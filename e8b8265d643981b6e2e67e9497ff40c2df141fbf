@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e35fe757_f10fd4c1",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-10T18:32:15Z",
+      "side": 1,
+      "message": "please document exact meaning of * in proto doc",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 32
+      },
+      "revId": "e8b8265d643981b6e2e67e9497ff40c2df141fbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3e2ef73_c05f9697",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-10T18:32:15Z",
+      "side": 1,
+      "message": "nit: make it switch\n\nswitch {\n  case !watcherRefs.hasRef(ref):\n    ...\n  case refs[ref] \u003d\u003d \"\":\n    ...\n}",
+      "range": {
+        "startLine": 143,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 3
+      },
+      "revId": "e8b8265d643981b6e2e67e9497ff40c2df141fbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d9b6ac3_48533dcd",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-10T18:32:15Z",
+      "side": 1,
+      "message": "I think you can reuse hasRef here and thus delete some code? e.g\n\nfor ref, tip :\u003d range tips {\n  if watched.hasRef(ref) {\n    allTips[ref] \u003d tip\n  }\n}\n\nIt will be slightly less efficient (more map lookups), but it\u0027s not a big deal.",
+      "range": {
+        "startLine": 312,
+        "startChar": 3,
+        "endLine": 312,
+        "endChar": 22
+      },
+      "revId": "e8b8265d643981b6e2e67e9497ff40c2df141fbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e39f0ba_01df113c",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-10T18:32:15Z",
+      "side": 1,
+      "message": "nit: maybe also do \"w.someChildren \u003d nil\" here, for consistency.",
+      "range": {
+        "startLine": 373,
+        "startChar": 2,
+        "endLine": 373,
+        "endChar": 22
+      },
+      "revId": "e8b8265d643981b6e2e67e9497ff40c2df141fbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dadb1e5_1cc998bf",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-10T18:32:15Z",
+      "side": 1,
+      "message": "strictly speaking there\u0027s Iter() method in stringset that can be used instead. But it\u0027s ugly.",
+      "range": {
+        "startLine": 390,
+        "startChar": 24,
+        "endLine": 390,
+        "endChar": 48
+      },
+      "revId": "e8b8265d643981b6e2e67e9497ff40c2df141fbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
