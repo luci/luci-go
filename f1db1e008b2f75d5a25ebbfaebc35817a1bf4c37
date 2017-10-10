@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "96a4e282_89d4879b",
+        "filename": "milo/api/buildbot/structs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-10T22:46:12Z",
+      "side": 1,
+      "message": "I think setting omitempty on bools might break stuff",
+      "range": {
+        "startLine": 239,
+        "startChar": 1,
+        "endLine": 239,
+        "endChar": 10
+      },
+      "revId": "f1db1e008b2f75d5a25ebbfaebc35817a1bf4c37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
