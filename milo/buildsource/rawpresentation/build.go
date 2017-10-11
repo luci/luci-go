@@ -25,6 +25,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
@@ -43,7 +44,7 @@ const (
 
 	// DefaultLogDogHost is the default LogDog host, if one isn't specified via
 	// query string.
-	DefaultLogDogHost = "luci-logdog.appspot.com"
+	DefaultLogDogHost = chromeinfra.LogDogHost
 )
 
 // AnnotationStream represents a LogDog annotation protobuf stream.

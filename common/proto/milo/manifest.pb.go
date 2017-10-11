@@ -338,7 +338,7 @@ type ManifestLink struct {
 	// other uri schemes here later.
 	//
 	// Ex.
-	//   logdog://luci-logdog.appspot.com/infra/build/12345/+/some/path
+	//   logdog://logs.chromium.org/infra/build/12345/+/some/path
 	Url string `protobuf:"bytes,1,opt,name=url" json:"url,omitempty"`
 	// The hash of the Manifest's raw binary form (i.e. the bytes at the end of
 	// `url`, without any interpretation or decoding). Milo will use this as an
