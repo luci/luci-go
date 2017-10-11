@@ -17,8 +17,8 @@ package bootstrap
 import (
 	"fmt"
 
-	"go.chromium.org/luci/client/environ"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
@@ -52,17 +52,17 @@ type Bootstrap struct {
 	Client streamclient.Client
 }
 
-func getFromEnv(env environ.Environment, reg *streamclient.Registry) (*Bootstrap, error) {
+func getFromEnv(env environ.Env, reg *streamclient.Registry) (*Bootstrap, error) {
 	// Detect Butler by looking for EnvStreamPrefix in the envrironent.
-	prefix, ok := env[EnvStreamPrefix]
+	prefix, ok := env.Get(EnvStreamPrefix)
 	if !ok {
 		return nil, ErrNotBootstrapped
 	}
 
 	bs := &Bootstrap{
-		CoordinatorHost: env[EnvCoordinatorHost],
+		CoordinatorHost: env.GetEmpty(EnvCoordinatorHost),
 		Prefix:          types.StreamName(prefix),
-		Project:         cfgtypes.ProjectName(env[EnvStreamProject]),
+		Project:         cfgtypes.ProjectName(env.GetEmpty(EnvStreamProject)),
 	}
 	if err := bs.Prefix.Validate(); err != nil {
 		return nil, fmt.Errorf("bootstrap: failed to validate prefix %q: %s", prefix, err)
@@ -72,7 +72,7 @@ func getFromEnv(env environ.Environment, reg *streamclient.Registry) (*Bootstrap
 	}
 
 	// If we have a stream server attached; instantiate a stream Client.
-	if p, ok := env[EnvStreamServerPath]; ok {
+	if p, ok := env.Get(EnvStreamServerPath); ok {
 		if err := bs.initializeClient(p, reg); err != nil {
 			return nil, fmt.Errorf("bootstrap: failed to create stream client [%s]: %s", p, err)
 		}
@@ -94,7 +94,7 @@ func (bs *Bootstrap) initializeClient(v string, reg *streamclient.Registry) erro
 // if the bootstrap data is invalid, and will return ErrNotBootstrapped if the
 // current process is not bootstrapped.
 func Get() (*Bootstrap, error) {
-	return getFromEnv(environ.Get(), streamclient.GetDefaultRegistry())
+	return getFromEnv(environ.System(), streamclient.GetDefaultRegistry())
 }
 
 // GetViewerURL returns a log stream viewer URL to the aggregate set of supplied
