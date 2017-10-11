@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/client/environ"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -54,9 +54,9 @@ func TestBootstrap(t *testing.T) {
 			return &sentinelClient{}, regErr
 		})
 
-		env := environ.Environment{
-			"IRRELEVANT": "VALUE",
-		}
+		env := environ.New([]string{
+			"IRRELEVANT=VALUE",
+		})
 
 		Convey(`With no Butler values will return ErrNotBootstrapped.`, func() {
 			_, err := getFromEnv(env, reg)
@@ -64,8 +64,8 @@ func TestBootstrap(t *testing.T) {
 		})
 
 		Convey(`With a Butler project and prefix`, func() {
-			env[EnvStreamProject] = "test-project"
-			env[EnvStreamPrefix] = "butler/prefix"
+			env.Set(EnvStreamProject, "test-project")
+			env.Set(EnvStreamPrefix, "butler/prefix")
 
 			Convey(`Yields a Bootstrap with a Project, Prefix, and no Client.`, func() {
 				bs, err := getFromEnv(env, reg)
@@ -78,8 +78,8 @@ func TestBootstrap(t *testing.T) {
 			})
 
 			Convey(`And the remaining environment parameters`, func() {
-				env[EnvStreamServerPath] = "test:client:params"
-				env[EnvCoordinatorHost] = "example.appspot.com"
+				env.Set(EnvStreamServerPath, "test:client:params")
+				env.Set(EnvCoordinatorHost, "example.appspot.com")
 
 				Convey(`Yields a fully-populated Bootstrap.`, func() {
 					bs, err := getFromEnv(env, reg)
@@ -106,19 +106,19 @@ func TestBootstrap(t *testing.T) {
 			})
 
 			Convey(`With an invalid Butler prefix, will fail.`, func() {
-				env[EnvStreamPrefix] = "_notavaildprefix"
+				env.Set(EnvStreamPrefix, "_notavaildprefix")
 				_, err := getFromEnv(env, reg)
 				So(err, ShouldErrLike, "failed to validate prefix")
 			})
 
 			Convey(`With an missing Butler project, will fail.`, func() {
-				delete(env, EnvStreamProject)
+				env.Remove(EnvStreamProject)
 				_, err := getFromEnv(env, reg)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
 
 			Convey(`With an invalid Butler project, will fail.`, func() {
-				env[EnvStreamProject] = "_notavaildproject"
+				env.Set(EnvStreamProject, "_notavaildproject")
 				_, err := getFromEnv(env, reg)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
