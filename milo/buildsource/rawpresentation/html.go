@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/server/auth"
@@ -31,8 +32,9 @@ import (
 //
 // It's exported so that tests may add additional hosts to it.
 var AcceptableLogdogHosts = stringset.NewFromSlice(
-	DefaultLogDogHost,
-	"luci-logdog-dev.appspot.com",
+	chromeinfra.LogDogHost,
+	chromeinfra.LogDogHostAppSpot,
+	chromeinfra.LogDogDevHost,
 )
 
 func resolveHost(host string) (string, error) {

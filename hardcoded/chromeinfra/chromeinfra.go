@@ -37,6 +37,17 @@ import (
 const (
 	// CIPDServiceURL is URL of a CIPD backend to connect to by default.
 	CIPDServiceURL = "https://chrome-infra-packages.appspot.com"
+
+	// LogDogHost is the default host of the production LogDog service in Chrome
+	// Operations.
+	LogDogHost = "logs.chromium.org"
+
+	// LogDogHostAppSpot is the ".appspot.com" host equivalent of LogDogHost.
+	LogDogHostAppSpot = "luci-logdog.appspot.com"
+
+	// LogDogDevHost is the default host of the development LogDog service in
+	// Chrome Operations.
+	LogDogDevHost = "luci-logdog-dev.appspot.com"
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra

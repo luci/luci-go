@@ -65,12 +65,12 @@
         },
         {
           "Label": "stderr",
-          "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstderr",
+          "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstderr",
           "Alias": true
         },
         {
           "Label": "stdout",
-          "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstdout",
+          "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstdout",
           "Alias": true
         }
       ],
@@ -84,7 +84,7 @@
         [
           {
             "Label": "all",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstdout\u0026s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstderr"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstdout\u0026s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstderr"
           }
         ]
       ],
@@ -171,13 +171,13 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Fstdout"
           }
         ],
         [
           {
             "Label": "run_recipe",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
           }
         ]
       ],
@@ -199,13 +199,13 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Fstdout"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Fstdout"
           }
         ],
         [
           {
             "Label": "json.output",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Flogs%2Fjson.output%2F0"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Flogs%2Fjson.output%2F0"
           }
         ]
       ],
@@ -227,7 +227,7 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fcommit-git-patch%2F0%2Fstdout"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fcommit-git-patch%2F0%2Fstdout"
           }
         ]
       ],
@@ -248,7 +248,7 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fgclient_runhooks%2F0%2Fstdout"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fgclient_runhooks%2F0%2Fstdout"
           }
         ]
       ],
@@ -269,7 +269,7 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fpresubmit%2F0%2Fstdout"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fpresubmit%2F0%2Fstdout"
           }
         ]
       ],
@@ -296,7 +296,7 @@
         [
           {
             "Label": "result",
-            "URL": "https://luci-logdog.appspot.com/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Frecipe_result%2F0%2Flogs%2Fresult%2F0"
+            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Frecipe_result%2F0%2Flogs%2Fresult%2F0"
           }
         ]
       ],
@@ -317,7 +317,7 @@
       "Property": [
         {
           "Key": "log_location",
-          "Value": "\"logdog://luci-logdog.appspot.com/chromium/bb/tryserver.chromium.linux/chromium_presubmit/426944/+/recipes/annotations\""
+          "Value": "\"logdog://logs.chromium.org/chromium/bb/tryserver.chromium.linux/chromium_presubmit/426944/+/recipes/annotations\""
         },
         {
           "Key": "logdog_prefix",
