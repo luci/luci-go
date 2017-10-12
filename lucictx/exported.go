@@ -89,5 +89,22 @@ type nullExport struct {
 	baseExport
 }
 
-func (n *nullExport) SetInCmd(*exec.Cmd)       { n.assertOpen() }
-func (n *nullExport) SetInEnviron(environ.Env) { n.assertOpen() }
+func (n *nullExport) SetInCmd(c *exec.Cmd) {
+	n.assertOpen()
+	pfx := EnvKey + "="
+	if c.Env == nil {
+		c.Env = os.Environ()
+	}
+	filtered := make([]string, 0, len(c.Env))
+	for _, l := range c.Env {
+		if !strings.HasPrefix(strings.ToUpper(l), pfx) {
+			filtered = append(filtered, l)
+		}
+	}
+	c.Env = filtered
+}
+
+func (n *nullExport) SetInEnviron(env environ.Env) {
+	n.assertOpen()
+	env.Remove(EnvKey)
+}
