@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0550682c_af59f880",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T15:45:52Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "130e6ae0_b04ba87c",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "10dec542_d3c6cc96",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "8852e7b9_bb2e1f3b",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T15:45:52Z",
+      "side": 1,
+      "message": "infra failure?",
+      "parentUuid": "10dec542_d3c6cc96",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf403ca8_bea4a3b6",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -47,6 +83,93 @@
       "writtenOn": "2017-10-12T08:30:56Z",
       "side": 1,
       "message": "This should probably be failure",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c64be8d_bc707fff",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T15:45:52Z",
+      "side": 1,
+      "message": "you mean infra failure?",
+      "parentUuid": "cf403ca8_bea4a3b6",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e636136_dcb16c7c",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T15:45:52Z",
+      "side": 1,
+      "message": "same here\n\ncan we move this hack to the hack that also parses swarming tags? i think it would be cleaner",
+      "range": {
+        "startLine": 104,
+        "startChar": 20,
+        "endLine": 104,
+        "endChar": 63
+      },
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78715286_09aea8e3",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T15:45:52Z",
+      "side": 1,
+      "message": "build.BuildSet contains only buildsets that buildbucket package could recognized from b.Tags[\"buildset\"], so these warnings won\u0027t cover all buildsets. They don\u0027t even cover gerrit changes. I\u0027d omit.",
+      "range": {
+        "startLine": 147,
+        "startChar": 3,
+        "endLine": 147,
+        "endChar": 81
+      },
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c138fdd_29ba851f",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T15:45:52Z",
+      "side": 1,
+      "message": "this won\u0027t work, there is no such tag key\n\nstrpair.ParseMap(build.Tags[\"swarming_tag\"])[\"luci_project\"]",
+      "range": {
+        "startLine": 192,
+        "startChar": 12,
+        "endLine": 192,
+        "endChar": 55
+      },
       "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
