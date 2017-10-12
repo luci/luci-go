@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d3de5c07_418ccf4b",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:55:18Z",
+      "side": 1,
+      "message": "I will add a README when I implement this in buildbucket. Then I will add a curl commandline with a buildbucket API call and sample output.",
+      "parentUuid": "e813d36c_b10a7ac0",
+      "range": {
+        "startLine": 1,
+        "startChar": 3,
+        "endLine": 1,
+        "endChar": 12
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa3a3c19_5c590160",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 15
@@ -45,6 +69,30 @@
       "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c933f8de_3207eeb4",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:55:18Z",
+      "side": 1,
+      "message": "oops, right",
+      "parentUuid": "fa3a3c19_5c590160",
+      "range": {
+        "startLine": 32,
+        "startChar": 52,
+        "endLine": 32,
+        "endChar": 53
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "8ef7cf1d_6f928a6e",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:55:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0de28359_af43dacc",
+      "range": {
+        "startLine": 38,
+        "startChar": 30,
+        "endLine": 38,
+        "endChar": 31
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee2d7209_f037dff7",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 15
@@ -82,6 +154,30 @@
       "writtenOn": "2017-10-12T17:49:33Z",
       "side": 1,
       "message": "document which one takes precedence, if they\u0027re both provided",
+      "range": {
+        "startLine": 95,
+        "startChar": 15,
+        "endLine": 95,
+        "endChar": 65
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1471448c_f30e62eb",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:55:18Z",
+      "side": 1,
+      "message": "Vadim, are there canonical delegation token docs? This comment is abstract because i didn\u0027t find ones.\n\nRobbie, none of them take precedence. A delegation token won\u0027t work without an oauth token (hence \"and, optionally,\")",
+      "parentUuid": "ee2d7209_f037dff7",
       "range": {
         "startLine": 95,
         "startChar": 15,
