@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package config;
 
+// TODO(hinoka): Proto naming convention is underscore_names for fields.
+
 // Project is a project definition for Milo.
 message Project {
   // ID is the identifier for the project, if different from its repository name.
@@ -13,6 +15,56 @@ message Project {
 
   // Consoles is a list of consoles to define under /console/
   repeated Console Consoles = 2;
+}
+
+message Link {
+  string text = 1;
+  string href = 2;
+  string alt = 3;
+}
+
+message Oncall {
+  string name = 1;
+  string oncall_url = 2;  // Protocol TBD
+}
+
+message Links {
+  string name = 1;
+  repeated Link links = 2;
+}
+
+message ConsoleSummaryGroup {
+  Link group_link = 1;
+  repeated string console_names = 2;
+}
+
+// Entry is a single header entry for the console.  It can be one of:
+// * oncall:         A reference to a oncall rotation, which is a URL to a .js
+//                   file containing document.write("content"), as defined by
+//                   infra_internal.services.sheriff.rotation and
+//                   infra_internal.services.trooper.rotation
+// * links:          A list of web links, grouped by name.
+// * console_groups: Groups of console summaries.
+message Entry {
+  oneof entry {
+    Oncall oncall = 1;
+    Links links = 2;
+    ConsoleSummaryGroup console_groups = 3;
+  }
+}
+
+// Header is a collection of links, rotation information, and console summaries
+// that are displayed at the top of a console, below the tree status information.
+// These are separated into columns first, then entries within the columns.
+message Header {
+  // Column is a collection of vertical entries.
+  message Column {
+    // entries can be oncall information, links, or console summaries.  Each
+    // entry occupies one row in the column.
+    repeated Entry entries = 1;
+  }
+  // A header can have multiple columns, and these will be laid out from left to right.
+  repeated Column columns = 1;
 }
 
 // Console is a waterfall definition consisting of one or more builders.
@@ -45,6 +97,15 @@ message Console {
   // This field is optional. The favicon URL must have a host of
   // storage.googleapis.com.
   string FaviconURL = 7;
+
+	// tree_status_host is the hostname of the chromium-status instance where
+	// the tree status of this console is hosted.  If provided, this will appear
+  // as the bar at the very top of the page.
+	string tree_status_host = 8;
+
+  // header is a collection of liks, rotation information, and console summaries
+  // displayed under the tree status but above the main console content.
+	Header header = 9;
 }
 
 // A builder is a reference to a Milo builder.
