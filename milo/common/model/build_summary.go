@@ -59,6 +59,12 @@ type BuildSummary struct {
 	//   "buildbucket/<bucketname>/<buildername>"
 	BuilderID string
 
+	// The stringified buildbucket.BuildSets associated with this Build, if any.
+	//
+	// Example:
+	//   commit/gitiles/<host>/<project/path>/+/<commit>
+	BuildSet []string
+
 	// SelfLink provides a relative URL for this build.
 	// Buildbot: /buildbot/<mastername>/<buildername>/<buildnumber>
 	// Swarmbucket: Derived from Buildbucket (usually link to self)
