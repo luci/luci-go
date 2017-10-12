@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "9f385ed1_ab9e8f88",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:23:40Z",
+      "side": 1,
+      "message": "it\u0027s in the default case of infra error.",
+      "parentUuid": "0550682c_af59f880",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "10dec542_d3c6cc96",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -69,6 +87,24 @@
       "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a3587fd_f9315426",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:23:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8852e7b9_bb2e1f3b",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -107,6 +143,24 @@
     },
     {
       "key": {
+        "uuid": "faa37686_2ca45b30",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:23:40Z",
+      "side": 1,
+      "message": "Cancelled is a user action, not an infra failure, right?",
+      "parentUuid": "8c64be8d_bc707fff",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0e636136_dcb16c7c",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -127,6 +181,30 @@
       "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e24f359_bec2c2a2",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:23:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e636136_dcb16c7c",
+      "range": {
+        "startLine": 104,
+        "startChar": 20,
+        "endLine": 104,
+        "endChar": 63
+      },
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -153,6 +231,30 @@
     },
     {
       "key": {
+        "uuid": "b9ee0400_a6d84a9c",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:23:40Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "78715286_09aea8e3",
+      "range": {
+        "startLine": 147,
+        "startChar": 3,
+        "endLine": 147,
+        "endChar": 81
+      },
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2c138fdd_29ba851f",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -173,6 +275,30 @@
       "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80bf4283_1a0c50b0",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:23:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c138fdd_29ba851f",
+      "range": {
+        "startLine": 192,
+        "startChar": 12,
+        "endLine": 192,
+        "endChar": 55
+      },
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
