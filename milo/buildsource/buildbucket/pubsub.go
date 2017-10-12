@@ -138,6 +138,9 @@ func attachRevisionData(c context.Context, project string, build buildbucket.Bui
 				// URL fields.
 				for _, con := range consoles {
 					bs.AddManifestKey(project, con.ID, "REVISION", "", revision)
+
+					url := fmt.Sprintf("https://%s/%s", x.Host, x.Project)
+					bs.AddManifestKey(project, con.ID, "BUILD_SET/GitilesCommit", url, revision)
 				}
 			}
 
