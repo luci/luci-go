@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "130e6ae0_b04ba87c",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-12T08:30:56Z",
+      "side": 1,
+      "message": "Missing StatusError",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10dec542_d3c6cc96",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-12T08:30:56Z",
+      "side": 1,
+      "message": "This should be failure, unless it\u0027s swarming that expired.",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf403ca8_bea4a3b6",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-12T08:30:56Z",
+      "side": 1,
+      "message": "This should probably be failure",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
