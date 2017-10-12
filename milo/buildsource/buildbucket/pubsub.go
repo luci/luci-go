@@ -86,7 +86,7 @@ func generateSummary(c context.Context, hostname, annotationURL string, build bu
 	bs.Summary.End = build.CompletionTime
 
 	var ok bool
-	// We map out non-infra failures explicitly. Any status not in this mapp
+	// We map out non-infra failures explicitly. Any status not in this map
 	// defaults to InfraFailure below.
 	bs.Summary.Status, ok = map[buildbucket.Status]model.Status{
 		buildbucket.StatusScheduled: model.NotRun,
@@ -137,6 +137,9 @@ func attachRevisionData(c context.Context, project string, build buildbucket.Bui
 				// URL fields.
 				for _, con := range consoles {
 					bs.AddManifestKey(project, con.ID, "REVISION", "", revision)
+
+					bs.AddManifestKey(project, con.ID, "BUILD_SET/GitilesCommit",
+						commit.RepoURL(), revision)
 				}
 			}
 		}

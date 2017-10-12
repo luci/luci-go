@@ -90,6 +90,18 @@ func (c *GitilesCommit) String() string {
 	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Revision)
 }
 
+// RepoURL returns the URL for the gitiles repo.
+// e.g. "https://chromium.googlesource.com/chromium/src"
+func (c *GitilesCommit) RepoURL() string {
+	return fmt.Sprintf("https://%s/%s", c.Host, c.Project)
+}
+
+// URL returns the URL for the gitiles commit.
+// e.g. "https://chromium.googlesource.com/chromium/src/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
+func (c *GitilesCommit) URL() string {
+	return fmt.Sprintf("%s/+/%s", c.RepoURL(), c.Revision)
+}
+
 // ParseBuildSet tries to parse buildset as one of the known formats.
 // If buildSet was not recognized, returns nil.
 func ParseBuildSet(buildSet string) BuildSet {
