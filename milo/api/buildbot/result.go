@@ -51,8 +51,6 @@ func (r Result) Status() model.Status {
 		return model.NotRun
 	case Exception:
 		return model.Exception
-	case Retry:
-		return model.WaitingDependency
 	default:
 		panic(fmt.Errorf("unknown status %d", r))
 	}
