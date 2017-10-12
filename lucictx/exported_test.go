@@ -90,3 +90,38 @@ func TestLiveExported(t *testing.T) {
 		})
 	})
 }
+
+func TestNullExported(t *testing.T) {
+	t.Parallel()
+
+	n := nullExport{}
+	someEnv := []string{"SOME_STUFF=0"}
+
+	Convey("SetInCmd, no LUCI_CONTEXT", t, func() {
+		cmd := exec.Cmd{
+			Env: append([]string{}, someEnv...),
+		}
+		n.SetInCmd(&cmd)
+		So(cmd.Env, ShouldResemble, someEnv)
+	})
+
+	Convey("SetInCmd, with LUCI_CONTEXT", t, func() {
+		cmd := exec.Cmd{
+			Env: append([]string{"LUCI_CONTEXT=abc"}, someEnv...),
+		}
+		n.SetInCmd(&cmd)
+		So(cmd.Env, ShouldResemble, someEnv) // no LUCI_CONTEXT anymore
+	})
+
+	Convey("SetInEnviron, no LUCI_CONTEXT", t, func() {
+		env := environ.New(someEnv)
+		n.SetInEnviron(env)
+		So(env.Sorted(), ShouldResemble, someEnv)
+	})
+
+	Convey("SetInEnviron, with LUCI_CONTEXT", t, func() {
+		env := environ.New(append([]string{"LUCI_CONTEXT=abc"}, someEnv...))
+		n.SetInEnviron(env)
+		So(env.Sorted(), ShouldResemble, someEnv) // no LUCI_CONTEXT anymore
+	})
+}
