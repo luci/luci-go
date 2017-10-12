@@ -22,6 +22,30 @@
       "revId": "6f8bf3019a21561c5b7cb64b86fadcb2bb031102",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84016654_ca3142bc",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T16:29:12Z",
+      "side": 1,
+      "message": "hmm, could manifest key be more generic so that we could do\n\nbs.AddManifestKey(project, con.ID, \"BUILD_SET\", buildSetStringVerbatim)\n\nWould it make sense?\n\nbuild set strings are kind of standardized, part of our API so unlikely to change",
+      "parentUuid": "685b3da5_404f0a31",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 142,
+        "endChar": 59
+      },
+      "revId": "6f8bf3019a21561c5b7cb64b86fadcb2bb031102",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
