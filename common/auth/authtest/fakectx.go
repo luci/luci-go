@@ -83,17 +83,13 @@ func (f *FakeContext) Start(ctx context.Context) (context.Context, error) {
 	}
 
 	// Launch the auth server in a background goroutine.
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		if err := srv.Serve(); err != nil {
-			logging.WithError(err).Errorf(ctx, "Unexpected error in the fake local auth server loop")
-		}
-	}()
+	if err := srv.Start(); err != nil {
+		srv.Close(ctx) // close the listening socket
+		return nil, err
+	}
 
 	// Make it seen to the world.
 	f.srv = srv
-	f.done = done
 
 	logging.Debugf(ctx, "The fake local auth server is at http://127.0.0.1:%d", localAuth.RPCPort)
 	return lucictx.SetLocalAuth(ctx, localAuth), nil
@@ -101,29 +97,10 @@ func (f *FakeContext) Start(ctx context.Context) (context.Context, error) {
 
 // Stop stops the local auth server if it is running.
 func (f *FakeContext) Stop(ctx context.Context) {
-	if f.srv == nil {
-		return
+	if f.srv != nil {
+		f.srv.Close(ctx)
+		f.srv = nil
 	}
-
-	// Gracefully stop the server.
-	logging.Debugf(ctx, "Stopping the fake local auth server...")
-	if err := f.srv.Close(); err != nil {
-		logging.WithError(err).Warningf(ctx, "Failed to close the fake local auth server")
-	}
-
-	// Wait for it to really die. Should be fast. Limit by timeout just in case.
-	ctx, cancel := clock.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	select {
-	case <-f.done:
-		logging.Debugf(ctx, "The fake local auth server stopped")
-	case <-ctx.Done():
-		logging.WithError(ctx.Err()).Warningf(ctx, "Giving up waiting for the fake local auth server to stop")
-	}
-
-	// Cleanup the state no matter what.
-	f.srv = nil
-	f.done = nil
 }
 
 type fakeGenerator struct {

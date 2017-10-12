@@ -38,32 +38,49 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+type callbackGen struct {
+	email string
+	cb    func(context.Context, []string, time.Duration) (*oauth2.Token, error)
+}
+
+func (g *callbackGen) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+	return g.cb(ctx, scopes, lifetime)
+}
+
+func (g *callbackGen) GetEmail() (string, error) {
+	return g.email, nil
+}
+
+func makeGenerator(email string, cb func(context.Context, []string, time.Duration) (*oauth2.Token, error)) TokenGenerator {
+	return &callbackGen{email, cb}
+}
+
 func TestServerLifecycle(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	Convey("Serve or close before init", t, func() {
+	Convey("Start or Close before init", t, func() {
 		s := Server{}
-		So(s.Serve(), ShouldErrLike, "not initialized")
-		So(s.Close(), ShouldErrLike, "not initialized")
+		So(s.Start(), ShouldErrLike, "not initialized")
+		So(s.Close(ctx), ShouldErrLike, "not initialized")
 	})
 
 	Convey("Double init", t, func() {
 		s := Server{}
-		defer s.Close()
+		defer s.Close(ctx)
 		_, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
 		_, err = s.Initialize(ctx)
 		So(err, ShouldErrLike, "already initialized")
 	})
 
-	Convey("Server after close", t, func() {
+	Convey("Start after close", t, func() {
 		s := Server{}
 		_, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
-		So(s.Close(), ShouldBeNil)
-		So(s.Serve(), ShouldErrLike, "already closed")
+		So(s.Close(ctx), ShouldBeNil)
+		So(s.Start(), ShouldErrLike, "already closed")
 	})
 
 	Convey("Close works", t, func() {
@@ -73,21 +90,14 @@ func TestServerLifecycle(t *testing.T) {
 		}
 		_, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
-
-		done := make(chan error)
-		go func() {
-			done <- s.Serve()
-		}()
+		So(s.Start(), ShouldBeNil)
 
 		<-serving // wait until really started
 
 		// Stop it.
-		So(s.Close(), ShouldBeNil)
+		So(s.Close(ctx), ShouldBeNil)
 		// Doing it second time is ok too.
-		So(s.Close(), ShouldBeNil)
-
-		serverErr := <-done
-		So(serverErr, ShouldBeNil)
+		So(s.Close(ctx), ShouldBeNil)
 	})
 }
 
@@ -137,15 +147,8 @@ func TestProtocol(t *testing.T) {
 		})
 		So(p.DefaultAccountID, ShouldEqual, "acc_id")
 
-		done := make(chan struct{})
-		go func() {
-			s.Serve()
-			close(done)
-		}()
-		defer func() {
-			s.Close()
-			<-done
-		}()
+		So(s.Start(), ShouldBeNil)
+		defer s.Close(ctx)
 
 		goodRequest := func() *http.Request {
 			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{

@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/auth/localauth/rpcs"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -108,8 +109,9 @@ type Server struct {
 	secret   []byte             // the clients are expected to send this secret
 	listener net.Listener       // to know what to stop in Close, nil after Close
 	wg       sync.WaitGroup     // +1 for each request being processed now
-	ctx      context.Context    // derived from ctx in Initialize
+	ctx      context.Context    // derived from ctx in Initialize, never resets
 	cancel   context.CancelFunc // cancels 'ctx'
+	stopped  chan struct{}      // closed when serve() goroutine stops
 
 	testingServeHook func() // called right before serving
 }
@@ -171,13 +173,69 @@ func (s *Server) Initialize(ctx context.Context) (*lucictx.LocalAuth, error) {
 	}, nil
 }
 
-// Serve runs a serving loop.
+// Start launches background goroutine with the serving loop.
+//
+// Must be eventually stopped with Close().
+func (s *Server) Start() error {
+	s.l.Lock()
+	defer s.l.Unlock()
+
+	switch {
+	case s.ctx == nil:
+		return fmt.Errorf("not initialized")
+	case s.listener == nil:
+		return fmt.Errorf("already closed")
+	case s.stopped != nil:
+		return fmt.Errorf("already started")
+	}
+
+	s.stopped = make(chan struct{})
+	go func() {
+		defer close(s.stopped)
+		if err := s.serve(); err != nil {
+			logging.WithError(err).Errorf(s.ctx, "Unexpected error in the local auth server loop")
+		}
+	}()
+
+	return nil
+}
+
+// Close closes the listening socket, notifies pending requests to abort and
+// stops the internal serving goroutine.
+//
+// Safe to call multiple times. Once closed, the server cannot be started again
+// (make a new instance of Server instead).
+//
+// Uses the given context for the deadline when waiting for the serving loop
+// to stop.
+func (s *Server) Close(ctx context.Context) error {
+	// Close the socket. It notifies the serving loop to stop.
+	stopped, err := s.killServe()
+	switch {
+	case err != nil:
+		return err
+	case stopped == nil:
+		return nil // the serving loop was not running
+	}
+
+	// Wait for the serving loop to actually stop.
+	select {
+	case <-stopped:
+		logging.Debugf(ctx, "The local auth server stopped")
+	case <-clock.After(ctx, 10*time.Second):
+		logging.Errorf(ctx, "Giving up waiting for the local auth server to stop")
+	}
+
+	return nil
+}
+
+// serve runs the serving loop.
 //
 // It unblocks once Close is called and all pending requests are served.
 //
 // Returns nil if serving was stopped by Close or non-nil if it failed for some
 // other reason.
-func (s *Server) Serve() (err error) {
+func (s *Server) serve() (err error) {
 	s.l.Lock()
 	switch {
 	case s.ctx == nil:
@@ -219,24 +277,31 @@ func (s *Server) Serve() (err error) {
 	return
 }
 
-// Close closes the listening socket and notifies pending requests to abort.
+// killServe stops the serving goroutine.
 //
-// Safe to call multiple times.
-func (s *Server) Close() error {
+// Returns a channel that is closed once the goroutine really stops or nil if
+// it isn't running now.
+func (s *Server) killServe() (chan struct{}, error) {
 	s.l.Lock()
 	defer s.l.Unlock()
+
 	if s.ctx == nil {
-		return fmt.Errorf("not initialized")
+		return nil, fmt.Errorf("not initialized")
 	}
-	// Stop accepting requests, unblock Serve(). Do it only once.
+
+	// Stop accepting requests, unblocks serve(). Do it only once.
 	if s.listener != nil {
+		logging.Debugf(s.ctx, "Stopping the local auth server...")
 		if err := s.listener.Close(); err != nil {
 			logging.WithError(err).Errorf(s.ctx, "Failed to close the listening socket")
 		}
 		s.listener = nil
 	}
 	s.cancel() // notify all running handlers to stop
-	return nil
+
+	stopped := s.stopped
+	s.stopped = nil
+	return stopped, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
