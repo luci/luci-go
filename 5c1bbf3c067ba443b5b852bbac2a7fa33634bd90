@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "b9f2b228_96998b87",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "Since this will be a breaking change, why not do it now? The sooner, the fewer configs get broken.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 60
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ff6d813_ccde7b68",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "Isn\u0027t it more idiomatic to have it be OnCall?",
+      "range": {
+        "startLine": 32,
+        "startChar": 8,
+        "endLine": 32,
+        "endChar": 14
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e0ca128_601dc3e8",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "Will this be derived from group_link?",
+      "range": {
+        "startLine": 48,
+        "startChar": 10,
+        "endLine": 48,
+        "endChar": 21
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "81bda384_45165abb",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -25,6 +94,30 @@
     },
     {
       "key": {
+        "uuid": "7ab79a62_77dc13ac",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "Yeah, that can get laid out automatically for sure.",
+      "parentUuid": "81bda384_45165abb",
+      "range": {
+        "startLine": 49,
+        "startChar": 8,
+        "endLine": 49,
+        "endChar": 27
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9267baf_039f1e80",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -41,6 +134,168 @@
         "startChar": 10,
         "endLine": 74,
         "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "070d11eb_62b8220e",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "It\u0027s probably do-able to use some heuristic to \"balance\" out the columns, but I don\u0027t think it\u0027ll ever turn out as nice as just letting the user have full control over the layout. Different projects have different requirements, and I think we would benefit from having more layout options. That also makes the rendering itself much more straight-forward. :)",
+      "parentUuid": "e9267baf_039f1e80",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d17249ef_4dc6bc16",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "Should start with \"Columns is\" to stay idiomatic with Go (this is pretty consistent throughout luci-go IIRC).",
+      "range": {
+        "startLine": 79,
+        "startChar": 5,
+        "endLine": 79,
+        "endChar": 13
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77fd3610_da17fd7a",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "These should be CamelCase so they appear idiomatically in the godoc. There\u0027s a number of new fields that have the same issue.",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 20
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa4cb854_0408d73f",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "This should be spaces.",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fd6a1ac_4d101425",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "779d7947_7f5571b0",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0e7620d_402841b4",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-12T01:03:51Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 1
       },
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
