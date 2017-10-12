@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "a4aeb856_e05b3626",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a602c65e_448a858d",
+      "range": {
+        "startLine": 18,
+        "startChar": 48,
+        "endLine": 18,
+        "endChar": 60
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90017c44_951b7219",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -131,6 +155,30 @@
       "side": 1,
       "message": "Ping",
       "parentUuid": "90017c44_951b7219",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bbd955a_70364cca",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "it is kind orthogonal to the _protocol_, but I\u0027ve added a comment. WDYT?",
+      "parentUuid": "61c8be70_68cecf1d",
       "range": {
         "startLine": 23,
         "startChar": 4,
@@ -190,6 +238,30 @@
     },
     {
       "key": {
+        "uuid": "25477056_dfae7193",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a97cb47f_d33d6607",
+      "range": {
+        "startLine": 53,
+        "startChar": 4,
+        "endLine": 53,
+        "endChar": 16
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bca0fef1_338570f0",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -213,6 +285,30 @@
     },
     {
       "key": {
+        "uuid": "1de768cc_4d0da53a",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bca0fef1_338570f0",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 26
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "363de89b_661cd3f6",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -233,6 +329,30 @@
       "revId": "0d2eb969effc180f3629bc4788816677c771999e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95970321_e03d5547",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "363de89b_661cd3f6",
+      "range": {
+        "startLine": 89,
+        "startChar": 75,
+        "endLine": 90,
+        "endChar": 19
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -279,6 +399,54 @@
       "revId": "0d2eb969effc180f3629bc4788816677c771999e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e1563e3_59668130",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a76073c_019f0fe2",
+      "range": {
+        "startLine": 99,
+        "startChar": 56,
+        "endLine": 99,
+        "endChar": 74
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "371b1f4d_2cd75e2a",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7d0b5af_5884765c",
+      "range": {
+        "startLine": 99,
+        "startChar": 9,
+        "endLine": 99,
+        "endChar": 14
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -401,6 +569,30 @@
     },
     {
       "key": {
+        "uuid": "e10124e4_f498bbbf",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5c9146a9_05ada3fe",
+      "range": {
+        "startLine": 102,
+        "startChar": 23,
+        "endLine": 102,
+        "endChar": 55
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "599255fb_146ec0f0",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -448,6 +640,30 @@
     },
     {
       "key": {
+        "uuid": "c931dc22_4f74215d",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d611b7e_3a703732",
+      "range": {
+        "startLine": 104,
+        "startChar": 18,
+        "endLine": 104,
+        "endChar": 31
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67424099_cd3736bc",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -471,6 +687,30 @@
     },
     {
       "key": {
+        "uuid": "4f6e8c34_7c2441b2",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67424099_cd3736bc",
+      "range": {
+        "startLine": 110,
+        "startChar": 8,
+        "endLine": 110,
+        "endChar": 32
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4d1a3117_fff4e38c",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -491,6 +731,30 @@
       "revId": "0d2eb969effc180f3629bc4788816677c771999e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d6fb564_e250e914",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:04:50Z",
+      "side": 1,
+      "message": "I\u0027ve deleted roles. We can add them later.",
+      "parentUuid": "4d1a3117_fff4e38c",
+      "range": {
+        "startLine": 113,
+        "startChar": 2,
+        "endLine": 116,
+        "endChar": 28
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
