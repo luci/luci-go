@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db49ca7c_733e2ce5",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T23:22:15Z",
+      "side": 1,
+      "message": "i am a bit concerned that this comment pretends to guarantee that we return a canonical URL but there is nothing in this file that enforces that. Can we omit \"canonical\" here and below?",
+      "range": {
+        "startLine": 93,
+        "startChar": 23,
+        "endLine": 93,
+        "endChar": 32
+      },
+      "revId": "2749c4ba71c0b9b13518048061de82189a3c12a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c107289_3efdfea1",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T23:22:15Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 89,
+        "startChar": 69,
+        "endLine": 89,
+        "endChar": 73
+      },
+      "revId": "2749c4ba71c0b9b13518048061de82189a3c12a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

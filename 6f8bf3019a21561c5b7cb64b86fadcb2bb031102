@@ -70,6 +70,30 @@
       "revId": "6f8bf3019a21561c5b7cb64b86fadcb2bb031102",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3e2eec5_987f6933",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T23:22:15Z",
+      "side": 1,
+      "message": "ok, just asking if makes sense. I don\u0027t have a good enough understanding of manifest keys",
+      "parentUuid": "9861a10b_5f7544e5",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 142,
+        "endChar": 59
+      },
+      "revId": "6f8bf3019a21561c5b7cb64b86fadcb2bb031102",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
