@@ -117,8 +117,9 @@ func attachRevisionData(c context.Context, project string, build buildbucket.Bui
 
 	var consoles []*common.Console
 
-	// TODO(iannucci): index buildset directly on BuildSummary as well
 	for _, bset := range build.BuildSets {
+		bs.BuildSet = append(bs.BuildSet, bset.String())
+
 		switch x := bset.(type) {
 		case *buildbucket.GitilesCommit:
 			revision, err := hex.DecodeString(x.Revision)
@@ -141,10 +142,10 @@ func attachRevisionData(c context.Context, project string, build buildbucket.Bui
 			}
 
 		case *buildbucket.GerritChange:
-			// TODO(iannucci): index this
+			// this is a known type, but we don't index it specially.
 
 		default:
-			logging.Warningf(c, "ignoring unknown buildset: %v - %s", bset, bset.String())
+			logging.Warningf(c, "unknown buildset: %v - %s", bset, bset.String())
 		}
 	}
 
