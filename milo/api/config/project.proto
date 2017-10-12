@@ -6,6 +6,10 @@ syntax = "proto3";
 
 package config;
 
+// TODO(hinoka): Proto naming convention is underscore_names for fields, fix
+// this file so that it conforms to the proto naming convention.
+// https://developers.google.com/protocol-buffers/docs/style
+
 // Project is a project definition for Milo.
 message Project {
   // ID is the identifier for the project, if different from its repository name.
@@ -13,6 +17,67 @@ message Project {
 
   // Consoles is a list of consoles to define under /console/
   repeated Console Consoles = 2;
+}
+
+// Link is a link to an internet resource, which will be rendered out as
+// an anchor tag <a href="url" alt="alt">text</a>.
+message Link {
+  string text = 1;
+  string url = 2;
+  string alt = 3;
+}
+
+// Oncall contains information about who is currently scheduled as the
+// oncall for certain rotations.
+message Oncall {
+  // name is the name of the oncall rotation being displayed.
+  string name = 1;
+  // url is a url to a .js file/endpoint containing text displayed, as defined in
+  // infra_internal.services.sheriff.rotation and infra_internal.services.trooper.rotation
+  string url = 2;
+}
+
+// Links is a grouped list of links, optionally given a name.
+message Links {
+  string name = 1;
+  repeated Link links = 2;
+}
+
+// ConsoleSummaryGroup is a list of consoles to be displayed as console summaries
+// (aka the little bubbles at the top of the console).  This can optionally
+// have a group name (e.g. "Tree closers", "Experimental", etc)
+message ConsoleSummaryGroup {
+  Link group_link = 1;
+  repeated string console_names = 2;
+}
+
+// Entry is a single header entry for the console.  It can be one of:
+// * oncall:         A reference to a oncall rotation, which is a URL to a .js
+//                   file containing document.write("content"), as defined by
+//                   infra_internal.services.sheriff.rotation and
+//                   infra_internal.services.trooper.rotation
+// * links:          A list of web links, grouped by name.
+// * console_groups: Groups of console summaries.
+message Entry {
+  oneof entry {
+    Oncall oncall = 1;
+    Links links = 2;
+    ConsoleSummaryGroup console_groups = 3;
+  }
+}
+
+// Header is a collection of links, rotation information, and console summaries
+// that are displayed at the top of a console, below the tree status information.
+// These are separated into columns first, then entries within the columns.
+message Header {
+  // Column is a collection of vertical entries.
+  message Column {
+    // entries can be oncall information, links, or console summaries.  Each
+    // entry occupies one row in the column.
+    repeated Entry entries = 1;
+  }
+  // A header can have multiple columns, and these will be laid out from left to right.
+  repeated Column columns = 1;
 }
 
 // Console is a waterfall definition consisting of one or more builders.
@@ -45,6 +110,15 @@ message Console {
   // This field is optional. The favicon URL must have a host of
   // storage.googleapis.com.
   string FaviconURL = 7;
+
+	// tree_status_host is the hostname of the chromium-status instance where
+	// the tree status of this console is hosted.  If provided, this will appear
+  // as the bar at the very top of the page.
+	string tree_status_host = 8;
+
+  // header is a collection of liks, rotation information, and console summaries
+  // displayed under the tree status but above the main console content.
+	Header header = 9;
 }
 
 // A builder is a reference to a Milo builder.
