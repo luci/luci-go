@@ -57,6 +57,8 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 // Get allows you to obtain the resp.Builder that corresponds with this
 // BuilderID.
 func (b BuilderID) Get(c context.Context, limit int, cursor string) (*resp.Builder, error) {
+	// TODO(nodir): fix the abstraction. Get parameters as combination of
+	// buildbot and buildbucket parameters.
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
 	source, group, builder, err := b.Split()
 	if err != nil {

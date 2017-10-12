@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
@@ -41,6 +42,42 @@ const maxDataSize = 950000
 // GetBuild fetches a buildbot build from the storage.
 // Does not check access.
 func GetBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
+	emOptions := GetEmulationOptions(c, master, builder)
+	if emOptions != nil && number >= int(emOptions.StartFrom) {
+		build, err := getEmulatedBuild(c, emOptions.Bucket, builder, number)
+		if err != nil {
+			return nil, err
+		}
+		build.Master = master
+		return build, nil
+	}
+	return getDatastoreBuild(c, master, builder, number)
+}
+
+// getEmulatedBuild returns a buildbot build derived from a LUCI build.
+// Does not populate Master, Blame or SourceStamp fields.
+func getEmulatedBuild(c context.Context, bucket, builder string, number int) (*buildbot.Build, error) {
+	bb, err := buildbucketClient(c)
+	if err != nil {
+		return nil, err
+	}
+
+	buildAddress := fmt.Sprintf("%s/%s/%d", bucket, builder, number)
+	msgs, err := bb.Search().
+		// this search is optimized, a datastore.get.
+		Tag(strpair.Format("build_address", buildAddress)).
+		Context(c).
+		Fetch(1, nil)
+	switch {
+	case err != nil:
+		return nil, err
+	case len(msgs) == 0:
+		return nil, errors.Reason("build %q not found", buildAddress).Tag(common.CodeNotFound).Err()
+	}
+	return buildFromBuildbucket(c, msgs[0], false)
+}
+
+func getDatastoreBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
 	entity := &buildEntity{
 		Master:      master,
 		Buildername: builder,

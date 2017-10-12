@@ -16,7 +16,9 @@ package buildbot
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,9 +78,19 @@ func mergeText(text []string) []string {
 	return result
 }
 
-func getBuildSummary(b *buildbot.Build) *resp.BuildSummary {
+func getBuildSummary(c context.Context, b *buildbot.Build) *resp.BuildSummary {
+	linkURL := fmt.Sprintf("%d", b.Number)
+	emOpt := buildstore.GetEmulationOptions(c, b.Master, b.Buildername)
+	if emOpt != nil {
+		// TODO(nodir,hinoka): move all link generation to a separate package
+		vals := url.Values{}
+		vals.Set("em-bucket", emOpt.Bucket)
+		vals.Set("em-start", strconv.Itoa(int(emOpt.StartFrom)))
+		linkURL += "?" + vals.Encode()
+	}
+
 	return &resp.BuildSummary{
-		Link:   resp.NewLink(fmt.Sprintf("#%d", b.Number), fmt.Sprintf("%d", b.Number)),
+		Link:   resp.NewLink(fmt.Sprintf("#%d", b.Number), linkURL),
 		Status: b.Status(),
 		ExecutionTime: resp.Interval{
 			Started:  b.Times.Start.Time,
@@ -207,7 +219,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.PrevCursor = res.PrevCursor
 			result.FinishedBuilds = make([]*resp.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
-				result.FinishedBuilds[i] = getBuildSummary(b)
+				result.FinishedBuilds[i] = getBuildSummary(c, b)
 			}
 			return err
 		}
@@ -221,7 +233,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.CurrentBuilds = make([]*resp.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
 				// currentBuilds is presented in reversed order, so flip it
-				result.CurrentBuilds[len(res.Builds)-i-1] = getBuildSummary(b)
+				result.CurrentBuilds[len(res.Builds)-i-1] = getBuildSummary(c, b)
 			}
 			return err
 		}
