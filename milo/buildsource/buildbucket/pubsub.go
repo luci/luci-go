@@ -117,7 +117,8 @@ func attachRevisionData(c context.Context, project string, build buildbucket.Bui
 
 	var consoles []*common.Console
 
-	// TODO(iannucci): index buildset directly on BuildSummary as well
+	bs.BuildSet = build.Tags[buildbucket.TagBuildSet]
+
 	for _, bset := range build.BuildSets {
 		if commit, ok := bset.(*buildbucket.GitilesCommit); ok {
 			revision, err := hex.DecodeString(commit.Revision)
