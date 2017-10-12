@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "78a1973e_8563f2a0",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T16:04:24Z",
+      "side": 1,
+      "message": "good point, the sooner it is done, the less work it will be overall",
+      "parentUuid": "b9f2b228_96998b87",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 60
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de850ed6_0436699c",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T16:04:24Z",
+      "side": 1,
+      "message": "why do we have this here? a project should not report its own id because ids are specified in projects.cfg. When milo loads project configs, for each config it has the config set which contains the project id.\nhttps://godoc.org/go.chromium.org/luci/luci_config/common/cfgtypes#ConfigSet.SplitProject\ncan be used to retrieve the project id",
+      "range": {
+        "startLine": 16,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8ff6d813_ccde7b68",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -165,6 +212,30 @@
     },
     {
       "key": {
+        "uuid": "7220d031_d825d37d",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T16:04:24Z",
+      "side": 1,
+      "message": "i think it is doable and it would simplify this proto and prevent users from having arbitrary orders of entry types, e.g. oncall after links or vice versa, or oncall, then link, then oncall again. Also this config proto currently allows arbitrary number of columns and putting console_groups to the left from oncalls. Do we really need such flexibility/generality? I don\u0027t think we have this requirement / users care.\n\nConsider squashing Column and Entry into Header, so that Header is simply\n\nmessage Header {\n    Oncall oncall \u003d 1;\n    Links links \u003d 2;\n    ConsoleSummaryGroup console_groups \u003d 3;\n}\n\nthen we can render it with predefined order:\n\n  link1            CONSOLE SUMMARY GOES HERE\n  link2            CONSOLE SUMMARY GOES HERE\n  link3            CONSOLE SUMMARY GOES HERE \n  oncall1          CONSOLE SUMMARY GOES HERE\n  oncall2          CONSOLE SUMMARY GOES HERE\n  oncall3          CONSOLE SUMMARY GOES HERE",
+      "parentUuid": "070d11eb_62b8220e",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d17249ef_4dc6bc16",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -273,6 +344,29 @@
         "startChar": 0,
         "endLine": 117,
         "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6e31205_92834c41",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T16:04:24Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 119,
+        "startChar": 31,
+        "endLine": 119,
+        "endChar": 35
       },
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
