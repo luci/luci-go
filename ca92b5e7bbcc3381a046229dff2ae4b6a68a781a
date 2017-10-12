@@ -179,6 +179,24 @@
     },
     {
       "key": {
+        "uuid": "4d3194af_6c876c85",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:57:52Z",
+      "side": 1,
+      "message": "bah:\n\nIn this case, I think milo should track the full underlying data, and then assign colors to data when rendering the UI; otherwise we\u0027re (permanently) losing information.",
+      "parentUuid": "180e28ed_21bfd303",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0e636136_dcb16c7c",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
