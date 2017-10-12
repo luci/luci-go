@@ -66,9 +66,6 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 			case miloProto.FailureDetails_EXPIRED:
 				comp.Status = model.Expired
 
-			case miloProto.FailureDetails_DM_DEPENDENCY_FAILED:
-				comp.Status = model.DependencyFailure
-
 			default:
 				comp.Status = model.Failure
 			}
