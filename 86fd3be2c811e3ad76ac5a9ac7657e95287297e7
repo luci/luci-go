@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e813d36c_b10a7ac0",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:49:33Z",
+      "side": 1,
+      "message": "Extra credit: it would be helpful to have a README in this directory which shows some expected call/response sequences taking some service (buildbucket? cipd?) as a concrete example.",
+      "range": {
+        "startLine": 1,
+        "startChar": 3,
+        "endLine": 1,
+        "endChar": 12
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa3a3c19_5c590160",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:49:33Z",
+      "side": 1,
+      "message": "unless these are literal strings somewhere (I hope not), I would drop the quotes.",
+      "range": {
+        "startLine": 32,
+        "startChar": 52,
+        "endLine": 32,
+        "endChar": 53
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0de28359_af43dacc",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:49:33Z",
+      "side": 1,
+      "message": "human-readable\n\n(I like it when documentation is explicit about which fields are meant for machines v. humans, with the assumption that ALL API fields are for machines unless said otherwise)",
+      "range": {
+        "startLine": 38,
+        "startChar": 30,
+        "endLine": 38,
+        "endChar": 31
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee2d7209_f037dff7",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T17:49:33Z",
+      "side": 1,
+      "message": "document which one takes precedence, if they\u0027re both provided",
+      "range": {
+        "startLine": 95,
+        "startChar": 15,
+        "endLine": 95,
+        "endChar": 65
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
