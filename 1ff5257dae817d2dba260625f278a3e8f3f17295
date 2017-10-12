@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4cde4449_869f7867",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T18:56:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b131d383_bcc5b66d",
+      "revId": "1ff5257dae817d2dba260625f278a3e8f3f17295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76ea006d_d7a3f0e9",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 4
@@ -30,6 +48,30 @@
       "writtenOn": "2017-10-12T18:47:45Z",
       "side": 1,
       "message": "nit: switch is too long?",
+      "range": {
+        "startLine": 91,
+        "startChar": 24,
+        "endLine": 91,
+        "endChar": 61
+      },
+      "revId": "1ff5257dae817d2dba260625f278a3e8f3f17295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3ee57999_e9e1768c",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T18:56:28Z",
+      "side": 1,
+      "message": "yeah, switch is much longer (~2x lines). It also invites folks to add code, which I don\u0027t like :).",
+      "parentUuid": "76ea006d_d7a3f0e9",
       "range": {
         "startLine": 91,
         "startChar": 24,
@@ -56,6 +98,24 @@
       "revId": "1ff5257dae817d2dba260625f278a3e8f3f17295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64117ea6_a2cd3e77",
+        "filename": "milo/common/model/status.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T18:56:28Z",
+      "side": 1,
+      "message": "yeah, realistically anywhere we\u0027d catch an exception is an infrastructure failure at some level. I think that it will make sense to squash them if all infra failures have some accountability (i.e. email) associated with them.",
+      "parentUuid": "f4e1ebcb_4ca79d49",
+      "revId": "1ff5257dae817d2dba260625f278a3e8f3f17295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
