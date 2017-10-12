@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "81bda384_45165abb",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-12T00:36:06Z",
+      "side": 1,
+      "message": "One change from the design doc: This no longer contains repeated rows, because I think it might be possible to get laid out automatically.",
+      "range": {
+        "startLine": 49,
+        "startChar": 8,
+        "endLine": 49,
+        "endChar": 27
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9267baf_039f1e80",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-12T00:36:06Z",
+      "side": 1,
+      "message": "Also considering: removing column and let the renderer do all the layout automatically.  Such that header becomes just a long list of entries.  Not sure if that\u0027s doable though.",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
