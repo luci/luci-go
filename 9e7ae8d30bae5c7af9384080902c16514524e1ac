@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "97741e31_a22257ab",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 16
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T22:30:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fef8e9f2_1a083fb8",
+      "range": {
+        "startLine": 62,
+        "startChar": 49,
+        "endLine": 62,
+        "endChar": 62
+      },
+      "revId": "9e7ae8d30bae5c7af9384080902c16514524e1ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9eb6d125_f8ccce2c",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 16
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "625fed87_e764e164",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 16
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T22:30:17Z",
+      "side": 1,
+      "message": "i don\u0027t know why i used curly braces here. Resource kind specified in resource_kind field.\n\nPermittedActions({\n  resource_kind: \"bucket\"\n  resource_ids: [\"luci.chromium.try\", \"luci.chromium.ci\"]\n})",
+      "parentUuid": "9eb6d125_f8ccce2c",
+      "range": {
+        "startLine": 102,
+        "startChar": 57,
+        "endLine": 103,
+        "endChar": 58
+      },
+      "revId": "9e7ae8d30bae5c7af9384080902c16514524e1ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0d8cd53_f8e0b43a",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 16
@@ -68,6 +116,30 @@
       "revId": "9e7ae8d30bae5c7af9384080902c16514524e1ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16ba890a_eb3aa26f",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 16
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T22:30:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0d8cd53_f8e0b43a",
+      "range": {
+        "startLine": 124,
+        "startChar": 3,
+        "endLine": 124,
+        "endChar": 7
+      },
+      "revId": "9e7ae8d30bae5c7af9384080902c16514524e1ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

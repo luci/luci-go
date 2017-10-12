@@ -211,6 +211,30 @@
       "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6db79cf1_b02d3490",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T22:30:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a953ff2_0b9eef33",
+      "range": {
+        "startLine": 95,
+        "startChar": 15,
+        "endLine": 95,
+        "endChar": 65
+      },
+      "revId": "86fd3be2c811e3ad76ac5a9ac7657e95287297e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
