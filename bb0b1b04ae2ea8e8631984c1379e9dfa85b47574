@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bcdac144_46455d2f",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T20:07:37Z",
+      "side": 1,
+      "message": "nit: log this at logging.Errorf level. This happens if the binary fails to start.",
+      "range": {
+        "startLine": 144,
+        "startChar": 1,
+        "endLine": 144,
+        "endChar": 16
+      },
+      "revId": "bb0b1b04ae2ea8e8631984c1379e9dfa85b47574",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34ff42e2_1784e624",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T20:07:37Z",
+      "side": 1,
+      "message": "not used anymore",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 32
+      },
+      "revId": "bb0b1b04ae2ea8e8631984c1379e9dfa85b47574",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bac29db_75ae108f",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T20:07:37Z",
+      "side": 1,
+      "message": "not used anymore",
+      "revId": "bb0b1b04ae2ea8e8631984c1379e9dfa85b47574",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29b19ad1_3363ee57",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T20:07:37Z",
+      "side": 1,
+      "message": "net/http does some additional crap: https://github.com/golang/go/blob/master/src/net/http/server.go#L2724\n\nNot sure we need to concern ourselves with it since we running on localhost. Maybe add a logging if listener.Accept() returns an error before Stop() is called. (Will need to introduce some atomic \"we are stopping now\" flag).",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 108,
+        "endChar": 3
+      },
+      "revId": "bb0b1b04ae2ea8e8631984c1379e9dfa85b47574",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c41e83ad_e2fbacb4",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T20:07:37Z",
+      "side": 1,
+      "message": "use logging",
+      "range": {
+        "startLine": 123,
+        "startChar": 5,
+        "endLine": 123,
+        "endChar": 15
+      },
+      "revId": "bb0b1b04ae2ea8e8631984c1379e9dfa85b47574",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0901d75b_09c9af94",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T20:07:37Z",
+      "side": 1,
+      "message": "does this devshell protocol have means to report the error back to the client? How does the client handle abrupt connection closure?",
+      "range": {
+        "startLine": 211,
+        "startChar": 4,
+        "endLine": 211,
+        "endChar": 14
+      },
+      "revId": "bb0b1b04ae2ea8e8631984c1379e9dfa85b47574",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
