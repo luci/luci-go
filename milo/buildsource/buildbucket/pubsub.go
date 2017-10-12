@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/buildbucket"
 	bucketApi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -45,62 +46,6 @@ var (
 		field.String("action"))
 )
 
-// bbPSEvent is the representation of a buidlbucket pubsub event.
-type bbPSEvent struct {
-	Build    bucketApi.ApiCommonBuildMessage
-	Hostname string
-
-	// DecodedParametersJson will store the build.ParametersJson object that we
-	// care about from the buildbucket message.
-	DecodedParametersJSON struct {
-		BuilderName     string `json:"builder_name"`
-		InputProperties struct {
-			Revision string `json:"revision"`
-		} `json:"properties"`
-	} `json:"-"`
-
-	// Action is the buildCounter "action". pubSubHandlerImpl will use this to
-	// record a single entry in the buildCounter.
-	Action string `json:"-"`
-
-	Project string
-}
-
-// isLUCI is a hack; there's currently a convention that all 'luci' buckets are
-// prefixed with the 'luci.' literal keyword.
-//
-// Currently this is only used for metrics and to avoid processing non-luci
-// builds in Milo's pubsub handler.
-//
-// HACK(nodir,hinoka,iannucci): Clean this up.
-func (b *bbPSEvent) isLUCI() bool {
-	// All luci buckets are assumed to be prefixed with luci.
-	return strings.HasPrefix(b.Build.Bucket, "luci.")
-}
-
-// readSwarmingTag loops over the buildbucket tags and finds a `swarming_tag`
-// entry, with the matching swarmingTag name, returning the string data to the
-// right of the colon.
-func (b *bbPSEvent) readSwarmingTag(swarmingTag string) string {
-	prefix := fmt.Sprintf("swarming_tag:%s:", swarmingTag)
-	for _, t := range b.Build.Tags {
-		if strings.HasPrefix(t, prefix) {
-			return t[len(prefix):]
-		}
-	}
-	return ""
-}
-
-func (b *bbPSEvent) swarmingTaskID() string {
-	const prefix = "swarming_task_id:"
-	for _, t := range b.Build.Tags {
-		if strings.HasPrefix(t, prefix) {
-			return t[len(prefix):]
-		}
-	}
-	return ""
-}
-
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
 func PubSubHandler(ctx *router.Context) {
 	err := pubSubHandlerImpl(ctx.Context, ctx.Request)
@@ -123,58 +68,42 @@ func PubSubHandler(ctx *router.Context) {
 //
 // This is the portion of the summarization process which cannot fail (i.e. is
 // pure-data).
-func generateSummary(c context.Context, event *bbPSEvent) *model.BuildSummary {
-	if !event.isLUCI() || event.Project == "" || event.DecodedParametersJSON.BuilderName == "" {
-		return nil
-	}
-
+func generateSummary(c context.Context, hostname string, build buildbucket.Build) *model.BuildSummary {
 	bs := &model.BuildSummary{}
-	bs.BuildKey = MakeBuildKey(c, event.Hostname, event.Build.Id)
-	bs.BuilderID = fmt.Sprintf("buildbucket/%s/%s", event.Build.Bucket,
-		event.DecodedParametersJSON.BuilderName)
+	bs.BuildKey = MakeBuildKey(c, hostname, build.ID)
+	bs.BuilderID = fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder)
 
 	// TODO(hinoka,iannucci) - make this link point to the /p/$project/build/b$buildId
 	// endpoint.
-	if sid := event.swarmingTaskID(); sid != "" {
+	if sid := build.Tags.Get("swarming_task_id"); sid != "" {
 		// HACK: this is an ugly cross-buildsource import. Should go away with
 		// a proper link though, as in the above TODO.
 		bs.SelfLink = fmt.Sprintf("%s/%s", swarming.URLBase, sid)
 	}
-	bs.Created = parseTimestamp(event.Build.CreatedTs)
-	bs.Summary.Start = parseTimestamp(event.Build.StartedTs)
-	bs.Summary.End = parseTimestamp(event.Build.CompletedTs)
-	switch event.Build.Status {
-	case "SCHEDULED":
-		bs.Summary.Status = model.NotRun
+	bs.Created = build.CreationTime
+	bs.Summary.Start = build.StartTime
+	bs.Summary.End = build.CompletionTime
 
-	case "STARTED":
-		bs.Summary.Status = model.Running
+	var ok bool
+	bs.Summary.Status, ok = map[buildbucket.Status]model.Status{
+		buildbucket.StatusScheduled: model.NotRun,
+		buildbucket.StatusStarted:   model.Running,
+		buildbucket.StatusSuccess:   model.Success,
+		buildbucket.StatusFailure:   model.Failure,
+		buildbucket.StatusTimeout:   model.Expired,
 
-	case "COMPLETED":
-		switch event.Build.Result {
-		case "SUCCESS":
-			bs.Summary.Status = model.Success
-
-		case "CANCELED":
-			// TODO(hinoka,nodir,iannucci): This isn't exactly true.
-			bs.Summary.Status = model.Expired
-
-		case "FAILURE":
-			switch event.Build.FailureReason {
-			case "BUILD_FAILURE":
-				bs.Summary.Status = model.Failure
-
-			default:
-				bs.Summary.Status = model.InfraFailure
-			}
-		}
+		// TODO(hinoka,nodir,iannucci): This isn't exactly true.
+		buildbucket.StatusCancelled: model.Expired,
+	}[build.Status]
+	if !ok {
+		bs.Summary.Status = model.InfraFailure
 	}
 
 	// HACK(iannucci,nodir) - The logdog annotation stream URL shouldn't be
 	// extracted from the swarming tags!!! This is a leaky abstraction!
-	bs.AnnotationURL = event.readSwarmingTag("log_location")
+	bs.AnnotationURL = build.Tags.Get("swarming_tag:log_location")
 
-	bs.Version = event.Build.UpdatedTs
+	bs.Version = build.UpdateTime.UnixNano()
 
 	return bs
 }
@@ -183,24 +112,39 @@ func generateSummary(c context.Context, event *bbPSEvent) *model.BuildSummary {
 // BuildSummary given the pubsub event data.
 //
 // This mutates `bs`'s Manifests field.
-func attachRevisionData(c context.Context, event bbPSEvent, bs *model.BuildSummary) error {
+func attachRevisionData(c context.Context, project string, build buildbucket.Build, bs *model.BuildSummary) error {
 	// TODO(iannucci,nodir): support manifests/got_revision
-	revisionHex := event.DecodedParametersJSON.InputProperties.Revision
-	revision, err := hex.DecodeString(revisionHex)
-	if err != nil {
-		logging.WithError(err).Warningf(c, "failed to decode revision: %v", revisionHex)
-	} else if len(revision) != sha1.Size {
-		logging.Warningf(c, "wrong revision size %d v %d: %v", len(revision), sha1.Size, revisionHex)
-	} else {
-		consoles, err := common.GetAllConsoles(c, bs.BuilderID)
-		if err != nil {
-			return errors.Annotate(err, "failed to GetAllConsoles").Tag(transient.Tag).Err()
-		}
-		// HACK(iannucci): Until we have real manifest support, console definitions
-		// will specify their manifest as "REVISION", and we'll do lookups with null
-		// URL fields.
-		for _, con := range consoles {
-			bs.AddManifestKey(event.Project, con.ID, "REVISION", "", revision)
+
+	var consoles []*common.Console
+
+	// TODO(iannucci): index buildset directly on BuildSummary as well
+	for _, bset := range build.BuildSets {
+		switch x := bset.(type) {
+		case *buildbucket.GitilesCommit:
+			revision, err := hex.DecodeString(x.Revision)
+			if err != nil {
+				logging.WithError(err).Warningf(c, "failed to decode revision: %v", x.Revision)
+			} else if len(revision) != sha1.Size {
+				logging.Warningf(c, "wrong revision size %d v %d: %v", len(revision), sha1.Size, x.Revision)
+			} else {
+				if consoles == nil {
+					if consoles, err = common.GetAllConsoles(c, bs.BuilderID); err != nil {
+						return errors.Annotate(err, "failed to GetAllConsoles").Tag(transient.Tag).Err()
+					}
+				}
+				// HACK(iannucci): Until we have real manifest support, console definitions
+				// will specify their manifest as "REVISION", and we'll do lookups with null
+				// URL fields.
+				for _, con := range consoles {
+					bs.AddManifestKey(project, con.ID, "REVISION", "", revision)
+				}
+			}
+
+		case *buildbucket.GerritChange:
+			// TODO(iannucci): index this
+
+		default:
+			logging.Warningf(c, "ignoring unknown buildset: %v - %s", bset, bset.String())
 		}
 	}
 
@@ -211,18 +155,14 @@ func attachRevisionData(c context.Context, event bbPSEvent, bs *model.BuildSumma
 // a common.PubSubSubscription JSON object in the Body, containing a bbPSEvent,
 // and handles the contents with generateSummary and attachRevisionData.
 func pubSubHandlerImpl(c context.Context, r *http.Request) error {
-	var event bbPSEvent
-
 	// This is the default action. The code below will modify the values of some
 	// or all of these parameters.
-	event.Build.Bucket = "UNKNOWN"
-	event.Build.Status = "UNKNOWN"
-	event.Action = "Rejected"
+	isLUCI, bucket, status, action := false, "UNKNOWN", "UNKNOWN", "Rejected"
 
-	defer buildCounter.Add(
-		c, 1, event.Build.Bucket, event.isLUCI(),
-		event.Build.Status, event.Action,
-	)
+	defer func() {
+		// closure for late binding
+		buildCounter.Add(c, 1, bucket, isLUCI, status, action)
+	}()
 
 	msg := common.PubSubSubscription{}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
@@ -234,30 +174,38 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	if err != nil {
 		return errors.Annotate(err, "could not parse pubsub message string").Err()
 	}
+
+	event := struct {
+		Build    bucketApi.ApiCommonBuildMessage `json:"build"`
+		Hostname string                          `json:"hostname"`
+	}{}
 	if err := json.Unmarshal(bData, &event); err != nil {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 
-	// HACK(iannucci,nodir) - The project shouldn't be extracted from the swarming
-	// tags!!! This is a leaky abstraction!
-	event.Project = event.readSwarmingTag("luci_project")
-
-	err = json.Unmarshal([]byte(event.Build.ParametersJson), &event.DecodedParametersJSON)
-	if err != nil {
-		return errors.Annotate(err, "could not parse Build.ParametersJson").Err()
+	build := buildbucket.Build{}
+	if err := build.ParseMessage(&event.Build); err != nil {
+		return errors.Annotate(err, "could not parse buildbucket.Build").Err()
 	}
 
-	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%v",
-		event.Hostname, event.Build.Bucket, event.DecodedParametersJSON.BuilderName,
-		event.Build.Status, event.Build)
+	// TODO(iannucci,nodir): ew.
+	project := build.Tags.Get("swarming_tag:luci_project")
+	isLUCI = strings.HasPrefix(project, "luci.")
+	bucket = build.Bucket
+	status = build.Status.String()
 
-	bs := generateSummary(c, &event)
-	if bs == nil {
+	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%v",
+		event.Hostname, build.Bucket, build.Builder,
+		build.Status.String(), build)
+
+	if !isLUCI || build.Builder == "" {
 		logging.Infof(c, "This is not an ingestable build, ignoring")
 		return nil
 	}
 
-	if err := attachRevisionData(c, event, bs); err != nil {
+	bs := generateSummary(c, event.Hostname, build)
+
+	if err := attachRevisionData(c, project, build, bs); err != nil {
 		return err
 	}
 
@@ -265,9 +213,9 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		curBS := &model.BuildSummary{BuildKey: bs.BuildKey}
 		switch err := datastore.Get(c, curBS); err {
 		case datastore.ErrNoSuchEntity:
-			event.Action = "Created"
+			action = "Created"
 		case nil:
-			event.Action = "Modified"
+			action = "Modified"
 		default:
 			return errors.Annotate(err, "reading current BuildSummary").Err()
 		}
