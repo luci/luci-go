@@ -117,9 +117,9 @@ func attachRevisionData(c context.Context, project string, build buildbucket.Bui
 
 	var consoles []*common.Console
 
-	bs.BuildSet = build.Tags[buildbucket.TagBuildSet]
-
 	for _, bset := range build.BuildSets {
+		bs.BuildSet = append(bs.BuildSet, bset.String())
+
 		if commit, ok := bset.(*buildbucket.GitilesCommit); ok {
 			revision, err := hex.DecodeString(commit.Revision)
 			if err != nil {
@@ -137,6 +137,9 @@ func attachRevisionData(c context.Context, project string, build buildbucket.Bui
 				// URL fields.
 				for _, con := range consoles {
 					bs.AddManifestKey(project, con.ID, "REVISION", "", revision)
+
+					bs.AddManifestKey(project, con.ID, "BUILD_SET/GitilesCommit",
+						commit.RepoURL(), revision)
 				}
 			}
 		}

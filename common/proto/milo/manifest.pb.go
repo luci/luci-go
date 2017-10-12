@@ -41,10 +41,10 @@ type Manifest struct {
 	// for informational/display/organization purposes. In particular, think VERY
 	// CAREFULLY before you configure remote services/recipes to look for
 	// particular filesystem layouts here. For example, if you want to look for
-	// "the version of chromium/src.git checked out by the job", prefer to look
-	// for a Directory which checks out "chromium/src.git", as opposed to assuming
-	// this checkout lives in a top-level folder called "src". The reason for this
-	// is that jobs SHOULD reserve the right to do their checkouts in any way they
+	// "the version of chromium/src checked out by the job", prefer to look for
+	// a Directory which checks out "chromium/src", as opposed to assuming this
+	// checkout lives in a top-level folder called "src". The reason for this is
+	// that jobs SHOULD reserve the right to do their checkouts in any way they
 	// please.
 	//
 	// If you feel like you need to make some service configuration which uses one
@@ -81,8 +81,8 @@ type Manifest_GitCheckout struct {
 	// of truth” for the source code.
 	//
 	// Ex.
-	//   https://chromium.googlesource.com/chromium/tools/build.git
-	//   https://chromium.googlesource.com/infra/luci/recipes-py.git
+	//   https://chromium.googlesource.com/chromium/tools/build
+	//   https://chromium.googlesource.com/infra/luci/recipes-py
 	RepoUrl string `protobuf:"bytes,1,opt,name=repo_url,json=repoUrl" json:"repo_url,omitempty"`
 	// If different from repo_url, this can be the URL of the repo that the source
 	// was actually fetched from (i.e. a mirror).
