@@ -161,6 +161,24 @@
     },
     {
       "key": {
+        "uuid": "180e28ed_21bfd303",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T17:32:41Z",
+      "side": 1,
+      "message": "correct https://godoc.org/go.chromium.org/luci/buildbucket#StatusCancelled\n\nwe talked about milo statuses with Ryan offline before. I think Milo shouldn\u0027t understand all possible statuses because it does not do anything with them, except choosing a color. I think the number of Milo statuses must be defined as the number of colors. Moreover, maybe the enum that Milo uses must be the Color enum, not statuses. I think this is acceptable because Milo is UI at the core, so a color is an acceptable milo-common concept.\n\nHaving said that, I am not sure such a refactoring should be a part of this CL, just expressing my vision. If the color we choose for a cancelled build matches expired build color, this code is fine.",
+      "parentUuid": "faa37686_2ca45b30",
+      "revId": "ca92b5e7bbcc3381a046229dff2ae4b6a68a781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0e636136_dcb16c7c",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
