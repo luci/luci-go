@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "398bf0ae_fdf15d1c",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T22:53:37Z",
+      "side": 1,
+      "message": "strictly speaking, not correct\nmaybe just \"buildsets\"\nthe buildset concept is more established/documented than buildbucket.Build.BuildSets",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "7a5d36385983880d4d81c315243d237da954413d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdf3fc86_6e4c463c",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T22:53:37Z",
+      "side": 1,
+      "message": "maybe provide a link to this doc\nhttps://chromium.googlesource.com/infra/infra/+/master/appengine/cr-buildbucket/doc/index.md#buildset-tag",
+      "revId": "7a5d36385983880d4d81c315243d237da954413d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
