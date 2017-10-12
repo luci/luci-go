@@ -4,9 +4,9 @@ package model
 
 import "fmt"
 
-const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureExceptionExpiredDependencyFailureWaitingDependency"
+const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureExceptionExpiredCancelled"
 
-var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 55, 62, 79, 96}
+var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 55, 62, 71}
 
 func (i Status) String() string {
 	if i < 0 || i >= Status(len(_Status_index)-1) {

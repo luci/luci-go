@@ -24,6 +24,8 @@ import (
 // It is implemented by *RietveldChange, *GerritChange, *GitilesCommit.
 type BuildSet interface {
 	fmt.Stringer
+
+	isABuildSet()
 }
 
 // TagBuildSet is a key of a tag used to group related builds.
@@ -37,6 +39,8 @@ type RietveldChange struct {
 	Issue    int64
 	PatchSet int
 }
+
+func (*RietveldChange) isABuildSet() {}
 
 // String returns a buildset string for the change,
 // e.g. "patch/rietveld/codereview.chromium.org/2979743003/1".
@@ -55,6 +59,8 @@ type GerritChange struct {
 	Change   int64
 	PatchSet int
 }
+
+func (*GerritChange) isABuildSet() {}
 
 // String returns a buildset string for the change,
 // e.g. "patch/gerrit/chromium-review.googlesource.com/677784/5".
@@ -75,6 +81,8 @@ type GitilesCommit struct {
 	Project  string
 	Revision string // i.e. commit hex sha1
 }
+
+func (*GitilesCommit) isABuildSet() {}
 
 // String returns a buildset string for the commit,
 // e.g. "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
