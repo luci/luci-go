@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b131d383_bcc5b66d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T18:47:45Z",
+      "side": 1,
+      "message": "please describe the changes, e.g. status enum changes",
+      "revId": "1ff5257dae817d2dba260625f278a3e8f3f17295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76ea006d_d7a3f0e9",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T18:47:45Z",
+      "side": 1,
+      "message": "nit: switch is too long?",
+      "range": {
+        "startLine": 91,
+        "startChar": 24,
+        "endLine": 91,
+        "endChar": 61
+      },
+      "revId": "1ff5257dae817d2dba260625f278a3e8f3f17295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4e1ebcb_4ca79d49",
+        "filename": "milo/common/model/status.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T18:47:45Z",
+      "side": 1,
+      "message": "the line between InfraFailure and Exception is vague, but it was before this CL too.\nCan we say that Exception is a legacy from Buildbot and from now on we will be using InfraFailure? e.g. a step exception would become an infra failure.\n\ni kind of strongly prefer not to have infra failure AND exception statuses in buildbucket v2 for steps.",
+      "revId": "1ff5257dae817d2dba260625f278a3e8f3f17295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
