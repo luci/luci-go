@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cde4fb50_a2574edd",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T23:30:24Z",
+      "side": 1,
+      "message": "changed documentation, also discussed proper treatment of canonicalization offline (specifically: buildbucket should reject buildsets with a known prefix that don\u0027t parse correctly).",
+      "parentUuid": "db49ca7c_733e2ce5",
+      "range": {
+        "startLine": 93,
+        "startChar": 23,
+        "endLine": 93,
+        "endChar": 32
+      },
+      "revId": "2749c4ba71c0b9b13518048061de82189a3c12a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7c107289_3efdfea1",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "2749c4ba71c0b9b13518048061de82189a3c12a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "795e1a7a_041203e5",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-12T23:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c107289_3efdfea1",
+      "range": {
+        "startLine": 89,
+        "startChar": 69,
+        "endLine": 89,
+        "endChar": 73
+      },
+      "revId": "2749c4ba71c0b9b13518048061de82189a3c12a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
