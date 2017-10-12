@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fef8e9f2_1a083fb8",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 16
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T19:27:44Z",
+      "side": 1,
+      "message": "can be performed",
+      "range": {
+        "startLine": 62,
+        "startChar": 49,
+        "endLine": 62,
+        "endChar": 62
+      },
+      "revId": "9e7ae8d30bae5c7af9384080902c16514524e1ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9eb6d125_f8ccce2c",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 16
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T19:27:44Z",
+      "side": 1,
+      "message": "err.. I\u0027m not getting how to specify resource kind. Did you mean \"{resource_kind}/{resource_id}\"?",
+      "range": {
+        "startLine": 102,
+        "startChar": 57,
+        "endLine": 103,
+        "endChar": 58
+      },
+      "revId": "9e7ae8d30bae5c7af9384080902c16514524e1ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0d8cd53_f8e0b43a",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 16
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-12T19:27:44Z",
+      "side": 1,
+      "message": "why not google.protobuf.Duration?",
+      "range": {
+        "startLine": 124,
+        "startChar": 3,
+        "endLine": 124,
+        "endChar": 7
+      },
+      "revId": "9e7ae8d30bae5c7af9384080902c16514524e1ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
