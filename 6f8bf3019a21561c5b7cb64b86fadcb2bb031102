@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "685b3da5_404f0a31",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-12T16:10:21Z",
+      "side": 1,
+      "message": "please add `RepoURL() string` to buildbucket.GitilesCommit.\nit would be kind of consistent with https://godoc.org/go.chromium.org/luci/buildbucket#GerritChange.URL",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 142,
+        "endChar": 59
+      },
+      "revId": "6f8bf3019a21561c5b7cb64b86fadcb2bb031102",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
