@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0810c625_1c25a6a1",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "this has type int, not Ordering\n\nIN_ORDER Ordering \u003d iota\n\nbut see below, you may not need this",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 9
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4b1b9b2_98891a7c",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "i think what we return here does not matter because we return a non-nil err\nthen, i don\u0027t think we need a dedicated const for error cases\nwe could return zero, whatever it means\n\nbut see below, you may not need this",
+      "range": {
+        "startLine": 72,
+        "startChar": 9,
+        "endLine": 72,
+        "endChar": 16
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b982416c_ed07eb49",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "transactions are somewhat expensive. We need a transaction here only once per builder when the builder is not in the datastore, so in the vast majority of cases we don\u0027t need a transaction. Ideally, we should try to get a builder and only if it is not there, start the transaction like this code is doing\n\nbut see below",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59d36203_339a666a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "the implication ((status\u003d\u003dunknown) \u003d\u003e (builder does not exist)) is a bit indirect.\nI think it would be more straightforward to talk to datastore directly\n\nbut see below",
+      "range": {
+        "startLine": 111,
+        "startChar": 5,
+        "endLine": 111,
+        "endChar": 36
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcb9da40_bdef9cbd",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "in this file we have two separate regions of code that run only when a builder is first-time registered: L112 and this. I think it would simpler if they were combined.\n\ni understand that this function is big and inlining getOrInitBuilder would make it even bigger. Can we keep extract datastore access and gitiles log fetching to a separate function?\n\nfunc updateBuilder(c context.Context, builderID string, gCommit *gitiles.Commit, buildTime time.Time) (*Builder, error)\n\nsee below too",
+      "range": {
+        "startLine": 165,
+        "startChar": 2,
+        "endLine": 165,
+        "endChar": 59
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55377cf2_5764f599",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "we should still may need to notify on every green/red build, even if it is for an old commit\n\nsee below",
+      "range": {
+        "startLine": 188,
+        "startChar": 4,
+        "endLine": 188,
+        "endChar": 14
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "956ccf72_bf5949e0",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "time may be skewed or may happen to match\nmonotonically increasing `Version int64` would be simpler and more correct\n\nbut see below, i don\u0027t think you need that",
+      "range": {
+        "startLine": 197,
+        "startChar": 6,
+        "endLine": 197,
+        "endChar": 55
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49ab0b4d_4b55ffbf",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T17:38:44Z",
+      "side": 1,
+      "message": "IMO think this is getting overly complicated, let me propose a design.\n\nthe combination of requirements\n1) make changes transactionally\n2) compare commits using urlfetch\n3) avoid urlfetch in transactions\nmake this tricky, but I think there is a way around it\n\nlet\u0027s fix the claim that StatusRevision never goes back. Then we can pretech history before the transaction\n\npseuducode (only to communicate the idea):\n\n  builder \u003d datastore.get(builderID)\n  if not builder:\n    with transaction:\n      builder \u003d datastore.get(builderID)\n      if builder \u003d\u003d nil:\n        log(\u0027registered new builder\u0027)\n        put(newBuilder(id, build.revision, build))\n        return\n\n  # builder is not nil\n  # it is either loaded with or without the transaction above\n\n  # history order is newest..oldest\n  history \u003d gitilesLog(builder.revision .. build.revision)\n  if len(history) \u003d\u003d 0:\n    log(build commit is old)\n    return\n  assert history[0] \u003d\u003d build.revision\n\n  with transaction:\n    builder \u003d datastore.get(builderID)\n    # builder cannot be nil\n    switch pos :\u003d history.index(builder.statusRevision); {\n    case pos \u003c 0:\n      # 1) builder.statusRevision never goes back, only forward\n      # 2) history contains commits up to build.revision\n      # \u003d\u003e builder has advanced beyond build.revision \n      log(build commit is old)\n      return\n\n    case pos \u003d\u003d 0 \u0026\u0026 build.createdTime \u003c builder.statusBuildTime:\n      log(build is out of order)\n      return\n    }\n\n    # * pos \u003d\u003d 0 and build is newer OR\n    # * pos \u003e 0 \u003d\u003e build commit is newer\n    # \u003d\u003e new state!\n    datastore.put(new_builder(id, build.revision, build))\n\nthis avoid thrashing because we can use commit history even if there was a change in the datastore and the overall amount of code might be smaller. IMO we don\u0027t need WithBuilder.\n\nWDYT?",
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
