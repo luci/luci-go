@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40c1ad19_0dd7dd62",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T22:42:41Z",
+      "side": 1,
+      "message": "Also add a comment on why we are doing this.",
+      "revId": "680f04016019600e9619d96b744037d31209c7c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
