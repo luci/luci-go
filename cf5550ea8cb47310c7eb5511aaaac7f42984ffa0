@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "f5063883_d0d241eb",
+        "filename": "common/api/gitiles/gitiles_test_util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:38:20Z",
+      "side": 1,
+      "message": "7",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9e2fabc4_fe993ea2",
         "filename": "common/api/gitiles/gitiles_test_util.go",
         "patchSetId": 1
@@ -19,6 +42,23 @@
         "endLine": 23,
         "endChar": 26
       },
+      "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dbeab2d_a547b186",
+        "filename": "common/api/gitiles/gitiles_test_util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:38:20Z",
+      "side": 1,
+      "message": "there is nothing in this file specific to gitiles. What\u0027s the goal here?",
       "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
