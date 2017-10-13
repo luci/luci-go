@@ -2,6 +2,167 @@
   "comments": [
     {
       "key": {
+        "uuid": "04bfd6da_8cef0b97",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "nit: StatusBuildTime to better represent what it is",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 11
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e14602d7_91a00f30",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "nit: revision",
+      "range": {
+        "startLine": 48,
+        "startChar": 74,
+        "endLine": 48,
+        "endChar": 80
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8040917d_bc7df074",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "i like this, this is simpler than passing a lot of state that is not actually used (build obj, commit obj)",
+      "range": {
+        "startLine": 54,
+        "startChar": 41,
+        "endLine": 54,
+        "endChar": 81
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b791b73_d3b0dc01",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "will panic if len(commits) \u003d\u003d 0",
+      "range": {
+        "startLine": 71,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 14
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c2b11aa_a2885db9",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "errors.Reason for consistency and stack trace",
+      "range": {
+        "startLine": 72,
+        "startChar": 14,
+        "endLine": 72,
+        "endChar": 24
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddb70dee_9da002d2",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "return i\nwould be simpler",
+      "range": {
+        "startLine": 94,
+        "startChar": 3,
+        "endLine": 95,
+        "endChar": 8
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "811e9a5c_4e3ebedd",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "return -1",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 13
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "60d103ee_56c8753e",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 16
@@ -22,6 +183,30 @@
       "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74a5dbda_aa32aecc",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:08:02Z",
+      "side": 1,
+      "message": "good enough",
+      "parentUuid": "60d103ee_56c8753e",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 134,
+        "endChar": 2
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
