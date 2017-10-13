@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "62416355_62de1570",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Good point, I\u0027ll just get it over with sooner than later.  Will need to change the configs on the infra/config side too.",
+      "parentUuid": "78a1973e_8563f2a0",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 60
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de850ed6_0436699c",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -69,6 +93,30 @@
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "572316c4_84dcc373",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "It\u0027s legacy and unused.  Removed.",
+      "parentUuid": "de850ed6_0436699c",
+      "range": {
+        "startLine": 16,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "484d774e_82b148a8",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Depends, if we say \"on-call\" then \"OnCall\" would be more idiomatic, but I think we usually use \"oncall\" colloquially, so \"Oncall\" would be fine.",
+      "parentUuid": "8ff6d813_ccde7b68",
+      "range": {
+        "startLine": 32,
+        "startChar": 8,
+        "endLine": 32,
+        "endChar": 14
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e0ca128_601dc3e8",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -115,6 +187,30 @@
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9158068c_5e527950",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Yep, added clarification.",
+      "parentUuid": "0e0ca128_601dc3e8",
+      "range": {
+        "startLine": 48,
+        "startChar": 10,
+        "endLine": 48,
+        "endChar": 21
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -236,6 +332,30 @@
     },
     {
       "key": {
+        "uuid": "86e387e6_4539c381",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "I think the arbitrary column requirement was inspired by this console:\nhttps://build.chromium.org/p/client.v8/console\n\nWhich uses 3 columns instead of 2, in an attempt to make the header a bit flatter.  I think I like constraining the layout options to make the configuration more straightforward (ie nodir\u0027s suggestion).  I\u0027ll try that out.  Michael what do you think?",
+      "parentUuid": "7220d031_d825d37d",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d17249ef_4dc6bc16",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -256,6 +376,30 @@
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d13b75f0_7c21db13",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d17249ef_4dc6bc16",
+      "range": {
+        "startLine": 79,
+        "startChar": 5,
+        "endLine": 79,
+        "endChar": 13
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -305,6 +449,54 @@
     },
     {
       "key": {
+        "uuid": "8c2eae60_b38e1e3b",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "These turn into CamelCase in the Go version (proto field name tree_status_host is TreeStatusHost in the resulting go struct after protoc compilation)",
+      "parentUuid": "77fd3610_da17fd7a",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 20
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4fe53f36_a1da4335",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa4cb854_0408d73f",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9fd6a1ac_4d101425",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -325,6 +517,30 @@
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6e19a76_65b9255d",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9fd6a1ac_4d101425",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -351,6 +567,30 @@
     },
     {
       "key": {
+        "uuid": "9729786c_0423f342",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "779d7947_7f5571b0",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6e31205_92834c41",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -374,6 +614,30 @@
     },
     {
       "key": {
+        "uuid": "230d4e80_2bfa0bd4",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6e31205_92834c41",
+      "range": {
+        "startLine": 119,
+        "startChar": 31,
+        "endLine": 119,
+        "endChar": 35
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0e7620d_402841b4",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -394,6 +658,30 @@
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cecd8e77_a78901b0",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T19:23:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0e7620d_402841b4",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 1
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
