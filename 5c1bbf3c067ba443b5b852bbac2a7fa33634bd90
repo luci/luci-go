@@ -356,6 +356,30 @@
     },
     {
       "key": {
+        "uuid": "a25e4a7c_85f62537",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T20:09:49Z",
+      "side": 1,
+      "message": "I\u0027m of the opinion that we should err on the side of customization. With that said, if you feel that there aren\u0027t enough actual use-cases for that to justify the complexity in configuration, then constraining it in this manner sounds good to me. I can\u0027t say I know enough about how useful this is in practice to have a strong opinion.",
+      "parentUuid": "86e387e6_4539c381",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d17249ef_4dc6bc16",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -494,6 +518,30 @@
       "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bdd61f81_8a62a232",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T20:09:49Z",
+      "side": 1,
+      "message": "Right, but protoc just copies the documentation verbatim and so it would be non-idiomatic in the Go output to have tree_status_host appear in the comment above TreeStatusHost. This was a point Nodir made in my protos for luci-notify. This also wouldn\u0027t matter if we were using this with any other languages, but since this proto will only ever be touched by Go code, might as well have the docs be tidy.",
+      "parentUuid": "8c2eae60_b38e1e3b",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 20
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {

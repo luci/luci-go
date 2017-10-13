@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cf23de47_d3f5b692",
+        "filename": "milo/api/config/project.pb.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T20:09:49Z",
+      "side": 1,
+      "message": "Because the documentation is copied verbatim, this ends up being non-idiomatic wrt Go.",
+      "range": {
+        "startLine": 240,
+        "startChar": 4,
+        "endLine": 240,
+        "endChar": 20
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "194b10da_1b32d1a1",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T20:09:49Z",
+      "side": 1,
+      "message": "I suppose it\u0027s OK to omit documentation here because these are so obvious, but maybe it still makes sense to document because in the generated Go code they do actually end up being public fields.",
+      "range": {
+        "startLine": 38,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 26
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b77a40a_807e8383",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T20:09:49Z",
+      "side": 1,
+      "message": "These fields should have some documentation for new readers (i.e. what exactly is a group link?)",
+      "range": {
+        "startLine": 47,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 36
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
