@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee3339c9_268139fd",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T23:03:23Z",
+      "side": 1,
+      "message": "nit: maybe space these out? Just to stay consistent with the existing code.",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 18
+      },
+      "revId": "a8e7fa52f4365b4304b6e44a9c5057c39ee1a23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1eb48dc_ca96beeb",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T23:03:23Z",
+      "side": 1,
+      "message": "nit: I think you missed this one.",
+      "range": {
+        "startLine": 55,
+        "startChar": 5,
+        "endLine": 55,
+        "endChar": 10
+      },
+      "revId": "a8e7fa52f4365b4304b6e44a9c5057c39ee1a23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
