@@ -122,6 +122,24 @@
       "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "380a4bd1_0e1cb32e",
+        "filename": "common/api/gitiles/gitiles_test_util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T23:16:58Z",
+      "side": 1,
+      "message": "I don\u0027t have a good answer to that. My original thought I think was flawed on how I wanted to mock out gitiles API. I\u0027ll abandon this change then.",
+      "parentUuid": "2ebff784_c1d8fda7",
+      "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
