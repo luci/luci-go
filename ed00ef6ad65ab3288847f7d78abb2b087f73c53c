@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a7c67d96_73201dc0",
+        "filename": "common/api/buildbucket/buildbucket/v1/const.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "i\u0027ve separated to a separate const group to make the distinction more obvious and clear",
+      "parentUuid": "233fd52a_97ac0b74",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 17
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "277965c6_886c9fac",
         "filename": "milo/api/proto/buildbot.proto",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "346077a1_2bf26092",
+        "filename": "milo/api/proto/buildbot.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "277965c6_886c9fac",
+      "range": {
+        "startLine": 27,
+        "startChar": 29,
+        "endLine": 27,
+        "endChar": 38
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "5bc933f6_2f1c0e87",
+        "filename": "milo/api/proto/buildbot.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4847cd3_4edbe1e8",
+      "range": {
+        "startLine": 93,
+        "startChar": 5,
+        "endLine": 93,
+        "endChar": 14
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "705c7747_e54f8590",
         "filename": "milo/buildsource/buildbot/buildstore/annotations.go",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2017-10-13T20:06:11Z",
       "side": 1,
       "message": "addSteps appends steps from a slice of annotation substeps (src) to an existing slice of buildbot steps (dest)",
+      "range": {
+        "startLine": 98,
+        "startChar": 23,
+        "endLine": 98,
+        "endChar": 25
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f5f8f50_b4809fa1",
+        "filename": "milo/buildsource/buildbot/buildstore/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "is this better?\ni think repeating parameter types in comments is unnecessary\ni\u0027ve made the comment say what the function does with more words.\n\nin general, i noticed that many stdlib functions refer to parameters by their names and do not repeat type info (https://godoc.org/io#Copy, https://godoc.org/io#ReadAtLeast, etc)",
+      "parentUuid": "705c7747_e54f8590",
       "range": {
         "startLine": 98,
         "startChar": 23,
@@ -111,6 +207,24 @@
     },
     {
       "key": {
+        "uuid": "f6bf284b_effe015c",
+        "filename": "milo/buildsource/buildbot/buildstore/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "renamed receivers and context to ac and c respectively\ni think ac cannot be confused with a context",
+      "parentUuid": "ee216938_b944c18d",
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0ddae65_6f9a4822",
         "filename": "milo/buildsource/buildbot/buildstore/buildbucket.go",
         "patchSetId": 1
@@ -128,6 +242,24 @@
     },
     {
       "key": {
+        "uuid": "17c25686_fe015fb6",
+        "filename": "milo/buildsource/buildbot/buildstore/buildbucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done everything except Slave, OSFamily and OSVersion.\n\nSlave info is explicitly not supported\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/buildsource/buildbot/grpc.go?q\u003dExcludeDeprecated+file:grpc.go\u0026sq\u003dpackage:chromium\u0026l\u003d214\nand not used by SoM/GK/FindIt.\n\nThey don\u0027t use OS(Version|Family) either and I doubt anyone uses that.\n\nAdded build logs because it was easy, but I don\u0027t think anyone uses that (because it seems unusable)",
+      "parentUuid": "c0ddae65_6f9a4822",
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ccb0d12e_af1b3ea5",
         "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
         "patchSetId": 1
@@ -142,6 +274,24 @@
       "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1284601_a4c54367",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ccb0d12e_af1b3ea5",
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -168,6 +318,30 @@
     },
     {
       "key": {
+        "uuid": "9d9d627b_b9ce533f",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95ee3a5b_173af210",
+      "range": {
+        "startLine": 11,
+        "startChar": 24,
+        "endLine": 11,
+        "endChar": 33
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae1d759c_f9024c8b",
         "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
         "patchSetId": 1
@@ -191,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "4520cfb8_1ced3d5d",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae1d759c_f9024c8b",
+      "range": {
+        "startLine": 21,
+        "startChar": 28,
+        "endLine": 21,
+        "endChar": 35
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "72a66335_2cfae591",
         "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
         "patchSetId": 1
@@ -211,6 +409,30 @@
       "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "407295f6_ed7955f4",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72a66335_2cfae591",
+      "range": {
+        "startLine": 24,
+        "startChar": 32,
+        "endLine": 24,
+        "endChar": 41
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -260,6 +482,54 @@
     },
     {
       "key": {
+        "uuid": "867c9a44_36ed8463",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08334898_a1d653a8",
+      "range": {
+        "startLine": 39,
+        "startChar": 23,
+        "endLine": 39,
+        "endChar": 30
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53864c61_4fbe5faf",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95b27fc1_a1a2656f",
+      "range": {
+        "startLine": 39,
+        "startChar": 64,
+        "endLine": 39,
+        "endChar": 71
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa6a6594_67031931",
         "filename": "milo/buildsource/buildbot/buildstore/master.go",
         "patchSetId": 1
@@ -283,6 +553,30 @@
     },
     {
       "key": {
+        "uuid": "f49ad502_871e04f0",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "Done\n\nPendingBuildStates are being excluded in master JSON API https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/719480",
+      "parentUuid": "fa6a6594_67031931",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 14
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81c93821_899a455f",
         "filename": "milo/buildsource/buildbot/buildstore/master.go",
         "patchSetId": 1
@@ -303,6 +597,30 @@
       "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "500bfce2_ea7b0991",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T22:45:49Z",
+      "side": 1,
+      "message": "SOM/GK/FindIt do not use slave. They all pass exclude_deprecated https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/api/proto/buildbot.proto?q\u003dbuildbot.proto\u0026sq\u003dpackage:chromium\u0026l\u003d26\n\nI\u0027ve put unfinished builds into m.Builders though",
+      "parentUuid": "81c93821_899a455f",
+      "range": {
+        "startLine": 79,
+        "startChar": 5,
+        "endLine": 79,
+        "endChar": 11
+      },
+      "revId": "ed00ef6ad65ab3288847f7d78abb2b087f73c53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
