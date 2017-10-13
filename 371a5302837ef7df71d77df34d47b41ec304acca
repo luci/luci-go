@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9738f9c4_76ea6d6c",
+        "filename": "milo/api/config/project.pb.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T21:03:09Z",
+      "side": 1,
+      "message": "Ignore this, see my other comment.",
+      "parentUuid": "cf23de47_d3f5b692",
+      "range": {
+        "startLine": 240,
+        "startChar": 4,
+        "endLine": 240,
+        "endChar": 20
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "194b10da_1b32d1a1",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 5
