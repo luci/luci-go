@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "68adbad1_b87f9b1a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 16
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:09:46Z",
+      "side": 1,
+      "message": "please update",
+      "range": {
+        "startLine": 12,
+        "startChar": 6,
+        "endLine": 14,
+        "endChar": 33
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9992ba1c_9e488b89",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T20:09:46Z",
+      "side": 1,
+      "message": "please document how total order of statuses is defined (commit pos, build creation time)",
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04bfd6da_8cef0b97",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 16
