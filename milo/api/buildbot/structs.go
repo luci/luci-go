@@ -145,6 +145,10 @@ type Build struct {
 	// Version is the version of the OS, such as (XP, 7, 10) for windows.
 	OSFamily  string `json:"osFamily"`
 	OSVersion string `json:"osVersion"`
+
+	// Emulated indicates that this Buildbot build was emulated from non-Buildbot
+	// e.g. from LUCI.
+	Emulated bool `json:"emulated"`
 }
 
 func (b *Build) Status() model.Status {
