@@ -155,9 +155,7 @@ func TestLogWithTreeDiff(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Log with TreeDiff", t, func() {
-		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(200)
-			w.Header().Set("Content-Type", "application/json")
+		srv, c := NewMockEnvironment(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(fakeLogTreeDiffData))
 		})
 		defer srv.Close()
