@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7af70ed9_c94a3b09",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af8984dc_cfa41522",
+      "range": {
+        "startLine": 62,
+        "startChar": 73,
+        "endLine": 62,
+        "endChar": 78
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04272baa_88c7cad5",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 12
@@ -39,6 +63,24 @@
       "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1831ec0f_d604b075",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04272baa_88c7cad5",
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "38463d47_5d5aa457",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5254fd21_fd4a0c1f",
+      "range": {
+        "startLine": 78,
+        "startChar": 9,
+        "endLine": 78,
+        "endChar": 11
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fda3c48b_41eb589e",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 12
@@ -85,6 +151,30 @@
       "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ae8b4b4_17245419",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fda3c48b_41eb589e",
+      "range": {
+        "startLine": 65,
+        "startChar": 20,
+        "endLine": 71,
+        "endChar": 2
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "341d2ba9_b73c21c8",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6e80865_a597821a",
+      "range": {
+        "startLine": 115,
+        "startChar": 92,
+        "endLine": 116,
+        "endChar": 66
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d27329a1_f5bc3040",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 12
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "97a94b53_e7c3b6ef",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d27329a1_f5bc3040",
+      "range": {
+        "startLine": 117,
+        "startChar": 20,
+        "endLine": 117,
+        "endChar": 32
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da01545c_7f8c0118",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 12
@@ -148,6 +286,24 @@
       "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "973394e2_018222dc",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da01545c_7f8c0118",
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -174,6 +330,30 @@
     },
     {
       "key": {
+        "uuid": "bf97bb33_2665f5df",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05a2c815_45ec1973",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 14
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "105f4b3c_0972b1ad",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 12
@@ -194,6 +374,30 @@
       "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8df9b02f_25151fd3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Oops, thanks.",
+      "parentUuid": "105f4b3c_0972b1ad",
+      "range": {
+        "startLine": 70,
+        "startChar": 49,
+        "endLine": 70,
+        "endChar": 64
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -220,6 +424,30 @@
     },
     {
       "key": {
+        "uuid": "415a66d5_46a9e094",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "998f2230_14dafa83",
+      "range": {
+        "startLine": 71,
+        "startChar": 17,
+        "endLine": 71,
+        "endChar": 27
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e694427d_f4ea9c94",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 12
@@ -240,6 +468,30 @@
       "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bf01827_666a9859",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e694427d_f4ea9c94",
+      "range": {
+        "startLine": 75,
+        "startChar": 17,
+        "endLine": 75,
+        "endChar": 20
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -266,6 +518,30 @@
     },
     {
       "key": {
+        "uuid": "7a3697ef_9fc74a7a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Good point, I forgot about the relative latency of network vs. local computation for a moment.",
+      "parentUuid": "3b3debf2_24f1ec57",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 60
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f999b3c_cc634758",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 12
@@ -286,6 +562,30 @@
       "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e7fe11b_2c9f4d3c",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f999b3c_cc634758",
+      "range": {
+        "startLine": 144,
+        "startChar": 23,
+        "endLine": 144,
+        "endChar": 24
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

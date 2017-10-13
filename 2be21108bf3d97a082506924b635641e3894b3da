@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4daca71c_d7fd2dde",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T00:41:26Z",
+      "side": 1,
+      "message": "This might not be necessary, I\u0027m not totally clear on the relative cost of calling Get within a transaction vs. outside of a transaction, and I recognize this might be too costly. In that case, I\u0027ll just let the logic flow so that a new builder gets initialized in the other transaction.",
+      "range": {
+        "startLine": 106,
+        "startChar": 32,
+        "endLine": 106,
+        "endChar": 86
+      },
+      "revId": "2be21108bf3d97a082506924b635641e3894b3da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
