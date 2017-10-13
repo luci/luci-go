@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9e2fabc4_fe993ea2",
+        "filename": "common/api/gitiles/gitiles_test_util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T22:22:28Z",
+      "side": 1,
+      "message": "This is perhaps not a good name. I\u0027m open to suggestions. It\u0027s just supposed to create a client/server that always errors when trying to contact.",
+      "range": {
+        "startLine": 23,
+        "startChar": 5,
+        "endLine": 23,
+        "endChar": 26
+      },
+      "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
