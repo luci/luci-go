@@ -173,6 +173,10 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		return nil, err
 	}
 
+	for _, builder := range master.Builders {
+		builder.PendingBuildStates = nil
+	}
+
 	if req.ExcludeDeprecated {
 		excludeDeprecatedFromMaster(&master.Master)
 	}
