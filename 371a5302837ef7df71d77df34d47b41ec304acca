@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "d7435c24_76333662",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T22:54:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "194b10da_1b32d1a1",
+      "range": {
+        "startLine": 38,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 26
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b77a40a_807e8383",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 5
@@ -119,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "3ed68abe_e46c86a6",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T22:54:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dcff31fe_44e5b3cd",
+      "range": {
+        "startLine": 47,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 36
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41ab57b2_4d2346f1",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 5
@@ -142,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "7343330d_c164f959",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T22:54:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41ab57b2_4d2346f1",
+      "range": {
+        "startLine": 62,
+        "startChar": 15,
+        "endLine": 62,
+        "endChar": 66
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3c1142d3_69f9f512",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 5
@@ -162,6 +234,30 @@
       "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56b1f72d_7326745b",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T22:54:11Z",
+      "side": 1,
+      "message": "I\u0027ll camelcase the comments then.  They still won\u0027t end up resulting in idiomatic go because url gets transcripted to \"Url\" instead of \"URL\".",
+      "parentUuid": "3c1142d3_69f9f512",
+      "range": {
+        "startLine": 111,
+        "startChar": 5,
+        "endLine": 111,
+        "endChar": 6
+      },
+      "revId": "371a5302837ef7df71d77df34d47b41ec304acca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

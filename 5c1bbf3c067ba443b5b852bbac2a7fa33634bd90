@@ -380,6 +380,30 @@
     },
     {
       "key": {
+        "uuid": "2c08893e_dd100949",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-13T22:54:11Z",
+      "side": 1,
+      "message": "I think we\u0027ll start with something more constrained, and add more customization only if someone asks for it.  It\u0027s easier to add something than to take it away.",
+      "parentUuid": "a25e4a7c_85f62537",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "5c1bbf3c067ba443b5b852bbac2a7fa33634bd90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d17249ef_4dc6bc16",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
