@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60d103ee_56c8753e",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "Communicating that we\u0027re \"done\" back is kind of annoying, but I didn\u0027t want to drop all this logic into handleBuild and make it even larger. I think aside from this case the name \"getOrInitBuilder\" fits and that datastore.ErrNoSuchEntity is the cleanest signal to send back, but I didn\u0027t want to return a nil Builder because I don\u0027t want to propagate this notion that *Builder is \"nil-able\", especially not to Notify where it makes the logic a bit more hairy. But maybe returning a dummy Builder is less clean?",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 134,
+        "endChar": 2
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

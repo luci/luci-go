@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "02c92711_5da6ed44",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0810c625_1c25a6a1",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 9
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f4b1b9b2_98891a7c",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
@@ -45,6 +69,30 @@
       "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "589dc695_84b7b5d2",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4b1b9b2_98891a7c",
+      "range": {
+        "startLine": 72,
+        "startChar": 9,
+        "endLine": 72,
+        "endChar": 16
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "4c251903_01c4eaf5",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b982416c_ed07eb49",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59d36203_339a666a",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
@@ -91,6 +163,30 @@
       "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fab0c36b_4ef258e4",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59d36203_339a666a",
+      "range": {
+        "startLine": 111,
+        "startChar": 5,
+        "endLine": 111,
+        "endChar": 36
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "18cf0e25_a1dbd011",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "I see your point, I\u0027ll clean this up.",
+      "parentUuid": "dcb9da40_bdef9cbd",
+      "range": {
+        "startLine": 165,
+        "startChar": 2,
+        "endLine": 165,
+        "endChar": 59
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "55377cf2_5764f599",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
@@ -137,6 +257,30 @@
       "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8655a8a8_0c25f8f1",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "Yeah, I realized this after I had already put up the PS, this wasn\u0027t the only place I missed (up above on the first update I also had to return Notify(...). But I\u0027ll be dropping this so it doesn\u0027t matter.",
+      "parentUuid": "55377cf2_5764f599",
+      "range": {
+        "startLine": 188,
+        "startChar": 4,
+        "endLine": 188,
+        "endChar": 14
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "93fe9d67_a1feef96",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "I see, I\u0027ll keep that in mind for future things, but you\u0027re right I don\u0027t need this.",
+      "parentUuid": "956ccf72_bf5949e0",
+      "range": {
+        "startLine": 197,
+        "startChar": 6,
+        "endLine": 197,
+        "endChar": 55
+      },
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49ab0b4d_4b55ffbf",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
@@ -177,6 +345,24 @@
       "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e63e16d4_7754ecfc",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-13T19:40:36Z",
+      "side": 1,
+      "message": "Ah hah, I see what you mean; we retain usage of the history instead of repeating the RPC, and that way we can just keep going. This makes a lot of sense to me. It\u0027s also fairly close to what\u0027s here right now, but with some of the abstractions torn down. I like it.",
+      "parentUuid": "49ab0b4d_4b55ffbf",
+      "revId": "4efd2970893b30fec3fa27cc0f54562182e38f1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
