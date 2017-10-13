@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "1cf2098c_67b5181c",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T23:15:53Z",
+      "side": 1,
+      "message": "field",
+      "range": {
+        "startLine": 9,
+        "startChar": 23,
+        "endLine": 9,
+        "endChar": 31
+      },
+      "revId": "a8e7fa52f4365b4304b6e44a9c5057c39ee1a23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f8da51e_5626f5a0",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T23:15:53Z",
+      "side": 1,
+      "message": "comments",
+      "range": {
+        "startLine": 10,
+        "startChar": 27,
+        "endLine": 10,
+        "endChar": 36
+      },
+      "revId": "a8e7fa52f4365b4304b6e44a9c5057c39ee1a23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ee3339c9_268139fd",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 6
