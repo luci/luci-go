@@ -16,6 +16,24 @@
       "revId": "680f04016019600e9619d96b744037d31209c7c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "517b1699_a3961d1f",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-13T23:26:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40c1ad19_0dd7dd62",
+      "revId": "680f04016019600e9619d96b744037d31209c7c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
