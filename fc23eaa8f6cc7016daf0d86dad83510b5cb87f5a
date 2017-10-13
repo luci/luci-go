@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e300f8b_b11883e1",
+        "filename": "common/auth/authtest/faketokengen.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-13T00:37:57Z",
+      "side": 1,
+      "message": "did you mean to export these? I know I didn\u0027t think of this in prior CL",
+      "range": {
+        "startLine": 28,
+        "startChar": 1,
+        "endLine": 28,
+        "endChar": 17
+      },
+      "revId": "fc23eaa8f6cc7016daf0d86dad83510b5cb87f5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4c786f0_06724635",
+        "filename": "common/auth/localauth/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-13T00:37:57Z",
+      "side": 1,
+      "message": "what does this mean?\nah, i see. How about \"never resets to nil after that\"?",
+      "range": {
+        "startLine": 111,
+        "startChar": 59,
+        "endLine": 111,
+        "endChar": 71
+      },
+      "revId": "fc23eaa8f6cc7016daf0d86dad83510b5cb87f5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b36bb49a_3110d985",
+        "filename": "common/auth/localauth/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-13T00:37:57Z",
+      "side": 1,
+      "message": "I wrote this at least 3 times in different ways in Go since 2015, though none in luci-go. Seems like a common thing to me. Not saying you should change this CL.",
+      "range": {
+        "startLine": 118,
+        "startChar": 0,
+        "endLine": 182,
+        "endChar": 0
+      },
+      "revId": "fc23eaa8f6cc7016daf0d86dad83510b5cb87f5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33067c6f_1af55fce",
+        "filename": "common/auth/localauth/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-13T00:37:57Z",
+      "side": 1,
+      "message": "why? this is local method, caller might as well just use s.stopped since s.stopped is never reset after initialized anyway.",
+      "range": {
+        "startLine": 273,
+        "startChar": 3,
+        "endLine": 273,
+        "endChar": 20
+      },
+      "revId": "fc23eaa8f6cc7016daf0d86dad83510b5cb87f5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
