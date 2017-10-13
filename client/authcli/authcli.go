@@ -525,28 +525,30 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		DefaultAccountID: "authutil",
 	}
 
-	// Enter the environment with the local auth server.
-	err = localauth.WithLocalAuth(ctx, srv, func(ctx context.Context) error {
-		// Put the new LUCI_CONTEXT file, prepare cmd environ.
-		exported, err := lucictx.Export(ctx)
-		if err != nil {
-			logging.WithError(err).Errorf(ctx, "Failed to prepare LUCI_CONTEXT file")
-			return err
+	// Bind to the local port and start serving.
+	la, err := srv.Start(ctx)
+	if err != nil {
+		logging.WithError(err).Errorf(ctx, "Failed to start the local auth server")
+		return ExitCodeInternalError
+	}
+	defer srv.Stop(ctx) // close the server no matter what
+
+	// Put the new LUCI_CONTEXT file, prepare cmd environ.
+	exported, err := lucictx.Export(lucictx.SetLocalAuth(ctx, la))
+	if err != nil {
+		logging.WithError(err).Errorf(ctx, "Failed to prepare LUCI_CONTEXT file")
+		return ExitCodeInternalError
+	}
+	defer func() {
+		if err := exported.Close(); err != nil {
+			logging.WithError(err).Warningf(ctx, "Failed to remove LUCI_CONTEXT file")
 		}
-		defer func() {
-			if err := exported.Close(); err != nil {
-				logging.WithError(err).Warningf(ctx, "Failed to remove LUCI_CONTEXT file")
-			}
-		}()
-		exported.SetInCmd(cmd)
+	}()
+	exported.SetInCmd(cmd)
 
-		// Launch the process and wait for it to finish.
-		logging.Debugf(ctx, "Running %q", cmd.Args)
-		return cmd.Run()
-	})
-
-	// Return the subprocess exit code, if available.
-	switch code, hasCode := exitcode.Get(err); {
+	// Launch the process and wait for it to finish. Return its exit code.
+	logging.Debugf(ctx, "Running %q", cmd.Args)
+	switch code, hasCode := exitcode.Get(cmd.Run()); {
 	case err == nil:
 		return 0
 	case hasCode:
