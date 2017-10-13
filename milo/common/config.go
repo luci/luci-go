@@ -90,13 +90,13 @@ func (con *Console) GetProjectName() string {
 func NewConsole(project *datastore.Key, URL, revision string, con *config.Console) *Console {
 	return &Console{
 		Parent:       project,
-		ID:           con.ID,
-		RepoURL:      con.RepoURL,
+		ID:           con.Id,
+		RepoURL:      con.RepoUrl,
 		Ref:          con.Ref,
 		ManifestName: con.ManifestName,
 		Revision:     revision,
 		URL:          URL,
-		FaviconURL:   con.FaviconURL,
+		FaviconURL:   con.FaviconUrl,
 		Builders:     BuilderFromProto(con.Builders),
 		BuilderMetas: BuilderRefFromProto(con.Builders),
 	}
@@ -284,8 +284,8 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 	// known ones if needed.
 	parentKey := datastore.MakeKey(c, "Project", projectName)
 	for _, pc := range proj.Consoles {
-		knownConsoles.Add(pc.ID)
-		con, err := GetConsole(c, projectName, pc.ID)
+		knownConsoles.Add(pc.Id)
+		con, err := GetConsole(c, projectName, pc.Id)
 		switch err {
 		case datastore.ErrNoSuchEntity:
 			// continue
@@ -295,12 +295,12 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 				continue
 			}
 		default:
-			return nil, errors.Annotate(err, "checking %s", pc.ID).Err()
+			return nil, errors.Annotate(err, "checking %s", pc.Id).Err()
 		}
 		URL := LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision)
 		con = NewConsole(parentKey, URL, cfg.Revision, pc)
 		if err = datastore.Put(c, con); err != nil {
-			return nil, errors.Annotate(err, "saving %s", pc.ID).Err()
+			return nil, errors.Annotate(err, "saving %s", pc.Id).Err()
 		}
 		logging.Infof(c, "saved a new %s / %s (revision %s)", projectName, con.ID, cfg.Revision)
 	}
