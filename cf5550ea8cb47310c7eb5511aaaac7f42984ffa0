@@ -104,6 +104,24 @@
       "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ebff784_c1d8fda7",
+        "filename": "common/api/gitiles/gitiles_test_util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-13T22:56:48Z",
+      "side": 1,
+      "message": "why do you need to mock input into gitiles.Client? Why not instead mock gitiles.Client itself and hence keep your tests independent of gitiles.Client internal implementation?",
+      "parentUuid": "ce47c6e9_b53ec07e",
+      "revId": "cf5550ea8cb47310c7eb5511aaaac7f42984ffa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
