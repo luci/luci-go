@@ -70,20 +70,19 @@ func TestConfig(t *testing.T) {
 }
 
 var fooCfg = `
-ID: "foo"
-Consoles: {
-	ID: "default"
-	RepoURL: "https://chromium.googlesource.com/foo/bar"
-	Ref: "master"
-	Builders: {
-		Name: "buildbucket/luci.foo.something/bar"
-		Category: "main|something"
-		ShortName: "s"
+consoles: {
+	id: "default"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	ref: "master"
+	builders: {
+		name: "buildbucket/luci.foo.something/bar"
+		category: "main|something"
+		short_name: "s"
 	}
-	Builders: {
-		Name: "buildbucket/luci.foo.other/baz"
-		Category: "main|other"
-		ShortName: "o"
+	builders: {
+		name: "buildbucket/luci.foo.other/baz"
+		category: "main|other"
+		short_name: "o"
 	}
 }
 `
