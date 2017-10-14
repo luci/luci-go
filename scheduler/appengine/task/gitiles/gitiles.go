@@ -39,11 +39,15 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+// defaultMaxTriggersPerInvocation limits number of triggers emitted per one
+// invocation.
+const defaultMaxTriggersPerInvocation = 100
+
 // TaskManager implements task.Manager interface for tasks defined with
 // GitilesTask proto message.
 type TaskManager struct {
-	// Used for testing only.
-	mockGitilesClient gitilesClient
+	mockGitilesClient        gitilesClient // Used for testing only.
+	maxTriggersPerInvocation int           // Avoid choking on DS or runtime limits.
 }
 
 // Name is part of Manager interface.
@@ -157,6 +161,12 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		sortedRefs = append(sortedRefs, ref)
 	}
 	sort.Strings(sortedRefs)
+
+	emittedTriggers := 0
+	maxTriggersPerInvocation := m.maxTriggersPerInvocation
+	if maxTriggersPerInvocation == 0 {
+		maxTriggersPerInvocation = defaultMaxTriggersPerInvocation
+	}
 	// Note, that current `refs` contain only watched refs (see getRefsTips).
 	for _, ref := range sortedRefs {
 		newHead := refs[ref]
@@ -172,6 +182,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		}
 		heads[ref] = newHead
 		refsChanged++
+		emittedTriggers++
 		// TODO(tandrii): actually look at commits between current and previously
 		// known tips of each ref.
 		// In current (v1) engine, all triggers emitted around the same time will
@@ -187,13 +198,20 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 				Gitiles: &internal.GitilesTriggerData{Repo: cfg.Repo, Ref: ref, Revision: newHead},
 			},
 		})
+
+		// Safeguard against too many changes such as the first run after
+		// config change to watch many more refs than before.
+		if emittedTriggers >= maxTriggersPerInvocation {
+			ctl.DebugLog("Emitted %d triggers, postponing the rest", emittedTriggers)
+			break
+		}
 	}
 
 	if refsChanged == 0 {
 		ctl.DebugLog("No changes detected")
 	} else {
 		ctl.DebugLog("%d refs changed", refsChanged)
-		// Force save to ensure triggesr are actually emitted.
+		// Force save to ensure triggers are actually emitted.
 		if err := ctl.Save(c); err != nil {
 			// At this point, triggers have not been sent, so bail now and don't save
 			// the refs' heads newest values.
