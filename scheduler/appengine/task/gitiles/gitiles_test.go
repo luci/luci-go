@@ -186,6 +186,65 @@ func TestTriggerBuild(t *testing.T) {
 				},
 			})
 		})
+
+		Convey("Avoid choking on too many refs", func() {
+			ds.Put(c, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/heads/master", Revision: "deadbeef0"},
+				},
+			})
+			gitilesMock.allRefs = func() (map[string]string, error) {
+				return map[string]string{
+					"refs/branch-heads/1": "cafe1",
+					"refs/branch-heads/2": "cafe2",
+					"refs/branch-heads/3": "cafe3",
+					"refs/branch-heads/4": "cafe4",
+					"refs/branch-heads/5": "cafe5",
+				}, nil
+			}
+
+			m.maxTriggersPerInvocation = 2
+			// First run, refs/branch-heads/{1,2} updated, refs/heads/master removed.
+			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(ctl.Triggers, ShouldHaveLength, 2)
+			So(loadSavedRepo(), ShouldResemble, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/branch-heads/1", Revision: "cafe1"},
+					{Name: "refs/branch-heads/2", Revision: "cafe2"},
+				},
+			})
+			ctl.Triggers = nil
+
+			// Second run, refs/branch-heads/{3,4} updated.
+			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(ctl.Triggers, ShouldHaveLength, 2)
+			So(loadSavedRepo(), ShouldResemble, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/branch-heads/1", Revision: "cafe1"},
+					{Name: "refs/branch-heads/2", Revision: "cafe2"},
+					{Name: "refs/branch-heads/3", Revision: "cafe3"},
+					{Name: "refs/branch-heads/4", Revision: "cafe4"},
+				},
+			})
+			ctl.Triggers = nil
+
+			// Final run, refs/branch-heads/5 updated.
+			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(ctl.Triggers, ShouldHaveLength, 1)
+			So(loadSavedRepo(), ShouldResemble, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/branch-heads/1", Revision: "cafe1"},
+					{Name: "refs/branch-heads/2", Revision: "cafe2"},
+					{Name: "refs/branch-heads/3", Revision: "cafe3"},
+					{Name: "refs/branch-heads/4", Revision: "cafe4"},
+					{Name: "refs/branch-heads/5", Revision: "cafe5"},
+				},
+			})
+		})
 	})
 }
 
