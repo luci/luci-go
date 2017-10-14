@@ -6,59 +6,137 @@ syntax = "proto3";
 
 package config;
 
+// Note that while the field names in the proto matches the proto
+// naming conventions, the comments uses the generate Go code variable naming
+// conventions.
+
 // Project is a project definition for Milo.
 message Project {
-  // ID is the identifier for the project, if different from its repository name.
-  string ID = 1;
+  reserved 1;
 
   // Consoles is a list of consoles to define under /console/
-  repeated Console Consoles = 2;
+  repeated Console consoles = 2;
+}
+
+// Link is a link to an internet resource, which will be rendered out as
+// an anchor tag <a href="url" alt="alt">text</a>.
+message Link {
+  // Text is displayed as the text between the anchor tags.
+  string text = 1;
+
+  // Url is the URL to link to.
+  string url = 2;
+
+  // Alt is the alt text displayed when hovering over the text.
+  string alt = 3;
+}
+
+// Oncall contains information about who is currently scheduled as the
+// oncall (Sheriff, trooper, etc) for certain rotations.
+message Oncall {
+  // Name is the name of the oncall rotation being displayed.
+  string name = 1;
+
+  // Url is a url to a .js file/endpoint containing text displayed, as defined in
+  // infra_internal.services.sheriff.rotation and infra_internal.services.trooper.rotation
+  string url = 2;
+}
+
+// LinkGroup is a list of links, optionally given a name.
+message LinkGroup {
+  // Name is the name of this list of links. This is optional.
+  string name = 1;
+
+  // Links is a list of links to display.
+  repeated Link links = 2;
+}
+
+// ConsoleSummaryGroup is a list of consoles to be displayed as console summaries
+// (aka the little bubbles at the top of the console).  This can optionally
+// have a group name if specified in the group_link.
+// (e.g. "Tree closers", "Experimental", etc)
+message ConsoleSummaryGroup {
+  // Title is a name or label for this group of consoles.  This is optional.
+  Link title = 1;
+
+  // ConsoleIds is a list of console ids to display in this console group.
+  // Only consoles from the same project are supported.
+  // TODO(hinoka): Allow cross-project consoles.
+  repeated string console_ids = 2;
+}
+
+// Header is a collection of links, rotation information, and console summaries
+// that are displayed at the top of a console, below the tree status information.
+// Links and oncall information is always laid out to the left, while
+// console groups are laid out on the right.  Each oncall and links group
+// take up a row.
+message Header {
+  // Oncalls are a reference to oncall rotations, which is a URL to a .js
+  // file containing document.write("content"), as defined by
+  // infra_internal.services.sheriff.rotation and
+  // infra_internal.services.trooper.rotation
+  repeated Oncall oncalls = 1;
+
+  // Links is a list of named groups of web links.
+  repeated LinkGroup links = 2;
+
+  // ConsoleGroups are groups of console summaries, each optionally named.
+  repeated ConsoleSummaryGroup console_groups = 3;
 }
 
 // Console is a waterfall definition consisting of one or more builders.
 message Console {
-  // ID is the reference to the console, and will be the address to make the
+  // Id is the reference to the console, and will be the address to make the
   // console reachable from /console/<Project>/<ID>.
-  string ID = 1;
+  string id = 1;
 
   // Name is the longform name of the waterfall, and will be used to be
   // displayed in the title.
-  string Name = 2;
+  string name = 2;
 
-  // RepoURL is the URL of the git repository to display as the rows of the console.
-  string RepoURL = 3;
+  // RepoUrl is the URL of the git repository to display as the rows of the console.
+  string repo_url = 3;
 
   // Ref is the ref to pull commits from when displaying the console.
   // Eg. refs/heads/master
-  string Ref = 4;
+  string ref = 4;
 
-  // ManifestName is the name of the manifest the waterfall looks at.
+  // ManifestName the name of the manifest the waterfall looks at.
   // By convention, Manifest Names can be:
   // * UNPATCHED - For non patched builds, such as continuous builds
   // * PATCHED - For patched builds, such as those on try jobs
-  string ManifestName = 5;
+  string manifest_name = 5;
 
   // Builders is a list of builder configurations to display as the columns of the console.
-  repeated Builder Builders = 6;
+  repeated Builder builders = 6;
 
-  // FaviconURL is the URL to the favicon for this console page.
+  // FaviconUrl is the URL to the favicon for this console page.
   // This field is optional. The favicon URL must have a host of
   // storage.googleapis.com.
-  string FaviconURL = 7;
+  string favicon_url = 7;
+
+  // TreeStatusHost is the hostname of the chromium-status instance where
+  // the tree status of this console is hosted.  If provided, this will appear
+  // as the bar at the very top of the page.
+  string tree_status_host = 8;
+
+  // Header is a collection of links, rotation information, and console summaries
+  // displayed under the tree status but above the main console content.
+  Header header = 9;
 }
 
-// A builder is a reference to a Milo builder.
+// Builder is a reference to a Milo builder.
 message Builder {
   // Name is the identifier to find the builder, which includes the module.
   // Buildbot builds would be like "buildbot/chromium.linux/Linux Tests"
   // Buildbucket builds would be like "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
-  string Name = 1;
+  string name = 1;
 
   // Category describes the hierarchy of the builder on the header of the
   // console as a "|" delimited list.  Neighboring builders with common ancestors
   // will be have their headers merged.
-  string Category = 2;
+  string category = 2;
 
   // ShortName is the 1-3 character abbreviation of the builder.
-  string ShortName = 3;
+  string short_name = 3;
 }
