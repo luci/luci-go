@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "c738ed5e_02f5b7ee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 16
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T18:37:53Z",
+      "side": 1,
+      "message": "whatever you use to upload patches undone your description edit in patchset 18",
+      "parentUuid": "3653abc5_85340c80",
+      "range": {
+        "startLine": 12,
+        "startChar": 6,
+        "endLine": 14,
+        "endChar": 33
+      },
+      "revId": "ee8be75b46a1b144292cc5a5260a57b40748c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9992ba1c_9e488b89",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 16

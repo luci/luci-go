@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "54b209d7_d9aeb998",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T18:37:53Z",
+      "side": 1,
+      "message": "trailing space",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7e56de3_ce4d652f",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T18:37:53Z",
+      "side": 1,
+      "message": "trailing space",
+      "range": {
+        "startLine": 50,
+        "startChar": 81,
+        "endLine": 50,
+        "endChar": 123
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f3b5b89_3e36f565",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T18:37:53Z",
+      "side": 1,
+      "message": "trailing space",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 1
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69570ed4_c29707da",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T18:37:53Z",
+      "side": 1,
+      "message": "nit: this order is a bit odd. maybe put new after old?",
+      "range": {
+        "startLine": 69,
+        "startChar": 55,
+        "endLine": 69,
+        "endChar": 79
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c57432b_8c5c4243",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T18:37:53Z",
+      "side": 1,
+      "message": "IMHO 100LOC to mock a single function is a bit overkill\nwouldn\u0027t be simpler to pass func(c context.Context, newRevision, oldRevision string) as a parameter to the function that need commit history? Test would pass a mock func and prod would pass a real func. If there is too much propagation to do, the parameter could be a field",
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "389bda0f_ec649bb4",
+        "filename": "luci_notify/notify/pubsub_test.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T18:37:53Z",
+      "side": 1,
+      "message": "why is this commented out?",
+      "range": {
+        "startLine": 69,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 5
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
