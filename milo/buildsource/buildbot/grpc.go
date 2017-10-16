@@ -19,6 +19,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -189,13 +190,6 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		return nil, err
 	}
 
-	for _, builder := range master.Builders {
-		// Nobody uses PendingBuildStates.
-		// Exclude them from the response
-		// because they are hard to emulate.
-		builder.PendingBuildStates = nil
-	}
-
 	if req.ExcludeDeprecated {
 		excludeDeprecatedFromMaster(&master.Master)
 	}
@@ -218,6 +212,17 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		Modified: google.NewTimestamp(master.Modified),
 		Data:     gzbs.Bytes(),
 	}, nil
+}
+
+// GetEmulationOptions returns default emulation options from buildstore.
+func (s *Service) GetEmulationOptions(c context.Context, req *milo.GetEmulationOptionsRequest) (*milo.GetEmulationOptionsResponse, error) {
+	opt, err := buildstore.GetDefaultEmulationOptions(c, req.Master, req.Builder)
+	return &milo.GetEmulationOptionsResponse{Options: opt}, err
+}
+
+// SetEmulationOptions sets default emulation options in buildstore.
+func (s *Service) SetEmulationOptions(c context.Context, req *milo.SetEmulationOptionsRequest) (*empty.Empty, error) {
+	return &empty.Empty{}, buildstore.SetDefaultEmulationOptions(c, req.Master, req.Builder, req.Options)
 }
 
 func excludeDeprecatedFromMaster(m *buildbot.Master) {

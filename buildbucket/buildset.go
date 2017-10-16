@@ -24,8 +24,6 @@ import (
 // It is implemented by *RietveldChange, *GerritChange, *GitilesCommit.
 type BuildSet interface {
 	fmt.Stringer
-
-	isABuildSet()
 }
 
 // TagBuildSet is a key of a tag used to group related builds.
@@ -39,8 +37,6 @@ type RietveldChange struct {
 	Issue    int64
 	PatchSet int
 }
-
-func (*RietveldChange) isABuildSet() {}
 
 // String returns a buildset string for the change,
 // e.g. "patch/rietveld/codereview.chromium.org/2979743003/1".
@@ -59,8 +55,6 @@ type GerritChange struct {
 	Change   int64
 	PatchSet int
 }
-
-func (*GerritChange) isABuildSet() {}
 
 // String returns a buildset string for the change,
 // e.g. "patch/gerrit/chromium-review.googlesource.com/677784/5".
@@ -82,24 +76,10 @@ type GitilesCommit struct {
 	Revision string // i.e. commit hex sha1
 }
 
-func (*GitilesCommit) isABuildSet() {}
-
 // String returns a buildset string for the commit,
 // e.g. "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
 func (c *GitilesCommit) String() string {
 	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Revision)
-}
-
-// RepoURL returns the URL for the gitiles repo.
-// e.g. "https://chromium.googlesource.com/chromium/src"
-func (c *GitilesCommit) RepoURL() string {
-	return fmt.Sprintf("https://%s/%s", c.Host, c.Project)
-}
-
-// URL returns the URL for the gitiles commit.
-// e.g. "https://chromium.googlesource.com/chromium/src/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
-func (c *GitilesCommit) URL() string {
-	return fmt.Sprintf("%s/+/%s", c.RepoURL(), c.Revision)
 }
 
 // ParseBuildSet tries to parse buildset as one of the known formats.

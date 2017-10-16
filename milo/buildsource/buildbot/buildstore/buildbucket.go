@@ -72,7 +72,6 @@ func buildFromBuildbucket(c context.Context, msg *bbapi.ApiCommonBuildMessage, d
 
 	for _, bs := range b.BuildSets {
 		if commit, ok := bs.(*buildbucket.GitilesCommit); ok {
-			res.Sourcestamp.Repository = commit.RepoURL()
 			res.Sourcestamp.Revision = commit.Revision
 			break
 		}

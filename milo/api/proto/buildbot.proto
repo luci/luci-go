@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package milo;
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 // DEPRECATED. Do not start using this API.
@@ -15,6 +16,11 @@ service Buildbot {
   rpc GetCompressedMasterJSON(MasterRequest) returns (CompressedMasterJSON) {}
   rpc GetBuildbotBuildJSON(BuildbotBuildRequest) returns (BuildbotBuildJSON) {}
   rpc GetBuildbotBuildsJSON(BuildbotBuildsRequest) returns (BuildbotBuildsJSON) {}
+
+  // Returns default emulation options of a builder.
+  rpc GetEmulationOptions(GetEmulationOptionsRequest) returns (GetEmulationOptionsResponse) {}
+  // Sets default emulation options of a builder.
+  rpc SetEmulationOptions(SetEmulationOptionsRequest) returns (google.protobuf.Empty) {}
 }
 
 // The request containing the name of the master.
@@ -96,4 +102,19 @@ message EmulationOptions {
   int32 start_from = 1;
   // The LUCI bucket corresponding to the master of the builder in question.
   string bucket = 2;
+}
+
+message GetEmulationOptionsRequest {
+  string master = 1;
+  string builder = 2;
+}
+
+message GetEmulationOptionsResponse {
+  EmulationOptions options = 1;
+}
+
+message SetEmulationOptionsRequest {
+  string master = 1;
+  string builder = 2;
+  EmulationOptions options = 3;
 }

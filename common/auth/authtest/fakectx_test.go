@@ -21,30 +21,23 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/auth/localauth"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/lucictx"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestFakeTokenGenerator(t *testing.T) {
+func TestFakeContext(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
-		srv := localauth.Server{
-			TokenGenerators: map[string]localauth.TokenGenerator{
-				"authtest": &FakeTokenGenerator{},
-			},
-			DefaultAccountID: "authtest",
-		}
-		la, err := srv.Start(ctx)
+		fake := FakeContext{}
+		ctx, err := fake.Start(ctx)
 		So(err, ShouldBeNil)
-		defer srv.Stop(ctx)
+		defer fake.Stop(ctx)
 
-		auth := auth.NewAuthenticator(lucictx.SetLocalAuth(ctx, la), auth.SilentLogin, auth.Options{})
+		auth := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{})
 
 		email, err := auth.GetEmail()
 		So(err, ShouldBeNil)

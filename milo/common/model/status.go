@@ -18,59 +18,50 @@ package model
 
 import "encoding/json"
 
-// Status indicates the status of some piece of the CI; builds, steps, builders,
-// etc. The UI maps this to a color, and some statuses may map to the same
-// color; however, we attempt to preserve full informational fidelity.
+// Status is a discrete status for the purpose of colorizing a component.
+// These are based off the Material Design Bootstrap color palettes.
 type Status int
 
 const (
 	// NotRun if the component has not yet been run.  E.g. if the component has
 	// been scheduled, but is pending execution.
-	NotRun Status = iota
+	NotRun Status = iota // 100 Gray
 
 	// Running if the component is currently running.
-	Running
+	Running // 100 Teal
 
-	// Success if the component has finished executing and accomplished what it
-	// was supposed to.
-	Success
+	// Success if the component has finished executing and is not noteworthy.
+	Success // A200 Green
 
-	// Failure if the component has finished executing and failed in
-	// a non-exceptional way. e.g. if a test completed execution, but determined
-	// that the code was bad.
-	Failure
+	// Failure if the component has finished executing and contains a failure.
+	Failure // A200 Red
 
-	// Warning if the component has finished executing, but encountered
-	// non-stoppage problems. e.g. if a test completed execution, but determined
-	// that the code was slow (but not slow enough to be a failure).
-	Warning
+	// Warning just like from the buildbot days.
+	Warning // 200 Yellow
 
-	// InfraFailure if the component has finished incompletely due to an
-	// infrastructure layer.
-	//
-	// This is used to categorize all unknown errors.
-	InfraFailure
+	// InfraFailure if the component has finished incompletely due to a failure in infra.
+	InfraFailure // A100 Purple
 
-	// Exception if the component has finished incompletely due to an exceptional
-	// error in the task. That means the infrastructure layers executed the task
-	// completely, but the task self-reported that it failed in an exceptional
-	// way.
-	//
-	// DON'T USE THIS IN ANY NEW CODE. Instead, prefer InfraFailure.
-	Exception
+	// Exception if the component has finished incompletely and unexpectedly. This
+	// is used for buildbot builds.
+	Exception // A100 Purple
 
 	// Expired if the component was never scheduled due to resource exhaustion.
-	Expired
+	Expired // A200 Purple
 
-	// Cancelled if the component had external intervention to stop it after it
-	// was scheduled, but before it completed on its own.
-	Cancelled
+	// DependencyFailure if the component has finished incompletely due to a failure in a
+	// dependency.
+	DependencyFailure // 100 Amber
+
+	// WaitingDependency if the component has finished or paused execution due to an
+	// incomplete dep.
+	WaitingDependency // 100 Brown
 )
 
 // Terminal returns true if the step status won't change.
 func (s Status) Terminal() bool {
 	switch s {
-	case Success, Failure, InfraFailure, Warning, Expired, Exception, Cancelled:
+	case Success, Failure, InfraFailure, Warning, DependencyFailure, Expired:
 		return true
 	default:
 		return false

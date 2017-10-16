@@ -38,60 +38,56 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-type callbackGen struct {
-	email string
-	cb    func(context.Context, []string, time.Duration) (*oauth2.Token, error)
-}
-
-func (g *callbackGen) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
-	return g.cb(ctx, scopes, lifetime)
-}
-
-func (g *callbackGen) GetEmail() (string, error) {
-	return g.email, nil
-}
-
-func makeGenerator(email string, cb func(context.Context, []string, time.Duration) (*oauth2.Token, error)) TokenGenerator {
-	return &callbackGen{email, cb}
-}
-
 func TestServerLifecycle(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	Convey("Double Start", t, func() {
+	Convey("Serve or close before init", t, func() {
 		s := Server{}
-		defer s.Stop(ctx)
-		_, err := s.Start(ctx)
+		So(s.Serve(), ShouldErrLike, "not initialized")
+		So(s.Close(), ShouldErrLike, "not initialized")
+	})
+
+	Convey("Double init", t, func() {
+		s := Server{}
+		defer s.Close()
+		_, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
-		_, err = s.Start(ctx)
+		_, err = s.Initialize(ctx)
 		So(err, ShouldErrLike, "already initialized")
 	})
 
-	Convey("Start after Stop", t, func() {
+	Convey("Server after close", t, func() {
 		s := Server{}
-		_, err := s.Start(ctx)
+		_, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
-		So(s.Stop(ctx), ShouldBeNil)
-		_, err = s.Start(ctx)
-		So(err, ShouldErrLike, "already initialized")
+		So(s.Close(), ShouldBeNil)
+		So(s.Serve(), ShouldErrLike, "already closed")
 	})
 
-	Convey("Stop works", t, func() {
+	Convey("Close works", t, func() {
 		serving := make(chan struct{})
 		s := Server{
 			testingServeHook: func() { close(serving) },
 		}
-		_, err := s.Start(ctx)
+		_, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
+
+		done := make(chan error)
+		go func() {
+			done <- s.Serve()
+		}()
 
 		<-serving // wait until really started
 
 		// Stop it.
-		So(s.Stop(ctx), ShouldBeNil)
+		So(s.Close(), ShouldBeNil)
 		// Doing it second time is ok too.
-		So(s.Stop(ctx), ShouldBeNil)
+		So(s.Close(), ShouldBeNil)
+
+		serverErr := <-done
+		So(serverErr, ShouldBeNil)
 	})
 }
 
@@ -132,15 +128,24 @@ func TestProtocol(t *testing.T) {
 			},
 			DefaultAccountID: "acc_id",
 		}
-		p, err := s.Start(ctx)
+		p, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
-		defer s.Stop(ctx)
 
 		So(p.Accounts, ShouldResemble, []lucictx.LocalAuthAccount{
 			{ID: "acc_id", Email: "some@example.com"},
 			{ID: "another_id", Email: "another@example.com"},
 		})
 		So(p.DefaultAccountID, ShouldEqual, "acc_id")
+
+		done := make(chan struct{})
+		go func() {
+			s.Serve()
+			close(done)
+		}()
+		defer func() {
+			s.Close()
+			<-done
+		}()
 
 		goodRequest := func() *http.Request {
 			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
