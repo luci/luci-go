@@ -84,11 +84,15 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 		b.Slave,
 		fmt.Sprintf("https://%s/%s/buildslaves/%s", host, b.Master, b.Slave),
 	)
-	source := resp.NewLink(
-		fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
-		fmt.Sprintf("https://%s/%s/builders/%s/builds/%d",
-			host, b.Master, b.Buildername, b.Number),
-	)
+
+	var source *resp.Link
+	if !b.Emulated {
+		source = resp.NewLink(
+			fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
+			fmt.Sprintf("https://%s/%s/builders/%s/builds/%d",
+				host, b.Master, b.Buildername, b.Number),
+		)
+	}
 
 	// The link to the builder page.
 	parent := resp.NewLink(b.Buildername, ".")

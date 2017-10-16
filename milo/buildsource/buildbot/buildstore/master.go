@@ -42,6 +42,9 @@ type Master struct {
 // If refreshState is true, refreshes individual builds from the datastore
 // and the list of Cached builds.
 //
+// If any of the master's builders is emulated, the returned Master
+// does not have any slave information or pending build states.
+//
 // Does not check access.
 func GetMaster(c context.Context, name string, refreshState bool) (*Master, error) {
 	entity := masterEntity{Name: name}
@@ -61,17 +64,37 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 		return m, nil
 	}
 
-	var refreshBuilds []*buildEntity
-	for _, slave := range m.Slaves {
-		for _, b := range slave.Runningbuilds {
-			refreshBuilds = append(refreshBuilds, (*buildEntity)(b))
+	emulation := false
+	for builder := range m.Builders {
+		opt, err := GetEmulationOptions(c, name, builder)
+		if err != nil {
+			return nil, err
+		}
+		if opt != nil {
+			emulation = true
+			break
 		}
 	}
-	if err = datastore.Get(c, refreshBuilds); err != nil {
-		return nil, errors.Annotate(err, "refresh builds").Err()
+	if emulation {
+		// Emulation does not support this Slaves field.
+		m.Slaves = nil
+		for _, b := range m.Builders {
+			b.Slaves = nil
+			b.PendingBuildStates = nil
+		}
+	} else {
+		var refreshBuilds []*buildEntity
+		for _, slave := range m.Slaves {
+			for _, b := range slave.Runningbuilds {
+				refreshBuilds = append(refreshBuilds, (*buildEntity)(b))
+			}
+		}
+		if err = datastore.Get(c, refreshBuilds); err != nil {
+			return nil, errors.Annotate(err, "refresh builds").Err()
+		}
 	}
 
-	// Also inject cached builds information.
+	// Inject cached builds information.
 	return m, parallel.FanOutIn(func(work chan<- func() error) {
 		for builderName, builder := range m.Builders {
 			builderName := builderName
@@ -80,11 +103,13 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 				// Get the most recent 50 buildNums on the builder to simulate what the
 				// cachedBuilds field looks like from the real buildbot master json.
 				q := Query{
-					Master:      name,
-					Builder:     builderName,
-					Finished:    Yes,
-					Limit:       50,
-					NumbersOnly: true,
+					Master:   name,
+					Builder:  builderName,
+					Finished: Yes,
+					Limit:    50,
+
+					NoAnnotationFetch: true,
+					KeyOnly:           true,
 				}
 				res, err := GetBuilds(c, q)
 				if err != nil {
@@ -94,6 +119,56 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 				for i, b := range res.Builds {
 					builder.CachedBuilds[i] = b.Number
 				}
+
+				opt, err := GetEmulationOptions(c, name, builderName)
+				if err != nil {
+					return err
+				}
+				if opt != nil {
+					// Pending buildbot builds do not have a number yet
+					// so it is hard to tell whether they WILL be before
+					// or after opt.StartFrom. Just ignore them.
+					builder.PendingBuilds = 0
+					// But keep current ones because they have numbers
+					// and it is easier to decide whether should be included in the
+					// response or not.
+					buildbotCurrent := builder.CurrentBuilds
+					builder.CurrentBuilds = nil
+
+					// Load all incomplete builds and add only those after
+					// opt.StartFrom.
+					q := Query{
+						Master:   name,
+						Builder:  builderName,
+						Finished: No,
+
+						// we will ignore buildbot builds
+						KeyOnly:           true,
+						NoAnnotationFetch: true,
+					}
+					res, err := GetBuilds(c, q)
+					if err != nil {
+						return err
+					}
+					for _, b := range res.Builds {
+						if b.Number < int(opt.StartFrom) {
+							// the rest of res.Builds are buildbot builds
+							// ignore them.
+							break
+						}
+						if b.Times.Start.IsZero() {
+							builder.PendingBuilds++
+						} else {
+							builder.CurrentBuilds = append(builder.CurrentBuilds, b.Number)
+						}
+					}
+					for _, num := range buildbotCurrent {
+						if num < int(opt.StartFrom) {
+							builder.CurrentBuilds = append(builder.CurrentBuilds, num)
+						}
+					}
+				}
+
 				return nil
 			}
 		}
