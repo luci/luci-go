@@ -15,8 +15,12 @@
 package buildstore
 
 import (
+	"fmt"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/milo/api/proto"
 )
 
@@ -58,4 +62,75 @@ func GetEmulationOptions(c context.Context, master, builder string) (*milo.Emula
 		return p.(EmulationOptionsProvider)(c, master, builder)
 	}
 	return nil, nil
+}
+
+// builderEmulationOptions stores default emulation options
+// of a builder.
+//
+// It does not implement MetaGetSetter because it would be way more code.
+// Not worth it.
+type builderEmulationOptions struct {
+	ID      string `gae:"$id"` // <master>:<builder>
+	Options optionsProperty
+}
+
+type optionsProperty struct {
+	milo.EmulationOptions
+}
+
+func (o *optionsProperty) ToProperty() (datastore.Property, error) {
+	data, err := proto.Marshal(&o.EmulationOptions)
+	return datastore.MkPropertyNI(data), err
+}
+
+func (o *optionsProperty) FromProperty(p datastore.Property) error {
+	return proto.Unmarshal(p.Value().([]byte), &o.EmulationOptions)
+}
+
+func builderID(master, builder string) string {
+	return fmt.Sprintf("%s:%s", master, builder)
+}
+
+// GetDefaultEmulationOptions returns default emulation options for a builder.
+func GetDefaultEmulationOptions(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
+	entity := &builderEmulationOptions{
+		ID: builderID(master, builder),
+	}
+	switch err := datastore.Get(c, entity); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+
+	return &entity.Options.EmulationOptions, nil
+}
+
+// SetDefaultEmulationOptions sets default emulation options for a builder.
+func SetDefaultEmulationOptions(c context.Context, master, builder string, opt *milo.EmulationOptions) error {
+	return datastore.Put(c, &builderEmulationOptions{
+		ID:      builderID(master, builder),
+		Options: optionsProperty{EmulationOptions: *opt},
+	})
+}
+
+// WithDefaultEmulationOptions provides default emulation options.
+//
+// Caches all options in process memory. Call this function on request basis.
+func WithDefaultEmulationOptions(c context.Context) context.Context {
+	cache := map[string]*milo.EmulationOptions{}
+	return WithEmulationOptionsProvider(c, func(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
+		cacheKey := builderID(master, builder)
+		if opt, ok := cache[cacheKey]; ok {
+			return opt, nil
+		}
+
+		opt, err := GetDefaultEmulationOptions(c, master, builder)
+		if err != nil {
+			return nil, err
+		}
+
+		cache[cacheKey] = opt
+		return opt, nil
+	})
 }
