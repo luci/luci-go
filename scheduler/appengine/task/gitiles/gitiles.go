@@ -218,6 +218,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 			return err
 		}
 		if err := m.save(c, ctl.JobID(), u, heads); err != nil {
+			logging.WithError(err).Errorf(c, "failed to save and emit the triggers, will retry")
 			return err
 		}
 		ctl.DebugLog("Saved %d known refs", len(heads))
