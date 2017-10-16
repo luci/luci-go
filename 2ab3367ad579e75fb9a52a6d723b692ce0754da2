@@ -1,0 +1,222 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9cbfbd54_665efe41",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "!\u003d",
+      "range": {
+        "startLine": 80,
+        "startChar": 34,
+        "endLine": 80,
+        "endChar": 36
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c98fdc3_f62bdb13",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "u.Path \u003d strings.TrimSuffix(u.Path, \".git\")",
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0b96885_81555914",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "please move this if before trimming .git\notherwise this code normalizes data before validating it, which reads weird",
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49cdcfa2_efad3156",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "non-determinism in bs.BuildSset, manifests keys and logs bothers me, but I understand that you want to save ~10 lines here\n\nWDYT\n\n  maybeAdd :\u003d func(k string, f func() (buildbucket.BuildSet, error)) {\n    // loop body\n  } \n\n  maybeAdd(\"GitilesCommit\", \u003cfunc\u003e)\n  maybeAdd(\"GerritChange\", \u003cfunc\u003e)\n\nbesides determinism: does not allocate a map",
+      "range": {
+        "startLine": 134,
+        "startChar": 4,
+        "endLine": 135,
+        "endChar": 51
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2df2e45e_4dbcf7b5",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "BuildKey was created only because the caller was in a different package. All usages of BuildKey are now inside this package. This code is allowed to know about datastore. Please inline BuildKey\n\nhowever, see below",
+      "range": {
+        "startLine": 151,
+        "startChar": 13,
+        "endLine": 151,
+        "endChar": 27
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a018c5da_4438772d",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "nit: |\u003d",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2586755b_3cd3408c",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "bs.BuildKey",
+      "range": {
+        "startLine": 188,
+        "startChar": 13,
+        "endLine": 188,
+        "endChar": 27
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e53262d_73248620",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "this code got complex for the benefit of doing one Get instead of two in a non-perf critical code.\n\nalso, i think storing buildSummaries is not buildstore\u0027s job\nbuildstore is defined as\n\"Package buildstore implements storage of //milo/api/buildbot/* types.\"\nhttps://godoc.org/go.chromium.org/luci/milo/buildsource/buildbot/buildstore\nbuildSummary is a concept common to buildbot and non-buildbot, so I think putting buildSummary is the responsibility of SaveBuilder\u0027s caller. Looking at this transactional code, I see no logic that would prevent that (except, it should happen in the same transaction).\n\nConsider:\n- SaveBuilder: panic if called not in a transaction (datastore.CurrentTransaction)\n- SaveBuilder: return build key\n- SaveBuilder callsite: start a new transaction, call SaveBuild, save buildSummary",
+      "range": {
+        "startLine": 206,
+        "startChar": 3,
+        "endLine": 208,
+        "endChar": 80
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "762c1a96_71d8defa",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "nit: switch?",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 17
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbdf5c9f_8620d3c4",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-16T16:34:25Z",
+      "side": 1,
+      "message": "i am not sure it is right. what if builderID was malformed?\ncommon.GetAllConsoles would know if it is transient or not. I think the returned err should already marked as transient if it is indeed such",
+      "range": {
+        "startLine": 177,
+        "startChar": 64,
+        "endLine": 177,
+        "endChar": 77
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
