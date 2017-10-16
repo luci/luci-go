@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "404f4c7d_452a34cc",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-16T23:23:00Z",
+      "side": 1,
+      "message": "actually, looks like this is not needed: killServe sets s.listener to nil (under the lock). This will cause the errors from listen be correctly ignored on line 216 below.",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 182,
+        "endChar": 4
+      },
+      "revId": "bd537f95424f9a8cb65166e1878a3761ade544fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb360338_cd82d48a",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-16T23:23:00Z",
+      "side": 1,
+      "message": "regardless, this should be \u0027break\u0027. We still need to execute lines 211 and below.",
+      "range": {
+        "startLine": 183,
+        "startChar": 3,
+        "endLine": 183,
+        "endChar": 9
+      },
+      "revId": "bd537f95424f9a8cb65166e1878a3761ade544fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
