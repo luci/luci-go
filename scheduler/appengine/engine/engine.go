@@ -1673,7 +1673,7 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	// to retry the whole launch attempt from scratch (redoing all the work,
 	// a properly implemented LaunchTask should be idempotent).
 	if err := ctl.Save(c); err != nil {
-		logging.WithError(err).Errorf(c, "Failed to save invocation state")
+		logging.WithError(err).Errorf(c, "Failed to save heads state")
 		return err
 	}
 
