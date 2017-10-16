@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "02e22d7f_13a3b3f0",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-16T22:59:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54b209d7_d9aeb998",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b7e56de3_ce4d652f",
         "filename": "luci_notify/notify/gitiles.go",
         "patchSetId": 19
@@ -45,6 +69,30 @@
       "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ae8d48b_f6b2627e",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-16T22:59:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7e56de3_ce4d652f",
+      "range": {
+        "startLine": 50,
+        "startChar": 81,
+        "endLine": 50,
+        "endChar": 123
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "a29e54d3_20f66702",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-16T22:59:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f3b5b89_3e36f565",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 1
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69570ed4_c29707da",
         "filename": "luci_notify/notify/gitiles.go",
         "patchSetId": 19
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "378a9e9e_2da519fb",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-16T22:59:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69570ed4_c29707da",
+      "range": {
+        "startLine": 69,
+        "startChar": 55,
+        "endLine": 69,
+        "endChar": 79
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c57432b_8c5c4243",
         "filename": "luci_notify/notify/gitiles.go",
         "patchSetId": 19
@@ -105,6 +201,24 @@
       "writtenOn": "2017-10-16T18:37:53Z",
       "side": 1,
       "message": "IMHO 100LOC to mock a single function is a bit overkill\nwouldn\u0027t be simpler to pass func(c context.Context, newRevision, oldRevision string) as a parameter to the function that need commit history? Test would pass a mock func and prod would pass a real func. If there is too much propagation to do, the parameter could be a field",
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f87a31e4_7993b750",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-16T22:59:30Z",
+      "side": 1,
+      "message": "I agree it\u0027s overkill, but the alternative isn\u0027t great as there\u0027s no reason to pass in a function like that except for testing purposes. I looked around through Milo (which does this exact pattern to mock pubsub editing) and through the various GAE abstractions (logging, datastore) and they all do the same thing. I I think I would like to move this into [gitiles] or something and instead make the interface Log, LogForward, and whatever else it provides.\n\nThe issue with that is it\u0027ll take a bit of work to get that in, test it, and fix up everything that depends on [gitiles]. I pushed this here in order to try out this testing model for the gitiles API, and I think it works well? If it\u0027s OK I\u0027d like to leave this here for now, but if it\u0027s too much then I can move it out now.",
+      "parentUuid": "7c57432b_8c5c4243",
       "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -131,6 +245,30 @@
       "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e7f49ef_c9f3ee75",
+        "filename": "luci_notify/notify/pubsub_test.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-16T22:59:30Z",
+      "side": 1,
+      "message": "I pushed a new patchset, but I hadn\u0027t gotten a chance to finish up the tests yet. I have tests now for everything except the corner cases that are hard to test (two competing updates with very specific timings. I COULD just introduce a race between two goroutines and just make sure that that isn\u0027t flaky, but I don\u0027t know if I want to introduce a flaky test at all...)",
+      "parentUuid": "389bda0f_ec649bb4",
+      "range": {
+        "startLine": 69,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 5
+      },
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
