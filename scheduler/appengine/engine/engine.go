@@ -1645,6 +1645,9 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	triggers, err := inv.IncomingTriggers()
 	if err == nil {
 		err = ctl.manager.LaunchTask(c, ctl, triggers)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Failed to LaunchTask")
+		}
 	}
 	if ctl.State().Status == task.StatusStarting && err == nil {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
