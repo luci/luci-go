@@ -63,6 +63,10 @@ type Client struct {
 
 	initBundlerOnce sync.Once
 	bundler         *bundler.Bundler
+
+	// outstanding is used to track outstanding RPCs. On Flush, the Client will
+	// block pending completion of all outstanding RPCs.
+	outstanding sync.WaitGroup
 }
 
 // RegisterStream implements ServicesClient.
@@ -126,6 +130,7 @@ func (c *Client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, 
 func (c *Client) Flush() {
 	c.initBundler()
 	c.bundler.Flush()
+	c.outstanding.Wait()
 }
 
 func (c *Client) initBundler() {
@@ -164,6 +169,10 @@ func (c *Client) addEntry(be *batchEntry) error {
 	return c.bundler.Add(be, proto.Size(be.req))
 }
 
+// bundleHandler is called when a bundle threshold has been met.
+//
+// Note that "iface" (the items slice) is owned by this handler; the Bundler
+// allocates a new item slice after each bundle dispatch.
 func (c *Client) bundlerHandler(iface interface{}) {
 	entries := iface.([]*batchEntry)
 	if len(entries) == 0 {
@@ -171,6 +180,15 @@ func (c *Client) bundlerHandler(iface interface{}) {
 	}
 
 	ctx, opts := entries[0].ctx, entries[0].opts
+
+	c.outstanding.Add(1)
+	go func() {
+		defer c.outstanding.Done()
+		c.sendBundle(ctx, entries, opts...)
+	}()
+}
+
+func (c *Client) sendBundle(ctx context.Context, entries []*batchEntry, opts ...grpc.CallOption) {
 	req := s.BatchRequest{
 		Req: make([]*s.BatchRequest_Entry, len(entries)),
 	}
@@ -183,6 +201,8 @@ func (c *Client) bundlerHandler(iface interface{}) {
 	// Supply a response to each blocking request. Note that "complete" is a
 	// buffered channel, so this will not block.
 	if err != nil {
+		logging.WithError(err).Errorf(ctx, "Failed to send RPC bundle.")
+
 		// Error case: generate an error response from "err".
 		for _, ent := range entries {
 			e := s.MakeError(err)
