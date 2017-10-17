@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "603dc163_8f1c47bb",
+        "filename": "milo/api/buildbot/result.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-17T21:01:22Z",
+      "side": 1,
+      "message": "use stringer maybe?",
+      "revId": "3d4926529e73516b86c075de05eb1bfcb173f071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40ff6a3b_930af98b",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-17T21:01:22Z",
+      "side": 1,
+      "message": "Technically, the full build information is also present in the master json.  Ensure that no downstream clients use this.",
+      "revId": "3d4926529e73516b86c075de05eb1bfcb173f071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
