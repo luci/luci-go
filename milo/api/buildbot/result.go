@@ -36,6 +36,28 @@ const (
 	resultEnd
 )
 
+// String converts r into a string.
+func (r Result) String() string {
+	switch r {
+	case NoResult:
+		return "NoResult"
+	case Success:
+		return "Success"
+	case Warning:
+		return "Warning"
+	case Failure:
+		return "Failure"
+	case Skipped:
+		return "Skipped"
+	case Exception:
+		return "Exception"
+	case Retry:
+		return "Retry"
+	default:
+		return fmt.Sprintf("unknown status %d", r)
+	}
+}
+
 // Status converts r into a model.Status.
 func (r Result) Status() model.Status {
 	switch r {
