@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c0f20df9_28021473",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cbfbd54_665efe41",
+      "range": {
+        "startLine": 80,
+        "startChar": 34,
+        "endLine": 80,
+        "endChar": 36
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3c98fdc3_f62bdb13",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4749bb61_c592c670",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c98fdc3_f62bdb13",
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "c0ede1c8_b62eb4e3",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0b96885_81555914",
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49cdcfa2_efad3156",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 1
@@ -70,6 +130,30 @@
       "writtenOn": "2017-10-16T16:34:25Z",
       "side": 1,
       "message": "non-determinism in bs.BuildSset, manifests keys and logs bothers me, but I understand that you want to save ~10 lines here\n\nWDYT\n\n  maybeAdd :\u003d func(k string, f func() (buildbucket.BuildSet, error)) {\n    // loop body\n  } \n\n  maybeAdd(\"GitilesCommit\", \u003cfunc\u003e)\n  maybeAdd(\"GerritChange\", \u003cfunc\u003e)\n\nbesides determinism: does not allocate a map",
+      "range": {
+        "startLine": 134,
+        "startChar": 4,
+        "endLine": 135,
+        "endChar": 51
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e977f103_2a399bd7",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "done a bit differently.",
+      "parentUuid": "49cdcfa2_efad3156",
       "range": {
         "startLine": 134,
         "startChar": 4,
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "17690fa4_37fdf3f8",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2df2e45e_4dbcf7b5",
+      "range": {
+        "startLine": 151,
+        "startChar": 13,
+        "endLine": 151,
+        "endChar": 27
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a018c5da_4438772d",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 1
@@ -116,6 +224,30 @@
       "writtenOn": "2017-10-16T16:34:25Z",
       "side": 1,
       "message": "nit: |\u003d",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d76fc218_9431c3a8",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "wow, I thought that that didn\u0027t work for some reason... maybe just boolean ops don\u0027t work?",
+      "parentUuid": "a018c5da_4438772d",
       "range": {
         "startLine": 170,
         "startChar": 2,
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "e9f53c5d_4795b250",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2586755b_3cd3408c",
+      "range": {
+        "startLine": 188,
+        "startChar": 13,
+        "endLine": 188,
+        "endChar": 27
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e53262d_73248620",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 1
@@ -162,6 +318,30 @@
       "writtenOn": "2017-10-16T16:34:25Z",
       "side": 1,
       "message": "this code got complex for the benefit of doing one Get instead of two in a non-perf critical code.\n\nalso, i think storing buildSummaries is not buildstore\u0027s job\nbuildstore is defined as\n\"Package buildstore implements storage of //milo/api/buildbot/* types.\"\nhttps://godoc.org/go.chromium.org/luci/milo/buildsource/buildbot/buildstore\nbuildSummary is a concept common to buildbot and non-buildbot, so I think putting buildSummary is the responsibility of SaveBuilder\u0027s caller. Looking at this transactional code, I see no logic that would prevent that (except, it should happen in the same transaction).\n\nConsider:\n- SaveBuilder: panic if called not in a transaction (datastore.CurrentTransaction)\n- SaveBuilder: return build key\n- SaveBuilder callsite: start a new transaction, call SaveBuild, save buildSummary",
+      "range": {
+        "startLine": 206,
+        "startChar": 3,
+        "endLine": 208,
+        "endChar": 80
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29c51cfc_c4b5f564",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "Discussed offline, but going to keep this here for now. The BuildSummary can (should) be thought of as a specialized index on all build objects inside of milo (regardless of underlying implementation). Keeping that index up to date makes sense for this package:\n  * summarization is a pure function of the build\n  * saving a build without updating the summary would be a bug (e.g. external summarization, external transaction)",
+      "parentUuid": "6e53262d_73248620",
       "range": {
         "startLine": 206,
         "startChar": 3,
@@ -197,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "7fa28417_95294ace",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "762c1a96_71d8defa",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 17
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bbdf5c9f_8620d3c4",
         "filename": "milo/common/model/build_summary.go",
         "patchSetId": 1
@@ -208,6 +412,30 @@
       "writtenOn": "2017-10-16T16:34:25Z",
       "side": 1,
       "message": "i am not sure it is right. what if builderID was malformed?\ncommon.GetAllConsoles would know if it is transient or not. I think the returned err should already marked as transient if it is indeed such",
+      "range": {
+        "startLine": 177,
+        "startChar": 64,
+        "endLine": 177,
+        "endChar": 77
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d7e0a9d_7be1dd54",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T22:36:37Z",
+      "side": 1,
+      "message": "this was copy+paste from before; moved the tag to GetAllConsoles. There\u0027s no way to tell between:\n  * BuilderID is malformed\n  * BuilderID just isn\u0027t in a console definition yet\n\nWe assume the second case is most common.",
+      "parentUuid": "bbdf5c9f_8620d3c4",
       "range": {
         "startLine": 177,
         "startChar": 64,
