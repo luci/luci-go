@@ -22,6 +22,30 @@
       "revId": "1fc67aff125aa8d204f678871def8a11ccd3ad5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cde958c5_a2c85d38",
+        "filename": "logdog/server/bundleServicesClient/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-17T03:59:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9036663b_a7425e1d",
+      "range": {
+        "startLine": 174,
+        "startChar": 14,
+        "endLine": 174,
+        "endChar": 19
+      },
+      "revId": "1fc67aff125aa8d204f678871def8a11ccd3ad5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
