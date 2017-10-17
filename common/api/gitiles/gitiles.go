@@ -33,6 +33,20 @@ import (
 // token for Gitiles RPCs.
 const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
 
+// HTTPStatusTag is applied to errors returned by thin wrappers of Gitiles
+// RPCs.
+var HTTPStatusTagKey = errors.NewTagKey("HTTP Status code")
+
+// HTTPStatus returns the HTTP status associated with the error
+// or 0 if unavailable.
+func HTTPStatus(err error) int {
+	val, ok := errors.TagValueIn(HTTPStatusTagKey, err)
+	if !ok {
+		return 0
+	}
+	return val.(int)
+}
+
 // Time is a wrapper around time.Time for clean JSON interoperation with
 // Gitiles time encoded as a string. This allows for the time to be
 // parsed from a Gitiles Commit JSON object at decode time, which makes
@@ -421,7 +435,9 @@ func (c *Client) get(ctx context.Context, repoURL, subPath string, result interf
 	}
 	defer r.Body.Close()
 	if r.StatusCode != 200 {
-		err = fmt.Errorf("failed to fetch %s, status code %d", URL, r.StatusCode)
+		err = errors.Reason("failed to fetch %s, status code %d", URL, r.StatusCode).
+			Tag(errors.TagValue{Key: HTTPStatusTagKey, Value: r.StatusCode}).
+			Err()
 		if r.StatusCode >= 500 {
 			// TODO(tandrii): consider retrying.
 			err = transient.Tag.Apply(err)
