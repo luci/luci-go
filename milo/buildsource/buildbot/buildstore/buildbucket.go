@@ -39,9 +39,9 @@ import (
 // If details is false, steps, text and properties are not guaranteed to be
 // loaded.
 //
-// Does not populate OSFamily, OSVersion, Master, Blame or SourceStamp.Changes
+// Does not populate OSFamily, OSVersion, Blame or SourceStamp.Changes
 // fields.
-func buildFromBuildbucket(c context.Context, msg *bbapi.ApiCommonBuildMessage, details bool) (*buildbot.Build, error) {
+func buildFromBuildbucket(c context.Context, master string, msg *bbapi.ApiCommonBuildMessage, fetchAnnotations bool) (*buildbot.Build, error) {
 	var b buildbucket.Build
 	if err := b.ParseMessage(msg); err != nil {
 		return nil, err
@@ -53,6 +53,7 @@ func buildFromBuildbucket(c context.Context, msg *bbapi.ApiCommonBuildMessage, d
 
 	res := &buildbot.Build{
 		Emulated:    true,
+		Master:      master,
 		Buildername: b.Builder,
 		Number:      num,
 		Results:     statusResult(b.Status),
@@ -78,7 +79,7 @@ func buildFromBuildbucket(c context.Context, msg *bbapi.ApiCommonBuildMessage, d
 		}
 	}
 
-	if details && b.Status != buildbucket.StatusScheduled {
+	if fetchAnnotations && b.Status != buildbucket.StatusScheduled {
 		addr, err := logLocation(&b)
 		if err != nil {
 			return nil, err
@@ -138,7 +139,6 @@ func buildbucketClient(c context.Context) (*bbapi.Service, error) {
 
 	client.BasePath = fmt.Sprintf("https://%s/api/buildbucket/v1/", settings.Buildbucket.Host)
 	return client, nil
-
 }
 
 func buildNumber(b *buildbucket.Build) (int, error) {
