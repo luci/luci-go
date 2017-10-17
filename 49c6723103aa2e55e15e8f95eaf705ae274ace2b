@@ -22,6 +22,30 @@
       "revId": "49c6723103aa2e55e15e8f95eaf705ae274ace2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6e61e2d3_6eaa2237",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-17T18:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "983e602a_0258cac0",
+      "range": {
+        "startLine": 143,
+        "startChar": 1,
+        "endLine": 143,
+        "endChar": 4
+      },
+      "revId": "49c6723103aa2e55e15e8f95eaf705ae274ace2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
