@@ -94,13 +94,15 @@ type Commit struct {
 
 // ValidateRepoURL validates gitiles repository URL for use in this package.
 func ValidateRepoURL(repoURL string) error {
-	_, err := NormalizeRepoURL(repoURL)
+	_, err := NormalizeRepoURL(repoURL, false)
 	return err
 }
 
-// NormalizeRepoURL returns canonical for gitiles URL of the repo including "a/" path prefix.
+// NormalizeRepoURL returns canonical for gitiles URL of the repo.
 // error is returned if validation fails.
-func NormalizeRepoURL(repoURL string) (string, error) {
+//
+// If auth is true, the returned URL has "/a/" path prefix.
+func NormalizeRepoURL(repoURL string, auth bool) (string, error) {
 	u, err := url.Parse(repoURL)
 	if err != nil {
 		return "", err
@@ -120,8 +122,10 @@ func NormalizeRepoURL(repoURL string) (string, error) {
 	if !strings.HasPrefix(u.Path, "/") {
 		u.Path = "/" + u.Path
 	}
-	if !strings.HasPrefix(u.Path, "/a/") {
-		// Use the authenticated URL
+	if strings.HasPrefix(u.Path, "/a/") {
+		u.Path = u.Path[2:]
+	}
+	if auth {
 		u.Path = "/a" + u.Path
 	}
 
@@ -133,6 +137,10 @@ func NormalizeRepoURL(repoURL string) (string, error) {
 // Client is Gitiles client.
 type Client struct {
 	Client *http.Client
+	// Auth, if true, indicates that the HTTP client sends authenticated
+	// requests. If so, the requests to Gitiles will include "/a/" URL path
+	// prefix.
+	Auth bool
 
 	// Used for testing only.
 	mockRepoURL string
@@ -234,11 +242,6 @@ func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, nextCursor
 	// the log contains fewer than this, in which case, give me all.
 	if lo.limit < 1 {
 		return nil, fmt.Errorf("internal gitiles package bug: lowerLimit must be at least 1, but %d provided", lo.limit)
-	}
-
-	repoURL, err := NormalizeRepoURL(repoURL)
-	if err != nil {
-		return nil, err
 	}
 
 	values := url.Values{"format": []string{"JSON"}}
@@ -350,10 +353,6 @@ func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string, opts ..
 // refPrefix would not be present in results because current user isn't granted
 // read permission on them.
 func (c *Client) Refs(ctx context.Context, repoURL, refsPath string) (map[string]string, error) {
-	repoURL, err := NormalizeRepoURL(repoURL)
-	if err != nil {
-		return nil, err
-	}
 	if refsPath != "refs" && !strings.HasPrefix(refsPath, "refs/") {
 		return nil, fmt.Errorf("refsPath must start with \"refs\": %q", refsPath)
 	}
@@ -402,6 +401,11 @@ type logResponse struct {
 }
 
 func (c *Client) get(ctx context.Context, repoURL, subPath string, result interface{}) error {
+	repoURL, err := NormalizeRepoURL(repoURL, c.Auth)
+	if err != nil {
+		return err
+	}
+
 	URL := fmt.Sprintf("%s/%s", repoURL, subPath)
 	if c.mockRepoURL != "" {
 		URL = fmt.Sprintf("%s/%s", c.mockRepoURL, subPath)
