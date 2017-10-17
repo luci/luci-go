@@ -24,6 +24,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 
 	"golang.org/x/net/context"
@@ -169,4 +170,27 @@ func ParseVersionOutput(output string) (Version, error) {
 		return v, err
 	}
 	return v, nil
+}
+
+// IsolateEnvironment mutates e to remove any environmental influence over
+// the Python interpreter.
+//
+// If e is nil, no operation will be performed.
+func IsolateEnvironment(e *environ.Env) {
+	if e == nil {
+		return
+	}
+
+	// Remove PYTHONPATH and PYTHONHOME from the environment. This prevents them
+	// from being propagated to delegate processes (e.g., "vpython" script calls
+	// Python script, the "vpython" one uses the Interpreter's IsolatedCommand
+	// to isolate the initial run, but the delegate command blindly uses the
+	// environment that it's provided).
+	e.Remove("PYTHONPATH")
+	e.Remove("PYTHONHOME")
+
+	// set PYTHONNOUSERSITE, which prevents a user's "site" configuration
+	// from influencing Python startup. The system "site" should already be
+	// ignored b/c we're using the VirtualEnv Python interpreter.
+	e.Set("PYTHONNOUSERSITE", "1")
 }
