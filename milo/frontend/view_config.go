@@ -53,7 +53,13 @@ func UpdateConfigHandler(ctx *router.Context) {
 	c = appengine.WithContext(c, ctx.Request)
 	projErr := common.UpdateConsoles(c)
 	if projErr != nil {
-		logging.WithError(projErr).Errorf(c, "project update handler encountered error")
+		if merr, ok := projErr.(errors.MultiError); ok {
+			for _, ierr := range merr {
+				logging.WithError(ierr).Errorf(c, "project update handler encountered error")
+			}
+		} else {
+			logging.WithError(projErr).Errorf(c, "project update handler encountered error")
+		}
 	}
 	settings, servErr := common.UpdateServiceConfig(c)
 	if servErr != nil {
