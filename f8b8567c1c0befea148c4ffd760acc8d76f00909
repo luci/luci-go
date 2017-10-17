@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "15b85d71_12e5fd03",
+        "filename": "vpython/python/interpreter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T23:25:48Z",
+      "side": 1,
+      "message": "do we have to worry about case sensitivity?",
+      "range": {
+        "startLine": 189,
+        "startChar": 11,
+        "endLine": 189,
+        "endChar": 21
+      },
+      "revId": "f8b8567c1c0befea148c4ffd760acc8d76f00909",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cd171d0_241f3fe3",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T23:25:48Z",
+      "side": 1,
+      "message": "maybe TryLock? LockNoWait? NonBlocking sounds like it will operate asynchronously from the current program, which isn\u0027t true.",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 12
+      },
+      "revId": "f8b8567c1c0befea148c4ffd760acc8d76f00909",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ff33d4e_9dc07224",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-17T23:25:48Z",
+      "side": 1,
+      "message": "is it NonBlocking (or whatever you pick instead?)",
+      "range": {
+        "startLine": 104,
+        "startChar": 72,
+        "endLine": 104,
+        "endChar": 80
+      },
+      "revId": "f8b8567c1c0befea148c4ffd760acc8d76f00909",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
