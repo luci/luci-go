@@ -34,6 +34,7 @@ It has these top-level messages:
 	DelegationRule
 	ServiceAccountsPermissions
 	ServiceAccountRule
+	ServiceAccountRuleDefaults
 */
 package admin
 

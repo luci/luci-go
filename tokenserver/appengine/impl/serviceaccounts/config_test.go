@@ -31,6 +31,10 @@ import (
 )
 
 const fakeConfig = `
+defaults {
+	max_grant_validity_duration: 72000
+	allowed_scope: "https://www.googleapis.com/default"
+}
 rules {
 	name: "rule 1"
 	owner: "developer@example.com"
@@ -63,6 +67,7 @@ func TestRules(t *testing.T) {
 		scopes := rule.AllowedScopes.ToSlice()
 		sort.Strings(scopes)
 		So(scopes, ShouldResemble, []string{
+			"https://www.googleapis.com/default",
 			"https://www.googleapis.com/scope1",
 			"https://www.googleapis.com/scope2",
 		})
@@ -82,7 +87,7 @@ func TestRules(t *testing.T) {
 			"group:proxy-group",
 			"user:proxy@example.com",
 		})
-		So(rule.Rule.MaxGrantValidityDuration, ShouldEqual, 24*3600)
+		So(rule.Rule.MaxGrantValidityDuration, ShouldEqual, 72000)
 
 		So(cfg.Rule("def@robots.com").Rule.Name, ShouldEqual, "rule 1")
 		So(cfg.Rule("xyz@robots.com").Rule.Name, ShouldEqual, "rule 2")

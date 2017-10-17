@@ -35,6 +35,10 @@ func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
 		return
 	}
 
+	if cfg.Defaults != nil {
+		validateDefaults("defaults", cfg.Defaults, ctx)
+	}
+
 	names := stringset.New(0)
 	accounts := map[string]string{} // service account -> rule name where its defined
 	for i, rule := range cfg.Rules {
@@ -61,6 +65,14 @@ func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
 	}
 }
 
+// validateDefaults checks ServiceAccountRuleDefaults proto.
+func validateDefaults(title string, d *admin.ServiceAccountRuleDefaults, ctx *validation.Context) {
+	ctx.Enter(title)
+	defer ctx.Exit()
+	validateScopes("allowed_scope", d.AllowedScope, ctx)
+	validateMaxGrantValidityDuration(d.MaxGrantValidityDuration, ctx)
+}
+
 // validateRule checks single ServiceAccountRule proto.
 func validateRule(title string, r *admin.ServiceAccountRule, ctx *validation.Context) {
 	ctx.Enter(title)
@@ -76,15 +88,7 @@ func validateRule(title string, r *admin.ServiceAccountRule, ctx *validation.Con
 	validateScopes("allowed_scope", r.AllowedScope, ctx)
 	validateIdSet("end_user", r.EndUser, ctx)
 	validateIdSet("proxy", r.Proxy, ctx)
-
-	if r.MaxGrantValidityDuration != 0 {
-		switch {
-		case r.MaxGrantValidityDuration < 0:
-			ctx.Error(`"max_grant_validity_duration" must be positive`)
-		case r.MaxGrantValidityDuration > maxAllowedMaxGrantValidityDuration:
-			ctx.Error(`"max_grant_validity_duration" must not exceed %d`, maxAllowedMaxGrantValidityDuration)
-		}
-	}
+	validateMaxGrantValidityDuration(r.MaxGrantValidityDuration, ctx)
 }
 
 func validateEmails(field string, emails []string, ctx *validation.Context) {
@@ -119,5 +123,16 @@ func validateIdSet(field string, ids []string, ctx *validation.Context) {
 		} else if _, err := identity.MakeIdentity(entry); err != nil {
 			ctx.Error("bad identity %q - %s", entry, err)
 		}
+	}
+}
+
+func validateMaxGrantValidityDuration(dur int64, ctx *validation.Context) {
+	switch {
+	case dur == 0:
+		// valid
+	case dur < 0:
+		ctx.Error(`"max_grant_validity_duration" must be positive`)
+	case dur > maxAllowedMaxGrantValidityDuration:
+		ctx.Error(`"max_grant_validity_duration" must not exceed %d`, maxAllowedMaxGrantValidityDuration)
 	}
 }

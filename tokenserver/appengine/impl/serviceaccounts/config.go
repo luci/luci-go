@@ -139,14 +139,29 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 		return nil, fmt.Errorf("wrong type of %s - %T", serviceAccountsCfg, cfg[serviceAccountsCfg])
 	}
 
+	// Grab defaults from the config or construct on the fly.
+	defaults := admin.ServiceAccountRuleDefaults{}
+	if parsed.Defaults != nil {
+		defaults = *parsed.Defaults
+	}
+	if defaults.MaxGrantValidityDuration == 0 {
+		defaults.MaxGrantValidityDuration = defaultMaxGrantValidityDuration
+	}
+
 	// Note: per policy.Policy API the config here was already validated when it
 	// was imported, but we double check core assumptions anyway. This check may
 	// fail if new code (with some new validation rules) uses old configs stored
 	// in the datastore (which were validated by old code). In practice this most
 	// certainly never happens.
+	v := validation.Context{}
+	validateDefaults("defaults", &defaults, &v)
+	if err := v.Finalize(); err != nil {
+		return nil, err
+	}
+
 	rules := map[string]*Rule{}
 	for _, ruleProto := range parsed.Rules {
-		r, err := makeRule(ruleProto, revision)
+		r, err := makeRule(ruleProto, &defaults, revision)
 		if err != nil {
 			return nil, err
 		}
@@ -223,15 +238,18 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 // makeRule converts ServiceAccountRule into queriable Rule.
 //
 // Mutates 'ruleProto' in-place filling in defaults.
-func makeRule(ruleProto *admin.ServiceAccountRule, rev string) (*Rule, error) {
+func makeRule(ruleProto *admin.ServiceAccountRule, defaults *admin.ServiceAccountRuleDefaults, rev string) (*Rule, error) {
 	v := validation.Context{}
 	validateRule(ruleProto.Name, ruleProto, &v)
 	if err := v.Finalize(); err != nil {
 		return nil, err
 	}
 
-	allowedScopes := stringset.New(len(ruleProto.AllowedScope))
+	allowedScopes := stringset.New(len(ruleProto.AllowedScope) + len(defaults.AllowedScope))
 	for _, scope := range ruleProto.AllowedScope {
+		allowedScopes.Add(scope)
+	}
+	for _, scope := range defaults.AllowedScope {
 		allowedScopes.Add(scope)
 	}
 
@@ -246,7 +264,7 @@ func makeRule(ruleProto *admin.ServiceAccountRule, rev string) (*Rule, error) {
 	}
 
 	if ruleProto.MaxGrantValidityDuration == 0 {
-		ruleProto.MaxGrantValidityDuration = defaultMaxGrantValidityDuration
+		ruleProto.MaxGrantValidityDuration = defaults.MaxGrantValidityDuration
 	}
 
 	return &Rule{
