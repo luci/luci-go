@@ -16,6 +16,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -24,10 +25,50 @@ import (
 
 	"go.chromium.org/luci/client/authcli"
 	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging/gologger"
 )
+
+const (
+	maskAlive      TaskState = 1
+	StateBotDied             = 1 << 1
+	StateCancelled           = 1 << 2
+	StateCompleted           = 1 << 3
+	StateExpired             = 1 << 4
+	StatePending             = 1<<5 | maskAlive
+	StateRunning             = 1<<6 | maskAlive
+	StateTimedOut            = 1 << 7
+	StateUnknown             = 1 << 31
+)
+
+type TaskState int64
+
+func ParseTaskState(state string) (TaskState, error) {
+	switch state {
+	case "BOT_DIED":
+		return StateBotDied, nil
+	case "CANCELED":
+		return StateCancelled, nil
+	case "COMPLETED":
+		return StateCompleted, nil
+	case "EXPIRED":
+		return StateExpired, nil
+	case "PENDING":
+		return StatePending, nil
+	case "RUNNING":
+		return StateRunning, nil
+	case "TIMED_OUT":
+		return StateTimedOut, nil
+	default:
+		return StateUnknown, fmt.Errorf("unrecognized state %q", state)
+	}
+}
+
+func (t TaskState) Alive() bool {
+	return (t & maskAlive) == 1
+}
 
 type commonFlags struct {
 	subcommands.CommandRunBase
@@ -67,4 +108,20 @@ func (c *commonFlags) createAuthClient() (*http.Client, error) {
 	// for IP whitelisted bots: they have NO credentials to send.
 	ctx := gologger.StdConfig.Use(context.Background())
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
+}
+
+func printError(a subcommands.Application, err error) {
+	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+}
+
+type jsonDump struct {
+	BaseTaskName string                              `json:"base_task_name"`
+	Tasks        []jsonTask                          `json:"tasks"`
+	Request      swarming.SwarmingRpcsNewTaskRequest `json:"request"`
+}
+
+type jsonTask struct {
+	ShardIndex int64  `json:"shard_index"`
+	TaskID     string `json:"task_id"`
+	ViewURL    string `json:"view_url"`
 }
