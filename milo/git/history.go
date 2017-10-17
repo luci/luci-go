@@ -159,7 +159,7 @@ func GetHistory(c context.Context, url, commitish string, limit int) (*milo.Cons
 		if err != nil {
 			return errors.Annotate(err, "getting RPC Transport").Err()
 		}
-		g := &gitiles.Client{Client: &http.Client{Transport: t}}
+		g := &gitiles.Client{Client: &http.Client{Transport: t}, Auth: true}
 		rawEntries, err := g.Log(c, url, commitish, gitiles.Limit(limit))
 		if err != nil {
 			return errors.Annotate(err, "GetHistory").Err()
