@@ -435,17 +435,13 @@ func (n *normalizedTrigger) buildset() string {
 }
 
 func normalizeGitilesTriggerData(in *internal.GitilesTriggerData) (*normalizedTrigger, error) {
-	u, err := gitiles.NormalizeRepoURL(in.Repo)
+	u, err := gitiles.NormalizeRepoURL(in.Repo, false)
 	if err != nil {
 		return nil, err
 	}
 	p, err := url.Parse(u)
 	if err != nil {
 		return nil, err
-	}
-	// Remove '/a/' from path.
-	if !strings.HasPrefix(p.Path, "/a/") {
-		return nil, errors.New("gitiles.NormalizeRepoURL doesn't add '/a' any more.")
 	}
 	p.Path = p.Path[len("/a/"):]
 	return &normalizedTrigger{repo: p, ref: in.Ref, revision: in.Revision}, nil
