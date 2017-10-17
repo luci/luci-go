@@ -59,6 +59,11 @@ func TestValidation(t *testing.T) {
 					proxy: "group:proxy-group"
 					max_grant_validity_duration: 3600
 				}
+
+				defaults {
+					allowed_scope: "https://www.googleapis.com/scope"
+					max_grant_validity_duration: 3600
+				}
 			`,
 		},
 
@@ -160,6 +165,17 @@ func TestValidation(t *testing.T) {
 				}
 			`,
 			Errors: []string{"must be positive", "must not exceed"},
+		},
+
+		// Bad defaults.
+		{
+			Cfg: `
+				defaults {
+					allowed_scope: "not a scope"
+					max_grant_validity_duration: -1
+				}
+			`,
+			Errors: []string{"bad scope", "must be positive"},
 		},
 	}
 

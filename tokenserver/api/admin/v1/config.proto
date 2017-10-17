@@ -173,6 +173,13 @@ message ServiceAccountsPermissions {
   //
   // See ServiceAccountRule comments for more details.
   repeated ServiceAccountRule rules = 1;
+
+  // Defaults specifies some default values applied to all rules, to reduce
+  // duplication.
+  //
+  // See docs for individual fields to figure out how defaults are merged into
+  // the rules.
+  ServiceAccountRuleDefaults defaults = 2;
 }
 
 
@@ -203,6 +210,8 @@ message ServiceAccountRule {
   // Any subset of given scopes is allowed. This field is evaluated in
   // MintOAuthTokenViaGrant RPC handler, right before generating the OAuth
   // token.
+  //
+  // Merged with corresponding list from ServiceAccountRuleDefaults.
   repeated string allowed_scope = 4;
 
   // A set of identities that are allowed to act as the service account (perhaps
@@ -239,6 +248,24 @@ message ServiceAccountRule {
   // produced by MintOAuthTokenViaGrant can always live up to 1h regardless of
   // validity duration of the grant.
   //
-  // Default is 24 hours.
+  // Default is taken from ServiceAccountRuleDefaults or 24 hours if not
+  // specified there.
   int64 max_grant_validity_duration = 7;
+}
+
+
+// ServiceAccountRuleDefaults specifies some default values applied to all
+// service account rules, to reduce duplication.
+message ServiceAccountRuleDefaults {
+  // OAuth scopes we allow to be granted to all generated OAuth tokens.
+  //
+  // Always merged with 'allowed_scope' fields of ServiceAccountRule rule to
+  // get the final list of scopes.
+  repeated string allowed_scope = 1;
+
+  // Default value for corresponding ServiceAccountRule field, if not specified
+  // there.
+  //
+  // Default is 24 hours.
+  int64 max_grant_validity_duration = 2;
 }
