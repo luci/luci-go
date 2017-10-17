@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "983e602a_0258cac0",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-17T01:07:53Z",
+      "side": 1,
+      "message": "s/def/defaults\nFor me, def in the context of proto is about proto\u0027s definition, not defaults. While right hand side explains what `def` is, inside the method makeRule it\u0027s not clear at all :(",
+      "range": {
+        "startLine": 143,
+        "startChar": 1,
+        "endLine": 143,
+        "endChar": 4
+      },
+      "revId": "49c6723103aa2e55e15e8f95eaf705ae274ace2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
