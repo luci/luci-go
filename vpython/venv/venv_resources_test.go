@@ -231,7 +231,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		// that we actually have "setuptools" and "wheel" packages, which are
 		// required for building wheels, and not necessarily present in their
 		// expected forms on all systems.
-		err := With(ctx, cfg, true, func(ctx context.Context, env *Env) error {
+		err := With(ctx, cfg, func(ctx context.Context, env *Env) error {
 			cmd := env.Interpreter().IsolatedCommand(ctx,
 				"setup.py",
 				"--no-user-cfg",
