@@ -344,9 +344,7 @@ type gitilesClient interface {
 }
 
 func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (gitilesClient, error) {
-	httpClient, err := ctl.GetClient(c, time.Minute, auth.WithScopes(
-		"https://www.googleapis.com/auth/gerritcodereview",
-	))
+	httpClient, err := ctl.GetClient(c, time.Minute, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, err
 	}
