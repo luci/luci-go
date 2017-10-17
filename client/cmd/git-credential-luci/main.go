@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/logging/gologger"
 
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -43,10 +44,7 @@ var (
 
 func init() {
 	defaults := chromeinfra.DefaultAuthOptions()
-	defaults.Scopes = []string{
-		"https://www.googleapis.com/auth/gerritcodereview",
-		"https://www.googleapis.com/auth/userinfo.email",
-	}
+	defaults.Scopes = []string{gitiles.OAuthScope, auth.OAuthScopeEmail}
 	flags.RegisterScopesFlag = true
 	flags.Register(flag.CommandLine, defaults)
 	flag.DurationVar(
