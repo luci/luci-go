@@ -166,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "979c2c42_0cca895a",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-17T22:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e977f103_2a399bd7",
+      "range": {
+        "startLine": 134,
+        "startChar": 4,
+        "endLine": 135,
+        "endChar": 51
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2df2e45e_4dbcf7b5",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 1
@@ -257,6 +281,30 @@
       "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32106f4b_9b7474ab",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-17T22:51:18Z",
+      "side": 1,
+      "message": "yeah, go does not like ||\u003d",
+      "parentUuid": "d76fc218_9431c3a8",
+      "range": {
+        "startLine": 170,
+        "startChar": 2,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -445,6 +493,30 @@
       "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f86aded_1edd8f6f",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-17T22:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d7e0a9d_7be1dd54",
+      "range": {
+        "startLine": 177,
+        "startChar": 64,
+        "endLine": 177,
+        "endChar": 77
+      },
+      "revId": "2ab3367ad579e75fb9a52a6d723b692ce0754da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
