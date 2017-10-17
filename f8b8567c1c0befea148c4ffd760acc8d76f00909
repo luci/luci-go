@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a322a006_4b322115",
+        "filename": "vpython/python/interpreter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-17T23:44:43Z",
+      "side": 1,
+      "message": "On case-sensitive systems, the all-caps version is the one that Python uses, so I don\u0027t think so.",
+      "parentUuid": "15b85d71_12e5fd03",
+      "range": {
+        "startLine": 189,
+        "startChar": 11,
+        "endLine": 189,
+        "endChar": 21
+      },
+      "revId": "f8b8567c1c0befea148c4ffd760acc8d76f00909",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6cd171d0_241f3fe3",
         "filename": "vpython/venv/config.go",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "130b8278_a6c87338",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-17T23:44:43Z",
+      "side": 1,
+      "message": "Went with FailIfLocked.",
+      "parentUuid": "6cd171d0_241f3fe3",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 12
+      },
+      "revId": "f8b8567c1c0befea148c4ffd760acc8d76f00909",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ff33d4e_9dc07224",
         "filename": "vpython/venv/venv.go",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "f8b8567c1c0befea148c4ffd760acc8d76f00909",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc68abbc_8d32c7a5",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-17T23:44:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ff33d4e_9dc07224",
+      "range": {
+        "startLine": 104,
+        "startChar": 72,
+        "endLine": 104,
+        "endChar": 80
+      },
+      "revId": "f8b8567c1c0befea148c4ffd760acc8d76f00909",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
