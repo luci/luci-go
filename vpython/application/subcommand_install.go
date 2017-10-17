@@ -54,9 +54,10 @@ func (cr *installCommandRun) Run(app subcommands.Application, args []string, env
 	a := getApplication(c, args)
 	a.opts.EnvConfig.PruneThreshold = 0 // Don't prune on install.
 	a.opts.EnvConfig.OverrideName = cr.name
+	a.opts.EnvConfig.FailIfLocked = true
 
 	return run(c, func(c context.Context) error {
-		err := venv.With(c, a.opts.EnvConfig, false, func(context.Context, *venv.Env) error {
+		err := venv.With(c, a.opts.EnvConfig, func(context.Context, *venv.Env) error {
 			return nil
 		})
 		if err != nil {

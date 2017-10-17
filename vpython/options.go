@@ -65,8 +65,7 @@ type Options struct {
 	// If EnvRoot is empty, WorkDir will be used as the base environment root.
 	WorkDir string
 
-	// Environ is the system environment. It can be used for some default values
-	// if present.
+	// Environ is environment to pass to subprocesses.
 	Environ environ.Env
 }
 
