@@ -648,6 +648,7 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) erro
 	cmd := e.Interpreter().IsolatedCommand(c,
 		"-m", "pip",
 		"install",
+		"--isolated",
 		"--use-wheel",
 		"--compile",
 		"--no-index",
