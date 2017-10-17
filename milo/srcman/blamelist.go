@@ -136,7 +136,7 @@ func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool)
 	if t, err := auth.GetRPCTransport(c, auth.AsSelf); err != nil {
 		logging.WithError(err).Errorf(c, "getting AsSelf transport")
 	} else {
-		selfClient = &gitiles.Client{Client: &http.Client{Transport: t}}
+		selfClient = &gitiles.Client{Client: &http.Client{Transport: t}, Auth: true}
 	}
 
 	if selfClient == nil && noauthClient == nil {

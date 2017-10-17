@@ -355,7 +355,7 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (g
 		logging.Infof(c, "using mockGitilesClient")
 		return m.mockGitilesClient, nil
 	}
-	return &gitiles.Client{Client: httpClient}, nil
+	return &gitiles.Client{Client: httpClient, Auth: true}, nil
 }
 
 func splitRef(s string) (string, string) {

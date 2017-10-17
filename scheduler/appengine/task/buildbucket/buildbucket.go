@@ -430,12 +430,16 @@ type normalizedTrigger struct {
 }
 
 func (n *normalizedTrigger) buildset() string {
-	c := buildbucket.GitilesCommit{Host: n.repo.Host, Project: n.repo.Path, Revision: n.revision}
+	c := buildbucket.GitilesCommit{
+		Host:     n.repo.Host,
+		Project:  strings.TrimPrefix(n.repo.Path, "/"),
+		Revision: n.revision,
+	}
 	return c.String()
 }
 
 func normalizeGitilesTriggerData(in *internal.GitilesTriggerData) (*normalizedTrigger, error) {
-	u, err := gitiles.NormalizeRepoURL(in.Repo)
+	u, err := gitiles.NormalizeRepoURL(in.Repo, false)
 	if err != nil {
 		return nil, err
 	}
@@ -443,10 +447,5 @@ func normalizeGitilesTriggerData(in *internal.GitilesTriggerData) (*normalizedTr
 	if err != nil {
 		return nil, err
 	}
-	// Remove '/a/' from path.
-	if !strings.HasPrefix(p.Path, "/a/") {
-		return nil, errors.New("gitiles.NormalizeRepoURL doesn't add '/a' any more.")
-	}
-	p.Path = p.Path[len("/a/"):]
 	return &normalizedTrigger{repo: p, ref: in.Ref, revision: in.Revision}, nil
 }

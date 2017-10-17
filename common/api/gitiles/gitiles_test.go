@@ -49,7 +49,7 @@ func TestRepoURL(t *testing.T) {
 	Convey("Malformed", t, func() {
 		f := func(arg string) {
 			So(ValidateRepoURL(arg), ShouldNotBeNil)
-			_, err := NormalizeRepoURL(arg)
+			_, err := NormalizeRepoURL(arg, true)
 			So(err, ShouldNotBeNil)
 		}
 
@@ -65,7 +65,7 @@ func TestRepoURL(t *testing.T) {
 	Convey("OK", t, func() {
 		f := func(arg, exp string) {
 			So(ValidateRepoURL(arg), ShouldBeNil)
-			act, err := NormalizeRepoURL(arg)
+			act, err := NormalizeRepoURL(arg, true)
 			So(err, ShouldBeNil)
 			So(act, ShouldEqual, exp)
 		}
@@ -220,8 +220,7 @@ func TestRefs(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Refs Bad RefsPath", t, func() {
-
-		c := Client{nil, "https://a.googlesource.com/a/repo", 0}
+		c := Client{mockRepoURL: "https://a.googlesource.com/a/repo"}
 		_, err := c.Refs(context.Background(), "https://c.googlesource.com/repo", "bad")
 		So(err, ShouldNotBeNil)
 	})
