@@ -74,19 +74,17 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 
 	// Load the BuildBot build from storage.
 	build, err := buildstore.GetBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber))
-	if err != nil {
-		switch common.ErrorTag.In(err) {
-		case common.CodeNotFound:
-			return nil, grpcutil.Errf(codes.NotFound, "Build #%d for master %q, builder %q was not found",
-				req.BuildNumber, req.MasterName, req.BuilderName)
+	switch code := common.ErrorTag.In(err); {
+	case code == common.CodeUnauthorized:
+		return nil, grpcutil.Unauthenticated
 
-		case common.CodeUnauthorized:
-			return nil, grpcutil.Unauthenticated
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Failed to load build info.")
+		return nil, grpcutil.Internal
 
-		default:
-			logging.WithError(err).Errorf(c, "Failed to load build info.")
-			return nil, grpcutil.Internal
-		}
+	case build == nil:
+		return nil, grpcutil.Errf(codes.NotFound, "Build #%d for master %q, builder %q was not found",
+			req.BuildNumber, req.MasterName, req.BuilderName)
 	}
 
 	// Create a new LogDog client.

@@ -76,10 +76,10 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 
 	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum))
 	switch {
-	case common.ErrorTag.In(err) == common.CodeNotFound:
-		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
+	case b == nil:
+		return nil, errNotFoundGRPC
 	}
 
 	if req.ExcludeDeprecated {
