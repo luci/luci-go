@@ -24,7 +24,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -147,21 +145,7 @@ func getOSInfo(c context.Context, b *buildbot.Build, m *buildstore.Master) (
 	return
 }
 
-// saveBuildSummary summerizes a build into a model.BuildSummary and then saves it.
-func saveBuildSummary(c context.Context, b *buildbot.Build) error {
-	resp := renderBuild(c, b)
-	bs := model.BuildSummary{
-		BuildKey:  buildstore.BuildKey(c, b),
-		SelfLink:  fmt.Sprintf("/buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
-		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
-	}
-	if err := resp.SummarizeTo(c, &bs); err != nil {
-		return err
-	}
-	return datastore.Put(c, &bs)
-}
-
-func doMaster(c context.Context, master *buildbot.Master, internal bool) int {
+func saveMaster(c context.Context, master *buildbot.Master, internal bool) int {
 	// Store the master in the storage.
 	expireCallback := func(b *buildbot.Build, reason string) {
 		logging.Infof(c, "Expiring %s/%s/%d due to %s",
@@ -298,11 +282,8 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 			return http.StatusInternalServerError
 		}
 
-		if err = saveBuildSummary(c, build); err != nil {
-			logging.WithError(err).Errorf(c, "could not save build summary into datastore")
-			return http.StatusInternalServerError
-		}
-
+		// TODO(iannucci): make these actions match the metric for buildbucket
+		//   builds.
 		status := "New"
 		if replaced {
 			status = "Replaced"
@@ -311,7 +292,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 			c, 1, false, build.Master, build.Buildername, build.Finished, status)
 	}
 	if master != nil {
-		code := doMaster(c, master, internal)
+		code := saveMaster(c, master, internal)
 		if code != 0 {
 			return code
 		}

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/caching"
@@ -403,7 +404,7 @@ func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
 	}
 	con := []*Console{}
 	err := datastore.GetAll(c, q, &con)
-	return con, err
+	return con, transient.Tag.Apply(err)
 }
 
 // GetProjectConsoles returns all consoles for the given project.

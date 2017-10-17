@@ -86,7 +86,7 @@ func TestPubSub(t *testing.T) {
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 		c, _ = testclock.UseTime(c, fakeTime)
-		c = testconfig.WithCommonClient(c, memcfg.New(bbAclConfigs))
+		c = testconfig.WithCommonClient(c, memcfg.New(bbACLConfigs))
 		c = auth.WithState(c, &authtest.FakeState{
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
@@ -433,5 +433,5 @@ func TestPubSub(t *testing.T) {
 }
 
 func unixTime(sec int64) buildbot.Time {
-	return buildbot.Time{time.Unix(sec, 0).UTC()}
+	return buildbot.Time{Time: time.Unix(sec, 0).UTC()}
 }

@@ -16,11 +16,19 @@ package model
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/cmpbin"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/common"
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like
@@ -144,4 +152,42 @@ func NewPartialManifestKey(project, console, manifest, repoURL string) PartialMa
 	cmpbin.WriteString(&buf, manifest)
 	cmpbin.WriteString(&buf, repoURL)
 	return PartialManifestKey(buf.Bytes())
+}
+
+// AddManifestKeysFromBuildSet takes a buildbucket.BuildSet, and then
+// potentially adds one or more ManifestKey's to the BuildSummary for it.
+//
+// This assumes that bs.BuilderID has already been populated. Otherwise this
+// will return an error.
+func (bs *BuildSummary) AddManifestKeysFromBuildSet(c context.Context, bset buildbucket.BuildSet) error {
+	if bs.BuilderID == "" {
+		return errors.New("BuilderID is empty")
+	}
+
+	if commit, ok := bset.(*buildbucket.GitilesCommit); ok {
+		revision, err := hex.DecodeString(commit.Revision)
+		switch {
+		case err != nil:
+			logging.WithError(err).Warningf(c, "failed to decode revision: %v", commit.Revision)
+
+		case len(revision) != sha1.Size:
+			logging.Warningf(c, "wrong revision size %d v %d: %v", len(revision), sha1.Size, commit.Revision)
+
+		default:
+			consoles, err := common.GetAllConsoles(c, bs.BuilderID)
+			if err != nil {
+				return errors.Annotate(err, "getting consoles for %q", bs.BuilderID).Err()
+			}
+			// HACK(iannucci): Until we have real manifest support, console definitions
+			// will specify their manifest as "REVISION", and we'll do lookups with null
+			// URL fields.
+			for _, con := range consoles {
+				bs.AddManifestKey(con.GetProjectName(), con.ID, "REVISION", "", revision)
+
+				bs.AddManifestKey(con.GetProjectName(), con.ID, "BUILD_SET/GitilesCommit",
+					commit.RepoURL(), revision)
+			}
+		}
+	}
+	return nil
 }

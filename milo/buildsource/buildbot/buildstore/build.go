@@ -15,22 +15,28 @@
 package buildstore
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // ErrTooBig indicates that entity was not saved because it was too large to store.
-var ErrTooBig = errors.New("entity was not saved because it was too large to store.")
+var ErrTooBig = errors.New("entity was not saved because it was too large to store")
 
 // maxDataSize is maximum number of bytes for "data" field in build or master
 // entities.
@@ -59,35 +65,158 @@ func GetBuild(c context.Context, master, builder string, number int) (*buildbot.
 // anymore.
 var ErrImportRejected = errors.New("import rejected")
 
+var errMissingProperties = errors.New("missing required properties")
+
+// attachRevisionInfo attaches a buildbucket-style BuildSet, and sets one or
+// more ManifestKeys on this build summary.
+func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSummary) error {
+	funcs := []struct {
+		Name string
+		CB   func() (buildbucket.BuildSet, error)
+	}{
+		{"GitilesCommit", func() (buildbucket.BuildSet, error) {
+			repoI, revI := b.PropertyValue("repository"), b.PropertyValue("revision")
+			repo, _ := repoI.(string)
+			rev, _ := revI.(string)
+			revBytes, _ := hex.DecodeString(rev)
+
+			if repo == "" || len(revBytes) != sha1.Size {
+				return nil, errMissingProperties
+			}
+
+			u, err := url.Parse(repo)
+			if err != nil {
+				return nil, errors.Annotate(err, "bad url").Err()
+			}
+
+			if !strings.HasSuffix(u.Host, ".googlesource.com") {
+				return nil, errors.Reason("unknown host: %q", u.Host).Err()
+			}
+
+			if strings.Contains(u.Path, "+") {
+				return nil, errors.Reason("path has '+': %q", u.Path).Err()
+			}
+
+			return &buildbucket.GitilesCommit{
+				Project:  strings.TrimSuffix(u.Path, ".git"),
+				Host:     u.Host,
+				Revision: rev,
+			}, nil
+		}},
+
+		{"GerritChange", func() (buildbucket.BuildSet, error) {
+			pgu, _ := b.PropertyValue("patch_gerrit_url").(string)
+			pi, _ := b.PropertyValue("patch_issue").(float64)
+			ps, _ := b.PropertyValue("patch_set").(float64)
+
+			if pgu == "" || pi == 0 || ps == 0 {
+				return nil, errMissingProperties
+			}
+
+			u, err := url.Parse(pgu)
+			if err != nil {
+				return nil, errors.Annotate(err, "parsing url").Err()
+			}
+
+			if !strings.HasSuffix(u.Host, ".googlesource.com") {
+				return nil, errors.Reason("unknown host: %q", u.Host).Err()
+			}
+
+			return &buildbucket.GerritChange{
+				Host:     u.Host,
+				Change:   int64(pi),
+				PatchSet: int(ps),
+			}, nil
+		}},
+	}
+
+	for _, f := range funcs {
+		if bset, err := f.CB(); err == nil {
+			bs.BuildSet = append(bs.BuildSet, bset.String())
+			if err := bs.AddManifestKeysFromBuildSet(c, bset); err != nil {
+				return err
+			}
+			logging.Infof(c, "applied %s: %q", f.Name, bset)
+		} else if err != errMissingProperties {
+			logging.WithError(err).Warningf(c, "failed to apply %s", f.Name)
+		}
+	}
+
+	return nil
+}
+
+// summarizeBuild creates a build summary from the buildbot build.
+func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, error) {
+	bs := &model.BuildSummary{
+		BuildKey:  datastore.KeyForObj(c, (*buildEntity)(b)),
+		SelfLink:  fmt.Sprintf("/buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
+		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
+	}
+
+	bs.Summary.Start = b.Times.Start.Time
+	bs.Summary.End = b.Times.Finish.Time
+	bs.Summary.Status = b.Status()
+
+	// Populates BuildSet and ManifestKey
+	if err := attachRevisionInfo(c, b, bs); err != nil {
+		return nil, err
+	}
+
+	bs.AnnotationURL, _ = b.PropertyValue("log_location").(string)
+
+	// we use the number of steps as the top bits, and the status (Finished
+	// > other) as the low bits as a very dumb version number.
+	bs.Version = int64(len(b.Steps)) << 1
+	if b.Finished {
+		bs.Version |= 1
+	}
+
+	return bs, nil
+}
+
 // SaveBuild persists the build in the storage.
+//
+// This will also update the model.BuildSummary.
 func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) {
+	bs, err := summarizeBuild(c, b)
+	if err != nil {
+		err = errors.Annotate(err, "summarizing build").Err()
+		return
+	}
+
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		existingBS := &model.BuildSummary{
+			BuildKey: bs.BuildKey,
+		}
 		existing := &buildEntity{
 			Master:      b.Master,
 			Buildername: b.Buildername,
 			Number:      b.Number,
 		}
-		switch err := datastore.Get(c, existing); {
-		case err == datastore.ErrNoSuchEntity:
-		case err != nil:
-			return err
-		case existing.Finished && b.Finished:
-			return nil // idempotency
-		case existing.Finished:
-			return ErrImportRejected
-		default:
+
+		if err := datastore.Get(c, existing, existingBS); err == nil {
+			// they both exist
 			replaced = true
+
+			if bs.Version < existingBS.Version {
+				return ErrImportRejected
+			} else if bs.Version == existingBS.Version {
+				return nil // idempotency
+			}
+		} else {
+			me := err.(errors.MultiError)
+			// one of the errors was NSE; bail.
+			if me[0] != datastore.ErrNoSuchEntity || me[1] != datastore.ErrNoSuchEntity {
+				return err
+			}
+
+			// One or the other was NES; don't care, just record both entries to get
+			// up to date.
 		}
 
-		return datastore.Put(c, (*buildEntity)(b))
+		return datastore.Put(c, (*buildEntity)(b), bs)
 	}, nil)
 	return
-}
-
-// BuildKey returns a key that identifies the build.
-// An entity with that key does not necessarily exist.
-func BuildKey(c context.Context, b *buildbot.Build) *datastore.Key {
-	return datastore.KeyForObj(c, (*buildEntity)(b))
 }
 
 // buildEntity is a datstore entity that stores buildbot.Build in
@@ -275,7 +404,7 @@ func promoteLogDogLinks(s *buildbot.Step, isInitialStep bool, linkMap map[string
 
 		result := make([]buildbot.Log, len(aliases))
 		for i, alias := range aliases {
-			log := buildbot.Log{alias.Text, alias.URL}
+			log := buildbot.Log{Name: alias.Text, URL: alias.URL}
 
 			// Any link named "logdog" (Annotee cosmetic implementation detail) will
 			// inherit the name of the original log.
@@ -309,7 +438,7 @@ func promoteLogDogLinks(s *buildbot.Step, isInitialStep bool, linkMap map[string
 	// Update step URLs.
 	newURLs := make(map[string]string, len(s.Urls))
 	for label, link := range s.Urls {
-		urlLinks := maybePromoteAliases(buildbot.Log{label, link}, false)
+		urlLinks := maybePromoteAliases(buildbot.Log{Name: label, URL: link}, false)
 		if len(urlLinks) > 0 {
 			// Use the last URL link, since our URL map can only tolerate one link.
 			// The expected case here is that len(urlLinks) == 1, though, but it's
