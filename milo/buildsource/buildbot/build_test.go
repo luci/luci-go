@@ -63,14 +63,14 @@ func TestBuild(t *testing.T) {
 
 	if *generate {
 		for _, tc := range TestCases {
-			fmt.Printf("Generating expectations for %s/%s\n", tc.Builder, tc.Build)
+			fmt.Printf("Generating expectations for %s/%d\n", tc.Builder, tc.Build)
 			build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
 			if err != nil {
-				panic(fmt.Errorf("Could not run build() for %s/%s: %s", tc.Builder, tc.Build, err))
+				panic(fmt.Errorf("Could not run build() for %s/%d: %s", tc.Builder, tc.Build, err))
 			}
 			buildJSON, err := json.MarshalIndent(build, "", "  ")
 			if err != nil {
-				panic(fmt.Errorf("Could not JSON marshal %s/%s: %s", tc.Builder, tc.Build, err))
+				panic(fmt.Errorf("Could not JSON marshal %s/%d: %s", tc.Builder, tc.Build, err))
 			}
 			fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
 			fpath := path.Join("expectations", fname)
@@ -83,7 +83,7 @@ func TestBuild(t *testing.T) {
 	}
 
 	Convey(`A test Environment`, t, func() {
-		c = testconfig.WithCommonClient(c, memcfg.New(bbAclConfigs))
+		c = testconfig.WithCommonClient(c, memcfg.New(bbACLConfigs))
 		c = auth.WithState(c, &authtest.FakeState{
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
@@ -120,7 +120,7 @@ buildbot: {
 }
 `
 
-var bbAclConfigs = map[string]memcfg.ConfigSet{
+var bbACLConfigs = map[string]memcfg.ConfigSet{
 	"services/luci-milo": {
 		"settings.cfg": internalConfig,
 	},

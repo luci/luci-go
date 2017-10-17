@@ -18,15 +18,10 @@
 package resp
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -287,71 +282,4 @@ type Link struct {
 // NewLink does just about what you'd expect.
 func NewLink(label, url string) *Link {
 	return &Link{Link: model.Link{Label: label, URL: url}}
-}
-
-func (comp *BuildComponent) toModelSummary() model.Summary {
-	text := strings.Join(comp.Text, "\n")
-	// Max length for a datastore text field is 1500 char, but for summary purposes
-	// we don't really need anything much longer than 256 char or so.
-	const maxTextLen = 256
-	sliceIdx := 0
-	// Make sure we don't cut off characters inbetween runes.
-	for idx := range text {
-		if idx > maxTextLen {
-			break
-		}
-		sliceIdx = idx
-	}
-	text = text[:sliceIdx]
-	return model.Summary{
-		Status: comp.Status,
-		Start:  comp.Started,
-		End:    comp.Finished,
-		Text:   strings.Split(text, "\n"),
-	}
-}
-
-// SummarizeTo summarizes the data into a given model.BuildSummary.
-func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) error {
-	bs.Summary = rb.Summary.toModelSummary()
-	if rb.Summary.Status == model.Running {
-		// Assume the last step is the current step.
-		if len(rb.Components) > 0 {
-			cs := rb.Components[len(rb.Components)-1]
-			bs.CurrentStep = cs.toModelSummary()
-		}
-	}
-	if rb.Trigger != nil {
-		// TODO(hinoka, iannucci): This should be full manifests, but lets just use
-		// single revisions for now. HACKS!
-		if rb.Trigger.Revision != nil {
-			revisionBytes, err := hex.DecodeString(rb.Trigger.Revision.Label)
-			if err != nil {
-				logging.WithError(err).Warningf(c, "bad revision (not hex-decodable)")
-			} else {
-				bs.Manifests = append(bs.Manifests, model.ManifestLink{
-					Name: "REVISION",
-					ID:   []byte(rb.Trigger.Revision.Label),
-				})
-				consoles, err := common.GetAllConsoles(c, bs.BuilderID)
-				if err != nil {
-					return err
-				}
-				for _, con := range consoles {
-					// HACK(iannucci): Until we have real manifest support, console
-					// definitions will specify their manifest as "REVISION", and we'll do
-					// lookups with null URL fields.
-					bs.AddManifestKey(
-						con.GetProjectName(), con.ID, "REVISION", "", revisionBytes)
-				}
-			}
-		}
-		if rb.Trigger.Changelist != nil {
-			bs.Patches = append(bs.Patches, model.PatchInfo{
-				Link:        rb.Trigger.Changelist.Link,
-				AuthorEmail: rb.Trigger.AuthorEmail,
-			})
-		}
-	}
-	return nil
 }
