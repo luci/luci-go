@@ -22,11 +22,16 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 )
+
+// OAuthScope is OAuth 2.0 scope that must be included when acquiring an access
+// token for Gitiles RPCs.
+const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
 
 // Time is a wrapper around time.Time for clean JSON interoperation with
 // Gitiles time encoded as a string. This allows for the time to be

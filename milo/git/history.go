@@ -153,9 +153,7 @@ func GetHistory(c context.Context, url, commitish string, limit int) (*milo.Cons
 	ret := &milo.ConsoleGitInfo{}
 	cacheKey := fmt.Sprintf("GetHistory|%s|%s|%d", url, commitish, limit)
 	err = protoCache(c, useCache, cacheKey, ret, func() error {
-		t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
-			"https://www.googleapis.com/auth/gerritcodereview",
-		))
+		t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 		if err != nil {
 			return errors.Annotate(err, "getting RPC Transport").Err()
 		}
