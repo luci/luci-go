@@ -15,10 +15,19 @@
 package application
 
 import (
+	"fmt"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 )
+
+// returnCodeError is an error wrapping a return code value.
+type returnCodeError int
+
+func (err returnCodeError) Error() string {
+	return fmt.Sprintf("python interpreter returned non-zero error: %d", err)
+}
 
 var appKey = "go.chromium.org/luci/vpython/application.A"
 
@@ -39,7 +48,7 @@ func run(c context.Context, fn func(context.Context) error) int {
 	case nil:
 		return 0
 
-	case ReturnCodeError:
+	case returnCodeError:
 		return int(t)
 
 	default:
