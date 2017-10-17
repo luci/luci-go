@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/milo/common"
 )
 
 // ErrTooBig indicates that entity was not saved because it was too large to store.
@@ -75,7 +74,7 @@ func getEmulatedBuild(c context.Context, bucket, builder string, number int) (*b
 	case err != nil:
 		return nil, err
 	case len(msgs) == 0:
-		return nil, errors.Reason("build %q not found", buildAddress).Tag(common.CodeNotFound).Err()
+		return nil, nil
 	}
 	return buildFromBuildbucket(c, msgs[0], true)
 }
@@ -89,7 +88,7 @@ func getDatastoreBuild(c context.Context, master, builder string, number int) (*
 
 	err := datastore.Get(c, entity)
 	if err == datastore.ErrNoSuchEntity {
-		err = errors.New("build not found", common.CodeNotFound)
+		return nil, nil
 	}
 
 	return (*buildbot.Build)(entity), err

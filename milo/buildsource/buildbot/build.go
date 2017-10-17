@@ -437,6 +437,11 @@ func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloB
 	if err != nil {
 		return nil, err
 	}
+	if b == nil {
+		return nil, errors.Reason("build %s/%s/%d not found", b.Master, b.Buildername, b.Number).
+			Tag(common.CodeNotFound).
+			Err()
+	}
 	return renderBuild(c, b), nil
 }
 
