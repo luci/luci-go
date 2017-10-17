@@ -49,7 +49,7 @@ func (r Result) Status() model.Status {
 		return model.Failure
 	case Skipped:
 		return model.NotRun
-	case Exception:
+	case Exception, Retry:
 		return model.Exception
 	default:
 		panic(fmt.Errorf("unknown status %d", r))
