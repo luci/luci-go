@@ -213,20 +213,16 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		}
 		defer dump.Close()
 
-		taskInfo := map[string]interface{}{
-			"shard_index": 0,
-			"task_id":     result.TaskId,
-			"view_url":    viewURL,
-		}
-
-		tasks := map[string]interface{}{
-			request.Name: taskInfo,
-		}
-
-		data := map[string]interface{}{
-			"base_task_name": c.taskName,
-			"tasks":          tasks,
-			"request":        request,
+		data := &jsonDump{
+			BaseTaskName: c.taskName,
+			Tasks: []jsonTask{
+				{
+					ShardIndex: 0,
+					TaskID:     result.TaskId,
+					ViewURL:    viewURL,
+				},
+			},
+			Request: *request,
 		}
 
 		b, err := json.MarshalIndent(data, "", "  ")
