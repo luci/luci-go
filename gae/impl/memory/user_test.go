@@ -100,7 +100,7 @@ func TestUser(t *testing.T) {
 		Convey("panics on bad email", func() {
 			So(func() {
 				user.GetTestable(c).Login("bademail", "", false)
-			}, ShouldPanicLike, `mail: missing phrase`)
+			}, ShouldPanicLike, `mail:`)
 		})
 
 		Convey("fake URLs", func() {

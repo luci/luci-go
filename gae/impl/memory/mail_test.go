@@ -172,7 +172,7 @@ func TestMail(t *testing.T) {
 		Convey("errors", func() {
 			Convey("setting a non-email is a panic", func() {
 				So(func() { mail.GetTestable(c).SetAdminEmails("i am a banana") },
-					ShouldPanicLike, `invalid email ("i am a banana"): mail: missing phrase`)
+					ShouldPanicLike, `invalid email ("i am a banana")`)
 			})
 
 			Convey("sending from a non-user, non-admin is an error", func() {
@@ -188,7 +188,7 @@ func TestMail(t *testing.T) {
 			Convey("sending from a bogus address is a problem", func() {
 				So(mail.Send(c, &mail.Message{
 					Sender: "lalal",
-				}), ShouldErrLike, "unparsable Sender address: lalal: mail: missing phrase")
+				}), ShouldErrLike, "unparsable Sender address: lalal")
 			})
 
 			Convey("sending with no recipients is a problem", func() {
@@ -201,17 +201,17 @@ func TestMail(t *testing.T) {
 				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					To:     []string{"wut"},
-				}), ShouldErrLike, `invalid email ("wut"): mail: missing phrase`)
+				}), ShouldErrLike, `invalid email ("wut")`)
 
 				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					Cc:     []string{"wut"},
-				}), ShouldErrLike, `invalid email ("wut"): mail: missing phrase`)
+				}), ShouldErrLike, `invalid email ("wut")`)
 
 				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					Bcc:    []string{"wut"},
-				}), ShouldErrLike, `invalid email ("wut"): mail: missing phrase`)
+				}), ShouldErrLike, `invalid email ("wut")`)
 			})
 
 			Convey("no body is a problem", func() {
