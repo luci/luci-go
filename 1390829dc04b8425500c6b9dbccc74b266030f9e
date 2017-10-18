@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3447a8ca_0d1a7c72",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-18T01:54:27Z",
+      "side": 1,
+      "message": "This is all setup logs. The real interpreter invocation is always forwarded. The rest is an implementation detail made public on failure.\n\nIn this case, if we are logging at info/debug level, the output of the process will be written in realtime to STDERR. If we are not logging at those levels, the output is buffered and dumped only on error.\n\nFor the final Python \"execve\" invocation, none of this is relevant; that is straight-up forwarded.",
+      "parentUuid": "a285d035_80e644a3",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 12
+      },
+      "revId": "1390829dc04b8425500c6b9dbccc74b266030f9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5bcf7c9a_bea590e1",
         "filename": "vpython/run.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "1390829dc04b8425500c6b9dbccc74b266030f9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59e24bae_c1c3e08b",
+        "filename": "vpython/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-18T01:54:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5bcf7c9a_bea590e1",
+      "range": {
+        "startLine": 94,
+        "startChar": 29,
+        "endLine": 94,
+        "endChar": 31
+      },
+      "revId": "1390829dc04b8425500c6b9dbccc74b266030f9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
