@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/testing/testfs"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -201,6 +202,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 	cfg := Config{
 		MaxHashLen: 1, // Only going to be 1 enviroment.
 		BaseDir:    filepath.Join(outDir, ".env"),
+		SetupEnv:   environ.System(),
 		Python:     py.Python,
 		Package: vpython.Spec_Package{
 			Name:    "foo/bar/virtualenv",
