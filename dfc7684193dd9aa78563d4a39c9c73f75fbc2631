@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "85021783_7d423e28",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-18T22:08:19Z",
+      "side": 1,
+      "message": "Also please update this message.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 67
+      },
+      "revId": "dfc7684193dd9aa78563d4a39c9c73f75fbc2631",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b8d53aa5_38ee9b68",
         "filename": "milo/api/config/header.go",
         "patchSetId": 2
