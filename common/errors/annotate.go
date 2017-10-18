@@ -219,6 +219,8 @@ func (a *Annotator) Tag(tags ...TagValueGenerator) *Annotator {
 }
 
 // Err returns the finalized annotated error.
+//
+//go:noinline
 func (a *Annotator) Err() error {
 	if a == nil {
 		return nil
