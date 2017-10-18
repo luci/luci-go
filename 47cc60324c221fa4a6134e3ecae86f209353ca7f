@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a7dccf2_ddd8199b",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-18T19:13:46Z",
+      "side": 1,
+      "message": "actually, you could implement https://godoc.org/go.chromium.org/gae/service/datastore#PropertyConverter on just the header field maybe?",
+      "range": {
+        "startLine": 110,
+        "startChar": 15,
+        "endLine": 110,
+        "endChar": 37
+      },
+      "revId": "47cc60324c221fa4a6134e3ecae86f209353ca7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
