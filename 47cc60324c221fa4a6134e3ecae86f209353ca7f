@@ -46,6 +46,30 @@
       "revId": "47cc60324c221fa4a6134e3ecae86f209353ca7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fed37134_db11b640",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-18T20:58:55Z",
+      "side": 1,
+      "message": "Nah, nevermind, it probably makes more sense this way. Done.",
+      "parentUuid": "d987dfaa_044b57f0",
+      "range": {
+        "startLine": 110,
+        "startChar": 15,
+        "endLine": 110,
+        "endChar": 37
+      },
+      "revId": "47cc60324c221fa4a6134e3ecae86f209353ca7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
