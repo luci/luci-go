@@ -183,7 +183,8 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 		}
 
 		Convey(`Testing Setup`, func() {
-			err := With(c, config, false, func(c context.Context, v *Env) error {
+			config.FailIfLocked = true
+			err := With(c, config, func(c context.Context, v *Env) error {
 				testScriptPath := filepath.Join(testDataDir, "setup_check.py")
 				checkOut := filepath.Join(tdir, "output.json")
 				cmd := v.Interpreter().IsolatedCommand(c, testScriptPath, "--json-output", checkOut)
@@ -228,7 +229,7 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 					i := i
 
 					taskC <- func() error {
-						return With(c, config, true, func(c context.Context, v *Env) error {
+						return With(c, config, func(c context.Context, v *Env) error {
 							// Has successfully loaded an Environment.
 							envs[i] = v.Environment
 
