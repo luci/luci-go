@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -62,18 +63,15 @@ func blocker(c context.Context) fslock.Blocker {
 	}
 }
 
-func withTempDir(l logging.Logger, prefix string, fn func(string) error) error {
-	tdir, err := ioutil.TempDir("", prefix)
-	if err != nil {
-		return errors.Annotate(err, "failed to create temporary directory").Err()
-	}
-	defer func() {
-		if err := filesystem.RemoveAll(tdir); err != nil {
+func withTempDir(l logging.Logger, dir, prefix string, fn func(string) error) error {
+	tdir := filesystem.TempDir{
+		Dir:    dir,
+		Prefix: prefix,
+		CleanupErrFunc: func(tdir string, err error) {
 			l.Infof("Failed to remove temporary directory: %s", err)
-		}
-	}()
-
-	return fn(tdir)
+		},
+	}
+	return tdir.With(fn)
 }
 
 // EnvRootFromStampPath calculates the environment root from an exported
@@ -103,9 +101,9 @@ func EnvRootFromStampPath(path string) (string, error) {
 // conflict with each other. If a VirtualEnv for this specification already
 // exists, it will be used directly without any additional setup.
 //
-// If another process holds the lock, With will return an error (if blocking is
-// false) or try again until it obtains the lock (if blocking is true).
-func With(c context.Context, cfg Config, blocking bool, fn func(context.Context, *Env) error) error {
+// If another process holds the lock, With will return an error if
+// cfg.FailIfLocked is true, or try again until it obtains the lock otherwise.
+func With(c context.Context, cfg Config, fn func(context.Context, *Env) error) error {
 	// Track which VirtualEnv we use so we can exempt them from pruning.
 	usedEnvs := stringset.New(2)
 
@@ -124,7 +122,7 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 		if err != nil {
 			return errors.Annotate(err, "failed to initialize empty probe environment").Err()
 		}
-		if err := emptyEnv.ensure(c, blocking); err != nil {
+		if err := emptyEnv.ensure(c, !cfg.FailIfLocked); err != nil {
 			return errors.Annotate(err, "failed to create empty probe environment").Err()
 		}
 
@@ -138,7 +136,7 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 		return err
 	}
 	usedEnvs.Add(env.Name)
-	return env.withImpl(c, blocking, usedEnvs, fn)
+	return env.withImpl(c, !cfg.FailIfLocked, usedEnvs, fn)
 }
 
 // Delete removes all resources consumed by an environment.
@@ -472,24 +470,37 @@ func (e *Env) createLocked(c context.Context) error {
 	// when ZIP-importing sub-sub-sub-sub-packages (e.g., pip, requests, etc.).
 	//
 	// We will clean this directory up on termination.
-	err := withTempDir(logging.Get(c), "vpython_bootstrap", func(bootstrapDir string) error {
+	err := withTempDir(logging.Get(c), "", "vpython_bootstrap", func(bootstrapDir string) error {
 		pkgDir := filepath.Join(bootstrapDir, "packages")
 		if err := filesystem.MakeDirs(pkgDir); err != nil {
 			return errors.Annotate(err, "could not create bootstrap packages directory").Err()
 		}
+
+		// Use a temporary HOME directory.
+		//
+		// This is an ugly hack. However, it's the only way to stop VirtualEnv's
+		// "pip" invocation's "setuptools" invocation from reading the local user's
+		// "~/.pydistutils.cfg" file, which can lead to broken VirtualEnv results.
+		//
+		// It has the nice side-effect of catching some potential artifacts that can
+		// be generated. There probably won't be any, but if they are, they will be
+		// cleaned up now.
+		setupEnv := e.isolatedSetupEnvironment()
+		setupEnv.Set("HOME", bootstrapDir)
+		setupEnvSorted := setupEnv.Sorted()
 
 		if err := e.downloadPackages(c, pkgDir, packages); err != nil {
 			return errors.Annotate(err, "failed to download packages").Err()
 		}
 
 		// Installing base VirtualEnv.
-		if err := e.installVirtualEnv(c, pkgDir); err != nil {
+		if err := e.installVirtualEnv(c, pkgDir, setupEnvSorted); err != nil {
 			return errors.Annotate(err, "failed to install VirtualEnv").Err()
 		}
 
 		// Load PEP425 tags, if we don't already have them.
 		if e.Environment.Pep425Tag == nil {
-			pep425Tags, err := e.getPEP425Tags(c)
+			pep425Tags, err := e.getPEP425Tags(c, setupEnvSorted)
 			if err != nil {
 				return errors.Annotate(err, "failed to get PEP425 tags").Err()
 			}
@@ -499,7 +510,7 @@ func (e *Env) createLocked(c context.Context) error {
 		// Install our wheel files.
 		if len(e.Environment.Spec.Wheel) > 0 {
 			// Install wheels into our VirtualEnv.
-			if err := e.installWheels(c, bootstrapDir, pkgDir); err != nil {
+			if err := e.installWheels(c, bootstrapDir, pkgDir, setupEnvSorted); err != nil {
 				return errors.Annotate(err, "failed to install wheels").Err()
 			}
 		}
@@ -533,7 +544,7 @@ func (e *Env) downloadPackages(c context.Context, dst string, packages []*vpytho
 	return nil
 }
 
-func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
+func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) error {
 	// Create our VirtualEnv package staging sub-directory underneath of root.
 	bsDir := filepath.Join(e.Root, ".virtualenv")
 	if err := filesystem.MakeDirs(bsDir); err != nil {
@@ -552,10 +563,12 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 	venvDir := matches[0]
 
 	logging.Debugf(c, "Creating VirtualEnv at: %s", e.Root)
+
 	cmd := e.Config.systemInterpreter().IsolatedCommand(c,
 		"virtualenv.py",
 		"--no-download",
 		e.Root)
+	cmd.Env = env
 	cmd.Dir = venvDir
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
@@ -567,6 +580,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 		"virtualenv.py",
 		"--relocatable",
 		e.Root)
+	cmd.Env = env
 	cmd.Dir = venvDir
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
@@ -579,7 +593,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 // getPEP425Tags calls Python's pip.pep425tags package to retrieve the tags.
 //
 // This must be run while "pip" is installed in the VirtualEnv.
-func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.PEP425Tag, error) {
+func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425Tag, error) {
 	// This script will return a list of 3-entry lists:
 	// [0]: version (e.g., "cp27")
 	// [1]: abi (e.g., "cp27mu", "none")
@@ -591,6 +605,7 @@ func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.PEP425Tag, error) {
 	type pep425TagEntry []string
 
 	cmd := e.Interpreter().IsolatedCommand(c, "-c", script)
+	cmd.Env = env
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -631,7 +646,7 @@ func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.PEP425Tag, error) {
 	return tags, nil
 }
 
-func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) error {
+func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env []string) error {
 	// Identify all downloaded wheels and parse them.
 	wheels, err := wheel.ScanDir(pkgDir)
 	if err != nil {
@@ -648,11 +663,13 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) erro
 	cmd := e.Interpreter().IsolatedCommand(c,
 		"-m", "pip",
 		"install",
+		"--isolated",
 		"--use-wheel",
 		"--compile",
 		"--no-index",
 		"--find-links", pkgDir,
 		"--requirement", reqPath)
+	cmd.Env = env
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
 		return errors.Annotate(err, "failed to install wheels").Err()
@@ -686,6 +703,12 @@ func (e *Env) touchCompleteFlagLocked() error {
 		return errors.Annotate(err, "").Err()
 	}
 	return nil
+}
+
+func (e *Env) isolatedSetupEnvironment() environ.Env {
+	env := e.Config.SetupEnv.Clone()
+	python.IsolateEnvironment(&env)
+	return env
 }
 
 // Delete removes all resources consumed by an environment.

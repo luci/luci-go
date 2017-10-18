@@ -70,26 +70,10 @@ func Run(c context.Context, opts Options) error {
 	}
 
 	// Create our virtual environment root directory.
-	err := venv.With(c, opts.EnvConfig, opts.WaitForEnv, func(c context.Context, ve *venv.Env) error {
-		// Build the augmented environment variables.
-		e := opts.Environ
-		if e.Len() == 0 {
-			// If no environment was supplied, use the system environment.
-			e = environ.System()
-		}
-
-		// Remove PYTHONPATH and PYTHONHOME from the environment. This prevents them
-		// from being propagated to delegate processes (e.g., "vpython" script calls
-		// Python script, the "vpython" one uses the Interpreter's IsolatedCommand
-		// to isolate the initial run, but the delegate command blindly uses the
-		// environment that it's provided).
-		//
-		// Also set PYTHONNOUSERSITE, which prevents a user's "site" configuration
-		// from influencing Python startup. The system "site" should already be
-		// ignored b/c we're using the VirtualEnv Python interpreter.
-		e.Remove("PYTHONPATH")
-		e.Remove("PYTHONHOME")
-		e.Set("PYTHONNOUSERSITE", "1")
+	opts.EnvConfig.FailIfLocked = !opts.WaitForEnv
+	err := venv.With(c, opts.EnvConfig, func(c context.Context, ve *venv.Env) error {
+		e := opts.Environ.Clone()
+		python.IsolateEnvironment(&e)
 
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
 		if ve.EnvironmentStampPath != "" {

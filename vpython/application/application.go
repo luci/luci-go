@@ -352,6 +352,7 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 			EnvConfig: venv.Config{
 				BaseDir:           "", // (Determined below).
 				MaxHashLen:        6,
+				SetupEnv:          env,
 				Package:           cfg.VENVPackage,
 				PruneThreshold:    cfg.PruneThreshold,
 				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,

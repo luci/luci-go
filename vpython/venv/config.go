@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 
 	"golang.org/x/net/context"
@@ -42,6 +43,10 @@ type Config struct {
 
 	// BaseDir is the parent directory of all VirtualEnv.
 	BaseDir string
+
+	// SetupEnv if not nil, is the base environment that will be used during
+	// VirtualEnv setup operations.
+	SetupEnv environ.Env
 
 	// OverrideName overrides the name of the specified VirtualEnv.
 	//
@@ -90,6 +95,11 @@ type Config struct {
 	// VirtualEnv scripts may be generated with a "shebang" (#!) line longer than
 	// what is allowed by the operating system.
 	MaxScriptPathLen int
+
+	// FailIfLocked, if true, means that if a lock is encountered during
+	// VirtualEnv operation, the VirtualEnv will exit immediately with an error.
+	// If false, the VirtualEnv will block pending the lock's availability.
+	FailIfLocked bool
 
 	// si is the system Python interpreter. It is resolved during
 	// "resolvePythonInterpreter".
