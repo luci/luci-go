@@ -17,6 +17,7 @@ package venv
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -570,8 +571,9 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 		e.Root)
 	cmd.Env = env
 	cmd.Dir = venvDir
-	attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
+		dumpOutput(c, logging.Error)
 		return errors.Annotate(err, "failed to create VirtualEnv").Err()
 	}
 
@@ -582,8 +584,9 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 		e.Root)
 	cmd.Env = env
 	cmd.Dir = venvDir
-	attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput = attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
+		dumpOutput(c, logging.Error)
 		return errors.Annotate(err, "failed to create VirtualEnv").Err()
 	}
 
@@ -610,8 +613,9 @@ func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425T
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 
-	attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
+		dumpOutput(c, logging.Error)
 		return nil, errors.Annotate(err, "failed to get PEP425 tags").Err()
 	}
 
@@ -670,8 +674,9 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env 
 		"--find-links", pkgDir,
 		"--requirement", reqPath)
 	cmd.Env = env
-	attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
+		dumpOutput(c, logging.Error)
 		return errors.Annotate(err, "failed to install wheels").Err()
 	}
 	return nil
@@ -782,22 +787,43 @@ func (e *Env) completionFlagTimestamp() (time.Time, error) {
 	}
 }
 
-func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) {
+// attachOutputForLogging modifies the supplied cmd's Stdout and Stderr fields
+// to output appropriately, assuming it isn't otherwise configured.
+//
+// If we are logging at level l, the process's Stdout and Stderr will be
+// directly connected to STDERR
+//
+// This will return a callback that can be invoked to dump any buffered process
+// output at the specified logging level.
+func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) func(context.Context, logging.Level) {
 	if logging.IsLogging(c, logging.Info) {
 		logging.Infof(c, "Running Python command (cwd=%s): %s",
 			cmd.Dir, strings.Join(cmd.Args, " "))
 	}
 
+	var out io.Writer
+	var buf bytes.Buffer
 	if logging.IsLogging(c, l) {
 		// If we're logging, redirect all process output to STDERR (same as logger
 		// uses).
-		if cmd.Stdout == nil {
-			// STDOUT will be sent to STDERR since this logging for debugging, not
-			// actual functional process output.
-			cmd.Stdout = os.Stderr
-		}
-		if cmd.Stderr == nil {
-			cmd.Stderr = os.Stderr
+		out = os.Stderr
+	} else {
+		out = &buf
+	}
+
+	if cmd.Stdout == nil {
+		// STDOUT will be sent to our output channel, since this logging for
+		// debugging, not actual functional process output.
+		cmd.Stdout = out
+	}
+	if cmd.Stderr == nil {
+		cmd.Stderr = out
+	}
+
+	// Do not dump any additional error output.
+	return func(c context.Context, l logging.Level) {
+		if buf.Len() > 0 {
+			logging.Logf(c, l, "Process output:\n%s", buf.Bytes())
 		}
 	}
 }

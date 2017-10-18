@@ -45,13 +45,11 @@ type runCommand struct {
 
 // Run sets up a Python VirtualEnv and executes the supplied Options.
 //
-// Run returns nil if if the Python environment was successfully set-up and the
-// Python interpreter was successfully run with a zero return code. If the
-// Python interpreter returns a non-zero return code, a PythonError (potentially
-// wrapped) will be returned.
+// If the Python interpreter was successfully launched, Run will never return,
+// and the process will exit with the return code of the Python interpreter.
 //
-// A generalized return code to return for an error value can be obtained via
-// ReturnCode.
+// If the Python environment could not be set-up, or if the interpreter could
+// not be invoked, Run will return an non-nil error.
 //
 // Run consists of:
 //
@@ -90,10 +88,10 @@ func Run(c context.Context, opts Options) error {
 		}
 		return nil
 	})
-	if err != nil {
-		return errors.Annotate(err, "").Err()
+	if err == nil {
+		panic("must not return nil error")
 	}
-	return nil
+	return err
 }
 
 // Exec runs the specified Python command.

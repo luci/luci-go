@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/prober"
 )
@@ -58,13 +57,6 @@ const (
 	// default VirtualEnv spec file if none is provided or found through probing.
 	DefaultSpecENV = "VPYTHON_DEFAULT_SPEC"
 )
-
-// ReturnCodeError is an error wrapping a return code value.
-type ReturnCodeError int
-
-func (err ReturnCodeError) Error() string {
-	return fmt.Sprintf("python interpreter returned non-zero error: %d", err)
-}
 
 // VerificationFunc is a function used in environment verification.
 //
@@ -161,7 +153,7 @@ func (a *application) mainDev(c context.Context, args []string) error {
 		},
 	}
 
-	return ReturnCodeError(subcommands.Run(&app, args))
+	return returnCodeError(subcommands.Run(&app, args))
 }
 
 func (a *application) addToFlagSet(fs *flag.FlagSet) {
@@ -272,16 +264,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	}
 
 	a.opts.Args = args
-	if err := vpython.Run(c, a.opts); err != nil {
-		// If the process failed because of a non-zero return value, return that
-		// as our error.
-		if rc, has := exitcode.Get(errors.Unwrap(err)); has {
-			err = ReturnCodeError(rc)
-		}
-
-		return errors.Annotate(err, "").Err()
-	}
-	return nil
+	return vpython.Run(c, a.opts)
 }
 
 func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lookPath) error {
