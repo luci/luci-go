@@ -15,6 +15,7 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -63,9 +64,55 @@ type Console struct {
 	// BuilderMeta is an expanded set of builders containing additional metadata.
 	// This should always match the Builders field.
 	BuilderMetas []BuilderMeta
+	// Header is a copy of the Header structure from the proto definition which is
+	// used for rendering the console's header. It is serialized as JSON bytes
+	// before a datastore Put and deserialized after a Get via the PLS interface.
+	Header *config.Header `gae:"-"`
 	// _ is a "black hole" which absorbs any extra props found during a
 	// datastore Get. These props are not written back on a datastore Put.
 	_ datastore.PropertyMap `gae:"-,extra"`
+}
+
+// Load loads a Console's information from props.
+//
+// This implements PropertyLoadSaver. Load decodes the property Header
+// stored in the datastore which is encoded json, and decodes it into the
+// struct's Header field.
+func (c *Console) Load(props datastore.PropertyMap) error {
+	if pdata, ok := props["Header"]; ok {
+		headers := pdata.Slice()
+		if len(headers) != 1 {
+			return fmt.Errorf("property `Header` is a property slice")
+		}
+		headerBytes, ok := headers[0].Value().([]byte)
+		if !ok {
+			return fmt.Errorf("expected byte array for property `Header`")
+		}
+		header := config.Header{}
+		if err := json.Unmarshal(headerBytes, &header); err != nil {
+			return err
+		}
+		c.Header = &header
+		delete(props, "Header")
+	}
+	return datastore.GetPLS(c).Load(props)
+}
+
+// Save saves a Console's information to a property map.
+//
+// This implements PropertyLoadSaver. Save encodes the Header
+// field as json and stores it in the Header property.
+func (c *Console) Save(withMeta bool) (datastore.PropertyMap, error) {
+	props, err := datastore.GetPLS(c).Save(withMeta)
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := json.Marshal(c.Header)
+	if err != nil {
+		return nil, err
+	}
+	props["Header"] = datastore.MkProperty(bytes)
+	return props, nil
 }
 
 // BuilderMeta is a struct containing metadata about a builder.
@@ -82,8 +129,8 @@ func (b *BuilderMeta) ParseCategory() []string {
 
 // GetProjectName retrieves the project name of the console out of the Console's
 // parent key.
-func (con *Console) GetProjectName() string {
-	return con.Parent.StringID()
+func (c *Console) GetProjectName() string {
+	return c.Parent.StringID()
 }
 
 // NewConsole creates a fully populated console out of the luci-config proto
@@ -100,6 +147,7 @@ func NewConsole(project *datastore.Key, URL, revision string, con *config.Consol
 		FaviconURL:   con.FaviconUrl,
 		Builders:     BuilderFromProto(con.Builders),
 		BuilderMetas: BuilderRefFromProto(con.Builders),
+		Header:       con.Header,
 	}
 }
 
