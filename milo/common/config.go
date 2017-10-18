@@ -435,5 +435,12 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 		ID:     id,
 	}
 	err := datastore.Get(c, &con)
-	return &con, err
+	switch err {
+	case datastore.ErrNoSuchEntity:
+		return nil, errors.New("console not found", CodeNotFound)
+	case nil:
+		return &con, nil
+	default:
+		return nil, err
+	}
 }
