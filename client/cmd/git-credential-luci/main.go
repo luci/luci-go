@@ -48,7 +48,7 @@ func init() {
 	flags.RegisterScopesFlag = true
 	flags.Register(flag.CommandLine, defaults)
 	flag.DurationVar(
-		&lifetime, "lifetime", 10*time.Minute,
+		&lifetime, "lifetime", time.Minute,
 		"Minimum token lifetime. If existing token expired and refresh token or service account is not present, returns nothing.",
 	)
 
