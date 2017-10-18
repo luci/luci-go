@@ -63,6 +63,10 @@ type Console struct {
 	// BuilderMeta is an expanded set of builders containing additional metadata.
 	// This should always match the Builders field.
 	BuilderMetas []BuilderMeta
+	// Header is a copy of the Header structure from the proto definition which is
+	// used for rendering the console's header. It is serialized as JSON bytes
+	// before a datastore Put and deserialized after a Get via the PLS interface.
+	Header config.Header
 	// _ is a "black hole" which absorbs any extra props found during a
 	// datastore Get. These props are not written back on a datastore Put.
 	_ datastore.PropertyMap `gae:"-,extra"`
@@ -89,6 +93,10 @@ func (con *Console) GetProjectName() string {
 // NewConsole creates a fully populated console out of the luci-config proto
 // definition of a console.
 func NewConsole(project *datastore.Key, URL, revision string, con *config.Console) *Console {
+	header := config.Header{}
+	if con.Header != nil {
+		header = *con.Header
+	}
 	return &Console{
 		Parent:       project,
 		ID:           con.Id,
@@ -100,6 +108,7 @@ func NewConsole(project *datastore.Key, URL, revision string, con *config.Consol
 		FaviconURL:   con.FaviconUrl,
 		Builders:     BuilderFromProto(con.Builders),
 		BuilderMetas: BuilderRefFromProto(con.Builders),
+		Header:       header,
 	}
 }
 
