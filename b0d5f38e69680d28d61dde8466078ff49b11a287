@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc409d23_c9d9e75e",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-18T21:14:30Z",
+      "side": 1,
+      "message": "weird",
+      "revId": "b0d5f38e69680d28d61dde8466078ff49b11a287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
