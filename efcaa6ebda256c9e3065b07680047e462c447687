@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b45eb110_58244ed3",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-18T22:18:50Z",
+      "side": 1,
+      "message": "+ via RPC calls to Gitiles",
+      "revId": "efcaa6ebda256c9e3065b07680047e462c447687",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f447dc6a_857c2d8a",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-18T22:18:50Z",
+      "side": 1,
+      "message": "not: is not a",
+      "range": {
+        "startLine": 89,
+        "startChar": 41,
+        "endLine": 89,
+        "endChar": 54
+      },
+      "revId": "efcaa6ebda256c9e3065b07680047e462c447687",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e2fa76c_530ad4a2",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-18T22:18:50Z",
+      "side": 1,
+      "message": "it would be helpful to log the revision string too",
+      "range": {
+        "startLine": 89,
+        "startChar": 32,
+        "endLine": 89,
+        "endChar": 40
+      },
+      "revId": "efcaa6ebda256c9e3065b07680047e462c447687",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
