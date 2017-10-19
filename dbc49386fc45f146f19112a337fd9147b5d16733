@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82cd4686_a1108277",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-19T18:47:02Z",
+      "side": 1,
+      "message": "Delete this too.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 96,
+        "endChar": 21
+      },
+      "revId": "dbc49386fc45f146f19112a337fd9147b5d16733",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
