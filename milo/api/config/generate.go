@@ -13,6 +13,7 @@
 // limitations under the License.
 
 //go:generate cproto
+//go:generate proto-gae -type Header
 
 package config
 
