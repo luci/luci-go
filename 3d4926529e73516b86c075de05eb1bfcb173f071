@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7f23c17c_a34f7c87",
+        "filename": "milo/api/buildbot/result.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-19T15:35:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "603dc163_8f1c47bb",
+      "revId": "3d4926529e73516b86c075de05eb1bfcb173f071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40ff6a3b_930af98b",
         "filename": "milo/buildsource/buildbot/buildstore/master.go",
         "patchSetId": 13
@@ -33,6 +51,24 @@
       "revId": "3d4926529e73516b86c075de05eb1bfcb173f071",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa38dbd7_ad43b289",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-19T15:35:00Z",
+      "side": 1,
+      "message": "you probably mean Slave.Runningbuilds field? I don\u0027t see any other field reachable for buildbot.Master that would have builds.\nwe explicitly do not support slave info, see L79",
+      "parentUuid": "40ff6a3b_930af98b",
+      "revId": "3d4926529e73516b86c075de05eb1bfcb173f071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
