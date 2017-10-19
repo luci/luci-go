@@ -87,17 +87,8 @@ type BuildSummary struct {
 	// Summary summarizes relevant bits about the overall build.
 	Summary Summary
 
-	// CurrentStep summarizes relevant bits about the currently running step (if
-	// any). Only expected to be set if !Summary.Status.Terminal().
-	CurrentStep Summary
-
 	// Manifests is a list of links to source manifests that this build reported.
 	Manifests []ManifestLink
-
-	// Patches is the list of patches which are associated with this build.
-	// We reserve the multi-patch case for advanced (multi-repo) tryjobs...
-	// Typically there will only be one patch associated with a build.
-	Patches []PatchInfo
 
 	// ManifestKeys is the list of ManifestKey entries for this BuildSummary.
 	ManifestKeys []ManifestKey
@@ -116,6 +107,9 @@ type BuildSummary struct {
 	//     be monotonically increasing. Used to ignore out-of-order pubsub
 	//     messages.
 	Version int64
+
+	// Ignore all extra fields when reading/writing
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // AddManifestKey adds a new entry to ManifestKey.
