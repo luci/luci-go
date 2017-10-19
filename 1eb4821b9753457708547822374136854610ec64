@@ -22,6 +22,30 @@
       "revId": "1eb4821b9753457708547822374136854610ec64",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3b9ff89_9d3a81ee",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-19T16:36:26Z",
+      "side": 1,
+      "message": "do\u0027h! thanks! done.",
+      "parentUuid": "002c22e2_cc5c8ebd",
+      "range": {
+        "startLine": 97,
+        "startChar": 5,
+        "endLine": 97,
+        "endChar": 31
+      },
+      "revId": "1eb4821b9753457708547822374136854610ec64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
