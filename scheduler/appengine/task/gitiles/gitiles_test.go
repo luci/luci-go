@@ -16,13 +16,13 @@ package gitiles
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -42,18 +42,23 @@ func TestTriggerBuild(t *testing.T) {
 			Repo: "https://a.googlesource.com/b.git",
 			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
 		}
-		loadSavedRepo := func() *Repository {
-			r := &Repository{ID: "proj/gitiles:https://a.googlesource.com/b.git"}
-			if err := ds.Get(c, r); err != nil {
-				panic(err) // Stack is useful.
+		jobID := "proj/gitiles"
+		parsedUrl, err := url.Parse(cfg.Repo)
+		So(err, ShouldBeNil)
+
+		loadNoError := func() map[string]string {
+			state, err := loadState(c, jobID, parsedUrl)
+			if err != nil {
+				panic(err)
 			}
-			return r
+			return state
 		}
+
 		ctl := &tasktest.TestController{
 			TaskMessage:   cfg,
 			Client:        http.DefaultClient,
 			SaveCallback:  func() error { return nil },
-			OverrideJobID: "proj/gitiles",
+			OverrideJobID: jobID,
 		}
 		gitilesMock := &mockGitilesClient{}
 		m := TaskManager{mockGitilesClient: gitilesMock}
@@ -61,146 +66,116 @@ func TestTriggerBuild(t *testing.T) {
 		Convey("new refs are discovered", func() {
 			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
-					"refs/heads/master": "deadbeef0",
-					"refs/weird":        "123456789",
+					"refs/heads/master": "deadbeef00",
+					"refs/weird":        "1234567890",
 				}, nil
 			}
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/heads/master", Revision: "deadbeef0"},
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/heads/master": "deadbeef00",
 			})
 			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef0")
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
 			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &internal.GitilesTriggerData{
 				Repo:     "https://a.googlesource.com/b.git",
 				Ref:      "refs/heads/master",
-				Revision: "deadbeef0",
+				Revision: "deadbeef00",
 			})
 		})
 
 		Convey("do not trigger if there are no new commits", func() {
-			ds.Put(c, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/heads/master", Revision: "deadbeef0"},
-				},
-			})
+			So(saveState(c, jobID, parsedUrl, map[string]string{
+				"refs/heads/master": "deadbeef00",
+			}), ShouldBeNil)
 			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
-					"refs/heads/master": "deadbeef0",
-					"refs/weird":        "123456789",
+					"refs/heads/master": "deadbeef00",
+					"refs/weird":        "1234567890",
 				}, nil
 			}
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/heads/master", Revision: "deadbeef0"},
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/heads/master": "deadbeef00",
 			})
 		})
 
 		Convey("New, updated, and deleted refs", func() {
-			ds.Put(c, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/heads/master", Revision: "deadbeef0"},
-					{Name: "refs/heads/branch", Revision: "123456789"},
-					{Name: "refs/was/watched", Revision: "098765432"},
-				},
-			})
+			So(saveState(c, jobID, parsedUrl, map[string]string{
+				"refs/heads/master": "deadbeef00",
+				"refs/heads/branch": "1234567890",
+				"refs/was/watched":  "0987654321",
+			}), ShouldBeNil)
 			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
-					"refs/heads/master":       "deadbeef1",
-					"refs/branch-heads/1.2.3": "baadcafe0",
+					"refs/heads/master":       "deadbeef01",
+					"refs/branch-heads/1.2.3": "baadcafe00",
 				}, nil
 			}
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/branch-heads/1.2.3", Revision: "baadcafe0"},
-					{Name: "refs/heads/master", Revision: "deadbeef1"},
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/heads/master":       "deadbeef01",
+				"refs/branch-heads/1.2.3": "baadcafe00",
 			})
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe0")
-			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef1")
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe00")
+			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01")
 		})
 
 		Convey("Refglobs: new, updated, and deleted refs", func() {
-			ds.Put(c, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/branch-heads/1.2.3", Revision: "deadbeef0"},
-					{Name: "refs/branch-heads/4.5", Revision: "beefcafe"},
-					{Name: "refs/branch-heads/6.7", Revision: "deadcafe"},
-				},
-			})
+			So(saveState(c, jobID, parsedUrl, map[string]string{
+				"refs/branch-heads/1.2.3": "deadbeef00",
+				"refs/branch-heads/4.5":   "beefcafe",
+				"refs/branch-heads/6.7":   "deadcafe",
+			}), ShouldBeNil)
 			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
-					"refs/branch-heads/1.2.3":          "deadbeef1",
+					"refs/branch-heads/1.2.3":          "deadbeef01",
 					"refs/branch-heads/6.7":            "deadcafe",
-					"refs/branch-heads/8.9.0":          "beef4dead",
+					"refs/branch-heads/8.9.0":          "beef44dead",
 					"refs/branch-heads/must/not/match": "deaddead",
 				}, nil
 			}
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/branch-heads/1.2.3", Revision: "deadbeef1"}, // updated.
-					{Name: "refs/branch-heads/6.7", Revision: "deadcafe"},    // same.
-					{Name: "refs/branch-heads/8.9.0", Revision: "beef4dead"}, // new.
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/branch-heads/1.2.3": "deadbeef01", // updated.
+				"refs/branch-heads/6.7":   "deadcafe",   // same.
+				"refs/branch-heads/8.9.0": "beef44dead", // new.
 			})
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@deadbeef1")
-			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/8.9.0@beef4dead")
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@deadbeef01")
+			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/8.9.0@beef44dead")
 		})
 
 		Convey("do nothing at all if there are no changes", func() {
-			ds.Put(c, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/heads/master", Revision: "deadbeef0"},
-				},
-			})
+			So(saveState(c, jobID, parsedUrl, map[string]string{
+				"refs/heads/master": "deadbeef",
+			}), ShouldBeNil)
 			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
-					"refs/heads/master": "deadbeef0",
+					"refs/heads/master": "deadbeef",
 				}, nil
 			}
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(ctl.Log, ShouldNotContain, "Saved 1 known refs")
 			So(ctl.Log, ShouldContain, "No changes detected")
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/heads/master", Revision: "deadbeef0"},
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/heads/master": "deadbeef",
 			})
 		})
 
 		Convey("Avoid choking on too many refs", func() {
-			ds.Put(c, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/heads/master", Revision: "deadbeef0"},
-				},
-			})
+			So(saveState(c, jobID, parsedUrl, map[string]string{
+				"refs/heads/master": "deadbeef",
+			}), ShouldBeNil)
 			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
-					"refs/branch-heads/1": "cafe1",
-					"refs/branch-heads/2": "cafe2",
-					"refs/branch-heads/3": "cafe3",
-					"refs/branch-heads/4": "cafe4",
-					"refs/branch-heads/5": "cafe5",
+					"refs/branch-heads/1": "cafee1",
+					"refs/branch-heads/2": "cafee2",
+					"refs/branch-heads/3": "cafee3",
+					"refs/branch-heads/4": "cafee4",
+					"refs/branch-heads/5": "cafee5",
 				}, nil
 			}
 
@@ -208,41 +183,32 @@ func TestTriggerBuild(t *testing.T) {
 			// First run, refs/branch-heads/{1,2} updated, refs/heads/master removed.
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/branch-heads/1", Revision: "cafe1"},
-					{Name: "refs/branch-heads/2", Revision: "cafe2"},
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/branch-heads/1": "cafee1",
+				"refs/branch-heads/2": "cafee2",
 			})
 			ctl.Triggers = nil
 
 			// Second run, refs/branch-heads/{3,4} updated.
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/branch-heads/1", Revision: "cafe1"},
-					{Name: "refs/branch-heads/2", Revision: "cafe2"},
-					{Name: "refs/branch-heads/3", Revision: "cafe3"},
-					{Name: "refs/branch-heads/4", Revision: "cafe4"},
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/branch-heads/1": "cafee1",
+				"refs/branch-heads/2": "cafee2",
+				"refs/branch-heads/3": "cafee3",
+				"refs/branch-heads/4": "cafee4",
 			})
 			ctl.Triggers = nil
 
 			// Final run, refs/branch-heads/5 updated.
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(loadSavedRepo(), ShouldResemble, &Repository{
-				ID: "proj/gitiles:https://a.googlesource.com/b.git",
-				References: []Reference{
-					{Name: "refs/branch-heads/1", Revision: "cafe1"},
-					{Name: "refs/branch-heads/2", Revision: "cafe2"},
-					{Name: "refs/branch-heads/3", Revision: "cafe3"},
-					{Name: "refs/branch-heads/4", Revision: "cafe4"},
-					{Name: "refs/branch-heads/5", Revision: "cafe5"},
-				},
+			So(loadNoError(), ShouldResemble, map[string]string{
+				"refs/branch-heads/1": "cafee1",
+				"refs/branch-heads/2": "cafee2",
+				"refs/branch-heads/3": "cafee3",
+				"refs/branch-heads/4": "cafee4",
+				"refs/branch-heads/5": "cafee5",
 			})
 		})
 	})
