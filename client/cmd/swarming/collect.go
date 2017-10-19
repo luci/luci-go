@@ -19,12 +19,16 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 )
 
 type TaskOutputOption int64
@@ -73,11 +77,40 @@ func (t *TaskOutputOption) Set(s string) error {
 }
 
 func (t TaskOutputOption) IncludesJSON() bool {
-	return (t & TaskOutputJSON) == 1
+	return (t & TaskOutputJSON) != 0
 }
 
 func (t TaskOutputOption) IncludesConsole() bool {
-	return (t & TaskOutputConsole) == 1
+	return (t & TaskOutputConsole) != 0
+}
+
+type TaskResult struct {
+	TaskID string
+	Result *swarming.SwarmingRpcsTaskResult
+	Output string
+	Error  error
+}
+
+func NewTaskError(taskID string, err error) TaskResult {
+	return TaskResult{
+		TaskID: taskID,
+		Error:  err,
+	}
+}
+
+func (t *TaskResult) Print() {
+	if t.Error != nil {
+		fmt.Printf("%s: %v\n", t.TaskID, t.Error)
+	} else {
+		fmt.Printf("%s: exit %d\n", t.TaskID, t.Result.ExitCode)
+		stdout := strings.TrimSpace(t.Output)
+		if len(stdout) > 0 {
+			lines := strings.Split(stdout, "\n")
+			for _, line := range lines {
+				fmt.Printf("    %s\n", line)
+			}
+		}
+	}
 }
 
 func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -107,7 +140,7 @@ type collectRun struct {
 func (c *collectRun) Init(defaultAuthOpts auth.Options) {
 	c.commonFlags.Init(defaultAuthOpts)
 
-	c.Flags.DurationVar(&c.timeout, "timeout", 0, "Timeout to wait for result. Set to 0 for no timeout.")
+	c.Flags.DurationVar(&c.timeout, "timeout", 0, "Timeout to wait for result. Set to 0 for no timeout. No timeout by default.")
 	c.Flags.StringVar(&c.taskSummaryJSON, "task-summary-json", "", "Dump a summary of task results to a file as json. Any output files emitted by the task can be collected by using --task-output-dir")
 	c.Flags.StringVar(&c.taskOutputDir, "task-output-dir", "", "Directory to put task results into. When the task finishes, this directory contains per-shard directories with output files produced by shards.")
 	c.Flags.BoolVar(&c.perf, "perf", false, "Includes performance statistics.")
@@ -166,5 +199,145 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		return 1
 	}
 	defer cl.Close()
+
+	if err := c.main(a, args); err != nil {
+		printError(a, err)
+		return 1
+	}
 	return 0
+}
+
+func (c *collectRun) fetchTaskResults(taskID string) TaskResult {
+	client, err := c.createAuthClient()
+	if err != nil {
+		return NewTaskError(taskID, err)
+	}
+
+	s, err := swarming.New(client)
+	if err != nil {
+		return NewTaskError(taskID, err)
+	}
+	s.BasePath = c.commonFlags.serverURL + swarmingAPISuffix
+
+	// Fetch the result details.
+	call := s.Task.Result(taskID).IncludePerformanceStats(c.perf)
+	result, err := call.Do()
+	if err != nil {
+		return NewTaskError(taskID, err)
+	}
+
+	// If we got the result details, try to fetch stdout if the
+	// user asked for it.
+	var output string
+	if c.taskOutput != TaskOutputNone {
+		call := s.Task.Stdout(taskID)
+		if taskOutput, err := call.Do(); err != nil {
+			return NewTaskError(taskID, err)
+		} else {
+			output = taskOutput.Output
+		}
+	}
+
+	// TODO: Fetch additional files from isolate server.
+
+	return TaskResult{
+		TaskID: taskID,
+		Result: result,
+		Output: output,
+	}
+}
+
+func (c *collectRun) pollForTaskResult(taskID string, results chan<- TaskResult) {
+	startedTime := time.Now()
+	deadline := startedTime.Add(c.timeout)
+	for {
+		result := c.fetchTaskResults(taskID)
+		if result.Error == nil {
+			state, err := ParseTaskState(result.Result.State)
+			if err != nil {
+				results <- NewTaskError(taskID, err)
+				return
+			}
+			if !state.Alive() {
+				results <- result
+				return
+			}
+		}
+		currentTime := time.Now()
+		if deadline.Before(currentTime) {
+			err := fmt.Errorf("task timeout %s exceeded", c.timeout)
+			results <- NewTaskError(taskID, err)
+			return
+		}
+
+		// Start with a 1 second delay and for each 30 seconds of waiting
+		// add another second until hitting a 15 second ceiling.
+		delay := time.Second + (currentTime.Sub(startedTime) / 30)
+		if delay >= 15*time.Second {
+			delay = 15 * time.Second
+		}
+		if delay >= deadline.Sub(currentTime) {
+			delay = deadline.Sub(currentTime)
+		}
+		time.Sleep(delay)
+	}
+}
+
+// summarizeResults generate a marshalled JSON summary of the task results.
+func (c *collectRun) summarizeResults(results []TaskResult) ([]byte, error) {
+	jsonShardResults := []interface{}{}
+	for _, result := range results {
+		if result.Error != nil {
+			jsonShardResults = append(jsonShardResults, result.Error)
+		} else {
+			jsonResult := map[string]interface{}{"results": *result.Result}
+			if c.taskOutput.IncludesJSON() {
+				jsonResult["output"] = result.Output
+			}
+			jsonShardResults = append(jsonShardResults, jsonResult)
+		}
+	}
+	return json.MarshalIndent(map[string]interface{}{"shards": jsonShardResults}, "", "  ")
+}
+
+func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
+	// Aggregate results by polling and fetching across multiple goroutines.
+	results := make([]TaskResult, len(taskIDs))
+	aggregator := make(chan TaskResult, len(taskIDs))
+	for _, id := range taskIDs {
+		go c.pollForTaskResult(id, aggregator)
+	}
+	for i := 0; i < len(taskIDs); i++ {
+		results[i] = <-aggregator
+	}
+
+	// Summarize results to JSON.
+	jsonSummary, err := c.summarizeResults(results)
+	if err != nil {
+		return err
+	}
+
+	// Write any relevant files.
+	if len(c.taskSummaryJSON) > 0 {
+		if err := ioutil.WriteFile(c.taskSummaryJSON, jsonSummary, 0664); err != nil {
+			return err
+		}
+	}
+	if len(c.taskOutputDir) > 0 {
+		if _, err := os.Stat(c.taskOutputDir); os.IsNotExist(err) {
+			os.MkdirAll(c.taskOutputDir, 0775)
+		} else if err != nil {
+			return err
+		}
+		summaryPath := filepath.Join(c.taskOutputDir, "summary.json")
+		if err := ioutil.WriteFile(summaryPath, jsonSummary, 0664); err != nil {
+			return err
+		}
+	}
+	if c.taskOutput.IncludesConsole() {
+		for _, result := range results {
+			result.Print()
+		}
+	}
+	return nil
 }
