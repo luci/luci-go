@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0820097b_971c5580",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-19T18:07:22Z",
+      "side": 1,
+      "message": "it is used by htmlMW one line below",
+      "parentUuid": "76ab7363_dbdbfdb8",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 11
+      },
+      "revId": "af07e3fcb0293b97896248f53f711a17102ffe3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "510b9180_63571dcc",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "af07e3fcb0293b97896248f53f711a17102ffe3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67da13c3_dd312254",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-19T18:07:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "510b9180_63571dcc",
+      "range": {
+        "startLine": 66,
+        "startChar": 23,
+        "endLine": 66,
+        "endChar": 29
+      },
+      "revId": "af07e3fcb0293b97896248f53f711a17102ffe3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
