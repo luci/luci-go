@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d474f616_7a193086",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-19T19:04:22Z",
+      "side": 1,
+      "message": "The rest of this client doesn\u0027t use the luci-go errors package, so I kept with that. WDYT?",
+      "range": {
+        "startLine": 139,
+        "startChar": 11,
+        "endLine": 139,
+        "endChar": 21
+      },
+      "revId": "2e98aebc39da0a03a661061f8fb647750db51b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
