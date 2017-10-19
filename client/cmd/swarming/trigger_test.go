@@ -124,7 +124,7 @@ func TestNamePartFromDimensions(t *testing.T) {
 	})
 }
 
-func TestParse_NoArgs(t *testing.T) {
+func TestTriggerParse_NoArgs(t *testing.T) {
 	Convey(`Make sure that Parse works with no arguments.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
@@ -134,7 +134,7 @@ func TestParse_NoArgs(t *testing.T) {
 	})
 }
 
-func TestParse_NoDimension(t *testing.T) {
+func TestTriggerParse_NoDimension(t *testing.T) {
 	Convey(`Make sure that Parse works with no dimensions.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
@@ -146,7 +146,7 @@ func TestParse_NoDimension(t *testing.T) {
 	})
 }
 
-func TestParse_NoIsolated(t *testing.T) {
+func TestTriggerParse_NoIsolated(t *testing.T) {
 	Convey(`Make sure that Parse handles a missing isolated flag.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
@@ -161,7 +161,7 @@ func TestParse_NoIsolated(t *testing.T) {
 	})
 }
 
-func TestParse_BadIsolated(t *testing.T) {
+func TestTriggerParse_BadIsolated(t *testing.T) {
 	Convey(`Make sure that Parse handles an invalid isolated flag.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
@@ -177,7 +177,7 @@ func TestParse_BadIsolated(t *testing.T) {
 	})
 }
 
-func TestParse_RawNoArgs(t *testing.T) {
+func TestTriggerParse_RawNoArgs(t *testing.T) {
 	Convey(`Make sure that Parse handles missing raw-cmd arguments.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
@@ -194,7 +194,7 @@ func TestParse_RawNoArgs(t *testing.T) {
 	})
 }
 
-func TestParse_RawAndIsolateServer(t *testing.T) {
+func TestTriggerParse_RawAndIsolateServer(t *testing.T) {
 	Convey(`Make sure that Parse handles raw-cmd and isolate-server arguments.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
