@@ -147,14 +147,6 @@ func (c *triggerRun) Parse(args []string) error {
 		return errors.New("please at least specify one dimension")
 	}
 
-	if len(c.isolated) == 0 {
-		return errors.New("please use -isolated to specify hash")
-	}
-
-	if len(c.isolated) != 40 {
-		return errors.New("invalid hash")
-	}
-
 	if c.rawCmd {
 		if len(args) == 0 {
 			return errors.New("arguments with -raw-cmd should be passed after -- as command delimiter")
@@ -162,6 +154,10 @@ func (c *triggerRun) Parse(args []string) error {
 
 		if len(c.isolateServer) > 0 {
 			return errors.New("can't use both -raw-cmd and -isolate-server")
+		}
+	} else {
+		if len(c.isolated) == 0 {
+			return errors.New("please use -isolated to specify hash or -raw-cmd")
 		}
 	}
 
@@ -338,7 +334,7 @@ func (c *triggerRun) createNewTask(request *swarming.SwarmingRpcsNewTaskRequest)
 	if err != nil {
 		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
 	}
-	s.BasePath = c.commonFlags.serverURL + "/api/swarming/v1/"
+	s.BasePath = c.commonFlags.serverURL + swarmingAPISuffix
 
 	call := s.Tasks.New(request).Fields("task_result")
 	result, err := call.Do()

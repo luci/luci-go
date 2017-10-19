@@ -15,11 +15,21 @@
 package main
 
 import (
+	"net/http"
 	"testing"
+	"time"
+
+	"golang.org/x/net/context"
+
+	googleapi "google.golang.org/api/googleapi"
+
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/auth"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCollectParse_NoArgs(t *testing.T) {
@@ -68,5 +78,80 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 
 		err = c.Parse(&[]string{"x81n8xn1b684n"})
 		So(err, ShouldErrLike, "negative timeout")
+	})
+}
+
+func testCollectPollWithServer(output taskOutputOption, s *testService) taskResult {
+	c, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
+	c, _ = clock.WithTimeout(c, 100*time.Second)
+
+	// Set a callback to make the timer finish.
+	clk.SetTimerCallback(func(amt time.Duration, t clock.Timer) {
+		clk.Add(amt)
+	})
+
+	results := make(chan taskResult, 1)
+	runner := collectRun{taskOutput: output}
+	go runner.pollForTaskResult(c, "10982374012938470", s, results)
+	ret := <-results
+	return ret
+}
+
+func TestCollectPollForTaskResult(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test fatal response`, t, func() {
+		service := &testService{
+			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				return nil, &googleapi.Error{Code: 404}
+			},
+		}
+		result := testCollectPollWithServer(taskOutputNone, service)
+		So(result.err, ShouldErrLike, "404")
+	})
+
+	Convey(`Test timeout exceeded`, t, func() {
+		service := &testService{
+			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				return nil, &googleapi.Error{Code: 502}
+			},
+		}
+		result := testCollectPollWithServer(taskOutputNone, service)
+		So(result.err, ShouldErrLike, "context deadline exceeded")
+	})
+
+	Convey(`Test bot finished`, t, func() {
+		service := &testService{
+			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
+			},
+			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
+				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			},
+		}
+		result := testCollectPollWithServer(taskOutputAll, service)
+		So(result.err, ShouldBeNil)
+		So(result.result, ShouldNotBeNil)
+		So(result.result.State, ShouldResemble, "COMPLETED")
+		So(result.output, ShouldResemble, "yipeeee")
+	})
+
+	Convey(`Test bot finished after failures`, t, func() {
+		i := 0
+		maxTries := 5
+		service := &testService{
+			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				if i < maxTries {
+					i += 1
+					return nil, &googleapi.Error{Code: http.StatusInternalServerError}
+				}
+				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
+			},
+		}
+		result := testCollectPollWithServer(taskOutputNone, service)
+		So(i, ShouldEqual, maxTries)
+		So(result.err, ShouldBeNil)
+		So(result.result, ShouldNotBeNil)
+		So(result.result.State, ShouldResemble, "COMPLETED")
 	})
 }

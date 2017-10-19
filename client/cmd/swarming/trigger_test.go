@@ -157,23 +157,7 @@ func TestTriggerParse_NoIsolated(t *testing.T) {
 		})
 
 		err = c.Parse([]string{})
-		So(err, ShouldResemble, errors.New("please use -isolated to specify hash"))
-	})
-}
-
-func TestTriggerParse_BadIsolated(t *testing.T) {
-	Convey(`Make sure that Parse handles an invalid isolated flag.`, t, func() {
-		c := triggerRun{}
-		c.Init(auth.Options{})
-
-		err := c.GetFlags().Parse([]string{
-			"-server", "http://localhost:9050",
-			"-dimension", "os=Ubuntu",
-			"-isolated", "0123456789",
-		})
-
-		err = c.Parse([]string{})
-		So(err, ShouldResemble, errors.New("invalid hash"))
+		So(err, ShouldResemble, errors.New("please use -isolated to specify hash or -raw-cmd"))
 	})
 }
 

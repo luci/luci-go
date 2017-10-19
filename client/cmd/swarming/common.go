@@ -31,6 +31,67 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
+var swarmingAPISuffix = "/api/swarming/v1/"
+
+// swarmingService is an interface intended to stub out the swarming API
+// bindings for testing.
+type swarmingService interface {
+	// TODO: Add support for trigger-related mocks.
+	GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
+	GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
+}
+
+type swarmingServiceImpl struct {
+	*swarming.Service
+}
+
+func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
+	return s.Service.Task.Result(taskID).IncludePerformanceStats(perf).Context(c).Do()
+}
+
+func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+	return s.Service.Task.Stdout(taskID).Context(c).Do()
+}
+
+type taskState int32
+
+const (
+	maskAlive                = 1
+	stateBotDied   taskState = 1 << 1
+	stateCancelled taskState = 1 << 2
+	stateCompleted taskState = 1 << 3
+	stateExpired   taskState = 1 << 4
+	statePending   taskState = 1<<5 | maskAlive
+	stateRunning   taskState = 1<<6 | maskAlive
+	stateTimedOut  taskState = 1 << 7
+	stateUnknown   taskState = -1
+)
+
+func parseTaskState(state string) (taskState, error) {
+	switch state {
+	case "BOT_DIED":
+		return stateBotDied, nil
+	case "CANCELED":
+		return stateCancelled, nil
+	case "COMPLETED":
+		return stateCompleted, nil
+	case "EXPIRED":
+		return stateExpired, nil
+	case "PENDING":
+		return statePending, nil
+	case "RUNNING":
+		return stateRunning, nil
+	case "TIMED_OUT":
+		return stateTimedOut, nil
+	default:
+		return stateUnknown, fmt.Errorf("unrecognized state %q", state)
+	}
+}
+
+func (t taskState) Alive() bool {
+	return (t & maskAlive) != 0
+}
+
 type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags common.Flags
