@@ -16,6 +16,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/client/authcli"
 	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -67,4 +69,14 @@ func (c *commonFlags) createAuthClient() (*http.Client, error) {
 	// for IP whitelisted bots: they have NO credentials to send.
 	ctx := gologger.StdConfig.Use(context.Background())
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
+}
+
+func printError(a subcommands.Application, err error) {
+	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+}
+
+type jsonDump struct {
+	TaskID  string
+	ViewURL string
+	Request swarming.SwarmingRpcsNewTaskRequest
 }
