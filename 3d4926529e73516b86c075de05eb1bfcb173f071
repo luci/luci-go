@@ -69,6 +69,24 @@
       "revId": "3d4926529e73516b86c075de05eb1bfcb173f071",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f62e3a02_93a90c4c",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-19T17:49:33Z",
+      "side": 1,
+      "message": "Yes, the implication is that because we don\u0027t support filling in slave info, then we don\u0027t have the full build objects in the master json.  This is technically introducing API incompatibility and I wanted to call that out so we don\u0027t get surprised by it later, since some downstream clients may expect to find current build info there instead of a separate endpoint.  I don\u0027t think it is a huge deal though.",
+      "parentUuid": "aa38dbd7_ad43b289",
+      "revId": "3d4926529e73516b86c075de05eb1bfcb173f071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
