@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ecee6b1e_6a5fb611",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-19T20:15:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d51b304f_3cc7f41f",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 12
+      },
+      "revId": "ff40971c0f13c77ed4fefc07af614b9edf40f041",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba4d0e84_3b76d538",
         "filename": "scheduler/appengine/task/gitiles/state.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4db42d50_b752ccae",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-19T20:15:44Z",
+      "side": 1,
+      "message": "flawed thinking on my side. Agree. Done.",
+      "parentUuid": "ba4d0e84_3b76d538",
+      "range": {
+        "startLine": 44,
+        "startChar": 41,
+        "endLine": 44,
+        "endChar": 51
+      },
+      "revId": "ff40971c0f13c77ed4fefc07af614b9edf40f041",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "428a6d2d_8920c50c",
         "filename": "scheduler/appengine/task/gitiles/state.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "ff40971c0f13c77ed4fefc07af614b9edf40f041",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb8365e3_350f34f8",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-19T20:15:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "428a6d2d_8920c50c",
+      "range": {
+        "startLine": 58,
+        "startChar": 41,
+        "endLine": 58,
+        "endChar": 51
+      },
+      "revId": "ff40971c0f13c77ed4fefc07af614b9edf40f041",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
