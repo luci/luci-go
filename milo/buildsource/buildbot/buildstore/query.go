@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
@@ -67,9 +68,13 @@ type Query struct {
 	// Loaded Buildbot builds will have only master, builder and number.
 	KeyOnly bool // make the data
 
-	// NoAnnotationFetch, if true, prevents annotation proto fetching.
+	// NoAnnotationFetch, if true, will not fetch annotation proto from LogDog.
 	// Loaded LUCI builds will not have properties, steps, logs or text.
 	NoAnnotationFetch bool
+
+	// NoChangeFetch, if true, will not load change history from Gitiles.
+	// Loaded LUCI builds will not have Blame or SourceStamp.Changes.
+	NoChangeFetch bool
 }
 
 func (q *Query) dsQuery() *datastore.Query {
@@ -155,15 +160,13 @@ func getEmulatedBuilds(c context.Context, q Query, emOptions api.EmulationOption
 			msg := msg
 			work <- func() error {
 				// may load annotations from logdog, that's why parallelized.
-				b, err := buildFromBuildbucket(c, msg, !q.NoAnnotationFetch)
+				b, err := buildFromBuildbucket(c, q.Master, msg, !q.NoAnnotationFetch)
 				if err != nil {
 					return err
 				}
-				if b.Number < int(emOptions.StartFrom) {
-					return nil
+				if b.Number >= int(emOptions.StartFrom) {
+					builds[i] = b
 				}
-				b.Master = q.Master
-				builds[i] = b
 				return nil
 			}
 		}
@@ -172,6 +175,35 @@ func getEmulatedBuilds(c context.Context, q Query, emOptions api.EmulationOption
 		return nil, err
 	}
 	logging.Infof(c, "conversion from buildbucket builds took %s", clock.Since(c, start))
+
+	if !q.NoChangeFetch {
+		start = clock.Now(c)
+		// We need to compute blamelist for multiple builds.
+		// 1) We don't have a guarantee that the numbers are contiguous
+		// 2) For some builds, we may have cached changes
+		// => compute blamelist for each build individually
+
+		// cache build revisions before fetching changes
+		// in case build numbers are contiguous.
+		caches := make([]memcache.Item, len(builds))
+		for i, b := range builds {
+			caches[i] = buildRevCache(c, b)
+		}
+		memcache.Set(c, caches...)
+
+		err = parallel.WorkPool(10, func(work chan<- func() error) {
+			for _, b := range builds {
+				b := b
+				work <- func() error {
+					return blame(c, b)
+				}
+			}
+		})
+		if err != nil {
+			return nil, errors.Annotate(err, "blamelist computation failed").Err()
+		}
+		logging.Infof(c, "blamelist computation took %s", clock.Since(c, start))
+	}
 
 	// Still need to load builds from datastore?
 	if q.Limit <= 0 || len(builds) < q.Limit {

@@ -111,7 +111,7 @@ func (p *Property) UnmarshalJSON(d []byte) error {
 // Build is a single build json on buildbot.
 type Build struct {
 	Master      string
-	Blame       []string `json:"blame"`
+	Blame       []string `json:"blame"` // email addresses
 	Buildername string   `json:"builderName"`
 	// This needs to be reflected.  This can be either a String or a Step.
 	Currentstep interface{} `json:"currentStep"`
@@ -149,6 +149,11 @@ type Build struct {
 	// Emulated indicates that this Buildbot build was emulated from non-Buildbot
 	// e.g. from LUCI.
 	Emulated bool `json:"emulated"`
+}
+
+// ID returns "<master>/<builder>/<number>" string.
+func (b *Build) ID() string {
+	return fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number)
 }
 
 func (b *Build) Status() model.Status {
@@ -213,7 +218,7 @@ type Change struct {
 	Revision   string          `json:"revision"`
 	Revlink    string          `json:"revlink"`
 	When       int             `json:"when"`
-	Who        string          `json:"who"`
+	Who        string          `json:"who"` // email address
 }
 
 func (bc *Change) GetFiles() []string {
