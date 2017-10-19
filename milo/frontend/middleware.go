@@ -299,8 +299,6 @@ func init() {
 					`</a>`))
 }
 
-var authconfig *auth.Config
-
 // getTemplateBundles is used to render HTML templates. It provides base args
 // passed to all templates.  It takes a path to the template folder, relative
 // to the path of the binary during runtime.
@@ -335,16 +333,6 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 		FuncMap: funcMap,
 	}
 }
-
-// base returns the basic LUCI appengine middlewares.
-func base(templatePath string) router.MiddlewareChain {
-	return standard.Base().Extend(
-		auth.Authenticate(server.CookieAuth),
-		withRequestMiddleware,
-		templates.WithTemplates(getTemplateBundle(templatePath)),
-	)
-}
-
 // The context key, so that we can embed the http.Request object into
 // the context.
 var requestKey = "http.request"
