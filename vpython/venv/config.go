@@ -19,7 +19,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"unicode/utf8"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
@@ -161,19 +160,6 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	}
 	if err := filesystem.AbsPath(&cfg.BaseDir); err != nil {
 		return nil, errors.Annotate(err, "failed to resolve absolute path of base directory").Err()
-	}
-
-	// Enforce maximum path length.
-	if cfg.MaxScriptPathLen > 0 {
-		if longestPath := longestGeneratedScriptPath(cfg.BaseDir); longestPath != "" {
-			longestPathLen := utf8.RuneCountInString(longestPath)
-			if longestPathLen > cfg.MaxScriptPathLen {
-				return nil, errors.Reason(
-					"expected deepest path length (%d) exceeds threshold (%d)",
-					longestPathLen, cfg.MaxScriptPathLen,
-				).InternalReason("longestPath(%q)", longestPath).Err()
-			}
-		}
 	}
 
 	// Construct a new, independent Environment for this Env.
