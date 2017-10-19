@@ -98,44 +98,53 @@ func show(c context.Context, client *prpc.Client, name string) error {
 	}
 
 	print := newPrinter(os.Stdout)
-	print.File = file
+	if err := print.SetFile(file); err != nil {
+		return err
+	}
 
 	switch obj := obj.(type) {
 
 	case *descriptor.ServiceDescriptorProto:
-		print.Service(obj, path[1], -1)
+		print.Service(obj, -1)
 
 	case *descriptor.MethodDescriptorProto:
 		serviceIndex, methodIndex := path[1], path[3]
-		print.Service(file.Service[serviceIndex], serviceIndex, methodIndex)
+		print.Service(file.Service[serviceIndex], methodIndex)
 
-		printMsg := func(name string) {
+		printMsg := func(name string) error {
 			name = strings.TrimPrefix(name, ".")
-			file, msg, path := descutil.Resolve(desc.Description, name)
+			file, msg, _ := descutil.Resolve(desc.Description, name)
 			if msg == nil {
 				print.Printf("// Message %q is not found\n", name)
-				return
+				return nil
 			}
-			print.File = file
-			print.Message(msg.(*descriptor.DescriptorProto), path)
+			if err := print.SetFile(file); err != nil {
+				return err
+			}
+			print.Message(msg.(*descriptor.DescriptorProto))
+			return nil
 		}
 
 		print.Printf("\n")
-		printMsg(obj.GetInputType())
+		if err := printMsg(obj.GetInputType()); err != nil {
+			return err
+		}
 		print.Printf("\n")
-		printMsg(obj.GetOutputType())
+		if err := printMsg(obj.GetOutputType()); err != nil {
+			return err
+		}
 
 	case *descriptor.DescriptorProto:
-		print.Message(obj, path)
+		print.Message(obj)
 
 	case *descriptor.FieldDescriptorProto:
-		print.Field(obj, path)
+		print.Field(obj)
 
 	case *descriptor.EnumDescriptorProto:
-		print.Enum(obj, path)
+		print.Enum(obj)
 
 	case *descriptor.EnumValueDescriptorProto:
-		print.EnumValue(obj, path)
+		print.EnumValue(obj)
 
 	default:
 		return fmt.Errorf("object of type %T is not supported", obj)
