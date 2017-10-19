@@ -25,22 +25,64 @@
   flex-direction: row;
 }
 
-/* Header */
+/* Title */
 
-.console-header {
+.console-title {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
   align-items: center;
 }
 
-.console-header * {
+.console-title * {
   margin-right: 1em;
 }
 
-.console-header img {
+.console-title img {
   width: 16px;
   height: 16px;
+}
+
+/* Header */
+
+.console-header {
+  display: flex;
+  flex-direction: row;
+  border-radius: 0.5em;
+  border: 1px solid silver;
+}
+
+.console-header-group {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.5em;
+  border: 1px solid silver;
+  margin: 1em;
+  padding: 0.5em;
+}
+
+.console-header-group-title {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  border-bottom: 1px solid silver;
+}
+
+.console-header-name {
+  display: flex;
+  flex-direction: row;
+  font-weight: bold;
+}
+
+.console-header-build {
+  display: flex;
+  flex-grow: 1;
+  min-height: 2em;
+  max-height: 2em;
+  border: none;
+  margin-right: 0.2em;
 }
 
 /* Commits */

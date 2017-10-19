@@ -109,10 +109,33 @@ func GetConsolePreview(c context.Context, def *common.Console) (ConsolePreview, 
 	if err != nil {
 		return nil, err
 	}
-
 	preview := make(ConsolePreview, len(def.Builders))
 	for i := 0; i < len(builds); i++ {
 		preview[BuilderID(def.Builders[i])] = builds[i]
 	}
 	return preview, nil
+}
+
+// GetConsoleSummaries returns a list of console summaries from the datastore.
+//
+// This list of console summaries directly corresponds to the input list of
+// console IDs.
+func GetConsoleSummaries(c context.Context, consoleIDs []string) ([][]*model.BuilderSummary, error) {
+	summaries := make([][]*model.BuilderSummary, len(consoleIDs))
+	err := parallel.WorkPool(4, func(ch chan<- func() error) {
+		for i, id := range consoleIDs {
+			i := i
+			id := id
+			ch <- func() error {
+				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", id)
+				return datastore.Run(c, q, func(bs *model.BuilderSummary) {
+					summaries[i] = append(summaries[i], bs)
+				})
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return summaries, nil
 }
