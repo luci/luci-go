@@ -20,8 +20,15 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/milo/api/buildbot"
+	api "go.chromium.org/luci/milo/api/proto"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -51,11 +58,18 @@ type Query struct {
 	Limit    int
 	Finished Ternary
 	Cursor   string
-	// NumbersOnly, if true, reduces the query to populate
-	// only Build.Number field in the returned builds.
-	// Other Build fields are not guaranteed to be set.
-	// Makes the query faster.
-	NumbersOnly bool
+
+	// The following fields are tuning parameters specific to a buildstore
+	// implementation. Their usage implies understanding of how emulation
+	// works.
+
+	// KeyOnly, if true, makes the datastore query keys-only.
+	// Loaded Buildbot builds will have only master, builder and number.
+	KeyOnly bool // make the data
+
+	// NoAnnotationFetch, if true, prevents annotation proto fetching.
+	// Loaded LUCI builds will not have properties, steps, logs or text.
+	NoAnnotationFetch bool
 }
 
 func (q *Query) dsQuery() *datastore.Query {
@@ -70,7 +84,7 @@ func (q *Query) dsQuery() *datastore.Query {
 	if q.Limit > 0 {
 		dsq = dsq.Limit(int32(q.Limit))
 	}
-	if q.NumbersOnly {
+	if q.KeyOnly {
 		dsq = dsq.KeysOnly(true)
 	}
 	return dsq
@@ -78,7 +92,7 @@ func (q *Query) dsQuery() *datastore.Query {
 
 // QueryResult is a result of running a Query.
 type QueryResult struct {
-	Builds     []*buildbot.Build
+	Builds     []*buildbot.Build // ordered from greater-number to lower-number
 	NextCursor string
 	PrevCursor string
 }
@@ -93,6 +107,91 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 		return nil, errors.New("builder is required")
 	}
 
+	emOptions, err := GetEmulationOptions(c, q.Master, q.Builder)
+	if err != nil {
+		return nil, err
+	}
+	if emOptions != nil {
+		return getEmulatedBuilds(c, q, *emOptions)
+	}
+	return getDatastoreBuilds(c, q)
+}
+
+func getEmulatedBuilds(c context.Context, q Query, emOptions api.EmulationOptions) (*QueryResult, error) {
+	if q.Cursor != "" {
+		// build query emulation does not support cursors
+		logging.Warningf(c, "ignoring cursor %q", q.Cursor)
+		q.Cursor = ""
+	}
+
+	bb, err := buildbucketClient(c)
+	if err != nil {
+		return nil, err
+	}
+
+	search := bb.Search().
+		Bucket(emOptions.Bucket).
+		Tag(strpair.Format(buildbucket.TagBuilder, q.Builder)).
+		Context(c)
+	switch q.Finished {
+	case Yes:
+		search.Status(bbapi.StatusCompleted)
+	case No:
+		search.Status(bbapi.StatusFilterIncomplete)
+	}
+
+	start := clock.Now(c)
+	msgs, err := search.Fetch(q.Limit, nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "searching on buildbucket").Err()
+	}
+	logging.Infof(c, "buildbucket search took %s", clock.Since(c, start))
+
+	builds := make([]*buildbot.Build, len(msgs))
+	start = clock.Now(c)
+	err = parallel.WorkPool(10, func(work chan<- func() error) {
+		for i, msg := range msgs {
+			i := i
+			msg := msg
+			work <- func() error {
+				// may load annotations from logdog, that's why parallelized.
+				b, err := buildFromBuildbucket(c, msg, !q.NoAnnotationFetch)
+				if err != nil {
+					return err
+				}
+				if b.Number < int(emOptions.StartFrom) {
+					return nil
+				}
+				b.Master = q.Master
+				builds[i] = b
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	logging.Infof(c, "conversion from buildbucket builds took %s", clock.Since(c, start))
+
+	// Still need to load builds from datastore?
+	if q.Limit <= 0 || len(builds) < q.Limit {
+		// get builds up to emOptions.StartFrom.
+		q.Cursor = strconv.Itoa(int(-emOptions.StartFrom))
+		if q.Limit > 0 {
+			// don't fetch more than we need
+			q.Limit -= len(builds)
+		}
+		dsRes, err := getDatastoreBuilds(c, q)
+		if err != nil {
+			return nil, errors.Annotate(err, "running datastore query %#v", q).Err()
+		}
+		builds = append(builds, dsRes.Builds...)
+	}
+
+	return &QueryResult{Builds: builds}, nil
+}
+
+func getDatastoreBuilds(c context.Context, q Query) (*QueryResult, error) {
 	var builds []*buildEntity
 	if q.Limit > 0 {
 		builds = make([]*buildEntity, 0, q.Limit)
@@ -127,6 +226,7 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 	}
 	dsq = dsq.Order(order)
 
+	logging.Debugf(c, "running datastore query: %s", dsq)
 	err := datastore.GetAll(c, dsq, &builds)
 	if err != nil {
 		return nil, err

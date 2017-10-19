@@ -25,6 +25,8 @@ import (
 
 type Result int
 
+//go:generate stringer -type Result
+
 const (
 	NoResult Result = iota - 1
 	Success

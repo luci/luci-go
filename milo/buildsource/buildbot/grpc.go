@@ -62,6 +62,9 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 	if req.Builder == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
 	}
+	if req.Emulation != nil {
+		c = buildstore.WithEmulationOptions(c, req.Master, req.Builder, *req.Emulation)
+	}
 
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is requesting %s/%s/%d",
@@ -73,10 +76,10 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 
 	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum))
 	switch {
-	case common.ErrorTag.In(err) == common.CodeNotFound:
-		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
+	case b == nil:
+		return nil, errNotFoundGRPC
 	}
 
 	if req.ExcludeDeprecated {
@@ -103,6 +106,10 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	}
 	if req.Builder == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
+	}
+
+	if req.Emulation != nil {
+		c = buildstore.WithEmulationOptions(c, req.Master, req.Builder, *req.Emulation)
 	}
 
 	limit := int(req.Limit)
@@ -154,6 +161,15 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 
 	if req.Name == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
+	}
+
+	if len(req.Emulation) > 0 {
+		c = buildstore.WithEmulationOptionsProvider(c, func(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
+			if master != req.Name {
+				return nil, nil
+			}
+			return req.Emulation[builder], nil
+		})
 	}
 
 	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "", req.ExcludeDeprecated)

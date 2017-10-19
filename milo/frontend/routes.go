@@ -97,14 +97,14 @@ func Run(templatePath string) {
 	})
 
 	// Buildbot
-	r.GET("/buildbot/:master/:builder/:build", basemw, func(c *router.Context) {
+	r.GET("/buildbot/:master/:builder/:build", basemw.Extend(emulationMiddleware), func(c *router.Context) {
 		BuildHandler(c, &buildbot.BuildID{
 			Master:      c.Params.ByName("master"),
 			BuilderName: c.Params.ByName("builder"),
 			BuildNumber: c.Params.ByName("build"),
 		})
 	})
-	r.GET("/buildbot/:master/:builder/", basemw, func(c *router.Context) {
+	r.GET("/buildbot/:master/:builder/", basemw.Extend(emulationMiddleware), func(c *router.Context) {
 		BuilderHandler(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
 	})

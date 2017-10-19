@@ -16,7 +16,9 @@ package buildbot
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,9 +78,13 @@ func mergeText(text []string) []string {
 	return result
 }
 
-func getBuildSummary(b *buildbot.Build) *resp.BuildSummary {
+func getBuildSummary(b *buildbot.Build, linkParams url.Values) *resp.BuildSummary {
+	linkURL := fmt.Sprintf("%d", b.Number)
+	if len(linkParams) > 0 {
+		linkURL += "?" + linkParams.Encode()
+	}
 	return &resp.BuildSummary{
-		Link:   resp.NewLink(fmt.Sprintf("#%d", b.Number), fmt.Sprintf("%d", b.Number)),
+		Link:   resp.NewLink(fmt.Sprintf("#%d", b.Number), linkURL),
 		Status: b.Status(),
 		ExecutionTime: resp.Interval{
 			Started:  b.Times.Start.Time,
@@ -189,10 +195,22 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	}
 	result.MachinePool = summarizeSlavePool(baseURL+master.Name, builder.Slaves, master.Slaves)
 
+	// TODO(nodir,hinoka): move all link generation to a separate package
+	var linkParams url.Values
+	if opt, err := buildstore.GetEmulationOptions(c, masterName, builderName); err != nil {
+		return nil, errors.Annotate(err, "failed to get emulation options").Err()
+	} else if opt != nil {
+		linkParams = url.Values{}
+		linkParams.Set("em-bucket", opt.Bucket)
+		linkParams.Set("em-start", strconv.Itoa(int(opt.StartFrom)))
+	}
+
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
 		q := buildstore.Query{
 			Master:  masterName,
 			Builder: builderName,
+
+			NoAnnotationFetch: true,
 		}
 		work <- func() error {
 			q := q
@@ -207,7 +225,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.PrevCursor = res.PrevCursor
 			result.FinishedBuilds = make([]*resp.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
-				result.FinishedBuilds[i] = getBuildSummary(b)
+				result.FinishedBuilds[i] = getBuildSummary(b, linkParams)
 			}
 			return err
 		}
@@ -221,7 +239,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.CurrentBuilds = make([]*resp.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
 				// currentBuilds is presented in reversed order, so flip it
-				result.CurrentBuilds[len(res.Builds)-i-1] = getBuildSummary(b)
+				result.CurrentBuilds[len(res.Builds)-i-1] = getBuildSummary(b, linkParams)
 			}
 			return err
 		}

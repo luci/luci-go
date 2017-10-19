@@ -14,6 +14,7 @@
 
 package buildbucket
 
+// Build statuses.
 const (
 	// StatusScheduled means a build was created, but did not start or
 	// complete.
@@ -23,6 +24,16 @@ const (
 	StatusStarted = "STARTED"
 	// StatusCompleted means a build has completed. See its Result.
 	StatusCompleted = "COMPLETED"
+)
+
+// Build status filters.
+// Can be used only when searching.
+// A build cannot have any of these statuses.
+//
+// Any build status defined above can be used as a status filter too.
+const (
+	// StatusFilterIncomplete matches StatusScheduled or StatusStarted.
+	StatusFilterIncomplete = "INCOMPLETE"
 )
 
 const (

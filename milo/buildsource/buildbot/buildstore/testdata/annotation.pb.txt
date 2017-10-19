@@ -1,0 +1,5888 @@
+substep: <
+  step: <
+    name: "setup_build"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/setup_build/0/stdout"
+    >
+    started: <
+      seconds: 1507648257
+      nanos: 394395567
+    >
+    ended: <
+      seconds: 1507648257
+      nanos: 758612461
+    >
+    text: "running recipe: \"chromium_trybot\""
+    other_links: <
+      label: "run_recipe"
+      logdog_stream: <
+        name: "steps/setup_build/0/logs/run_recipe/0"
+      >
+    >
+    property: <
+      name: "$recipe_engine/path"
+      value: "{\"cache_dir\": \"/b/swarming/w/ir/cache\", \"temp_dir\": \"/b/swarming/w/ir/tmp/rt\"}"
+    >
+    property: <
+      name: "$recipe_engine/step"
+      value: "{\"prefix_path\": [\"/b/swarming/w/ir/cipd_bin_packages\", \"/b/swarming/w/ir/cipd_bin_packages/bin\"]}"
+    >
+    property: <
+      name: "attempt_start_ts"
+      value: "1507636501000000"
+    >
+    property: <
+      name: "blamelist"
+      value: "[\"fs@opera.com\"]"
+    >
+    property: <
+      name: "bot_id"
+      value: "\"swarm902-c4\""
+    >
+    property: <
+      name: "buildbucket"
+      value: "{\"build\": {\"bucket\": \"luci.chromium.try\", \"created_by\": \"user:luci-migration@appspot.gserviceaccount.com\", \"created_ts\": 1507648197433220, \"id\": \"8966109999687220400\", \"tags\": [\"buildset:patch/gerrit/chromium-review.googlesource.com/708994/1\", \"luci_migration_attempt:1\", \"luci_migration_buildbot_build_id:8966117936677079552\", \"user_agent:luci-migration\"]}, \"hostname\": \"cr-buildbucket.appspot.com\"}"
+    >
+    property: <
+      name: "buildername"
+      value: "\"linux_chromium_rel_ng\""
+    >
+    property: <
+      name: "buildnumber"
+      value: "8928"
+    >
+    property: <
+      name: "category"
+      value: "\"cq_experimental\""
+    >
+    property: <
+      name: "master"
+      value: "\"master.tryserver.chromium.linux\""
+    >
+    property: <
+      name: "mastername"
+      value: "\"tryserver.chromium.linux\""
+    >
+    property: <
+      name: "patch_gerrit_url"
+      value: "\"https://chromium-review.googlesource.com\""
+    >
+    property: <
+      name: "patch_issue"
+      value: "708994"
+    >
+    property: <
+      name: "patch_project"
+      value: "\"chromium/src\""
+    >
+    property: <
+      name: "patch_ref"
+      value: "\"refs/changes/94/708994/1\""
+    >
+    property: <
+      name: "patch_repository_url"
+      value: "\"https://chromium.googlesource.com/chromium/src\""
+    >
+    property: <
+      name: "patch_set"
+      value: "1"
+    >
+    property: <
+      name: "patch_storage"
+      value: "\"gerrit\""
+    >
+    property: <
+      name: "path_config"
+      value: "\"generic\""
+    >
+    property: <
+      name: "reason"
+      value: "\"CQ\""
+    >
+    property: <
+      name: "recipe"
+      value: "\"chromium_trybot\""
+    >
+    property: <
+      name: "repository"
+      value: "\"https://chromium.googlesource.com/chromium/src\""
+    >
+    property: <
+      name: "revision"
+      value: "\"c31e3896b8fe7f6e0a73c70633b37f7ab06f0236\""
+    >
+    property: <
+      name: "swarming_run_id"
+      value: "\"391fa75fcf8e4911\""
+    >
+  >
+>
+substep: <
+  step: <
+    name: "makedirs checkout path"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/makedirs_checkout_path/0/stdout"
+    >
+    started: <
+      seconds: 1507648257
+      nanos: 772455860
+    >
+    ended: <
+      seconds: 1507648257
+      nanos: 813708308
+    >
+  >
+>
+substep: <
+  step: <
+    name: "bot_update"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/bot_update/0/stdout"
+    >
+    started: <
+      seconds: 1507648257
+      nanos: 814422723
+    >
+    ended: <
+      seconds: 1507648448
+      nanos: 470244748
+    >
+    text: "[205GB/295GB used (69%)]"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/bot_update/0/logs/json.output/0"
+      >
+    >
+    property: <
+      name: "got_angle_revision"
+      value: "\"000dab88d3d34fa7038bab00600764b51b245526\""
+    >
+    property: <
+      name: "got_buildtools_revision"
+      value: "null"
+    >
+    property: <
+      name: "got_nacl_revision"
+      value: "\"7f07816e463da403255f0ab4f6d88004450dd09d\""
+    >
+    property: <
+      name: "got_revision"
+      value: "\"c31e3896b8fe7f6e0a73c70633b37f7ab06f0236\""
+    >
+    property: <
+      name: "got_revision_cp"
+      value: "\"refs/heads/master@{#507651}\""
+    >
+    property: <
+      name: "got_swarming_client_revision"
+      value: "null"
+    >
+    property: <
+      name: "got_v8_revision"
+      value: "\"ca82b06345e7227fac81628af9bde1e72345458d\""
+    >
+    property: <
+      name: "got_v8_revision_cp"
+      value: "\"refs/heads/6.3.289@{#1}\""
+    >
+    property: <
+      name: "got_webrtc_revision"
+      value: "\"deeba1f298d128f979f124303884514b6ec0e4e4\""
+    >
+    property: <
+      name: "got_webrtc_revision_cp"
+      value: "\"refs/heads/master@{#20212}\""
+    >
+  >
+>
+substep: <
+  step: <
+    name: "ensure_goma"
+    status: SUCCESS
+    substep: <
+      step: <
+        name: "ensure_goma.ensure_installed"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/ensure_goma/0/steps/ensure_installed/0/stdout"
+        >
+        started: <
+          seconds: 1507648448
+          nanos: 470526525
+        >
+        ended: <
+          seconds: 1507648449
+          nanos: 857179038
+        >
+        other_links: <
+          label: "json.output"
+          logdog_stream: <
+            name: "steps/ensure_goma/0/steps/ensure_installed/0/logs/json.output/0"
+          >
+        >
+      >
+    >
+    started: <
+      seconds: 1507648449
+      nanos: 857466041
+    >
+    ended: <
+      seconds: 1507648449
+      nanos: 857553860
+    >
+  >
+>
+substep: <
+  step: <
+    name: "swarming.py --version"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/swarming.py_--version/0/stdout"
+    >
+    started: <
+      seconds: 1507648449
+      nanos: 857985802
+    >
+    ended: <
+      seconds: 1507648450
+      nanos: 555065203
+    >
+    text: "0.9.3"
+  >
+>
+substep: <
+  step: <
+    name: "gclient runhooks (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/gclient_runhooks__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507648450
+      nanos: 555542211
+    >
+    ended: <
+      seconds: 1507648476
+      nanos: 872754868
+    >
+  >
+>
+substep: <
+  step: <
+    name: "get compile targets for scripts"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/get_compile_targets_for_scripts/0/stdout"
+    >
+    started: <
+      seconds: 1507648476
+      nanos: 873418776
+    >
+    ended: <
+      seconds: 1507648478
+      nanos: 137939670
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/get_compile_targets_for_scripts/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "read test spec (chromium.gpu.json)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/read_test_spec__chromium.gpu.json_/0/stdout"
+    >
+    started: <
+      seconds: 1507648478
+      nanos: 138444782
+    >
+    ended: <
+      seconds: 1507648478
+      nanos: 357603614
+    >
+    text: "path: /b/swarming/w/ir/cache/builder/linux/src/testing/buildbot/chromium.gpu.json"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/read_test_spec__chromium.gpu.json_/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "read test spec (chromium.linux.json)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/read_test_spec__chromium.linux.json_/0/stdout"
+    >
+    started: <
+      seconds: 1507648478
+      nanos: 357966883
+    >
+    ended: <
+      seconds: 1507648478
+      nanos: 739831736
+    >
+    text: "path: /b/swarming/w/ir/cache/builder/linux/src/testing/buildbot/chromium.linux.json"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/read_test_spec__chromium.linux.json_/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "git diff to analyze patch"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/git_diff_to_analyze_patch/0/stdout"
+    >
+    started: <
+      seconds: 1507648478
+      nanos: 740397445
+    >
+    ended: <
+      seconds: 1507648478
+      nanos: 976167717
+    >
+    other_links: <
+      label: "files"
+      logdog_stream: <
+        name: "steps/git_diff_to_analyze_patch/0/logs/files/0"
+      >
+    >
+    property: <
+      name: "subproject_tag"
+      value: "\"blink\""
+    >
+  >
+>
+substep: <
+  step: <
+    name: "read filter exclusion spec"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/read_filter_exclusion_spec/0/stdout"
+    >
+    started: <
+      seconds: 1507648478
+      nanos: 976513164
+    >
+    ended: <
+      seconds: 1507648479
+      nanos: 27517260
+    >
+    text: "path: 'testing/buildbot/trybot_analyze_config.json'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/read_filter_exclusion_spec/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "analyze"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/analyze/0/stdout"
+    >
+    started: <
+      seconds: 1507648479
+      nanos: 27936020
+    >
+    ended: <
+      seconds: 1507648512
+      nanos: 303530133
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/analyze/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "analyze_details"
+      logdog_stream: <
+        name: "steps/analyze/0/logs/analyze_details/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "clean isolated files"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/clean_isolated_files/0/stdout"
+    >
+    started: <
+      seconds: 1507648512
+      nanos: 303951833
+    >
+    ended: <
+      seconds: 1507648512
+      nanos: 391615719
+    >
+  >
+>
+substep: <
+  step: <
+    name: "generate_build_files (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/generate_build_files__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507648512
+      nanos: 392244800
+    >
+    ended: <
+      seconds: 1507648519
+      nanos: 971420358
+    >
+    other_links: <
+      label: "swarming-targets-file.txt"
+      logdog_stream: <
+        name: "steps/generate_build_files__with_patch_/0/logs/swarming-targets-file.txt/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "calculate the number of recommended jobs"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/calculate_the_number_of_recommended_jobs/0/stdout"
+    >
+    started: <
+      seconds: 1507648519
+      nanos: 971970163
+    >
+    ended: <
+      seconds: 1507648520
+      nanos: 119927595
+    >
+  >
+>
+substep: <
+  step: <
+    name: "preprocess_for_goma"
+    status: SUCCESS
+    substep: <
+      step: <
+        name: "preprocess_for_goma.goma cache directory"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/preprocess_for_goma/0/steps/goma_cache_directory/0/stdout"
+        >
+        started: <
+          seconds: 1507648520
+          nanos: 121098902
+        >
+        ended: <
+          seconds: 1507648520
+          nanos: 167345453
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "preprocess_for_goma.start_goma"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/preprocess_for_goma/0/steps/start_goma/0/stdout"
+        >
+        started: <
+          seconds: 1507648520
+          nanos: 167987673
+        >
+        ended: <
+          seconds: 1507648530
+          nanos: 746060774
+        >
+        other_links: <
+          label: "cloudtail"
+          url: "https://console.cloud.google.com/logs/viewer?project=goma-logs&resource=gce_instance%2Finstance_id%2Fswarm902-c4&timestamp=2017-10-10T15:15:30.744785"
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "preprocess_for_goma.start cloudtail"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/preprocess_for_goma/0/steps/start_cloudtail/0/stdout"
+        >
+        started: <
+          seconds: 1507648530
+          nanos: 746466715
+        >
+        ended: <
+          seconds: 1507648531
+          nanos: 845674411
+        >
+      >
+    >
+    started: <
+      seconds: 1507648531
+      nanos: 846235329
+    >
+    ended: <
+      seconds: 1507648531
+      nanos: 846413717
+    >
+  >
+>
+substep: <
+  step: <
+    name: "compile (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/compile__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507648531
+      nanos: 846998984
+    >
+    ended: <
+      seconds: 1507649229
+      nanos: 226087897
+    >
+  >
+>
+substep: <
+  step: <
+    name: "compile (with patch) confirm no-op"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/compile__with_patch__confirm_no-op/0/stdout"
+    >
+    started: <
+      seconds: 1507649229
+      nanos: 227482518
+    >
+    ended: <
+      seconds: 1507649264
+      nanos: 584982135
+    >
+  >
+>
+substep: <
+  step: <
+    name: "postprocess_for_goma"
+    status: SUCCESS
+    substep: <
+      step: <
+        name: "postprocess_for_goma.goma_jsonstatus"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma/0/steps/goma_jsonstatus/0/stdout"
+        >
+        started: <
+          seconds: 1507649264
+          nanos: 586194989
+        >
+        ended: <
+          seconds: 1507649264
+          nanos: 995973562
+        >
+        other_links: <
+          label: "json.output"
+          logdog_stream: <
+            name: "steps/postprocess_for_goma/0/steps/goma_jsonstatus/0/logs/json.output/0"
+          >
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.goma_stat"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma/0/steps/goma_stat/0/stdout"
+        >
+        started: <
+          seconds: 1507649264
+          nanos: 996598142
+        >
+        ended: <
+          seconds: 1507649265
+          nanos: 243591564
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.stop_goma"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma/0/steps/stop_goma/0/stdout"
+        >
+        started: <
+          seconds: 1507649265
+          nanos: 244467336
+        >
+        ended: <
+          seconds: 1507649265
+          nanos: 566134917
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.upload_log"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma/0/steps/upload_log/0/stdout"
+        >
+        started: <
+          seconds: 1507649265
+          nanos: 567184755
+        >
+        ended: <
+          seconds: 1507649281
+          nanos: 785160465
+        >
+        other_links: <
+          label: "json.output"
+          logdog_stream: <
+            name: "steps/postprocess_for_goma/0/steps/upload_log/0/logs/json.output/0"
+          >
+        >
+        other_links: <
+          label: "compiler_proxy_log"
+          url: "http://chromium-build-stats.appspot.com/compiler_proxy_log/2017/10/10/swarm902-c4/compiler_proxy.swarm902-c4.chrome-bot.log.INFO.20171010-081520.27120.gz"
+        >
+        other_links: <
+          label: "ninja_log"
+          url: "http://chromium-build-stats.appspot.com/ninja_log/2017/10/10/swarm902-c4/ninja_log.swarm902-c4.chrome-bot.20171010-082709.5230.gz"
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.stop cloudtail"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma/0/steps/stop_cloudtail/0/stdout"
+        >
+        started: <
+          seconds: 1507649281
+          nanos: 785543158
+        >
+        ended: <
+          seconds: 1507649282
+          nanos: 895997749
+        >
+      >
+    >
+    started: <
+      seconds: 1507649282
+      nanos: 896563241
+    >
+    ended: <
+      seconds: 1507649282
+      nanos: 896741476
+    >
+  >
+>
+substep: <
+  step: <
+    name: "remove_build_metadata"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/remove_build_metadata/0/stdout"
+    >
+    started: <
+      seconds: 1507649282
+      nanos: 897106504
+    >
+    ended: <
+      seconds: 1507649283
+      nanos: 240737250
+    >
+  >
+>
+substep: <
+  step: <
+    name: "isolate webkit_layout_tests_exparchive"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/isolate_webkit_layout_tests_exparchive/0/stdout"
+    >
+    started: <
+      seconds: 1507649283
+      nanos: 241406723
+    >
+    ended: <
+      seconds: 1507649496
+      nanos: 495695049
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/isolate_webkit_layout_tests_exparchive/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "isolate tests"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/isolate_tests/0/stdout"
+    >
+    started: <
+      seconds: 1507649496
+      nanos: 496442467
+    >
+    ended: <
+      seconds: 1507649637
+      nanos: 295476365
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/isolate_tests/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "mark: before_tests"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/mark:_before_tests/0/stdout"
+    >
+    started: <
+      seconds: 1507649637
+      nanos: 296108999
+    >
+    ended: <
+      seconds: 1507649637
+      nanos: 344154253
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] content_shell_crash_test (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__content_shell_crash_test__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649637
+      nanos: 345162283
+    >
+    ended: <
+      seconds: 1507649638
+      nanos: 351985544
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__content_shell_crash_test__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd56e8838f10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] telemetry_perf_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__telemetry_perf_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649638
+      nanos: 352503102
+    >
+    ended: <
+      seconds: 1507649644
+      nanos: 478830807
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__telemetry_perf_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd592ab2b710"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd5be809e610"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd5d2a871910"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd5f63786c10"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd60a06ce510"
+    >
+    other_links: <
+      label: "shard #5"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd61a72e3d10"
+    >
+    other_links: <
+      label: "shard #6"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd62ad430b10"
+    >
+    other_links: <
+      label: "shard #7"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd640f09e410"
+    >
+    other_links: <
+      label: "shard #8"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd65255d1b10"
+    >
+    other_links: <
+      label: "shard #9"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd67b1c3f910"
+    >
+    other_links: <
+      label: "shard #10"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd6ab755ba10"
+    >
+    other_links: <
+      label: "shard #11"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd6e08058c10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] telemetry_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__telemetry_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649644
+      nanos: 479377702
+    >
+    ended: <
+      seconds: 1507649646
+      nanos: 197528736
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__telemetry_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd707a839310"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd71a7808a10"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd730c7d2410"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd74bcc88510"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] webkit_layout_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__webkit_layout_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649646
+      nanos: 198295951
+    >
+    ended: <
+      seconds: 1507649648
+      nanos: 722966855
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__webkit_layout_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7732f94810"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd78a0331810"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7a1b1b4810"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7b2a3be710"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7c8ebc8410"
+    >
+    other_links: <
+      label: "shard #5"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7dd5c40f10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] app_shell_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__app_shell_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649648
+      nanos: 723487420
+    >
+    ended: <
+      seconds: 1507649649
+      nanos: 298371463
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__app_shell_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd811582dc10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] blink_heap_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__blink_heap_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649649
+      nanos: 298958649
+    >
+    ended: <
+      seconds: 1507649649
+      nanos: 819198090
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__blink_heap_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd83482b2910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] blink_platform_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__blink_platform_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649649
+      nanos: 819881103
+    >
+    ended: <
+      seconds: 1507649650
+      nanos: 624553702
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__blink_platform_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd85efe6c610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] browser_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__browser_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649650
+      nanos: 625138941
+    >
+    ended: <
+      seconds: 1507649652
+      nanos: 574570309
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__browser_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd889706fe10"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd89f825c810"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd8af7dc5c10"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd8c5c8f6510"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd8e1a244410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_browser_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_browser_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649652
+      nanos: 575278478
+    >
+    ended: <
+      seconds: 1507649654
+      nanos: 814637113
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_browser_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd902403c110"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd92246d4e10"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd939cb4ab10"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd958d261d10"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd96d4500c10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] site_per_process_browser_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__site_per_process_browser_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649654
+      nanos: 816755662
+    >
+    ended: <
+      seconds: 1507649657
+      nanos: 344554680
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__site_per_process_browser_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd98f98c2510"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd9b56f19110"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd9cc2616b10"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd9ed48ada10"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbda06f787b10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] chrome_app_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__chrome_app_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649657
+      nanos: 345252612
+    >
+    ended: <
+      seconds: 1507649659
+      nanos: 59885697
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__chrome_app_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbda31dcfb110"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] components_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__components_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649659
+      nanos: 60736927
+    >
+    ended: <
+      seconds: 1507649660
+      nanos: 305562985
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__components_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbda9c0df3310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_components_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_components_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649660
+      nanos: 306223544
+    >
+    ended: <
+      seconds: 1507649660
+      nanos: 792241451
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_components_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdae6fe9f610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] components_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__components_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649660
+      nanos: 792757965
+    >
+    ended: <
+      seconds: 1507649661
+      nanos: 298227711
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__components_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb02aabd910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_components_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_components_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649661
+      nanos: 298926475
+    >
+    ended: <
+      seconds: 1507649662
+      nanos: 64002865
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_components_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb261172710"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] content_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__content_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649662
+      nanos: 64668561
+    >
+    ended: <
+      seconds: 1507649662
+      nanos: 725360975
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__content_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb52cc3e610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_content_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_content_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649662
+      nanos: 728021640
+    >
+    ended: <
+      seconds: 1507649663
+      nanos: 662855966
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_content_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb811564e10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] site_per_process_content_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__site_per_process_content_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649663
+      nanos: 663591819
+    >
+    ended: <
+      seconds: 1507649664
+      nanos: 173429752
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__site_per_process_content_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdbb7297ce10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] content_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__content_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649664
+      nanos: 174256409
+    >
+    ended: <
+      seconds: 1507649664
+      nanos: 764136625
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__content_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdbd6ff4af10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_content_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_content_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649664
+      nanos: 764937740
+    >
+    ended: <
+      seconds: 1507649665
+      nanos: 304709540
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_content_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdbfbd64b910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] site_per_process_content_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__site_per_process_content_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649665
+      nanos: 305577296
+    >
+    ended: <
+      seconds: 1507649666
+      nanos: 304309669
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__site_per_process_content_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdc254c53e10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] extensions_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__extensions_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649666
+      nanos: 304988339
+    >
+    ended: <
+      seconds: 1507649666
+      nanos: 850895684
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__extensions_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdc5caa94210"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_extensions_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_extensions_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649666
+      nanos: 851607376
+    >
+    ended: <
+      seconds: 1507649667
+      nanos: 862358153
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_extensions_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdc81e098310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] extensions_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__extensions_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649667
+      nanos: 863502389
+    >
+    ended: <
+      seconds: 1507649668
+      nanos: 690628390
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__extensions_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdcbe04f5110"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] headless_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__headless_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649668
+      nanos: 691785874
+    >
+    ended: <
+      seconds: 1507649669
+      nanos: 258655477
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__headless_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdcf1bd4bf10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_headless_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_headless_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649669
+      nanos: 259703491
+    >
+    ended: <
+      seconds: 1507649669
+      nanos: 954758476
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_headless_browsertests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdd1476f2410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] headless_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__headless_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649669
+      nanos: 955782419
+    >
+    ended: <
+      seconds: 1507649670
+      nanos: 828162645
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__headless_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdd4396a5b10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] interactive_ui_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__interactive_ui_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649670
+      nanos: 829144808
+    >
+    ended: <
+      seconds: 1507649671
+      nanos: 529822443
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__interactive_ui_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdd7c2b6bc10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_interactive_ui_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_interactive_ui_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649671
+      nanos: 530481791
+    >
+    ended: <
+      seconds: 1507649672
+      nanos: 124996647
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_interactive_ui_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdda1f8b2510"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] media_blink_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__media_blink_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649672
+      nanos: 125932253
+    >
+    ended: <
+      seconds: 1507649673
+      nanos: 17707343
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__media_blink_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbddcb9758410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] services_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__services_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649673
+      nanos: 18535239
+    >
+    ended: <
+      seconds: 1507649673
+      nanos: 928167531
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__services_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde03b91e910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] sync_integration_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__sync_integration_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649673
+      nanos: 929058333
+    >
+    ended: <
+      seconds: 1507649674
+      nanos: 461695436
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__sync_integration_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde37e3b5e10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649674
+      nanos: 462676402
+    >
+    ended: <
+      seconds: 1507649675
+      nanos: 282536393
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__unit_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde58ad22010"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] renderer_side_navigation_unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__renderer_side_navigation_unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649675
+      nanos: 285278231
+    >
+    ended: <
+      seconds: 1507649675
+      nanos: 891712744
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__renderer_side_navigation_unit_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde8e36dbb10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] site_per_process_unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__site_per_process_unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649675
+      nanos: 892353696
+    >
+    ended: <
+      seconds: 1507649676
+      nanos: 486846148
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__site_per_process_unit_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdeb4137b010"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] webkit_unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__webkit_unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649676
+      nanos: 487759962
+    >
+    ended: <
+      seconds: 1507649677
+      nanos: 86819891
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__webkit_unit_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdeddf8e6110"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] context_lost_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649677
+      nanos: 89578805
+    >
+    ended: <
+      seconds: 1507649677
+      nanos: 659577178
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdefe7943310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] depth_capture_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649677
+      nanos: 660388394
+    >
+    ended: <
+      seconds: 1507649678
+      nanos: 161214870
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf20dc1d610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] gpu_process_launch_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649678
+      nanos: 162467260
+    >
+    ended: <
+      seconds: 1507649678
+      nanos: 698314076
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf419001a10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] hardware_accelerated_feature_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649678
+      nanos: 699228005
+    >
+    ended: <
+      seconds: 1507649679
+      nanos: 258356358
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf62a210410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] info_collection_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649679
+      nanos: 259460695
+    >
+    ended: <
+      seconds: 1507649679
+      nanos: 903592430
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf89a0c5610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] maps_pixel_test on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649679
+      nanos: 906629397
+    >
+    ended: <
+      seconds: 1507649680
+      nanos: 345457160
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdfaddb1c310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] pixel_test on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649680
+      nanos: 346474426
+    >
+    ended: <
+      seconds: 1507649680
+      nanos: 975025386
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdfcbecaec10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] screenshot_sync_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649680
+      nanos: 976146913
+    >
+    ended: <
+      seconds: 1507649681
+      nanos: 565688574
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdff018a0710"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] trace_test on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649681
+      nanos: 567035904
+    >
+    ended: <
+      seconds: 1507649682
+      nanos: 157235706
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbe0168fa5910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] webgl_conformance_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649682
+      nanos: 158054159
+    >
+    ended: <
+      seconds: 1507649682
+      nanos: 799416560
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbe03bf9e7310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] tab_capture_end2end_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507649682
+      nanos: 800215642
+    >
+    ended: <
+      seconds: 1507649683
+      nanos: 515956472
+    >
+    text: "Run on OS: 'Ubuntu'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbe0638259f10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "check_network_annotations (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/check_network_annotations__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649683
+      nanos: 517085710
+    >
+    ended: <
+      seconds: 1507649683
+      nanos: 650615930
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/check_network_annotations__with_patch_/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "checkdeps (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/checkdeps__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649683
+      nanos: 651651349
+    >
+    ended: <
+      seconds: 1507649867
+      nanos: 106594435
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/checkdeps__with_patch_/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "webkit_lint (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/webkit_lint__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649867
+      nanos: 107693298
+    >
+    ended: <
+      seconds: 1507649875
+      nanos: 98607335
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/webkit_lint__with_patch_/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "checkperms (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/checkperms__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649875
+      nanos: 99392641
+    >
+    ended: <
+      seconds: 1507649924
+      nanos: 46557040
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/checkperms__with_patch_/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "content_shell_crash_test (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/content_shell_crash_test__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649924
+      nanos: 47404888
+    >
+    ended: <
+      seconds: 1507649925
+      nanos: 76943376
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:01:04.169860<br/>Total tests: n/a<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/content_shell_crash_test__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/content_shell_crash_test__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/content_shell_crash_test__with_patch_/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/content_shell_crash_test__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=b3143fd7c068240ed97d7d0e858c0b9e1979d878"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd56e8838f10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "telemetry_perf_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/telemetry_perf_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507649925
+      nanos: 77898469
+    >
+    ended: <
+      seconds: 1507650025
+      nanos: 289775173
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Max shard duration: 0:06:20.478440 (shard #6)<br/>Total tests: 315<br/>* Passed: 290 (290 expected, 0 unexpected)<br/>* Skipped: 25 (25 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/telemetry_perf_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/telemetry_perf_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/telemetry_perf_unittests__with_patch_/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/telemetry_perf_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=a4f60a8074e561fde32b571e51c8e6a683bfbc2f"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd592ab2b710"
+    >
+    other_links: <
+      label: "shard #1 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=11f13034ba9052d6d8b15603c31a9bbed4c8ab7d"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd5be809e610"
+    >
+    other_links: <
+      label: "shard #2 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f36a161a4a091c0e43ca6c3bced0c91809bfc4cb"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd5d2a871910"
+    >
+    other_links: <
+      label: "shard #3 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=55f7e0ede78c453a1292b391a9d44a79706b80a9"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd5f63786c10"
+    >
+    other_links: <
+      label: "shard #4 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=30b886c05bc45766d4ca4e83fe7b23aa1fc08911"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd60a06ce510"
+    >
+    other_links: <
+      label: "shard #5 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f2c7ceaee8013af905a19036650f1f45295755cd"
+    >
+    other_links: <
+      label: "shard #5"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd61a72e3d10"
+    >
+    other_links: <
+      label: "shard #6 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=a444d050d37b2d4e17cfbc8d1b8c61e48c1070b0"
+    >
+    other_links: <
+      label: "shard #6"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd62ad430b10"
+    >
+    other_links: <
+      label: "shard #7 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=758fcdb3b54caad3dc2d99b3ca18df8432df512b"
+    >
+    other_links: <
+      label: "shard #7"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd640f09e410"
+    >
+    other_links: <
+      label: "shard #8 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=5c0db64e25fcba6cef08b591590c4f0940c1be11"
+    >
+    other_links: <
+      label: "shard #8"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd65255d1b10"
+    >
+    other_links: <
+      label: "shard #9 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=146f827d02f43cb9c6f5eb749f985f83f7b1b65f"
+    >
+    other_links: <
+      label: "shard #9"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd67b1c3f910"
+    >
+    other_links: <
+      label: "shard #10 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=6a4309d973abf64e0cd89233c281b22fbec0c20a"
+    >
+    other_links: <
+      label: "shard #10"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd6ab755ba10"
+    >
+    other_links: <
+      label: "shard #11 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=94acc931ae8ea346e74294128c5f5948422f5f26"
+    >
+    other_links: <
+      label: "shard #11"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd6e08058c10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [telemetry_perf_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__telemetry_perf_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650025
+      nanos: 290757772
+    >
+    ended: <
+      seconds: 1507650026
+      nanos: 849512028
+    >
+  >
+>
+substep: <
+  step: <
+    name: "telemetry_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/telemetry_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650026
+      nanos: 850954728
+    >
+    ended: <
+      seconds: 1507650137
+      nanos: 623503706
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Max shard duration: 0:08:09.337200 (shard #2)<br/>Total tests: 1125<br/>* Passed: 1048 (1048 expected, 0 unexpected)<br/>* Skipped: 77 (77 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/telemetry_unittests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/telemetry_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/telemetry_unittests__with_patch_/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/telemetry_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=9c5f5710605f8ed300f348a9e64b616caed2bb05"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd707a839310"
+    >
+    other_links: <
+      label: "shard #1 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=2c1b37612d3ee6d920ec6c9093ad5df18be2d604"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd71a7808a10"
+    >
+    other_links: <
+      label: "shard #2 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=24db43d400a3810843a39920a67e536b9b59d00c"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd730c7d2410"
+    >
+    other_links: <
+      label: "shard #3 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f58c84d09912dfd4c248cb97c12671a8b839a2e4"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd74bcc88510"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [telemetry_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__telemetry_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650137
+      nanos: 624299205
+    >
+    ended: <
+      seconds: 1507650140
+      nanos: 335693363
+    >
+  >
+>
+substep: <
+  step: <
+    name: "webkit_layout_tests (with patch)"
+    status: FAILURE
+    stdout_stream: <
+      name: "steps/webkit_layout_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650140
+      nanos: 337322437
+    >
+    ended: <
+      seconds: 1507650404
+      nanos: 49068522
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Max shard duration: 0:11:04.594790 (shard #2)<br/>Total tests: 72830<br/>* Passed: 62087 (62041 expected, 46 unexpected)<br/>* Skipped: 9072 (9072 expected, 0 unexpected)<br/>* Failed: 1616 (1446 expected, >>>170 unexpected<<<)<br/>* Flaky: 55 (55 expected, 0 unexpected)<br/><br/>Unexpected Failures:<br/>* paint/invalidation/svg/append-text-node-to-tspan.html<br/>* paint/invalidation/svg/modify-text-node-in-tspan.html<br/>* paint/invalidation/svg/remove-text-node-from-tspan.html<br/>* paint/invalidation/svg/remove-tspan-from-text.html<br/>* paint/invalidation/svg/text-viewbox-rescale.html<br/>* paint/invalidation/svg/use-detach.svg<br/>* paint/invalidation/svg/window.svg<br/>* svg/W3C-I18N/g-dirLTR-ubNone.svg<br/>* svg/W3C-I18N/g-dirLTR-ubOverride.svg<br/>* svg/W3C-I18N/g-dirRTL-ubNone.svg<br/>* svg/W3C-I18N/g-dirRTL-ubOverride.svg<br/>* svg/W3C-I18N/text-dirLTR-ubNone.svg<br/>* svg/W3C-I18N/text-dirLTR-ubOverride.svg<br/>* svg/W3C-I18N/text-dirRTL-ubNone.svg<br/>* svg/W3C-I18N/text-dirRTL-ubOverride.svg<br/>* svg/W3C-I18N/tspan-dirLTR-ubEmbed-in-rtl-context.svg<br/>* svg/W3C-I18N/tspan-dirLTR-ubNone-in-rtl-context.svg<br/>* svg/W3C-I18N/tspan-dirLTR-ubOverride-in-default-context.svg<br/>* svg/W3C-I18N/tspan-dirLTR-ubOverride-in-ltr-context.svg<br/>* svg/W3C-I18N/tspan-dirLTR-ubOverride-in-rtl-context.svg<br/>* svg/W3C-I18N/tspan-dirNone-ubOverride-in-default-context.svg<br/>* svg/W3C-I18N/tspan-dirNone-ubOverride-in-ltr-context.svg<br/>* svg/W3C-I18N/tspan-dirNone-ubOverride-in-rtl-context.svg<br/>* svg/W3C-I18N/tspan-dirRTL-ubEmbed-in-default-context.svg<br/>* svg/W3C-I18N/tspan-dirRTL-ubEmbed-in-ltr-context.svg<br/>* svg/W3C-I18N/tspan-dirRTL-ubNone-in-default-context.svg<br/>* svg/W3C-I18N/tspan-dirRTL-ubNone-in-ltr-context.svg<br/>* svg/W3C-I18N/tspan-dirRTL-ubOverride-in-default-context.svg<br/>* svg/W3C-I18N/tspan-dirRTL-ubOverride-in-ltr-context.svg<br/>* svg/W3C-I18N/tspan-dirRTL-ubOverride-in-rtl-context.svg<br/>* ... 140 more ...<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__with_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__with_patch_/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=ac12ebb78909aaea5b6fc3488f1338b22b9b1f70"
+    >
+    other_links: <
+      label: "shard #0 (failed)"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7732f94810"
+    >
+    other_links: <
+      label: "shard #1 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=99c7b9498347e3673ac7db725183939a9a6ade26"
+    >
+    other_links: <
+      label: "shard #1 (failed)"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd78a0331810"
+    >
+    other_links: <
+      label: "shard #2 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=5c3a13e1c1791417d6a0a27b0195ee0807dffc87"
+    >
+    other_links: <
+      label: "shard #2 (failed)"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7a1b1b4810"
+    >
+    other_links: <
+      label: "shard #3 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=84fe2c867305692a00b960d383a24780244e368c"
+    >
+    other_links: <
+      label: "shard #3 (failed)"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7b2a3be710"
+    >
+    other_links: <
+      label: "shard #4 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=fbea60300fbc2a8cb55cd63327bf2db3776daae2"
+    >
+    other_links: <
+      label: "shard #4 (failed)"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7c8ebc8410"
+    >
+    other_links: <
+      label: "shard #5 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=ad8db06cf40686abfc4e1e59e3165c4a8f32774b"
+    >
+    other_links: <
+      label: "shard #5 (failed)"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd7dd5c40f10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [webkit_layout_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__webkit_layout_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650404
+      nanos: 66379634
+    >
+    ended: <
+      seconds: 1507650431
+      nanos: 648189179
+    >
+  >
+>
+substep: <
+  step: <
+    name: "archive_webkit_tests_results"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/archive_webkit_tests_results/0/stdout"
+    >
+    started: <
+      seconds: 1507650431
+      nanos: 649972409
+    >
+    ended: <
+      seconds: 1507650537
+      nanos: 705816356
+    >
+    other_links: <
+      label: "layout_test_results"
+      url: "https://storage.googleapis.com/chromium-layout-test-archives/linux_chromium_rel_ng/8928/layout-test-results/results.html"
+    >
+    other_links: <
+      label: "(zip)"
+      url: "https://storage.googleapis.com/chromium-layout-test-archives/linux_chromium_rel_ng/8928/layout-test-results.zip"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "app_shell_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/app_shell_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650537
+      nanos: 707101897
+    >
+    ended: <
+      seconds: 1507650538
+      nanos: 806296243
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 10s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/app_shell_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/app_shell_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=e50f0caf9d0ccd90661f71e99350004438400bda"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd811582dc10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [app_shell_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__app_shell_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650538
+      nanos: 807548572
+    >
+    ended: <
+      seconds: 1507650542
+      nanos: 690957789
+    >
+  >
+>
+substep: <
+  step: <
+    name: "blink_heap_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/blink_heap_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650542
+      nanos: 692698586
+    >
+    ended: <
+      seconds: 1507650543
+      nanos: 556353091
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 10s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/blink_heap_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/blink_heap_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=0ab3952967e0f0899922376575c968b3d47b974d"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd83482b2910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [blink_heap_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__blink_heap_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650543
+      nanos: 557794243
+    >
+    ended: <
+      seconds: 1507650544
+      nanos: 796388175
+    >
+  >
+>
+substep: <
+  step: <
+    name: "blink_platform_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/blink_platform_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650544
+      nanos: 798256879
+    >
+    ended: <
+      seconds: 1507650546
+      nanos: 490690913
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 8s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/blink_platform_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/blink_platform_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=05956a7b5cde1e9cd923ec5d5c407932aa919710"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd85efe6c610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [blink_platform_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__blink_platform_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650546
+      nanos: 493223437
+    >
+    ended: <
+      seconds: 1507650549
+      nanos: 404218215
+    >
+  >
+>
+substep: <
+  step: <
+    name: "browser_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/browser_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650549
+      nanos: 405803084
+    >
+    ended: <
+      seconds: 1507650555
+      nanos: 336147869
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Max shard duration: 0:13:05.233150 (shard #2)"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/browser_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/browser_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=5aed90145ccad949838f2b5abe79576ddae5f9f3"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd889706fe10"
+    >
+    other_links: <
+      label: "shard #1 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f6de73f0737f3951e38e4b603f3d281e92c5d80d"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd89f825c810"
+    >
+    other_links: <
+      label: "shard #2 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=57948747951287004e0002eb699d8aaa43e30bb4"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd8af7dc5c10"
+    >
+    other_links: <
+      label: "shard #3 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=da282502efb39df0e0eceed3bd98a5bfe1ebe8ce"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd8c5c8f6510"
+    >
+    other_links: <
+      label: "shard #4 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=3924ee5e9cd1f7705f9d17b4a978b36a2793ec32"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd8e1a244410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [browser_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__browser_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650555
+      nanos: 700661349
+    >
+    ended: <
+      seconds: 1507650567
+      nanos: 639247972
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_browser_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_browser_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650567
+      nanos: 641220361
+    >
+    ended: <
+      seconds: 1507650574
+      nanos: 686998017
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Max shard duration: 0:10:58.470060 (shard #3)"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_browser_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_browser_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f2f5202436b07f313b9b1f12f069ddf91cab039a"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd902403c110"
+    >
+    other_links: <
+      label: "shard #1 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=dbd240083b408939a183f56b371a06cfe04149aa"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd92246d4e10"
+    >
+    other_links: <
+      label: "shard #2 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=b44746d804d7167b22b137a31690f0b231285690"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd939cb4ab10"
+    >
+    other_links: <
+      label: "shard #3 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=d82b624b8dbed0309bf175aafd2c5817bd5fdb2b"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd958d261d10"
+    >
+    other_links: <
+      label: "shard #4 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=af35dd7ef6a4704e1fcb392bec31f18cad397f19"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd96d4500c10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_browser_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_browser_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650574
+      nanos: 999471099
+    >
+    ended: <
+      seconds: 1507650583
+      nanos: 752980171
+    >
+  >
+>
+substep: <
+  step: <
+    name: "site_per_process_browser_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/site_per_process_browser_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650583
+      nanos: 754711171
+    >
+    ended: <
+      seconds: 1507650589
+      nanos: 863569965
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Max shard duration: 0:11:15.377770 (shard #2)"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/site_per_process_browser_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/site_per_process_browser_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=1fb4ba6534ea747c7a9affcdf229f70669721beb"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd98f98c2510"
+    >
+    other_links: <
+      label: "shard #1 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f4c4a9555746568c384b1a77e91c5ceb53fc00a7"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd9b56f19110"
+    >
+    other_links: <
+      label: "shard #2 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=7646db12961ed1a27a068af18376b8f7ecdedd47"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd9cc2616b10"
+    >
+    other_links: <
+      label: "shard #3 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=d19866539a957f075735e9aa6fb6bbc50ba7fed9"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbd9ed48ada10"
+    >
+    other_links: <
+      label: "shard #4 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=464fbe5fc5178a40890314184c41186b13e91265"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbda06f787b10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [site_per_process_browser_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__site_per_process_browser_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650590
+      nanos: 151115277
+    >
+    ended: <
+      seconds: 1507650603
+      nanos: 93941193
+    >
+  >
+>
+substep: <
+  step: <
+    name: "chrome_app_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/chrome_app_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650603
+      nanos: 96051599
+    >
+    ended: <
+      seconds: 1507650603
+      nanos: 851028154
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 9s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/chrome_app_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/chrome_app_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=e413b8af818a14df1661f5d2c31de383f43f8592"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbda31dcfb110"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [chrome_app_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__chrome_app_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650603
+      nanos: 852385503
+    >
+    ended: <
+      seconds: 1507650606
+      nanos: 397521329
+    >
+  >
+>
+substep: <
+  step: <
+    name: "components_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/components_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650606
+      nanos: 399598831
+    >
+    ended: <
+      seconds: 1507650607
+      nanos: 346285769
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 26s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/components_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/components_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=124740ac110c874d833f58bfab7bcf7b7c0efe18"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbda9c0df3310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [components_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__components_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650607
+      nanos: 348144105
+    >
+    ended: <
+      seconds: 1507650609
+      nanos: 648021060
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_components_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_components_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650609
+      nanos: 651011858
+    >
+    ended: <
+      seconds: 1507650611
+      nanos: 189726475
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 32s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_components_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_components_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=5d6b4dcc75bde66742c9d426811a1c3b2ae5ce95"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdae6fe9f610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_components_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_components_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650611
+      nanos: 191025117
+    >
+    ended: <
+      seconds: 1507650613
+      nanos: 56012187
+    >
+  >
+>
+substep: <
+  step: <
+    name: "components_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/components_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650613
+      nanos: 58201214
+    >
+    ended: <
+      seconds: 1507650618
+      nanos: 821729062
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:01:03.385910"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/components_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/components_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=210bd66cb6650290a81189981ccac2ee14826e84"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb02aabd910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [components_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__components_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650618
+      nanos: 889359922
+    >
+    ended: <
+      seconds: 1507650625
+      nanos: 121255717
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_components_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_components_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650625
+      nanos: 123277579
+    >
+    ended: <
+      seconds: 1507650633
+      nanos: 271720258
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:01:11.113040"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_components_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_components_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=8357fa215936ad6b1654405ea54a92012de8abd2"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb261172710"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_components_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_components_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650633
+      nanos: 337833175
+    >
+    ended: <
+      seconds: 1507650637
+      nanos: 539093315
+    >
+  >
+>
+substep: <
+  step: <
+    name: "content_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/content_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650637
+      nanos: 540861697
+    >
+    ended: <
+      seconds: 1507650639
+      nanos: 561000330
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:05:36.320670"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/content_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/content_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=40d65d08d1eaf92ed60743a3aa03c85ca90296c1"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb52cc3e610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [content_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__content_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650639
+      nanos: 599685900
+    >
+    ended: <
+      seconds: 1507650644
+      nanos: 665862718
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_content_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_content_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650644
+      nanos: 668563272
+    >
+    ended: <
+      seconds: 1507650646
+      nanos: 410244946
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:05:23.803820"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_content_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_content_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=ad3a70a15fd80196d61c151a85a0a7f9c07a7506"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdb811564e10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_content_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_content_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650646
+      nanos: 458016582
+    >
+    ended: <
+      seconds: 1507650648
+      nanos: 488884355
+    >
+  >
+>
+substep: <
+  step: <
+    name: "site_per_process_content_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/site_per_process_content_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650648
+      nanos: 491324613
+    >
+    ended: <
+      seconds: 1507650650
+      nanos: 513377870
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:06:00.652900"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/site_per_process_content_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/site_per_process_content_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=34eb63a00a7cea395e7c60f660871f1ad305d2ee"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdbb7297ce10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [site_per_process_content_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__site_per_process_content_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650650
+      nanos: 559047015
+    >
+    ended: <
+      seconds: 1507650655
+      nanos: 469039895
+    >
+  >
+>
+substep: <
+  step: <
+    name: "content_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/content_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650655
+      nanos: 471492126
+    >
+    ended: <
+      seconds: 1507650660
+      nanos: 619798561
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 44s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/content_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/content_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=c99def139e5f195334add11cc391524635538e00"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdbd6ff4af10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [content_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__content_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650660
+      nanos: 636848662
+    >
+    ended: <
+      seconds: 1507650665
+      nanos: 507060278
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_content_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_content_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650665
+      nanos: 509345748
+    >
+    ended: <
+      seconds: 1507650668
+      nanos: 45332950
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 38s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_content_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_content_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f214d37b7778ab27dc96d2bd105c15fec2b21391"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdbfbd64b910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_content_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_content_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650668
+      nanos: 63421885
+    >
+    ended: <
+      seconds: 1507650671
+      nanos: 784942048
+    >
+  >
+>
+substep: <
+  step: <
+    name: "site_per_process_content_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/site_per_process_content_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650671
+      nanos: 787690247
+    >
+    ended: <
+      seconds: 1507650677
+      nanos: 159340211
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:01:09.671840"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/site_per_process_content_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/site_per_process_content_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=208721ab3f3453aae830a19b0fcf8b53cefb4bff"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdc254c53e10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [site_per_process_content_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__site_per_process_content_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650677
+      nanos: 180441278
+    >
+    ended: <
+      seconds: 1507650681
+      nanos: 44634458
+    >
+  >
+>
+substep: <
+  step: <
+    name: "extensions_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/extensions_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650681
+      nanos: 47154744
+    >
+    ended: <
+      seconds: 1507650682
+      nanos: 272452765
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 53s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/extensions_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/extensions_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=ef7038fd08fe1e62128ceb0f2597ffdd11fa8145"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdc5caa94210"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [extensions_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__extensions_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650682
+      nanos: 274373137
+    >
+    ended: <
+      seconds: 1507650684
+      nanos: 532351358
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_extensions_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_extensions_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650684
+      nanos: 534771464
+    >
+    ended: <
+      seconds: 1507650685
+      nanos: 495286783
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 30s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_extensions_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_extensions_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=721277bf76c15caf414f76a7e916663342bda960"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdc81e098310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_extensions_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_extensions_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650685
+      nanos: 496791591
+    >
+    ended: <
+      seconds: 1507650686
+      nanos: 639841841
+    >
+  >
+>
+substep: <
+  step: <
+    name: "extensions_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/extensions_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650686
+      nanos: 647630996
+    >
+    ended: <
+      seconds: 1507650688
+      nanos: 41836046
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 14s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/extensions_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/extensions_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=20850cc5665574565d52b7426dd8516a76a12227"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdcbe04f5110"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [extensions_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__extensions_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650688
+      nanos: 43252412
+    >
+    ended: <
+      seconds: 1507650691
+      nanos: 10958460
+    >
+  >
+>
+substep: <
+  step: <
+    name: "headless_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/headless_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650691
+      nanos: 13603979
+    >
+    ended: <
+      seconds: 1507650691
+      nanos: 946838562
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 14s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/headless_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/headless_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=52c58b83f7ebb9350a0062f5b91619451c5ea939"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdcf1bd4bf10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [headless_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__headless_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650691
+      nanos: 948997694
+    >
+    ended: <
+      seconds: 1507650696
+      nanos: 661658799
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_headless_browsertests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_headless_browsertests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650696
+      nanos: 663845753
+    >
+    ended: <
+      seconds: 1507650697
+      nanos: 552198681
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 18s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_headless_browsertests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_headless_browsertests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=a2960e7092070981ed494cf1191f38811f82cd03"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdd1476f2410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_headless_browsertests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_headless_browsertests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650697
+      nanos: 553864230
+    >
+    ended: <
+      seconds: 1507650698
+      nanos: 492517945
+    >
+  >
+>
+substep: <
+  step: <
+    name: "headless_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/headless_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650698
+      nanos: 494541651
+    >
+    ended: <
+      seconds: 1507650699
+      nanos: 520735817
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 7s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/headless_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/headless_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=afdb42a57254af7dd71e771c098b00cf1cd60050"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdd4396a5b10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [headless_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__headless_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650699
+      nanos: 522239202
+    >
+    ended: <
+      seconds: 1507650701
+      nanos: 64503699
+    >
+  >
+>
+substep: <
+  step: <
+    name: "interactive_ui_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/interactive_ui_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650701
+      nanos: 67043731
+    >
+    ended: <
+      seconds: 1507650702
+      nanos: 224435330
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:06:06.016340"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/interactive_ui_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/interactive_ui_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=7974b8bcade395ecc5ddc4712743295912d33b9c"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdd7c2b6bc10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [interactive_ui_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__interactive_ui_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650702
+      nanos: 227301664
+    >
+    ended: <
+      seconds: 1507650705
+      nanos: 406123033
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_interactive_ui_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_interactive_ui_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650705
+      nanos: 408354183
+    >
+    ended: <
+      seconds: 1507650706
+      nanos: 683276534
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:06:59.570730"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_interactive_ui_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_interactive_ui_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=1f21e213146f169cdb0136f6d72146981a5710cc"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdda1f8b2510"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_interactive_ui_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_interactive_ui_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650706
+      nanos: 689058681
+    >
+    ended: <
+      seconds: 1507650708
+      nanos: 70079213
+    >
+  >
+>
+substep: <
+  step: <
+    name: "media_blink_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/media_blink_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650708
+      nanos: 72187706
+    >
+    ended: <
+      seconds: 1507650709
+      nanos: 127857833
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 9s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/media_blink_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/media_blink_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=ca46e35da7c1fcb288611cb6a2627c1dd1365f3e"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbddcb9758410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [media_blink_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__media_blink_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650709
+      nanos: 129976879
+    >
+    ended: <
+      seconds: 1507650712
+      nanos: 286391327
+    >
+  >
+>
+substep: <
+  step: <
+    name: "services_unittests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/services_unittests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650712
+      nanos: 288975089
+    >
+    ended: <
+      seconds: 1507650713
+      nanos: 769389170
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 9s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/services_unittests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/services_unittests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=9fea3c5acd2786ed274415ca02579245b431f141"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde03b91e910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [services_unittests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__services_unittests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650713
+      nanos: 771520044
+    >
+    ended: <
+      seconds: 1507650719
+      nanos: 569677661
+    >
+  >
+>
+substep: <
+  step: <
+    name: "sync_integration_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/sync_integration_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650719
+      nanos: 571880321
+    >
+    ended: <
+      seconds: 1507650720
+      nanos: 674787162
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:02:13.882930"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/sync_integration_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/sync_integration_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=58200e1386aecd3f87a29d5c641a63cb2e6cfaa0"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde37e3b5e10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [sync_integration_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__sync_integration_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650720
+      nanos: 711223065
+    >
+    ended: <
+      seconds: 1507650724
+      nanos: 565151175
+    >
+  >
+>
+substep: <
+  step: <
+    name: "unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650724
+      nanos: 567591204
+    >
+    ended: <
+      seconds: 1507650730
+      nanos: 978339201
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:01:18.471060"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/unit_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/unit_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=aef6f643ea27e06dcbacd8fce12dd9631e552863"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde58ad22010"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [unit_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__unit_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650731
+      nanos: 65460453
+    >
+    ended: <
+      seconds: 1507650737
+      nanos: 23192286
+    >
+  >
+>
+substep: <
+  step: <
+    name: "renderer_side_navigation_unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/renderer_side_navigation_unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650737
+      nanos: 25445690
+    >
+    ended: <
+      seconds: 1507650740
+      nanos: 267535869
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:01:16.940180"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_unit_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/renderer_side_navigation_unit_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f4ae1c4bbaa0af3dbbc6e96d46d265368b62187b"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbde8e36dbb10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [renderer_side_navigation_unit_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__renderer_side_navigation_unit_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650740
+      nanos: 325580636
+    >
+    ended: <
+      seconds: 1507650743
+      nanos: 777631993
+    >
+  >
+>
+substep: <
+  step: <
+    name: "site_per_process_unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/site_per_process_unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650743
+      nanos: 780182393
+    >
+    ended: <
+      seconds: 1507650750
+      nanos: 817391778
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 0:02:59.085360"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/site_per_process_unit_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/site_per_process_unit_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=ea320011ec608f056f8305fe50a162ab27dc4fd3"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdeb4137b010"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [site_per_process_unit_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__site_per_process_unit_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650750
+      nanos: 869585143
+    >
+    ended: <
+      seconds: 1507650756
+      nanos: 170770502
+    >
+  >
+>
+substep: <
+  step: <
+    name: "webkit_unit_tests (with patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/webkit_unit_tests__with_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650756
+      nanos: 173239691
+    >
+    ended: <
+      seconds: 1507650759
+      nanos: 130906698
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Shard duration: 45s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/webkit_unit_tests__with_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/webkit_unit_tests__with_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=30b4aacefeccac6e183260c00038db874c9ee848"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdeddf8e6110"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [webkit_unit_tests (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__webkit_unit_tests__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650759
+      nanos: 162547299
+    >
+    ended: <
+      seconds: 1507650764
+      nanos: 207005579
+    >
+  >
+>
+substep: <
+  step: <
+    name: "context_lost_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650764
+      nanos: 209317635
+    >
+    ended: <
+      seconds: 1507650765
+      nanos: 532428996
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 59s<br/>Total tests: 6<br/>* Passed: 6 (6 expected, 0 unexpected)<br/>* Skipped: 0 (0 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=d6a0c74e10c5fd0dab83e4cc75d2c7b79bb0fcb3"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdefe7943310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [context_lost_tests on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650765
+      nanos: 535516076
+    >
+    ended: <
+      seconds: 1507650766
+      nanos: 797084695
+    >
+  >
+>
+substep: <
+  step: <
+    name: "depth_capture_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650766
+      nanos: 799905897
+    >
+    ended: <
+      seconds: 1507650767
+      nanos: 758605585
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 24s<br/>Total tests: 3<br/>* Passed: 3 (3 expected, 0 unexpected)<br/>* Skipped: 0 (0 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=0efbce5df1f11837fd3ecd5259be40c3704e0644"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf20dc1d610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [depth_capture_tests on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650767
+      nanos: 760409264
+    >
+    ended: <
+      seconds: 1507650769
+      nanos: 413596422
+    >
+  >
+>
+substep: <
+  step: <
+    name: "gpu_process_launch_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650769
+      nanos: 416208857
+    >
+    ended: <
+      seconds: 1507650770
+      nanos: 935769722
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 0:02:57.388980<br/>Total tests: 17<br/>* Passed: 16 (16 expected, 0 unexpected)<br/>* Skipped: 1 (1 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=fb3149d17c829a556b037717e44871c3f3d221b4"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf419001a10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [gpu_process_launch_tests on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650770
+      nanos: 937440880
+    >
+    ended: <
+      seconds: 1507650772
+      nanos: 562742307
+    >
+  >
+>
+substep: <
+  step: <
+    name: "hardware_accelerated_feature_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650772
+      nanos: 567323629
+    >
+    ended: <
+      seconds: 1507650773
+      nanos: 552619259
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 24s<br/>Total tests: 2<br/>* Passed: 2 (2 expected, 0 unexpected)<br/>* Skipped: 0 (0 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=fb12c3d51a82e03e84c67c9fcfc1a318ca6bf1f0"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf62a210410"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [hardware_accelerated_feature_tests on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650773
+      nanos: 554496056
+    >
+    ended: <
+      seconds: 1507650778
+      nanos: 61117664
+    >
+  >
+>
+substep: <
+  step: <
+    name: "info_collection_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650778
+      nanos: 63948255
+    >
+    ended: <
+      seconds: 1507650778
+      nanos: 942975827
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 23s<br/>Total tests: 1<br/>* Passed: 1 (1 expected, 0 unexpected)<br/>* Skipped: 0 (0 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=968293e334cffce5fe0936f5e80d3974824a0818"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdf89a0c5610"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [info_collection_tests on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650778
+      nanos: 944601777
+    >
+    ended: <
+      seconds: 1507650781
+      nanos: 481705674
+    >
+  >
+>
+substep: <
+  step: <
+    name: "maps_pixel_test on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650781
+      nanos: 485004322
+    >
+    ended: <
+      seconds: 1507650782
+      nanos: 442168019
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 23s<br/>Total tests: 1<br/>* Passed: 1 (1 expected, 0 unexpected)<br/>* Skipped: 0 (0 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=02a9b7e2828ae154780088240898a5a17122b897"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdfaddb1c310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [maps_pixel_test on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650782
+      nanos: 444059129
+    >
+    ended: <
+      seconds: 1507650784
+      nanos: 498350521
+    >
+  >
+>
+substep: <
+  step: <
+    name: "pixel_test on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650784
+      nanos: 501872209
+    >
+    ended: <
+      seconds: 1507650786
+      nanos: 398109928
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 0:03:29.642230<br/>Total tests: 35<br/>* Passed: 35 (35 expected, 0 unexpected)<br/>* Skipped: 0 (0 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=d0257f4c9fd53d4e40c7d2b56434e19ab0f3bb67"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdfcbecaec10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [pixel_test on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650786
+      nanos: 399972485
+    >
+    ended: <
+      seconds: 1507650787
+      nanos: 777537400
+    >
+  >
+>
+substep: <
+  step: <
+    name: "screenshot_sync_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650787
+      nanos: 780366692
+    >
+    ended: <
+      seconds: 1507650788
+      nanos: 807256825
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 0:02:13.819030<br/>Total tests: 4<br/>* Passed: 4 (4 expected, 0 unexpected)<br/>* Skipped: 0 (0 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=f1aacaefb3ddca326f7b2c8362fad055a3a0d9b3"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbdff018a0710"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [screenshot_sync_tests on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650788
+      nanos: 809031922
+    >
+    ended: <
+      seconds: 1507650790
+      nanos: 526664005
+    >
+  >
+>
+substep: <
+  step: <
+    name: "trace_test on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650790
+      nanos: 529673127
+    >
+    ended: <
+      seconds: 1507650791
+      nanos: 607156810
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 0:02:18.156230<br/>Total tests: 28<br/>* Passed: 14 (14 expected, 0 unexpected)<br/>* Skipped: 14 (14 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=d952c2df5b5a917fcd048ca6e76d83058ee3962c"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbe0168fa5910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [trace_test on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650791
+      nanos: 608981924
+    >
+    ended: <
+      seconds: 1507650793
+      nanos: 114728867
+    >
+  >
+>
+substep: <
+  step: <
+    name: "webgl_conformance_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650793
+      nanos: 117239661
+    >
+    ended: <
+      seconds: 1507650794
+      nanos: 650627081
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 0:09:32.753120<br/>Total tests: 907<br/>* Passed: 900 (900 expected, 0 unexpected)<br/>* Skipped: 7 (7 expected, 0 unexpected)<br/>* Failed: 0 (0 expected, 0 unexpected)<br/>* Flaky: 0 (0 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=2fb92ef5a7a76df40fdb276567249460d93fee8a"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbe03bf9e7310"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [webgl_conformance_tests on NVIDIA GPU on Linux (with patch)]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__/0/stdout"
+    >
+    started: <
+      seconds: 1507650794
+      nanos: 652591351
+    >
+    ended: <
+      seconds: 1507650798
+      nanos: 146008873
+    >
+  >
+>
+substep: <
+  step: <
+    name: "tab_capture_end2end_tests on NVIDIA GPU on Linux (with patch) on Ubuntu"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/stdout"
+    >
+    started: <
+      seconds: 1507650798
+      nanos: 149317214
+    >
+    ended: <
+      seconds: 1507650798
+      nanos: 995849840
+    >
+    text: "Run on OS: 'Ubuntu'<br>Shard duration: 19s"
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=35aaf8ccef565a260529106058ce2ae2790190e1"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fbe0638259f10"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Upload to test-results [tab_capture_end2end_tests on NVIDIA GPU on Linux (with patch) on Ubuntu]"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/Upload_to_test-results__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu_/0/stdout"
+    >
+    started: <
+      seconds: 1507650799
+      nanos: 3148130
+    >
+    ended: <
+      seconds: 1507650804
+      nanos: 126172023
+    >
+  >
+>
+substep: <
+  step: <
+    name: "bot_update (without patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/bot_update__without_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650804
+      nanos: 128753875
+    >
+    ended: <
+      seconds: 1507650910
+      nanos: 713746912
+    >
+    text: "[206GB/295GB used (69%)]"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/bot_update__without_patch_/0/logs/json.output/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "gclient runhooks (without patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/gclient_runhooks__without_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650910
+      nanos: 717440685
+    >
+    ended: <
+      seconds: 1507650935
+      nanos: 842424143
+    >
+  >
+>
+substep: <
+  step: <
+    name: "clean isolated files (2)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/clean_isolated_files__2_/0/stdout"
+    >
+    started: <
+      seconds: 1507650935
+      nanos: 845089028
+    >
+    ended: <
+      seconds: 1507650935
+      nanos: 952333522
+    >
+  >
+>
+substep: <
+  step: <
+    name: "generate_build_files (without patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/generate_build_files__without_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650935
+      nanos: 955655216
+    >
+    ended: <
+      seconds: 1507650942
+      nanos: 974625012
+    >
+    other_links: <
+      label: "swarming-targets-file.txt"
+      logdog_stream: <
+        name: "steps/generate_build_files__without_patch_/0/logs/swarming-targets-file.txt/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "preprocess_for_goma (2)"
+    status: SUCCESS
+    substep: <
+      step: <
+        name: "preprocess_for_goma.goma cache directory (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/preprocess_for_goma__2_/0/steps/preprocess_for_goma.goma_cache_directory__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650942
+          nanos: 977419307
+        >
+        ended: <
+          seconds: 1507650943
+          nanos: 142560515
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "preprocess_for_goma.start_goma (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/preprocess_for_goma__2_/0/steps/preprocess_for_goma.start_goma__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650943
+          nanos: 146338319
+        >
+        ended: <
+          seconds: 1507650952
+          nanos: 166174126
+        >
+        other_links: <
+          label: "cloudtail"
+          url: "https://console.cloud.google.com/logs/viewer?project=goma-logs&resource=gce_instance%2Finstance_id%2Fswarm902-c4&timestamp=2017-10-10T15:55:52.163633"
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "preprocess_for_goma.start cloudtail (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/preprocess_for_goma__2_/0/steps/preprocess_for_goma.start_cloudtail__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650952
+          nanos: 168533545
+        >
+        ended: <
+          seconds: 1507650953
+          nanos: 383506554
+        >
+      >
+    >
+    started: <
+      seconds: 1507650953
+      nanos: 394831345
+    >
+    ended: <
+      seconds: 1507650953
+      nanos: 397091516
+    >
+  >
+>
+substep: <
+  step: <
+    name: "compile (without patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/compile__without_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507650953
+      nanos: 399571312
+    >
+    ended: <
+      seconds: 1507650983
+      nanos: 320116958
+    >
+  >
+>
+substep: <
+  step: <
+    name: "compile (without patch) confirm no-op"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/compile__without_patch__confirm_no-op/0/stdout"
+    >
+    started: <
+      seconds: 1507650983
+      nanos: 323463858
+    >
+    ended: <
+      seconds: 1507650986
+      nanos: 320055971
+    >
+  >
+>
+substep: <
+  step: <
+    name: "postprocess_for_goma (2)"
+    status: SUCCESS
+    substep: <
+      step: <
+        name: "postprocess_for_goma.goma_jsonstatus (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma__2_/0/steps/postprocess_for_goma.goma_jsonstatus__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650986
+          nanos: 322974322
+        >
+        ended: <
+          seconds: 1507650986
+          nanos: 722631499
+        >
+        other_links: <
+          label: "json.output"
+          logdog_stream: <
+            name: "steps/postprocess_for_goma__2_/0/steps/postprocess_for_goma.goma_jsonstatus__2_/0/logs/json.output/0"
+          >
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.goma_stat (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma__2_/0/steps/postprocess_for_goma.goma_stat__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650986
+          nanos: 725939880
+        >
+        ended: <
+          seconds: 1507650987
+          nanos: 51609070
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.stop_goma (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma__2_/0/steps/postprocess_for_goma.stop_goma__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650987
+          nanos: 54925363
+        >
+        ended: <
+          seconds: 1507650987
+          nanos: 382370145
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.upload_log (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma__2_/0/steps/postprocess_for_goma.upload_log__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650987
+          nanos: 385356646
+        >
+        ended: <
+          seconds: 1507650998
+          nanos: 438280615
+        >
+        other_links: <
+          label: "json.output"
+          logdog_stream: <
+            name: "steps/postprocess_for_goma__2_/0/steps/postprocess_for_goma.upload_log__2_/0/logs/json.output/0"
+          >
+        >
+        other_links: <
+          label: "compiler_proxy_log"
+          url: "http://chromium-build-stats.appspot.com/compiler_proxy_log/2017/10/10/swarm902-c4/compiler_proxy.swarm902-c4.chrome-bot.log.INFO.20171010-085543.32633.gz"
+        >
+        other_links: <
+          label: "ninja_log"
+          url: "http://chromium-build-stats.appspot.com/ninja_log/2017/10/10/swarm902-c4/ninja_log.swarm902-c4.chrome-bot.20171010-085623.466.gz"
+        >
+      >
+    >
+    substep: <
+      step: <
+        name: "postprocess_for_goma.stop cloudtail (2)"
+        status: SUCCESS
+        stdout_stream: <
+          name: "steps/postprocess_for_goma__2_/0/steps/postprocess_for_goma.stop_cloudtail__2_/0/stdout"
+        >
+        started: <
+          seconds: 1507650998
+          nanos: 440683652
+        >
+        ended: <
+          seconds: 1507650999
+          nanos: 623356570
+        >
+      >
+    >
+    started: <
+      seconds: 1507650999
+      nanos: 625427516
+    >
+    ended: <
+      seconds: 1507650999
+      nanos: 626138685
+    >
+  >
+>
+substep: <
+  step: <
+    name: "find isolated targets"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/find_isolated_targets/0/stdout"
+    >
+    started: <
+      seconds: 1507650999
+      nanos: 628618807
+    >
+    ended: <
+      seconds: 1507650999
+      nanos: 744666947
+    >
+    other_links: <
+      label: "glob"
+      logdog_stream: <
+        name: "steps/find_isolated_targets/0/logs/glob/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "isolate webkit_layout_tests_exparchive (2)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/isolate_webkit_layout_tests_exparchive__2_/0/stdout"
+    >
+    started: <
+      seconds: 1507650999
+      nanos: 748227015
+    >
+    ended: <
+      seconds: 1507651164
+      nanos: 176146842
+    >
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/isolate_webkit_layout_tests_exparchive__2_/0/logs/json.output/0"
+      >
+    >
+    property: <
+      name: "swarm_hashes"
+      value: "{\"webkit_layout_tests_exparchive\": \"e56374d3bae11787b7391616539a7cadf9c2625d\"}"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "[trigger] webkit_layout_tests (without patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/s__trigger__webkit_layout_tests__without_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507651164
+      nanos: 180777274
+    >
+    ended: <
+      seconds: 1507651167
+      nanos: 637828404
+    >
+    text: "Run on OS: 'Ubuntu-14.04'"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/s__trigger__webkit_layout_tests__without_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a13a166710"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a364439210"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a6fc6f7910"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a8db62d710"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4aa8891d310"
+    >
+    other_links: <
+      label: "shard #5"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4ac1f3b3910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "webkit_layout_tests (without patch)"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/webkit_layout_tests__without_patch_/0/stdout"
+    >
+    started: <
+      seconds: 1507651167
+      nanos: 644896991
+    >
+    ended: <
+      seconds: 1507651969
+      nanos: 226489120
+    >
+    text: "Run on OS: 'Ubuntu-14.04'<br>Max shard duration: 0:11:57.511110 (shard #1)<br/>Total tests: 72830<br/>* Passed: 62251 (62204 expected, 47 unexpected)<br/>* Skipped: 9072 (9072 expected, 0 unexpected)<br/>* Failed: 1450 (1450 expected, 0 unexpected)<br/>* Flaky: 57 (57 expected, 0 unexpected)<br/>"
+    other_links: <
+      label: "json.output"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__without_patch_/0/logs/json.output/0"
+      >
+    >
+    other_links: <
+      label: "swarming.summary"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__without_patch_/0/logs/swarming.summary/0"
+      >
+    >
+    other_links: <
+      label: "outdir_json"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__without_patch_/0/logs/outdir_json/0"
+      >
+    >
+    other_links: <
+      label: "step_metadata"
+      logdog_stream: <
+        name: "steps/webkit_layout_tests__without_patch_/0/logs/step_metadata/0"
+      >
+    >
+    other_links: <
+      label: "shard #0 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=c4ee7f841889cb98d1a74731f8bc4fd299aa3dcc"
+    >
+    other_links: <
+      label: "shard #0"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a13a166710"
+    >
+    other_links: <
+      label: "shard #1 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=eb74049bbfbf27b91b3b83ea6dd7a08765ad0ca1"
+    >
+    other_links: <
+      label: "shard #1"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a364439210"
+    >
+    other_links: <
+      label: "shard #2 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=204880635d9d635fdfe4f4ac9f309b27c787d201"
+    >
+    other_links: <
+      label: "shard #2"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a6fc6f7910"
+    >
+    other_links: <
+      label: "shard #3 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=7f40c9c5fd17dd0c99ec322a2e72c116da6d75cc"
+    >
+    other_links: <
+      label: "shard #3"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4a8db62d710"
+    >
+    other_links: <
+      label: "shard #4 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=66b80ed80ad639bb880857fb0856a828638f7a47"
+    >
+    other_links: <
+      label: "shard #4"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4aa8891d310"
+    >
+    other_links: <
+      label: "shard #5 isolated out"
+      url: "https://isolateserver.appspot.com/browse?namespace=default-gzip&hash=4f8440c6d7e3626208a32130b0a226704f6e1613"
+    >
+    other_links: <
+      label: "shard #5"
+      url: "https://chromium-swarm.appspot.com/user/task/391fd4ac1f3b3910"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "webkit_layout_tests (retry summary)"
+    status: FAILURE
+    stdout_stream: <
+      name: "steps/webkit_layout_tests__retry_summary_/0/stdout"
+    >
+    started: <
+      seconds: 1507651969
+      nanos: 228501645
+    >
+    ended: <
+      seconds: 1507651969
+      nanos: 234433071
+    >
+    text: "<br/>failures:<br/>svg/text/small-fonts-in-html5.html<br/>svg/text/text-selection-spacing-01-b.svg<br/>svg/text/text-selection-align-02-b.svg<br/>svg/W3C-I18N/tspan-dirRTL-ubEmbed-in-default-context.svg<br/>svg/W3C-SVG-1.2-Tiny/struct-use-recursion-01-t.svg<br/>svg/text/selection-tripleclick.svg<br/>svg/W3C-SVG-1.1/text-text-01-b.svg<br/>svg/text/text-selection-align-05-b.svg<br/>svg/text/text-selection-text-01-b.svg<br/>svg/W3C-SVG-1.1-SE/types-dom-01-b.svg<br/>paint/invalidation/svg/append-text-node-to-tspan.html<br/>svg/text/bidi-tspans.svg<br/>svg/hixie/text/001.xml<br/>svg/custom/text-letter-spacing.svg<br/>svg/batik/text/textOnPathSpaces.svg<br/>svg/W3C-SVG-1.1-SE/types-dom-04-b.svg<br/>svg/text/selection-doubleclick.svg<br/>svg/carto.net/selectionlist.svg<br/>svg/zoom/page/zoom-coords-viewattr-01-b.svg<br/>svg/W3C-I18N/g-dirLTR-ubNone.svg<br/>svg/text/select-x-list-2.svg<br/>svg/text/select-x-list-with-tspans-2.svg<br/>svg/custom/text-rotated-gradient.svg<br/>svg/carto.net/button.svg<br/>svg/W3C-SVG-1.1/paths-data-08-t.svg<br/>svg/zoom/page/zoom-zoom-coords.xhtml<br/>svg/text/text-selection-fonts-02-t.svg<br/>svg/text/bbox-with-glyph-overflow-on-path.html<br/>svg/W3C-SVG-1.2-Tiny/struct-use-recursion-03-t.svg<br/>svg/custom/text-dom-01-f.svg<br/>svg/text/text-selection-ws-02-t.svg<br/>svg/text/select-textLength-spacing-squeeze-2.svg<br/>svg/text/bbox-with-glyph-overflow-zoomed.html<br/>svg/W3C-I18N/tspan-direction-rtl.svg<br/>svg/text/select-x-list-4.svg<br/>svg/custom/shapes-supporting-markers.svg<br/>svg/W3C-SVG-1.1/coords-trans-03-t.svg<br/>svg/W3C-I18N/tspan-dirNone-ubOverride-in-default-context.svg<br/>svg/hixie/viewbox/002.xml<br/>svg/text/select-x-list-1.svg<br/>svg/W3C-I18N/tspan-dirLTR-ubEmbed-in-rtl-context.svg<br/>svg/custom/feComponentTransfer-Linear.svg<br/>paint/invalidation/svg/text-viewbox-rescale.html<br/>svg/text/select-textLength-spacingAndGlyphs-squeeze-2.svg<br/>svg/W3C-SVG-1.1/coords-trans-06-t.svg<br/>svg/text/select-x-list-with-tspans-4.svg<br/>svg/text/text-selection-text-03-b.svg<br/>svg/custom/text-match-highlight.html<br/>svg/W3C-SVG-1.1/filters-comptran-01-b.svg<br/>svg/text/text-selection-align-06-b.svg<br/>svg/W3C-I18N/text-dirLTR-ubNone.svg<br/>svg/W3C-SVG-1.1/coords-trans-05-t.svg<br/>svg/carto.net/combobox.svg<br/>svg/text/bidi-text-query.svg<br/>svg/W3C-SVG-1.1/struct-frag-02-t.svg<br/>svg/W3C-I18N/tspan-direction-ltr.svg<br/>paint/invalidation/svg/remove-tspan-from-text.html<br/>svg/custom/preserve-aspect-ratio-syntax.svg<br/>svg/batik/text/textOnPath3.svg<br/>svg/W3C-I18N/tspan-dirLTR-ubOverride-in-rtl-context.svg<br/>svg/text/text-selection-fonts-01-t.svg<br/>svg/W3C-I18N/tspan-dirLTR-ubNone-in-rtl-context.svg<br/>svg/text/select-textLength-spacingAndGlyphs-squeeze-1.svg<br/>svg/W3C-SVG-1.1/animate-elem-33-t.svg<br/>svg/W3C-SVG-1.1/animate-elem-04-t.svg<br/>svg/W3C-SVG-1.1/animate-elem-07-t.svg<br/>svg/hixie/viewbox/003.xml<br/>svg/text/select-x-list-with-tspans-1.svg<br/>svg/W3C-I18N/tspan-dirRTL-ubNone-in-default-context.svg<br/>svg/W3C-SVG-1.1/paths-data-05-t.svg<br/>svg/W3C-SVG-1.1/paths-data-06-t.svg<br/>svg/W3C-SVG-1.1/filters-example-01-b.svg<br/>svg/W3C-I18N/tspan-dirNone-ubOverride-in-ltr-context.svg<br/>svg/W3C-I18N/tspan-dirRTL-ubEmbed-in-ltr-context.svg<br/>svg/text/text-selection-text-07-t.svg<br/>svg/custom/marker-default-width-height.svg<br/>svg/W3C-SVG-1.1/interact-zoom-01-t.svg<br/>svg/text/select-textLength-spacing-stretch-3.svg<br/>svg/custom/feComponentTransfer-Discrete.svg<br/>svg/text/text-selection-tselect-01-b.svg<br/>svg/batik/text/textProperties2.svg<br/>svg/W3C-SVG-1.1-SE/text-tspan-02-b.svg<br/>svg/W3C-SVG-1.1/paths-data-07-t.svg<br/>svg/W3C-I18N/tspan-dirRTL-ubOverride-in-ltr-context.svg<br/>svg/carto.net/colourpicker.svg<br/>paint/invalidation/svg/use-detach.svg<br/>svg/zoom/page/zoom-foreignObject.svg<br/>svg/custom/linking-a-03-b-viewBox.svg<br/>svg/text/text-selection-path-01-b.svg<br/>svg/text/select-textLength-spacing-stretch-1.svg<br/>svg/batik/text/smallFonts.svg<br/>svg/W3C-I18N/text-dirRTL-ubOverride.svg<br/>svg/W3C-SVG-1.2-Tiny/struct-use-recursion-02-t.svg<br/>svg/zoom/page/zoom-svg-through-object-with-absolute-size.xhtml<br/>svg/text/select-textLength-spacing-squeeze-1.svg<br/>svg/W3C-I18N/g-dirRTL-ubOverride.svg<br/>svg/text/select-textLength-spacingAndGlyphs-squeeze-4.svg<br/>svg/W3C-SVG-1.1/filters-color-01-b.svg<br/>svg/text/font-size-below-point-five-2.svg<br/>svg/text/select-textLength-spacingAndGlyphs-squeeze-3.svg<br/>svg/hixie/viewbox/preserveAspectRatio/001.xml<br/>svg/W3C-SVG-1.1/pservers-grad-08-b.svg<br/>svg/transforms/text-with-mask-with-svg-transform.svg<br/>svg/transforms/text-with-pattern-inside-transformed-html.xhtml<br/>svg/W3C-SVG-1.1/types-basicDOM-01-b.svg<br/>svg/W3C-SVG-1.1/paths-data-04-t.svg<br/>svg/text/small-fonts-3.svg<br/>svg/W3C-SVG-1.1/metadata-example-01-b.svg<br/>svg/text/text-selection-text-06-t.svg<br/>svg/zoom/page/zoom-svg-through-object-with-absolute-size-2.xhtml<br/>svg/text/select-textLength-spacing-stretch-2.svg<br/>svg/text/text-selection-align-03-b.svg<br/>svg/text/text-selection-tselect-02-f.svg<br/>svg/W3C-SVG-1.1/text-spacing-01-b.svg<br/>svg/text/text-selection-deco-01-b.svg<br/>svg/W3C-SVG-1.1/coords-trans-04-t.svg<br/>svg/batik/text/textGlyphOrientationHorizontal.svg<br/>svg/text/select-textLength-spacingAndGlyphs-stretch-1.svg<br/>svg/W3C-I18N/g-dirLTR-ubOverride.svg<br/>paint/invalidation/svg/remove-text-node-from-tspan.html<br/>svg/carto.net/textbox.svg<br/>svg/custom/linking-a-03-b-viewBox-transform.svg<br/>svg/text/select-textLength-spacingAndGlyphs-stretch-2.svg<br/>svg/text/bidi-reorder-value-lists.svg<br/>svg/custom/viewbox-syntax.svg<br/>svg/W3C-SVG-1.1/animate-elem-06-t.svg<br/>svg/batik/text/textOnPath2.svg<br/>svg/text/text-selection-text-08-b.svg<br/>svg/W3C-SVG-1.1/pservers-grad-07-b.svg<br/>svg/text/select-textLength-spacingAndGlyphs-stretch-3.svg<br/>svg/W3C-I18N/tspan-dirLTR-ubOverride-in-ltr-context.svg<br/>svg/text/select-textLength-spacing-squeeze-3.svg<br/>svg/zoom/page/zoom-mask-with-percentages.svg<br/>paint/invalidation/svg/modify-text-node-in-tspan.html<br/>svg/W3C-I18N/tspan-dirRTL-ubOverride-in-default-context.svg<br/>paint/invalidation/svg/window.svg<br/>svg/text/select-x-list-3.svg<br/>svg/text/select-textLength-spacingAndGlyphs-stretch-4.svg<br/>svg/custom/invalid-css.svg<br/>svg/transforms/text-with-pattern-with-svg-transform.svg<br/>svg/text/small-fonts-2.svg<br/>svg/text/select-x-list-with-tspans-3.svg<br/>svg/W3C-SVG-1.1/text-path-01-b.svg<br/>svg/text/scaling-font-with-geometric-precision.html<br/>svg/W3C-SVG-1.1/coords-trans-02-t.svg<br/>svg/text/text-selection-align-04-b.svg<br/>svg/text/text-selection-tspan-01-b.svg<br/>svg/batik/text/textOnPath.svg<br/>svg/batik/text/verticalTextOnPath.svg<br/>svg/W3C-I18N/text-dirLTR-ubOverride.svg<br/>svg/custom/feComponentTransfer-Table.svg<br/>svg/W3C-I18N/tspan-dirNone-ubOverride-in-rtl-context.svg<br/>svg/zoom/page/zoom-svg-through-object-with-percentage-size.xhtml<br/>svg/W3C-I18N/text-dirRTL-ubNone.svg<br/>svg/W3C-I18N/tspan-dirLTR-ubOverride-in-default-context.svg<br/>svg/W3C-SVG-1.1/filters-blend-01-b.svg<br/>svg/carto.net/slider.svg<br/>svg/custom/feComponentTransfer-Gamma.svg<br/>svg/W3C-I18N/tspan-dirRTL-ubNone-in-ltr-context.svg<br/>svg/text/text-selection-ws-01-t.svg<br/>svg/text/text-selection-align-01-b.svg<br/>svg/W3C-SVG-1.1/text-text-07-t.svg<br/>svg/W3C-SVG-1.1/animate-elem-05-t.svg<br/>svg/W3C-I18N/tspan-dirRTL-ubOverride-in-rtl-context.svg<br/>svg/custom/use-referencing-nonexisting-symbol.svg<br/>svg/W3C-SVG-1.1/animate-elem-84-t.svg<br/>svg/W3C-I18N/g-dirRTL-ubNone.svg<br/>svg/W3C-SVG-1.1/struct-frag-03-t.svg<br/>svg/text/select-textLength-spacing-squeeze-4.svg<br/>svg/text/select-textLength-spacing-stretch-4.svg<br/>"
+    property: <
+      name: "failure_type"
+      value: "\"TEST_FAILURE\""
+    >
+  >
+>
+substep: <
+  step: <
+    name: "archive_retry_summary"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/archive_retry_summary/0/stdout"
+    >
+    started: <
+      seconds: 1507651969
+      nanos: 236943191
+    >
+    ended: <
+      seconds: 1507651971
+      nanos: 251466881
+    >
+    property: <
+      name: "failure_hash"
+      value: "\"06ef69ba814934114b05bee1a43f963a745661e9\""
+    >
+  >
+>
+substep: <
+  step: <
+    name: "Failure reason"
+    status: FAILURE
+    started: <
+      seconds: 1507651972
+      nanos: 174803929
+    >
+    ended: <
+      seconds: 1507651972
+      nanos: 177859437
+    >
+    other_links: <
+      label: "reason"
+      logdog_stream: <
+        name: "steps/Failure_reason/0/logs/reason/0"
+      >
+    >
+  >
+>
+stdout_stream: <
+  name: "stdout"
+>
+started: <
+  seconds: 1507648257
+  nanos: 393045870
+>
+text: "Failure webkit_layout_tests (with patch)"
+text: "Failure webkit_layout_tests (retry summary)"
+text: "Failure Failure reason"
