@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64dae941_f7bdb4e3",
+        "filename": "milo/api/config/header.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-19T05:53:28Z",
+      "side": 1,
+      "message": "why json? this is not even jsonpb. Wouldn\u0027t binary format be more compact, faster and natural for a protobuf message? Moreover Robbie wrote proto-gae tool that generates PropertyConverter methods for your proto\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/dm/api/distributor/jobsim/gen.go?type\u003dcs\u0026q\u003dproto-gae\u0026sq\u003dpackage:chromium\u0026l\u003d16",
+      "range": {
+        "startLine": 29,
+        "startChar": 15,
+        "endLine": 29,
+        "endChar": 30
+      },
+      "revId": "6a929af5b8a79a45e3ac1d8eed3b011da44a1a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
