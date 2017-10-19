@@ -177,8 +177,14 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		}
 	})
 
+	header, err := consoleHeader(c, def)
+	if err != nil {
+		return nil, err
+	}
+
 	return &resp.Console{
 		Name:       def.ID,
+		Header:     header,
 		Commit:     commits,
 		Table:      *categoryTree,
 		MaxDepth:   depth + 1,
@@ -203,6 +209,22 @@ func consolePreview(c context.Context, def *common.Console) (*resp.Console, erro
 		Table:      *categoryTree,
 		MaxDepth:   depth + 1,
 		FaviconURL: getFaviconURL(c, def),
+	}, nil
+}
+
+func consoleHeader(c context.Context, def *common.Console) (*resp.ConsoleHeader, error) {
+	summaryGroups := make([][][]*model.BuilderSummary, len(def.Header.ConsoleGroups))
+	for i, group := range def.Header.ConsoleGroups {
+		summaries, err := buildsource.GetConsoleSummaries(c, group.ConsoleIds)
+		if err != nil {
+			return nil, err
+		}
+		summaryGroups[i] = summaries
+	}
+
+	return &resp.ConsoleHeader{
+		ConsoleGroups: def.Header.ConsoleGroups,
+		SummaryGroups: summaryGroups,
 	}, nil
 }
 
@@ -262,6 +284,7 @@ func ConsoleHandler(c *router.Context) {
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
+		"Project": project,
 		"Console": consoleRenderer{result},
 		"Reload":  reload,
 	})
