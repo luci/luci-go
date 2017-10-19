@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1adb68e_af212cda",
+        "filename": "milo/buildsource/swarming/buildLog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-19T14:04:40Z",
+      "side": 1,
+      "message": "make 1 line?",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "e9857ea455945271b30791ffba2bc64e46360290",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
