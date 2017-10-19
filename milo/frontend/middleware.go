@@ -27,12 +27,9 @@ import (
 
 	"go.chromium.org/gae/service/info"
 
-	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -41,6 +38,7 @@ import (
 	"go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
+	"go.chromium.org/luci/milo/common"
 )
 
 // A collection of useful templating functions
@@ -299,8 +297,6 @@ func init() {
 					`</a>`))
 }
 
-var authconfig *auth.Config
-
 // getTemplateBundles is used to render HTML templates. It provides base args
 // passed to all templates.  It takes a path to the template folder, relative
 // to the path of the binary during runtime.
@@ -334,15 +330,6 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 		},
 		FuncMap: funcMap,
 	}
-}
-
-// base returns the basic LUCI appengine middlewares.
-func base(templatePath string) router.MiddlewareChain {
-	return standard.Base().Extend(
-		auth.Authenticate(server.CookieAuth),
-		withRequestMiddleware,
-		templates.WithTemplates(getTemplateBundle(templatePath)),
-	)
 }
 
 // The context key, so that we can embed the http.Request object into
