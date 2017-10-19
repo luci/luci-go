@@ -15,11 +15,19 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/auth"
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCollectParse_NoArgs(t *testing.T) {
@@ -68,5 +76,55 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 
 		err = c.Parse(&[]string{"x81n8xn1b684n"})
 		So(err, ShouldErrLike, "negative timeout")
+	})
+}
+
+func testCollectPollWithServer(tout string, handler func(http.ResponseWriter, *http.Request)) taskResult {
+	// Set up test server.
+	ts := httptest.NewServer(http.HandlerFunc(handler))
+	defer ts.Close()
+
+	// Set up test swarming service.
+	s, err := swarming.New(&http.Client{})
+	So(err, ShouldBeNil)
+	s.BasePath = ts.URL
+
+	// Set up context.
+	timeout, err := time.ParseDuration(tout)
+	So(err, ShouldBeNil)
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+
+	results := make(chan taskResult, 1)
+	runner := collectRun{}
+	go runner.pollForTaskResult(ctx, "10982374012938470", s, results)
+	ret := <-results
+	return ret
+}
+
+func TestCollectPollForTaskResult(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test fatal response`, t, func() {
+		result := testCollectPollWithServer("1s", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(404)
+		})
+		So(result.err, ShouldErrLike, "404")
+	})
+
+	Convey(`Test timeout exceeded`, t, func() {
+		result := testCollectPollWithServer("100ms", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(502)
+		})
+		So(result.err, ShouldErrLike, "context deadline exceeded")
+	})
+
+	Convey(`Test bot finished`, t, func(c C) {
+		result := testCollectPollWithServer("1s", func(w http.ResponseWriter, r *http.Request) {
+			err := json.NewEncoder(w).Encode(&swarming.SwarmingRpcsTaskResult{State: "COMPLETED"})
+			c.So(err, ShouldBeNil)
+		})
+		So(result.err, ShouldBeNil)
+		So(result.result, ShouldNotBeNil)
+		So(result.result.State, ShouldResemble, "COMPLETED")
 	})
 }

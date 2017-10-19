@@ -31,6 +31,47 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
+var swarmingAPISuffix = "/api/swarming/v1/"
+
+type taskState int32
+
+const (
+	maskAlive                = 1
+	stateBotDied   taskState = 1 << 1
+	stateCancelled taskState = 1 << 2
+	stateCompleted taskState = 1 << 3
+	stateExpired   taskState = 1 << 4
+	statePending   taskState = 1<<5 | maskAlive
+	stateRunning   taskState = 1<<6 | maskAlive
+	stateTimedOut  taskState = 1 << 7
+	stateUnknown   taskState = -1
+)
+
+func parseTaskState(state string) (taskState, error) {
+	switch state {
+	case "BOT_DIED":
+		return stateBotDied, nil
+	case "CANCELED":
+		return stateCancelled, nil
+	case "COMPLETED":
+		return stateCompleted, nil
+	case "EXPIRED":
+		return stateExpired, nil
+	case "PENDING":
+		return statePending, nil
+	case "RUNNING":
+		return stateRunning, nil
+	case "TIMED_OUT":
+		return stateTimedOut, nil
+	default:
+		return stateUnknown, fmt.Errorf("unrecognized state %q", state)
+	}
+}
+
+func (t taskState) Alive() bool {
+	return (t & maskAlive) == 1
+}
+
 type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags common.Flags
