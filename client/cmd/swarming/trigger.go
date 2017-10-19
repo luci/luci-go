@@ -174,18 +174,18 @@ func (c *triggerRun) Parse(args []string) error {
 
 func (c *triggerRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if err := c.Parse(args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		printError(a, err)
 		return 1
 	}
 	cl, err := c.defaultFlags.StartTracing()
 	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		printError(a, err)
 		return 1
 	}
 	defer cl.Close()
 
 	if err := c.main(a, args, env); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		printError(a, err)
 		return 1
 	}
 	return 0
@@ -213,23 +213,13 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		}
 		defer dump.Close()
 
-		taskInfo := map[string]interface{}{
-			"shard_index": 0,
-			"task_id":     result.TaskId,
-			"view_url":    viewURL,
+		data := jsonDump{
+			TaskID:  result.TaskId,
+			ViewURL: viewURL,
+			Request: *request,
 		}
 
-		tasks := map[string]interface{}{
-			request.Name: taskInfo,
-		}
-
-		data := map[string]interface{}{
-			"base_task_name": c.taskName,
-			"tasks":          tasks,
-			"request":        request,
-		}
-
-		b, err := json.MarshalIndent(data, "", "  ")
+		b, err := json.MarshalIndent(&data, "", "  ")
 		if err != nil {
 			return errors.New("could not marshal data")
 		}

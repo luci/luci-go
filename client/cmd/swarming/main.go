@@ -38,6 +38,7 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Title: "Client tool to access a swarming server.",
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
+			cmdCollect(defaultAuthOpts),
 			cmdRequestShow(defaultAuthOpts),
 			cmdTrigger(defaultAuthOpts),
 			subcommands.CmdHelp,
