@@ -26,13 +26,10 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
-	ds "go.chromium.org/gae/service/datastore"
-
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -117,7 +114,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		heads, headsErr = m.load(c, ctl.JobID(), u)
+		heads, headsErr = loadState(c, ctl.JobID(), u)
 	}()
 
 	var refs map[string]string
@@ -217,7 +214,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 			// the refs' heads newest values.
 			return err
 		}
-		if err := m.save(c, ctl.JobID(), u, heads); err != nil {
+		if err := saveState(c, ctl.JobID(), u, heads); err != nil {
 			return err
 		}
 		ctl.DebugLog("Saved %d known refs", len(heads))
@@ -240,64 +237,6 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 // HandleTimer is part of Manager interface.
 func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	return errors.New("not implemented")
-}
-
-// Reference is used to store the revision of a ref.
-type Reference struct {
-	// Name is the reference name.
-	Name string `gae:",noindex"`
-
-	// Revision is the ref commit.
-	Revision string `gae:",noindex"`
-}
-
-// Repository is used to store the repository status.
-type Repository struct {
-	_kind  string         `gae:"$kind,gitiles.Repository"`
-	_extra ds.PropertyMap `gae:"-,extra"`
-
-	// ID is "<job ID>:<repository URL>".
-	ID string `gae:"$id"`
-
-	// References is the slice of all the tracked refs within repository.
-	References []Reference `gae:",noindex"`
-}
-
-func repositoryID(jobID string, u *url.URL) string {
-	return fmt.Sprintf("%s:%s", jobID, u)
-}
-
-func (m TaskManager) load(c context.Context, jobID string, u *url.URL) (map[string]string, error) {
-	stored := &Repository{ID: repositoryID(jobID, u)}
-	err := ds.Get(c, stored)
-	if err != nil && err != ds.ErrNoSuchEntity {
-		return nil, err
-	}
-	heads := make(map[string]string, len(stored.References))
-	for _, b := range stored.References {
-		heads[b.Name] = b.Revision
-	}
-	return heads, nil
-}
-
-func (m TaskManager) save(c context.Context, jobID string, u *url.URL, heads map[string]string) error {
-	sortedRefs := make([]string, 0, len(heads))
-	for ref := range heads {
-		sortedRefs = append(sortedRefs, ref)
-	}
-	sort.Strings(sortedRefs)
-
-	refs := make([]Reference, 0, len(heads))
-	for _, n := range sortedRefs {
-		refs = append(refs, Reference{
-			Name:     n,
-			Revision: heads[n],
-		})
-	}
-	return transient.Tag.Apply(ds.Put(c, &Repository{
-		ID:         repositoryID(jobID, u),
-		References: refs,
-	}))
 }
 
 // getRefsTips returns tip for each ref being watched.
@@ -356,14 +295,6 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (g
 	return &gitiles.Client{Client: httpClient, Auth: true}, nil
 }
 
-func splitRef(s string) (string, string) {
-	if i := strings.LastIndex(s, "/"); i <= 0 {
-		return s, ""
-	} else {
-		return s[:i], s[i+1:]
-	}
-}
-
 type watchedRefNamespace struct {
 	namespace    string // no trailing "/".
 	allChildren  bool   // if true, someChildren is ignored.
@@ -418,4 +349,12 @@ func (w *watchedRefs) hasRef(ref string) bool {
 		return wrn.hasSuffix(suffix)
 	}
 	return false
+}
+
+func splitRef(s string) (string, string) {
+	if i := strings.LastIndex(s, "/"); i <= 0 {
+		return s, ""
+	} else {
+		return s[:i], s[i+1:]
+	}
 }
