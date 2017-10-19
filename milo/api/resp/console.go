@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"html/template"
 
+	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -41,6 +42,13 @@ import (
 type Console struct {
 	Name string
 
+	// Header is an optional header for the console which contains links, oncall info,
+	// and summaries of other, presumably related consoles.
+	//
+	// This field may be nil, which simply indicates to the renderer to not render a
+	// header.
+	Header *ConsoleHeader
+
 	// Commit is a list of commits representing the list of commits to the left of the
 	// console.
 	Commit []Commit
@@ -57,6 +65,23 @@ type Console struct {
 
 	// FaviconURL is the URL to the favicon for this console.
 	FaviconURL string
+}
+
+// ConsoleHeader represents the header of a console view, containing a set of links,
+// oncall details, as well as a set of console summaries for other, relevant consoles.
+type ConsoleHeader struct {
+	// ConsoleGroups is a list of ConsoleSummaryGroups from the project configuration.
+	ConsoleGroups []*config.ConsoleSummaryGroup
+
+	// SummaryGroups is a list of lists of console summaries.
+	//
+	// The outermost list corresponds to ConsoleGroups, the next inner lists
+	// correspond to each ConsoleGroup's ConsoleIds field, and the final list
+	// is a list of BuilderSummaries which contain the actual data we want to
+	// display.
+	SummaryGroups [][][]*model.BuilderSummary
+
+	// TODO(mknyszek): Add Oncall and Links support.
 }
 
 // ConsoleElement represents a single renderable console element.
