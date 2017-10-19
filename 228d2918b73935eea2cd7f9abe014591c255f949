@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8096e681_8496e68c",
+        "filename": "common/proto/google/descutil/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1121710
+      },
+      "writtenOn": "2017-10-19T18:08:50Z",
+      "side": 1,
+      "message": "\"2nd\"?",
+      "range": {
+        "startLine": 254,
+        "startChar": 35,
+        "endLine": 254,
+        "endChar": 39
+      },
+      "revId": "228d2918b73935eea2cd7f9abe014591c255f949",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2aa3b959_2f557096",
+        "filename": "common/proto/google/descutil/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1121710
+      },
+      "writtenOn": "2017-10-19T18:08:50Z",
+      "side": 1,
+      "message": "no",
+      "range": {
+        "startLine": 272,
+        "startChar": 34,
+        "endLine": 272,
+        "endChar": 37
+      },
+      "revId": "228d2918b73935eea2cd7f9abe014591c255f949",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
