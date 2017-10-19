@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65a02b28_9b35b6d9",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-19T03:04:36Z",
+      "side": 1,
+      "message": "TODO(...): \u003cbug\u003e: Actionable item.  Would be a better label.",
+      "revId": "ad2dea23d098b96afa7453d0bd89ba07cad411c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
