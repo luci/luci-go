@@ -78,14 +78,14 @@ func (b *Build) SchedulingDuration() (duration time.Duration, ok bool) {
 	return b.StartTime.Sub(b.CompletionTime), true
 }
 
-// UserData is data provided by users, opaque to LUCI services.
-// The value must be JSON marshalable/unmarshalable. Typically it is
-// a JSON object.
+// Properties is data provided by users, opaque to LUCI services.
+// The value must be JSON marshalable/unmarshalable into/out from a
+// JSON object.
 //
 // When using an unmarshaling function, such as (*Build).ParseMessage,
-// if the user knows the structure of the user data, they may set the
+// if the user knows the properties they need, they may set the
 // value to a json-compatible struct. The unmarshaling function will try
-// to unmarshal the userdata into the struct. Otherwise, the unmarshaling
+// to unmarshal the properties into the struct. Otherwise, the unmarshaling
 // function will use a generic type, e.g. map[string]interface{}.
 //
 // Example:
@@ -94,23 +94,23 @@ func (b *Build) SchedulingDuration() (duration time.Duration, ok bool) {
 //     A string
 //   }
 //   var build buildbucket.Build
-//   build.Input.UserData = &props
+//   build.Input.Properties = &props
 //   if err := build.ParseMessage(msg); err != nil {
 //     return err
 //   }
 //   println(props.A)
-type UserData interface{}
+type Properties interface{}
 
 // Input is the input to the builder.
 type Input struct {
-	// UserData is opaque data passed to the build.
+	// Properties is opaque data passed to the build.
 	// For recipe-based builds, this is build properties.
-	UserData UserData
+	Properties Properties
 }
 
 // Output is build output.
 type Output struct {
-	UserData UserData
+	Properties Properties
 
 	// TODO(nodir, iannucci): replace type "error" with a new type that
 	// represents a stack of errors emitted by different layers of the system,
@@ -149,7 +149,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		return err
 	}
 
-	input := struct{ Properties interface{} }{b.Input.UserData}
+	input := struct{ Properties interface{} }{b.Input.Properties}
 	if err := parseJSON(msg.ParametersJson, &input); err != nil {
 		return errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
@@ -159,7 +159,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		Error      struct {
 			Message string
 		}
-	}{Properties: b.Output.UserData}
+	}{Properties: b.Output.Properties}
 	if err := parseJSON(msg.ResultDetailsJson, &output); err != nil {
 		return errors.Annotate(err, "invalid msg.ResultDetailsJson").Err()
 	}
@@ -185,7 +185,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		Tags:             tags,
 		CanaryPreference: canaryPref,
 		Input: Input{
-			UserData: input.Properties,
+			Properties: input.Properties,
 		},
 
 		Status:           status,
@@ -197,8 +197,8 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 
 		CompletionTime: ParseTimestamp(msg.CompletedTs),
 		Output: Output{
-			UserData: output.Properties,
-			Err:      outErr,
+			Properties: output.Properties,
+			Err:        outErr,
 		},
 	}
 	return nil
@@ -231,7 +231,7 @@ func (b *Build) PutRequest() (*buildbucket.ApiPutRequestMessage, error) {
 
 	parameters := map[string]interface{}{
 		"builder_name": b.Builder,
-		"properties":   b.Input.UserData,
+		"properties":   b.Input.Properties,
 		// keep this synced with marshaling error annotation
 	}
 	if data, err := json.Marshal(parameters); err != nil {
