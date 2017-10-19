@@ -20,11 +20,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
+	"strings"
 	"time"
+
+	"golang.org/x/net/context"
+
+	googleapi "google.golang.org/api/googleapi"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 )
 
 type taskOutputOption int64
@@ -78,6 +85,28 @@ func (t *taskOutputOption) IncludesJSON() bool {
 
 func (t *taskOutputOption) IncludesConsole() bool {
 	return (*t & taskOutputConsole) != 0
+}
+
+type taskResult struct {
+	TaskID string
+	Result *swarming.SwarmingRpcsTaskResult
+	Output string
+	Error  error
+}
+
+func (t *taskResult) Print() {
+	if t.Error != nil {
+		fmt.Printf("%s: %v\n", t.TaskID, t.Error)
+	} else {
+		fmt.Printf("%s: exit %d\n", t.TaskID, t.Result.ExitCode)
+		stdout := strings.TrimSpace(t.Output)
+		if len(stdout) > 0 {
+			lines := strings.Split(stdout, "\n")
+			for _, line := range lines {
+				fmt.Printf("    %s\n", line)
+			}
+		}
+	}
 }
 
 func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -162,5 +191,146 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		printError(a, err)
 		return 1
 	}
+	if err := c.main(a, args); err != nil {
+		printError(a, err)
+		return 1
+	}
 	return 0
+}
+
+func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, service *swarming.Service) taskResult {
+	// Fetch the result details.
+	call := service.Task.Result(taskID).IncludePerformanceStats(c.perf)
+	result, err := call.Context(ctx).Do()
+	if err != nil {
+		return taskResult{TaskID: taskID, Error: err}
+	}
+
+	// If we got the result details, try to fetch stdout if the
+	// user asked for it.
+	var output string
+	if c.taskOutput != taskOutputNone {
+		call := service.Task.Stdout(taskID)
+		if taskOutput, err := call.Context(ctx).Do(); err != nil {
+			return taskResult{TaskID: taskID, Error: err}
+		} else {
+			output = taskOutput.Output
+		}
+	}
+
+	// TODO: Fetch additional files from isolate server.
+
+	return taskResult{
+		TaskID: taskID,
+		Result: result,
+		Output: output,
+	}
+}
+
+func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service *swarming.Service, results chan<- taskResult) {
+	startedTime := clock.Now(ctx)
+	for {
+		result := c.fetchTaskResults(ctx, taskID, service)
+		if result.Error != nil {
+			if gapiErr, ok := result.Error.(*googleapi.Error); ok {
+				// Error code of < 500 is a fatal error.
+				if gapiErr.Code < 500 {
+					results <- result
+					return
+				}
+			}
+		} else {
+			// Only stop if the swarming bot is "dead" (i.e. not running).
+			state, err := ParseTaskState(result.Result.State)
+			if err != nil {
+				results <- taskResult{TaskID: taskID, Error: err}
+				return
+			}
+			if !state.Alive() {
+				results <- result
+				return
+			}
+		}
+
+		currentTime := clock.Now(ctx)
+
+		// Start with a 1 second delay and for each 30 seconds of waiting
+		// add another second until hitting a 15 second ceiling.
+		delay := time.Second + (currentTime.Sub(startedTime) / 30)
+		if delay >= 15*time.Second {
+			delay = 15 * time.Second
+		}
+		timerResult := <- clock.After(ctx, delay)
+
+		// timerResult should have an error if the context's deadline was exceeded,
+		// or if the context was cancelled.
+		if timerResult.Err != nil {
+			results <- taskResult{TaskID: taskID, Error: timerResult.Err}
+			return
+		}
+	}
+}
+
+// summarizeResults generate a marshalled JSON summary of the task results.
+func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
+	jsonResults := []interface{}{}
+	for _, result := range results {
+		if result.Error != nil {
+			jsonResults = append(jsonResults, result.Error)
+		} else {
+			jsonResult := map[string]interface{}{"results": *result.Result}
+			if c.taskOutput.IncludesJSON() {
+				jsonResult["output"] = result.Output
+			}
+			jsonResults = append(jsonResults, jsonResult)
+		}
+	}
+	return json.MarshalIndent(map[string]interface{}{"tasks": jsonResults}, "", "  ")
+}
+
+func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
+	// Set up swarming service.
+	client, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	s, err := swarming.New(client)
+	if err != nil {
+		return err
+	}
+	s.BasePath = c.commonFlags.serverURL + swarmingAPISuffix
+
+	// Prepare context.
+	// TODO(mknyszek): Use cancel func to implement graceful exit on SIGINT.
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	// Aggregate results by polling and fetching across multiple goroutines.
+	results := make([]taskResult, len(taskIDs))
+	aggregator := make(chan taskResult, len(taskIDs))
+	for _, id := range taskIDs {
+		go c.pollForTaskResult(ctx, id, s, aggregator)
+	}
+	for i := 0; i < len(taskIDs); i++ {
+		results[i] = <-aggregator
+	}
+
+	// Summarize results to JSON.
+	jsonSummary, err := c.summarizeResults(results)
+	if err != nil {
+		return err
+	}
+
+	// Write any relevant files.
+	if len(c.taskSummaryJSON) > 0 {
+		if err := ioutil.WriteFile(c.taskSummaryJSON, jsonSummary, 0664); err != nil {
+			return err
+		}
+	}
+	if c.taskOutput.IncludesConsole() {
+		for _, result := range results {
+			result.Print()
+		}
+	}
+	return nil
 }
