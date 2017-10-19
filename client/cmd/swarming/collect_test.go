@@ -15,11 +15,21 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
+
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/auth"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCollectParse_NoArgs(t *testing.T) {
@@ -68,5 +78,85 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 
 		err = c.Parse(&[]string{"x81n8xn1b684n"})
 		So(err, ShouldErrLike, "negative timeout")
+	})
+}
+
+func contextWithTimeout(tout string) context.Context {
+	testDate := time.Date(2222, 10, 10, 10, 1, 1, 1, time.UTC)
+	ctx, clk := testclock.UseTime(context.Background(), testDate)
+	timeout, _ := time.ParseDuration(tout)
+	ctx, _ = clock.WithTimeout(ctx, timeout)
+
+	// Set a callback to make the timer finish.
+	clk.SetTimerCallback(func(amt time.Duration, t clock.Timer) {
+		clk.Add(amt)
+	})
+	return ctx
+}
+
+func testCollectPollWithServer(c context.Context, handler func(http.ResponseWriter, *http.Request)) taskResult {
+	// Set up test server.
+	ts := httptest.NewServer(http.HandlerFunc(handler))
+	defer ts.Close()
+
+	// Set up test swarming service.
+	s, err := swarming.New(&http.Client{})
+	So(err, ShouldBeNil)
+	s.BasePath = ts.URL
+
+	results := make(chan taskResult, 1)
+	runner := collectRun{}
+	go runner.pollForTaskResult(c, "10982374012938470", s, results)
+	ret := <-results
+	return ret
+}
+
+func TestCollectPollForTaskResult(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test fatal response`, t, func() {
+		ctx := contextWithTimeout("10s")
+		result := testCollectPollWithServer(ctx, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(404)
+		})
+		So(result.err, ShouldErrLike, "404")
+	})
+
+	Convey(`Test timeout exceeded`, t, func() {
+		ctx := contextWithTimeout("10s")
+		result := testCollectPollWithServer(ctx, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(502)
+		})
+		So(result.err, ShouldErrLike, "context deadline exceeded")
+	})
+
+	Convey(`Test bot finished`, t, func(c C) {
+		ctx := contextWithTimeout("10s")
+		result := testCollectPollWithServer(ctx, func(w http.ResponseWriter, r *http.Request) {
+			err := json.NewEncoder(w).Encode(&swarming.SwarmingRpcsTaskResult{State: "COMPLETED"})
+			c.So(err, ShouldBeNil)
+		})
+		So(result.err, ShouldBeNil)
+		So(result.result, ShouldNotBeNil)
+		So(result.result.State, ShouldResemble, "COMPLETED")
+	})
+
+	Convey(`Test bot finished after failures`, t, func(c C) {
+		ctx := contextWithTimeout("10s")
+		i := 0
+		maxTries := 5
+		result := testCollectPollWithServer(ctx, func(w http.ResponseWriter, r *http.Request) {
+			if i < maxTries {
+				w.WriteHeader(http.StatusInternalServerError)
+				i += 1
+			} else {
+				err := json.NewEncoder(w).Encode(&swarming.SwarmingRpcsTaskResult{State: "COMPLETED"})
+				c.So(err, ShouldBeNil)
+			}
+		})
+		So(i, ShouldEqual, maxTries)
+		So(result.err, ShouldBeNil)
+		So(result.result, ShouldNotBeNil)
+		So(result.result.State, ShouldResemble, "COMPLETED")
 	})
 }
