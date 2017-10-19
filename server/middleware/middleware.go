@@ -18,9 +18,12 @@ package middleware
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/server/router"
 )
 
 // Handler is the type for all request handlers. Of particular note, it's the
@@ -46,10 +49,10 @@ func TestingBase(c context.Context) Base {
 	}
 }
 
-// WithContextValue is a middleware that adds a value to the context before
-// calling the handler.
-func WithContextValue(h Handler, key, val interface{}) Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(context.WithValue(c, key, val), rw, r, p)
+// WithContextTimeout returns a middleware that adds a timeout to the context.
+func WithContextTimeout(timeout time.Duration) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		c.Context, _ = context.WithTimeout(c.Context, timeout)
+		next(c)
 	}
 }
