@@ -68,7 +68,7 @@ func TestBuild(t *testing.T) {
 				"user_agent":       []string{"luci-migration"},
 			},
 			Input: Input{
-				UserData: map[string]interface{}{
+				Properties: map[string]interface{}{
 					"attempt_start_ts":     json.Number("1506353363000000.0"),
 					"category":             "cq_experimental",
 					"master":               "master.tryserver.chromium.linux",
@@ -84,7 +84,7 @@ func TestBuild(t *testing.T) {
 				},
 			},
 			Output: Output{
-				UserData: map[string]interface{}{
+				Properties: map[string]interface{}{
 					"got_revision": "ea69a470367f45ef9c98b9cb79d540c689154d0d",
 				},
 			},
@@ -112,10 +112,10 @@ func TestBuild(t *testing.T) {
 				Revision string
 			}
 			var actual Build
-			actual.Input.UserData = &props{}
+			actual.Input.Properties = &props{}
 			err := actual.ParseMessage(msg)
 			So(err, ShouldBeNil)
-			So(actual.Input.UserData, ShouldResemble, &props{
+			So(actual.Input.Properties, ShouldResemble, &props{
 				Category: "cq_experimental",
 				Master:   "master.tryserver.chromium.linux",
 				Revision: "ea69a470367f45ef9c98b9cb79d540c689154d0d",
@@ -137,7 +137,7 @@ func TestBuild(t *testing.T) {
 		Convey("PutRequest", func() {
 			paramsJSON, err := json.Marshal(map[string]interface{}{
 				"builder_name": "linux_chromium_rel_ng",
-				"properties":   build.Input.UserData,
+				"properties":   build.Input.Properties,
 			})
 			So(err, ShouldBeNil)
 			actual, err := build.PutRequest()
