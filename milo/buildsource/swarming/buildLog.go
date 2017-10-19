@@ -43,7 +43,6 @@ func swarmingBuildLogImpl(c context.Context, svc swarmingService, taskID, lognam
 	}
 
 	fetchParams := swarmingFetchParams{
-		fetchRes: true, // Needed so we can validate that this is a Milo build.
 		fetchLog: true,
 	}
 	fr, err := swarmingFetch(c, svc, taskID, fetchParams)
