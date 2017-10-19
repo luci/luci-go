@@ -67,6 +67,10 @@ type BuildSummary struct {
 	//   "buildbucket/<bucketname>/<buildername>"
 	BuilderID string
 
+	// The LUCI project ID associated with this build. This is used for ACL checks
+	// when presenting this build to end users.
+	ProjectID string
+
 	// The buildbucket buildsets associated with this Build, if any.
 	//
 	// Example:
