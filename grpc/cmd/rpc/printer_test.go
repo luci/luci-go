@@ -47,10 +47,12 @@ func TestPrinter(t *testing.T) {
 		So(desc.File, ShouldHaveLength, 1)
 		file := desc.File[0]
 
-		getExpectedDef := func(path ...int) string {
-			loc := descutil.FindLocation(file.SourceCodeInfo, path)
-			So(loc, ShouldNotBeNil)
+		sourceCodeInfo, err := descutil.IndexSourceCodeInfo(file)
+		So(err, ShouldBeNil)
 
+		getExpectedDef := func(ptr interface{}, unindent int) string {
+			loc := sourceCodeInfo[ptr]
+			So(loc, ShouldNotBeNil)
 			startLine := loc.Span[0]
 			endLine := startLine
 			if len(loc.Span) > 3 {
@@ -61,7 +63,6 @@ func TestPrinter(t *testing.T) {
 				startLine--
 			}
 
-			unindent := (len(path) - 2) / 2
 			expected := make([]string, endLine-startLine+1)
 			for i := 0; i < len(expected); i++ {
 				expected[i] = protoFileLines[int(startLine)+i][unindent:]
@@ -72,58 +73,58 @@ func TestPrinter(t *testing.T) {
 
 		var buf bytes.Buffer
 		printer := newPrinter(&buf)
-		printer.File = file
+		So(printer.SetFile(file), ShouldBeNil)
 
-		checkOutput := func(path ...int) {
-			So(buf.String(), ShouldEqual, getExpectedDef(path...))
+		checkOutput := func(ptr interface{}, unindent int) {
+			So(buf.String(), ShouldEqual, getExpectedDef(ptr, unindent))
 		}
 
 		Convey("package", func() {
 			printer.Package(file.GetPackage())
-			checkOutput(descutil.FileDescriptorProtoPackageTag)
+			checkOutput(&file.Package, 0)
 		})
 
 		Convey("service", func() {
-			for i, s := range file.Service {
+			for _, s := range file.Service {
 				Convey(s.GetName(), func() {
-					printer.Service(s, i, -1)
-					checkOutput(descutil.FileDescriptorProtoServiceTag, i)
+					printer.Service(s, -1)
+					checkOutput(s, 0)
 				})
 			}
 		})
 
-		testEnum := func(e *descriptor.EnumDescriptorProto, path []int) {
+		testEnum := func(e *descriptor.EnumDescriptorProto, unindent int) {
 			Convey(e.GetName(), func() {
-				printer.Enum(e, path)
-				checkOutput(path...)
+				printer.Enum(e)
+				checkOutput(e, unindent)
 			})
 		}
 
 		Convey("enum", func() {
-			for i, e := range file.EnumType {
-				testEnum(e, []int{descutil.FileDescriptorProtoEnumTag, i})
+			for _, e := range file.EnumType {
+				testEnum(e, 0)
 			}
 		})
 
 		Convey("message", func() {
-			var testMsg func(*descriptor.DescriptorProto, []int)
-			testMsg = func(m *descriptor.DescriptorProto, path []int) {
+			var testMsg func(*descriptor.DescriptorProto, int)
+			testMsg = func(m *descriptor.DescriptorProto, unindent int) {
 				Convey(m.GetName(), func() {
 					if len(m.NestedType) == 0 && len(m.EnumType) == 0 {
-						printer.Message(m, path)
-						checkOutput(path...)
+						printer.Message(m)
+						checkOutput(m, unindent)
 					} else {
-						for i, m := range m.NestedType {
-							testMsg(m, append(path, descutil.DescriptorProtoNestedTypeTag, i))
+						for _, m := range m.NestedType {
+							testMsg(m, unindent+1)
 						}
-						for i, e := range m.EnumType {
-							testEnum(e, append(path, descutil.DescriptorProtoEnumTypeTag, i))
+						for _, e := range m.EnumType {
+							testEnum(e, unindent+1)
 						}
 					}
 				})
 			}
-			for i, m := range file.MessageType {
-				testMsg(m, []int{descutil.FileDescriptorProtoMessageTag, i})
+			for _, m := range file.MessageType {
+				testMsg(m, 0)
 			}
 		})
 	})

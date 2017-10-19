@@ -19,19 +19,19 @@ import (
 	"io"
 	"strings"
 
-	"go.chromium.org/luci/common/proto/google/descutil"
-
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+
 	"go.chromium.org/luci/common/data/text/indented"
+	"go.chromium.org/luci/common/proto/google/descutil"
 )
 
 // printer prints a proto3 definition from a description.
 // Does not support options.
 type printer struct {
-	// File is the file containing the desriptors being printed.
-	// Used to relativize names and print comments.
-	File *descriptor.FileDescriptorProto
-	Out  indented.Writer
+	file           *descriptor.FileDescriptorProto
+	sourceCodeInfo map[interface{}]*descriptor.SourceCodeInfo_Location
+
+	Out indented.Writer
 
 	// Err is not nil if writing to Out failed.
 	Err error
@@ -39,6 +39,15 @@ type printer struct {
 
 func newPrinter(out io.Writer) *printer {
 	return &printer{Out: indented.Writer{Writer: out}}
+}
+
+// SetFile specifies the file containing the descriptors being printed.
+// Used to relativize names and print comments.
+func (p *printer) SetFile(f *descriptor.FileDescriptorProto) error {
+	p.file = f
+	var err error
+	p.sourceCodeInfo, err = descutil.IndexSourceCodeInfo(f)
+	return err
 }
 
 // Printf prints to p.Out unless there was an error.
@@ -66,22 +75,10 @@ func (p *printer) open(format string, a ...interface{}) func() {
 	}
 }
 
-// MaybeLeadingComments prints leading comments of the protobuf entity
-// at path, if found.
-//
-// For path, see comment in SourceCodeInfo.Location message in
-// common/proto/google/descriptor/descriptor.proto.
-func (p *printer) MaybeLeadingComments(path []int) {
-	if p.File == nil || p.File.SourceCodeInfo == nil || len(path) == 0 {
-		return
-	}
-
-	loc := descutil.FindLocation(p.File.SourceCodeInfo, path)
-	if loc == nil {
-		return
-	}
-
-	comments := loc.GetLeadingComments()
+// MaybeLeadingComments prints leading comments of the descriptor proto
+// if found.
+func (p *printer) MaybeLeadingComments(ptr interface{}) {
+	comments := p.sourceCodeInfo[ptr].GetLeadingComments()
 	// print comments, but insert "//" before each newline.
 	for len(comments) > 0 {
 		var toPrint string
@@ -98,11 +95,11 @@ func (p *printer) MaybeLeadingComments(path []int) {
 	}
 }
 
-// shorten removes leading "." and trims package name if it matches p.File.
+// shorten removes leading "." and trims package name if it matches p.file.
 func (p *printer) shorten(name string) string {
 	name = strings.TrimPrefix(name, ".")
-	if p.File != nil && p.File.GetPackage() != "" {
-		name = strings.TrimPrefix(name, p.File.GetPackage()+".")
+	if p.file.GetPackage() != "" {
+		name = strings.TrimPrefix(name, p.file.GetPackage()+".")
 	}
 	return name
 }
@@ -110,28 +107,16 @@ func (p *printer) shorten(name string) string {
 // Service prints a service definition.
 // If methodIndex != -1, only one method is printed.
 // If serviceIndex != -1, leading comments are printed if found.
-func (p *printer) Service(service *descriptor.ServiceDescriptorProto, serviceIndex, methodIndex int) {
-	var path []int
-	if serviceIndex != -1 {
-		path = []int{descutil.FileDescriptorProtoServiceTag, serviceIndex}
-		p.MaybeLeadingComments(path)
-	}
+func (p *printer) Service(service *descriptor.ServiceDescriptorProto, methodIndex int) {
+	p.MaybeLeadingComments(service)
 	defer p.open("service %s", service.GetName())()
-
-	printMethod := func(i int) {
-		var methodPath []int
-		if path != nil {
-			methodPath = append(path, descutil.ServiceDescriptorProtoMethodTag, i)
-		}
-		p.Method(service.Method[i], methodPath)
-	}
 
 	if methodIndex < 0 {
 		for i := range service.Method {
-			printMethod(i)
+			p.Method(service.Method[i])
 		}
 	} else {
-		printMethod(methodIndex)
+		p.Method(service.Method[methodIndex])
 		if len(service.Method) > 1 {
 			p.Printf("// other methods were omitted.\n")
 		}
@@ -139,12 +124,8 @@ func (p *printer) Service(service *descriptor.ServiceDescriptorProto, serviceInd
 }
 
 // Method prints a service method definition.
-//
-// If path is specified, leading comments are printed if found.
-// See also comment in SourceCodeInfo.Location message in
-// common/proto/google/descriptor/descriptor.proto.
-func (p *printer) Method(method *descriptor.MethodDescriptorProto, path []int) {
-	p.MaybeLeadingComments(path)
+func (p *printer) Method(method *descriptor.MethodDescriptorProto) {
+	p.MaybeLeadingComments(method)
 	p.Printf(
 		"rpc %s(%s) returns (%s) {};\n",
 		method.GetName(),
@@ -172,12 +153,8 @@ var fieldTypeName = map[descriptor.FieldDescriptorProto_Type]string{
 }
 
 // Field prints a field definition.
-//
-// If path is specified, leading comments are printed if found.
-// See also comment in SourceCodeInfo.Location message in
-// common/proto/google/descriptor/descriptor.proto.
-func (p *printer) Field(field *descriptor.FieldDescriptorProto, path []int) {
-	p.MaybeLeadingComments(path)
+func (p *printer) Field(field *descriptor.FieldDescriptorProto) {
+	p.MaybeLeadingComments(field)
 	if descutil.Repeated(field) {
 		p.Printf("repeated ")
 	}
@@ -193,76 +170,46 @@ func (p *printer) Field(field *descriptor.FieldDescriptorProto, path []int) {
 }
 
 // Message prints a message definition.
-//
-// If path is specified, leading comments are printed if found.
-// See also comment in SourceCodeInfo.Location message in
-// common/proto/google/descriptor/descriptor.proto.
-func (p *printer) Message(msg *descriptor.DescriptorProto, path []int) {
-	p.MaybeLeadingComments(path)
+func (p *printer) Message(msg *descriptor.DescriptorProto) {
+	p.MaybeLeadingComments(msg)
 	defer p.open("message %s", msg.GetName())()
 
 	for i := range msg.GetOneofDecl() {
-		p.OneOf(msg, i, path)
+		p.OneOf(msg, i)
 	}
 
 	for i, f := range msg.Field {
 		if f.OneofIndex == nil {
-			var fieldPath []int
-			if len(path) > 0 {
-				fieldPath = append(path, descutil.DescriptorProtoFieldTag, i)
-			}
-			p.Field(msg.Field[i], fieldPath)
+			p.Field(msg.Field[i])
 		}
 	}
 }
 
 // OneOf prints a oneof definition.
-//
-// If path is specified, leading comments are printed if found.
-// See also comment in SourceCodeInfo.Location message in
-// common/proto/google/descriptor/descriptor.proto.
-func (p *printer) OneOf(msg *descriptor.DescriptorProto, oneOfIndex int, msgPath []int) {
+func (p *printer) OneOf(msg *descriptor.DescriptorProto, oneOfIndex int) {
 	of := msg.GetOneofDecl()[oneOfIndex]
-	if len(msgPath) > 0 {
-		p.MaybeLeadingComments(append(msgPath, descutil.DescriptorProtoOneOfTag, oneOfIndex))
-	}
+	p.MaybeLeadingComments(of)
 	defer p.open("oneof %s", of.GetName())()
 
 	for i, f := range msg.Field {
 		if f.OneofIndex != nil && int(f.GetOneofIndex()) == oneOfIndex {
-			var fieldPath []int
-			if len(msgPath) > 0 {
-				fieldPath = append(msgPath, descutil.DescriptorProtoFieldTag, i)
-			}
-			p.Field(msg.Field[i], fieldPath)
+			p.Field(msg.Field[i])
 		}
 	}
 }
 
 // Enum prints an enum definition.
-//
-// If path is specified, leading comments are printed if found.
-// See also comment in SourceCodeInfo.Location message in
-// common/proto/google/descriptor/descriptor.proto.
-func (p *printer) Enum(enum *descriptor.EnumDescriptorProto, path []int) {
-	p.MaybeLeadingComments(path)
+func (p *printer) Enum(enum *descriptor.EnumDescriptorProto) {
+	p.MaybeLeadingComments(enum)
 	defer p.open("enum %s", enum.GetName())()
 
-	for i, v := range enum.Value {
-		var valuePath []int
-		if len(path) > 0 {
-			valuePath = append(path, descutil.EnumDescriptorProtoValueTag, i)
-		}
-		p.EnumValue(v, valuePath)
+	for _, v := range enum.Value {
+		p.EnumValue(v)
 	}
 }
 
 // EnumValue prints an enum value definition.
-//
-// If path is specified, leading comments are printed if found.
-// See also comment in SourceCodeInfo.Location message in
-// common/proto/google/descriptor/descriptor.proto.
-func (p *printer) EnumValue(v *descriptor.EnumValueDescriptorProto, path []int) {
-	p.MaybeLeadingComments(path)
+func (p *printer) EnumValue(v *descriptor.EnumValueDescriptorProto) {
+	p.MaybeLeadingComments(v)
 	p.Printf("%s = %d;\n", v.GetName(), v.GetNumber())
 }

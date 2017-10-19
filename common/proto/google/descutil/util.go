@@ -15,8 +15,11 @@
 package descutil
 
 import (
+	"fmt"
+	"reflect"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
@@ -243,19 +246,76 @@ func FindValueByNumber(e *pb.EnumDescriptorProto, number int32) int {
 ////////////////////////////////////////////////////////////////////////////////
 // SourceCodeInfo
 
-// FindLocation searches for a location by path.
-func FindLocation(s *pb.SourceCodeInfo, path []int) *pb.SourceCodeInfo_Location {
-Outer:
-	for _, l := range s.GetLocation() {
-		if len(path) != len(l.Path) {
-			continue
-		}
-		for i := range path {
-			if int32(path[i]) != l.Path[i] {
-				continue Outer
+// At returns a pointer to a descriptor proto or its field at the given path.
+// The path has same semantics as
+// descriptor.SourceCodeInfo_Location.Path. See its comment for explanation.
+//
+// For example, given a FileDescriptorProto and path [4, 2],
+// At will return a pointer to the 2nd top-level message DescriptorProto
+// because 4 is FileDescriptorProto.MessageType field tag.
+func At(descProto proto.Message, path []int32) (interface{}, error) {
+	// invariant: cur's value must implement proto.Message.
+	cur := reflect.ValueOf(descProto)
+	for len(path) > 0 {
+		tag := int(path[0])
+		path = path[1:]
+
+		// The tag->field index mapping could be precomputed.
+		var prop *proto.Properties
+		for _, p := range proto.GetProperties(cur.Type().Elem()).Prop {
+			if p.Tag == tag {
+				prop = p
+				break
 			}
 		}
-		return l
+		if prop == nil {
+			return nil, fmt.Errorf("%T has no tag %d", cur.Interface(), tag)
+		}
+		next := cur.Elem().FieldByName(prop.Name)
+
+		if next.Kind() == reflect.Slice {
+			switch {
+			case len(path) == 0:
+				return nil, fmt.Errorf("expected element index in path")
+			case path[0] < 0, int(path[0]) >= next.Len():
+				return nil, fmt.Errorf("element index out of bounds")
+			}
+			next, path = next.Index(int(path[0])), path[1:]
+			if next.Kind() != reflect.Ptr {
+				panic("impossible: all repeated fields are slices of pointers")
+			}
+		}
+
+		if _, ok := next.Interface().(proto.Message); !ok {
+			// next is not a descriptor proto, it must be a field,
+			// e.g. myFieldDescriptorProto.Name.
+			if len(path) > 0 {
+				return nil, fmt.Errorf("expected path end, but got %q", path)
+			}
+			// return the address of the field, not field value.
+			return next.Addr().Interface(), nil
+		}
+		cur = next
 	}
-	return nil
+	return cur.Interface(), nil
+}
+
+// IndexSourceCodeInfo returns a map that maps a pointer to the associated
+// source code info, where the pointer points to a descriptor proto or its
+// field, e.g. &myFieldDescriptorProto.Name.
+//
+// IndexSourceCodeInfo can be used to retrieve comments.
+func IndexSourceCodeInfo(f *pb.FileDescriptorProto) (map[interface{}]*pb.SourceCodeInfo_Location, error) {
+	if f.SourceCodeInfo == nil {
+		return nil, nil
+	}
+	ret := make(map[interface{}]*pb.SourceCodeInfo_Location, len(f.SourceCodeInfo.Location))
+	for _, loc := range f.SourceCodeInfo.Location {
+		ptr, err := At(f, loc.Path)
+		if err != nil {
+			return nil, err
+		}
+		ret[ptr] = loc
+	}
+	return ret, nil
 }
