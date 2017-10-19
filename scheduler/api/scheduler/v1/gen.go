@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -import-path=scheduler
+//go:generate cproto
 
 // Package scheduler contains the main API of Scheduler service.
 package scheduler

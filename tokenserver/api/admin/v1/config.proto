@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package tokenserver.admin;
 
+option go_package = "admin";
+
 
 // TokenServerConfig is read from tokenserver.cfg in luci-config.
 message TokenServerConfig {

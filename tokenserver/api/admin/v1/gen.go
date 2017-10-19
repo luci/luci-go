@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -import-path=admin
+//go:generate cproto
 //go:generate svcdec -type AdminServer
 //go:generate svcdec -type CertificateAuthoritiesServer
 
