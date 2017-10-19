@@ -5,8 +5,6 @@
 package buildbucket
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -69,10 +67,17 @@ func PubSubHandler(ctx *router.Context) {
 //
 // This is the portion of the summarization process which cannot fail (i.e. is
 // pure-data).
-func generateSummary(c context.Context, hostname, annotationURL string, build buildbucket.Build) *model.BuildSummary {
+func generateSummary(c context.Context, hostname string, build buildbucket.Build) *model.BuildSummary {
 	bs := &model.BuildSummary{}
 	bs.BuildKey = MakeBuildKey(c, hostname, build.ID)
 	bs.BuilderID = fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder)
+
+	// HACK(iannucci,nodir) - crbug.com/776300 - The project and annotation URL
+	// should be directly represented on the Build. This is a leaky abstraction;
+	// swarming isn't relevant to either value.
+	swarmTags := strpair.ParseMap(build.Tags["swarming_tag"])
+	bs.ProjectID = swarmTags.Get("luci_project")
+	bs.AnnotationURL = swarmTags.Get("log_location")
 
 	// TODO(hinoka,iannucci) - make this link point to the /p/$project/build/b$buildId
 	// endpoint.
@@ -101,8 +106,6 @@ func generateSummary(c context.Context, hostname, annotationURL string, build bu
 		bs.Summary.Status = model.InfraFailure
 	}
 
-	bs.AnnotationURL = annotationURL
-
 	bs.Version = build.UpdateTime.UnixNano()
 
 	return bs
@@ -112,36 +115,14 @@ func generateSummary(c context.Context, hostname, annotationURL string, build bu
 // BuildSummary given the pubsub event data.
 //
 // This mutates `bs`'s Manifests field.
-func attachRevisionData(c context.Context, project string, build buildbucket.Build, bs *model.BuildSummary) error {
+func attachRevisionData(c context.Context, build buildbucket.Build, bs *model.BuildSummary) error {
 	// TODO(iannucci,nodir): support manifests/got_revision
-
-	var consoles []*common.Console
 
 	bs.BuildSet = build.Tags[buildbucket.TagBuildSet]
 
 	for _, bset := range build.BuildSets {
-		if commit, ok := bset.(*buildbucket.GitilesCommit); ok {
-			revision, err := hex.DecodeString(commit.Revision)
-			if err != nil {
-				logging.WithError(err).Warningf(c, "failed to decode revision: %v", commit.Revision)
-			} else if len(revision) != sha1.Size {
-				logging.Warningf(c, "wrong revision size %d v %d: %v", len(revision), sha1.Size, commit.Revision)
-			} else {
-				if consoles == nil {
-					if consoles, err = common.GetAllConsoles(c, bs.BuilderID); err != nil {
-						return errors.Annotate(err, "failed to GetAllConsoles").Tag(transient.Tag).Err()
-					}
-				}
-				// HACK(iannucci): Until we have real manifest support, console definitions
-				// will specify their manifest as "REVISION", and we'll do lookups with null
-				// URL fields.
-				for _, con := range consoles {
-					bs.AddManifestKey(project, con.ID, "REVISION", "", revision)
-
-					bs.AddManifestKey(project, con.ID, "BUILD_SET/GitilesCommit",
-						commit.RepoURL(), revision)
-				}
-			}
+		if err := bs.AddManifestKeysFromBuildSet(c, bset); err != nil {
+			return errors.Annotate(err, "failed to add manifest keys for %q", bset).Err()
 		}
 	}
 
@@ -185,13 +166,6 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return errors.Annotate(err, "could not parse buildbucket.Build").Err()
 	}
 
-	// HACK(iannucci,nodir) - The project and annotation URL should be directly
-	// represented on the Build. This is a leaky abstraction; swarming isn't
-	// relevant to either value.
-	swarmTags := strpair.ParseMap(build.Tags["swarming_tag"])
-	project := swarmTags.Get("luci_project")
-	annotationURL := swarmTags.Get("log_location")
-
 	bucket = build.Bucket
 	status = build.Status.String()
 	isLUCI = strings.HasPrefix(bucket, "luci.")
@@ -204,9 +178,9 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	bs := generateSummary(c, event.Hostname, annotationURL, build)
+	bs := generateSummary(c, event.Hostname, build)
 
-	if err := attachRevisionData(c, project, build, bs); err != nil {
+	if err := attachRevisionData(c, build, bs); err != nil {
 		return err
 	}
 
