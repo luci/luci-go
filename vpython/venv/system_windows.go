@@ -22,12 +22,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// longestGeneratedScriptPath returns the path of the longest generated script
-// given a VirtualEnv root.
-//
-// Since Windows doesn't generate scripts, this is disabled.
-func longestGeneratedScriptPath(basedir string) string { return "" }
-
 // venvBinDir resolves the path where VirtualEnv binaries are installed.
 func venvBinDir(root string) string {
 	return filepath.Join(root, "Scripts")

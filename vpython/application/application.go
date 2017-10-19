@@ -108,12 +108,6 @@ type Config struct {
 	// bootstrapping and execute with the local system interpreter.
 	Bypass bool
 
-	// MaxScriptPathLen, if > 0, is the maximum generated script path lengt. If
-	// a generated script is expected to exist longer than this, we will error.
-	//
-	// See venv.Config's MaxScriptPathLen.
-	MaxScriptPathLen int
-
 	// DefaultVerificationTags is the default set of PEP425 tags to verify a
 	// specification against.
 	//
@@ -339,7 +333,6 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 				Package:           cfg.VENVPackage,
 				PruneThreshold:    cfg.PruneThreshold,
 				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
-				MaxScriptPathLen:  cfg.MaxScriptPathLen,
 				Loader:            cfg.PackageLoader,
 			},
 			BaseWheels: cfg.BaseWheels,
