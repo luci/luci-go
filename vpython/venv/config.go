@@ -19,7 +19,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"unicode/utf8"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
@@ -87,15 +86,6 @@ type Config struct {
 	// deployment.
 	Loader PackageLoader
 
-	// MaxScriptPathLen, if >0, is the maximum allowed VirutalEnv path length.
-	// If set, and if the VirtualEnv is configured to be installed at a path
-	// greater than this, Env will fail.
-	//
-	// This can be used to enforce "shebang" length limits, whereupon generated
-	// VirtualEnv scripts may be generated with a "shebang" (#!) line longer than
-	// what is allowed by the operating system.
-	MaxScriptPathLen int
-
 	// FailIfLocked, if true, means that if a lock is encountered during
 	// VirtualEnv operation, the VirtualEnv will exit immediately with an error.
 	// If false, the VirtualEnv will block pending the lock's availability.
@@ -161,19 +151,6 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	}
 	if err := filesystem.AbsPath(&cfg.BaseDir); err != nil {
 		return nil, errors.Annotate(err, "failed to resolve absolute path of base directory").Err()
-	}
-
-	// Enforce maximum path length.
-	if cfg.MaxScriptPathLen > 0 {
-		if longestPath := longestGeneratedScriptPath(cfg.BaseDir); longestPath != "" {
-			longestPathLen := utf8.RuneCountInString(longestPath)
-			if longestPathLen > cfg.MaxScriptPathLen {
-				return nil, errors.Reason(
-					"expected deepest path length (%d) exceeds threshold (%d)",
-					longestPathLen, cfg.MaxScriptPathLen,
-				).InternalReason("longestPath(%q)", longestPath).Err()
-			}
-		}
 	}
 
 	// Construct a new, independent Environment for this Env.
