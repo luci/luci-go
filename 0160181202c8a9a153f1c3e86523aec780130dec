@@ -225,6 +225,24 @@
     },
     {
       "key": {
+        "uuid": "1d00b97c_eac67d3e",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-19T19:48:24Z",
+      "side": 1,
+      "message": "Nevermind, done.",
+      "parentUuid": "f87a31e4_7993b750",
+      "revId": "0160181202c8a9a153f1c3e86523aec780130dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "389bda0f_ec649bb4",
         "filename": "luci_notify/notify/pubsub_test.go",
         "patchSetId": 19
