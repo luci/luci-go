@@ -47,24 +47,22 @@ const maxDataSize = 950000
 // GetBuild fetches a buildbot build from the storage.
 // Does not check access.
 func GetBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
+	return getBuild(c, master, builder, number, true, true)
+}
+
+func getBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	emOptions, err := GetEmulationOptions(c, master, builder)
 	if err != nil {
 		return nil, err
 	}
 	if emOptions != nil && number >= int(emOptions.StartFrom) {
-		build, err := getEmulatedBuild(c, emOptions.Bucket, builder, number)
-		if err != nil {
-			return nil, err
-		}
-		build.Master = master
-		return build, nil
+		return getEmulatedBuild(c, master, emOptions.Bucket, builder, number, fetchAnnotations, fetchChanges)
 	}
 	return getDatastoreBuild(c, master, builder, number)
 }
 
 // getEmulatedBuild returns a buildbot build derived from a LUCI build.
-// Does not populate Master, Blame or SourceStamp.Changes fields.
-func getEmulatedBuild(c context.Context, bucket, builder string, number int) (*buildbot.Build, error) {
+func getEmulatedBuild(c context.Context, master, bucket, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	bb, err := buildbucketClient(c)
 	if err != nil {
 		return nil, err
@@ -82,7 +80,19 @@ func getEmulatedBuild(c context.Context, bucket, builder string, number int) (*b
 	case len(msgs) == 0:
 		return nil, nil
 	}
-	return buildFromBuildbucket(c, msgs[0], true)
+
+	build, err := buildFromBuildbucket(c, master, msgs[0], fetchAnnotations)
+	if err != nil {
+		return nil, err
+	}
+
+	if fetchChanges {
+		if err := blame(c, build); err != nil {
+			return nil, err
+		}
+	}
+
+	return build, nil
 }
 
 func getDatastoreBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
