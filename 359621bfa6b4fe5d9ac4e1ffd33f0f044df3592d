@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b0722f8_59e4ebcd",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T22:55:48Z",
+      "side": 1,
+      "message": "Use model.Link instead. It\u0027s more consistent and there are helpers funcs in the template bundle to facilitate rendering those.",
+      "range": {
+        "startLine": 78,
+        "startChar": 14,
+        "endLine": 78,
+        "endChar": 18
+      },
+      "revId": "359621bfa6b4fe5d9ac4e1ffd33f0f044df3592d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a383608d_b321b281",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T22:55:48Z",
+      "side": 1,
+      "message": "Same here",
+      "range": {
+        "startLine": 89,
+        "startChar": 15,
+        "endLine": 89,
+        "endChar": 19
+      },
+      "revId": "359621bfa6b4fe5d9ac4e1ffd33f0f044df3592d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5469d7e_3973c505",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T22:55:48Z",
+      "side": 1,
+      "message": "model.Link",
+      "range": {
+        "startLine": 135,
+        "startChar": 33,
+        "endLine": 135,
+        "endChar": 37
+      },
+      "revId": "359621bfa6b4fe5d9ac4e1ffd33f0f044df3592d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
