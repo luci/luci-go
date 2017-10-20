@@ -43,8 +43,8 @@ type Console struct {
 	Parent *datastore.Key `gae:"$parent"`
 	// ID is the ID of the console.
 	ID string `gae:"$id"`
-	// Name is the name of the console intended for humans.
-	Name string
+	// Title is the name of the console intended for humans.
+	Title string
 	// RepoURL and Ref combined defines the commits the show up on the left
 	// hand side of a Console.
 	RepoURL string
@@ -102,7 +102,7 @@ func NewConsole(project *datastore.Key, URL, revision string, con *config.Consol
 	return &Console{
 		Parent:       project,
 		ID:           con.Id,
-		Name:         con.Name,
+		Title:        con.Name,
 		RepoURL:      con.RepoUrl,
 		Ref:          con.Ref,
 		ManifestName: con.ManifestName,
