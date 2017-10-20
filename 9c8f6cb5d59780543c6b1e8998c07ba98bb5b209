@@ -99,6 +99,30 @@
       "revId": "9c8f6cb5d59780543c6b1e8998c07ba98bb5b209",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0de57dec_5723980f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T20:08:08Z",
+      "side": 1,
+      "message": "sgtm.  the comments in the proto say otherwise currently, can you change them to match this proposal?",
+      "parentUuid": "20801729_b2150423",
+      "range": {
+        "startLine": 218,
+        "startChar": 61,
+        "endLine": 218,
+        "endChar": 71
+      },
+      "revId": "9c8f6cb5d59780543c6b1e8998c07ba98bb5b209",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
