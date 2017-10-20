@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package tokenserver.admin;
 
+option go_package = "admin";
+
 import "google/protobuf/empty.proto";
 
 import "go.chromium.org/luci/server/auth/delegation/messages/delegation.proto";
