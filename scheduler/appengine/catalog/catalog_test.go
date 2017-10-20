@@ -40,6 +40,7 @@ import (
 )
 
 func TestRegisterTaskManagerAndFriends(t *testing.T) {
+	t.Parallel()
 	Convey("RegisterTaskManager works", t, func() {
 		c := New("scheduler.cfg")
 		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldBeNil)
@@ -61,6 +62,7 @@ func TestRegisterTaskManagerAndFriends(t *testing.T) {
 }
 
 func TestProtoValidation(t *testing.T) {
+	t.Parallel()
 	Convey("validateJobProto works", t, func() {
 		c := New("scheduler.cfg").(*catalog)
 
@@ -159,6 +161,7 @@ func TestProtoValidation(t *testing.T) {
 }
 
 func TestTaskMarshaling(t *testing.T) {
+	t.Parallel()
 	Convey("works", t, func() {
 		c := New("scheduler.cfg").(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
@@ -189,6 +192,7 @@ func TestTaskMarshaling(t *testing.T) {
 }
 
 func TestConfigReading(t *testing.T) {
+	t.Parallel()
 	Convey("with mocked config", t, func() {
 		ctx := testContext()
 		ctx = testconfig.WithCommonClient(ctx, memcfg.New(mockedConfigs))
