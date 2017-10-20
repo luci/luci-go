@@ -14,14 +14,57 @@
 {{define "body"}}
 {{ $console := .Console }}
 
-<div class="console-header">
-{{ if .Console.FaviconURL }}
+<!-- Title -->
+<div class="console-title">
+{{ if $console.FaviconURL }}
   <img src="{{ .Console.FaviconURL }}" />
 {{ end }}
 
   <h1>{{ $console.Name }}</h1>
 </div>
 
+<!-- Header -->
+{{ if $console.Header }}
+{{ $header := $console.Header }}
+<div class="console-header">
+{{ if $header.ConsoleGroups }}
+  <div class="console-column">
+  {{ range $header.ConsoleGroups }}
+
+    <!-- Header Group -->
+    <!-- If the title is nil, don't wrap it in a special div. -->
+    {{ if .Title }}
+    <div class="console-header-group">
+      <div class="console-header-group-title">
+        <a href="{{ .Title.Url }}" title="{{ .Title.Alt }}">
+          {{ .Title.Text }}
+        </a>
+      </div>
+    {{ end }}
+      <div class="console-column">
+      {{ range .Consoles }}
+        <div class="console-row">
+          <div class="console-header-name">
+            <a href="{{ .Name.Url }}">{{ .Name.Text }}</a>
+          </div>
+          {{ range .Builders }}
+            <div class="console-header-build {{ .LastFinishedStatus }}">
+              <a href="#"><!-- TODO(mknyszek): Link to build. --></a>
+            </div>
+          {{ end }}
+        </div>
+      {{ end }}
+      </div>
+    <!-- If the title is nil, don't wrap it in a special div. -->
+    {{ if .Title }}
+    </div>
+    {{ end }}
+
+  {{ end }}
+  </div>
+{{ end }}
+</div>
+{{ end }}
 
 <!-- Container -->
 <div class="console-row">
