@@ -22,6 +22,30 @@
       "revId": "e9857ea455945271b30791ffba2bc64e46360290",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab6a0d3c_4dd899f6",
+        "filename": "milo/buildsource/swarming/buildLog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-20T21:27:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1adb68e_af212cda",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "e9857ea455945271b30791ffba2bc64e46360290",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
