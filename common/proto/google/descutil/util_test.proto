@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package descutil;
 
+// Comment for go_package option.
+option go_package = "descutil";
+
 
 // Enum comment.
 // next line.

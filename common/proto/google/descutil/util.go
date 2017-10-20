@@ -17,6 +17,7 @@ package descutil
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -220,6 +221,11 @@ func Repeated(f *pb.FieldDescriptorProto) bool {
 	return f.GetLabel() == pb.FieldDescriptorProto_LABEL_REPEATED
 }
 
+// Required returns true if the field is required.
+func Required(f *pb.FieldDescriptorProto) bool {
+	return f.GetLabel() == pb.FieldDescriptorProto_LABEL_REQUIRED
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // EnumDescriptorProto
 
@@ -246,56 +252,61 @@ func FindValueByNumber(e *pb.EnumDescriptorProto, number int32) int {
 ////////////////////////////////////////////////////////////////////////////////
 // SourceCodeInfo
 
-// At returns a pointer to a descriptor proto or its field at the given path.
+// At returns a descriptor proto or its field value at the given path.
 // The path has same semantics as
 // descriptor.SourceCodeInfo_Location.Path. See its comment for explanation.
 //
 // For example, given a FileDescriptorProto and path [4, 2],
-// At will return a pointer to the 2nd top-level message DescriptorProto
+// At will return the 2nd top-level message DescriptorProto
 // because 4 is FileDescriptorProto.MessageType field tag.
+//
+// Does not supported uninterpreted options, returns (nil, nil).
 func At(descProto proto.Message, path []int32) (interface{}, error) {
-	// invariant: cur's value must implement proto.Message.
 	cur := reflect.ValueOf(descProto)
-	for len(path) > 0 {
-		tag := int(path[0])
-		path = path[1:]
 
-		// The tag->field index mapping could be precomputed.
-		var prop *proto.Properties
-		for _, p := range proto.GetProperties(cur.Type().Elem()).Prop {
-			if p.Tag == tag {
-				prop = p
-				break
-			}
+	pathStr := func() string {
+		s := make([]string, len(path))
+		for i, x := range path {
+			s[i] = strconv.FormatInt(int64(x), 10)
 		}
-		if prop == nil {
-			return nil, fmt.Errorf("%T has no tag %d", cur.Interface(), tag)
-		}
-		next := cur.Elem().FieldByName(prop.Name)
+		return fmt.Sprintf("[%s]", strings.Join(s, ","))
+	}
 
-		if next.Kind() == reflect.Slice {
-			switch {
-			case len(path) == 0:
-				return nil, fmt.Errorf("expected element index in path")
-			case path[0] < 0, int(path[0]) >= next.Len():
-				return nil, fmt.Errorf("element index out of bounds")
+	for i := 0; i < len(path); i++ {
+		if cur.Kind() == reflect.Slice {
+			index := int(path[i])
+			if index < 0 || index >= cur.Len() {
+				return nil, fmt.Errorf("element #%d of path %s is an index and it is out of bounds", i, pathStr())
 			}
-			next, path = next.Index(int(path[0])), path[1:]
-			if next.Kind() != reflect.Ptr {
-				panic("impossible: all repeated fields are slices of pointers")
+			cur = cur.Index(int(path[i]))
+		} else if _, ok := cur.Interface().(proto.Message); ok {
+			tag := int(path[i])
+			if tag == 999 {
+				// this is an "UnintepretedOption" field.
+				// protoc produces inconsistent source code location paths for
+				// options that are not used, e.g. if go_package option is
+				// specified, but go code is not generated.
+				// We do not support uninterpreted options
+				return nil, nil
 			}
+			// The tag->field index mapping could be precomputed.
+			var prop *proto.Properties
+			for _, p := range proto.GetProperties(cur.Type().Elem()).Prop {
+				if p.Tag == tag {
+					prop = p
+					break
+				}
+			}
+			if prop == nil {
+				return nil, fmt.Errorf("%T has no tag %d", cur.Interface(), tag)
+			}
+			cur = cur.Elem().FieldByName(prop.Name)
+			if cur.Kind() != reflect.Ptr && cur.Kind() != reflect.Slice {
+				panic("a field value is not a slice or pointer")
+			}
+		} else {
+			return nil, fmt.Errorf("expected end at index %d in path %s", i, pathStr())
 		}
-
-		if _, ok := next.Interface().(proto.Message); !ok {
-			// next is not a descriptor proto, it must be a field,
-			// e.g. myFieldDescriptorProto.Name.
-			if len(path) > 0 {
-				return nil, fmt.Errorf("expected path end, but got %q", path)
-			}
-			// return the address of the field, not field value.
-			return next.Addr().Interface(), nil
-		}
-		cur = next
 	}
 	return cur.Interface(), nil
 }

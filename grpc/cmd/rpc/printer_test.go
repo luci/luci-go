@@ -81,7 +81,7 @@ func TestPrinter(t *testing.T) {
 
 		Convey("package", func() {
 			printer.Package(file.GetPackage())
-			checkOutput(&file.Package, 0)
+			checkOutput(file.Package, 0)
 		})
 
 		Convey("service", func() {
