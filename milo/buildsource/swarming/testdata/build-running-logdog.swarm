@@ -4,7 +4,7 @@
   "tags": [
     "allow_milo:1",
     "luci_project:testproject",
-    "log_location:logdog://example.com/testproject/${swarming_run_id}/+/annotations"
+    "log_location:logdog://example.com/testproject/2d8d62f6be545b10/+/annotations"
   ],
   "task_id": "2d8d62f6be545b10"
 }

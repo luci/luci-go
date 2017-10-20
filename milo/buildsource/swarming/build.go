@@ -129,12 +129,10 @@ func (svc *prodSwarmingService) getSwarmingRequest(c context.Context, taskID str
 }
 
 type swarmingFetchParams struct {
-	fetchReq bool
-	fetchRes bool
 	fetchLog bool
 
 	// taskResCallback, if not nil, is a callback that will be invoked after
-	// fetching the result, if fetchRes is true. It will be passed a key/value map
+	// fetching the result. It will be passed a key/value map
 	// of the Swarming result's tags.
 	//
 	// If taskResCallback returns true, any pending log fetch will be cancelled
@@ -143,7 +141,6 @@ type swarmingFetchParams struct {
 }
 
 type swarmingFetchResult struct {
-	req *swarming.SwarmingRpcsTaskRequest
 	res *swarming.SwarmingRpcsTaskResult
 
 	// log is the log data content. If no log data was fetched, this will empty.
@@ -171,23 +168,14 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 	defer cancelLogs()
 
 	err := parallel.FanOutIn(func(workC chan<- func() error) {
-		if req.fetchReq {
-			workC <- func() (err error) {
-				fr.req, err = svc.getSwarmingRequest(c, taskID)
-				return
-			}
-		}
-
-		if req.fetchRes {
-			workC <- func() (err error) {
-				if fr.res, err = svc.getSwarmingResult(c, taskID); err == nil {
-					if req.taskResCallback != nil && req.taskResCallback(fr.res) {
-						logsCancelled = true
-						cancelLogs()
-					}
+		workC <- func() (err error) {
+			if fr.res, err = svc.getSwarmingResult(c, taskID); err == nil {
+				if req.taskResCallback != nil && req.taskResCallback(fr.res) {
+					logsCancelled = true
+					cancelLogs()
 				}
-				return
 			}
+			return
 		}
 
 		if req.fetchLog {
@@ -207,23 +195,11 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 	// If allow_milo:1 is present, it is a public job.  Don't bother with ACL check.
 	// If it is not present, check the luci_project tag, and see if user is allowed
 	// to access said project.
-	switch {
-	case req.fetchReq:
-		if !isAllowed(c, fr.req.Tags) {
-			return nil, ErrNotMiloJob
-		}
-
-	case req.fetchRes:
-		if !isAllowed(c, fr.res.Tags) {
-			return nil, ErrNotMiloJob
-		}
-
-	default:
-		// No metadata to decide if this is a Milo job, so assume that it is not.
+	if !isAllowed(c, fr.res.Tags) {
 		return nil, ErrNotMiloJob
 	}
 
-	if req.fetchRes && logErr != nil {
+	if logErr != nil {
 		switch fr.res.State {
 		case TaskCompleted, TaskRunning, TaskCanceled:
 		default:
@@ -575,7 +551,6 @@ func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID strin
 	var logDogStreamAddr *types.StreamAddr
 
 	fetchParams := swarmingFetchParams{
-		fetchRes: true,
 		fetchLog: true,
 
 		// Cancel if LogDog annotation stream parameters are present in the tag set.
@@ -597,7 +572,7 @@ func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID strin
 			tags := swarmingTags(res.Tags)
 
 			var err error
-			if logDogStreamAddr, err = resolveLogDogStreamAddrFromTags(tags, res.TaskId, res.TryNumber); err != nil {
+			if logDogStreamAddr, err = resolveLogDogStreamAddrFromTags(tags); err != nil {
 				logging.WithError(err).Debugf(c, "Not using LogDog annotation stream.")
 				return false
 			}
