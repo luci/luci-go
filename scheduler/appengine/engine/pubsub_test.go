@@ -25,6 +25,8 @@ import (
 )
 
 func TestConfigureTopic(t *testing.T) {
+	t.Parallel()
+
 	Convey("configureTopic works", t, func(ctx C) {
 		c := newTestContext(epoch)
 
