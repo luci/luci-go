@@ -79,5 +79,15 @@ func TestUtil(t *testing.T) {
 				So(path, ShouldBeNil)
 			})
 		})
+
+		Convey("IndexSourceCodeInfo", func() {
+			sourceCodeInfo, err := IndexSourceCodeInfo(file)
+			So(err, ShouldBeNil)
+			_, m1, _ := Resolve(&desc, "descutil.M1")
+			So(m1, ShouldNotEqual, -1)
+			loc := sourceCodeInfo[m1]
+			So(loc, ShouldNotBeNil)
+			So(loc.GetLeadingComments(), ShouldEqual, " M1\n next line.\n")
+		})
 	})
 }
