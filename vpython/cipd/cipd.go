@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/spec"
 	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/cipd/client/cipd"
@@ -188,7 +189,7 @@ func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpyt
 }
 
 // Verify implements venv.PackageLoader.
-func (pl *PackageLoader) Verify(c context.Context, spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
+func (pl *PackageLoader) Verify(c context.Context, sp *vpython.Spec, tags []*vpython.PEP425Tag) error {
 	client, err := cipd.NewClient(pl.Options)
 	if err != nil {
 		return errors.Annotate(err, "failed to generate CIPD client").Err()
@@ -198,14 +199,21 @@ func (pl *PackageLoader) Verify(c context.Context, spec *vpython.Spec, tags []*v
 		Client: client,
 	}
 
-	// Convert our spec into an ensure file.
-	ef, _ := specToEnsureFile(spec)
-
 	// Build an Ensure file for our specification under each tag and register it
 	// with our Verifier.
 	ensureFileErrors := 0
 	for _, tag := range tags {
-		expander, err := pl.expanderForTags(c, []*vpython.PEP425Tag{tag})
+		tagSlice := []*vpython.PEP425Tag{tag}
+
+		tagSpec := sp.Clone()
+		if err := spec.NormalizeSpec(tagSpec, tagSlice); err != nil {
+			return errors.Annotate(err, "failed to normalize spec for %q", tag).Err()
+		}
+
+		// Convert our spec into an ensure file.
+		ef, _ := specToEnsureFile(tagSpec)
+
+		expander, err := pl.expanderForTags(c, tagSlice)
 		if err != nil {
 			logging.Errorf(c, "Failed to generate template expander for: %s", tag.TagString())
 			ensureFileErrors++
