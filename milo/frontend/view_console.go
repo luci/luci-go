@@ -100,6 +100,20 @@ func getFaviconURL(c context.Context, def *common.Console) string {
 	return faviconURL
 }
 
+// validateConsoleID checks to see whether a console ID has both a project and
+// name, and that the project is the same as the current project being checked.
+func validateConsoleID(consoleID, project string) error {
+	components := strings.SplitN(consoleID, "/", 2)
+	if len(components) != 2 {
+		return errors.Reason("console ID must have format <project>/<name>: %s", consoleID).Err()
+	}
+	if components[0] != project {
+		// TODO(hinoka): Support cross-project consoles.
+		return errors.Reason("console ID is from a different project").Err()
+	}
+	return nil
+}
+
 type builderRefFactory func(name, shortname string) *resp.BuilderRef
 
 func buildTreeFromDef(def *common.Console, factory builderRefFactory) (*resp.Category, int) {
@@ -177,8 +191,15 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		}
 	})
 
+	header, err := consoleHeader(c, project, def)
+	if err != nil {
+		return nil, err
+	}
+
 	return &resp.Console{
 		Name:       def.Title,
+		Project:    project,
+		Header:     header,
 		Commit:     commits,
 		Table:      *categoryTree,
 		MaxDepth:   depth + 1,
@@ -204,6 +225,26 @@ func consolePreview(c context.Context, def *common.Console) (*resp.Console, erro
 		MaxDepth:   depth + 1,
 		FaviconURL: getFaviconURL(c, def),
 	}, nil
+}
+
+func consoleHeader(c context.Context, project string, def *common.Console) (*resp.ConsoleHeader, error) {
+	consoleGroups := make([]resp.ConsoleGroup, len(def.Header.ConsoleGroups))
+	for i, group := range def.Header.ConsoleGroups {
+		for _, id := range group.ConsoleIds {
+			if err := validateConsoleID(id, project); err != nil {
+				return nil, err
+			}
+		}
+		summaries, err := buildsource.GetConsoleSummaries(c, group.ConsoleIds)
+		if err != nil {
+			return nil, err
+		}
+		consoleGroups[i].Title.Label = group.Title.Text
+		consoleGroups[i].Title.URL = group.Title.Url
+		consoleGroups[i].Consoles = summaries
+	}
+
+	return &resp.ConsoleHeader{ConsoleGroups: consoleGroups}, nil
 }
 
 // consoleRenderer is a wrapper around Console to provide additional methods.

@@ -60,6 +60,8 @@ message ConsoleSummaryGroup {
   Link title = 1;
 
   // ConsoleIds is a list of console ids to display in this console group.
+  // Each console id must be prepended with its related project (e.g.
+  // chromium/main) because console ids are project-local.
   // Only consoles from the same project are supported.
   // TODO(hinoka): Allow cross-project consoles.
   repeated string console_ids = 2;
