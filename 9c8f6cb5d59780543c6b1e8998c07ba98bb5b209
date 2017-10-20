@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1cd3d10b_85b705cc",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-20T19:09:05Z",
+      "side": 1,
+      "message": "Right, the way it works right now is the Title is actually taken from ConsoleGroups. If you look at the HTML template it iterates through one of these structures, but then uses data from both using \"index.\" Having a unified data structure would probably be the cleanest though, and something like what you describe was what I was thinking, the downside is it basically means a deep-copy of config.ConsoleSummaryGroup into this new data structure, which is essentially just config.ConsoleSummaryGroup with []*model.BuilderSummary tacked on at the bottom layer.\n\nBecause the ConsoleSummaryGroup is already mostly ready for rendering, it ends up being a bunch of duplicate code between the proto and this, hence my hesitation to do this initially.",
+      "parentUuid": "f3ca2e6e_851ec41c",
+      "revId": "9c8f6cb5d59780543c6b1e8998c07ba98bb5b209",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a6a7fe25_9f24456e",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 4
@@ -30,6 +48,30 @@
       "writtenOn": "2017-10-20T17:59:51Z",
       "side": 1,
       "message": "Need to take projects into account.  I realize it\u0027s a little inconsistent here right now wrt projects, since the ConsoleIds here are defined as not prepended with project ID.  There are two options here:\n\n1. Change the ConsoleIds to also include project name, and then do ACL checks here to make sure the user can access that project.\n2. Keep the ConsoleIds as is, and prepend this project name to each element in the ConsoleIds.\n\nI\u0027m inclined to say do #2 for now, and #1 when we do a larger refactor to include builder-level ACLs.",
+      "range": {
+        "startLine": 218,
+        "startChar": 61,
+        "endLine": 218,
+        "endChar": 71
+      },
+      "revId": "9c8f6cb5d59780543c6b1e8998c07ba98bb5b209",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20801729_b2150423",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-20T19:09:05Z",
+      "side": 1,
+      "message": "What about doing #1, but without the ACL checks? Instead we just validate that the project \u003d\u003d the current console\u0027s project. This way when ACLs are added in it\u0027s just a matter of changing the validation code as opposed to changing the semantics of the proto. Maybe this has other issues, but I thought I\u0027d suggest it. I\u0027ll defer to your judgement.\n\nRegardless of which we do though, this means for config.Console I should be prepending the project to the console ID, right? (i.e. \u003cproject\u003e/\u003cid\u003e)",
+      "parentUuid": "a6a7fe25_9f24456e",
       "range": {
         "startLine": 218,
         "startChar": 61,
