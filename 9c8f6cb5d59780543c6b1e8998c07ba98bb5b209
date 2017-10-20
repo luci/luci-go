@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "2d2554db_d2a79080",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T20:07:09Z",
+      "side": 1,
+      "message": "Deep-copy is fine, because the datastructures are very lightweight.  When given the choice between slightly cleaner and slightly more \"efficient\" code, i\u0027d lean towards slightly cleaner.",
+      "parentUuid": "1cd3d10b_85b705cc",
+      "revId": "9c8f6cb5d59780543c6b1e8998c07ba98bb5b209",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a6a7fe25_9f24456e",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 4
