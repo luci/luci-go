@@ -16,8 +16,9 @@ syntax = "proto3";
 
 package internal.tq;
 
-import "go.chromium.org/luci/scheduler/appengine/internal/triggers.proto";
+option go_package = "internal";
 
+import "go.chromium.org/luci/scheduler/appengine/internal/triggers.proto";
 
 // ReadProjectConfigTask is used to import jobs of some project.
 //

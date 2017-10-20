@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package tokenserver.minter;
 
+option go_package = "minter";
+
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/server/auth/delegation/messages/delegation.proto";

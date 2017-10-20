@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package internal.triggers;
 
+option go_package = "internal";
+
 import "google/protobuf/timestamp.proto";
 
 

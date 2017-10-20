@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -import-path=internal
+//go:generate cproto
 
 // Package internal contains internal structs used by the tasks and the engine.
 package internal
