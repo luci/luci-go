@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16305cc6_a6425ba9",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-20T18:54:37Z",
+      "side": 1,
+      "message": "I\u0027m not sure what the best thing to do here is. I need this piece to be re-usable between main.go and tests, but I can\u0027t find a good place to put it (from here it prevents an import cycle). Would it be better to wrap tq.Dispatcher with my own type instead?",
+      "range": {
+        "startLine": 144,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 1
+      },
+      "revId": "83908bc7c54003afda4574fb8c01fb2c5069382e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
