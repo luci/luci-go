@@ -31,7 +31,7 @@
   {{ else }}
     <ul>
       <li> Revision: {{ .ServiceConfig.Revision }} </li>
-      <li> Last Updated: {{ .ServiceConfig.LastUpdated | localTime "N/A" }} </li>
+      <li> Last Updated: {{ .ServiceConfig.LastUpdated | localTime "N/A" "" }} </li>
     </ul>
     Content:
     <pre>{{ .ServiceConfig.Text }}</pre>

@@ -103,7 +103,7 @@
     <ul>
     {{- range .Builder.PendingBuilds -}}
       <li>
-        <small>({{- .PendingTime.Started | localTime "" }}, waiting {{ .PendingTime.Duration | humanDuration -}})</small>
+        <small>({{- .PendingTime.Started | localTime "" "" }}, waiting {{ .PendingTime.Duration | humanDuration -}})</small>
         {{- with .Blame }}{{- template "blamelist" -}}{{- end -}}
       </li>
     {{- end -}}
@@ -132,7 +132,7 @@
 
       {{ range .Builder.FinishedBuilds }}
         <tr>
-          <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
+          <td>{{ .ExecutionTime.Finished | localTime "" "" }}</td>
           <td class="revision">{{ .Revision }}</td>
           {{ if eq .Status.String "Success" }}
             <td class="status-Success">Success</td>

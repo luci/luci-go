@@ -62,15 +62,21 @@ var funcMap = template.FuncMap{
 
 // localTime returns a <span> element with t in human format
 // that will be converted to local timezone in the browser.
-// Recommended usage: {{ .Date | localTime "N/A" }}
-func localTime(ifZero string, t time.Time) template.HTML {
+// Recommended usage: {{ .Date | localTime "N/A" "" }}
+//
+// There are 2 available presentation styles:
+// * default  - Main text shows the format "YYYY-MM-DD LT (z)"
+// * relative - Makes the main text show relative time
+//              (i.e. an hour ago) in the current timezone.
+func localTime(ifZero, style string, t time.Time) template.HTML {
 	if t.IsZero() {
 		return template.HTML(template.HTMLEscapeString(ifZero))
 	}
 	milliseconds := t.UnixNano() / 1e6
 	return template.HTML(fmt.Sprintf(
-		`<span class="local-time" data-timestamp="%d">%s</span>`,
+		`<span class="local-time" data-timestamp="%d" data-presentation="%s">%s</span>`,
 		milliseconds,
+		style,
 		t.Format(time.RFC850)))
 }
 

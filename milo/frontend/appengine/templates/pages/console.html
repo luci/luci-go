@@ -31,17 +31,20 @@
     <div class="console-row">
       <div class="console-commit-column">
       {{ range $console.Commit }}
-        <div class="console-commit-item">{{ .CommitTime | localTime "N/A" }}</div>
-      {{ end }}
-      </div>
-      <div class="console-commit-column">
-      {{ range $console.Commit }}
-        <div class="console-commit-item">
-          <a href="{{.Revision.URL}}">
-            <span class="commit" title="{{ .Description }}">
-              {{ .AuthorEmail }}
-            </span>
-          </a>
+        <div class="console-row-item-base console-commit-item">
+          <div class="console-commit-info-column">
+            <a href="{{ .Revision.URL }}" class="console-commit-message" title="{{ .Description }}">
+              {{ .Title }}
+            </a>
+            <div class="console-row" style="justify-content: space-between">
+              <a href="mailto:{{ .AuthorEmail }}" class="console-commit-author" title="{{ .AuthorEmail }}">
+                {{ .AuthorName }}
+              </a>
+              <span>
+                {{ .CommitTime | localTime "N/A" "relative" }}
+              </span>
+            </div>
+          </div>
         </div>
       {{ end }}
       </div>
