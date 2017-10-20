@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b775d032_d4836181",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T18:04:16Z",
+      "side": 1,
+      "message": "config",
+      "range": {
+        "startLine": 47,
+        "startChar": 42,
+        "endLine": 47,
+        "endChar": 49
+      },
+      "revId": "42eb25b9662c588ed782075adcb822fdeaa9ba8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
