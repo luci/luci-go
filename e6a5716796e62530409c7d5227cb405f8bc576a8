@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73db4a27_44737d33",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-20T23:38:36Z",
+      "side": 1,
+      "message": "Why does this need to be a pointer?",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 7
+      },
+      "revId": "e6a5716796e62530409c7d5227cb405f8bc576a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
