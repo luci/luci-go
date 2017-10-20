@@ -37,6 +37,8 @@ import (
 var _ task.Manager = (*TaskManager)(nil)
 
 func TestValidateProtoMessage(t *testing.T) {
+	t.Parallel()
+
 	tm := TaskManager{}
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
@@ -91,6 +93,8 @@ func TestValidateProtoMessage(t *testing.T) {
 }
 
 func TestLaunchTask(t *testing.T) {
+	t.Parallel()
+
 	tm := TaskManager{}
 
 	Convey("LaunchTask works", t, func(c C) {

@@ -30,6 +30,8 @@ import (
 )
 
 func TestRunTxn(t *testing.T) {
+	t.Parallel()
+
 	Convey("With mock context", t, func(C) {
 		c := memory.Use(context.Background())
 		c = clock.Set(c, testclock.New(epoch))
@@ -109,6 +111,8 @@ func TestRunTxn(t *testing.T) {
 }
 
 func TestOpsCache(t *testing.T) {
+	t.Parallel()
+
 	Convey("Works", t, func(C) {
 		c := memory.Use(context.Background())
 

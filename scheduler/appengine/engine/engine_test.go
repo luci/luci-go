@@ -71,6 +71,8 @@ var (
 )
 
 func TestGetAllProjects(t *testing.T) {
+	t.Parallel()
+
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
@@ -95,6 +97,8 @@ func TestGetAllProjects(t *testing.T) {
 }
 
 func TestUpdateProjectJobs(t *testing.T) {
+	t.Parallel()
+
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
@@ -190,6 +194,8 @@ func TestUpdateProjectJobs(t *testing.T) {
 }
 
 func TestTransactionRetries(t *testing.T) {
+	t.Parallel()
+
 	Convey("retry works", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
@@ -243,6 +249,8 @@ func TestTransactionRetries(t *testing.T) {
 }
 
 func TestResetAllJobsOnDevServer(t *testing.T) {
+	t.Parallel()
+
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
@@ -290,6 +298,8 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 }
 
 func TestFullFlow(t *testing.T) {
+	t.Parallel()
+
 	Convey("full flow", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -510,6 +520,8 @@ func TestFullFlow(t *testing.T) {
 }
 
 func TestForceInvocation(t *testing.T) {
+	t.Parallel()
+
 	Convey("full flow", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -565,6 +577,8 @@ func TestForceInvocation(t *testing.T) {
 }
 
 func TestFullTriggeredFlow(t *testing.T) {
+	t.Parallel()
+
 	Convey("full triggered flow", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -705,6 +719,8 @@ func TestFullTriggeredFlow(t *testing.T) {
 }
 
 func TestGenerateInvocationID(t *testing.T) {
+	t.Parallel()
+
 	Convey("generateInvocationID does not collide", t, func() {
 		c := newTestContext(epoch)
 		k := ds.NewKey(c, "Job", "", 123, nil)
@@ -736,6 +752,8 @@ func TestGenerateInvocationID(t *testing.T) {
 }
 
 func TestQueries(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mock data", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
@@ -896,6 +914,8 @@ func TestQueries(t *testing.T) {
 }
 
 func TestRecordOverrun(t *testing.T) {
+	t.Parallel()
+
 	Convey("RecordOverrun works", t, func(ctx C) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
@@ -924,6 +944,8 @@ func TestRecordOverrun(t *testing.T) {
 }
 
 func TestPrepareTopic(t *testing.T) {
+	t.Parallel()
+
 	Convey("PrepareTopic works", t, func(ctx C) {
 		c := newTestContext(epoch)
 
@@ -965,6 +987,8 @@ func TestPrepareTopic(t *testing.T) {
 }
 
 func TestProcessPubSubPush(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mock invocation", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -1049,6 +1073,8 @@ func TestProcessPubSubPush(t *testing.T) {
 }
 
 func TestAborts(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mock invocation", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -1158,6 +1184,8 @@ func TestAborts(t *testing.T) {
 }
 
 func TestAddTimer(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mock job", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -1231,6 +1259,8 @@ func TestAddTimer(t *testing.T) {
 }
 
 func TestTrimDebugLog(t *testing.T) {
+	t.Parallel()
+
 	ctx := clock.Set(context.Background(), testclock.New(epoch))
 	junk := strings.Repeat("a", 1000)
 

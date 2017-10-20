@@ -50,6 +50,8 @@ func timeTable(cron string, now time.Time, count int) (out []time.Time) {
 }
 
 func TestAbsoluteSchedule(t *testing.T) {
+	t.Parallel()
+
 	Convey("Parsing success", t, func() {
 		sched, err := Parse("* * * * * *", 0)
 		So(err, ShouldBeNil)
@@ -103,6 +105,8 @@ func TestAbsoluteSchedule(t *testing.T) {
 }
 
 func TestRelativeSchedule(t *testing.T) {
+	t.Parallel()
+
 	Convey("Parsing success", t, func() {
 		sched, err := Parse("with 15s interval", 0)
 		So(err, ShouldBeNil)

@@ -35,6 +35,7 @@ import (
 var _ task.Manager = (*TaskManager)(nil)
 
 func TestTriggerBuild(t *testing.T) {
+	t.Parallel()
 
 	Convey("LaunchTask Triggers Jobs", t, func() {
 		c := memory.Use(context.Background())
@@ -215,6 +216,8 @@ func TestTriggerBuild(t *testing.T) {
 }
 
 func TestValidateConfig(t *testing.T) {
+	t.Parallel()
+
 	Convey("refNamespace works", t, func() {
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
@@ -241,6 +244,8 @@ func TestValidateConfig(t *testing.T) {
 }
 
 func TestRefNamespace(t *testing.T) {
+	t.Parallel()
+
 	Convey("splitRef works", t, func() {
 		p, s := splitRef("refs/heads/master")
 		So(p, ShouldEqual, "refs/heads")
@@ -271,6 +276,8 @@ func (m *mockGitilesClient) Refs(c context.Context, repo string, path string) (m
 }
 
 func TestRefsMock(t *testing.T) {
+	t.Parallel()
+
 	Convey("Refs Mock works", t, func() {
 		c := context.Background()
 		repo := "https://repo/whatever.git"
