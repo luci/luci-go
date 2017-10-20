@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1727474b_a0afc8e4",
+        "filename": "luci_notify/frontend/queue.yaml",
+        "patchSetId": 5
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-20T19:55:03Z",
+      "side": 1,
+      "message": "that it is a lot of email. I\u0027d rather make this number small to prevent spamming",
+      "range": {
+        "startLine": 3,
+        "startChar": 8,
+        "endLine": 3,
+        "endChar": 13
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a710176_de8e38a5",
+        "filename": "luci_notify/internal/tq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-20T19:55:03Z",
+      "side": 1,
+      "message": "we want to hide swarming tasks from users because swarming is implementation detail of LUCI. ideally we should not operate on the swarming task level\nmilo has recently extended its BuildInfo api to load info by buildbucket build id, as opposed to swarming task id\n\nalso this is not used. let\u0027s omit this in this CL\n\nfinally, i think if we want to include some extra info, it should go into the email body which is represented by build_info, so milo would be queried at the task creation time",
+      "range": {
+        "startLine": 32,
+        "startChar": 2,
+        "endLine": 32,
+        "endChar": 27
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "641f09e1_c21c85f0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-20T19:55:03Z",
+      "side": 1,
+      "message": "createEmailTask",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 12
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adeab424_fc242877",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-20T19:55:03Z",
+      "side": 1,
+      "message": "does not send",
+      "range": {
+        "startLine": 66,
+        "startChar": 28,
+        "endLine": 66,
+        "endChar": 33
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9fe288e_502dbbb8",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-20T19:55:03Z",
+      "side": 1,
+      "message": "why not Body? it would be consistent with recipients and subject",
+      "range": {
+        "startLine": 85,
+        "startChar": 3,
+        "endLine": 85,
+        "endChar": 12
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd742bda_291a7213",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-20T19:55:03Z",
+      "side": 1,
+      "message": "task creation must happen within the transaction, otherwise it defeats the purpose of the CL",
+      "range": {
+        "startLine": 201,
+        "startChar": 7,
+        "endLine": 201,
+        "endChar": 47
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
