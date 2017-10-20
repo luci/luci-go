@@ -35,6 +35,8 @@ import (
 var _ task.Manager = (*TaskManager)(nil)
 
 func TestValidateProtoMessage(t *testing.T) {
+	t.Parallel()
+
 	tm := TaskManager{}
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
@@ -120,6 +122,8 @@ func TestValidateProtoMessage(t *testing.T) {
 }
 
 func TestFullFlow(t *testing.T) {
+	t.Parallel()
+
 	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
 		mockRunning := true
 
@@ -214,6 +218,8 @@ func TestFullFlow(t *testing.T) {
 }
 
 func TestTriggeredFlow(t *testing.T) {
+	t.Parallel()
+
 	Convey("LaunchTask with GitilesTrigger works", t, func(ctx C) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")

@@ -34,6 +34,8 @@ import (
 var _ task.Manager = (*TaskManager)(nil)
 
 func TestFullFlow(t *testing.T) {
+	t.Parallel()
+
 	Convey("Noop", t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {

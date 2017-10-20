@@ -27,6 +27,8 @@ import (
 var epoch = time.Unix(1442270520, 0).UTC()
 
 func TestStateMachine(t *testing.T) {
+	t.Parallel()
+
 	Convey("Normal flow on abs schedule", t, func() {
 		m := newTestStateMachine("*/5 * * * * * *")
 
