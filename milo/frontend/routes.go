@@ -67,7 +67,7 @@ func Run(templatePath string) {
 
 	// New Style URLs go here
 	// BuildBucket build.
-	r.GET("/p/:project/build/b:id", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/builds/b:id", htmlMW, func(c *router.Context) {
 		BuildHandler(c, &buildbucket.BuildID{
 			Project: c.Params.ByName("project"),
 			ID:      c.Params.ByName("id"),

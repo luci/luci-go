@@ -21,7 +21,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/router"
@@ -67,33 +66,10 @@ func PubSubHandler(ctx *router.Context) {
 //
 // This is the portion of the summarization process which cannot fail (i.e. is
 // pure-data).
-func generateSummary(c context.Context, hostname string, build buildbucket.Build) *model.BuildSummary {
-	bs := &model.BuildSummary{}
-	bs.BuildKey = MakeBuildKey(c, hostname, build.ID)
-	bs.BuilderID = fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder)
-
-	// HACK(iannucci,nodir) - crbug.com/776300 - The project and annotation URL
-	// should be directly represented on the Build. This is a leaky abstraction;
-	// swarming isn't relevant to either value.
-	swarmTags := strpair.ParseMap(build.Tags["swarming_tag"])
-	bs.ProjectID = swarmTags.Get("luci_project")
-	bs.AnnotationURL = swarmTags.Get("log_location")
-
-	// TODO(hinoka,iannucci) - make this link point to the /p/$project/build/b$buildId
-	// endpoint.
-	if sid := build.Tags.Get("swarming_task_id"); sid != "" {
-		// HACK: this is an ugly cross-buildsource import. Should go away with
-		// a proper link though, as in the above TODO.
-		bs.SelfLink = fmt.Sprintf("%s/%s", swarming.URLBase, sid)
-	}
-	bs.Created = build.CreationTime
-	bs.Summary.Start = build.StartTime
-	bs.Summary.End = build.CompletionTime
-
-	var ok bool
+func generateSummary(c context.Context, hostname string, build buildbucket.Build) (*model.BuildSummary, error) {
 	// We map out non-infra failures explicitly. Any status not in this map
 	// defaults to InfraFailure below.
-	bs.Summary.Status, ok = map[buildbucket.Status]model.Status{
+	status, ok := map[buildbucket.Status]model.Status{
 		buildbucket.StatusScheduled: model.NotRun,
 		buildbucket.StatusStarted:   model.Running,
 		buildbucket.StatusSuccess:   model.Success,
@@ -103,35 +79,48 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		buildbucket.StatusTimeout:   model.Expired,
 	}[build.Status]
 	if !ok {
-		bs.Summary.Status = model.InfraFailure
+		status = model.InfraFailure
 	}
 
-	bs.Version = build.UpdateTime.UnixNano()
+	// HACK(iannucci,nodir) - crbug.com/776300 - The project and annotation URL
+	// should be directly represented on the Build. This is a leaky abstraction;
+	// swarming isn't relevant to either value.
+	swarmTags := strpair.ParseMap(build.Tags["swarming_tag"])
+	project := swarmTags.Get("luci_project")
 
-	return bs
-}
+	ret := &model.BuildSummary{
+		ProjectID:     project,
+		AnnotationURL: swarmTags.Get("log_location"),
+		BuildKey:      MakeBuildKey(c, hostname, build.ID),
+		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
 
-// attachRevisionData attaches the pseudo-manifest REVISION data to this
-// BuildSummary given the pubsub event data.
-//
-// This mutates `bs`'s Manifests field.
-func attachRevisionData(c context.Context, build buildbucket.Build, bs *model.BuildSummary) error {
+		BuildSet: build.Tags[buildbucket.TagBuildSet],
+
+		SelfLink: fmt.Sprintf("/p/%s/builds/b%d", project, build.ID),
+
+		Created: build.CreationTime,
+		Summary: model.Summary{
+			Start:  build.StartTime,
+			End:    build.CompletionTime,
+			Status: status,
+		},
+
+		Version: build.UpdateTime.UnixNano(),
+	}
+
 	// TODO(iannucci,nodir): support manifests/got_revision
-
-	bs.BuildSet = build.Tags[buildbucket.TagBuildSet]
-
 	for _, bset := range build.BuildSets {
-		if err := bs.AddManifestKeysFromBuildSet(c, bset); err != nil {
-			return errors.Annotate(err, "failed to add manifest keys for %q", bset).Err()
+		if err := ret.AddManifestKeysFromBuildSet(c, bset); err != nil {
+			return nil, errors.Annotate(err, "failed to add manifest keys for %q", bset).Err()
 		}
 	}
 
-	return nil
+	return ret, nil
 }
 
 // pubSubHandlerImpl takes the http.Request, expects to find
 // a common.PubSubSubscription JSON object in the Body, containing a bbPSEvent,
-// and handles the contents with generateSummary and attachRevisionData.
+// and handles the contents with generateSummary.
 func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	// This is the default action. The code below will modify the values of some
 	// or all of these parameters.
@@ -178,9 +167,8 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	bs := generateSummary(c, event.Hostname, build)
-
-	if err := attachRevisionData(c, build, bs); err != nil {
+	bs, err := generateSummary(c, event.Hostname, build)
+	if err != nil {
 		return err
 	}
 
