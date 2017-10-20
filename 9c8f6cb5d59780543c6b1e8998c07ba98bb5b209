@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3ca2e6e_851ec41c",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T17:59:51Z",
+      "side": 1,
+      "message": "Yeah I think each layer of this needs to be type alias\u0027ed.  At least one of those reasons is because Console groups have titles.  So I\u0027d probably embed the groups and do something like this:\n\ntype ConsoleSummary {\n  Name *Link  // Links to the console.\n  []model.BuilderSummary\n}\n\ntype ConsoleGroup struct {\n  Config config.ConsoleSummaryGroup  // This probably isn\u0027t necessary\n  Title *Link  // Provided by the config above\n  Consoles []ConsoleSummary\n}\n\nConsoleHeader struct {\n  ConsoleGroups []ConsoleGroup\n}",
+      "revId": "9c8f6cb5d59780543c6b1e8998c07ba98bb5b209",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6a7fe25_9f24456e",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-20T17:59:51Z",
+      "side": 1,
+      "message": "Need to take projects into account.  I realize it\u0027s a little inconsistent here right now wrt projects, since the ConsoleIds here are defined as not prepended with project ID.  There are two options here:\n\n1. Change the ConsoleIds to also include project name, and then do ACL checks here to make sure the user can access that project.\n2. Keep the ConsoleIds as is, and prepend this project name to each element in the ConsoleIds.\n\nI\u0027m inclined to say do #2 for now, and #1 when we do a larger refactor to include builder-level ACLs.",
+      "range": {
+        "startLine": 218,
+        "startChar": 61,
+        "endLine": 218,
+        "endChar": 71
+      },
+      "revId": "9c8f6cb5d59780543c6b1e8998c07ba98bb5b209",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
