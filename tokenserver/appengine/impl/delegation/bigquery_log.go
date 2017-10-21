@@ -69,6 +69,7 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		// Information about the request.
 		"requested_validity": int(i.Request.ValidityDuration),
 		"requested_intent":   i.Request.Intent,
+		"tags":               i.Request.Tags,
 
 		// Information about the delegation rule used.
 		"config_rev":  i.ConfigRev,

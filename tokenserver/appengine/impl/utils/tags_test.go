@@ -22,31 +22,31 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateAuditTags(t *testing.T) {
-	Convey("ValidateAuditTags ok", t, func() {
-		So(ValidateAuditTags(nil), ShouldBeNil)
-		So(ValidateAuditTags([]string{"k1:v1", "k2:v2"}), ShouldBeNil)
-		So(ValidateAuditTags([]string{"k1:v1:more:stuff"}), ShouldBeNil)
+func TestValidateTags(t *testing.T) {
+	Convey("ValidateTags ok", t, func() {
+		So(ValidateTags(nil), ShouldBeNil)
+		So(ValidateTags([]string{"k1:v1", "k2:v2"}), ShouldBeNil)
+		So(ValidateTags([]string{"k1:v1:more:stuff"}), ShouldBeNil)
 	})
 
-	Convey("ValidateAuditTags errors", t, func() {
+	Convey("ValidateTags errors", t, func() {
 		many := []string{}
 		for i := 0; i < maxTagCount+1; i++ {
 			many = append(many, "k:v")
 		}
-		So(ValidateAuditTags(many), ShouldErrLike, "too many audit tags given")
+		So(ValidateTags(many), ShouldErrLike, "too many tags given")
 
 		So(
-			ValidateAuditTags([]string{"k:v", "not-kv"}),
+			ValidateTags([]string{"k:v", "not-kv"}),
 			ShouldErrLike,
-			"audit tag #2: not in <key>:<value> form")
+			"tag #2: not in <key>:<value> form")
 		So(
-			ValidateAuditTags([]string{strings.Repeat("k", maxTagKeySize+1) + ":v"}),
+			ValidateTags([]string{strings.Repeat("k", maxTagKeySize+1) + ":v"}),
 			ShouldErrLike,
-			"audit tag #1: the key length must not exceed 128")
+			"tag #1: the key length must not exceed 128")
 		So(
-			ValidateAuditTags([]string{"k:" + strings.Repeat("v", maxTagValueSize+1)}),
+			ValidateTags([]string{"k:" + strings.Repeat("v", maxTagValueSize+1)}),
 			ShouldErrLike,
-			"audit tag #1: the value length must not exceed 1024")
+			"tag #1: the value length must not exceed 1024")
 	})
 }

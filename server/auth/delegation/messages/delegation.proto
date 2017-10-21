@@ -50,7 +50,7 @@ message DelegationToken {
 
 // Identifies who delegates what authority to whom where.
 //
-// Next ID: 9.
+// Next ID: 10.
 message Subtoken {
   enum Kind {
     // This is to catch old tokens that don't have 'kind' field yet.
@@ -110,4 +110,13 @@ message Subtoken {
   // that should accept this token. May also contain special "*" string, which
   // means "All services".
   repeated string services = 6;
+
+  // Arbitrary key:value pairs embedded into the token by whoever requested it.
+  // Convey circumstance of why the token is created.
+  //
+  // Services that accept the token may use them for additional authorization
+  // decisions. Please use extremely carefully, only when you control both sides
+  // of the delegation link and can guarantee that services involved understand
+  // the tags.
+  repeated string tags = 9;
 }
