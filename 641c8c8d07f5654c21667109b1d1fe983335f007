@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1daf6e29_d75a235d",
+        "filename": "luci_notify/frontend/queue.yaml",
+        "patchSetId": 5
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-21T00:14:27Z",
+      "side": 1,
+      "message": "I really don\u0027t have a good idea for the rate with which emails will be sent from prod, so I played it very safe. I changed it to 5/s, does that seem more reasonable?",
+      "parentUuid": "1727474b_a0afc8e4",
+      "range": {
+        "startLine": 3,
+        "startChar": 8,
+        "endLine": 3,
+        "endChar": 13
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3a710176_de8e38a5",
         "filename": "luci_notify/internal/tq.proto",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a19c1bd1_f33a5e89",
+        "filename": "luci_notify/internal/tq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-21T00:14:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a710176_de8e38a5",
+      "range": {
+        "startLine": 32,
+        "startChar": 2,
+        "endLine": 32,
+        "endChar": 27
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "bbeeebe4_65e0ad31",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-21T00:14:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "641f09e1_c21c85f0",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 12
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2af3393d_609faeab",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-21T00:14:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "adeab424_fc242877",
+      "range": {
+        "startLine": 66,
+        "startChar": 28,
+        "endLine": 66,
+        "endChar": 33
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9fe288e_502dbbb8",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 5
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "d09c58aa_ee80c82e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-21T00:14:27Z",
+      "side": 1,
+      "message": "I was planning to have this be more of a \"header\" with the rest of the email derived from Milo step data, kind of like inlining Milo\u0027s build page into the email. I\u0027ll rename this to Body for now since it\u0027s most accurate.",
+      "parentUuid": "f9fe288e_502dbbb8",
+      "range": {
+        "startLine": 85,
+        "startChar": 3,
+        "endLine": 85,
+        "endChar": 12
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd742bda_291a7213",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 5
@@ -128,6 +248,30 @@
       "writtenOn": "2017-10-20T19:55:03Z",
       "side": 1,
       "message": "task creation must happen within the transaction, otherwise it defeats the purpose of the CL",
+      "range": {
+        "startLine": 201,
+        "startChar": 7,
+        "endLine": 201,
+        "endChar": 47
+      },
+      "revId": "641c8c8d07f5654c21667109b1d1fe983335f007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab5da9a1_5e67bbe2",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-21T00:14:27Z",
+      "side": 1,
+      "message": "Oh woops, you\u0027re right. After rebasing so many times that got lost. Thanks.",
+      "parentUuid": "bd742bda_291a7213",
       "range": {
         "startLine": 201,
         "startChar": 7,
