@@ -65,6 +65,12 @@
       'description': 'An intent string provided by the caller',
     },
     {
+      'name': 'tags',
+      'type': 'STRING',
+      'mode': 'REPEATED',
+      'description': 'Arbitrary key:value pairs embedded into the token',
+    },
+    {
       'name': 'config_rev',
       'type': 'STRING',
       'description': 'Revision of the luci-config repo with delegation rules',
