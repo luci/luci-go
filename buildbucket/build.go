@@ -16,6 +16,8 @@ package buildbucket
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,11 +35,21 @@ const TagBuilder = "builder"
 type Build struct {
 	// fields set at the build creation time, immutable.
 
-	ID           int64
+	ID int64
+	// Address is an alternative identifier of the build.
+	// If the build has build number, it is "<bucket>/<builder>/<number>".
+	// Otherwise it is "<id>".
+	Address      string
 	CreationTime time.Time
 	CreatedBy    identity.Identity
 	Bucket       string
 	Builder      string
+	// Number identifies the build within the builder.
+	// Build numbers are monotonically increasing, mostly contiguous.
+	//
+	// The type is *int to prevent accidental confusion
+	// of valid build number 0 with absence of the number (zero value).
+	Number *int
 	// BuildSets is parsed "buildset" tag values.
 	//
 	// If a buildset is present in tags, but not recognized
@@ -149,6 +161,22 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		return err
 	}
 
+	address := tags.Get("build_address")
+	var number *int
+	if address == "" {
+		address = strconv.FormatInt(msg.Id, 10)
+	} else {
+		parts := strings.Split(address, "/")
+		if len(parts) != 3 || parts[0] != msg.Bucket || parts[1] != builder {
+			return fmt.Errorf("invalid build_address %q", address)
+		}
+		num, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return fmt.Errorf("invalid build_address %q", address)
+		}
+		number = &num
+	}
+
 	input := struct{ Properties interface{} }{b.Input.Properties}
 	if err := parseJSON(msg.ParametersJson, &input); err != nil {
 		return errors.Annotate(err, "invalid msg.ParametersJson").Err()
@@ -177,10 +205,12 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 
 	*b = Build{
 		ID:               msg.Id,
+		Address:          address,
 		CreationTime:     ParseTimestamp(msg.CreatedTs),
 		CreatedBy:        createdBy,
 		Bucket:           msg.Bucket,
 		Builder:          builder,
+		Number:           number,
 		BuildSets:        bs,
 		Tags:             tags,
 		CanaryPreference: canaryPref,

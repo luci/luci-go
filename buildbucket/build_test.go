@@ -38,12 +38,15 @@ func TestBuild(t *testing.T) {
 		err = json.Unmarshal(msgBytes, msg)
 		So(err, ShouldBeNil)
 
+		num := 4124
 		build := Build{
 			ID:           8967467172028179648,
+			Address:      "luci.chromium.try/linux_chromium_rel_ng/4124",
 			CreationTime: time.Date(2017, 9, 25, 15, 38, 17, 28510000, time.UTC),
 			CreatedBy:    "user:luci-migration@appspot.gserviceaccount.com",
 			Bucket:       "luci.chromium.try",
 			Builder:      "linux_chromium_rel_ng",
+			Number:       &num,
 			BuildSets:    []BuildSet{&GerritChange{"chromium-review.googlesource.com", 678507, 3}},
 			Tags: strpair.Map{
 				"build_address":                    []string{"luci.chromium.try/linux_chromium_rel_ng/4124"},
