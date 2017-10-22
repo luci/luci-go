@@ -84,10 +84,10 @@ func (b *Build) RunDuration() (duration time.Duration, ok bool) {
 
 // SchedulingDuration returns duration between build creation and start.
 func (b *Build) SchedulingDuration() (duration time.Duration, ok bool) {
-	if b.CompletionTime.IsZero() || b.StartTime.IsZero() {
+	if b.CreationTime.IsZero() || b.StartTime.IsZero() {
 		return 0, false
 	}
-	return b.StartTime.Sub(b.CompletionTime), true
+	return b.StartTime.Sub(b.CreationTime), true
 }
 
 // Properties is data provided by users, opaque to LUCI services.
