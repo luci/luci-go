@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "908c909d_a2fa5840",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-22T07:38:19Z",
+      "side": 1,
+      "message": "throw me in there too; I\u0027m working on this",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 79
+      },
+      "revId": "7703be5a8f9821e48f4a8ecc2570417bb3fef92b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ddc1041_fbde9d59",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-22T07:38:19Z",
+      "side": 1,
+      "message": "up top?",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 5
+      },
+      "revId": "7703be5a8f9821e48f4a8ecc2570417bb3fef92b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33901e6d_99c7900d",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-22T07:38:19Z",
+      "side": 1,
+      "message": "let\u0027s just use a map instead?",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 14
+      },
+      "revId": "7703be5a8f9821e48f4a8ecc2570417bb3fef92b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
