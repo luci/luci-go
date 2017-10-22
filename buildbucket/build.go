@@ -148,9 +148,12 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		return err
 	}
 
-	createdBy, err := identity.MakeIdentity(msg.CreatedBy)
-	if err != nil {
-		return err
+	var createdBy identity.Identity
+	if msg.CreatedBy != "" {
+		createdBy, err = identity.MakeIdentity(msg.CreatedBy)
+		if err != nil {
+			return err
+		}
 	}
 
 	tags := strpair.ParseMap(msg.Tags)
