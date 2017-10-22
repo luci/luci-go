@@ -108,6 +108,16 @@ func TestBuild(t *testing.T) {
 			So(actual, ShouldResemble, build)
 		})
 
+		Convey("Durations", func() {
+			dur, ok := build.SchedulingDuration()
+			So(ok, ShouldBeTrue)
+			So(dur, ShouldEqual, 2316560*time.Microsecond)
+
+			dur, ok = build.RunDuration()
+			So(ok, ShouldBeTrue)
+			So(dur, ShouldEqual, 393638720*time.Microsecond)
+		})
+
 		Convey("ParseMessage with structured properties", func() {
 			type props struct {
 				Category string
