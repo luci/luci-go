@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2016 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package buildbucket
 
@@ -67,21 +77,6 @@ func PubSubHandler(ctx *router.Context) {
 // This is the portion of the summarization process which cannot fail (i.e. is
 // pure-data).
 func generateSummary(c context.Context, hostname string, build buildbucket.Build) (*model.BuildSummary, error) {
-	// We map out non-infra failures explicitly. Any status not in this map
-	// defaults to InfraFailure below.
-	status, ok := map[buildbucket.Status]model.Status{
-		buildbucket.StatusScheduled: model.NotRun,
-		buildbucket.StatusStarted:   model.Running,
-		buildbucket.StatusSuccess:   model.Success,
-		buildbucket.StatusFailure:   model.Failure,
-		buildbucket.StatusError:     model.InfraFailure,
-		buildbucket.StatusCancelled: model.Cancelled,
-		buildbucket.StatusTimeout:   model.Expired,
-	}[build.Status]
-	if !ok {
-		status = model.InfraFailure
-	}
-
 	// HACK(iannucci,nodir) - crbug.com/776300 - The project and annotation URL
 	// should be directly represented on the Build. This is a leaky abstraction;
 	// swarming isn't relevant to either value.
@@ -102,7 +97,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		Summary: model.Summary{
 			Start:  build.StartTime,
 			End:    build.CompletionTime,
-			Status: status,
+			Status: parseStatus(build.Status),
 		},
 
 		Version: build.UpdateTime.UnixNano(),
@@ -160,7 +155,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	isLUCI = strings.HasPrefix(bucket, "luci.")
 
 	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%v",
-		event.Hostname, bucket, build.Builder, build.Status.String(), build)
+		event.Hostname, bucket, build.Builder, status, build)
 
 	if !isLUCI || build.Builder == "" {
 		logging.Infof(c, "This is not an ingestable build, ignoring")
