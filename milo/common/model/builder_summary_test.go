@@ -38,6 +38,7 @@ func TestUpdateBuilder(t *testing.T) {
 		builds[i] = &BuildSummary{
 			BuildKey:  bk,
 			BuilderID: "fake",
+			BuildID:   fmt.Sprintf("build_id/%d", i),
 			Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
 		}
 		datastore.Put(c, builds[i])
@@ -45,9 +46,9 @@ func TestUpdateBuilder(t *testing.T) {
 
 	Convey("Updating appropriate builder having existing last finished build", t, func() {
 		builder := &BuilderSummary{
-			BuilderID:          "fake",
-			LastFinishedStatus: Success,
-			LastFinishedID:     builds[5].BuildKey,
+			BuilderID:           "fake",
+			LastFinishedStatus:  Success,
+			LastFinishedBuildID: builds[5].BuildID,
 		}
 
 		Convey("and no pending builds", func() {
@@ -56,7 +57,7 @@ func TestUpdateBuilder(t *testing.T) {
 				err := builder.Update(c, builds[6])
 				So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
 				So(builder.LastFinishedStatus, ShouldEqual, Failure)
-				So(builder.LastFinishedID, ShouldEqual, builds[6].BuildKey)
+				So(builder.LastFinishedBuildID, ShouldEqual, builds[6].BuildID)
 			})
 
 			Convey("with pending build should update InProgress but not last finished build info", func() {
@@ -65,7 +66,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[4])
 					So(err, ShouldBeNil)
 					So(builder.LastFinishedStatus, ShouldEqual, Success)
-					So(builder.LastFinishedID, ShouldEqual, builds[5].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 					So(builder.GetInProgress(), ShouldResemble,
 						map[string]Status{builds[4].BuildKey.String(): NotRun})
 				})
@@ -75,7 +76,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[6])
 					So(err, ShouldBeNil)
 					So(builder.LastFinishedStatus, ShouldEqual, Success)
-					So(builder.LastFinishedID, ShouldEqual, builds[5].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 					So(builder.GetInProgress(), ShouldResemble,
 						map[string]Status{builds[6].BuildKey.String(): NotRun})
 				})
@@ -93,7 +94,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[4])
 					So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
 					So(builder.LastFinishedStatus, ShouldEqual, Success)
-					So(builder.LastFinishedID, ShouldEqual, builds[5].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 				})
 
 				Convey("but update last finished build info for build created later than last finished", func() {
@@ -101,7 +102,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[6])
 					So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
 					So(builder.LastFinishedStatus, ShouldEqual, Failure)
-					So(builder.LastFinishedID, ShouldEqual, builds[6].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldEqual, builds[6].BuildID)
 				})
 			})
 
@@ -111,7 +112,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[4])
 					So(err, ShouldBeNil)
 					So(builder.LastFinishedStatus, ShouldEqual, Success)
-					So(builder.LastFinishedID, ShouldEqual, builds[5].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 					So(builder.GetInProgress(), ShouldResemble,
 						map[string]Status{
 							builds[3].BuildKey.String(): NotRun,
@@ -124,7 +125,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[6])
 					So(err, ShouldBeNil)
 					So(builder.LastFinishedStatus, ShouldEqual, Success)
-					So(builder.LastFinishedID, ShouldEqual, builds[5].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 					So(builder.GetInProgress(), ShouldResemble,
 						map[string]Status{
 							builds[3].BuildKey.String(): NotRun,
@@ -147,7 +148,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[4])
 					So(err, ShouldBeNil)
 					So(builder.LastFinishedStatus, ShouldEqual, Success)
-					So(builder.LastFinishedID, ShouldResemble, builds[5].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldResemble, builds[5].BuildID)
 					So(builder.GetInProgress(), ShouldResemble,
 						map[string]Status{
 							builds[3].BuildKey.String(): NotRun,
@@ -160,7 +161,7 @@ func TestUpdateBuilder(t *testing.T) {
 					err := builder.Update(c, builds[7])
 					So(err, ShouldBeNil)
 					So(builder.LastFinishedStatus, ShouldEqual, Failure)
-					So(builder.LastFinishedID, ShouldResemble, builds[7].BuildKey)
+					So(builder.LastFinishedBuildID, ShouldResemble, builds[7].BuildID)
 					So(builder.GetInProgress(), ShouldResemble,
 						map[string]Status{
 							builds[3].BuildKey.String(): NotRun,
@@ -176,7 +177,7 @@ func TestUpdateBuilder(t *testing.T) {
 						err := builder.Update(c, builds[2])
 						So(err, ShouldBeNil)
 						So(builder.LastFinishedStatus, ShouldEqual, Success)
-						So(builder.LastFinishedID, ShouldResemble, builds[5].BuildKey)
+						So(builder.LastFinishedBuildID, ShouldResemble, builds[5].BuildID)
 						So(builder.GetInProgress(), ShouldResemble,
 							map[string]Status{
 								builds[3].BuildKey.String(): NotRun,
@@ -191,7 +192,7 @@ func TestUpdateBuilder(t *testing.T) {
 						err := builder.Update(c, builds[8])
 						So(err, ShouldBeNil)
 						So(builder.LastFinishedStatus, ShouldEqual, Success)
-						So(builder.LastFinishedID, ShouldResemble, builds[5].BuildKey)
+						So(builder.LastFinishedBuildID, ShouldResemble, builds[5].BuildID)
 						So(builder.GetInProgress(), ShouldResemble,
 							map[string]Status{
 								builds[3].BuildKey.String(): NotRun,
@@ -208,7 +209,7 @@ func TestUpdateBuilder(t *testing.T) {
 						err := builder.Update(c, builds[3])
 						So(err, ShouldBeNil)
 						So(builder.LastFinishedStatus, ShouldEqual, Success)
-						So(builder.LastFinishedID, ShouldResemble, builds[5].BuildKey)
+						So(builder.LastFinishedBuildID, ShouldResemble, builds[5].BuildID)
 						So(builder.GetInProgress(), ShouldResemble,
 							map[string]Status{
 								builds[3].BuildKey.String(): Running,
@@ -222,7 +223,7 @@ func TestUpdateBuilder(t *testing.T) {
 						err := builder.Update(c, builds[7])
 						So(err, ShouldBeNil)
 						So(builder.LastFinishedStatus, ShouldEqual, Success)
-						So(builder.LastFinishedID, ShouldResemble, builds[5].BuildKey)
+						So(builder.LastFinishedBuildID, ShouldResemble, builds[5].BuildID)
 						So(builder.GetInProgress(), ShouldResemble,
 							map[string]Status{
 								builds[3].BuildKey.String(): NotRun,
@@ -243,14 +244,14 @@ func TestUpdateBuilder(t *testing.T) {
 			err := builder.Update(c, builds[5])
 			So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
 			So(builder.LastFinishedStatus, ShouldEqual, Failure)
-			So(builder.LastFinishedID, ShouldEqual, builds[5].BuildKey)
+			So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 		})
 
 		Convey("InProgress with pending build", func() {
 			builds[5].Summary.Status = NotRun
 			err := builder.Update(c, builds[5])
 			So(err, ShouldBeNil)
-			So(builder.LastFinishedID, ShouldEqual, nil)
+			So(builder.LastFinishedBuildID, ShouldEqual, "")
 			So(builder.GetInProgress(), ShouldResemble,
 				map[string]Status{builds[5].BuildKey.String(): NotRun})
 		})

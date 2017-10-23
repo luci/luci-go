@@ -200,6 +200,7 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 		BuildKey:  datastore.KeyForObj(c, (*buildEntity)(b)),
 		SelfLink:  fmt.Sprintf("/buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
+		BuildID:   fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 	}
 
 	bs.Summary.Start = b.Times.Start.Time
