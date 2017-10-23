@@ -1,3 +1,17 @@
+// Copyright 2016 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package buildbucket
 
 import (
@@ -7,8 +21,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	bucket "go.chromium.org/luci/buildbucket"
-	bucketApi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/milo/api/resp"
@@ -28,7 +42,7 @@ type BuildID struct {
 }
 
 // getBucketBuild fetches the buildbucket build given the ID.
-func getBucketBuild(client *bucketApi.Service, id int64) (*bucket.Build, error) {
+func fetchBuild(client *bbapi.Service, id int64) (*buildbucket.Build, error) {
 	response, err := client.Get(id).Do()
 
 	switch {
@@ -38,14 +52,14 @@ func getBucketBuild(client *bucketApi.Service, id int64) (*bucket.Build, error) 
 	case response.HTTPStatusCode == http.StatusForbidden:
 		return nil, errors.New("access forbidden", common.CodeNoAccess)
 	case response.HTTPStatusCode == http.StatusNotFound,
-		response.Error != nil && response.Error.Reason == bucketApi.ReasonNotFound:
+		response.Error != nil && response.Error.Reason == bbapi.ReasonNotFound:
 		return nil, errors.New("build not found", common.CodeNotFound)
 	case response.Error != nil:
 		return nil, fmt.Errorf(
 			"reason: %s, message: %s", response.Error.Reason, response.Error.Message)
 	}
 
-	build := &bucket.Build{}
+	build := &buildbucket.Build{}
 	err = build.ParseMessage(response.Build)
 	return build, err
 }
@@ -74,7 +88,7 @@ func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, error) {
 	if err != nil {
 		return nil, err
 	}
-	build, err := getBucketBuild(client, id)
+	build, err := fetchBuild(client, id)
 	if err != nil {
 		return nil, err
 	}
@@ -83,18 +97,18 @@ func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, error) {
 
 // getRespBuild fetches the full build state from Swarming and LogDog if
 // available, otherwise returns an empty "pending build".
-func getRespBuild(c context.Context, build *bucket.Build) (*resp.MiloBuild, error) {
-	// Hasn't started yet, so definitely no build ready yet, return a pending
-	// build.
-	if build.Status == bucket.StatusScheduled {
-		b := &resp.MiloBuild{
-			Summary: resp.BuildComponent{
-				Status: model.NotRun,
-			},
-		}
-		return b, nil
+func getRespBuild(c context.Context, build *buildbucket.Build) (*resp.MiloBuild, error) {
+	// TODO(nodir,hinoka): squash getRespBuild with toMiloBuild.
+
+	if build.Status == buildbucket.StatusScheduled {
+		// Hasn't started yet, so definitely no build ready yet, return a pending
+		// build.
+		return &resp.MiloBuild{
+			Summary: resp.BuildComponent{Status: model.NotRun},
+		}, nil
 	}
 
+	// TODO(nodir,hinoka,iannucci): use annotations directly without fetching swarming task
 	sID, err := swarmingRefFromTags(build.Tags)
 	if err != nil {
 		return nil, err
@@ -119,7 +133,7 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 	if err != nil {
 		return nil, err
 	}
-	build, err := getBucketBuild(client, id)
+	build, err := fetchBuild(client, id)
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +155,7 @@ func (b *BuildID) GetLog(c context.Context, logname string) (
 	if err != nil {
 		return "", false, errors.Annotate(err, "%s is not a valid number", b.ID).Err()
 	}
+	// TODO(nodir,hinoka): use annotations directly without fetching swarming task
 	sID, err := GetSwarmingID(c, id)
 	if err != nil {
 		return "", false, err
