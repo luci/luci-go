@@ -15,9 +15,13 @@
 package buildstore
 
 import (
+	"fmt"
+
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/server/caching"
 )
 
 var emulationOptionsProviderKey = "emulation options provider"
@@ -58,4 +62,60 @@ func GetEmulationOptions(c context.Context, master, builder string) (*milo.Emula
 		return p.(EmulationOptionsProvider)(c, master, builder)
 	}
 	return nil, nil
+}
+
+// builderEmulationOptions stores default emulation options
+// of a builder.
+//
+// It does not implement MetaGetSetter because it would be way more code.
+// Not worth it.
+type builderEmulationOptions struct {
+	ID      string `gae:"$id"` // <master>:<builder>
+	Options milo.EmulationOptions
+}
+
+func builderID(master, builder string) string {
+	return fmt.Sprintf("%s:%s", master, builder)
+}
+
+// GetDefaultEmulationOptions returns default emulation options for a builder.
+func GetDefaultEmulationOptions(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
+	entity := &builderEmulationOptions{
+		ID: builderID(master, builder),
+	}
+	switch err := datastore.Get(c, entity); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, err
+	default:
+		return &entity.Options, nil
+	}
+}
+
+// SetDefaultEmulationOptions sets default emulation options for a builder.
+func SetDefaultEmulationOptions(c context.Context, master, builder string, opt *milo.EmulationOptions) error {
+	return datastore.Put(c, &builderEmulationOptions{
+		ID:      builderID(master, builder),
+		Options: *opt,
+	})
+}
+
+// WithDefaultEmulationOptions provides default emulation options.
+func WithDefaultEmulationOptions(c context.Context) context.Context {
+	return WithEmulationOptionsProvider(c, func(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
+		cache := caching.RequestCache(c)
+		cacheKey := &struct{ Master, Builder string }{Master: master, Builder: builder}
+		if opt, ok := cache.Get(c, cacheKey); ok {
+			return opt.(*milo.EmulationOptions), nil
+		}
+
+		opt, err := GetDefaultEmulationOptions(c, master, builder)
+		if err != nil {
+			return nil, err
+		}
+
+		cache.Put(c, cacheKey, opt, 0)
+		return opt, nil
+	})
 }

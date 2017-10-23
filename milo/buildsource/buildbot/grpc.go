@@ -19,6 +19,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -220,6 +221,23 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	}, nil
 }
 
+// GetEmulationOptions returns default emulation options from buildstore.
+func (s *Service) GetEmulationOptions(c context.Context, req *milo.GetEmulationOptionsRequest) (*milo.GetEmulationOptionsResponse, error) {
+	if err := grpcCheckAdmin(c); err != nil {
+		return nil, err
+	}
+	opt, err := buildstore.GetDefaultEmulationOptions(c, req.Master, req.Builder)
+	return &milo.GetEmulationOptionsResponse{Options: opt}, err
+}
+
+// SetEmulationOptions sets default emulation options in buildstore.
+func (s *Service) SetEmulationOptions(c context.Context, req *milo.SetEmulationOptionsRequest) (*empty.Empty, error) {
+	if err := grpcCheckAdmin(c); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, buildstore.SetDefaultEmulationOptions(c, req.Master, req.Builder, req.Options)
+}
+
 func excludeDeprecatedFromMaster(m *buildbot.Master) {
 	m.Slaves = nil
 	for _, builder := range m.Builders {
@@ -247,5 +265,16 @@ func grpcCanAccessMaster(c context.Context, master string) error {
 		return grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
 	default:
 		return err
+	}
+}
+
+func grpcCheckAdmin(c context.Context) error {
+	switch isAdmin, err := common.IsAdmin(c); {
+	case err != nil:
+		return err
+	case !isAdmin:
+		return grpc.Errorf(codes.PermissionDenied, "permission denied")
+	default:
+		return nil
 	}
 }

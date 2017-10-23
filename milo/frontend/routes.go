@@ -34,6 +34,7 @@ import (
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -144,7 +145,7 @@ func Run(templatePath string) {
 
 	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
 		Service: &buildbot.Service{},
-		Prelude: checkUnrestrictedRequest,
+		Prelude: buildbotAPIPrelude,
 	})
 	milo.RegisterBuildInfoServer(&api, &rpc.BuildInfoService{})
 	discovery.Enable(&api)
@@ -153,12 +154,13 @@ func Run(templatePath string) {
 	http.DefaultServeMux.Handle("/", r)
 }
 
-func checkUnrestrictedRequest(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
 	deprecatable, ok := req.(interface {
 		GetExcludeDeprecated() bool
 	})
 	if ok && !deprecatable.GetExcludeDeprecated() {
 		logging.Warningf(c, "user agent %q might be using deprecated API!", getRequest(c).UserAgent())
 	}
-	return c, nil
+
+	return buildstore.WithDefaultEmulationOptions(c), nil
 }
