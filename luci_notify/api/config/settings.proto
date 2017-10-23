@@ -15,4 +15,10 @@ message Settings {
   //
   // Required.
   string milo_host = 1;
+
+  // BuildbucketHost is the hostname of the Milo instance luci-notify queries
+  // for validation.
+  //
+  // Required.
+  string buildbucket_host = 2;
 }

@@ -18,22 +18,38 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/testing/assertions"
 
 	"go.chromium.org/luci/luci_notify/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
+
+type testIndex struct{}
+
+func (t *testIndex) GetProject(_ context.Context, bucket string) (string, error) {
+	switch bucket {
+	case "test.bucket":
+		return "test", nil
+	case "test2.bucket":
+		return "test2", nil
+	default:
+		return "", fmt.Errorf("no such bucket")
+	}
+}
 
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Test Environment for validateProjectConfig`, t, func() {
+		index := &testIndex{}
 		testValidation := func(env, config, expectFormat string, expectArgs ...interface{}) {
 			Convey(env, func() {
 				cfg, err := testutil.ParseProjectConfig(config)
 				So(err, ShouldBeNil)
-				err = validateProjectConfig("projects/test", cfg)
+				err = validateProjectConfig(context.Background(), "test", cfg, index)
 				if expectFormat == "" {
 					So(err, assertions.ShouldErrLike)
 					return
@@ -79,6 +95,16 @@ func TestValidation(t *testing.T) {
 			}`,
 			requiredFieldError, "bucket")
 
+		testValidation(`builder out-of-project bucket`, `
+			notifiers {
+				name: "good-name"
+				builders {
+					bucket: "test2.bucket"
+					name: "i-am-a-builder"
+				}
+			}`,
+			"is not part of project")
+
 		testValidation(`bad email address`, `
 			notifiers {
 				name: "good-name"
@@ -110,8 +136,28 @@ func TestValidation(t *testing.T) {
 				So(err, assertions.ShouldErrLike, expect)
 			})
 		}
-		testValidation(`empty`, ``, requiredFieldError, "milo_host")
-		testValidation(`bad hostname`, `milo_host: "9mNRn29%^^%#"`, invalidFieldError, "milo_host")
-		testValidation(`good`, `milo_host: "luci-milo.example.com"`, "")
+
+		testValidation(`milo empty`, `
+			buildbucket_host: "buildbucket.example.com"
+		`, requiredFieldError, "milo_host")
+
+		testValidation(`milo bad hostname`, `
+			milo_host: "9mNRn29%^^%#"
+			buildbucket_host: "buildbucket.example.com"
+		`, invalidFieldError, "milo_host")
+
+		testValidation(`buildbucket empty`, `
+			milo_host: "luci-milo.example.com"
+		`, requiredFieldError, "buildbucket_host")
+
+		testValidation(`buildbucket bad hostname`, `
+			milo_host: "luci-milo.example.com"
+			buildbucket_host: "anasdf8@!!!nf8.com"
+		`, invalidFieldError, "buildbucket_host")
+
+		testValidation(`good`, `
+			milo_host: "luci-milo.example.com"
+			buildbucket_host: "buildbucket.example.com"
+		`, "")
 	})
 }
