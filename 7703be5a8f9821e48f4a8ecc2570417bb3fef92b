@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "777323e3_b13a982b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-23T20:14:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "908c909d_a2fa5840",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 79
+      },
+      "revId": "7703be5a8f9821e48f4a8ecc2570417bb3fef92b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ddc1041_fbde9d59",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "31b33f42_3403e2a6",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-23T20:14:51Z",
+      "side": 1,
+      "message": "oops, done",
+      "parentUuid": "2ddc1041_fbde9d59",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 5
+      },
+      "revId": "7703be5a8f9821e48f4a8ecc2570417bb3fef92b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33901e6d_99c7900d",
         "filename": "milo/buildsource/buildbucket/common.go",
         "patchSetId": 6
@@ -68,6 +116,30 @@
       "revId": "7703be5a8f9821e48f4a8ecc2570417bb3fef92b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "088631a6_2d15e3da",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-23T20:14:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33901e6d_99c7900d",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 14
+      },
+      "revId": "7703be5a8f9821e48f4a8ecc2570417bb3fef92b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
