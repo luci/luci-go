@@ -74,6 +74,8 @@ type Console struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
+
 // BuilderMeta is a struct containing metadata about a builder.
 type BuilderMeta struct {
 	Category  string
@@ -300,7 +302,7 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 		knownConsoles.Add(pc.Id)
 		con, err := GetConsole(c, projectName, pc.Id)
 		switch err {
-		case datastore.ErrNoSuchEntity:
+		case ErrConsoleNotFound:
 			// continue
 		case nil:
 			// Check if revisions match, if so just skip it.
@@ -446,6 +448,12 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 		Parent: datastore.MakeKey(c, "Project", proj),
 		ID:     id,
 	}
-	err := datastore.Get(c, &con)
-	return &con, err
+	switch err := datastore.Get(c, &con); err {
+	case datastore.ErrNoSuchEntity:
+		return nil, ErrConsoleNotFound
+	case nil:
+		return &con, nil
+	default:
+		return nil, err
+	}
 }
