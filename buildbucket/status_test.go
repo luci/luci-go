@@ -27,6 +27,8 @@ func TestStatus(t *testing.T) {
 
 	Convey("ParseStatus", t, func() {
 		cases := map[Status]*buildbucket.ApiCommonBuildMessage{
+			0: {},
+
 			StatusScheduled: {
 				Status: "SCHEDULED",
 			},

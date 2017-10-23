@@ -85,8 +85,14 @@ func (s Status) Completed() bool {
 
 // ParseStatus parses build's Status, Result, FailureReason and
 // CancelationReason as Status type.
+//
+// If build.Status is "", returns (0, nil). It may happen with partial
+// buildbucket responses.
 func ParseStatus(build *buildbucket.ApiCommonBuildMessage) (Status, error) {
 	switch build.Status {
+	case "":
+		return 0, nil
+
 	case "SCHEDULED":
 		return StatusScheduled, nil
 
