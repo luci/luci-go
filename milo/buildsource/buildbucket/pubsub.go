@@ -67,6 +67,7 @@ func PubSubHandler(ctx *router.Context) {
 // This is the portion of the summarization process which cannot fail (i.e. is
 // pure-data).
 func generateSummary(c context.Context, hostname string, build buildbucket.Build) (*model.BuildSummary, error) {
+	//fmt.Printf("BUILD: %v\n", build)
 	// We map out non-infra failures explicitly. Any status not in this map
 	// defaults to InfraFailure below.
 	status, ok := map[buildbucket.Status]model.Status{
@@ -107,6 +108,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 
 		Version: build.UpdateTime.UnixNano(),
 	}
+	//fmt.Printf("NYOOOOOOOOOOOOOOOOM SETTING ret.Created to %v, now %v\n", build.CreationTime, ret.Created)
 
 	// TODO(iannucci,nodir): support manifests/got_revision
 	for _, bset := range build.BuildSets {
@@ -138,6 +140,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return errors.Annotate(err, "could not decode message").Tag(transient.Tag).Err()
 	}
 	bData, err := msg.GetData()
+	//fmt.Printf("YAAAAAAAAAAAAAAAA bData: %v\n", bData)
 	if err != nil {
 		return errors.Annotate(err, "could not parse pubsub message string").Err()
 	}
@@ -147,50 +150,94 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		Hostname string                          `json:"hostname"`
 	}{}
 	if err := json.Unmarshal(bData, &event); err != nil {
+		//fmt.Printf("YAAAAAAAAAAAAAAAA err: %v\n", err)
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
+	//fmt.Printf("YAAAAAAAAAAAAAAAA event: %v\n", event)
 
 	build := buildbucket.Build{}
 	if err := build.ParseMessage(&event.Build); err != nil {
+		//fmt.Printf("YAAAAAAAAAAAAAAAA err: %v\n", err)
 		return errors.Annotate(err, "could not parse buildbucket.Build").Err()
 	}
+	//fmt.Printf("YAAAAAAAAAAAAAAAA event.Build: %v\n", event.Build)
+	//fmt.Printf("YAAAAAAAAAAAAAAAA build: %v\n", build)
 
+	//fmt.Printf("yumyum1\n")
 	bucket = build.Bucket
 	status = build.Status.String()
 	isLUCI = strings.HasPrefix(bucket, "luci.")
 
+	//fmt.Printf("yumyum2\n")
+
 	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%v",
 		event.Hostname, bucket, build.Builder, build.Status.String(), build)
+
+	//fmt.Printf("yumyum3\n")
 
 	if !isLUCI || build.Builder == "" {
 		logging.Infof(c, "This is not an ingestable build, ignoring")
 		return nil
 	}
 
+	//fmt.Printf("yumyum4\n")
 	bs, err := generateSummary(c, event.Hostname, build)
+	//fmt.Printf("YAAAAAAAAAAAAAAAA BuildSummary: %v\n", bs)
 	if err != nil {
+		//fmt.Printf("YAAAAAAAAAAAAAAAA err attaching revision data: %v\n", err)
 		return err
 	}
+	//fmt.Printf("herro\n")
 
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		//fmt.Printf("nyoom\n")
 		curBS := &model.BuildSummary{BuildKey: bs.BuildKey}
 		switch err := datastore.Get(c, curBS); err {
 		case datastore.ErrNoSuchEntity:
+			//fmt.Printf("YAAAAAAAAAAAAAAAA created\n")
 			action = "Created"
 		case nil:
+			//fmt.Printf("YAAAAAAAAAAAAAAAA modified\n")
 			action = "Modified"
 		default:
+			//fmt.Printf("YAAAAAAAAAAAAAAAA reading current BuildSummary err\n")
 			return errors.Annotate(err, "reading current BuildSummary").Err()
 		}
 
 		if build.UpdateTime.UnixNano() <= curBS.Version {
+			//fmt.Printf("YAAAAAAAAAAAAAAAA current BuildSummary is newer: %d <= %d\n",
+			//	build.UpdateTime.UnixNano(), curBS.Version)
 			logging.Warningf(c, "current BuildSummary is newer: %d <= %d",
 				build.UpdateTime.UnixNano(), curBS.Version)
 			return nil
 		}
 
-		return datastore.Put(c, bs)
-	}, nil)
+		//fmt.Printf("BuilderID: %v\n", bs.BuilderID)
+
+		if err := datastore.Put(c, bs); err != nil {
+			//fmt.Printf("YAAAAAAAAAAAAAAAA err putting BuildSummary: %v\n", err)
+			return err
+		}
+
+		builder := &model.BuilderSummary{BuilderID: bs.BuilderID}
+		if err := datastore.Get(c, builder); err != nil {
+			if _, ok := err.(model.ErrBuildMessageOutOfOrder); !ok {
+				//fmt.Printf("err getting BuilderSummary: %v\n", err)
+				return err
+			}
+
+			// In fact, we should never get a model.ErrBuildMessageOutOfOrder either, due to check above
+			// for ingesting newer update. If we do, however, just return.
+			//fmt.Printf("got an earlier message\n")
+			return nil
+		}
+
+		//fmt.Printf("builder: %v, curBS: %v\n", builder, bs)
+		builder.Update(c, bs)
+		//fmt.Printf("updated builder: %v\n", builder)
+		return datastore.Put(c, builder)
+	}, &datastore.TransactionOptions{XG: true})
+	//fmt.Printf("txn error: %v\n", err)
 
 	return transient.Tag.Apply(err)
 }

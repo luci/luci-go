@@ -263,8 +263,21 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 			// up to date.
 		}
 
-		return datastore.Put(c, (*buildEntity)(b), bs)
-	}, nil)
+		if err := datastore.Put(c, (*buildEntity)(b), bs); err != nil {
+			return err
+		}
+
+		builderS := model.BuilderSummary{BuilderID: bs.BuilderID}
+		if err := datastore.Get(c, &builderS); err != nil {
+			if _, ok := err.(model.ErrBuildMessageOutOfOrder); !ok {
+				return err
+			}
+			return nil
+		}
+
+		builderS.Update(c, bs)
+		return datastore.Put(c, &builderS)
+	}, &datastore.TransactionOptions{XG: true})
 	return
 }
 

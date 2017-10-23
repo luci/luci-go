@@ -251,6 +251,8 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 			return http.StatusOK
 		}
 
+		fmt.Printf("\nprocessing\n%v\n", build.Number)
+
 		// Also set the finished, timestamp, and internal bit.
 		build.Finished = false
 		if build.TimeStamp.IsZero() {

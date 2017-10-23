@@ -19,6 +19,7 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -202,6 +204,20 @@ func TestPubSub(t *testing.T) {
 			TimeStamp:   ts,
 		}
 
+		bDone := &buildbot.Build{
+			Master:      "Fake buildbotMasterEntry",
+			Buildername: "Fake buildername",
+			Number:      2234,
+			Results:     buildbot.Failure,
+			Times:       buildbot.TimeRange{Start: unixTime(8123), Finish: unixTime(8124)},
+			TimeStamp:   ts,
+		}
+
+		builderSummary := &model.BuilderSummary{
+			BuilderID: "buildbot/Fake buildbotMasterEntry/Fake buildername",
+		}
+		datastore.Put(c, builderSummary)
+
 		Convey("Basic master + build pusbsub subscription", func() {
 			h := httptest.NewRecorder()
 			slaves := map[string]*buildbot.Slave{}
@@ -213,6 +229,7 @@ func TestPubSub(t *testing.T) {
 						Master:      "Fake buildbotMasterEntry",
 						Buildername: "Fake buildername",
 						Number:      2222,
+						Results:     buildbot.NoResult, // some non-terminal result
 						Times:       buildbot.TimeRange{Start: unixTime(1234)},
 					},
 				},
@@ -227,8 +244,9 @@ func TestPubSub(t *testing.T) {
 			ms.Builders["Fake buildername"] = &buildbot.Builder{
 				CurrentBuilds: []int{1234},
 			}
+
 			r := &http.Request{
-				Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
+				Body: newCombinedPsBody([]*buildbot.Build{b, bDone}, &ms, false),
 			}
 			PubSubHandler(&router.Context{
 				Context: c,
@@ -236,6 +254,27 @@ func TestPubSub(t *testing.T) {
 				Request: r,
 			})
 			So(h.Code, ShouldEqual, 200)
+
+			Convey("And updates build summary correctly", func() {
+			})
+
+			/*Convey("And updates builder summary correctly", func() {
+				builderSummary := &model.BuilderSummary{
+					BuilderID: "buildbot/Fake buildbotMasterEntry/Fake buildername",
+				}
+				err = datastore.Get(c, builderSummary)
+				So(err, ShouldBeNil)
+
+				lastB, err := buildstore.GetBuild(c, b.Master, b.Buildername, 2234)
+				So(err, ShouldBeNil)
+				bKey := buildstore.BuildKey(c, lastB)
+
+				lastKey := builderSummary.LastFinishedID
+				So(lastKey, ShouldNotBeNil)
+				So(lastKey.String(), ShouldEqual, bKey.String())
+				So(builderSummary.LastFinishedStatus, ShouldResemble, model.Failure)
+			})*/
+
 			Convey("And stores correctly", func() {
 				loadB, err := buildstore.GetBuild(c, b.Master, b.Buildername, b.Number)
 				So(err, ShouldBeNil)
@@ -287,6 +326,7 @@ func TestPubSub(t *testing.T) {
 				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234)
 				So(err, ShouldBeNil)
 				So(loadB.Times, ShouldResemble, b.Times)
+
 				Convey("And another pending build is rejected", func() {
 					b.Times.Start = unixTime(123)
 					b.Times.Finish = buildbot.Time{}
@@ -306,6 +346,7 @@ func TestPubSub(t *testing.T) {
 					So(loadB.Times.Finish, ShouldResemble, unixTime(124))
 				})
 			})
+
 			Convey("Don't Expire non-existent current build under 20 min", func() {
 				b.Number = 1235
 				b.TimeStamp.Time = fakeTime.Add(-1000 * time.Second)
@@ -385,6 +426,7 @@ func TestPubSub(t *testing.T) {
 						Master:      "Fake buildbotMasterEntry",
 						Buildername: "Fake buildername",
 						Number:      2222,
+						Results:     buildbot.NoResult, // some non-terminal result
 						Times:       buildbot.TimeRange{Start: unixTime(1234)},
 					},
 				},
@@ -404,10 +446,28 @@ func TestPubSub(t *testing.T) {
 				Context: c,
 				Writer:  h,
 				Request: &http.Request{
-					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, true),
+					Body: newCombinedPsBody([]*buildbot.Build{b, bDone}, &ms, true),
 				},
 			})
 			So(h.Code, ShouldEqual, http.StatusOK)
+
+			Convey("And updates builder summary correctly", func() {
+				builderSummary := &model.BuilderSummary{
+					BuilderID: "buildbot/Fake buildbotMasterEntry/Fake buildername",
+				}
+				err = datastore.Get(c, builderSummary)
+				So(err, ShouldBeNil)
+
+				/*lastB, err := buildstore.GetBuild(c, b.Master, b.Buildername, 2234)
+				So(err, ShouldBeNil)
+				bKey := buildstore.BuildKey(c, lastB)
+
+				lastKey := builderSummary.LastFinishedID
+				So(lastKey, ShouldNotBeNil)
+				So(lastKey.String(), ShouldEqual, bKey.String())
+				So(builderSummary.LastFinishedStatus, ShouldResemble, model.Failure)*/
+			})
+
 			Convey("And stores correctly", func() {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
