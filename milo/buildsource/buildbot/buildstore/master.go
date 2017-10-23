@@ -241,9 +241,10 @@ func SaveMaster(c context.Context, master *buildbot.Master,
 		return err
 	}
 	logging.Debugf(c, "Length of gzipped master data: %d", len(entity.Data))
-	// Limit for datastore_v3 is 1572864 bytes for the total datastore entity.
 	if len(entity.Data) > maxDataSize {
-		return ErrTooBig
+		return errors.Reason("master data is %d bytes, which is more than %d limit", len(entity.Data), maxDataSize).
+			Tag(ErrTooBig).
+			Err()
 	}
 	if err := datastore.Put(c, toPut); err != nil {
 		return err
