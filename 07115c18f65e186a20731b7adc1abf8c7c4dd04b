@@ -62,6 +62,30 @@
       "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "352fe376_94982eb4",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-23T22:56:03Z",
+      "side": 1,
+      "message": "In order to validate that the builder really is part of that project, don\u0027t we still need to make an RPC call like this anyway for the time being?\n\nI can do (1), but then it\u0027s not really validating the bucket since someone could just put the project ID of the current project even though the builder is from a different project. Without an RPC call right now, there\u0027s no way to be sure someone isn\u0027t doing that. If buildbucket  emitted a project ID with the build information, I could then just create builder ID as you suggest, and all would be fine.\n\nWith (2) it\u0027s a little better since that can\u0027t happen, but it\u0027s not a good long-term solution and I agree will have to be replaced.\n\nI\u0027m not exactly sure what I should be doing now to get to a state where I can use luci-notify against prod buildbucket. What do you suggest? Just require project ID and don\u0027t fully validate (other than that it\u0027s there and the same as the current project)? Do (2) for now since its simple and then use project IDs later? Or should I just wait?",
+      "parentUuid": "816c0dbd_f471321b",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 61
+      },
+      "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
