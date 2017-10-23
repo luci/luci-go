@@ -178,11 +178,21 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 // AllMasters returns all buildbot masters.
 func AllMasters(c context.Context, checkAccess bool) ([]*Master, error) {
 	const batchSize = int32(500)
-	allowInternal := isAllowedInternal(c)
 	masters := make([]*Master, 0, batchSize)
 	q := datastore.NewQuery(masterKind)
+
+	var allowInternal bool
+	if checkAccess {
+		allowInternal = isAllowedInternal(c)
+	} else {
+		// avoid calling isAllowedInternal. checkAccess is usually false on
+		// cron jobs where there is no auth state, so isAllowedInternal call
+		// would unconditionally log an error.
+		allowInternal = true
+	}
+
 	err := datastore.RunBatch(c, batchSize, q, func(e *masterEntity) error {
-		if !checkAccess || allowInternal || !e.Internal {
+		if allowInternal || !e.Internal {
 			m, err := e.decode()
 			if err != nil {
 				return err
