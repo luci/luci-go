@@ -19,22 +19,19 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"golang.org/x/net/context"
-	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/milo/api/resp"
@@ -42,156 +39,136 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 )
 
-// search executes the search request with retries and exponential back-off.
-func search(c context.Context, client *buildbucket.Service, req *buildbucket.SearchCall) (
-	*buildbucket.ApiSearchResponseMessage, error) {
-
-	var res *buildbucket.ApiSearchResponseMessage
-	err := retry.Retry(
-		c,
-		transient.Only(retry.Default),
-		func() error {
-			var err error
-			res, err = req.Do()
-			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 500 {
-				err = transient.Tag.Apply(apiErr)
-			}
-			return err
-		},
-		func(err error, wait time.Duration) {
-			logging.WithError(err).Warningf(c, "buildbucket search request failed transiently, will retry in %s", wait)
-		})
-	return res, err
-}
-
 // fetchBuilds fetches builds given a criteria.
 // The returned builds are sorted by build creation descending.
 // count defines maximum number of builds to fetch; if <0, defaults to 100.
-func fetchBuilds(c context.Context, client *buildbucket.Service, bucket, builder,
-	status string, count int) ([]*buildbucket.ApiCommonBuildMessage, error) {
+func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
+	status string, limit int) ([]*bbapi.ApiCommonBuildMessage, error) {
 
-	req := client.Search()
-	req.Bucket(bucket)
-	req.Status(status)
-	req.Tag("builder:" + builder)
+	search := client.Search()
+	search.Bucket(bucket)
+	search.Status(status)
+	search.Tag(strpair.Format(buildbucket.TagBuilder, builder))
 
-	if count < 0 {
-		count = 100
+	if limit < 0 {
+		limit = 100
 	}
 
-	fetched := make([]*buildbucket.ApiCommonBuildMessage, 0, count)
 	start := clock.Now(c)
-	for len(fetched) < count {
-		req.MaxBuilds(int64(count - len(fetched)))
-
-		res, err := search(c, client, req)
-		switch {
-		case err != nil:
-			return fetched, err
-		case res.Error != nil:
-			return fetched, fmt.Errorf(res.Error.Message)
-		}
-
-		fetched = append(fetched, res.Builds...)
-
-		if len(res.Builds) == 0 || res.NextCursor == "" {
-			break
-		}
-		req.StartCursor(res.NextCursor)
+	msgs, err := search.Fetch(limit, nil)
+	if err != nil {
+		return nil, err
 	}
-	logging.Debugf(c, "Fetched %d %s builds in %s", len(fetched), status, clock.Since(c, start))
-	return fetched, nil
+	logging.Infof(c, "Fetched %d %s builds in %s", len(msgs), status, clock.Since(c, start))
+	return msgs, nil
 }
 
 // toMiloBuild converts a buildbucket build to a milo build.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuild(c context.Context, build *buildbucket.ApiCommonBuildMessage) *resp.BuildSummary {
-	// Parsing of parameters and result details is best effort.
-	var params buildParameters
-	if err := json.NewDecoder(strings.NewReader(build.ParametersJson)).Decode(&params); err != nil {
-		logging.Errorf(c, "Could not parse parameters of build %d: %s", build.Id, err)
-	}
-	var resultDetails resultDetails
-	if err := json.NewDecoder(strings.NewReader(build.ResultDetailsJson)).Decode(&resultDetails); err != nil {
-		logging.Errorf(c, "Could not parse result details of build %d: %s", build.Id, err)
+func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
+	var b buildbucket.Build
+	if err := b.ParseMessage(msg); err != nil {
+		return nil, err
 	}
 
+	var params struct {
+		Changes []struct {
+			Author struct{ Email string }
+		}
+		Properties struct {
+			Revision string `json:"revision"`
+		}
+	}
+	if msg.ParametersJson != "" {
+		if err := json.NewDecoder(strings.NewReader(msg.ParametersJson)).Decode(&params); err != nil {
+			return nil, errors.Annotate(err, "failed to parse parameters_json of build %d", b.ID).Err()
+		}
+	}
+
+	var resultDetails struct {
+		Properties struct {
+			GotRevision string `json:"got_revision"`
+		}
+		// BuildRunResult and its subfields are not protos
+		// because we want to minimize deps on these protos
+		// because we want to revise them anyway.
+		BuildRunResult struct {
+			Annotations struct {
+				Text []string
+			}
+		} `json:"build_run_result"`
+	}
+	if msg.ResultDetailsJson != "" {
+		if err := json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails); err != nil {
+			return nil, errors.Annotate(err, "failed to parse result_details_json of build %d", b.ID).Err()
+		}
+	}
+
+	schedulingDuration, _ := b.SchedulingDuration()
+	runDuration, _ := b.RunDuration()
 	result := &resp.BuildSummary{
 		Revision: resultDetails.Properties.GotRevision,
 		Text:     resultDetails.BuildRunResult.Annotations.Text,
+		Status:   parseStatus(b.Status),
+		PendingTime: resp.Interval{
+			Started:  b.CreationTime,
+			Finished: b.StartTime,
+			Duration: schedulingDuration,
+		},
+		ExecutionTime: resp.Interval{
+			Started:  b.StartTime,
+			Finished: b.CompletionTime,
+			Duration: runDuration,
+		},
 	}
 	if result.Revision == "" {
 		result.Revision = params.Properties.Revision
 	}
 
-	var err error
-	result.Status, err = parseStatus(build)
-	if err != nil {
-		// almost never happens
-		logging.WithError(err).Errorf(c, "could not convert status of build %d", build.Id)
-		result.Status = model.InfraFailure
-		result.Text = append(result.Text, fmt.Sprintf("invalid build: %s", err))
-	}
-
-	result.PendingTime.Started = parseTimestamp(build.CreatedTs)
-	switch build.Status {
-	case "SCHEDULED":
-		result.PendingTime.Duration = clock.Since(c, result.PendingTime.Started)
-
-	case "STARTED":
-		result.ExecutionTime.Started = parseTimestamp(build.StatusChangedTs)
-		result.ExecutionTime.Duration = clock.Since(c, result.PendingTime.Started)
-		result.PendingTime.Finished = result.ExecutionTime.Started
-		result.PendingTime.Duration = result.PendingTime.Finished.Sub(result.PendingTime.Started)
-
-	case "COMPLETED":
-		// buildbucket does not provide build start time or execution duration.
-		result.ExecutionTime.Finished = parseTimestamp(build.CompletedTs)
-	}
-
-	cl := getChangeList(build, &params, &resultDetails)
-	if cl != nil {
-		result.Blame = []*resp.Commit{cl}
-	}
-
-	tags := ParseTags(build.Tags)
-
-	if build.Url != "" {
-		u := build.Url
-		parsed, err := url.Parse(u)
-
-		// map milo links to itself
-		switch {
-		case err != nil:
-			logging.Errorf(c, "invalid URL in build %d: %s", build.Id, err)
-		case parsed.Host == info.DefaultVersionHostname(c):
-			parsed.Host = ""
-			parsed.Scheme = ""
-			u = parsed.String()
+	for _, bs := range b.BuildSets {
+		// ignore rietveld.
+		cl, ok := bs.(*buildbucket.GerritChange)
+		if !ok {
+			continue
 		}
 
-		result.Link = resp.NewLink(strconv.FormatInt(build.Id, 10), u)
+		// support only one CL per build.
+		result.Blame = []*resp.Commit{{
+			Changelist:      resp.NewLink(fmt.Sprintf("Gerrit CL %d", cl.Change), cl.URL()),
+			RequestRevision: resp.NewLink(params.Properties.Revision, ""),
+		}}
+
+		if len(params.Changes) == 1 {
+			result.Blame[0].AuthorEmail = params.Changes[0].Author.Email
+		}
+		break
+	}
+
+	if b.URL != "" {
+		result.Link = resp.NewLink(strconv.FormatInt(b.ID, 10), b.URL)
 
 		// compute the best link label
-		if taskID := tags["swarming_task_id"]; taskID != "" {
+		if b.Number != nil {
+			result.Link.Label = strconv.Itoa(*b.Number)
+		} else if taskID := b.Tags.Get("swarming_task_id"); taskID != "" {
 			result.Link.Label = taskID
-		} else if resultDetails.Properties.BuildNumber != 0 {
-			result.Link.Label = strconv.Itoa(resultDetails.Properties.BuildNumber)
-		} else if parsed != nil {
-			// does the URL look like a buildbot build URL?
-			pattern := fmt.Sprintf(
-				`/%s/builders/%s/builds/`,
-				strings.TrimPrefix(build.Bucket, "master."), params.BuilderName)
-			beforeBuildNumber, buildNumberStr := path.Split(parsed.Path)
-			_, err := strconv.Atoi(buildNumberStr)
-			if strings.HasSuffix(beforeBuildNumber, pattern) && err == nil {
-				result.Link.Label = buildNumberStr
-			}
+		}
+
+		// map milo links to itself
+		switch u, err := url.Parse(b.URL); {
+		case err != nil:
+			logging.Errorf(c, "invalid URL in build %d: %s", b.ID, err)
+		case u.Host == info.DefaultVersionHostname(c):
+			u.Host = ""
+			u.Scheme = ""
+			result.Link.URL = u.String()
+			// we could redirect Buildbot URLs back to Milo, but it is not worth it
+			// because this view is not used for buildbot builds.
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuilds int, target *resp.Builder) error {
@@ -205,13 +182,16 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 	}
 	defer resFile.Close()
 
-	res := &buildbucket.ApiSearchResponseMessage{}
+	res := &bbapi.ApiSearchResponseMessage{}
 	if err := json.NewDecoder(resFile).Decode(res); err != nil {
 		return err
 	}
 
 	for _, bb := range res.Builds {
-		mb := toMiloBuild(c, bb)
+		mb, err := toMiloBuild(c, bb)
+		if err != nil {
+			return err
+		}
 		switch mb.Status {
 		case model.NotRun:
 			target.PendingBuilds = append(target.PendingBuilds, mb)
@@ -229,24 +209,6 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 		}
 	}
 	return nil
-}
-
-// parseTimestamp converts buildbucket timestamp in microseconds to time.Time
-//
-// TODO(nodir): This should be moved to a common location.
-func parseTimestamp(microseconds int64) time.Time {
-	if microseconds == 0 {
-		return time.Time{}
-	}
-	return time.Unix(microseconds/1e6, microseconds%1e6*1000).UTC()
-}
-
-type newBuildsFirst []*resp.BuildSummary
-
-func (a newBuildsFirst) Len() int      { return len(a) }
-func (a newBuildsFirst) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a newBuildsFirst) Less(i, j int) bool {
-	return a[i].PendingTime.Started.After(a[j].PendingTime.Started)
 }
 
 func getHost(c context.Context) (string, error) {
@@ -279,30 +241,34 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Bui
 		return nil, err
 	}
 
-	fetch := func(target *[]*resp.BuildSummary, status string, count int) error {
-		builds, err := fetchBuilds(c, client, bucket, builder, status, count)
+	fetch := func(statusFilter string, limit int) error {
+		msgs, err := fetchBuilds(c, client, bucket, builder, statusFilter, limit)
 		if err != nil {
-			logging.Errorf(c, "Could not fetch builds with status %s: %s", status, err)
+			logging.Errorf(c, "Could not fetch %s builds: %s", statusFilter, err)
 			return err
 		}
-		*target = make([]*resp.BuildSummary, len(builds))
-		for i, bb := range builds {
-			(*target)[i] = toMiloBuild(c, bb)
+		for _, m := range msgs {
+			b, err := toMiloBuild(c, m)
+			if err != nil {
+				return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
+			}
+			switch b.Status {
+			case model.NotRun:
+				result.PendingBuilds = append(result.PendingBuilds, b)
+			case model.Running:
+				result.PendingBuilds = append(result.CurrentBuilds, b)
+			default:
+				result.FinishedBuilds = append(result.FinishedBuilds, b)
+			}
 		}
 		return nil
 	}
-	// fetch pending, current and finished builds concurrently.
-	// Why not a single request? Because we need different build number
-	// limits for different statuses.
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error {
-			return fetch(&result.PendingBuilds, StatusScheduled, -1)
+			return fetch(bbapi.StatusFilterIncomplete, -1)
 		}
 		work <- func() error {
-			return fetch(&result.CurrentBuilds, StatusStarted, -1)
-		}
-		work <- func() error {
-			return fetch(&result.FinishedBuilds, StatusCompleted, limit)
+			return fetch(bbapi.StatusCompleted, limit)
 		}
 	})
 }

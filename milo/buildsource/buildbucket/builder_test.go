@@ -38,7 +38,6 @@ func TestBuilder(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct{ bucket, builder string }{
-		{"master.tryserver.infra", "InfraPresubmit"},
 		{"master.tryserver.infra", "InfraPresubmit.Swarming"},
 	}
 
