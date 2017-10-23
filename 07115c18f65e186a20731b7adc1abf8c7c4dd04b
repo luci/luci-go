@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "704424ed_72a0a5c7",
+        "filename": "luci_notify/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-23T22:22:14Z",
+      "side": 1,
+      "message": "i am confused\n\"host of the Milo\" is called buildbucket_host?",
+      "range": {
+        "startLine": 19,
+        "startChar": 28,
+        "endLine": 19,
+        "endChar": 48
+      },
+      "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ce77e60_8ab393f2",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-23T22:22:14Z",
+      "side": 1,
+      "message": "nit: remove blank line",
+      "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "816c0dbd_f471321b",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-23T22:22:14Z",
+      "side": 1,
+      "message": "the requirement that buildbucket buckets are global causes problems, e.g. given a bucket identifier (bucket name), it is not easy to determine its project. We want to fix that problem, so that code like this does not have to be written. We are thinking to fix that by removing the \"bucket namespace is global\" requirement. It can be achieved by changing the bucket identifier from (bucket name) to (project id, bucket name), but it is a breaking change and that\u0027s why we are punting on that.\n\nFor luci buckets, we\u0027ve mitigated the problem by requiring the \"luci.\u003cproject id\u003e.\" bucket name prefix.\n\nThis CL hardens the requirement, so it would be harder to remove it in the future. I see two options:\n\n1) require project id in the configs, so I guess instead of \"\u003cbucket\u003e/\u003cbuilder\u003e\" require \"\u003cproject id\u003e/\u003cbucket\u003e/\u003cbuilder\u003e\".\n2) assume the \"luci.\u003cproject\u003e.\" prefix\n\nI prefer (1)",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 61
+      },
+      "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
