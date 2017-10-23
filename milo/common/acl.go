@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient/access"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/server/auth"
 )
 
 // Helper functions for ACL checking.
@@ -39,4 +40,10 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	default:
 		return false, err
 	}
+}
+
+// IsAdmin returns true if the current identity is an administrator.
+func IsAdmin(c context.Context) (bool, error) {
+	// TODO(nodir): unhardcode group name to config file if there is a need
+	return auth.IsMember(c, "administrators")
 }
