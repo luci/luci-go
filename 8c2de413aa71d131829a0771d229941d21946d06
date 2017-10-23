@@ -16,6 +16,24 @@
       "revId": "8c2de413aa71d131829a0771d229941d21946d06",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f486c545_3a80a3cb",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-23T17:40:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "406cf5f2_fa0e3bd7",
+      "revId": "8c2de413aa71d131829a0771d229941d21946d06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
