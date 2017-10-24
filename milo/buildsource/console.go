@@ -16,6 +16,7 @@ package buildsource
 
 import (
 	"encoding/hex"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
+	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -109,10 +111,36 @@ func GetConsolePreview(c context.Context, def *common.Console) (ConsolePreview, 
 	if err != nil {
 		return nil, err
 	}
-
 	preview := make(ConsolePreview, len(def.Builders))
 	for i := 0; i < len(builds); i++ {
 		preview[BuilderID(def.Builders[i])] = builds[i]
 	}
 	return preview, nil
+}
+
+// GetConsoleSummaries returns a list of console summaries from the datastore.
+//
+// This list of console summaries directly corresponds to the input list of
+// console IDs.
+func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.ConsoleSummary, error) {
+	summaries := make([]resp.ConsoleSummary, len(consoleIDs))
+	err := parallel.WorkPool(4, func(ch chan<- func() error) {
+		for i, id := range consoleIDs {
+			i := i
+			id := id
+			ch <- func() error {
+				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", id)
+				return datastore.Run(c, q, func(bs *model.BuilderSummary) {
+					// It's safe to do this because we assume the ID has already been validated.
+					summaries[i].Name.Label = strings.SplitN(id, "/", 2)[1]
+					summaries[i].Name.URL = "/console/" + id
+					summaries[i].Builders = append(summaries[i].Builders, bs)
+				})
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return summaries, nil
 }
