@@ -35,6 +35,8 @@ var delegationTokensLog = bqlog.Log{
 	DryRun:              appengine.IsDevAppServer(),
 }
 
+var emptyStringSlice = []string{}
+
 // MintedTokenInfo is passed to LogToken.
 //
 // It carries all information about the token minting operation and the produced
@@ -54,6 +56,10 @@ type MintedTokenInfo struct {
 // Its schema must match 'bq/tables/delegation_tokens.schema'.
 func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 	subtok := i.Response.DelegationSubtoken
+	tags := subtok.Tags
+	if tags == nil {
+		tags = emptyStringSlice // bigquery doesn't like null-value fields
+	}
 	return map[string]interface{}{
 		// Information about the produced token.
 		"fingerprint":        utils.TokenFingerprint(i.Response.Token),
@@ -65,7 +71,7 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		"expiration":         float64(subtok.CreationTime + int64(subtok.ValidityDuration)),
 		"target_audience":    subtok.Audience,
 		"target_services":    subtok.Services,
-		"tags":               i.Request.Tags,
+		"tags":               tags,
 
 		// Information about the request.
 		"requested_validity": int(i.Request.ValidityDuration),
