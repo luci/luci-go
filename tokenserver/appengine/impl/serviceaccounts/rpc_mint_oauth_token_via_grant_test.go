@@ -144,7 +144,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 			OauthScope: []string{"https://www.googleapis.com/scope1"},
 			AuditTags:  []string{"not-kv-pair"},
 		})
-		So(err, ShouldBeRPCInvalidArgument, "bad audit_tags - audit tag #1")
+		So(err, ShouldBeRPCInvalidArgument, "bad audit_tags - tag #1")
 	})
 
 	Convey("Broken body", t, func() {
