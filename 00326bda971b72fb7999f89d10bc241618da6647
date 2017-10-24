@@ -22,6 +22,30 @@
       "revId": "00326bda971b72fb7999f89d10bc241618da6647",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1a9fc46_2b677b4b",
+        "filename": "server/auth/delegation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-24T17:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "766ae457_5b7deee5",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 12
+      },
+      "revId": "00326bda971b72fb7999f89d10bc241618da6647",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
