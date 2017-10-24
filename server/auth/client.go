@@ -130,6 +130,29 @@ func (o delegationTokenOption) apply(opts *rpcOptions) {
 	opts.delegationToken = o.token
 }
 
+type delegationTagsOption struct {
+	tags []string
+}
+
+func (o delegationTagsOption) apply(opts *rpcOptions) {
+	opts.delegationTags = o.tags
+}
+
+// WithDelegationTags can be used to attach tags to the delegation token used
+// internally in AsUser mode.
+//
+// The recipient of the RPC that uses the delegation will be able to extract
+// them, if necessary. They are also logged in the token server logs.
+//
+// Each tag is a key:value string.
+//
+// Note that any delegation tags are ignored if the current request was
+// initiated by an anonymous caller, since delegation protocol is not actually
+// used in this case.
+func WithDelegationTags(tags ...string) RPCOption {
+	return delegationTagsOption{tags: tags}
+}
+
 // GetRPCTransport returns http.RoundTripper to use for outbound HTTP RPC
 // requests.
 //
@@ -300,6 +323,7 @@ type rpcOptions struct {
 	scopes          []string // for AsSelf and AsActor
 	serviceAccount  string   // for AsActor
 	delegationToken string   // for AsUser
+	delegationTags  []string // for AsUser
 	getRPCHeaders   headersGetter
 	rpcMocks        *rpcMocks
 }
@@ -329,6 +353,12 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	}
 	if options.delegationToken != "" && options.kind != AsUser {
 		return nil, fmt.Errorf("auth: WithDelegationToken can only be used with AsUser authorization kind")
+	}
+	if len(options.delegationTags) != 0 && options.kind != AsUser {
+		return nil, fmt.Errorf("auth: WithDelegationTags can only be used with AsUser authorization kind")
+	}
+	if len(options.delegationTags) != 0 && options.delegationToken != "" {
+		return nil, fmt.Errorf("auth: WithDelegationTags and WithDelegationToken cannot be used together")
 	}
 
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
@@ -404,6 +434,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 		}
 		tok, err := mintTokenCall(c, DelegationTokenParams{
 			TargetHost: host,
+			Tags:       opts.delegationTags,
 			MinTTL:     10 * time.Minute,
 		})
 		if err != nil {
