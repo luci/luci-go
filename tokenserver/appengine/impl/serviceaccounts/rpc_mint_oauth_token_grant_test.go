@@ -177,7 +177,7 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 				EndUser:        "user:enduser@example.com",
 				AuditTags:      []string{"not-kv-pair"},
 			})
-			So(err, ShouldBeRPCInvalidArgument, "bad audit_tags - audit tag #1")
+			So(err, ShouldBeRPCInvalidArgument, "bad audit_tags - tag #1")
 		})
 
 		Convey("Unknown rule", func() {

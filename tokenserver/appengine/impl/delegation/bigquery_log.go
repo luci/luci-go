@@ -65,6 +65,7 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		"expiration":         float64(subtok.CreationTime + int64(subtok.ValidityDuration)),
 		"target_audience":    subtok.Audience,
 		"target_services":    subtok.Services,
+		"tags":               i.Request.Tags,
 
 		// Information about the request.
 		"requested_validity": int(i.Request.ValidityDuration),

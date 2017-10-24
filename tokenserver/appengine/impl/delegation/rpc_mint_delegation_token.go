@@ -34,8 +34,9 @@ import (
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"
 
-	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/revocation"
@@ -127,6 +128,13 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	}
 	if req.ValidityDuration < 0 {
 		err = fmt.Errorf("invalid 'validity_duration' (%d)", req.ValidityDuration)
+		logging.WithError(err).Errorf(c, "Bad request")
+		return nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
+	}
+
+	// Same for tags, they are transferred intact to the final token.
+	if err := utils.ValidateTags(req.Tags); err != nil {
+		err = fmt.Errorf("invalid 'tags': %s", err)
 		logging.WithError(err).Errorf(c, "Bad request")
 		return nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}
@@ -227,6 +235,7 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 		ValidityDuration:  int32(p.request.ValidityDuration),
 		Audience:          p.query.Audience.ToStrings(),
 		Services:          p.query.Services.ToStrings(),
+		Tags:              p.request.Tags,
 	}
 
 	signed, err := SignToken(c, r.Signer, subtok)

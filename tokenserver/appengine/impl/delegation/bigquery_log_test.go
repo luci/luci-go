@@ -33,6 +33,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			Request: &minter.MintDelegationTokenRequest{
 				ValidityDuration: 3600,
 				Intent:           "intent string",
+				Tags:             []string{"k:v"},
 			},
 			Response: &minter.MintDelegationTokenResponse{
 				Token:          "blah",
@@ -71,6 +72,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			"requested_validity": int(3600),
 			"requestor_identity": "user:requestor@example.com",
 			"service_version":    "unit-tests/mocked-ver",
+			"tags":               []string{"k:v"},
 			"target_audience":    []string{"user:audience@example.com"},
 			"target_services":    []string{"*"},
 			"token_id":           "1234",

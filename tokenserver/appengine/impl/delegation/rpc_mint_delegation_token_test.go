@@ -244,6 +244,7 @@ func TestMintDelegationToken(t *testing.T) {
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
+				Tags:              []string{"k:v"},
 			}
 			resp, err := rpc.MintDelegationToken(ctx, req)
 			So(err, ShouldBeNil)
@@ -314,6 +315,16 @@ func TestMintDelegationToken(t *testing.T) {
 				ValidityDuration:  -1,
 			})
 			So(err, ShouldBeRPCInvalidArgument, "bad request - invalid 'validity_duration' (-1)")
+		})
+
+		Convey("Bad tags", func() {
+			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
+				DelegatedIdentity: "REQUESTOR",
+				Audience:          []string{"REQUESTOR"},
+				Services:          []string{"*"},
+				Tags:              []string{"not key value"},
+			})
+			So(err, ShouldBeRPCInvalidArgument, "bad request - invalid 'tags': tag #1: not in <key>:<value> form")
 		})
 
 		Convey("Malformed request", func() {

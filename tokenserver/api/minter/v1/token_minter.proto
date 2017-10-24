@@ -287,6 +287,15 @@ message MintDelegationTokenRequest {
   // Used only for logging and auditing purposes. Doesn't become part of the
   // token.
   string intent = 5;
+
+  // Arbitrary key:value pairs embedded into the token by whoever requested it.
+  // Convey circumstance of why the token is created.
+  //
+  // Services that accept the token may use them for additional authorization
+  // decisions. Please use extremely carefully, only when you control both sides
+  // of the delegation link and can guarantee that services involved understand
+  // the tags.
+  repeated string tags = 6;
 }
 
 

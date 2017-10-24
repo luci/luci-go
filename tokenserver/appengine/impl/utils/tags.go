@@ -27,13 +27,13 @@ const (
 	maxTagValueSize = 1024
 )
 
-// ValidateAuditTags returns an error if some audit tags are malformed.
+// ValidateTags returns an error if some tags are malformed.
 //
-// Audit tags are "key:value" pairs that can be passed with some RPCs. They end
-// up in BigQuery logs.
-func ValidateAuditTags(tags []string) error {
+// Tags are "key:value" pairs that can be passed with some RPCs. They end up
+// inside the tokens and/or BigQuery logs.
+func ValidateTags(tags []string) error {
 	if len(tags) > maxTagCount {
-		return fmt.Errorf("too many audit tags given (%d), expecting up to %d tags", len(tags), maxTagCount)
+		return fmt.Errorf("too many tags given (%d), expecting up to %d tags", len(tags), maxTagCount)
 	}
 	var merr errors.MultiError
 	for i, tag := range tags {
@@ -48,7 +48,7 @@ func ValidateAuditTags(tags []string) error {
 			msg = fmt.Sprintf("the value length must not exceed %d", maxTagValueSize)
 		}
 		if msg != "" {
-			merr = append(merr, fmt.Errorf("audit tag #%d: %s", i+1, msg))
+			merr = append(merr, fmt.Errorf("tag #%d: %s", i+1, msg))
 		}
 	}
 	if len(merr) == 0 {
