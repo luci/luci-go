@@ -90,14 +90,10 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.Bui
 		Properties struct {
 			GotRevision string `json:"got_revision"`
 		}
-		// BuildRunResult and its subfields are not protos
-		// because we want to minimize deps on these protos
-		// because we want to revise them anyway.
-		BuildRunResult struct {
-			Annotations struct {
-				Text []string
-			}
-		} `json:"build_run_result"`
+		// TODO(nodir,iannucci): define a proto for build UI data
+		UI struct {
+			Info string
+		}
 	}
 	if msg.ResultDetailsJson != "" {
 		if err := json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails); err != nil {
@@ -109,7 +105,6 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.Bui
 	runDuration, _ := b.RunDuration()
 	result := &resp.BuildSummary{
 		Revision: resultDetails.Properties.GotRevision,
-		Text:     resultDetails.BuildRunResult.Annotations.Text,
 		Status:   parseStatus(b.Status),
 		PendingTime: resp.Interval{
 			Started:  b.CreationTime,
@@ -124,6 +119,9 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.Bui
 	}
 	if result.Revision == "" {
 		result.Revision = params.Properties.Revision
+	}
+	if resultDetails.UI.Info != "" {
+		result.Text = strings.Split(resultDetails.UI.Info, "\n")
 	}
 
 	for _, bs := range b.BuildSets {
