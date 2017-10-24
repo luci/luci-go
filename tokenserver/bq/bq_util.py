@@ -78,7 +78,7 @@ class BigQuery(object):
   def list_datasets(self):
     """Returns a list of dataset IDs in the project."""
     reply = self._call('ls', ['%s:' % self.project_id]) or []
-    return [d['datasetId'] for d in reply]
+    return [d['datasetReference']['datasetId'] for d in reply]
 
   def create_dataset(self, dataset_id, description=''):
     # 'mk' returns "Dataset '...' successfully created." instead of JSON.
@@ -91,7 +91,7 @@ class BigQuery(object):
   def list_tables(self, dataset_id):
     """Returns a list of table IDs within the dataset."""
     reply = self._call('ls', ['%s:%s.' % (self.project_id, dataset_id)]) or []
-    return [t['tableId'] for t in reply]
+    return [t['tableReference']['tableId'] for t in reply]
 
   def get_table_metadata(self, dataset_id, table_id):
     """Returns information about an existing table (as a dict).
