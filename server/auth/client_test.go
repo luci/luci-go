@@ -82,10 +82,11 @@ func TestGetRPCTransport(t *testing.T) {
 				user: &User{Identity: "user:abc@example.com"},
 			})
 
-			t, err := GetRPCTransport(ctx, AsUser, &rpcMocks{
+			t, err := GetRPCTransport(ctx, AsUser, WithDelegationTags("a:b", "c:d"), &rpcMocks{
 				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*delegation.Token, error) {
 					c.So(p, ShouldResemble, DelegationTokenParams{
 						TargetHost: "example.com",
+						Tags:       []string{"a:b", "c:d"},
 						MinTTL:     10 * time.Minute,
 					})
 					return &delegation.Token{Token: "deleg_tok"}, nil
@@ -137,6 +138,17 @@ func TestGetRPCTransport(t *testing.T) {
 				"Authorization":         {"Bearer blah:https://www.googleapis.com/auth/userinfo.email"},
 				"X-Delegation-Token-V1": {"deleg_tok"},
 			})
+		})
+
+		Convey("in AsUser mode with both delegation tags and token", func(c C) {
+			_, err := GetRPCTransport(
+				ctx, AsUser, WithDelegationToken("deleg_tok"), WithDelegationTags("a:b"))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("in NoAuth mode with delegation tags, should error", func(c C) {
+			_, err := GetRPCTransport(ctx, NoAuth, WithDelegationTags("a:b"))
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("in NoAuth mode with scopes, should error", func(c C) {

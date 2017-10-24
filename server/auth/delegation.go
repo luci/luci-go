@@ -17,6 +17,7 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -61,6 +62,10 @@ var (
 	// ErrBadDelegationTokenTTL is returned by MintDelegationToken if requested
 	// token lifetime is outside of the allowed range.
 	ErrBadDelegationTokenTTL = fmt.Errorf("auth: requested delegation token TTL is invalid")
+
+	// ErrBadDelegationTag is returned by MintDelegationToken if some of the
+	// passed tags are malformed.
+	ErrBadDelegationTag = fmt.Errorf("auth: provided delegation tags are invalid")
 )
 
 const (
@@ -104,6 +109,16 @@ type DelegationTokenParams struct {
 	//
 	// Optional.
 	Intent string
+
+	// Tags are optional arbitrary key:value pairs embedded into the token.
+	//
+	// They convey circumstance of why the token is created.
+	//
+	// Services that accept the token may use them for additional authorization
+	// decisions. Please use extremely carefully, only when you control both sides
+	// of the delegation link and can guarantee that services involved understand
+	// the tags.
+	Tags []string
 
 	// rpcClient is token server RPC client to use.
 	//
@@ -165,6 +180,18 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 		return nil, ErrBadDelegationTokenTTL
 	}
 
+	// Validate tags are sane, sort them. Don't be very pedantic with validation,
+	// the server will apply its more precise validation rules anyway.
+	tags := append([]string(nil), p.Tags...)
+	for _, t := range tags {
+		parts := strings.SplitN(t, ":", 2)
+		if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+			report(ErrBadDelegationTag, "ERROR_BAD_TAG")
+			return nil, ErrBadDelegationTag
+		}
+	}
+	sort.Strings(tags)
+
 	// Config contains the cache implementation.
 	cfg := getConfig(ctx)
 	if cfg == nil || cfg.Cache == nil {
@@ -212,10 +239,13 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 		"userID": userID,
 	})
 
+	cacheKey := fmt.Sprintf("%s\n%s\n%s\n%d\n%s",
+		userID, tokenServiceHost, target, len(tags), strings.Join(tags, "\n"))
+
 	cached, label, err := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
 		Config:   cfg,
 		Cache:    &delegationTokenCache,
-		CacheKey: string(userID) + "\n" + tokenServiceHost + "\n" + target,
+		CacheKey: cacheKey,
 		MinTTL:   p.MinTTL,
 
 		// Mint is called on cache miss, under the lock.
@@ -250,6 +280,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 				Audience:          []string{"REQUESTOR"}, // make the token usable only by the calling service
 				Services:          []string{target},
 				Intent:            p.Intent,
+				Tags:              tags,
 			})
 			if err != nil {
 				err = grpcutil.WrapIfTransient(err)

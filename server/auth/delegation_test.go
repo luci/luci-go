@@ -83,6 +83,7 @@ func TestMintDelegationToken(t *testing.T) {
 			tok, err := MintDelegationToken(ctx, DelegationTokenParams{
 				TargetHost: "hostname.example.com",
 				MinTTL:     time.Hour,
+				Tags:       []string{"c:d", "a:b"},
 				Intent:     "intent",
 				rpcClient:  mockedClient,
 			})
@@ -97,11 +98,12 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"https://hostname.example.com"},
 				Intent:            "intent",
+				Tags:              []string{"a:b", "c:d"},
 			})
 
 			// Cached now.
 			So(tokenCache.(*MemoryCache).LRU.Len(), ShouldEqual, 1)
-			v, _ := tokenCache.Get(ctx, fmt.Sprintf("delegation/%d/dL9oZrnNLCIxyUBBaX3eGKAwTbA", delegationTokenCache.Version))
+			v, _ := tokenCache.Get(ctx, fmt.Sprintf("delegation/%d/nRjAVFndlAsI_ND3kcvDrS_9AC0", delegationTokenCache.Version))
 			So(v, ShouldNotBeNil)
 
 			// On subsequence request the cached token is used.
@@ -110,6 +112,7 @@ func TestMintDelegationToken(t *testing.T) {
 				TargetHost: "hostname.example.com",
 				MinTTL:     time.Hour,
 				Intent:     "intent",
+				Tags:       []string{"c:d", "a:b"},
 				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
@@ -121,6 +124,7 @@ func TestMintDelegationToken(t *testing.T) {
 				TargetHost: "hostname.example.com",
 				MinTTL:     time.Hour,
 				Intent:     "intent",
+				Tags:       []string{"c:d", "a:b"},
 				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
