@@ -22,6 +22,30 @@
       "revId": "1b22b7816f1cac7ee8b55571428a5c546bcde59e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d8047e8_9f7c3531",
+        "filename": "tokenserver/appengine/impl/utils/tags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-24T03:08:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c17d932_4b1d09d8",
+      "range": {
+        "startLine": 32,
+        "startChar": 77,
+        "endLine": 32,
+        "endChar": 79
+      },
+      "revId": "1b22b7816f1cac7ee8b55571428a5c546bcde59e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
