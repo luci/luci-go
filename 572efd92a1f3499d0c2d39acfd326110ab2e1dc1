@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2456379a_8cb7d3f6",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-24T02:42:21Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 182,
+        "startChar": 36,
+        "endLine": 182,
+        "endChar": 37
+      },
+      "revId": "572efd92a1f3499d0c2d39acfd326110ab2e1dc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
