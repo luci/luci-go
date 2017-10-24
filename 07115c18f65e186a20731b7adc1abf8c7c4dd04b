@@ -110,6 +110,30 @@
       "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b9ea83a_d16a15c5",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-24T00:39:54Z",
+      "side": 1,
+      "message": "alternatively, consider adding project info to builds on buildbucket side crbug.com/776300. Then luci-notify says free of hacks.",
+      "parentUuid": "cf6bfb01_e72b02d8",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 61
+      },
+      "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
