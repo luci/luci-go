@@ -47,6 +47,7 @@ func TestMintedTokenInfo(t *testing.T) {
 					ValidityDuration:  3600,
 					Audience:          []string{"user:audience@example.com"},
 					Services:          []string{"*"},
+					Tags:              []string{"k:v"},
 				},
 			},
 			ConfigRev: "config-rev",
