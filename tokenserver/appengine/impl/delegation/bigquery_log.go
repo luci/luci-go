@@ -35,8 +35,6 @@ var delegationTokensLog = bqlog.Log{
 	DryRun:              appengine.IsDevAppServer(),
 }
 
-var emptyStringSlice = []string{}
-
 // MintedTokenInfo is passed to LogToken.
 //
 // It carries all information about the token minting operation and the produced
@@ -56,11 +54,8 @@ type MintedTokenInfo struct {
 // Its schema must match 'bq/tables/delegation_tokens.schema'.
 func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 	subtok := i.Response.DelegationSubtoken
-	tags := subtok.Tags
-	if tags == nil {
-		tags = emptyStringSlice // bigquery doesn't like null-value fields
-	}
-	return map[string]interface{}{
+
+	row := map[string]interface{}{
 		// Information about the produced token.
 		"fingerprint":        utils.TokenFingerprint(i.Response.Token),
 		"token_kind":         subtok.Kind.String(),
@@ -71,7 +66,6 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		"expiration":         float64(subtok.CreationTime + int64(subtok.ValidityDuration)),
 		"target_audience":    subtok.Audience,
 		"target_services":    subtok.Services,
-		"tags":               tags,
 
 		// Information about the request.
 		"requested_validity": int(i.Request.ValidityDuration),
@@ -87,6 +81,13 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		"gae_request_id":  i.RequestID,
 		"auth_db_rev":     i.AuthDBRev,
 	}
+
+	// Bigquery doesn't like empty lists or nulls. Omit the column completely.
+	if len(subtok.Tags) != 0 {
+		row["tags"] = subtok.Tags
+	}
+
+	return row
 }
 
 // LogToken records information about the token in the BigQuery.
