@@ -19,7 +19,9 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": null,
+      "Text": [
+        ""
+      ],
       "Blame": [
         {
           "AuthorName": "",
@@ -64,7 +66,9 @@
         "Duration": 94626130000
       },
       "Revision": "HEAD",
-      "Text": null,
+      "Text": [
+        "Build succeeded"
+      ],
       "Blame": [
         {
           "AuthorName": "",
