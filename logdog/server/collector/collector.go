@@ -414,6 +414,16 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		// Store log data, if any was provided. It has already been validated.
 		if len(logData) > 0 {
 			taskC <- func() error {
+				log.Fields{
+					"BQ":              "here be dragons",
+					"project":         h.project,
+					"path":            h.path,
+					"type":            streamTypeField,
+					"sequence_number": types.MessageIndex(blockIndex),
+				}.Errorf(ctx, "TODO(go/logdog2bq)")
+				return nil
+			}
+			taskC <- func() error {
 				// Post the log to storage.
 				err = c.Storage.Put(ctx, storage.PutRequest{
 					Project: h.project,
