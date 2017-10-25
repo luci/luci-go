@@ -91,6 +91,30 @@ type GetRequest struct {
 // the caller will have to unmarshal the log entry data to determine its index.
 type GetCallback func(*Entry) bool
 
+// WriteStorage represents a place the collection service layer can write logs
+// to.
+//
+// All of these methods must be synchronous and goroutine-safe.
+//
+// All methods may return errors.Transient errors if they encounter an error
+// that may be transient.
+type WriteStorage interface {
+	// StorageID identifies this particular storage in logs and metrics.
+	StorageID() string
+
+	// Close shuts down this instance, releasing any allocated resources.
+	Close()
+
+	// Writes log record data to storage.
+	//
+	// If the data already exists, ErrExists will be returned.
+	Put(context.Context, PutRequest) error
+
+	// Config installs the supplied configuration parameters into the storage
+	// instance.
+	Config(context.Context, Config) error
+}
+
 // Storage is an abstract LogDog storage implementation. Interfaces implementing
 // this may be used to store and retrieve log records by the collection service
 // layer.
@@ -100,13 +124,7 @@ type GetCallback func(*Entry) bool
 // All methods may return errors.Transient errors if they encounter an error
 // that may be transient.
 type Storage interface {
-	// Close shuts down this instance, releasing any allocated resources.
-	Close()
-
-	// Writes log record data to storage.
-	//
-	// If the data already exists, ErrExists will be returned.
-	Put(context.Context, PutRequest) error
+	WriteStorage
 
 	// Get invokes a callback over a range of sequential LogEntry records.
 	//
@@ -130,8 +148,4 @@ type Storage interface {
 	// the caller will have to unmarshal the log entry data to determine its
 	// index.
 	Tail(context.Context, cfgtypes.ProjectName, types.StreamPath) (*Entry, error)
-
-	// Config installs the supplied configuration parameters into the storage
-	// instance.
-	Config(context.Context, Config) error
 }
