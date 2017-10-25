@@ -16,6 +16,7 @@ package collector
 
 import (
 	"bytes"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerproto"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/server/collector/bqsink"
 	"go.chromium.org/luci/logdog/server/collector/coordinator"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
@@ -113,6 +115,11 @@ type Collector struct {
 	// MaxMessageWorkers is the maximum number of concurrent workers to employ
 	// for any given message. If <= 0, DefaultMaxMessageWorkers will be applied.
 	MaxMessageWorkers int
+
+	l sync.RWMutex // protects bqSinks
+
+	// bqSinks are stateful sinks to use when uploading logs to BigQuery.
+	bqSinks map[bqsink.Parameters]*bqsink.Sink
 }
 
 // Process ingests an encoded ButlerLogBundle message, registering it with
@@ -408,32 +415,51 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		}
 	}
 
+	// Stream data to the main storage and to any extra sinks that may be
+	// configured for this particular log stream. The first storage is considered
+	// the main one.
+	sinks := append(
+		[]storage.WriteStorage{c.Storage},
+		c.getExtraStorageForStream(ctx, h.be.Desc, state)...)
+
 	// Perform stream processing operations. We can do these operations in
 	// parallel.
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
 		// Store log data, if any was provided. It has already been validated.
 		if len(logData) > 0 {
-			taskC <- func() error {
-				// Post the log to storage.
-				err = c.Storage.Put(ctx, storage.PutRequest{
-					Project: h.project,
-					Path:    h.path,
-					Index:   types.MessageIndex(blockIndex),
-					Values:  logData,
-				})
+			for i, sink := range sinks {
+				isPrimary := i == 0
+				sink := sink
 
-				// If the log entry already exists, consider the "put" successful.
-				// Storage will return a transient error if one occurred.
-				if err != nil && err != storage.ErrExists {
-					log.Fields{
-						log.ErrorKey: err,
-						"blockIndex": blockIndex,
-					}.Errorf(ctx, "Failed to load log entry into Storage.")
-					return err
+				taskC <- func() error {
+					// Post the log to storage.
+					err := sink.Put(ctx, storage.PutRequest{
+						Project: h.project,
+						Path:    h.path,
+						Index:   types.MessageIndex(blockIndex),
+						Values:  logData,
+					})
+
+					// If the log entry already exists, consider the "put" successful.
+					// Storage will return a transient error if one occurred.
+					if err != nil && err != storage.ErrExists {
+						log.Fields{
+							log.ErrorKey: err,
+							"blockIndex": blockIndex,
+							"storage":    sink.StorageID(),
+						}.Errorf(ctx, "Failed to load log entry into Storage.")
+						return err
+					}
+
+					// Report the metric only if we successfully flushed logs to the main
+					// storage.
+					//
+					// TODO(vadimsh): Report metrics for non-primary storages too.
+					if isPrimary {
+						tsLogs.Add(ctx, int64(len(logData)), streamTypeField)
+					}
+					return nil
 				}
-
-				tsLogs.Add(ctx, int64(len(logData)), streamTypeField)
-				return nil
 			}
 		}
 
@@ -461,6 +487,53 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 			}
 		}
 	})
+}
+
+// getExtraStorageForStream returns a list of additional storage locations to
+// upload logs for the giving stream to.
+func (c *Collector) getExtraStorageForStream(ctx context.Context, desc *logpb.LogStreamDescriptor, state *coordinator.LogStreamState) []storage.WriteStorage {
+	// TODO(vadimsh): Use 'state' to pass BigQuery tableRef to be used for the
+	// current stream. For now, export all text logs into the hardcoded BigQuery
+	// project, to verify it works.
+	if desc.StreamType == logpb.StreamType_TEXT {
+		return []storage.WriteStorage{&bqsink.Storage{
+			Sink: c.bqSinkFromParams(ctx, bqsink.Parameters{
+				ProjectID: "logdogbigquery",
+				DatasetID: "LogDogBuildLogs",
+				TableID:   "text_logs",
+			}),
+			Desc: desc,
+		}}
+	}
+	return nil
+}
+
+// bqSinkFromParams creates a new bqsink.Sink or gets an existing cached one.
+func (c *Collector) bqSinkFromParams(ctx context.Context, params bqsink.Parameters) *bqsink.Sink {
+	c.l.RLock()
+	s := c.bqSinks[params]
+	c.l.RUnlock()
+	if s != nil {
+		return s
+	}
+
+	c.l.Lock()
+	defer c.l.Unlock()
+
+	if s = c.bqSinks[params]; s != nil {
+		return s
+	}
+	s = bqsink.NewSink(params)
+
+	if c.bqSinks == nil {
+		c.bqSinks = make(map[bqsink.Parameters]*bqsink.Sink, 1)
+	}
+	c.bqSinks[params] = s
+
+	log.Fields{
+		"storage": s.StorageID(),
+	}.Infof(ctx, "Initialized new BigQuery sink.")
+	return s
 }
 
 func streamType(desc *logpb.LogStreamDescriptor) string {

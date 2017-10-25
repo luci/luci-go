@@ -106,6 +106,9 @@ func (s *Storage) getIface() btIface {
 	return prodBTIface{s}
 }
 
+// StorageID implements storage.Storage.
+func (s *Storage) StorageID() string { return "bigtable" }
+
 // Close implements storage.Storage.
 func (s *Storage) Close() {}
 
