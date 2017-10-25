@@ -96,6 +96,8 @@ func New(o Options) (storage.Storage, error) {
 	return &s, nil
 }
 
+func (s *storageImpl) StorageID() string { return "gcs" }
+
 func (s *storageImpl) Close() {}
 
 func (s *storageImpl) Config(context.Context, storage.Config) error  { return storage.ErrReadOnly }

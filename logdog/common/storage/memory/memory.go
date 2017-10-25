@@ -67,6 +67,11 @@ type Storage struct {
 
 var _ storage.Storage = (*Storage)(nil)
 
+// StorageID implements storage.Storage.
+func (s *Storage) StorageID() string {
+	return "memory"
+}
+
 // Close implements storage.Storage.
 func (s *Storage) Close() {
 	s.run(func() error {
