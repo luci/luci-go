@@ -21,6 +21,7 @@ import (
 	_ "net/http/pprof"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
@@ -42,7 +43,9 @@ func init() {
 	r := router.New()
 
 	// Setup Cloud Endpoints.
-	svr := prpc.Server{}
+	svr := prpc.Server{
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+	}
 	servicesPb.RegisterServicesServer(&svr, services.New())
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
