@@ -25,17 +25,46 @@ import (
 	// Importing pprof implicitly installs "/debug/*" profiling handlers.
 	_ "net/http/pprof"
 
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	adminPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
+	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
+	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/admin"
 
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 )
 
 // Run installs and executes this site.
 func init() {
+	ps := endpoints.ProdService{}
+
 	r := router.New()
 
 	// Standard HTTP endpoints.
 	standard.InstallHandlers(r)
+
+	// Register all of the handlers that we want to show up in RPC explorer (via
+	// pRPC discovery).
+	//
+	// Note that most of these services have dedicated service handlers, and any
+	// RPCs sent to this module will automatically be routed to them via
+	// "dispatch.yaml".
+	svr := &prpc.Server{
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+	}
+	logsPb.RegisterLogsServer(svr, dummyLogsService)
+	registrationPb.RegisterRegistrationServer(svr, dummyRegistrationService)
+	servicesPb.RegisterServicesServer(svr, dummyServicesService)
+	adminPb.RegisterAdminServer(svr, admin.New())
+	discovery.Enable(svr)
+
+	base := standard.Base().Extend(ps.Base)
+	svr.InstallHandlers(r, base)
 
 	// Redirect "/" to "/app/".
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
