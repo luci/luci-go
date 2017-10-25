@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8cc4e177_70ec4f63",
+        "filename": "logdog/appengine/cmd/coordinator/default/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-25T15:58:22Z",
+      "side": 1,
+      "message": "this is mostly useless here, since default service doesn\u0027t actually handle any traffic, might just as well drop to to avoid misdirecting the readers",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 65
+      },
+      "revId": "6367be3403f60ab7ba46abc5752e9110f80fd931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
