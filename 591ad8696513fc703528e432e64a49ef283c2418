@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "900568dd_99e565d5",
+        "filename": "logdog/server/collector/collector.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-25T00:03:32Z",
+      "side": 0,
+      "message": "this was a race condition :) \u0027err\u0027 is shared between different goroutines",
+      "range": {
+        "startLine": 418,
+        "startChar": 4,
+        "endLine": 418,
+        "endChar": 10
+      },
+      "revId": "591ad8696513fc703528e432e64a49ef283c2418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
