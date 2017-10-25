@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0816dad7_2d0a9690",
+        "filename": "logdog/server/collector/bqsink/bqsink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-25T01:53:01Z",
+      "side": 1,
+      "message": "package",
+      "range": {
+        "startLine": 15,
+        "startChar": 2,
+        "endLine": 15,
+        "endChar": 3
+      },
+      "revId": "b2b335fa0c377599e5b18ba64b66b4953a51463f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "802060f9_549e907d",
+        "filename": "logdog/server/collector/bqsink/bqsink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-25T01:53:01Z",
+      "side": 1,
+      "message": "implementation",
+      "range": {
+        "startLine": 15,
+        "startChar": 19,
+        "endLine": 15,
+        "endChar": 29
+      },
+      "revId": "b2b335fa0c377599e5b18ba64b66b4953a51463f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b193aeab_03b2183f",
+        "filename": "logdog/server/collector/bqsink/bqsink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-25T01:53:01Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 38,
+        "startChar": 10,
+        "endLine": 38,
+        "endChar": 11
+      },
+      "revId": "b2b335fa0c377599e5b18ba64b66b4953a51463f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d69e39c5_f0f551a9",
+        "filename": "logdog/server/collector/bqsink/bqsink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-25T01:53:01Z",
+      "side": 1,
+      "message": "ed",
+      "range": {
+        "startLine": 68,
+        "startChar": 23,
+        "endLine": 68,
+        "endChar": 26
+      },
+      "revId": "b2b335fa0c377599e5b18ba64b66b4953a51463f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "358c969b_0fdbfc9a",
+        "filename": "logdog/server/collector/collector.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-25T01:53:01Z",
+      "side": 1,
+      "message": "primary, for consistency with below code",
+      "range": {
+        "startLine": 426,
+        "startChar": 8,
+        "endLine": 426,
+        "endChar": 12
+      },
+      "revId": "b2b335fa0c377599e5b18ba64b66b4953a51463f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1086ce93_566cd9b6",
+        "filename": "logdog/server/collector/collector.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 499,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-25T01:53:01Z",
+      "side": 1,
+      "message": "given",
+      "range": {
+        "startLine": 499,
+        "startChar": 23,
+        "endLine": 499,
+        "endChar": 29
+      },
+      "revId": "b2b335fa0c377599e5b18ba64b66b4953a51463f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "691cf352_8f1cedf1",
+        "filename": "logdog/server/collector/collector.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 541,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-25T01:53:01Z",
+      "side": 1,
+      "message": "imo, log params as well.",
+      "range": {
+        "startLine": 539,
+        "startChar": 1,
+        "endLine": 541,
+        "endChar": 2
+      },
+      "revId": "b2b335fa0c377599e5b18ba64b66b4953a51463f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
