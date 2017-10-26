@@ -18,11 +18,15 @@ package bqsink
 
 import (
 	"fmt"
+	"time"
 
+	"cloud.google.com/go/bigquery"
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
-
-	"golang.org/x/net/context"
 )
 
 // Parameters specify parameters for the sink.
@@ -40,12 +44,21 @@ type Parameters struct {
 // It may be shared by multiple goroutines and should implement proper
 // synchronization itself.
 type Sink struct {
-	p Parameters
+	p        Parameters
+	client   *bigquery.Client
+	uploader *bigquery.Uploader
 }
 
 // NewSink creates a new Sink instance.
-func NewSink(p Parameters) *Sink {
-	return &Sink{p}
+//
+// It uses default application credentials to access BigQuery.
+func NewSink(ctx context.Context, p Parameters) (*Sink, error) {
+	bq, err := bigquery.NewClient(ctx, p.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	u := bq.DatasetInProject(p.ProjectID, p.DatasetID).Table(p.TableID).Uploader()
+	return &Sink{p, bq, u}, nil
 }
 
 // StorageID is returned as storage.WriteStorage ID.
@@ -55,13 +68,28 @@ func (s *Sink) StorageID() string {
 
 // Close releases the allocated resources.
 func (s *Sink) Close() {
-	// nothing here for now
+	s.client.Close()
 }
 
 // put transforms the raw logs into BigQuery rows and uploads them.
 func (s *Sink) put(ctx context.Context, desc *logpb.LogStreamDescriptor, r *storage.PutRequest) error {
-	// TODO(vadimsh): Extract the data from 'r', transform it into a bunch of
-	// BigQuery rows and insert them.
+	// BigQuery library retries transient uploads until context deadline.
+	ctx, cancel := clock.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// TODO(vadimsh): Make the transformation configurable.
+	rows := logsToRows(ctx, desc, r)
+
+	// Ignore errors for now.
+	logging.Infof(ctx, "Uploading %d rows to %q", len(rows), s.StorageID())
+	err := s.uploader.Put(ctx, toStuctSavers(rows))
+	if merr, _ := err.(bigquery.PutMultiError); len(merr) != 0 {
+		for _, err := range merr {
+			logging.Errorf(ctx, "Failed to insert a row into BigQuery: %s", err)
+		}
+	} else if err != nil {
+		logging.Errorf(ctx, "Failed to upload rows into BigQuery: %s", err)
+	}
 	return nil
 }
 

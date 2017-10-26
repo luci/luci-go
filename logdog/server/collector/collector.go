@@ -423,10 +423,13 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 
 	// Stream data to the main storage and to any extra sinks that may be
 	// configured for this particular log stream. The first storage is considered
-	// the main one.
-	sinks := append(
-		[]storage.WriteStorage{c.Storage},
-		c.getExtraStorageForStream(ctx, h.be.Desc, state)...)
+	// the main one. Do not freak out if the extra storages cannot be initialized,
+	// this should not be happening.
+	extra, err := c.getExtraStorageForStream(ctx, h.be.Desc, state)
+	if err != nil {
+		log.WithError(err).Errorf(ctx, "Failed to create extra storage sink")
+	}
+	sinks := append([]storage.WriteStorage{c.Storage}, extra...)
 
 	// Perform stream processing operations. We can do these operations in
 	// parallel.
@@ -497,39 +500,48 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 
 // getExtraStorageForStream returns a list of additional storage locations to
 // upload logs for the giving stream to.
-func (c *Collector) getExtraStorageForStream(ctx context.Context, desc *logpb.LogStreamDescriptor, state *coordinator.LogStreamState) []storage.WriteStorage {
+func (c *Collector) getExtraStorageForStream(ctx context.Context, desc *logpb.LogStreamDescriptor, state *coordinator.LogStreamState) ([]storage.WriteStorage, error) {
 	// TODO(vadimsh): Use 'state' to pass BigQuery tableRef to be used for the
 	// current stream. For now, export all text logs into the hardcoded BigQuery
 	// project, to verify it works.
 	if desc.StreamType == logpb.StreamType_TEXT {
+		sink, err := c.bqSinkFromParams(ctx, bqsink.Parameters{
+			ProjectID: "logdogbigquery",
+			DatasetID: "LogDogBuildLogs",
+			TableID:   "text_logs",
+		})
+		if err != nil {
+			return nil, err
+		}
+
 		return []storage.WriteStorage{&bqsink.Storage{
-			Sink: c.bqSinkFromParams(ctx, bqsink.Parameters{
-				ProjectID: "logdogbigquery",
-				DatasetID: "LogDogBuildLogs",
-				TableID:   "text_logs",
-			}),
+			Sink: sink,
 			Desc: desc,
-		}}
+		}}, nil
 	}
-	return nil
+
+	return nil, nil
 }
 
 // bqSinkFromParams creates a new bqsink.Sink or gets an existing cached one.
-func (c *Collector) bqSinkFromParams(ctx context.Context, params bqsink.Parameters) *bqsink.Sink {
+func (c *Collector) bqSinkFromParams(ctx context.Context, params bqsink.Parameters) (*bqsink.Sink, error) {
 	c.l.RLock()
 	s := c.bqSinks[params]
 	c.l.RUnlock()
 	if s != nil {
-		return s
+		return s, nil
 	}
 
 	c.l.Lock()
 	defer c.l.Unlock()
 
 	if s = c.bqSinks[params]; s != nil {
-		return s
+		return s, nil
 	}
-	s = bqsink.NewSink(params)
+	s, err := bqsink.NewSink(ctx, params)
+	if err != nil {
+		return nil, err
+	}
 
 	if c.bqSinks == nil {
 		c.bqSinks = make(map[bqsink.Parameters]*bqsink.Sink, 1)
@@ -539,7 +551,7 @@ func (c *Collector) bqSinkFromParams(ctx context.Context, params bqsink.Paramete
 	log.Fields{
 		"storage": s.StorageID(),
 	}.Infof(ctx, "Initialized new BigQuery sink.")
-	return s
+	return s, nil
 }
 
 func streamType(desc *logpb.LogStreamDescriptor) string {
