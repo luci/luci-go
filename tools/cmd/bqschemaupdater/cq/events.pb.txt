@@ -1,0 +1,105 @@
+dataset: "cq"
+table_id: "events"
+name: "CQ Events"
+description: "Events from commit queue."
+partition_table: true
+fields: <
+  name: "timestamp"
+  description: "Time of event."
+  is_required: true
+  type: TIMESTAMP
+>
+fields: <
+  name: "project_id"
+  description: "LUCI project id"
+  type: STRING
+>
+fields: <
+  name: "gerrit"
+  description: "Gerrit change"
+  type: RECORD
+  schema: <
+    name: "host"
+    description: "Gerrit host, e.g. chromium-review.googlesource.com"
+    is_required: True
+    type: STRING
+  >
+  schema: <
+    name: "project"
+    description: "Gerrit host, e.g. chormium/src"
+    is_required: True
+    type: STRING
+  >
+  schema: <
+    name: "change"
+    description: "Change number"
+    is_required: True
+    type: INTEGER
+  >
+  schema: <
+    name: "patchset"
+    description: "Patch set number"
+    is_required: True
+    type: INTEGER
+  >
+>
+fields: <
+  name: "action"
+  description: "Type of CQ event, e.g. PATCH_COMMITTED."
+  type: STRING
+>
+fields: <
+  name: "attempt_start"
+  description: "Time when the CQ attempt was started (user clicked on CQ bit)."
+  type: TIMESTAMP
+>
+fields: <
+  name: "dry_run"
+  description: "True if CQ is in dry-run mode."
+  type: BOOLEAN
+>
+fields: <
+  name: "failure_reason"
+  description: "Detailed reason on failure to commit."
+  type: RECORD
+  schema: <
+    name: "verifier"
+    type: STRING
+  >
+  schema: <
+    name: "fail_type"
+    type: STRING
+  >
+  schema: <
+    name: "failed_try_jobs"
+    is_repeated: true
+    type: RECORD
+    schema: <
+      name: "bucket"
+      description: "Buildbucket bucket"
+      type: STRING
+    >
+    schema: <
+      name: "builder"
+      type: STRING
+    >
+    schema: <
+      name: "build_id"
+      description: "Build id. See also build_id in the build.builds table."
+      type: INTEGER
+    >
+    schema: <
+      name: "fail_type"
+      type: STRING
+    >
+  >
+>
+fields: <
+  name: "build_ids"
+  description: <<END
+    List of build IDs that contributed to the attempt.
+    See also build_id in the build.builds table.
+  END
+  is_repeated: true
+  type: INTEGER
+>

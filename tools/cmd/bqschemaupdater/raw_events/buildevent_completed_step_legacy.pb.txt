@@ -1,0 +1,102 @@
+# This is a text protobuf specification for the BuildBot / Kitchen completed
+# builds table.
+#
+# For the underlying protobuf, see:
+# https://chromium.googlesource.com/infra/infra/+/master/go/src/infra/libs/bqschema/tabledef/table_def.proto
+
+dataset_id: "raw_events"
+table_id: "completed_step_legacy"
+name: "Legacy information about completed build steps"
+description: "Legacy record of build steps."
+partition_table: true
+
+fields: <
+  name: "master"
+  description: "The name of the BuildBot master."
+  type: STRING
+>
+fields: <
+  name: "builder"
+  description: "The name of the BuildBot builder."
+  type: STRING
+>
+fields: <
+  name: "build_number"
+  description: "The BuildBot build number."
+  type: INTEGER
+>
+fields: <
+  name: "build_sched_msec"
+  description: "The build schedule time, in milliseconds from epoch."
+  type: INTEGER
+>
+fields: <
+  name: "step_name"
+  description: "The name of this step."
+  type: STRING
+>
+fields: <
+  name: "step_text"
+  description: "Step text output."
+  type: STRING
+>
+fields: <
+  name: "step_number"
+  description: "The ordinal of this step, relative to other steps in the build."
+  type: INTEGER
+>
+fields: <
+  name: "host_name"
+  description: "The builder host name."
+  type: STRING
+>
+fields: <
+  name: "result"
+  description: "The step result (enum)."
+  type: STRING
+>
+fields: <
+  name: "step_started_msec"
+  description: "The step's started time, in milliseconds from epoch."
+  type: INTEGER
+>
+fields: <
+  name: "step_duration_s"
+  description: "The step's duration, in seconds."
+  type: FLOAT
+>
+fields: <
+  name: "patch_url"
+  description: "The patch URL."
+  type: STRING
+>
+fields: <
+  name: "project"
+  description: "The build's project."
+  type: STRING
+>
+fields: <
+  name: "bbucket_id"
+  description: "The BuildBucket ID."
+  type: STRING
+>
+fields: <
+  name: "bbucket_user_agent"
+  description: "The BuildBucket user agent."
+  type: STRING
+>
+fields: <
+  name: "build_id"
+  description: "An identifier unique to this build. Shared with 'build_id' in builds table."
+  type: STRING
+>
+fields: <
+  name: "step_started"
+  description: "The time when the step started."
+	type: TIMESTAMP
+>
+fields: <
+  name: "step_finished"
+  description: "The time when the step finished."
+	type: TIMESTAMP
+>

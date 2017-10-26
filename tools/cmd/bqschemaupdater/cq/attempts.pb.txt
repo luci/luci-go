@@ -1,0 +1,143 @@
+dataset: "cq"
+table_id: "attempts"
+name: "CQ Attempts"
+partition_table: true
+fields: <
+  name: "attempt_start"
+  description: "Time when the attempt starts. CQ calculates this by searching for the last 'The CQ bit checked by...' message, which corresponds to the moment when the user has clicked on the CQ checkbox"
+  is_required: true
+  type: TIMESTAMP
+>
+fields: <
+  name: "start"
+  description: "The time when CQ actually starts processing the patch."
+  type: TIMESTAMP
+>
+fields: <
+  name: "stop"
+  description: "The time when CQ stopped processing the patchset. This is when attempt ends."
+  type: TIMESTAMP
+>
+fields: <
+  name: "committed"
+  description: "True if the patch was committed in this attempt."
+  type: BOOLEAN
+>
+fields: <
+  name: "was_throttled"
+  description: "True if the request was throttled due to too many CLs being committed."
+  type: BOOLEAN
+>
+fields: <
+  name: "waited_for_tree"
+  description: "True if the request had to wait for an open tree."
+  type: BOOLEAN
+>
+fields: <
+  name: "cq_name"
+  description: "CQ name"
+  type: STRING
+>
+fields: <
+  name: "issue"
+  description: "Issue ID. Maybe non-numeric for Gerrit issues."
+  type: STRING
+>
+fields: <
+  name: "patchset"
+>
+fields: <
+  name: "dry_run"
+  description: "True if this attempt is a CQ dry run: CQ runs all jobs but won't commit a patch."
+  type: BOOLEAN
+>
+fields: <
+  name: "no_tryjobs_launched"
+  description: "True CQ did not launch any tryjobs due to NOTRY=true flag or because all tryjobs have finished before CQ started processing the patch"
+  type: BOOLEAN
+>
+fields: <
+  name: "custom_trybots"
+  description: "True if custom trybots were used."
+  type: BOOLEAN
+>
+fields: <
+  name: "failed"
+  description: "True if the patch was rejected in this attempt."
+  type: BOOLEAN
+>
+fields: <
+  name: "fail_type"
+  description: "Reason why the patch was rejected."
+  type: STRING
+>
+fields: <
+  name: "infra_failures"
+  type: INTEGER
+>
+fields: <
+  name: "compile_failures"
+  type: INTEGER
+>
+fields: <
+  name: "patch_failures"
+  type: INTEGER
+>
+fields: <
+  name: "test_failures"
+  type: INTEGER
+>
+fields: <
+  name: "invalid_test_results_failures"
+  type: INTEGER
+>
+fields: <
+  name: "total_failures"
+  type: INTEGER
+>
+fields: <
+  name: "cq_pickup_latency_sec"
+  description: "Time between start of request (SoR) and PATCH_START."
+  type: FLOAT
+>
+fields: <
+  name: "cq_launch_latency_sec"
+  description: "Time between start of request (SoR) and first VERIFIER_TRIGGER."
+  type: FLOAT
+>
+fields: <
+  name: "verifier_pass_latency_sec"
+  description: "Time between start of request (SoR) and first VERIFIER_PASS if it exists, Null if there is no VERIFIER_PASS."
+  type: FLOAT
+>
+fields: <
+  name: "tree_check_and_throttle_latency_sec"
+  description: "Time between VERIFIER_PASS and PATCH_COMMITTING."
+  type: FLOAT
+>
+fields: <
+  name: "vcs_commit_latency_sec"
+  description: "Time between first PATCH_COMMITTING and PATCH_COMMITTED. This also includes download patch from Rietv"
+  type: FLOAT
+>
+fields: <
+  name: "click_to_failure_sec"
+  description: "Time between SoR and PATCH_FAILED (if it exists)."
+  type: FLOAT
+>
+fields: <
+  name: "click_to_patch_committed_sec"
+  description: "Time between SoR and PATCH_COMMITTED."
+  type: FLOAT
+>
+fields: <
+  name: "click_to_result_sec"
+  description: "Time between SoR and PATCH_STOP, overall CQ run."
+  type: FLOAT
+>
+fields: <
+  name: "contributing_bbucket_ids"
+  description: "List of builds' buildbucket IDs that have contributed to an attempt."
+  is_repeated: true
+  type: INTEGER
+>

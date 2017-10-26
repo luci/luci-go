@@ -1,0 +1,128 @@
+# This is a text protobuf specification for the BuildBot / Kitchen completed
+# builds table.
+#
+# For the underlying protobuf, see:
+# https://chromium.googlesource.com/infra/infra/+/master/go/src/infra/libs/bqschema/tabledef/table_def.proto
+
+table_id: "builds"
+description: "Records of completed builds."
+partition_table: true
+
+fields: <
+  name: "build_id"
+  description: <<EOF
+    An unique identifier of the build.
+    On Buildbucket, it has format "buildbucket/<buildbucket host>/<buildbucket build id>".
+    On Buildbot, it has format "buildbot/<master>/<builder>/<number>".
+    Other tables may also have build_id field to reference this row.
+  EOF
+  is_required: true
+  type: STRING
+>
+fields: <
+  name: "bucket"
+  description: "The buildbucket bucket."
+  is_required: true
+  type: STRING
+>
+fields: <
+  name: "builder"
+  description: "The name of the builder. Unique within the bucket."
+  is_required: true
+  type: STRING
+>
+fields: <
+  name: "number"
+  description: "The build number, unique within the builder. May be not present."
+  type: INTEGER
+>
+fields: <
+  name: "creation_time"
+  description: "When the buildbucket build was created."
+  is_required: true
+  type: TIMESTAMP
+>
+fields: <
+  name: "start_time"
+  description: "When a bot started bootstrapping the build."
+  type: TIMESTAMP
+>
+fields: <
+  name: "completion_time"
+  description: "The build completion time."
+  type: TIMESTAMP
+>
+fields: <
+  name: "host_name"
+  description: "The host name of the machine that runs the build."
+  is_required: true
+  type: STRING
+>
+fields: <
+  name: "status"
+  description: "The build status. Valid value are SUCCESS, FAILURE, ERROR, TIMEOUT, CANCELLED"
+  type: STRING
+>
+fields: <
+  name: "buildset"
+  description: "Buildset, format documented in go/buildbucket-buildset. Identifies a patchset."
+  type: STRING
+  is_repeated: true
+>
+fields: <
+  name: "input"
+  description: "Build input"
+  type: RECORD
+  schema: <
+    name: "properties"
+    description: "Input user-defined list of key-value pairs."
+    # NOTE: this schema must be synced with output.properties field schema.
+    is_repeated: true
+    type: RECORD
+    schema: <
+      name: "key"
+      is_required: true
+      type: STRING
+    >
+    schema: <
+      name: "value_json"
+      type: STRING
+    >
+  >
+>
+fields: <
+  name: "output"
+  description: "Build output"
+  type: RECORD
+  schema: <
+    name: "properties"
+    description: "Output user-defined list of key-value pairs."
+    # NOTE: this schema must be synced with input.properties field schema.
+    is_repeated: true
+    type: RECORD
+    schema: <
+      name: "key"
+      is_required: true
+      type: STRING
+    >
+    schema: <
+      name: "value_json"
+      type: STRING
+    >
+  >
+>
+fields: <
+  name: "swarming"
+  description: "Swarming information."
+  type: RECORD
+  schema: <
+    name: "host"
+    description: "The host name of the swarming server."
+    type: STRING
+  >
+  schema: <
+    name: "run_id"
+    description: "The run ID (zero out last digit for task ID)."
+    type: STRING
+  >
+>

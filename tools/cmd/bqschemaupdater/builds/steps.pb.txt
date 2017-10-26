@@ -1,0 +1,40 @@
+# This is a text protobuf specification for the BuildBot / Kitchen completed
+# steps table.
+#
+# For the underlying protobuf, see:
+# https://chromium.googlesource.com/infra/infra/+/master/go/src/infra/libs/bqschema/tabledef/table_def.proto
+
+table_id: "steps"
+description: "Record of completed build steps."
+partition_table: true
+
+fields: <
+  name: "build_id"
+  description: "An unique identifier of the build. See build_id in completed_builds table."
+  is_required: true
+  type: STRING
+>
+fields: <
+  name: "step_name"
+  description: "The name of this step. Fields build_id and step_name uniquely identify a step."
+  is_required: true
+  type: STRING
+>
+fields: <
+  name: "result"
+  description: <<EOF
+    The step result.
+    Valid values: "SUCCESS", "FAILURE", "EXCEPTION".
+  EOF
+  type: STRING
+>
+fields: <
+  name: "start_time"
+  description: "The step's started time."
+  type: TIMESTAMP
+>
+fields: <
+  name: "finish_time"
+  description: "The step's finish time."
+  type: TIMESTAMP
+>

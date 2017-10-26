@@ -1,0 +1,79 @@
+dataset_id: "flakiness"
+table_id: "test_results"
+name: "Test Results"
+description: "Test results reported to test-results.appspot.com by the test launcher. Based on original JSON format: https://www.chromium.org/developers/the-json-test-results-format. "
+partition_table: true
+fields: <
+  name: "master_name"
+  description: "Name of the master on which tests were run."
+  type: STRING
+  is_required: true
+>
+fields: <
+  name: "builder_name"
+  description: "If this test run was produced on a bot, this should be the builder name of the bot, e.g., \"Linux Tests\"."
+  type: STRING
+  is_required: true
+>
+fields: <
+  name: "build_number"
+  description: "If this test run was produced on a bot, this should be the build number of the run, e.g., 1234."
+  type: INTEGER
+>
+fields: <
+  name: "test_type"
+  description: "Test type is derived from step name, by stripping anything but the first word (before the first space), but preserving '(with patch)' suffix if it was present in the original step name."
+  type: STRING
+  is_required: true
+>
+fields: <
+  name: "step_name"
+  description: "Name of the step that was running the tests. Test type above is a normalized version of this name."
+  type: STRING
+>
+fields: <
+  name: "interrupted"
+  description: "Whether the test run was interrupted and terminated early (either via the runner bailing out or the user hitting ctrl-C, etc.) If true, this indicates that not all of the tests in the suite were run and the results are at best incomplete and possibly totally invalid."
+  type: BOOLEAN
+  is_required: true
+>
+fields: <
+  name: "version"
+  description: "Version of the JSON file format."
+  type: INTEGER
+  is_required: true
+>
+fields: <
+  name: "usec_since_epoch"
+  description: "The start time of the test run expressed as a number of microseconds from the UNIX epoch."
+  type: INTEGER
+  is_required: true
+>
+fields: <
+  name: "test"
+  description: "Test result for individual test."
+  type: RECORD
+  schema: <
+    name: "test_name"
+    description: "Full name of the test. Created by combining names of each nesting level in JSON format, e.g.  test suite name, test case and actual test name using a separator as specified in \"path_delimiter\" field."
+    type: STRING
+  >
+  schema: <
+    name: "actual"
+    description: "Ordered list of actual test result types. May contain multiple results if the test was retried by the test launcher."
+    type: STRING
+    is_repeated: true
+  >
+  schema: <
+    name: "expected"
+    description: "Unordered set of expected result types. May contain multiple results if the test may produce various results all of which are considered successful."
+    type: STRING
+    is_repeated: true
+  >
+  schema: <
+    name: "bugs"
+    description: "URLs of the bugs associated with the test."
+    type: STRING
+    is_repeated: true
+  >
+>

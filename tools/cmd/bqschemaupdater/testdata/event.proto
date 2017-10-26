@@ -1,0 +1,43 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package testdata;
+
+import "google/protobuf/timestamp.proto";
+
+
+message Property {
+    string name = 1;
+    string value_json = 2;
+}
+
+message Input {
+    repeated Property properties = 4;
+}
+
+message Output {
+    repeated Property properties = 4;
+}
+
+// Build events.
+//
+// Line after blank line.
+message BuildEvent {
+    // Universal build id.
+    string build_id = 1;
+    // Builder name.
+    string builder = 2;
+    Status status = 3;
+    Input input = 4;
+    Output output = 5;
+    google.protobuf.Timestamp timestamp = 6;
+}
+
+enum Status {
+    SUCCESS = 0;
+    FAILURE = 1;
+    ERROR = 2;
+}
