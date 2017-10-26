@@ -1,0 +1,37 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+// SwitchConfig describes a switch.
+message SwitchConfig {
+  // The name of this switch.
+  string name = 1;
+  // A description of this switch.
+  string description = 2;
+  // The number of ports this switch has.
+  int32 ports = 3;
+}
+
+// RackConfig describes a rack.
+message RackConfig {
+  // The name of this rack.
+  string name = 1;
+  // A description of this rack.
+  string description = 2;
+  // The switches belonging to this rack.
+  repeated SwitchConfig switch = 3;
+}
+
+// DatacenterConfig describes a datacenter.
+message DatacenterConfig {
+  // The name of this datacenter.
+  string name = 1;
+  // A description of this datacenter.
+  string description = 2;
+  // The racks belonging to this datacenter.
+  repeated RackConfig rack = 3;
+}
