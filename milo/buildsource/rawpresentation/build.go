@@ -15,6 +15,7 @@
 package rawpresentation
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -226,14 +227,14 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 		}
 
 		u := viewer.GetURL(server, b.Project, prefix.Join(types.StreamName(ls.Name)))
-		link := resp.NewLink(l.Label, u)
+		link := resp.NewLink(l.Label, u, fmt.Sprintf("logdog link for %s", l.Label))
 		if link.Label == "" {
 			link.Label = ls.Name
 		}
 		return link
 
 	case *miloProto.Link_Url:
-		link := resp.NewLink(l.Label, t.Url)
+		link := resp.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 		if link.Label == "" {
 			link.Label = "unnamed"
 		}

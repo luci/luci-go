@@ -2,17 +2,20 @@
   "Summary": {
     "ParentLabel": {
       "Label": "win_chromium_rel_ng",
-      "URL": "."
+      "URL": "Parent builder win_chromium_rel_ng",
+      "AriaLabel": "."
     },
     "Label": "#246309",
     "Status": "Failure",
     "Bot": {
       "Label": "vm774-m4",
-      "URL": "https://build.chromium.org/p//buildslaves/vm774-m4"
+      "URL": "Buildbot buildslave vm774-m4",
+      "AriaLabel": "https://build.chromium.org/p//buildslaves/vm774-m4"
     },
     "Source": {
       "Label": "/win_chromium_rel_ng/246309",
-      "URL": "https://build.chromium.org/p//builders/win_chromium_rel_ng/builds/246309"
+      "URL": "Build number 246309 on master  builder win_chromium_rel_ng",
+      "AriaLabel": "https://build.chromium.org/p//builders/win_chromium_rel_ng/builds/246309"
     },
     "Started": "2016-06-27T23:30:30.080228Z",
     "Finished": "2016-06-27T23:50:06.476459Z",
@@ -31,12 +34,13 @@
     "RequestRevision": null,
     "Revision": {
       "Label": "cb7c961aea3ee23c4e246f50441e5dc582565129",
-      "URL": ""
+      "URL": "got revision cb7c961aea3ee23c4e246f50441e5dc582565129"
     },
     "Description": "",
     "Changelist": {
       "Label": "Rietveld CL 2101793003",
-      "URL": "https://codereview.chromium.org/2101793003"
+      "URL": "",
+      "AriaLabel": "https://codereview.chromium.org/2101793003"
     },
     "CommitURL": "",
     "File": null,
@@ -50,14 +54,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/stdio"
+          "URL": "log standard i/o for step steps",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "preamble",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble"
+            "URL": "log preamble for step steps",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble"
           }
         ]
       ],
@@ -77,20 +83,23 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/stdio"
+          "URL": "log standard i/o for step update_scripts",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "gclient_json",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/gclient_json"
+            "URL": "log gclient_json for step update_scripts",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/gclient_json"
           }
         ],
         [
           {
             "Label": "Fake Link",
-            "URL": "https://www.example.com"
+            "URL": "step link Fake Link for step update_scripts",
+            "AriaLabel": "https://www.example.com"
           }
         ]
       ],
@@ -111,7 +120,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_properties/logs/stdio"
+          "URL": "log standard i/o for step setup_properties",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_properties/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:30:46.691456Z",
@@ -130,14 +140,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/stdio"
+          "URL": "log standard i/o for step setup_build",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "run_recipe",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/run_recipe"
+            "URL": "log run_recipe for step setup_build",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/run_recipe"
           }
         ]
       ],
@@ -158,7 +170,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill/logs/stdio"
+          "URL": "log standard i/o for step taskkill",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:31:03.47385Z",
@@ -177,14 +190,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/stdio"
+          "URL": "log standard i/o for step bot_update",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/json.output"
+            "URL": "log json.output for step bot_update",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/json.output"
           }
         ]
       ],
@@ -205,7 +220,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma/logs/stdio"
+          "URL": "log standard i/o for step ensure_goma",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:33:26.039239Z",
@@ -224,14 +240,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/stdio"
+          "URL": "log standard i/o for step ensure_goma.install cipd",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/json.output"
+            "URL": "log json.output for step ensure_goma.install cipd",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/json.output"
           }
         ]
       ],
@@ -252,14 +270,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/stdio"
+          "URL": "log standard i/o for step ensure_goma.ensure_installed",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/json.output"
+            "URL": "log json.output for step ensure_goma.ensure_installed",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/json.output"
           }
         ]
       ],
@@ -279,7 +299,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/swarming.py%20--version/logs/stdio"
+          "URL": "log standard i/o for step swarming.py --version",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/swarming.py%20--version/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:33:26.04041Z",
@@ -299,7 +320,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28with%20patch%29/logs/stdio"
+          "URL": "log standard i/o for step gclient runhooks (with patch)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28with%20patch%29/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:33:31.580763Z",
@@ -318,14 +340,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/stdio"
+          "URL": "log standard i/o for step get compile targets for scripts",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/json.output"
+            "URL": "log json.output for step get compile targets for scripts",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/json.output"
           }
         ]
       ],
@@ -345,14 +369,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/stdio"
+          "URL": "log standard i/o for step read test spec (chromium.gpu.json)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/json.output"
+            "URL": "log json.output for step read test spec (chromium.gpu.json)",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/json.output"
           }
         ]
       ],
@@ -373,14 +399,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/stdio"
+          "URL": "log standard i/o for step read test spec (chromium.win.json)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/json.output"
+            "URL": "log json.output for step read test spec (chromium.win.json)",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/json.output"
           }
         ]
       ],
@@ -401,7 +429,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure%20git%20tooling%20on%20windows/logs/stdio"
+          "URL": "log standard i/o for step ensure git tooling on windows",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure%20git%20tooling%20on%20windows/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:33:47.073535Z",
@@ -420,14 +449,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/stdio"
+          "URL": "log standard i/o for step git diff to analyze patch",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "files",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/files"
+            "URL": "log files for step git diff to analyze patch",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/files"
           }
         ]
       ],
@@ -447,14 +478,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/stdio"
+          "URL": "log standard i/o for step read filter exclusion spec",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/json.output"
+            "URL": "log json.output for step read filter exclusion spec",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/json.output"
           }
         ]
       ],
@@ -475,20 +508,23 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/stdio"
+          "URL": "log standard i/o for step analyze",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/json.output"
+            "URL": "log json.output for step analyze",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/json.output"
           }
         ],
         [
           {
             "Label": "analyze_details",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/analyze_details"
+            "URL": "log analyze_details for step analyze",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/analyze_details"
           }
         ]
       ],
@@ -508,7 +544,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/cleanup_temp/logs/stdio"
+          "URL": "log standard i/o for step cleanup_temp",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/cleanup_temp/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:34:11.73199Z",
@@ -527,7 +564,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/clean%20isolated%20files/logs/stdio"
+          "URL": "log standard i/o for step clean isolated files",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/clean%20isolated%20files/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:34:11.739719Z",
@@ -546,14 +584,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/stdio"
+          "URL": "log standard i/o for step generate_build_files (with patch)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "swarming-targets-file.txt",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/swarming-targets-file.txt"
+            "URL": "log swarming-targets-file.txt for step generate_build_files (with patch)",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/swarming-targets-file.txt"
           }
         ]
       ],
@@ -573,14 +613,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/stdio"
+          "URL": "log standard i/o for step compile (with patch)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/json.output"
+            "URL": "log json.output for step compile (with patch)",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/json.output"
           }
         ]
       ],
@@ -600,7 +642,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill%20%282%29/logs/stdio"
+          "URL": "log standard i/o for step taskkill (2)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill%20%282%29/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:36:30.259513Z",
@@ -619,14 +662,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/stdio"
+          "URL": "log standard i/o for step bot_update (without patch)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/json.output"
+            "URL": "log json.output for step bot_update (without patch)",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/json.output"
           }
         ]
       ],
@@ -647,7 +692,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28without%20patch%29/logs/stdio"
+          "URL": "log standard i/o for step gclient runhooks (without patch)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28without%20patch%29/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:37:40.31495Z",
@@ -666,14 +712,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/stdio"
+          "URL": "log standard i/o for step generate_build_files (without patch)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "swarming-targets-file.txt",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/swarming-targets-file.txt"
+            "URL": "log swarming-targets-file.txt for step generate_build_files (without patch)",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/swarming-targets-file.txt"
           }
         ]
       ],
@@ -693,14 +741,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/stdio"
+          "URL": "log standard i/o for step compile (without patch)",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/json.output"
+            "URL": "log json.output for step compile (without patch)",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/json.output"
           }
         ]
       ],
@@ -720,7 +770,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/mark%3A%20before_tests/logs/stdio"
+          "URL": "log standard i/o for step mark: before_tests",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/mark%3A%20before_tests/logs/stdio"
         }
       ],
       "Started": "2016-06-27T23:50:06.385913Z",
@@ -739,14 +790,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/stdio"
+          "URL": "log standard i/o for step Failure reason",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "reason",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/reason"
+            "URL": "log reason for step Failure reason",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/reason"
           }
         ]
       ],
@@ -993,7 +1046,7 @@
       "RequestRevision": null,
       "Revision": {
         "Label": "",
-        "URL": ""
+        "URL": "commit by sky@chromium.org"
       },
       "Description": "",
       "Changelist": null,
