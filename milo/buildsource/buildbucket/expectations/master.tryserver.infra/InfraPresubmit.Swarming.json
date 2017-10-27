@@ -5,7 +5,8 @@
     {
       "Link": {
         "Label": "2fbc7169a3b9a010",
-        "URL": "/swarming/prod/2fbc7169a3b9a010"
+        "URL": "/swarming/prod/2fbc7169a3b9a010",
+        "AriaLabel": "https://luci-milo-dev.example.com/swarming/prod/2fbc7169a3b9a010"
       },
       "Status": "Running",
       "PendingTime": {
@@ -29,13 +30,14 @@
           "Branch": "",
           "RequestRevision": {
             "Label": "HEAD",
-            "URL": ""
+            "URL": "request revision HEAD"
           },
           "Revision": null,
           "Description": "",
           "Changelist": {
             "Label": "Gerrit CL 1",
-            "URL": "https://chromium-review.googlesource.com/c/1/2"
+            "URL": "gerrit changelist 1",
+            "AriaLabel": "https://chromium-review.googlesource.com/c/1/2"
           },
           "CommitURL": "",
           "File": null
@@ -50,7 +52,8 @@
     {
       "Link": {
         "Label": "2fbc5f57c3a4b910",
-        "URL": "/swarming/prod/2fbc5f57c3a4b910"
+        "URL": "/swarming/prod/2fbc5f57c3a4b910",
+        "AriaLabel": "https://luci-milo-dev.example.com/swarming/prod/2fbc5f57c3a4b910"
       },
       "Status": "Success",
       "PendingTime": {
@@ -76,13 +79,14 @@
           "Branch": "",
           "RequestRevision": {
             "Label": "HEAD",
-            "URL": ""
+            "URL": "request revision HEAD"
           },
           "Revision": null,
           "Description": "",
           "Changelist": {
             "Label": "Gerrit CL 2",
-            "URL": "https://chromium-review.googlesource.com/c/2/2"
+            "URL": "gerrit changelist 2",
+            "AriaLabel": "https://chromium-review.googlesource.com/c/2/2"
           },
           "CommitURL": "",
           "File": null
