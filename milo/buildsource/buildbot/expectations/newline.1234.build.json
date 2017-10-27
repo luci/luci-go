@@ -2,17 +2,20 @@
   "Summary": {
     "ParentLabel": {
       "Label": "",
-      "URL": "."
+      "URL": ".",
+      "AriaLabel": "Parent builder "
     },
     "Label": "#0",
     "Status": "Failure",
     "Bot": {
       "Label": "",
-      "URL": "https://build.chromium.org/p//buildslaves/"
+      "URL": "https://build.chromium.org/p//buildslaves/",
+      "AriaLabel": "Buildbot buildslave "
     },
     "Source": {
       "Label": "//0",
-      "URL": "https://build.chromium.org/p//builders//builds/0"
+      "URL": "https://build.chromium.org/p//builders//builds/0",
+      "AriaLabel": "Build number 0 on master  builder "
     },
     "Started": "2016-06-27T23:30:30.080228Z",
     "Finished": "2016-06-27T23:50:06.476459Z",
@@ -45,7 +48,8 @@
         [
           {
             "Label": "preamble",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble"
+            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble",
+            "AriaLabel": "log preamble for step steps"
           }
         ]
       ],

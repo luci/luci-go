@@ -290,7 +290,7 @@ func init() {
 	linkifyTemplate = template.Must(
 		template.New("linkify").
 			Parse(
-				`<a href="{{.URL}}">` +
+				`<a href="{{.URL}}"{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}>` +
 					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
 					`{{else if .Alias}}[{{.Label}}]` +
 					`{{else}}{{.Label}}{{end}}` +

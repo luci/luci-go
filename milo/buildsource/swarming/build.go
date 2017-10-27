@@ -252,7 +252,8 @@ func addBuilderLink(c context.Context, build *resp.MiloBuild, tags map[string]st
 	builder := tags["builder"]
 	if bucket != "" && builder != "" {
 		build.Summary.ParentLabel = resp.NewLink(
-			builder, fmt.Sprintf("/buildbucket/%s/%s", bucket, builder))
+			builder, fmt.Sprintf("/buildbucket/%s/%s", bucket, builder),
+			fmt.Sprintf("buildbucket builder %s on bucket %s", builder, bucket))
 	}
 }
 
@@ -394,7 +395,8 @@ func addBuildsetInfo(build *resp.MiloBuild, tags map[string]string) {
 			build.Trigger = &resp.Trigger{}
 		}
 		build.Trigger.Changelist = resp.NewLink(
-			"Gerrit CL", fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]))
+			"Gerrit CL", fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]),
+			fmt.Sprintf("gerrit changelist number %s", parts[1]))
 
 	}
 }
@@ -418,7 +420,7 @@ func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
 			}
 			name += " @ " + revision
 		}
-		build.Summary.Recipe = resp.NewLink(name, repoURL)
+		build.Summary.Recipe = resp.NewLink(name, repoURL, fmt.Sprintf("recipe %s", name))
 	}
 }
 
@@ -435,7 +437,9 @@ func addProjectInfo(build *resp.MiloBuild, tags map[string]string) {
 func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
 	build.Summary.Label = sr.TaskId
 	build.Summary.Type = resp.Recipe
-	build.Summary.Source = resp.NewLink("Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String())
+	build.Summary.Source = resp.NewLink(
+		"Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String(),
+		fmt.Sprintf("swarming task %s", sr.TaskId))
 
 	// Extract more swarming specific information into the properties.
 	if props := taskProperties(sr); len(props.Property) > 0 {
@@ -451,7 +455,8 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 
 	// Add a link to the bot.
 	if sr.BotId != "" {
-		build.Summary.Bot = resp.NewLink(sr.BotId, botPageURL(host, sr.BotId))
+		build.Summary.Bot = resp.NewLink(sr.BotId, botPageURL(host, sr.BotId),
+			fmt.Sprintf("swarming bot %s", sr.BotId))
 	}
 
 	return nil
@@ -614,7 +619,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 		if err != nil {
 			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error())
 			comp.SubLink = append(comp.SubLink, resp.LinkSet{
-				resp.NewLink("swarming task", taskURL.String()),
+				resp.NewLink("swarming task", taskURL.String(), ""),
 			})
 			build.Components = append(build.Components, comp)
 		} else if lds.MainStream != nil {
@@ -786,14 +791,15 @@ func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 	case *miloProto.Link_LogdogStream:
 		ls := t.LogdogStream
 
-		link := resp.NewLink(l.Label, fmt.Sprintf("%s/%s/%s", URLBase, b, ls.Name))
+		link := resp.NewLink(l.Label, fmt.Sprintf("%s/%s/%s", URLBase, b, ls.Name), "")
 		if link.Label == "" {
 			link.Label = ls.Name
 		}
+		link.AriaLabel = fmt.Sprintf("log link for %s", link.Label)
 		return link
 
 	case *miloProto.Link_Url:
-		return resp.NewLink(l.Label, t.Url)
+		return resp.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 
 	default:
 		return nil
