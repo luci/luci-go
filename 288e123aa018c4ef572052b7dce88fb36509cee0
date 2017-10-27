@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "284355e8_5ab56bf3",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-27T22:56:43Z",
+      "side": 1,
+      "message": "%d",
+      "range": {
+        "startLine": 149,
+        "startChar": 24,
+        "endLine": 149,
+        "endChar": 27
+      },
+      "revId": "288e123aa018c4ef572052b7dce88fb36509cee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecf63547_acddaead",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-27T22:56:43Z",
+      "side": 1,
+      "message": "%s\n?",
+      "range": {
+        "startLine": 154,
+        "startChar": 53,
+        "endLine": 154,
+        "endChar": 55
+      },
+      "revId": "288e123aa018c4ef572052b7dce88fb36509cee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
