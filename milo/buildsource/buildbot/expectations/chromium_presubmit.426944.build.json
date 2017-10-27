@@ -2,7 +2,8 @@
   "Summary": {
     "ParentLabel": {
       "Label": "chromium_presubmit",
-      "URL": "."
+      "URL": "Parent builder chromium_presubmit",
+      "AriaLabel": "."
     },
     "Label": "#426944",
     "Status": "Success",
@@ -19,11 +20,13 @@
     },
     "Bot": {
       "Label": "slave349-c4",
-      "URL": "https://build.chromium.org/p/tryserver.chromium.linux/buildslaves/slave349-c4"
+      "URL": "Buildbot buildslave slave349-c4",
+      "AriaLabel": "https://build.chromium.org/p/tryserver.chromium.linux/buildslaves/slave349-c4"
     },
     "Source": {
       "Label": "tryserver.chromium.linux/chromium_presubmit/426944",
-      "URL": "https://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944"
+      "URL": "Build number 426944 on master tryserver.chromium.linux builder chromium_presubmit",
+      "AriaLabel": "https://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944"
     },
     "Started": "2017-05-03T23:34:23.961041Z",
     "Finished": "2017-05-03T23:37:53.351052Z",
@@ -42,12 +45,13 @@
     "RequestRevision": null,
     "Revision": {
       "Label": "543cbcbb37d29652edb36adcb64e1dee09e4efe8",
-      "URL": ""
+      "URL": "got revision 543cbcbb37d29652edb36adcb64e1dee09e4efe8"
     },
     "Description": "",
     "Changelist": {
       "Label": "Rietveld CL 2860873002",
-      "URL": "https://codereview.chromium.org/2860873002"
+      "URL": "",
+      "AriaLabel": "https://codereview.chromium.org/2860873002"
     },
     "CommitURL": "",
     "File": null,
@@ -61,16 +65,19 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/steps/logs/stdio"
+          "URL": "log standard i/o for step steps",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/steps/logs/stdio"
         },
         {
           "Label": "stderr",
-          "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstderr",
+          "URL": "alias link for stderr",
+          "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstderr",
           "Alias": true
         },
         {
           "Label": "stdout",
-          "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstdout",
+          "URL": "alias link for stdout",
+          "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fstdout",
           "Alias": true
         }
       ],
@@ -78,13 +85,15 @@
         [
           {
             "Label": "preamble",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/steps/logs/preamble"
+            "URL": "log preamble for step steps",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/steps/logs/preamble"
           }
         ],
         [
           {
             "Label": "all",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstdout\u0026s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstderr"
+            "URL": "alias link for stdio",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstdout\u0026s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2F%2A%2A%2Fstderr"
           }
         ]
       ],
@@ -104,14 +113,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/update_scripts/logs/stdio"
+          "URL": "log standard i/o for step update_scripts",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/update_scripts/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "gclient_json",
-            "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/update_scripts/logs/gclient_json"
+            "URL": "log gclient_json for step update_scripts",
+            "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/update_scripts/logs/gclient_json"
           }
         ]
       ],
@@ -132,7 +143,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/setup_properties/logs/stdio"
+          "URL": "log standard i/o for step setup_properties",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/setup_properties/logs/stdio"
         }
       ],
       "Started": "2017-05-03T23:34:42.62644Z",
@@ -151,7 +163,8 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/LogDog%20Bootstrap/logs/stdio"
+          "URL": "log standard i/o for step LogDog Bootstrap",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/LogDog%20Bootstrap/logs/stdio"
         }
       ],
       "Started": "2017-05-03T23:34:50.166759Z",
@@ -171,13 +184,15 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+            "URL": "log standard out for step setup_build",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Fstdout"
           }
         ],
         [
           {
             "Label": "run_recipe",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+            "URL": "log run_recipe for step setup_build",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
           }
         ]
       ],
@@ -199,13 +214,15 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Fstdout"
+            "URL": "log standard out for step bot_update",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Fstdout"
           }
         ],
         [
           {
             "Label": "json.output",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Flogs%2Fjson.output%2F0"
+            "URL": "log json.output for step bot_update",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fbot_update%2F0%2Flogs%2Fjson.output%2F0"
           }
         ]
       ],
@@ -227,7 +244,8 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fcommit-git-patch%2F0%2Fstdout"
+            "URL": "log standard out for step commit-git-patch",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fcommit-git-patch%2F0%2Fstdout"
           }
         ]
       ],
@@ -248,7 +266,8 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fgclient_runhooks%2F0%2Fstdout"
+            "URL": "log standard out for step gclient runhooks",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fgclient_runhooks%2F0%2Fstdout"
           }
         ]
       ],
@@ -269,7 +288,8 @@
         [
           {
             "Label": "stdout",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fpresubmit%2F0%2Fstdout"
+            "URL": "log standard out for step presubmit",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Fpresubmit%2F0%2Fstdout"
           }
         ]
       ],
@@ -289,14 +309,16 @@
       "MainLink": [
         {
           "Label": "stdio",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/recipe%20result/logs/stdio"
+          "URL": "log standard i/o for step recipe result",
+          "AriaLabel": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/recipe%20result/logs/stdio"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "result",
-            "URL": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Frecipe_result%2F0%2Flogs%2Fresult%2F0"
+            "URL": "log result for step recipe result",
+            "AriaLabel": "https://logs.chromium.org/v/?s=chromium%2Fbb%2Ftryserver.chromium.linux%2Fchromium_presubmit%2F426944%2F%2B%2Frecipes%2Fsteps%2Frecipe_result%2F0%2Flogs%2Fresult%2F0"
           }
         ]
       ],
@@ -541,7 +563,7 @@
       "RequestRevision": null,
       "Revision": {
         "Label": "",
-        "URL": ""
+        "URL": "commit by binji@chromium.org"
       },
       "Description": "",
       "Changelist": null,

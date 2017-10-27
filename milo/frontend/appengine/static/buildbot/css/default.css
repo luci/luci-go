@@ -711,6 +711,9 @@ span.ansi36 {
 span.ansi37 {
   color: white;
 }
+span.hidden {
+  display: none;
+}
 
 /* revision & email */
 .revision .full {

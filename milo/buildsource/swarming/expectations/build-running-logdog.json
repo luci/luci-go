@@ -4,25 +4,29 @@
     "Status": "Running",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
+      "URL": "swarming task 2d8d62f6be545b10",
+      "AriaLabel": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
     },
     "MainLink": [
       {
         "Label": "Task 2d8d62f6be545b10",
-        "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
+        "URL": "step link for Task 2d8d62f6be545b10",
+        "AriaLabel": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
       }
     ],
     "SubLink": [
       [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstdout"
+          "URL": "logdog link for stdout",
+          "AriaLabel": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstdout"
         }
       ],
       [
         {
           "Label": "stderr",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstderr"
+          "URL": "logdog link for stderr",
+          "AriaLabel": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstderr"
         }
       ]
     ],
@@ -58,7 +62,8 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
+          "URL": "logdog link for stdout",
+          "AriaLabel": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
         }
       ],
       "Started": "2016-03-14T10:00:02Z",
@@ -75,14 +80,16 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+          "URL": "logdog link for stdout",
+          "AriaLabel": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "run_recipe",
-            "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+            "URL": "logdog link for run_recipe",
+            "AriaLabel": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
           }
         ]
       ],
@@ -102,7 +109,8 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
+          "URL": "logdog link for stdout",
+          "AriaLabel": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
         }
       ],
       "Started": "2016-03-14T10:00:05Z",
