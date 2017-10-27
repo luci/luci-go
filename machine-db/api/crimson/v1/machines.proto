@@ -1,0 +1,166 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// Machines implements a service to manipulate machines.
+service Machines {
+  // AddMachine adds a machine.
+  rpc AddMachine(AddMachineRequest) returns (AddMachineResponse);
+
+  // DeleteMachine deletes a machine.
+  rpc DeleteMachine(DeleteMachineRequest) returns (DeleteMachineResponse);
+
+  // EditMachine edits a machine.
+  rpc EditMachine(EditMachineRequest) returns (EditMachineResponse);
+
+  // GetMachines retrieves machines.
+  rpc GetMachines(GetMachinesRequest) returns (GetMachinesResponse);
+}
+
+// Machine describes a machine.
+message Machine {
+  // The name of this machine.
+  string name = 1;
+  // The datacenter this machine belongs to.
+  string datacenter = 2;
+  // The rack this machine belongs to.
+  string rack = 3;
+  // The unit number of the space this machine is racked in.
+  int32 unit = 4;
+  // The switch this machine is connected to.
+  string switch = 5;
+  // The switchport this machine is connected to.
+  int32 switchport = 6;
+  // The platform backing this machine.
+  string platform = 7;
+  // A description of this machine.
+  string description = 8;
+  // The hardware asset tag assigned to this machine.
+  string asset_tag = 9;
+  // The service tag associated with this machine.
+  string service_tag = 10;
+  // The ticket this machine was deployed for.
+  string deployment_ticket = 11;
+  // The state this machine is in.
+  string state = 12;
+}
+
+// AddMachineRequest is a request to add a machine.
+message AddMachineRequest {
+  // The name of this machine.
+  string name = 1;
+  // The unit number of the space this machine is racked in.
+  int32 unit = 2;
+  // The switch this machine is connected to.
+  string switch = 3;
+  // The switchport this machine is connected to.
+  int32 switchport = 4;
+  // The platform backing this machine.
+  string platform = 5;
+  // A description of this machine.
+  string description = 6;
+  //The hardware asset tag assigned to this machine.
+  string asset_tag = 7;
+  // The service tag associated with this machine.
+  string service_tag = 8;
+  // The ticket this machine was deployed for.
+  string deployment_ticket = 9;
+  // The state this machine is in.
+  string state = 10;
+}
+
+// AddMachineResponse is a response to a request to add a machine.
+message AddMachineResponse {
+  // The machine added for this request.
+  Machine machine = 1;
+  // The errors which prevented this machine from being added.
+  repeated string error = 2;
+}
+
+// DeleteMachineRequest is a request to delete a machine.
+message DeleteMachineRequest {
+  // The name of the machine.
+  string name = 1;
+}
+
+// DeleteMachineResponse is a response to a request to delete a machine.
+message DeleteMachineResponse {
+  // The machine deleted for this request.
+  Machine machine = 1;
+  // The errors which prevented this machine from being deleted.
+  repeated string error = 2;
+}
+
+// EditMachineRequest is a request to edit a machine.
+message EditMachineRequest {
+  // The name of the machine.
+  string name = 1;
+
+  // The unit number of the space this machine is racked in.
+  int32 unit = 2;
+  // The name of the switch this machine belongs to.
+  string switch = 3;
+  // The swiwtchport this machine is connected to.
+  int32 switchport = 4;
+  // The name of the platform backing this machine.
+  string platform = 5;
+  // A description of this machine.
+  string description = 6;
+  //The hardware asset tag assigned to this machine.
+  string asset_tag = 7;
+  // The service tag associated with this machine.
+  string service_tag = 8;
+  // The ticket this machine was deployed for.
+  string deployment_ticket = 9;
+  // The state this machine is in.
+  string state = 10;
+
+  // The names of the fields whose values should be updated.
+  // Any fields not mentioned here will retain their current value.
+  repeated string field = 11;
+}
+
+// EditMachineResponse is a response to a request to edit a machine.
+message EditMachineResponse {
+  // The machine edited for this request.
+  Machine machine = 1;
+  // The errors which prevented this machine from being edited.
+  repeated string error = 2;
+}
+
+// GetMachinesRequest is a request to retrieve machines.
+message GetMachinesRequest {
+  // The names of machines to retrieve.
+  repeated string names = 1;
+
+  // The datacenters to filter returned machines on.
+  repeated string datacenters = 2;
+  // The racks to filter returned machines on.
+  repeated string racks = 3;
+  // The rack unit numbers to filter returned machines on.
+  repeated int32 units = 4;
+  // The switches to filter returned machines on.
+  repeated string switches = 5;
+  // The switchports to filter returned machines on.
+  repeated int32 switchports = 6;
+  // The platforms to filter returned machines on.
+  repeated string platforms = 7;
+  // The asset tags to filter returned machines on.
+  repeated string asset_tags = 8;
+  // The service tags to filter returned machines on.
+  repeated string service_tags = 9;
+  // The deployment tickets to filter returned machines on.
+  repeated string deployment_tickets = 10;
+  // The states to filter returned machines on.
+  repeated string states = 11;
+}
+
+// GetMachinesResponse is a response to a request to retrieve machines.
+message GetMachinesResponse {
+  // The machines matching this request.
+  repeated Machine machines = 1;
+}

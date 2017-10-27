@@ -1,0 +1,41 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// VLANs implements a read-only service to retrieve VLANs.
+service VLANs {
+  // GetVLANs retrieves vlans.
+  rpc GetVLANs(VLANsRequest) returns (VLANsResponse);
+}
+
+// VLANsRequest is a request to retrieve VLANs.
+message VLANsRequest {
+  // The IDs of vlans to retrieve.
+  repeated int32 ids = 1;
+  // The names of vlans to retrieve.
+  repeated string names = 2;
+  // The states to filter retrieved vlans on.
+  repeated string state = 3;
+}
+
+// VLAN describes a VLAN.
+message VLAN {
+  // The ID of this vlan.
+  int32 id = 1;
+  // The name of this vlan.
+  string name = 2;
+  // A description of this vlan.
+  string description = 3;
+  // The state of this vlan.
+  string state = 4;
+}
+
+// VLANsResponse is a response to a request to retrieve VLANs.
+message VLANsResponse {
+  // The vlans matching the request.
+  repeated VLAN vlans = 1;
+}

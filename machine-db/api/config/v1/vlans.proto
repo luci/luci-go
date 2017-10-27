@@ -1,0 +1,21 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+// VLANConfig describes a virtual LAN.
+message VLANConfig {
+  // The ID of this vlan.
+  int32 id = 1;
+  // The name of this vlan.
+  string name = 2;
+  // A description of this vlan.
+  string description = 3;
+  // The block of IPv4 addresses belonging to this vlan.
+  string cidr_block = 4;
+  // The state of this vlan.
+  string state = 5;
+}

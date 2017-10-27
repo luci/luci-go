@@ -1,0 +1,196 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// Hostss implements a service to manipulate hosts.
+service Hosts {
+  // AddHost adds a host.
+  rpc AddHost(AddHostRequest) returns (AddHostResponse);
+
+  // DeleteHost deletes a host.
+  rpc DeleteHost(DeleteHostRequest) returns (DeleteHostResponse);
+
+  // EditHost edits a host.
+  rpc EditHost(EditHostRequest) returns (EditHostResponse);
+
+  // GetHosts retrieves host.
+  rpc GetHosts(GetHostsRequest) returns (GetHostsResponse);
+}
+
+// Host describes a host.
+message Host {
+  // The hostname assigned to this host on the network.
+  string hostname = 1;
+  // Whether this is a virtual host or not.
+  bool virtual = 2;
+  // A description of this host.
+  string description = 3;
+  // The machine backing this host.
+  string machine = 4;
+  // The platform of the machine backing this host.
+  string platform = 5;
+  // The datacenter the machine backing this host belongs to.
+  string datacenter = 6;
+  // The rack the machine backing this host belongs to.
+  string rack = 7;
+  // The unit number of the space the machine backing this host is racked in.
+  int32 unit = 8;
+  // The switch the machine backing this host is connected to.
+  string switch = 9;
+  // The switchport the machine backing this host is connected to.
+  int32 switchport = 10;
+  // The operating system this host is running.
+  string os = 11;
+  // The vlan this host belongs to.
+  int32 vlan = 12;
+  // The network interface in use by this host.
+  string network_interface = 13;
+  // The MAC address of the network interface in use by this host.
+  string mac_address = 14;
+  // The IPv4 address assigned to this host on the network.
+  string ipv4 = 15;
+  // The ticket this host was deployed for.
+  string deployment_ticket = 16;
+  // The state this machine is in.
+  string state = 17;
+}
+
+// AddHostRequest is a request to add a machine.
+message AddHostRequest {
+  // The hostname assigned to this host on the network.
+  string hostname = 1;
+  // Whether this is a virtual host or not.
+  bool virtual = 2;
+  // A description of this host.
+  string description = 3;
+  // The machine backing this host.
+  string machine = 4;
+  // The operating system this host is running.
+  string os = 5;
+  // The vlan this host belongs to.
+  int32 vlan = 6;
+  // The network interface in use by this host.
+  string network_interface = 7;
+  // The MAC address of the network interface in use by this host.
+  string mac_address = 8;
+  // The IPv4 address assigned to this host on the network.
+  string ipv4 = 9;
+  // The ticket this host was deployed for.
+  string deployment_ticket = 10;
+  // The state this machine is in.
+  string state = 11;
+}
+
+// AddHostResponse is a response to a request to add a host.
+message AddHostResponse {
+  // The host added for this request.
+  Host host = 1;
+  // The errors which prevented this host from being added.
+  repeated string error = 2;
+}
+
+// DeleteHostRequest is a request to delete a machine.
+message DeleteHostRequest {
+  // The hostname assigned to this host on the network.
+  string hostname = 1;
+  // The vlan this host belongs to.
+  int32 vlan = 2;
+}
+
+// DeleteHostResponse is a response to a request to delete a host.
+message DeleteHostResponse {
+  // The host deleted for this request.
+  Host host = 1;
+  // The errors which prevented this host from being deleted.
+  repeated string error = 2;
+}
+
+// EditHostRequest is a request to edit a host.
+message EditHostRequest {
+  // The hostname assigned to this host on the network.
+  string hostname = 1;
+  // The vlan the host belongs to.
+  int32 vlan = 2;
+
+  // Whether this is a virtual host or not.
+  bool virtual = 3;
+  // A description of this host.
+  string description = 4;
+  // The machine backing this host.
+  string machine = 5;
+  // The operating system this host is running.
+  string os = 6;
+  // The network interface in use by this host.
+  string network_interface = 7;
+  // The MAC address of the network interface in use by this host.
+  string mac_address = 8;
+  // The IPv4 address assigned to this host on the network.
+  string ipv4 = 9;
+  // The ticket this host was deployed for.
+  string deployment_ticket = 10;
+  // The state this machine is in.
+  string state = 11;
+
+  // The names of the fields whose values should be updated.
+  // Any fields not mentioned here will retain their current value.
+  repeated string field = 12;
+}
+
+// EditHostResponse is a response to a request to edit a host.
+message EditHostResponse {
+  // The host edited for this request.
+  Host host = 1;
+  // The errors which prevented this host from being edited.
+  repeated string error = 2;
+}
+
+// GetHostsRequest is a request to retrieve hosts.
+message GetHostsRequest {
+  // The hostnames of the hosts to retrieve.
+  repeated string hostnames = 1;
+
+  // The host type to filter returned hosts on.
+  repeated bool virtual = 2;
+  // The machines to filter returned hosts on.
+  repeated string machines = 3;
+  // The platforms to filter returned hosts on.
+  repeated string platforms = 4;
+  // The datacenters to filter returned hosts on.
+  repeated string datacenters = 5;
+  // The racks to filter returned hosts on.
+  repeated string racks = 6;
+  // The rack unit numbers to filter returned hosts on.
+  repeated int32 units = 7;
+  // The switches to filter returned hosts on.
+  repeated string switches = 8;
+  // The switchports to filter returned hosts on.
+  repeated int32 switchports = 9;
+  // The operating systems to filter returned hosts on.
+  repeated string oses = 10;
+  // The vlans to filter returned hosts on.
+  repeated int32 vlans = 11;
+  // The network interfaces to filter returned hosts on.
+  repeated string network_interfaces = 12;
+  // The MAC addresses to filter returned hosts on.
+  repeated string mac_address = 13;
+  // The IPv4 addresses to filter returned hosts on.
+  repeated string ipv4 = 14;
+  // The asset tags to filter returned hosts on.
+  repeated string asset_tags = 15;
+  // The service tags to filter returned hosts on.
+  repeated string service_tags = 16;
+  // The deployment tickets to filter returned hosts on.
+  repeated string deployment_tickets = 17;
+  // The states to filter returned hosts on.
+  repeated string states = 18;
+}
+
+// GetHostsResponse is a response to a request to retrieve hosts.
+message GetHostsResponse {
+  // The hosts matching this request.
+  repeated Host hosts = 1;
+}

@@ -1,0 +1,17 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+// SettingsConfig describes the server settings.
+message SettingsConfig {
+	// The database to connect to.
+	string database = 1;
+	// The username to authenticate to the database with.
+	string username = 2;
+	// The password to authenticate to the database with.
+	string password = 3;
+}
