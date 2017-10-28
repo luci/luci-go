@@ -223,7 +223,7 @@ func TestConfigReading(t *testing.T) {
 				{
 					JobID:       "project1/noop-job-1",
 					Acls:        acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
-					Revision:    "44e8e469baa6de5036bbd2709e74a890712b51bb",
+					Revision:    "ab303f699de2d07ab5458e20ea600f3c1adffddb",
 					RevisionURL: "https://example.com/view/here/scheduler.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{0xa, 0x0},
@@ -231,7 +231,7 @@ func TestConfigReading(t *testing.T) {
 				{
 					JobID:       "project1/noop-job-2",
 					Acls:        acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
-					Revision:    "44e8e469baa6de5036bbd2709e74a890712b51bb",
+					Revision:    "ab303f699de2d07ab5458e20ea600f3c1adffddb",
 					RevisionURL: "https://example.com/view/here/scheduler.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{0xa, 0x0},
@@ -239,7 +239,7 @@ func TestConfigReading(t *testing.T) {
 				{
 					JobID:       "project1/urlfetch-job-1",
 					Acls:        acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:debuggers", "group:some-admins"}},
-					Revision:    "44e8e469baa6de5036bbd2709e74a890712b51bb",
+					Revision:    "ab303f699de2d07ab5458e20ea600f3c1adffddb",
 					RevisionURL: "https://example.com/view/here/scheduler.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
@@ -416,12 +416,12 @@ job {
   }
 }
 
-# Will be skipped since SwarmingTask Manager is not registered.
+# Will be skipped since BuildbucketTask Manager is not registered.
 job {
-  id: "swarming-job"
+  id: "buildbucket-job"
   schedule: "*/10 * * * * * *"
 
-  swarming: {}
+  buildbucket: {}
 }
 `
 
