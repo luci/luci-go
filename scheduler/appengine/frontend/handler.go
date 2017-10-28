@@ -59,7 +59,6 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task/buildbucket"
 	"go.chromium.org/luci/scheduler/appengine/task/gitiles"
 	"go.chromium.org/luci/scheduler/appengine/task/noop"
-	"go.chromium.org/luci/scheduler/appengine/task/swarming"
 	"go.chromium.org/luci/scheduler/appengine/task/urlfetch"
 	"go.chromium.org/luci/scheduler/appengine/ui"
 )
@@ -80,7 +79,6 @@ var (
 		&buildbucket.TaskManager{},
 		&gitiles.TaskManager{},
 		&noop.TaskManager{},
-		&swarming.TaskManager{},
 		&urlfetch.TaskManager{},
 	}
 )

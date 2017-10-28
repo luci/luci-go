@@ -41,6 +41,7 @@ message AclSet {
 // Such jobs runs on a schedule or can be triggered by some trigger.
 message Job {
   reserved 4;
+  reserved 102;
 
   // Id is a name of the job (unique for the project).
   //
@@ -91,8 +92,6 @@ message Job {
   NoopTask noop = 100;
   // UrlFetch can be used to make a simple HTTP call.
   UrlFetchTask url_fetch = 101;
-  // SwarmingTask can be used to schedule swarming job.
-  SwarmingTask swarming = 102;
   // BuildbucketTask can be used to schedule buildbucket job.
   BuildbucketTask buildbucket = 103;
 }
@@ -180,43 +179,6 @@ message UrlFetchTask {
 }
 
 
-// SwarmingTask is DEPRECATED per https://crbug.com/767287.
-// It specifies parameters of Swarming-based jobs.
-message SwarmingTask {
-  // IsolatedRef defines a data tree reference, normally a reference to
-  // an .isolated file
-  message IsolatedRef {
-    string isolated = 1;
-    string isolated_server = 2;
-    string namespace = 3;
-  }
-
-  // Server is URL of the swarming service to use.
-  string server = 1;
-
-  // What to run. Only one of 'command' or 'isolated_ref' must be given.
-  repeated string command = 2;
-  IsolatedRef isolated_ref = 3;
-
-  // Additional arguments to pass to isolated command.
-  repeated string extra_args = 4;
-  // List of "key=value" pairs with additional OS environment variables.
-  repeated string env = 5;
-
-  // Where to run it. List of "key:value" pairs.
-  repeated string dimensions = 6;
-  // Tags is a list of tags (as "key:value" pairs) to assign to the task.
-  repeated string tags = 7;
-  // Priority is task priority (or niceness, lower value - higher priority).
-  int32 priority = 8;
-
-  // Timeouts. All optional. The scheduler will set reasonable default values.
-  int32 execution_timeout_secs = 9;
-  int32 grace_period_secs = 10;
-  int32 io_timeout_secs = 11;
-}
-
-
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 message BuildbucketTask {
   // Server is hostname of the buildbucket service to use.
@@ -254,9 +216,10 @@ message ProjectConfig {
 //
 // It is used internally when storing jobs in the datastore.
 message TaskDefWrapper {
+  reserved 3;
+
   NoopTask noop = 1;
   UrlFetchTask url_fetch = 2;
-  SwarmingTask swarming = 3;
   BuildbucketTask buildbucket = 4;
   GitilesTask gitiles = 5;
 }
