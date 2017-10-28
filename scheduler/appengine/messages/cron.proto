@@ -180,7 +180,8 @@ message UrlFetchTask {
 }
 
 
-// SwarmingTask specifies parameters of Swarming-based jobs.
+// SwarmingTask is DEPRECATED per https://crbug.com/767287.
+// It specifies parameters of Swarming-based jobs.
 message SwarmingTask {
   // IsolatedRef defines a data tree reference, normally a reference to
   // an .isolated file

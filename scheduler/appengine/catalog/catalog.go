@@ -404,7 +404,8 @@ func (cat *catalog) validateJobProto(c context.Context, j *messages.Job) (proto.
 	}
 	// TODO(tandrii): delete this block to complete https://crbug.com/767287.
 	if j.Swarming != nil {
-		logging.Warningf(c, "swarming job is defined in %q", j.Id)
+		logging.Errorf(c, "swarming job is defined in %q", j.Id)
+		return nil, fmt.Errorf("swarming job is deprecated, see https://crbug.com/767287")
 	}
 	return cat.extractTaskProto(j)
 }
