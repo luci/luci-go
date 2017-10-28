@@ -435,7 +435,8 @@ func (m *UrlFetchTask) GetTimeoutSec() int32 {
 	return 0
 }
 
-// SwarmingTask specifies parameters of Swarming-based jobs.
+// SwarmingTask is DEPRECATED per https://crbug.com/767287.
+// It specifies parameters of Swarming-based jobs.
 type SwarmingTask struct {
 	// Server is URL of the swarming service to use.
 	Server string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
