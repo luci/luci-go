@@ -298,23 +298,9 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		commands = nil
 	}
 
-	pkgs := []*swarming.SwarmingRpcsCipdPackage{}
-	for k, v := range c.cipdPackage {
-		s := strings.SplitN(k, ":", 2)
-		pkg := swarming.SwarmingRpcsCipdPackage{
-			PackageName: s[len(s)-1],
-			Version:     v,
-		}
-		if len(s) > 1 {
-			pkg.Path = s[0]
-		}
-		pkgs = append(pkgs, &pkg)
-	}
-
 	properties := swarming.SwarmingRpcsTaskProperties{
 		Command:              commands,
 		Dimensions:           mapToArray(c.dimensions),
-		CipdInput:            &swarming.SwarmingRpcsCipdInput{Packages: pkgs},
 		Env:                  mapToArray(c.env),
 		ExecutionTimeoutSecs: c.hardTimeout,
 		ExtraArgs:            extraArgs,
@@ -322,6 +308,22 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Idempotent:           c.idempotent,
 		InputsRef:            inputsRefs,
 		IoTimeoutSecs:        c.ioTimeout,
+	}
+
+	if len(c.cipdPackage) > 0 {
+		pkgs := []*swarming.SwarmingRpcsCipdPackage{}
+		for k, v := range c.cipdPackage {
+			s := strings.SplitN(k, ":", 2)
+			pkg := swarming.SwarmingRpcsCipdPackage{
+				PackageName: s[len(s)-1],
+				Version:     v,
+			}
+			if len(s) > 1 {
+				pkg.Path = s[0]
+			}
+			pkgs = append(pkgs, &pkg)
+		}
+		properties.CipdInput = &swarming.SwarmingRpcsCipdInput{Packages: pkgs}
 	}
 
 	request := swarming.SwarmingRpcsNewTaskRequest{
