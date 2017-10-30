@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2da6997_d897c9b5",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-30T15:01:45Z",
+      "side": 1,
+      "message": "Previously, this logic would prevent running -raw-cmd without an isolate hash which is incorrect. The correct behavior IIUC is to allow -raw-cmd or an isolate hash or both, but not neither.",
+      "range": {
+        "startLine": 160,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 3
+      },
+      "revId": "aaf4debd2700539e15ac59da4fac52d0da699dad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
