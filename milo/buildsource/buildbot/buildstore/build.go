@@ -202,11 +202,15 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 		BuildKey:  datastore.KeyForObj(c, (*buildEntity)(b)),
 		SelfLink:  fmt.Sprintf("/buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
+		BuildID:   fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 	}
 
 	bs.Summary.Start = b.Times.Start.Time
 	bs.Summary.End = b.Times.Finish.Time
 	bs.Summary.Status = b.Status()
+
+	// Start time acts as a proxy for creation time.
+	bs.Created = b.Times.Start.Time
 
 	// Populates BuildSet and ManifestKey
 	if err := attachRevisionInfo(c, b, bs); err != nil {

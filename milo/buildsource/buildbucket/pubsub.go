@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,8 +88,8 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		AnnotationURL: swarmTags.Get("log_location"),
 		BuildKey:      MakeBuildKey(c, hostname, build.ID),
 		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
-
-		BuildSet: build.Tags[buildbucket.TagBuildSet],
+		BuildID:       build.Address(),
+		BuildSet:      build.Tags[buildbucket.TagBuildSet],
 
 		SelfLink: fmt.Sprintf("/p/%s/builds/b%d", project, build.ID),
 
