@@ -16,20 +16,19 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"golang.org/x/net/context"
-
-	"go.chromium.org/gae/service/datastore"
 )
 
-type ErrBuildMessageOutOfOrder struct {
-	error
-}
+// ErrBuildMessageOutOfOrder indicates that a terminal build message arrived before any pending
+// build messages.
+type ErrBuildMessageOutOfOrder struct{ error }
 
 // pendingBuild holds information about builds that are still in progress for a builder.
 type pendingBuild struct {
-	// BuildKey is the string representation of *datastore.Key BuildKey.
-	BuildKey string
+	// BuildID is the ID of a Build.
+	BuildID string
 
 	// Status is the status of the build whose key's string representation is above.
 	Status Status
@@ -43,12 +42,15 @@ type BuilderSummary struct {
 	// Matches field in BuildSummary.
 	BuilderID string `gae:"$id"`
 
+	// LastFinishedCreated is the time the last finished build was created.
+	LastFinishedCreated time.Time
+
 	// LastFinishedStatus is the status of last finished build on builder.
 	LastFinishedStatus Status
 
-	// LastFinishedID is the parent key of the BuildSummary associated with last finished build on the
-	// builder.
-	LastFinishedID *datastore.Key
+	// LastFinishedBuildID is the BuildID of the BuildSummary associated with last finished build on
+	// the builder.
+	LastFinishedBuildID string
 
 	// Consoles lists consoles of which this builder is part.
 	Consoles []string // indexed on this
@@ -61,7 +63,7 @@ type BuilderSummary struct {
 func (b *BuilderSummary) GetInProgress() map[string]Status {
 	bp := make(map[string]Status, len(b.InProgress))
 	for _, bld := range b.InProgress {
-		bp[bld.BuildKey] = bld.Status
+		bp[bld.BuildID] = bld.Status
 	}
 	return bp
 }
@@ -69,8 +71,8 @@ func (b *BuilderSummary) GetInProgress() map[string]Status {
 // SetInProgress stores the given map of pending builds back into the internal array representation.
 func (b *BuilderSummary) SetInProgress(bp map[string]Status) {
 	b.InProgress = make([]pendingBuild, 0, len(bp))
-	for bk, bs := range bp {
-		b.InProgress = append(b.InProgress, pendingBuild{bk, bs})
+	for id, bs := range bp {
+		b.InProgress = append(b.InProgress, pendingBuild{id, bs})
 	}
 }
 
@@ -81,7 +83,7 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 	if b.BuilderID != build.BuilderID {
 		return fmt.Errorf(
 			"updating wrong builder %s for build %v (should be %s)",
-			b.BuilderID, build.BuildKey, build.BuilderID)
+			b.BuilderID, build.BuildID, build.BuilderID)
 	}
 
 	// Update builder's InProgress with given build.
@@ -99,20 +101,14 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 	}
 
 	// Check if we can bail from updating builder's last complete build state.
-	if b.LastFinishedID != nil {
-		last := &BuildSummary{BuildKey: b.LastFinishedID}
-		if err := datastore.Get(c, last); err != nil {
-			return err
-		}
-
-		// TODO(jchinlee): Backfilled builds have the wrong creation time; use revision comparison.
-		if build.Created.Before(last.Created) {
-			return updateErr
-		}
+	// TODO(jchinlee): Backfilled builds have the wrong creation time; use revision comparison.
+	if b.LastFinishedBuildID != "" && build.Created.Before(b.LastFinishedCreated) {
+		return updateErr
 	}
 
+	b.LastFinishedCreated = build.Created
 	b.LastFinishedStatus = build.Summary.Status
-	b.LastFinishedID = build.BuildKey
+	b.LastFinishedBuildID = build.BuildID
 
 	// Re-raise update error if applicable.
 	return updateErr
@@ -122,23 +118,23 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 // needs additional processing.
 // In particular, a build that has not terminated doesn't update builder last finished build state.
 func (b *BuilderSummary) updateInProgress(build *BuildSummary) error {
-	bk := build.BuildKey.String()
+	bid := build.BuildID
 	st := build.Summary.Status
 
 	bp := b.GetInProgress()
 	if st.Terminal() {
 		// If we have a terminal state, the build is no longer InProgress so remove it.
-		if _, ok := bp[bk]; !ok {
+		if _, ok := bp[bid]; !ok {
 			// If the build was never InProgress, that's an error. This should never happen, as earlier
 			// parts of the pipeline take care of it, so throw an error.
 			return ErrBuildMessageOutOfOrder{
-				fmt.Errorf("finished build %v that was not in-progress for builder %s", bk, b.BuilderID)}
+				fmt.Errorf("finished build %v that was not in-progress for builder %s", bid, b.BuilderID)}
 		}
 
-		delete(bp, bk)
+		delete(bp, bid)
 	} else {
 		// Otherwise just update in the map, whether it's a newly pending or existing pending build.
-		bp[bk] = st
+		bp[bid] = st
 	}
 
 	b.SetInProgress(bp)
