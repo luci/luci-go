@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "606aee3b_c63002e4",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-30T21:21:05Z",
+      "side": 1,
+      "message": "did you mean \"creation\"?",
+      "range": {
+        "startLine": 210,
+        "startChar": 35,
+        "endLine": 210,
+        "endChar": 45
+      },
+      "revId": "b5ec9dee913047d6bba7eac1c575a23035b1dcce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcdc5140_1c7c37e5",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-30T21:21:05Z",
+      "side": 1,
+      "message": "ping https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/732444",
+      "range": {
+        "startLine": 106,
+        "startChar": 23,
+        "endLine": 106,
+        "endChar": 30
+      },
+      "revId": "b5ec9dee913047d6bba7eac1c575a23035b1dcce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89b20100_dc90ed0c",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-30T21:21:05Z",
+      "side": 1,
+      "message": "it is an address of a build, not bucket\n\"buildaddr\"?",
+      "range": {
+        "startLine": 72,
+        "startChar": 31,
+        "endLine": 72,
+        "endChar": 41
+      },
+      "revId": "b5ec9dee913047d6bba7eac1c575a23035b1dcce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a9c4dcd_b9d2d755",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-30T21:21:05Z",
+      "side": 1,
+      "message": "note that go map iteration order is random, so this function is non-deterministic. Consider making a slice of ids, sorting it and then iterating over sorted ids",
+      "revId": "b5ec9dee913047d6bba7eac1c575a23035b1dcce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44b0e07e_3d601974",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-30T21:21:05Z",
+      "side": 1,
+      "message": "why not join with the prev line?",
+      "revId": "b5ec9dee913047d6bba7eac1c575a23035b1dcce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
