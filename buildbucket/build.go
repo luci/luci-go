@@ -35,11 +35,7 @@ const TagBuilder = "builder"
 type Build struct {
 	// fields set at the build creation time, immutable.
 
-	ID int64
-	// Address is an alternative identifier of the build.
-	// If the build has build number, it is "<bucket>/<builder>/<number>".
-	// Otherwise it is "<id>".
-	Address      string
+	ID           int64
 	CreationTime time.Time
 	CreatedBy    identity.Identity
 	Bucket       string
@@ -72,6 +68,16 @@ type Build struct {
 
 	CompletionTime time.Time
 	Output         Output
+}
+
+// Address returns an alternative identifier of the build.
+// If b has a number, the address is "<bucket>/<builder>/<number>".
+// Otherwise it is "<id>".
+func (b *Build) Address() string {
+	if b.Number != nil {
+		return fmt.Sprintf("%s/%s/%d", b.Bucket, b.Builder, *b.Number)
+	}
+	return strconv.FormatInt(b.ID, 10)
 }
 
 // RunDuration returns duration between build start and completion.
@@ -208,7 +214,6 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 
 	*b = Build{
 		ID:               msg.Id,
-		Address:          address,
 		CreationTime:     ParseTimestamp(msg.CreatedTs),
 		CreatedBy:        createdBy,
 		Bucket:           msg.Bucket,
