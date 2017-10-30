@@ -4,19 +4,22 @@
     "Status": "Running",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
+      "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true",
+      "AriaLabel": "swarming task 2d8d62f6be545b10"
     },
     "MainLink": [
       {
         "Label": "Task 2d8d62f6be545b10",
-        "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
+        "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true",
+        "AriaLabel": "step link for Task 2d8d62f6be545b10"
       }
     ],
     "SubLink": [
       [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-internal/stdout"
+          "URL": "/swarming/task/build-internal/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ]
     ],
@@ -52,14 +55,16 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-internal/steps/recipe_bootstrap/0/stdout"
+          "URL": "/swarming/task/build-internal/steps/recipe_bootstrap/0/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "Confused? README here",
-            "URL": "https://chromium.googlesource.com/external/github.com/luci/recipes-py/+/master/doc/workflow.md"
+            "URL": "https://chromium.googlesource.com/external/github.com/luci/recipes-py/+/master/doc/workflow.md",
+            "AriaLabel": "step link for Confused? README here"
           }
         ]
       ],

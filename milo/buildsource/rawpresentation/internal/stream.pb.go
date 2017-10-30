@@ -15,7 +15,7 @@ package internal
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import milo "go.chromium.org/luci/common/proto/milo"
+import milo1 "go.chromium.org/luci/common/proto/milo"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -32,7 +32,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // deserialize Step and associated fetch data into memcache.
 type CachedStep struct {
 	// Step is the root annotation step.
-	Step *milo.Step `protobuf:"bytes,1,opt,name=step" json:"step,omitempty"`
+	Step *milo1.Step `protobuf:"bytes,1,opt,name=step" json:"step,omitempty"`
 	// Finished is true if this is the last annotation protobuf in the stream.
 	Finished bool `protobuf:"varint,2,opt,name=finished" json:"finished,omitempty"`
 }
@@ -42,7 +42,7 @@ func (m *CachedStep) String() string            { return proto.CompactTextString
 func (*CachedStep) ProtoMessage()               {}
 func (*CachedStep) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
-func (m *CachedStep) GetStep() *milo.Step {
+func (m *CachedStep) GetStep() *milo1.Step {
 	if m != nil {
 		return m.Step
 	}

@@ -4,19 +4,22 @@
     "Status": "Failure",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
+      "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true",
+      "AriaLabel": "swarming task 2d8d62f6be545b10"
     },
     "MainLink": [
       {
         "Label": "Task 2d8d62f6be545b10",
-        "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true"
+        "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true",
+        "AriaLabel": "step link for Task 2d8d62f6be545b10"
       }
     ],
     "SubLink": [
       [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-patch-failure/stdout"
+          "URL": "/swarming/task/build-patch-failure/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ]
     ],
@@ -38,14 +41,16 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-patch-failure/steps/update_scripts/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/update_scripts/0/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "gclient_json",
-            "URL": "/swarming/task/build-patch-failure/steps/update_scripts/0/logs/gclient_json/0"
+            "URL": "/swarming/task/build-patch-failure/steps/update_scripts/0/logs/gclient_json/0",
+            "AriaLabel": "log link for gclient_json"
           }
         ]
       ],
@@ -65,14 +70,16 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-patch-failure/steps/setup_build/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/setup_build/0/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "run_recipe",
-            "URL": "/swarming/task/build-patch-failure/steps/setup_build/0/logs/run_recipe/0"
+            "URL": "/swarming/task/build-patch-failure/steps/setup_build/0/logs/run_recipe/0",
+            "AriaLabel": "log link for run_recipe"
           }
         ]
       ],
@@ -92,20 +99,23 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/logs/json.output/0"
+            "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/logs/json.output/0",
+            "AriaLabel": "log link for json.output"
           }
         ],
         [
           {
             "Label": "patch error",
-            "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/logs/patch_error/0"
+            "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/logs/patch_error/0",
+            "AriaLabel": "log link for patch error"
           }
         ]
       ],
@@ -125,7 +135,8 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-patch-failure/steps/Patch_failure/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/Patch_failure/0/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ],
       "Started": "2016-03-14T10:00:08Z",
@@ -144,14 +155,16 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "/swarming/task/build-patch-failure/steps/recipe_failure_reason/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/recipe_failure_reason/0/stdout",
+          "AriaLabel": "log link for stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "failure reason",
-            "URL": "/swarming/task/build-patch-failure/steps/recipe_failure_reason/0/logs/failure_reason/0"
+            "URL": "/swarming/task/build-patch-failure/steps/recipe_failure_reason/0/logs/failure_reason/0",
+            "AriaLabel": "log link for failure reason"
           }
         ]
       ],

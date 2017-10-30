@@ -26,10 +26,10 @@
 
 <body class="interface">
   <header>
-    <a href="/">Luci</a>
+    <a href="/" alt="Home">Luci</a>
     <div>
       
-        <a href="http://fake.example.com/login?dest=%2Ffoobar">login</a>
+        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">login</a>
       
     </div>
   </header>
@@ -86,7 +86,10 @@
         
         <li>
           Source:
-          <a href="https://example.com/task?id=2d8d62f6be545b10&amp;show_raw=1&amp;wide_logs=true">Task 2d8d62f6be545b10</a>
+          <a href="https://example.com/task?id=2d8d62f6be545b10&amp;show_raw=1&amp;wide_logs=true"
+             aria-label="Source for Task 2d8d62f6be545b10">
+            Task 2d8d62f6be545b10
+          </a>
         </li>
         
 
@@ -123,7 +126,7 @@
               </div>
               <ul>
                 
-                <li class="sublink"><a href="/swarming/task/build-internal/stdout">stdout</a></li>
+                <li class="sublink"><a href="/swarming/task/build-internal/stdout" aria-label="log link for stdout">stdout</a></li>
                 
               </ul>
             </li>
@@ -144,9 +147,9 @@
             </div>
             <ul>
               
-                <li class="sublink"><a href="/swarming/task/build-internal/steps/recipe_bootstrap/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="/swarming/task/build-internal/steps/recipe_bootstrap/0/stdout" aria-label="log link for stdout">stdout</a></li>
               
-                <li class="sublink"><a href="https://chromium.googlesource.com/external/github.com/luci/recipes-py/&#43;/master/doc/workflow.md">Confused? README here</a></li>
+                <li class="sublink"><a href="https://chromium.googlesource.com/external/github.com/luci/recipes-py/&#43;/master/doc/workflow.md" aria-label="step link for Confused? README here">Confused? README here</a></li>
               
               
             </ul>

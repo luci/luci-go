@@ -4,7 +4,8 @@
     "Status": "InfraFailure",
     "Source": {
       "Label": "Task 1a2b3c4d5e6f7890",
-      "URL": "https://example.com/task?id=1a2b3c4d5e6f7890\u0026show_raw=1\u0026wide_logs=true"
+      "URL": "https://example.com/task?id=1a2b3c4d5e6f7890\u0026show_raw=1\u0026wide_logs=true",
+      "AriaLabel": "swarming task 1a2b3c4d5e6f7890"
     },
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "2016-03-14T11:00:18.48602Z",

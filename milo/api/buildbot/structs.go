@@ -69,7 +69,7 @@ type LinkAlias struct {
 }
 
 func (a *LinkAlias) Link() *resp.Link {
-	return resp.NewLink(a.Text, a.URL)
+	return resp.NewLink(a.Text, a.URL, fmt.Sprintf("alias link for %s", a.Text))
 }
 
 type Property struct {

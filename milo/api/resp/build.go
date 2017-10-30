@@ -269,7 +269,10 @@ type LinkSet []*Link
 type Link struct {
 	model.Link
 
-	// An icon for the link.  Not compatible with label.  Rendered as <img>
+	// AriaLabel is a spoken label for the link.  Used as aria-label under the anchor tag.
+	AriaLabel string `json:",omitempty"`
+
+	// Img is an icon for the link.  Not compatible with label.  Rendered as <img>
 	Img string `json:",omitempty"`
 
 	// Alt text for the image, only supported with img.
@@ -280,6 +283,6 @@ type Link struct {
 }
 
 // NewLink does just about what you'd expect.
-func NewLink(label, url string) *Link {
-	return &Link{Link: model.Link{Label: label, URL: url}}
+func NewLink(label, url, ariaLabel string) *Link {
+	return &Link{Link: model.Link{Label: label, URL: url}, AriaLabel: ariaLabel}
 }

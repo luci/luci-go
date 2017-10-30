@@ -83,7 +83,7 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 	bot := resp.NewLink(
 		b.Slave,
 		fmt.Sprintf("https://%s/%s/buildslaves/%s", host, b.Master, b.Slave),
-	)
+		fmt.Sprintf("Buildbot buildslave %s", b.Slave))
 
 	var source *resp.Link
 	if !b.Emulated {
@@ -91,11 +91,11 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 			fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
 			fmt.Sprintf("https://%s/%s/builders/%s/builds/%d",
 				host, b.Master, b.Buildername, b.Number),
-		)
+			fmt.Sprintf("Build number %d on master %s builder %s", b.Number, b.Master, b.Buildername))
 	}
 
 	// The link to the builder page.
-	parent := resp.NewLink(b.Buildername, ".")
+	parent := resp.NewLink(b.Buildername, ".", fmt.Sprintf("Parent builder %s", b.Buildername))
 
 	// Do a best effort lookup for the bot information to fill in OS/Platform info.
 	banner := getBanner(c, b)
@@ -176,7 +176,16 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 		}
 
 		for _, l := range step.Logs {
-			logLink := resp.NewLink(l.Name, l.URL)
+			ariaName := l.Name
+			switch ariaName {
+			case "stdio":
+				ariaName = "standard i/o"
+			case "stdout":
+				ariaName = "standard out"
+			case "stderr":
+				ariaName = "standard error"
+			}
+			logLink := resp.NewLink(l.Name, l.URL, fmt.Sprintf("log %s for step %s", ariaName, step.Name))
 
 			links := getLinksWithAliases(logLink, true)
 			if logLink.Label == "stdio" {
@@ -195,7 +204,7 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			logLink := resp.NewLink(name, step.Urls[name])
+			logLink := resp.NewLink(name, step.Urls[name], fmt.Sprintf("step link %s for step %s", name, step.Name))
 
 			bc.SubLink = append(bc.SubLink, getLinksWithAliases(logLink, false))
 		}
@@ -312,7 +321,7 @@ func blame(b *buildbot.Build) (result []*resp.Commit) {
 				AuthorEmail: c.Who,
 				Repo:        c.Repository,
 				CommitTime:  time.Unix(int64(c.When), 0).UTC(),
-				Revision:    resp.NewLink(c.Revision, c.Revlink),
+				Revision:    resp.NewLink(c.Revision, c.Revlink, fmt.Sprintf("commit by %s", c.Who)),
 				Description: c.Comments,
 				File:        files,
 			})
@@ -381,17 +390,17 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
 			rietveld = strings.TrimRight(rietveld, "/")
 			ss.Changelist = resp.NewLink(
 				fmt.Sprintf("Rietveld CL %d", issue),
-				fmt.Sprintf("%s/%d", rietveld, issue))
+				fmt.Sprintf("%s/%d", rietveld, issue), "")
 		case gerrit != "":
 			gerrit = strings.TrimRight(gerrit, "/")
 			ss.Changelist = resp.NewLink(
 				fmt.Sprintf("Gerrit CL %d", issue),
-				fmt.Sprintf("%s/c/%d", gerrit, issue))
+				fmt.Sprintf("%s/c/%d", gerrit, issue), "")
 		}
 	}
 
 	if gotRevision != "" {
-		ss.Revision = resp.NewLink(gotRevision, "")
+		ss.Revision = resp.NewLink(gotRevision, "", fmt.Sprintf("got revision %s", gotRevision))
 		if repository != "" {
 			ss.Revision.URL = repository + "/+/" + gotRevision
 		}

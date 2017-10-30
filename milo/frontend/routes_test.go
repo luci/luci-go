@@ -156,7 +156,7 @@ func buildbotBuildTestData() []common.TestBundle {
 
 // buildbotBuilderTestData returns sample test data for builder pages.
 func buildbotBuilderTestData() []common.TestBundle {
-	l := resp.NewLink("Some current build", "https://some.url/path")
+	l := resp.NewLink("Some current build", "https://some.url/path", "")
 	return []common.TestBundle{
 		{
 			Description: "Basic Test no builds",

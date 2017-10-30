@@ -84,7 +84,8 @@ func getBuildSummary(b *buildbot.Build, linkParams url.Values) *resp.BuildSummar
 		linkURL += "?" + linkParams.Encode()
 	}
 	return &resp.BuildSummary{
-		Link:   resp.NewLink(fmt.Sprintf("#%d", b.Number), linkURL),
+		Link: resp.NewLink(fmt.Sprintf("#%d", b.Number), linkURL,
+			fmt.Sprintf("build number %d on builder %s", b.Number, b.Buildername)),
 		Status: b.Status(),
 		ExecutionTime: resp.Interval{
 			Started:  b.Times.Start.Time,
@@ -110,7 +111,7 @@ func summarizeSlavePool(
 			Name: *resp.NewLink(
 				slaveName,
 				fmt.Sprintf("%s/buildslaves/%s", baseURL, slaveName),
-			),
+				fmt.Sprintf("buildslave %s", slaveName)),
 		}
 		switch {
 		case !ok:
@@ -268,7 +269,8 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 			// Go templates escapes this for us, and also
 			// slashes are not allowed in builder names.
 			ml.Builders = append(ml.Builders, *resp.NewLink(
-				b, fmt.Sprintf("/buildbot/%s/%s", m.Name, b)))
+				b, fmt.Sprintf("/buildbot/%s/%s", m.Name, b),
+				fmt.Sprintf("buildbot builder %s on master %s", b, m.Name)))
 		}
 		result.BuilderGroups = append(result.BuilderGroups, ml)
 	}

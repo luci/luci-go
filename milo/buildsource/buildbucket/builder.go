@@ -133,8 +133,9 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.Bui
 
 		// support only one CL per build.
 		result.Blame = []*resp.Commit{{
-			Changelist:      resp.NewLink(fmt.Sprintf("Gerrit CL %d", cl.Change), cl.URL()),
-			RequestRevision: resp.NewLink(params.Properties.Revision, ""),
+			Changelist: resp.NewLink(fmt.Sprintf("Gerrit CL %d", cl.Change), cl.URL(),
+				fmt.Sprintf("gerrit changelist %d", cl.Change)),
+			RequestRevision: resp.NewLink(params.Properties.Revision, "", fmt.Sprintf("request revision %s", params.Properties.Revision)),
 		}}
 
 		if len(params.Changes) == 1 {
@@ -144,11 +145,13 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.Bui
 	}
 
 	if b.URL != "" {
-		result.Link = resp.NewLink(strconv.FormatInt(b.ID, 10), b.URL)
+		result.Link = resp.NewLink(strconv.FormatInt(b.ID, 10), b.URL,
+			fmt.Sprintf("build ID %d", b.ID))
 
 		// compute the best link label
 		if b.Number != nil {
 			result.Link.Label = strconv.Itoa(*b.Number)
+			result.Link.AriaLabel = fmt.Sprintf("build number %s", result.Link.Label)
 		} else if taskID := b.Tags.Get("swarming_task_id"); taskID != "" {
 			result.Link.Label = taskID
 		}

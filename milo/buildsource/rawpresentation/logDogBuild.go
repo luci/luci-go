@@ -256,7 +256,7 @@ func AddLogDogToBuild(
 				build.Trigger = &resp.Trigger{}
 			}
 			build.Trigger.Revision = resp.NewLink(
-				rev, fmt.Sprintf("https://crrev.com/%s", rev))
+				rev, fmt.Sprintf("https://crrev.com/%s", rev), fmt.Sprintf("revision %s", rev))
 		}
 	}
 

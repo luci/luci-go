@@ -5,7 +5,8 @@
     {
       "Link": {
         "Label": "2fbc7169a3b9a010",
-        "URL": "/swarming/prod/2fbc7169a3b9a010"
+        "URL": "/swarming/prod/2fbc7169a3b9a010",
+        "AriaLabel": "build ID 9008387734773878544"
       },
       "Status": "Running",
       "PendingTime": {
@@ -29,13 +30,15 @@
           "Branch": "",
           "RequestRevision": {
             "Label": "HEAD",
-            "URL": ""
+            "URL": "",
+            "AriaLabel": "request revision HEAD"
           },
           "Revision": null,
           "Description": "",
           "Changelist": {
             "Label": "Gerrit CL 1",
-            "URL": "https://chromium-review.googlesource.com/c/1/2"
+            "URL": "https://chromium-review.googlesource.com/c/1/2",
+            "AriaLabel": "gerrit changelist 1"
           },
           "CommitURL": "",
           "File": null
@@ -50,7 +53,8 @@
     {
       "Link": {
         "Label": "2fbc5f57c3a4b910",
-        "URL": "/swarming/prod/2fbc5f57c3a4b910"
+        "URL": "/swarming/prod/2fbc5f57c3a4b910",
+        "AriaLabel": "build ID 9008388977193267696"
       },
       "Status": "Success",
       "PendingTime": {
@@ -76,13 +80,15 @@
           "Branch": "",
           "RequestRevision": {
             "Label": "HEAD",
-            "URL": ""
+            "URL": "",
+            "AriaLabel": "request revision HEAD"
           },
           "Revision": null,
           "Description": "",
           "Changelist": {
             "Label": "Gerrit CL 2",
-            "URL": "https://chromium-review.googlesource.com/c/2/2"
+            "URL": "https://chromium-review.googlesource.com/c/2/2",
+            "AriaLabel": "gerrit changelist 2"
           },
           "CommitURL": "",
           "File": null
