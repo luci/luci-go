@@ -217,13 +217,16 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 	}
 	if len(cmd) != 0 {
 		isol.Command = cmd
-	}
-	if rootDir != isolateDir {
-		relPath, err := filepath.Rel(rootDir, isolateDir)
-		if err != nil {
-			return nil, "", nil, err
+		// Only set RelativeCwd if a command was also specified. This reduce the
+		// noise for Swarming tasks where the command is specified as part of the
+		// Swarming task request and not thru the isolated file.
+		if rootDir != isolateDir {
+			relPath, err := filepath.Rel(rootDir, isolateDir)
+			if err != nil {
+				return nil, "", nil, err
+			}
+			isol.RelativeCwd = relPath
 		}
-		isol.RelativeCwd = relPath
 	}
 	return deps, rootDir, isol, nil
 }
