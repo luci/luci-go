@@ -22,6 +22,30 @@
       "revId": "aaf4debd2700539e15ac59da4fac52d0da699dad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "405e2788_9eff41a4",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-10-30T17:48:11Z",
+      "side": 1,
+      "message": "This is needed if we\u0027re going to replace the commands in isolates with Swarming commands which AFAIK is the plan.",
+      "parentUuid": "a2da6997_d897c9b5",
+      "range": {
+        "startLine": 160,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 3
+      },
+      "revId": "aaf4debd2700539e15ac59da4fac52d0da699dad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
