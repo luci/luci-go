@@ -18,16 +18,16 @@ that can be found in the LICENSE file. -->
 
 <body class="interface">
   <header>
-    <a href="/">Luci</a>
+    <a href="/" alt="Home">Luci</a>
     <div>
       {{ if .IsAnonymous }}
-        <a href="{{.LoginURL}}">login</a>
+        <a href="{{.LoginURL}}" alt="Login">login</a>
       {{ else }}
         {{ if .User.Picture }}
-          <img class="account-picture" src="{{.User.Picture}}">
+          <img class="account-picture" src="{{.User.Picture}}" alt="Account Icon">
         {{ end }}
         {{ .User.Email }} |
-        <a href="{{.LogoutURL}}">logout</a>
+        <a href="{{.LogoutURL}}" alt="Logout">logout</a>
       {{ end }}
     </div>
   </header>
