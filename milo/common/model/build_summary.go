@@ -67,6 +67,13 @@ type BuildSummary struct {
 	//   "buildbucket/<bucketname>/<buildername>"
 	BuilderID string
 
+	// Global identifier for this Build.
+	// Buildbot: "buildbot/<mastername>/<buildername>/<buildnumber>"
+	// Buildbucket: "buildbucket/<bucketaddr>"
+	// For buildbucket, <bucketaddr> looks like <bucketname>/<buildername>/<buildnumber> if available
+	// and <buildid> otherwise.
+	BuildID string
+
 	// The LUCI project ID associated with this build. This is used for ACL checks
 	// when presenting this build to end users.
 	ProjectID string
