@@ -32,7 +32,8 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 	}
 	result := &resp.CIService{
 		Name: "Swarmbucket",
-		Host: resp.NewLink(bucketSettings.Name, "https://"+bucketSettings.Host),
+		Host: resp.NewLink(bucketSettings.Name, "https://"+bucketSettings.Host,
+			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
 	}
 	client, err := newSwarmbucketClient(c, bucketSettings.Host)
 	if err != nil {
@@ -50,7 +51,8 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 		group.Builders = make([]resp.Link, len(bucket.Builders))
 		for j, builder := range bucket.Builders {
 			group.Builders[j] = *resp.NewLink(
-				builder.Name, fmt.Sprintf("/buildbucket/%s/%s", bucket.Name, builder.Name))
+				builder.Name, fmt.Sprintf("/buildbucket/%s/%s", bucket.Name, builder.Name),
+				fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Name, bucket.Name))
 		}
 		result.BuilderGroups[i] = group
 	}

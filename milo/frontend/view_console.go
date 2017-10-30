@@ -157,7 +157,7 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 			Repo:        def.RepoURL,
 			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
 			Description: commit.Msg,
-			Revision:    resp.NewLink(commitNames[row], def.RepoURL+"/+/"+commitNames[row]),
+			Revision:    resp.NewLink(commitNames[row], def.RepoURL+"/+/"+commitNames[row], fmt.Sprintf("commit by %s", commit.AuthorEmail)),
 		}
 	}
 
@@ -229,7 +229,7 @@ func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*resp.Link, error)
 	if err != nil {
 		return nil, err
 	}
-	return resp.NewLink(builderName, "/"+bs.BuilderID), nil
+	return resp.NewLink(builderName, "/"+bs.BuilderID, fmt.Sprintf("builder %s", builderName)), nil
 }
 
 // ConsoleHandler renders the console page.

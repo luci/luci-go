@@ -123,18 +123,24 @@
         {{ if .Build.Summary.Source }}
         <li>
           Source:
-          <a href="{{ .Build.Summary.Source.URL }}">{{ .Build.Summary.Source.Label }}</a>
+          <a href="{{ .Build.Summary.Source.URL }}"
+             aria-label="Source for {{ .Build.Summary.Source.Label }}">
+            {{ .Build.Summary.Source.Label }}
+          </a>
         </li>
         {{ end }}
 
         {{ if .Build.Summary.Bot }}
         <li>
           Bot:
-          <a href="{{ .Build.Summary.Bot.URL }}">{{ .Build.Summary.Bot.Label }}</a>
+          <a href="{{ .Build.Summary.Bot.URL }}"
+             aria-label="Bot {{ .Build.Summary.Bot.Label }}">
+            {{ .Build.Summary.Bot.Label }}
+          </a>
         </li>
         {{ end }}
 
-        {{ if .Build.Summary.Recipe}}
+        {{ if .Build.Summary.Recipe }}
         <li>
           Recipe: {{ .Build.Summary.Recipe | linkify }}
         </li>
@@ -273,7 +279,7 @@
 
     </div>
 
-    {{ if .Build.Blame}}
+    {{ if .Build.Blame }}
     <div class="column">
       <h2>All Changes:</h2>
       <ol>
