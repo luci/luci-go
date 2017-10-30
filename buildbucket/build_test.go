@@ -41,7 +41,6 @@ func TestBuild(t *testing.T) {
 		num := 4124
 		build := Build{
 			ID:           8967467172028179648,
-			Address:      "luci.chromium.try/linux_chromium_rel_ng/4124",
 			CreationTime: time.Date(2017, 9, 25, 15, 38, 17, 28510000, time.UTC),
 			CreatedBy:    "user:luci-migration@appspot.gserviceaccount.com",
 			Bucket:       "luci.chromium.try",
@@ -116,6 +115,12 @@ func TestBuild(t *testing.T) {
 			dur, ok = build.RunDuration()
 			So(ok, ShouldBeTrue)
 			So(dur, ShouldEqual, 393638720*time.Microsecond)
+		})
+
+		Convey("Address", func() {
+			So(build.Address(), ShouldEqual, "luci.chromium.try/linux_chromium_rel_ng/4124")
+			build.Number = nil
+			So(build.Address(), ShouldEqual, "8967467172028179648")
 		})
 
 		Convey("ParseMessage with structured properties", func() {
