@@ -22,6 +22,8 @@ import (
 )
 
 func TestPattern(t *testing.T) {
+	t.Parallel()
+
 	Convey("Pattern", t, func() {
 		Convey("Exact", func() {
 			p := Exact("a")

@@ -23,6 +23,8 @@ import (
 )
 
 func TestWriter(t *testing.T) {
+	t.Parallel()
+
 	Convey("Writer", t, func() {
 		var buf bytes.Buffer
 		w := &Writer{Writer: &buf}
