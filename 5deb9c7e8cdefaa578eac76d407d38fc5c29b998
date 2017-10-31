@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "d6ae97bb_66eb32e6",
+        "filename": "client/cmd/gitiles/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T17:39:18Z",
+      "side": 1,
+      "message": "I would consider putting this and also //common/api/gitiles into:\n  * //external/gitiles/cmd/gitiles  - the new gitiles client \n  * //external/gitiles              - previously //common/api/gitiles\n\nOr even dropping the `external` bit. That way the client and the command live side-by-side.",
+      "range": {
+        "startLine": 1,
+        "startChar": 3,
+        "endLine": 1,
+        "endChar": 12
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7ee5fb5d_6785b108",
         "filename": "client/cmd/gitiles/common.go",
         "patchSetId": 1
@@ -36,6 +59,30 @@
       "writtenOn": "2017-10-31T17:32:38Z",
       "side": 1,
       "message": "so with OptionalLogin it would be possible to use gitiles utility in anonymous mode (if it runs before user logs in or outside of LUCI_CONTEXT). Is this what we want? If we want it to always use authentication, it should be auth.SilentLogin. I think it\u0027s better to  use auth.SilentLogin, to avoid dealing with mysterious quota issues associated with anonymous usage.",
+      "range": {
+        "startLine": 54,
+        "startChar": 35,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ef98072_ad253cf7",
+        "filename": "client/cmd/gitiles/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T17:39:18Z",
+      "side": 1,
+      "message": "If we wanted it to allow anonymous usage, I would definitely want an explicit flag (-anonymous) for that.",
+      "parentUuid": "4b88d150_79f6e4a8",
       "range": {
         "startLine": 54,
         "startChar": 35,
