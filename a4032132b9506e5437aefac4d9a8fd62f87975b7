@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb95ae93_c81fa8d9",
+        "filename": "machine-db/api/config/v1/settings.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T23:48:16Z",
+      "side": 1,
+      "message": "Storing password in plain text in a config repository readable by hundreds/thousands of people is not great.\n\nCrimson solved this by moving db config into /admin/settings, which is accessible only by GAE level admins. It also simplified running the code locally. https://screenshot.googleplex.com/DKztCtFOUqn.png\n\nPlease reuse this code... https://chrome-internal.googlesource.com/infra/infra_internal/+/master/go/src/infra_internal/crimson/server/crimsondb/crimsondb.go#737\n\nIf you choose not not reuse it, make sure machine-db still can run locally on devserver. It is much easier to modify stuff if it can be done locally.",
+      "range": {
+        "startLine": 16,
+        "startChar": 1,
+        "endLine": 16,
+        "endChar": 21
+      },
+      "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04ce3dbc_3df9e1a1",
+        "filename": "machine-db/appengine/frontend/cron.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T23:48:16Z",
+      "side": 1,
+      "message": "this is wrong, please read the doc https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware#hdr-Cron_setup",
+      "range": {
+        "startLine": 7,
+        "startChar": 2,
+        "endLine": 7,
+        "endChar": 33
+      },
+      "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
