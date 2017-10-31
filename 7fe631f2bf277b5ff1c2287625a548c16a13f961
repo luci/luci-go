@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbefeb32_7e49fa1a",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T19:30:44Z",
+      "side": 1,
+      "message": "this needs to happen inside the transaction.",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 0
+      },
+      "revId": "7fe631f2bf277b5ff1c2287625a548c16a13f961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eaa4026a_460fbcff",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T19:30:44Z",
+      "side": 1,
+      "message": "why not have `builder.GetAndUpdate(context.Context, *BuildSummary)` which does the get/create + update + put?  Or just `model.UpdateBuilderForBuild(c, bs)`? Both buildbucket and buildbot should call that code. That function should also assert that `c` is happening inside of a transaction (assert datastore.CurrentTransaction(c) !\u003d nil).",
+      "range": {
+        "startLine": 191,
+        "startChar": 0,
+        "endLine": 199,
+        "endChar": 3
+      },
+      "revId": "7fe631f2bf277b5ff1c2287625a548c16a13f961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

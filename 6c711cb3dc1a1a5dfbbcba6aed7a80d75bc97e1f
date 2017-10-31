@@ -56,6 +56,24 @@
       "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99490289_ee20f11e",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T19:30:44Z",
+      "side": 1,
+      "message": "If it\u0027s moved out of this transaction, it would still need to be a second transaction.\n\nSince both builds and builders have an update rate of like 1 / 30 minutes, I don\u0027t think the XG transaction will be any issue.\n\nTry builders might be more of a problem, but I\u0027m not sure how much sense the build summaries really make in that context either.",
+      "parentUuid": "1e11e509_a04d210e",
+      "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
