@@ -217,6 +217,7 @@ func TestTriggerBuild(t *testing.T) {
 
 func TestValidateConfig(t *testing.T) {
 	t.Parallel()
+	c := context.Background()
 
 	Convey("refNamespace works", t, func() {
 		cfg := &messages.GitilesTask{
@@ -224,10 +225,10 @@ func TestValidateConfig(t *testing.T) {
 			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
 		}
 		m := TaskManager{}
-		So(m.ValidateProtoMessage(cfg), ShouldBeNil)
+		So(m.ValidateProtoMessage(c, cfg), ShouldBeNil)
 
 		cfg.Refs = []string{"wtf/not/a/ref"}
-		So(m.ValidateProtoMessage(cfg), ShouldNotBeNil)
+		So(m.ValidateProtoMessage(c, cfg), ShouldNotBeNil)
 	})
 
 	Convey("trailing refGlobs work", t, func() {
@@ -236,10 +237,10 @@ func TestValidateConfig(t *testing.T) {
 			Refs: []string{"refs/*", "refs/heads/*", "refs/other/something"},
 		}
 		m := TaskManager{}
-		So(m.ValidateProtoMessage(cfg), ShouldBeNil)
+		So(m.ValidateProtoMessage(c, cfg), ShouldBeNil)
 
 		cfg.Refs = []string{"refs/*/*"}
-		So(m.ValidateProtoMessage(cfg), ShouldNotBeNil)
+		So(m.ValidateProtoMessage(c, cfg), ShouldNotBeNil)
 	})
 }
 

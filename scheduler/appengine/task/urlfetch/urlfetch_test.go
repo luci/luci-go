@@ -40,52 +40,53 @@ func TestValidateProtoMessage(t *testing.T) {
 	t.Parallel()
 
 	tm := TaskManager{}
+	c := context.Background()
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
-		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
+		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
 			Url: "https://blah.com",
 		}), ShouldBeNil)
 	})
 
 	Convey("ValidateProtoMessage wrong type", t, func() {
-		So(tm.ValidateProtoMessage(&messages.NoopTask{}), ShouldErrLike, "wrong type")
+		So(tm.ValidateProtoMessage(c, &messages.NoopTask{}), ShouldErrLike, "wrong type")
 	})
 
 	Convey("ValidateProtoMessage empty", t, func() {
-		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty UrlFetchTask")
+		So(tm.ValidateProtoMessage(c, tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty UrlFetchTask")
 	})
 
 	Convey("ValidateProtoMessage bad method", t, func() {
-		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
+		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
 			Method: "BLAH",
 		}), ShouldErrLike, "unsupported HTTP method")
 	})
 
 	Convey("ValidateProtoMessage no URL", t, func() {
-		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{}), ShouldErrLike, "field 'url' is required")
+		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{}), ShouldErrLike, "field 'url' is required")
 	})
 
 	Convey("ValidateProtoMessage bad URL", t, func() {
-		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
+		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
 			Url: "%%%%",
 		}), ShouldErrLike, "invalid URL")
 	})
 
 	Convey("ValidateProtoMessage non-absolute URL", t, func() {
-		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
+		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
 			Url: "/abc",
 		}), ShouldErrLike, "not an absolute url")
 	})
 
 	Convey("ValidateProtoMessage bad timeout", t, func() {
-		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
+		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
 			Url:        "https://blah.com",
 			TimeoutSec: -1,
 		}), ShouldErrLike, "minimum allowed 'timeout_sec' is 1 sec")
 	})
 
 	Convey("ValidateProtoMessage large timeout", t, func() {
-		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
+		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
 			Url:        "https://blah.com",
 			TimeoutSec: 10000,
 		}), ShouldErrLike, "maximum allowed 'timeout_sec' is 480 sec")

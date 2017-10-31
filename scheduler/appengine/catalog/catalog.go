@@ -92,7 +92,7 @@ type Catalog interface {
 	// unmarshals and validates it, and returns proto.Message that represent
 	// the concrete task to run (e.g. SwarmingTask proto). It can be passed to
 	// corresponding task.Manager.
-	UnmarshalTask(task []byte) (proto.Message, error)
+	UnmarshalTask(c context.Context, task []byte) (proto.Message, error)
 
 	// GetAllProjects returns a list of all known project ids.
 	//
@@ -195,12 +195,12 @@ func (cat *catalog) GetTaskManager(msg proto.Message) task.Manager {
 	return cat.managers[reflect.TypeOf(msg)]
 }
 
-func (cat *catalog) UnmarshalTask(task []byte) (proto.Message, error) {
+func (cat *catalog) UnmarshalTask(c context.Context, task []byte) (proto.Message, error) {
 	msg := messages.TaskDefWrapper{}
 	if err := proto.Unmarshal(task, &msg); err != nil {
 		return nil, err
 	}
-	return cat.extractTaskProto(&msg)
+	return cat.extractTaskProto(c, &msg)
 }
 
 func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
@@ -337,7 +337,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			id = trigger.Id
 		}
 		var task proto.Message
-		if task, err = cat.validateTriggerProto(trigger); err != nil {
+		if task, err = cat.validateTriggerProto(c, trigger); err != nil {
 			logging.Errorf(c, "Invalid trigger definition %s: %s", id, err)
 			continue
 		}
@@ -402,13 +402,13 @@ func (cat *catalog) validateJobProto(c context.Context, j *messages.Job) (proto.
 			return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
 		}
 	}
-	return cat.extractTaskProto(j)
+	return cat.extractTaskProto(c, j)
 }
 
 // validateTriggerProto validates messages.Trigger protobuf message.
 //
 // It also extracts a task definition from it.
-func (cat *catalog) validateTriggerProto(t *messages.Trigger) (proto.Message, error) {
+func (cat *catalog) validateTriggerProto(c context.Context, t *messages.Trigger) (proto.Message, error) {
 	if t.Id == "" {
 		return nil, fmt.Errorf("missing 'id' field'")
 	}
@@ -420,7 +420,7 @@ func (cat *catalog) validateTriggerProto(t *messages.Trigger) (proto.Message, er
 			return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", t.Schedule, err)
 		}
 	}
-	return cat.extractTaskProto(t)
+	return cat.extractTaskProto(c, t)
 }
 
 // normalizeTriggeredJobIDs returns sorted list without duplicates.
@@ -437,7 +437,7 @@ func (cat *catalog) normalizeTriggeredJobIDs(projectID string, t *messages.Trigg
 // extractTaskProto visits all fields of a proto and sniffs ones that correspond
 // to task definitions (as registered via RegisterTaskManager). It ensures
 // there's one and only one such field, validates it, and returns it.
-func (cat *catalog) extractTaskProto(t proto.Message) (proto.Message, error) {
+func (cat *catalog) extractTaskProto(c context.Context, t proto.Message) (proto.Message, error) {
 	var taskMsg proto.Message
 
 	v := reflect.ValueOf(t)
@@ -468,7 +468,7 @@ func (cat *catalog) extractTaskProto(t proto.Message) (proto.Message, error) {
 	}
 
 	taskMan := cat.GetTaskManager(taskMsg)
-	if err := taskMan.ValidateProtoMessage(taskMsg); err != nil {
+	if err := taskMan.ValidateProtoMessage(c, taskMsg); err != nil {
 		return nil, err
 	}
 

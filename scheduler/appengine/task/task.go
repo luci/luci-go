@@ -124,7 +124,7 @@ type Manager interface {
 
 	// ValidateProtoMessage verifies task definition proto message makes sense.
 	// msg must have same underlying type as ProtoMessageType() return value.
-	ValidateProtoMessage(msg proto.Message) error
+	ValidateProtoMessage(c context.Context, msg proto.Message) error
 
 	// LaunchTask starts (or starts and finishes in one go) the task.
 	//
