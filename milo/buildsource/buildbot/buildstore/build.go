@@ -231,12 +231,23 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 
 // SaveBuild persists the build in the storage.
 //
-// This will also update the model.BuildSummary.
+// This will also update the model.BuildSummary and model.BuilderSummary.
 func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) {
 	bs, err := summarizeBuild(c, b)
 	if err != nil {
 		err = errors.Annotate(err, "summarizing build").Err()
 		return
+	}
+
+	// Get the relevant BuilderSummary.
+	builder := model.BuilderSummary{BuilderID: bs.BuilderID}
+	switch err := datastore.Get(c, &builder); err {
+	case nil:
+	case datastore.ErrNoSuchEntity:
+		logging.Warningf(c, "creating new BuilderSummary for BuilderID: %s", bs.BuilderID)
+		datastore.Put(c, builder)
+	default:
+		return false, err
 	}
 
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
@@ -269,8 +280,24 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 			// up to date.
 		}
 
-		return datastore.Put(c, (*buildEntity)(b), bs)
-	}, nil)
+		if err := datastore.Put(c, (*buildEntity)(b), bs); err != nil {
+			return err
+		}
+
+		// Update BuilderSummary with new BuildSummary. If there's an ErrBuildMessageOutOfOrder, we
+		// actually still want to try to update (after logging the error, which is done on creation).
+		updateErr := builder.Update(c, bs)
+		if updateErr != nil {
+			if _, ok := updateErr.(model.ErrBuildMessageOutOfOrder); !ok {
+				return updateErr
+			}
+		}
+
+		if err := datastore.Put(c, &builder); err != nil {
+			return err
+		}
+		return updateErr
+	}, &datastore.TransactionOptions{XG: true})
 	return
 }
 

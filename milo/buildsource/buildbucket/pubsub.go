@@ -88,7 +88,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		AnnotationURL: swarmTags.Get("log_location"),
 		BuildKey:      MakeBuildKey(c, hostname, build.ID),
 		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
-		BuildID:       build.Address(),
+		BuildID:       fmt.Sprintf("buildbucket/%s", build.Address()),
 		BuildSet:      build.Tags[buildbucket.TagBuildSet],
 
 		SelfLink: fmt.Sprintf("/p/%s/builds/b%d", project, build.ID),
@@ -184,8 +184,34 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 			return nil
 		}
 
-		return datastore.Put(c, bs)
-	}, nil)
+		if err := datastore.Put(c, bs); err != nil {
+			return err
+		}
+
+		builder := &model.BuilderSummary{BuilderID: bs.BuilderID}
+		switch err := datastore.Get(c, builder); err {
+		case nil:
+		case datastore.ErrNoSuchEntity:
+			logging.Warningf(c, "creating new BuilderSummary for BuilderID: %s", bs.BuilderID)
+			datastore.Put(c, builder)
+		default:
+			return err
+		}
+
+		// Update BuilderSummary with new BuildSummary. If there's an ErrBuildMessageOutOfOrder, we
+		// actually still want to try to update (after logging the error, which is done on creation).
+		updateErr := builder.Update(c, bs)
+		if updateErr != nil {
+			if _, ok := updateErr.(model.ErrBuildMessageOutOfOrder); !ok {
+				return updateErr
+			}
+		}
+
+		if err := datastore.Put(c, builder); err != nil {
+			return err
+		}
+		return updateErr
+	}, &datastore.TransactionOptions{XG: true})
 
 	return transient.Tag.Apply(err)
 }
