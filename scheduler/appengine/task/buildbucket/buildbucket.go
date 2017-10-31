@@ -67,13 +67,6 @@ func (m TaskManager) Traits() task.Traits {
 	}
 }
 
-func normalizeServerURL(s string) string {
-	if strings.HasPrefix(s, "https://") || strings.HasPrefix(s, "http://") {
-		return s
-	}
-	return "https://" + s
-}
-
 // ValidateProtoMessage is part of Manager interface.
 func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
 	cfg, ok := msg.(*messages.BuildbucketTask)
@@ -88,19 +81,15 @@ func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) 
 	if cfg.Server == "" {
 		return fmt.Errorf("field 'server' is required")
 	}
-	// TODO(tandrii): delete this to resolve https://crbug.com/771503.
 	if strings.HasPrefix(cfg.Server, "https://") || strings.HasPrefix(cfg.Server, "http://") {
-		logging.Warningf(c, "task.buildbucket.server field is a URL (see https://crbug.com/771503).")
+		return fmt.Errorf("field 'server' should be just a host, not a URL: %q", cfg.Server)
 	}
-	u, err := url.Parse(normalizeServerURL(cfg.Server))
+	u, err := url.Parse("https://" + cfg.Server)
 	if err != nil {
-		return fmt.Errorf("invalid URL %q: %s", cfg.Server, err)
+		return fmt.Errorf("field 'server' is not a valid hostname %q: %s", cfg.Server, err)
 	}
-	if !u.IsAbs() {
-		return fmt.Errorf("not an absolute url: %q", cfg.Server)
-	}
-	if u.Path != "" {
-		return fmt.Errorf("not a host root url: %q", cfg.Server)
+	if !u.IsAbs() || u.Path != "" {
+		return fmt.Errorf("field 'server' is not a valid hostname %q", cfg.Server)
 	}
 
 	// Bucket and builder fields are required.
@@ -186,7 +175,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 
 	// Make sure Buildbucket can publish PubSub messages, grab token that would
 	// identify this invocation when receiving PubSub notifications.
-	serverURL := normalizeServerURL(cfg.Server)
+	serverURL := makeServerUrl(cfg.Server)
 	ctl.DebugLog("Preparing PubSub topic for %q", serverURL)
 	topic, authToken, err := ctl.PrepareTopic(c, serverURL)
 	if err != nil {
@@ -296,6 +285,14 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 	return nil
 }
 
+func makeServerUrl(s string) string {
+	if strings.HasPrefix(s, "http://") {
+		// Used only in tests where we hardcode http in cfg.Server because local server is http not https.
+		return s
+	}
+	return "https://" + s
+}
+
 // createBuildbucketService makes a configured Buildbucket API client.
 func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*bbapi.Service, error) {
 	client, err := ctl.GetClient(c, time.Minute)
@@ -307,7 +304,7 @@ func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Contro
 		return nil, err
 	}
 	cfg := ctl.Task().(*messages.BuildbucketTask)
-	service.BasePath = normalizeServerURL(cfg.Server) + "/_ah/api/buildbucket/v1/"
+	service.BasePath = makeServerUrl(cfg.Server) + "/_ah/api/buildbucket/v1/"
 	return service, nil
 }
 
