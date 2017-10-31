@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0835835f_72c61cd2",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-31T01:55:02Z",
+      "side": 1,
+      "message": "could not fetch.  Only datastore.ErrEntityNotFound means that it doesn\u0027t exist.  There could be other classes of errors such as timeout, flake, etc.",
+      "range": {
+        "startLine": 245,
+        "startChar": 38,
+        "endLine": 245,
+        "endChar": 42
+      },
+      "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4afd966f_345e98be",
+        "filename": "milo/buildsource/buildbot/pubsub_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 461,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-31T01:55:02Z",
+      "side": 1,
+      "message": "?",
+      "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e11e509_a04d210e",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-31T01:55:02Z",
+      "side": 1,
+      "message": "Should keep an eye out for elevated levels of ds failures due to xg (I\u0027m not really sure what the limits are).  If so, then we can probably afford builder summaries being \"good enough\" and put this outside the transaction block.",
+      "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
