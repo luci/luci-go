@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ee5fb5d_6785b108",
+        "filename": "client/cmd/gitiles/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "this copy-pasted comment doesn\u0027t apply to Gitiles, since it doesn\u0027t understand IP whitelists :)",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 52,
+        "endChar": 62
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b88d150_79f6e4a8",
+        "filename": "client/cmd/gitiles/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "so with OptionalLogin it would be possible to use gitiles utility in anonymous mode (if it runs before user logs in or outside of LUCI_CONTEXT). Is this what we want? If we want it to always use authentication, it should be auth.SilentLogin. I think it\u0027s better to  use auth.SilentLogin, to avoid dealing with mysterious quota issues associated with anonymous usage.",
+      "range": {
+        "startLine": 54,
+        "startChar": 35,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2550c10a_769c5085",
+        "filename": "client/cmd/gitiles/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "nit: for better readability \n\n repo :\u003d args[0]\n treeish  :\u003d args[1]\n\n g.Log(ctx, repo, treeish, ...)",
+      "range": {
+        "startLine": 72,
+        "startChar": 27,
+        "endLine": 72,
+        "endChar": 44
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "467502ab_dda48c15",
+        "filename": "client/cmd/gitiles/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "this error is already logged in Run",
+      "range": {
+        "startLine": 86,
+        "startChar": 4,
+        "endLine": 86,
+        "endChar": 32
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddd592ba_81a74d71",
+        "filename": "client/cmd/gitiles/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "nit: maybe MarshalIndent with 2 spaces for nicer output?",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 31
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2900b49_877934b1",
+        "filename": "client/cmd/gitiles/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 31
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d28120b7_2108c7e8",
+        "filename": "client/cmd/gitiles/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "I\u0027m not sure we need tracing here... It is very simple utility.",
+      "range": {
+        "startLine": 104,
+        "startChar": 27,
+        "endLine": 104,
+        "endChar": 41
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8949ff75_14fa7df1",
+        "filename": "client/cmd/gitiles/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "default auth options do not have Gerrit scope. I think it\u0027s a good place to add it here:\n\n  defaultAuthOpts.Scopes \u003d []string{auth.OAuthScopeEmail, gitiles.OAuthScope}",
+      "range": {
+        "startLine": 35,
+        "startChar": 20,
+        "endLine": 35,
+        "endChar": 35
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4888234f_54cbae8e",
+        "filename": "client/cmd/gitiles/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "luci is not using \u0027log\u0027 package. Its usage in \u0027isolate\u0027 tool is historical incident :(\n\nThis gitiles code definitely should not use anything that uses \u0027log\u0027, so no need to configure it.",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 32
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f7a00a6_aed69c84",
+        "filename": "client/cmd/gitiles/refs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T17:32:38Z",
+      "side": 1,
+      "message": "lot of code here and in Run is identical to log.go. We should try to deduplicate it.",
+      "range": {
+        "startLine": 63,
+        "startChar": 17,
+        "endLine": 63,
+        "endChar": 22
+      },
+      "revId": "5deb9c7e8cdefaa578eac76d407d38fc5c29b998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
