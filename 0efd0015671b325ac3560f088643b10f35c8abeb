@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7e367410_13a1cfad",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T23:22:37Z",
+      "side": 1,
+      "message": "Discussed offline: we\u0027ll leave this part as-is.",
+      "parentUuid": "9b251d2c_099c682e",
+      "range": {
+        "startLine": 90,
+        "startChar": 50,
+        "endLine": 90,
+        "endChar": 77
+      },
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5da1d85_d78c4a4f",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cbe2e22_59a1d790",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T23:22:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5da1d85_d78c4a4f",
+      "range": {
+        "startLine": 27,
+        "startChar": 3,
+        "endLine": 27,
+        "endChar": 28
+      },
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "57e42273_903db1aa",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T23:22:37Z",
+      "side": 1,
+      "message": "I just meant panic vs. assert, if there was a preferred way of doing assertions that was hiding :)",
+      "parentUuid": "010534b1_9ae74037",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 79
+      },
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0250b69_42fc9f97",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -85,6 +157,24 @@
       "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "764ed8f0_b3bd1dd0",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T23:22:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0250b69_42fc9f97",
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
