@@ -182,6 +182,7 @@ message UrlFetchTask {
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 message BuildbucketTask {
   // Server is hostname of the buildbucket service to use.
+  // Typically, "cr-buildbucket.appspot.com".
   string server = 1;
   // Bucket defines what bucket to add the task to.
   string bucket = 2;

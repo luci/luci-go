@@ -428,6 +428,7 @@ func (m *UrlFetchTask) GetTimeoutSec() int32 {
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 type BuildbucketTask struct {
 	// Server is hostname of the buildbucket service to use.
+	// Typically, "cr-buildbucket.appspot.com".
 	Server string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
 	// Bucket defines what bucket to add the task to.
 	Bucket string `protobuf:"bytes,2,opt,name=bucket" json:"bucket,omitempty"`
