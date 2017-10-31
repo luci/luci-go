@@ -107,6 +107,15 @@ func TestBuild(t *testing.T) {
 			So(actual, ShouldResemble, build)
 		})
 
+		Convey("ParseMessage with a partial response", func() {
+			var actual Build
+			msg.Bucket = ""
+			err := actual.ParseMessage(msg)
+			So(err, ShouldBeNil)
+			// expect bucket to be parsed out of build_address tag
+			So(actual, ShouldResemble, build)
+		})
+
 		Convey("Durations", func() {
 			dur, ok := build.SchedulingDuration()
 			So(ok, ShouldBeTrue)

@@ -176,12 +176,23 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		address = strconv.FormatInt(msg.Id, 10)
 	} else {
 		parts := strings.Split(address, "/")
-		if len(parts) != 3 || parts[0] != msg.Bucket || parts[1] != builder {
-			return fmt.Errorf("invalid build_address %q", address)
+		if len(parts) != 3 {
+			return fmt.Errorf("invalid build_address %q: expected exactly 2 slashes", address)
+		}
+		if msg.Bucket == "" {
+			// this is a partial response message
+			msg.Bucket = parts[0]
+		} else if msg.Bucket != parts[0] {
+			return fmt.Errorf("invalid build_address %q: expected first component to be %q", address, msg.Bucket)
+		}
+		if builder == "" {
+			return fmt.Errorf("build_address tag is present, but builder tag is not")
+		} else if parts[1] != builder {
+			return fmt.Errorf("invalid build_address %q: expected second component to be %q", address, builder)
 		}
 		num, err := strconv.Atoi(parts[2])
 		if err != nil {
-			return fmt.Errorf("invalid build_address %q", address)
+			return fmt.Errorf("invalid build_address %q: expected third component to be a valid int32", address)
 		}
 		number = &num
 	}
