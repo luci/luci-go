@@ -42,7 +42,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
 		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:     "https://blah.com",
+			Server:     "blah.com",
 			Bucket:     "bucket",
 			Builder:    "builder",
 			Tags:       []string{"a:b", "c:d"},
@@ -75,28 +75,28 @@ func TestValidateProtoMessage(t *testing.T) {
 			})
 		}
 		So(call(""), ShouldErrLike, "field 'server' is required")
-		So(call("%%%%"), ShouldErrLike, "invalid URL")
-		So(call("/abc"), ShouldErrLike, "not a host root url")
-		So(call("https://host/not-root"), ShouldErrLike, "not a host root url")
+		So(call("https://host/not-root"), ShouldErrLike, "field 'server' should be just a host, not a URL")
+		So(call("%%%%"), ShouldErrLike, "field 'server' is not a valid hostname")
+		So(call("blah.com/abc"), ShouldErrLike, "field 'server' is not a valid hostname")
 	})
 
 	Convey("ValidateProtoMessage needs bucket", t, func() {
 		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:  "https://blah.com",
+			Server:  "blah.com",
 			Builder: "builder",
 		}), ShouldErrLike, "'bucket' field is required")
 	})
 
 	Convey("ValidateProtoMessage needs builder", t, func() {
 		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server: "https://blah.com",
+			Server: "blah.com",
 			Bucket: "bucket",
 		}), ShouldErrLike, "'builder' field is required")
 	})
 
 	Convey("ValidateProtoMessage validates properties", t, func() {
 		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:     "https://blah.com",
+			Server:     "blah.com",
 			Bucket:     "bucket",
 			Builder:    "builder",
 			Properties: []string{"not_kv_pair"},
@@ -105,7 +105,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage validates tags", t, func() {
 		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:  "https://blah.com",
+			Server:  "blah.com",
 			Bucket:  "bucket",
 			Builder: "builder",
 			Tags:    []string{"not_kv_pair"},
@@ -114,7 +114,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage forbids default tags overwrite", t, func() {
 		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:  "https://blah.com",
+			Server:  "blah.com",
 			Bucket:  "bucket",
 			Builder: "builder",
 			Tags:    []string{"scheduler_job_id:blah"},
