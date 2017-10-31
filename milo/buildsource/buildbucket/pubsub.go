@@ -88,7 +88,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		AnnotationURL: swarmTags.Get("log_location"),
 		BuildKey:      MakeBuildKey(c, hostname, build.ID),
 		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
-		BuildID:       build.Address(),
+		BuildID:       fmt.Sprintf("buildbucket/%s", build.Address()),
 		BuildSet:      build.Tags[buildbucket.TagBuildSet],
 
 		SelfLink: fmt.Sprintf("/p/%s/builds/b%d", project, build.ID),
@@ -184,8 +184,24 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 			return nil
 		}
 
-		return datastore.Put(c, bs)
-	}, nil)
+		if err := datastore.Put(c, bs); err != nil {
+			return err
+		}
+
+		builder := &model.BuilderSummary{BuilderID: bs.BuilderID}
+		if err := datastore.Get(c, builder); err != nil {
+			if _, ok := err.(model.ErrBuildMessageOutOfOrder); !ok {
+				return err
+			}
+
+			// In fact, we should never get a model.ErrBuildMessageOutOfOrder either, due to check above
+			// for ingesting newer update. If we do, however, just return.
+			return nil
+		}
+
+		builder.Update(c, bs)
+		return datastore.Put(c, builder)
+	}, &datastore.TransactionOptions{XG: true})
 
 	return transient.Tag.Apply(err)
 }

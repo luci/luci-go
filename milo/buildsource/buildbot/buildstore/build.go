@@ -239,6 +239,12 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 		return
 	}
 
+	// Get the relevant BuilderSummary.
+	builder := model.BuilderSummary{BuilderID: bs.BuilderID}
+	if err := datastore.Get(c, &builder); err != nil {
+		return false, fmt.Errorf("Could not find BuilderSummary with BuilderID %s", bs.BuilderID)
+	}
+
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		existingBS := &model.BuildSummary{
 			BuildKey: bs.BuildKey,
@@ -269,8 +275,21 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 			// up to date.
 		}
 
-		return datastore.Put(c, (*buildEntity)(b), bs)
-	}, nil)
+		if err := datastore.Put(c, (*buildEntity)(b), bs); err != nil {
+			return err
+		}
+
+		updateErr := builder.Update(c, bs)
+		if updateErr != nil {
+			if _, ok := updateErr.(model.ErrBuildMessageOutOfOrder); !ok {
+				return updateErr
+			}
+		}
+		if err := datastore.Put(c, &builder); err != nil {
+			return err
+		}
+		return updateErr
+	}, &datastore.TransactionOptions{XG: true})
 	return
 }
 
