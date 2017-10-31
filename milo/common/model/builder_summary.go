@@ -19,6 +19,9 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/logging"
 )
 
 // ErrBuildMessageOutOfOrder indicates that a terminal build message arrived before any pending
@@ -76,7 +79,43 @@ func (b *BuilderSummary) SetInProgress(bp map[string]Status) {
 	}
 }
 
-// Update updates the provided BuilderSummary with the provided BuildSummary, if applicable.
+// UpdateBuilderForBuild updates the appropriate BuilderSummary for the provided BuildSummary.
+// In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete
+// and has a more recent creation time than the one stored in the BuilderSummary.
+// If there is no existing BuilderSummary for the BuildSummary provided, one is created.
+func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
+	if datastore.CurrentTransaction(c) == nil {
+		panic(fmt.Errorf("GetAndUpdateBuilderSummary must occur within transaction"))
+	}
+
+	// Get or create the relevant BuilderSummary.
+	builder := BuilderSummary{BuilderID: build.BuilderID}
+	switch err := datastore.Get(c, &builder); err {
+	case nil:
+	case datastore.ErrNoSuchEntity:
+		logging.Warningf(c, "creating new BuilderSummary for BuilderID: %s", build.BuilderID)
+		datastore.Put(c, &builder)
+	default:
+		return err
+	}
+
+	// Update BuilderSummary with new BuildSummary. If there's an ErrBuildMessageOutOfOrder, we
+	// still want to try to update, so in fact, just log and ignore.
+	if updateErr := builder.Update(c, build); updateErr != nil {
+		if _, ok := updateErr.(ErrBuildMessageOutOfOrder); !ok {
+			return updateErr
+		}
+
+		logging.Warningf(c, "got out of order build messages: %v", updateErr)
+	}
+
+	if err := datastore.Put(c, &builder); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Update updates the given BuilderSummary with the provided BuildSummary.
 // In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete
 // and has a more recent creation time than the one stored in the BuilderSummary.
 func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {

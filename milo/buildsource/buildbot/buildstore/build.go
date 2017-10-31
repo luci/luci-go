@@ -231,7 +231,7 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 
 // SaveBuild persists the build in the storage.
 //
-// This will also update the model.BuildSummary.
+// This will also update the model.BuildSummary and model.BuilderSummary.
 func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) {
 	bs, err := summarizeBuild(c, b)
 	if err != nil {
@@ -269,8 +269,12 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 			// up to date.
 		}
 
-		return datastore.Put(c, (*buildEntity)(b), bs)
-	}, nil)
+		if err := datastore.Put(c, (*buildEntity)(b), bs); err != nil {
+			return err
+		}
+
+		return model.UpdateBuilderForBuild(c, bs)
+	}, &datastore.TransactionOptions{XG: true})
 	return
 }
 
