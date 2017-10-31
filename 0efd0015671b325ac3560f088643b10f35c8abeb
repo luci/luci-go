@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b251d2c_099c682e",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T20:52:24Z",
+      "side": 1,
+      "message": "does it make sense to have build.Builder() return this portion?",
+      "range": {
+        "startLine": 90,
+        "startChar": 50,
+        "endLine": 90,
+        "endChar": 77
+      },
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5da1d85_d78c4a4f",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T20:52:24Z",
+      "side": 1,
+      "message": "Use an error tag for this, or a constant error, e.g.\n\n  var OutOfOrderTag \u003d errors.BoolTag{\n    Key: errors.NewTagKey(\"Trying to apply N data after N+1 has been processed.\")\n  }\n\n  return errors.Reason(\"something bad: %s\", data).Tag(OutOfOrderTag).Err()\n\n  if OutOfOrderTag.In(err) {\n    // do stuff\n  }\n\nOR\n\n  var OutOfOrderErr \u003d errors.New(\"stuff is out of order, yo\")\n\n  return errors.Annotate(OutOfOrderErr, \"something bad: %s\", data).Err()\n\n  if errors.Unwrap(err) \u003d\u003d OutOfOrderErr {\n    // do stuff\n  }\n\nI would prefer the first over the second.",
+      "range": {
+        "startLine": 27,
+        "startChar": 3,
+        "endLine": 27,
+        "endChar": 28
+      },
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "010534b1_9ae74037",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T20:52:24Z",
+      "side": 1,
+      "message": "On the one hand, panics are generally considered bad, but OTOH, this would require recompilation to fix in 100% of the cases (I can\u0027t imagine calling code which \u0027sometimes\u0027 does a transaction, based on user input). So, for posterity, I think this is OK :)",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 79
+      },
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0250b69_42fc9f97",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-31T20:52:24Z",
+      "side": 1,
+      "message": "switch err :\u003d builder.Update(c, build); {\n  case OutOfOrderTag.In(err):\n    logging.Warningf(...)\n    return nil\n\n  default:\n    return err\n}",
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
