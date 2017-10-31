@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "35e429e2_679e3f8b",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T20:18:56Z",
+      "side": 1,
+      "message": "Create BuilderSummary instead as discussed (or just propagate error)",
+      "parentUuid": "0835835f_72c61cd2",
+      "range": {
+        "startLine": 245,
+        "startChar": 38,
+        "endLine": 245,
+        "endChar": 42
+      },
+      "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4afd966f_345e98be",
         "filename": "milo/buildsource/buildbot/pubsub_test.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ece8bb60_2e5d8ac5",
+        "filename": "milo/buildsource/buildbot/pubsub_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 461,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T20:18:56Z",
+      "side": 1,
+      "message": "This was supposed to test the same functionality as above but for internal.\n\nThanks for the catch!",
+      "parentUuid": "4afd966f_345e98be",
+      "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -74,6 +116,24 @@
       "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2221572a_2b6ba393",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T20:18:56Z",
+      "side": 1,
+      "message": "Ack\n\nDo these show up in the logs/alongside other errors?",
+      "parentUuid": "1e11e509_a04d210e",
+      "revId": "6c711cb3dc1a1a5dfbbcba6aed7a80d75bc97e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

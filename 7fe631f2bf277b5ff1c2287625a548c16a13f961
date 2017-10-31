@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d97c01d2_d9b125b1",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T20:18:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fbefeb32_7e49fa1a",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 0
+      },
+      "revId": "7fe631f2bf277b5ff1c2287625a548c16a13f961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eaa4026a_460fbcff",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "7fe631f2bf277b5ff1c2287625a548c16a13f961",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfc63c11_22f0d8b1",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-31T20:18:56Z",
+      "side": 1,
+      "message": "I think I had some trouble getting the datastore operation to work correctly in its own function before, but it works now. Did you mean panic?",
+      "parentUuid": "eaa4026a_460fbcff",
+      "range": {
+        "startLine": 191,
+        "startChar": 0,
+        "endLine": 199,
+        "endChar": 3
+      },
+      "revId": "7fe631f2bf277b5ff1c2287625a548c16a13f961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
