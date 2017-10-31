@@ -25,22 +25,89 @@
   flex-direction: row;
 }
 
-/* Header */
+/* Title */
 
-.console-header {
+.console-title {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
   align-items: center;
 }
 
-.console-header * {
+.console-title * {
   margin-right: 1em;
 }
 
-.console-header img {
+.console-title img {
   width: 16px;
   height: 16px;
+}
+
+/* Header */
+
+.console-header {
+  display: flex;
+  flex-direction: row;
+  border-radius: 0.5em;
+  border: 1px solid silver;
+  margin-bottom: 2em;
+}
+
+.console-header-column {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.console-header-group {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.5em;
+  border: 1px solid silver;
+  margin: 1em;
+  padding: 0.5em;
+}
+
+.console-header-group-title {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.33em;
+  border-bottom: 1px solid silver;
+}
+
+.console-header-group-title a {
+  text-decoration: none;
+}
+
+.console-header-summary {
+  display: flex;
+  align-items: center;
+  padding: 1em;
+}
+
+.console-header-summary * {
+  margin-right: 0.2em;
+}
+
+.console-header-name {
+  display: flex;
+  flex-direction: row;
+  font-weight: bold;
+}
+
+.console-header-build {
+  display: flex;
+  flex-grow: 1;
+  min-height: 2em;
+  max-height: 2em;
+  min-width: 2em;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 0.25em;
+  margin-right: 0.2em;
 }
 
 /* Commits */

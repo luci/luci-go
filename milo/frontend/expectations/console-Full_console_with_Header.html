@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+<meta charset="utf-8">
+<meta name="google" value="notranslate">
+<title>Test Console</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
+<script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
+<script src="/static/common/js/time.js"></script>
+<script src="/static/common/third_party/js/jquery.min.js"></script>
+<script src="/static/common/third_party/js/jquery-ui.min.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/static/common/css/console.css" type="text/css">
+
+
+<body class="interface">
+  <header>
+    <a href="/" alt="Home">Luci</a>
+    <div>
+      
+        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">login</a>
+      
+    </div>
+  </header>
+  <hr>
+  
+
+
+
+<div class="console-title">
+
+
+  <h1>Test</h1>
+</div>
+
+
+
+
+<div class="console-header">
+
+  <div class="console-header-column" style="border-right: 1px solid silver">
+  </div>
+  <div class="console-header-column">
+  
+
+    
+    
+    
+    <div class="console-header-group">
+      <div class="console-header-group-title">
+        <a href="something">
+          bah
+        </a>
+      </div>
+    
+      <div class="console-column">
+      
+        <div class="console-header-summary">
+          <div class="console-header-name">
+            <a href="something2">hurrah</a>
+          </div>
+          
+            <div class="console-header-build status-Success">
+              <a href="#"></a>
+            </div>
+          
+            <div class="console-header-build status-Success">
+              <a href="#"></a>
+            </div>
+          
+            <div class="console-header-build status-Failure">
+              <a href="#"></a>
+            </div>
+          
+        </div>
+      
+      </div>
+    
+    
+    </div>
+    
+
+  
+
+    
+    
+    
+      <div class="console-column">
+      
+        <div class="console-header-summary">
+          <div class="console-header-name">
+            <a href="something2">hurrah</a>
+          </div>
+          
+            <div class="console-header-build status-Success">
+              <a href="#"></a>
+            </div>
+          
+        </div>
+      
+      </div>
+    
+    
+    </div>
+    
+
+  
+  </div>
+
+</div>
+
+
+
+<div class="console-row">
+
+  
+  <div class="console-column" style="justify-content: flex-end">
+    <div class="console-row">
+      <div class="console-commit-column">
+      
+        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357446871">Wednesday, 12-Dec-12 12:12:12 UTC</span></div>
+      
+        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357447871">Wednesday, 12-Dec-12 12:12:11 UTC</span></div>
+      
+      </div>
+      <div class="console-commit-column">
+      
+        <div class="console-commit-item">
+          <a href="blah%20blah%20blah">
+            <span class="commit" title="Me too.">
+              x@example.com
+            </span>
+          </a>
+        </div>
+      
+        <div class="console-commit-item">
+          <a href="blah%20blah%20blah%201">
+            <span class="commit" title="I did something.">
+              y@example.com
+            </span>
+          </a>
+        </div>
+      
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="console-column"><div class="console-top-item">cat1</div>
+				  <div class="console-top-row"><div class="console-column"><div class="console-top-item">cat2</div>
+				  <div class="console-top-row"><div class="console-builder-column" style="flex-grow: 1"><div><a class="console-builder-item" href="/tester" title="tester">tst</a></div><div class="console-build-column"><div><a class="console-cell-top status-Success" href=""></a></div><div><a class="console-cell-middle status-Success" href=""></a></div></div></div></div></div></div></div>
+</div>
+
+<div class="epiloge" style="margin-top: 1em">
+  (Show:
+  <a href="?numbuilds=">default</a>
+  <a href="?numbuilds=25">25</a>
+  <a href="?numbuilds=50">50</a>
+  <a href="?numbuilds=100">100</a>
+  <a href="?numbuilds=200">200</a>
+  )
+</div>
+
+
+  <footer>
+    <hr>
+    <a href="https://github.com/luci">luci</a>,
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    built: <b><span class="local-time" data-timestamp="-6792498672871">Saturday, 03-Feb-01 04:05:06 UTC</span></b><br>
+    version: <b>testVersionID</b><br>
+  </footer>
+<script>
+(function () {
+  'use strict';
+  milo.makeTimesLocal();
+  milo.annotateDurations();
+  $(document).tooltip({
+    show: false,
+    hide: false
+  });
+})();
+</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
+
+  crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?cc=hinoka@chromium.org&components=Infra%3EPlatform%3EMilo');
+</script>
+
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-12345-01', 'auto');
+	ga('send', 'pageview');
+</script>
+
