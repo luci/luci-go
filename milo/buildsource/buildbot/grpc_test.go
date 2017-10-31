@@ -15,6 +15,7 @@
 package buildbot
 
 import (
+	"fmt"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
+	"go.chromium.org/luci/milo/common/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -144,6 +146,13 @@ func TestGRPC(t *testing.T) {
 }
 
 func importBuild(c context.Context, b *buildbot.Build) {
+	// Make sure a BuilderSummary exists for this Build.
+	builderID := fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername)
+	builder := model.BuilderSummary{BuilderID: builderID}
+	builder.SetInProgress(map[string]model.Status{"buildbot/" + b.ID(): model.Running})
+	datastore.Put(c, &builder)
+	datastore.GetTestable(c).CatchupIndexes()
+
 	_, err := buildstore.SaveBuild(c, b)
 	So(err, ShouldBeNil)
 }
