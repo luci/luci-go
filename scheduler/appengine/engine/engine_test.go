@@ -1401,7 +1401,7 @@ func (m *fakeTaskManager) Traits() task.Traits {
 	return task.Traits{}
 }
 
-func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
+func (m *fakeTaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
 	return nil
 }
 

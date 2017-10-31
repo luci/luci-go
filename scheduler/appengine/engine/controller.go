@@ -66,7 +66,7 @@ func controllerForInvocation(c context.Context, e *engineImpl, inv *Invocation) 
 	}
 	ctl.populateState()
 	var err error
-	ctl.task, err = e.cfg.Catalog.UnmarshalTask(inv.Task)
+	ctl.task, err = e.cfg.Catalog.UnmarshalTask(c, inv.Task)
 	if err != nil {
 		return ctl, fmt.Errorf("failed to unmarshal the task - %s", err)
 	}

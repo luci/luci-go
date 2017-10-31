@@ -97,7 +97,7 @@ func GetPublicStateKind(j *engine.Job, traits task.Traits) PublicStateKind {
 
 func GetJobTraits(ctx context.Context, cat catalog.Catalog, j *engine.Job) (task.Traits, error) {
 	// trais = task.Traits{}
-	taskDef, err := cat.UnmarshalTask(j.Task)
+	taskDef, err := cat.UnmarshalTask(ctx, j.Task)
 	if err != nil {
 		logging.WithError(err).Warningf(ctx, "Failed to unmarshal task proto for %s", j.JobID)
 		return task.Traits{}, err

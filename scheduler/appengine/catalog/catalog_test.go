@@ -65,6 +65,8 @@ func TestRegisterTaskManagerAndFriends(t *testing.T) {
 func TestProtoValidation(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	Convey("validateJobProto works", t, func() {
 		c := New("scheduler.cfg").(*catalog)
 
@@ -102,21 +104,21 @@ func TestProtoValidation(t *testing.T) {
 		})
 
 		Convey("with TaskDefWrapper", func() {
-			msg, err := c.extractTaskProto(&messages.TaskDefWrapper{
+			msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 				Noop: &messages.NoopTask{},
 			})
 			So(err, ShouldBeNil)
 			So(msg.(*messages.NoopTask), ShouldNotBeNil)
 
-			msg, err = c.extractTaskProto(nil)
+			msg, err = c.extractTaskProto(ctx, nil)
 			So(err, ShouldErrLike, "expecting a pointer to proto message")
 			So(msg, ShouldBeNil)
 
-			msg, err = c.extractTaskProto(&messages.TaskDefWrapper{})
+			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{})
 			So(err, ShouldErrLike, "can't find a recognized task definition")
 			So(msg, ShouldBeNil)
 
-			msg, err = c.extractTaskProto(&messages.TaskDefWrapper{
+			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 				Noop:     &messages.NoopTask{},
 				UrlFetch: &messages.UrlFetchTask{},
 			})
@@ -125,20 +127,20 @@ func TestProtoValidation(t *testing.T) {
 		})
 
 		Convey("with Job", func() {
-			msg, err := c.extractTaskProto(&messages.Job{
+			msg, err := c.extractTaskProto(ctx, &messages.Job{
 				Id:   "blah",
 				Noop: &messages.NoopTask{},
 			})
 			So(err, ShouldBeNil)
 			So(msg.(*messages.NoopTask), ShouldNotBeNil)
 
-			msg, err = c.extractTaskProto(&messages.Job{
+			msg, err = c.extractTaskProto(ctx, &messages.Job{
 				Id: "blah",
 			})
 			So(err, ShouldErrLike, "can't find a recognized task definition")
 			So(msg, ShouldBeNil)
 
-			msg, err = c.extractTaskProto(&messages.Job{
+			msg, err = c.extractTaskProto(ctx, &messages.Job{
 				Id:       "blah",
 				Noop:     &messages.NoopTask{},
 				UrlFetch: &messages.UrlFetchTask{},
@@ -154,7 +156,7 @@ func TestProtoValidation(t *testing.T) {
 			name:          "broken noop",
 			validationErr: errors.New("boo"),
 		})
-		msg, err := c.extractTaskProto(&messages.TaskDefWrapper{
+		msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 			Noop: &messages.NoopTask{},
 		})
 		So(err, ShouldErrLike, "boo")
@@ -164,6 +166,8 @@ func TestProtoValidation(t *testing.T) {
 
 func TestTaskMarshaling(t *testing.T) {
 	t.Parallel()
+
+	ctx := context.Background()
 
 	Convey("works", t, func() {
 		c := New("scheduler.cfg").(*catalog)
@@ -177,7 +181,7 @@ func TestTaskMarshaling(t *testing.T) {
 			Url: "123",
 		})
 		So(err, ShouldBeNil)
-		task, err := c.UnmarshalTask(blob)
+		task, err := c.UnmarshalTask(ctx, blob)
 		So(err, ShouldBeNil)
 		So(task, ShouldResemble, &messages.UrlFetchTask{
 			Url: "123",
@@ -189,7 +193,7 @@ func TestTaskMarshaling(t *testing.T) {
 
 		// Once registered, but not anymore.
 		c = New("scheduler.cfg").(*catalog)
-		_, err = c.UnmarshalTask(blob)
+		_, err = c.UnmarshalTask(ctx, blob)
 		So(err, ShouldErrLike, "can't find a recognized task definition")
 	})
 }
@@ -268,11 +272,11 @@ func TestConfigReading(t *testing.T) {
 			defs, err := cat.GetProjectJobs(ctx, "project1")
 			So(err, ShouldBeNil)
 
-			task, err := cat.UnmarshalTask(defs[0].Task)
+			task, err := cat.UnmarshalTask(ctx, defs[0].Task)
 			So(err, ShouldBeNil)
 			So(task, ShouldResemble, &messages.NoopTask{})
 
-			task, err = cat.UnmarshalTask([]byte("blarg"))
+			task, err = cat.UnmarshalTask(ctx, []byte("blarg"))
 			So(err, ShouldNotBeNil)
 			So(task, ShouldBeNil)
 		})
@@ -306,7 +310,7 @@ func (m fakeTaskManager) Traits() task.Traits {
 	return task.Traits{}
 }
 
-func (m fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
+func (m fakeTaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
 	So(msg, ShouldNotBeNil)
 	return m.validationErr
 }

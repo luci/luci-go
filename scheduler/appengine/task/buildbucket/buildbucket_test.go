@@ -38,9 +38,10 @@ func TestValidateProtoMessage(t *testing.T) {
 	t.Parallel()
 
 	tm := TaskManager{}
+	c := context.Background()
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
-		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
+		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 			Server:     "https://blah.com",
 			Bucket:     "bucket",
 			Builder:    "builder",
@@ -50,7 +51,7 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage passes good minimal msg", t, func() {
-		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
+		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 			Server:  "blah.com",
 			Bucket:  "bucket",
 			Builder: "builder",
@@ -58,16 +59,16 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage wrong type", t, func() {
-		So(tm.ValidateProtoMessage(&messages.NoopTask{}), ShouldErrLike, "wrong type")
+		So(tm.ValidateProtoMessage(c, &messages.NoopTask{}), ShouldErrLike, "wrong type")
 	})
 
 	Convey("ValidateProtoMessage empty", t, func() {
-		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty BuildbucketTask")
+		So(tm.ValidateProtoMessage(c, tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty BuildbucketTask")
 	})
 
 	Convey("ValidateProtoMessage validates URL", t, func() {
 		call := func(url string) error {
-			return tm.ValidateProtoMessage(&messages.BuildbucketTask{
+			return tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 				Server:  url,
 				Bucket:  "bucket",
 				Builder: "builder",
@@ -80,21 +81,21 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage needs bucket", t, func() {
-		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
+		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 			Server:  "https://blah.com",
 			Builder: "builder",
 		}), ShouldErrLike, "'bucket' field is required")
 	})
 
 	Convey("ValidateProtoMessage needs builder", t, func() {
-		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
+		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 			Server: "https://blah.com",
 			Bucket: "bucket",
 		}), ShouldErrLike, "'builder' field is required")
 	})
 
 	Convey("ValidateProtoMessage validates properties", t, func() {
-		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
+		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 			Server:     "https://blah.com",
 			Bucket:     "bucket",
 			Builder:    "builder",
@@ -103,7 +104,7 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage validates tags", t, func() {
-		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
+		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 			Server:  "https://blah.com",
 			Bucket:  "bucket",
 			Builder: "builder",
@@ -112,7 +113,7 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage forbids default tags overwrite", t, func() {
-		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
+		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
 			Server:  "https://blah.com",
 			Bucket:  "bucket",
 			Builder: "builder",

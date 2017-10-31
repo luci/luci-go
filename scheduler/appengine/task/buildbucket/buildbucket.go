@@ -75,7 +75,7 @@ func normalizeServerURL(s string) string {
 }
 
 // ValidateProtoMessage is part of Manager interface.
-func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
+func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
 	cfg, ok := msg.(*messages.BuildbucketTask)
 	if !ok {
 		return fmt.Errorf("wrong type %T, expecting *messages.BuildbucketTask", msg)
