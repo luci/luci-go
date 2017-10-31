@@ -41,6 +41,16 @@ import (
 type Console struct {
 	Name string
 
+	// Project is the LUCI project for which this console is defined.
+	Project string
+
+	// Header is an optional header for the console which contains links, oncall info,
+	// and summaries of other, presumably related consoles.
+	//
+	// This field may be nil, which simply indicates to the renderer to not render a
+	// header.
+	Header *ConsoleHeader
+
 	// Commit is a list of commits representing the list of commits to the left of the
 	// console.
 	Commit []Commit
@@ -57,6 +67,41 @@ type Console struct {
 
 	// FaviconURL is the URL to the favicon for this console.
 	FaviconURL string
+}
+
+// ConsoleSummary represents the summary of a console, including its name and the latest
+// status of each of its builders.
+type ConsoleSummary struct {
+	// Name is a Link that contains the name of the console as well as a relative URL
+	// to the console's page.
+	Name model.Link
+
+	// Builders contains a list of builders for a given console and some data about
+	// the latest state for each builder.
+	Builders []*model.BuilderSummary
+}
+
+// ConsoleGroup represents a group of console summaries which may optionally be titled.
+// Logically, it represents a group of consoles with some shared quality (e.g. tree closers).
+type ConsoleGroup struct {
+	// Title is the title for this group of consoles and may link to anywhere.
+	Title model.Link
+
+	// Consoles is the list of console summaries contained without this group.
+	Consoles []ConsoleSummary
+}
+
+// ConsoleHeader represents the header of a console view, containing a set of links,
+// oncall details, as well as a set of console summaries for other, relevant consoles.
+type ConsoleHeader struct {
+	// ConsoleGroups is a list of groups of console summaries to be displayed in
+	// the header.
+	//
+	// A console group without a title will have all of its console summaries
+	// appear "ungrouped" when rendered.
+	ConsoleGroups []ConsoleGroup
+
+	// TODO(mknyszek): Add Oncall and Links support.
 }
 
 // ConsoleElement represents a single renderable console element.

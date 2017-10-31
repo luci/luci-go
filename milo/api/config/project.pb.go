@@ -155,6 +155,8 @@ type ConsoleSummaryGroup struct {
 	// Title is a name or label for this group of consoles.  This is optional.
 	Title *Link `protobuf:"bytes,1,opt,name=title" json:"title,omitempty"`
 	// ConsoleIds is a list of console ids to display in this console group.
+	// Each console id must be prepended with its related project (e.g.
+	// chromium/main) because console ids are project-local.
 	// Only consoles from the same project are supported.
 	// TODO(hinoka): Allow cross-project consoles.
 	ConsoleIds []string `protobuf:"bytes,2,rep,name=console_ids,json=consoleIds" json:"console_ids,omitempty"`

@@ -53,6 +53,7 @@ var (
 	allPackages = []testPackage{
 		{buildbotBuildTestData, "buildbot.build", "build.html"},
 		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
+		{consoleTestData, "console", "console.html"},
 		{func() []common.TestBundle {
 			return swarming.BuildTestData("../buildsource/swarming")
 		}, "swarming.build", "build.html"},
