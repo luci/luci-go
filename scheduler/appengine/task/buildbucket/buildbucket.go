@@ -88,6 +88,10 @@ func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) 
 	if cfg.Server == "" {
 		return fmt.Errorf("field 'server' is required")
 	}
+	// TODO(tandrii): delete this to resolve https://crbug.com/771503.
+	if strings.HasPrefix(cfg.Server, "https://") || strings.HasPrefix(cfg.Server, "http://") {
+		logging.Warningf(c, "task.buildbucket.server field is a URL (see https://crbug.com/771503).")
+	}
 	u, err := url.Parse(normalizeServerURL(cfg.Server))
 	if err != nil {
 		return fmt.Errorf("invalid URL %q: %s", cfg.Server, err)
