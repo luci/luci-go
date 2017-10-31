@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "636e2369_76d8d631",
+        "filename": "machine-db/appengine/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T23:05:35Z",
+      "side": 1,
+      "message": "add also \n- url: /(internal|admin)/.*\n  script: _go_app\n  secure: always\n  login: admin\n\nsee https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware#hdr-Handlers_setup\n\nAlso, please add cron.yaml right away (https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware#hdr-Cron_setup)",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 8
+      },
+      "revId": "bd9c136e1a899b16ac2a55b680295f8c85c328d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99353727_f07e439d",
+        "filename": "machine-db/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-31T23:05:35Z",
+      "side": 1,
+      "message": "bad copy-pasta",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 63
+      },
+      "revId": "bd9c136e1a899b16ac2a55b680295f8c85c328d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
