@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b612e062_3504bab1",
+        "filename": "machine-db/appengine/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-10-31T23:19:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "636e2369_76d8d631",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 8
+      },
+      "revId": "bd9c136e1a899b16ac2a55b680295f8c85c328d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "99353727_f07e439d",
         "filename": "machine-db/appengine/frontend/main.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "bd9c136e1a899b16ac2a55b680295f8c85c328d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7baaa357_91a0ca21",
+        "filename": "machine-db/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-10-31T23:19:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99353727_f07e439d",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 63
+      },
+      "revId": "bd9c136e1a899b16ac2a55b680295f8c85c328d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
