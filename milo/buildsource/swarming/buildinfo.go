@@ -32,14 +32,14 @@ import (
 // In a production system, this will be completely defaults. For testing, the
 // various services and data sources may be substituted for testing stubs.
 type BuildInfoProvider struct {
-	// swarmingServiceFunc returns a swarmingService instance for the supplied
+	// swarmingServiceFunc returns a SwarmingService instance for the supplied
 	// parameters.
 	//
 	// If nil, a production fetcher will be generated.
-	swarmingServiceFunc func(c context.Context, host string) (swarmingService, error)
+	swarmingServiceFunc func(c context.Context, host string) (SwarmingService, error)
 }
 
-func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (swarmingService, error) {
+func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (SwarmingService, error) {
 	if p.swarmingServiceFunc == nil {
 		return NewProdService(c, host)
 	}
@@ -58,7 +58,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	}
 
 	// Use default Swarming host.
-	host := sf.getHost()
+	host := sf.GetHost()
 	logging.Infof(c, "Loading build info for Swarming host %s, task %s.", host, req.Task)
 
 	fr, err := swarmingFetch(c, sf, req.Task, swarmingFetchParams{})
@@ -90,7 +90,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	step, err := rawpresentation.ReadAnnotations(c, stream)
 
 	// Add Swarming task parameters to the Milo step.
-	if err := addTaskToMiloStep(c, sf.getHost(), fr.res, step); err != nil {
+	if err := addTaskToMiloStep(c, sf.GetHost(), fr.res, step); err != nil {
 		return nil, err
 	}
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package swarming
+package testdata
 
 import (
 	"encoding/json"
@@ -46,18 +46,18 @@ import (
 	"go.chromium.org/luci/server/templates"
 )
 
-type testCase struct {
-	name string
+type TestCase struct {
+	Name string
 
-	swarmingRelDir string
+	SwarmingRelDir string
 
-	swarmResult string
-	swarmOutput string
-	annotations string
+	SwarmResult string
+	TaskOutput  string
+	Annotations string
 }
 
-func getTestCases(swarmingRelDir string) []*testCase {
-	testCases := make(map[string]*testCase)
+func GetTestCases(swarmingRelDir string) []*TestCase {
+	testCases := make(map[string]*TestCase)
 
 	// References "milo/buildsource/swarming/testdata".
 	testdata := filepath.Join(swarmingRelDir, "testdata")
@@ -69,21 +69,26 @@ func getTestCases(swarmingRelDir string) []*testCase {
 		fileName := fi.Name()
 		parts := strings.SplitN(fileName, ".", 2)
 
+		if len(parts) > 1 && parts[1] == "go" {
+			continue
+		}
+
 		name := parts[0]
+
 		tc := testCases[name]
 		if tc == nil {
-			tc = &testCase{name: name}
+			tc = &TestCase{Name: name}
 			testCases[name] = tc
 		}
-		tc.swarmingRelDir = swarmingRelDir
+		tc.SwarmingRelDir = swarmingRelDir
 
 		switch {
 		case len(parts) == 1:
-			tc.swarmOutput = fileName
+			tc.TaskOutput = fileName
 		case parts[1] == "swarm":
-			tc.swarmResult = fileName
+			tc.SwarmResult = fileName
 		case parts[1] == "pb.txt":
-			tc.annotations = fileName
+			tc.Annotations = fileName
 		}
 	}
 
@@ -94,7 +99,7 @@ func getTestCases(swarmingRelDir string) []*testCase {
 	}
 	sort.Strings(names)
 
-	results := make([]*testCase, len(names))
+	results := make([]*TestCase, len(names))
 	for i, name := range names {
 		results[i] = testCases[name]
 	}
@@ -102,14 +107,38 @@ func getTestCases(swarmingRelDir string) []*testCase {
 	return results
 }
 
-func (tc *testCase) injectLogdogClient(c context.Context) context.Context {
+func (tc *TestCase) GetHost() string { return "example.com" }
+
+func (tc *TestCase) GetSwarmingRequest(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (tc *TestCase) GetSwarmingResult(context.Context, string) (*swarming.SwarmingRpcsTaskResult, error) {
+	var sr swarming.SwarmingRpcsTaskResult
+	data := tc.getContent(tc.SwarmResult)
+	if err := json.Unmarshal(data, &sr); err != nil {
+		return nil, err
+	}
+	return &sr, nil
+}
+
+func (tc *TestCase) GetTaskOutput(context.Context, string) (string, error) {
+	return string(tc.getContent(tc.TaskOutput)), nil
+}
+
+func (tc *TestCase) InjectLogdogClient(c context.Context) context.Context {
 	fCl := fakelogs.NewClient()
 	c = rawpresentation.InjectFakeLogdogClient(c, fCl)
-	if tc.annotations == "" {
+	if tc.Annotations == "" {
 		return c
 	}
 
-	url, err := types.ParseURL(strpair.ParseMap(tc.getSwarmingResult().Tags).Get("log_location"))
+	rslt, err := tc.GetSwarmingResult(nil, "")
+	if err != nil {
+		panic(err)
+	}
+
+	url, err := types.ParseURL(strpair.ParseMap(rslt.Tags).Get("log_location"))
 	if err != nil {
 		panic(err)
 	}
@@ -134,7 +163,7 @@ func (tc *testCase) injectLogdogClient(c context.Context) context.Context {
 	return c
 }
 
-func (tc *testCase) getContent(name string) []byte {
+func (tc *TestCase) getContent(name string) []byte {
 	if name == "" {
 		return nil
 	}
@@ -142,7 +171,7 @@ func (tc *testCase) getContent(name string) []byte {
 	// ../swarming below assumes that
 	// - this code is not executed by tests outside of this dir
 	// - this dir is a sibling of frontend dir
-	path := filepath.Join(tc.swarmingRelDir, "testdata", name)
+	path := filepath.Join(tc.SwarmingRelDir, "testdata", name)
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(fmt.Errorf("failed to read [%s]: %s", path, err))
@@ -150,52 +179,17 @@ func (tc *testCase) getContent(name string) []byte {
 	return data
 }
 
-func (tc *testCase) getSwarmingResult() *swarming.SwarmingRpcsTaskResult {
-	var sr swarming.SwarmingRpcsTaskResult
-	data := tc.getContent(tc.swarmResult)
-	if err := json.Unmarshal(data, &sr); err != nil {
-		panic(fmt.Errorf("failed to unmarshal [%s]: %s", tc.swarmResult, err))
-	}
-	return &sr
-}
-
-func (tc *testCase) getSwarmingOutput() string {
-	return string(tc.getContent(tc.swarmOutput))
-}
-
-func (tc *testCase) getAnnotation() *miloProto.Step {
+func (tc *TestCase) getAnnotation() *miloProto.Step {
 	var step miloProto.Step
-	data := tc.getContent(tc.annotations)
+	data := tc.getContent(tc.Annotations)
 	if len(data) == 0 {
 		return nil
 	}
 
 	if err := proto.UnmarshalText(string(data), &step); err != nil {
-		panic(fmt.Errorf("failed to unmarshal text protobuf [%s]: %s", tc.annotations, err))
+		panic(fmt.Errorf("failed to unmarshal text protobuf [%s]: %s", tc.Annotations, err))
 	}
 	return &step
-}
-
-type debugSwarmingService struct {
-	tc *testCase
-}
-
-func (svc debugSwarmingService) getHost() string { return "example.com" }
-
-func (svc debugSwarmingService) getSwarmingResult(c context.Context, taskID string) (
-	*swarming.SwarmingRpcsTaskResult, error) {
-
-	return svc.tc.getSwarmingResult(), nil
-}
-
-func (svc debugSwarmingService) getSwarmingRequest(c context.Context, taskID string) (
-	*swarming.SwarmingRpcsTaskRequest, error) {
-
-	return nil, errors.New("not implemented")
-}
-
-func (svc debugSwarmingService) getTaskOutput(c context.Context, taskID string) (string, error) {
-	return svc.tc.getSwarmingOutput(), nil
 }
 
 // LogTestData returns sample test data for log pages.
@@ -211,8 +205,21 @@ func LogTestData() []common.TestBundle {
 	}
 }
 
+// SwarmingService is an interface that fetches data from Swarming.
+//
+// In production, this is fetched from a Swarming host. For testing, this can
+// be replaced with a mock.
+type SwarmingService interface {
+	GetHost() string
+	GetSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
+	GetSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
+	GetTaskOutput(c context.Context, taskID string) (string, error)
+}
+
+type SwarmingBuildImplFn func(c context.Context, svc SwarmingService, taskID string) (*resp.MiloBuild, error)
+
 // BuildTestData returns sample test data for swarming build pages.
-func BuildTestData(swarmingRelDir string) []common.TestBundle {
+func BuildTestData(swarmingRelDir string, swarmingBuildImpl SwarmingBuildImplFn) []common.TestBundle {
 	basic := resp.MiloBuild{
 		Summary: resp.BuildComponent{
 			Label:    "Test swarming build",
@@ -230,23 +237,22 @@ func BuildTestData(swarmingRelDir string) []common.TestBundle {
 	}
 	c := context.Background()
 	c = memory.UseWithAppID(c, "dev~luci-milo")
-	c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+	c = testconfig.WithCommonClient(c, memcfg.New(AclConfigs))
 	c = auth.WithState(c, &authtest.FakeState{
 		Identity:       "user:alicebob@google.com",
 		IdentityGroups: []string{"all", "googlers"},
 	})
 	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
 
-	for _, tc := range getTestCases(swarmingRelDir) {
-		c := tc.injectLogdogClient(c)
-		svc := debugSwarmingService{tc}
+	for _, tc := range GetTestCases(swarmingRelDir) {
+		c := tc.InjectLogdogClient(c)
 
-		build, err := SwarmingBuildImpl(c, svc, tc.name)
+		build, err := swarmingBuildImpl(c, tc, tc.Name)
 		if err != nil {
-			panic(fmt.Errorf("Error while processing %s: %s", tc.name, err))
+			panic(fmt.Errorf("Error while processing %s: %s", tc.Name, err))
 		}
 		results = append(results, common.TestBundle{
-			Description: tc.name,
+			Description: tc.Name,
 			Data:        templates.Args{"Build": build},
 		})
 	}
@@ -263,7 +269,7 @@ name: "opensource"
 access: "group:all"
 `
 
-var aclConfgs = map[string]memcfg.ConfigSet{
+var AclConfigs = map[string]memcfg.ConfigSet{
 	"projects/secret": {
 		"project.cfg": secretProjectCfg,
 	},

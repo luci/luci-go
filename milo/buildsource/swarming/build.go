@@ -40,6 +40,17 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+// SwarmingService is an interface that fetches data from Swarming.
+//
+// In production, this is fetched from a Swarming host. For testing, this can
+// be replaced with a mock.
+type SwarmingService interface {
+	GetHost() string
+	GetSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
+	GetSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
+	GetTaskOutput(c context.Context, taskID string) (string, error)
+}
+
 // ErrNotMiloJob is returned if a Swarming task is fetched that does not self-
 // identify as a Milo job.
 var ErrNotMiloJob = errors.New("Not a Milo Job or access denied", common.CodeNoAccess)
@@ -83,17 +94,6 @@ func getSwarmingClient(c context.Context, host string) (*swarming.Service, error
 	return sc, nil
 }
 
-// swarmingService is an interface that fetches data from Swarming.
-//
-// In production, this is fetched from a Swarming host. For testing, this can
-// be replaced with a mock.
-type swarmingService interface {
-	getHost() string
-	getSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
-	getSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
-	getTaskOutput(c context.Context, taskID string) (string, error)
-}
-
 type prodSwarmingService struct {
 	host   string
 	client *swarming.Service
@@ -110,13 +110,13 @@ func NewProdService(c context.Context, host string) (*prodSwarmingService, error
 	}, nil
 }
 
-func (svc *prodSwarmingService) getHost() string { return svc.host }
+func (svc *prodSwarmingService) GetHost() string { return svc.host }
 
-func (svc *prodSwarmingService) getSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+func (svc *prodSwarmingService) GetSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
 	return svc.client.Task.Result(taskID).Context(c).Do()
 }
 
-func (svc *prodSwarmingService) getTaskOutput(c context.Context, taskID string) (string, error) {
+func (svc *prodSwarmingService) GetTaskOutput(c context.Context, taskID string) (string, error) {
 	stdout, err := svc.client.Task.Stdout(taskID).Context(c).Do()
 	if err != nil {
 		return "", err
@@ -124,7 +124,7 @@ func (svc *prodSwarmingService) getTaskOutput(c context.Context, taskID string) 
 	return stdout.Output, nil
 }
 
-func (svc *prodSwarmingService) getSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
+func (svc *prodSwarmingService) GetSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
 	return svc.client.Task.Request(taskID).Context(c).Do()
 }
 
@@ -154,7 +154,7 @@ type swarmingFetchResult struct {
 // After fetching, an ACL check is performed to confirm that the user is
 // permitted to view the resulting data. If this check fails, get returns
 // errNotMiloJob.
-func swarmingFetch(c context.Context, svc swarmingService, taskID string, req swarmingFetchParams) (
+func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req swarmingFetchParams) (
 	*swarmingFetchResult, error) {
 
 	// logErr is managed separately from other fetch errors, since in some
@@ -169,7 +169,7 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 
 	err := parallel.FanOutIn(func(workC chan<- func() error) {
 		workC <- func() (err error) {
-			if fr.res, err = svc.getSwarmingResult(c, taskID); err == nil {
+			if fr.res, err = svc.GetSwarmingResult(c, taskID); err == nil {
 				if req.taskResCallback != nil && req.taskResCallback(fr.res) {
 					logsCancelled = true
 					cancelLogs()
@@ -182,7 +182,7 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 			workC <- func() error {
 				// Note: we're using the log Context here so we can cancel log fetch
 				// explicitly.
-				fr.log, logErr = svc.getTaskOutput(logCtx, taskID)
+				fr.log, logErr = svc.GetTaskOutput(logCtx, taskID)
 				return nil
 			}
 		}
@@ -514,7 +514,7 @@ func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.Swarm
 
 // swarmingFetchMaybeLogs fetches the swarming task result.  It also fetches
 // the log iff the task is not a logdog enabled task.
-func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID string) (
+func swarmingFetchMaybeLogs(c context.Context, svc SwarmingService, taskID string) (
 	*swarmingFetchResult, *types.StreamAddr, error) {
 	// Fetch the data from Swarming
 	var logDogStreamAddr *types.StreamAddr
@@ -594,7 +594,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 
 // SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuild
 // representation of a build state given a Swarming TaskID.
-func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*resp.MiloBuild, error) {
+func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*resp.MiloBuild, error) {
 	// First, get the task result from swarming, and maybe the logs.
 	fr, logDogStreamAddr, err := swarmingFetchMaybeLogs(c, svc, taskID)
 	if err != nil {
@@ -605,7 +605,7 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 	// Legacy codepath - Annotations are encoded in the swarming log instead of LogDog.
 	// TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
 	if logDogStreamAddr == nil {
-		taskURL := taskPageURL(svc.getHost(), taskID)
+		taskURL := taskPageURL(svc.GetHost(), taskID)
 		return buildFromLogs(c, taskURL, fr)
 	}
 
@@ -624,7 +624,7 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 		// 2. The bootsrap on the client failed, and never sent data to logdog.
 		// This would be evident because the swarming result would be a failure.
 		if swarmingResult.State == TaskCompleted {
-			err = failedToStart(c, &build, swarmingResult, svc.getHost())
+			err = failedToStart(c, &build, swarmingResult, svc.GetHost())
 			return &build, err
 		}
 		logging.WithError(err).Errorf(c, "User cannot access stream.")
@@ -652,7 +652,7 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 	// i.e. when the stream isn't ready yet, or errored out.
 	if step != nil {
 		// Milo Step Proto += Swarming Result Data
-		if err := addTaskToMiloStep(c, svc.getHost(), swarmingResult, step); err != nil {
+		if err := addTaskToMiloStep(c, svc.GetHost(), swarmingResult, step); err != nil {
 			return nil, err
 		}
 		// Milo Resp Build += Milo Step Proto.
@@ -664,7 +664,7 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 	// Milo Resp Build += Swarming Result Data
 	// This is done for things in resp but not in step like the banner, buildset,
 	// recipe link, bot info, title, etc.
-	err = addTaskToBuild(c, svc.getHost(), swarmingResult, &build)
+	err = addTaskToBuild(c, svc.GetHost(), swarmingResult, &build)
 	return &build, err
 }
 
