@@ -552,26 +552,6 @@ func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID strin
 	return fr, logDogStreamAddr, err
 }
 
-func streamFromLogDog(c context.Context, addr *types.StreamAddr) (*miloProto.Step, error) {
-	logging.Infof(c, "Loading build from LogDog stream at: %s", addr)
-
-	client, err := rawpresentation.NewClient(c, addr.Host)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
-	}
-
-	as := rawpresentation.AnnotationStream{
-		Client:  client,
-		Project: addr.Project,
-		Path:    addr.Path,
-	}
-	if err := as.Normalize(); err != nil {
-		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
-	}
-
-	return as.Fetch(c)
-}
-
 // buildFromLogs returns a milo build from just the swarming log and result data.
 // TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
 func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*resp.MiloBuild, error) {
@@ -635,7 +615,7 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 
 	// Load the build from the LogDog service.  For known classes of errors, add
 	// steps in the build presentation to explain what may be going on.
-	step, err := streamFromLogDog(c, logDogStreamAddr)
+	step, err := rawpresentation.ReadAnnotations(c, logDogStreamAddr)
 	switch errors.Unwrap(err) {
 	case coordinator.ErrNoSuchStream:
 		// The stream was not found.  This could be due to one of two things:

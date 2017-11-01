@@ -301,3 +301,25 @@ func NewBuildID(host, project, path string) *BuildID {
 		types.StreamPath(strings.Trim(path, "/")),
 	}
 }
+
+// ReadAnnotations synchronously reads and decodes the latest Step information
+// from the provided StreamAddr.
+func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*miloProto.Step, error) {
+	log.Infof(c, "Loading build from LogDog stream at: %s", addr)
+
+	client, err := NewClient(c, addr.Host)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
+	}
+
+	as := AnnotationStream{
+		Client:  client,
+		Project: addr.Project,
+		Path:    addr.Path,
+	}
+	if err := as.Normalize(); err != nil {
+		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
+	}
+
+	return as.Fetch(c)
+}

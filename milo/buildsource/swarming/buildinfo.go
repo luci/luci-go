@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 
 	"golang.org/x/net/context"
 )
@@ -86,7 +87,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 		"path":    stream.Path,
 	}.Infof(c, "Resolved LogDog annotation stream.")
 
-	step, err := streamFromLogDog(c, stream)
+	step, err := rawpresentation.ReadAnnotations(c, stream)
 
 	// Add Swarming task parameters to the Milo step.
 	if err := addTaskToMiloStep(c, sf.getHost(), fr.res, step); err != nil {
