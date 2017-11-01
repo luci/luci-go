@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3936cd04_77e36a64",
+        "filename": "machine-db/api/config/v1/settings.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T00:19:12Z",
+      "side": 1,
+      "message": "I see, I thought that reviewed and versioned config would be better than configuring it via web UI but I wasn\u0027t sure the best way to store this password in a way that the app would be able to see it but the password was still sufficiently \"secret\". I will change it to be configured via /admin/settings.\n\nWhy do we need to stand up local instances of the app which interact with user-specific dev databases? I was hoping that rather than local instances for each person we\u0027d just use the -dev AppEngine instance (machine-db-dev). For comparison, I have never once started Machine Provider locally (besides unit tests).",
+      "parentUuid": "bb95ae93_c81fa8d9",
+      "range": {
+        "startLine": 16,
+        "startChar": 1,
+        "endLine": 16,
+        "endChar": 21
+      },
+      "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04ce3dbc_3df9e1a1",
         "filename": "machine-db/appengine/frontend/cron.yaml",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60573d17_58458bfb",
+        "filename": "machine-db/appengine/frontend/cron.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T00:19:12Z",
+      "side": 1,
+      "message": "Oh wtf, I copied this from another app so I didn\u0027t expect it to be wrong. Sorry about that. Fixed.",
+      "parentUuid": "04ce3dbc_3df9e1a1",
+      "range": {
+        "startLine": 7,
+        "startChar": 2,
+        "endLine": 7,
+        "endChar": 33
+      },
+      "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
