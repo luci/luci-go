@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0dc6fbd9_27afa3aa",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-01T22:56:40Z",
+      "side": 1,
+      "message": "This is going to propagate into the console preview, so I\u0027d suggest modifying the console preview to drop the bubbles at the bottom altogether, otherwise you\u0027ll see the same color twice, presumably.\n\nA nice side-effect of this is you can also drop my hack to get console previews via an index (and remove that index as well from index.yaml), but we need builder summaries to have console IDs before we can push to prod (otherwise console previews will be broken).\n\nIt\u0027s up to you if you want to fix this here, or if we fix this when builder summaries are fully populated.",
+      "range": {
+        "startLine": 204,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 85
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12c11c3b_1a09c6be",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-01T22:56:40Z",
+      "side": 1,
+      "message": "This is unnecessary now, assuming you decide to clean up console previews (see my comment in api/resp/console.go).",
+      "range": {
+        "startLine": 235,
+        "startChar": 1,
+        "endLine": 238,
+        "endChar": 2
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b09672d2_1d1bbe44",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-01T22:56:40Z",
+      "side": 1,
+      "message": "Populate this with Builder like above.",
+      "range": {
+        "startLine": 240,
+        "startChar": 10,
+        "endLine": 240,
+        "endChar": 25
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04323232_8ee1ba45",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-01T22:56:40Z",
+      "side": 1,
+      "message": "So is this.",
+      "range": {
+        "startLine": 243,
+        "startChar": 36,
+        "endLine": 243,
+        "endChar": 67
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
