@@ -71,6 +71,7 @@ const (
 	UIFieldText   UIFieldType = "text"   // one line of text, editable
 	UIFieldChoice UIFieldType = "choice" // pick one of predefined choices
 	UIFieldStatic UIFieldType = "static" // one line of text, read only
+	UIFieldPassword UIFieldType = "password" // one line of text, editable but obscured
 )
 
 // IsEditable returns true for fields that can be edited.
