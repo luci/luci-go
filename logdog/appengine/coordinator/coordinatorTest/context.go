@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/tumble"
 
@@ -185,15 +186,14 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		Config:   make(map[string]memory.ConfigSet),
 		GSClient: GSClient{},
 		StorageCache: StorageCache{
-			Base: &flex.StorageCache{
-				Cache: lru.New(0),
-			},
+			Base: &flex.StorageCache{},
 		},
 	}
 
 	// Get our starting context. This installs, among other things, in-memory
 	// gae, settings, and logger.
 	c := e.Tumble.Context()
+	c = caching.WithProcessCache(c, lru.New(0))
 	if *testGoLogger {
 		c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
 	}
