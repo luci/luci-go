@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d21fb99e_9448237a",
+        "filename": "common/auth/internal/disk_cache_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-01T01:59:32Z",
+      "side": 1,
+      "message": "how about skipping it only windows then?",
+      "range": {
+        "startLine": 52,
+        "startChar": 38,
+        "endLine": 52,
+        "endChar": 48
+      },
+      "revId": "d424e052aadce82f398d7e3029fe42f19b860cee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
