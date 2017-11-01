@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "5d905a54_b6f91237",
+        "filename": "machine-db/api/config/v1/settings.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T02:40:31Z",
+      "side": 1,
+      "message": "I\u0027m following these docs:\nhttps://cloud.google.com/appengine/docs/standard/go/cloud-sql/\n\nIt seems like it\u0027s one thing that just happens to be formatted as project:region:name, so for example in our dev instance, database would be set to \"machine-db-dev:us-central1:crimson\". Not sure, because they call it \"instance connection name\". Should I rename it, split it out, or just leave it?",
+      "parentUuid": "21e25a6d_1571c51d",
+      "range": {
+        "startLine": 16,
+        "startChar": 1,
+        "endLine": 16,
+        "endChar": 21
+      },
+      "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04ce3dbc_3df9e1a1",
         "filename": "machine-db/appengine/frontend/cron.yaml",
         "patchSetId": 2
