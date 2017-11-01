@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f4b2670_4f396a88",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T22:58:19Z",
+      "side": 1,
+      "message": "maybe use singular for better readability of text proto?\n\nrack {\n  name: \"blah\"\n\n  switch {\n  }\n  switch {\n  }\n}\n\nlooks more natural than\n\nracks {\n  switches {\n  }\n  switches {\n  }\n}",
+      "range": {
+        "startLine": 26,
+        "startChar": 24,
+        "endLine": 26,
+        "endChar": 32
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b428d215_8089d245",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T22:58:19Z",
+      "side": 1,
+      "message": "why not specify database name here too and then construct connection string that includes it? Like here https://chrome-internal.googlesource.com/infra/infra_internal/+/master/go/src/infra_internal/crimson/server/settings/settings.go#46",
+      "range": {
+        "startLine": 30,
+        "startChar": 5,
+        "endLine": 30,
+        "endChar": 21
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6d16678_010eccf6",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T22:58:19Z",
+      "side": 1,
+      "message": "how to specify local unix socket if I want to connect to local database or cloudsqlproxy?",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 102
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "978412a1_0b02c80e",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T22:58:19Z",
+      "side": 1,
+      "message": "this is not necessary, go knows how to type-cast literals to appropriate compatible types. template.HTML and string are compatible (see https://golang.org/pkg/html/template/#HTML), so \"\u003cp\u003eServer ...\" is silently getting type cast to template.HTML.\n\nThis works only for literals though, e.g. following will not work:\n\ns :\u003d \"stuff\"\nf :\u003d settings.UIField{\n  Help: s, // error, s is \u0027string\u0027, not \u0027template.HTML\u0027\n}",
+      "range": {
+        "startLine": 71,
+        "startChar": 10,
+        "endLine": 71,
+        "endChar": 24
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75987b84_e7741a45",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T22:58:19Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 21
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d43faa69_4031378f",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T22:58:19Z",
+      "side": 1,
+      "message": "nit: just return it right away\n\nreturn map[string]string{\n  ...\n}, nil",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 99,
+        "endChar": 16
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
