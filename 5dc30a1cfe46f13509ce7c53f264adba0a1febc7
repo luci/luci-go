@@ -214,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "a07ff8dd_915038ff",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T23:57:17Z",
+      "side": 1,
+      "message": "I already created the tables. I don\u0027t see why I would need or want to start a local development instance of the app in order to do that, it makes no sense. Why would I create a local dev server and then connect to the prod db? To set up the db, we can and should use Cloud SQL Helper as is from the infra repository with custom dbs.yaml and migration files. Per your docs, Cloud SQL Helper is a command line tool. You use it from the CLI to apply migrations and set up the Cloud SQL db. What part of that requires standing up a local dev server? You don\u0027t need to do that, so I don\u0027t see why it needs to be supported here.\n\nI\u0027m not trying to pitch inferior solutions, I\u0027m just trying to get this project off the ground since it\u0027s had no traction in the past two years. These settings are intended to tell an AppEngine app which Cloud SQL database to use and how to connect to it. Server should be of the form project:region:instance. There\u0027s no other use case here, you can forget about what I said about IP addresses, I only said that to attempt to satisfy your insistence on starting a local dev server (which I thought we moved past when I explained that I never start dev servers and you commented that we must have different development styles). There\u0027s no point in spending time overengineering the app to integrate with Cloud SQL Helper and migrate and whatnot to make it easy for hypothetical developers to stand up dev instances so they can work on the project when in reality nobody else has had any desire to work on this project. There\u0027s also no point in spending time learning about what little progress has been made and trying to build off of it. My design proposal is small, this app\u0027s implementation should be relatively small, there\u0027s no need to overthink it. Dev server integration is completely out of scope, I did not mention it anywhere in the design doc.",
+      "parentUuid": "15a510ca_d6a3a3dd",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 102
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "75987b84_e7741a45",
         "filename": "machine-db/appengine/frontend/settings.go",
         "patchSetId": 7
