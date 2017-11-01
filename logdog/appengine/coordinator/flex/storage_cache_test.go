@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/server/caching"
 
 	"golang.org/x/net/context"
 
@@ -32,10 +33,8 @@ func testStorageCache(t *testing.T, compress bool) {
 
 	Convey(`Testing storage cache in a testing envrionment`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-
-		cache := StorageCache{
-			Cache: lru.New(0),
-		}
+		c = caching.WithProcessCache(c, lru.New(0))
+		cache := StorageCache{}
 		if compress {
 			cache.compressionThreshold = 1
 		}
@@ -54,7 +53,7 @@ func testStorageCache(t *testing.T, compress bool) {
 			for _, it := range items {
 				cache.Put(c, it.k, it.v, time.Minute)
 			}
-			So(cache.Cache.Len(), ShouldEqual, 4)
+			So(caching.ProcessCache(c).Len(), ShouldEqual, 4)
 
 			for _, it := range items {
 				v, ok := cache.Get(c, it.k)

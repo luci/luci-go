@@ -20,9 +20,9 @@ import (
 	"io/ioutil"
 	"time"
 
-	"go.chromium.org/luci/common/data/caching/lru"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/server/caching"
 
 	"golang.org/x/net/context"
 )
@@ -35,15 +35,15 @@ const (
 )
 
 // StorageCache implements a generic storage.Cache for Storage instances.
+//
+// This uses caching.ProcessCache for the underlying cache.
 type StorageCache struct {
-	Cache *lru.Cache
-
 	compressionThreshold int
 }
 
 // Get implements storage.Cache.
 func (sc *StorageCache) Get(c context.Context, key storage.CacheKey) ([]byte, bool) {
-	itm, ok := sc.Cache.Get(c, key)
+	itm, ok := caching.ProcessCache(c).Get(c, key)
 	if !ok {
 		return nil, false
 	}
@@ -118,5 +118,5 @@ func (sc *StorageCache) Put(c context.Context, key storage.CacheKey, data []byte
 		}
 	}
 
-	sc.Cache.Put(c, key, buf.Bytes(), exp)
+	caching.ProcessCache(c).Put(c, key, buf.Bytes(), exp)
 }

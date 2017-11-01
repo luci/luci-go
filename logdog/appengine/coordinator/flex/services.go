@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
-	"go.chromium.org/luci/appengine/gaemiddleware/flex"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -97,9 +96,7 @@ func NewGlobalServices(c context.Context) (*GlobalServices, error) {
 	// application configuration, which we will in turn use to instantiate our
 	// clients.
 	s := GlobalServices{
-		storageCache: &StorageCache{
-			Cache: flex.ProcessCache,
-		},
+		storageCache: &StorageCache{},
 	}
 
 	// Load our service configuration.
