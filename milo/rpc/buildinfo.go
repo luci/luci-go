@@ -29,8 +29,6 @@ import (
 
 // BuildInfoService is a BuildInfoServer implementation.
 type BuildInfoService struct {
-	// BuildBot is the BuildInfoProvider for the BuildBot service.
-	BuildBot buildbot.BuildInfoProvider
 	// Swarming is the BuildInfoProvider for the Swarming service.
 	Swarming swarming.BuildInfoProvider
 }
@@ -48,7 +46,7 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 
 	switch {
 	case req.GetBuildbot() != nil:
-		return svc.BuildBot.GetBuildInfo(c, req.GetBuildbot(), projectHint)
+		return buildbot.GetBuildInfo(c, req.GetBuildbot(), projectHint)
 
 	case req.GetSwarming() != nil:
 		return svc.Swarming.GetBuildInfo(c, req.GetSwarming(), projectHint)

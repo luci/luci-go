@@ -15,85 +15,48 @@
 package buildbot
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/gae/impl/memory"
 	miloProto "go.chromium.org/luci/common/proto/milo"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/coordinator"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/fakelogs"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-// testLogDogClient is a minimal functional LogsClient implementation.
-//
-// It retains its latest input parameter and returns its configured err (if not
-// nil) or resp.
-type testLogDogClient struct {
-	logdog.LogsClient
-
-	req  []interface{}
-	resp []interface{}
-	err  error
-}
-
-func (tc *testLogDogClient) popResp() (resp interface{}) {
-	resp, tc.resp = tc.resp[0], tc.resp[1:]
-	return
-}
-
-func (tc *testLogDogClient) Tail(ctx context.Context, in *logdog.TailRequest, opts ...grpc.CallOption) (
-	*logdog.GetResponse, error) {
-
-	tc.req = append(tc.req, in)
-	if tc.err != nil {
-		return nil, tc.err
-	}
-	return tc.popResp().(*logdog.GetResponse), nil
-}
-
-// Query returns log stream paths that match the requested query.
-func (tc *testLogDogClient) Query(ctx context.Context, in *logdog.QueryRequest, opts ...grpc.CallOption) (
-	*logdog.QueryResponse, error) {
-
-	tc.req = append(tc.req, in)
-	if tc.err != nil {
-		return nil, tc.err
-	}
-	return tc.popResp().(*logdog.QueryResponse), nil
-}
-
-func datagramGetResponse(project, prefix string, msg proto.Message) *logdog.GetResponse {
+func writeDatagram(c *fakelogs.Client, prefix, path types.StreamName, msg proto.Message, tags ...map[string]string) {
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}
-	return &logdog.GetResponse{
-		Project: project,
-		Desc: &logpb.LogStreamDescriptor{
-			Prefix:      prefix,
-			ContentType: miloProto.ContentTypeAnnotations,
-			StreamType:  logpb.StreamType_DATAGRAM,
-		},
-		State: &logdog.LogStreamState{},
-		Logs: []*logpb.LogEntry{
-			{
-				Content: &logpb.LogEntry_Datagram{
-					Datagram: &logpb.Datagram{
-						Data: data,
-					},
-				},
-			},
-		},
+	var tagMap streamproto.TagMap
+	if len(tags) > 0 {
+		tagMap = streamproto.TagMap(tags[0])
+	}
+
+	s, err := c.OpenDatagramStream(prefix, path, &streamproto.Flags{
+		ContentType: miloProto.ContentTypeAnnotations,
+		Tags:        tagMap,
+	})
+	if err != nil {
+		panic(err)
+	}
+	if _, err := s.Write(data); err != nil {
+		panic(err)
+	}
+	if err := s.Close(); err != nil {
+		panic(err)
 	}
 }
 
@@ -104,15 +67,8 @@ func TestBuildInfo(t *testing.T) {
 		c := context.Background()
 		c = memory.Use(c)
 
-		testClient := testLogDogClient{}
-		bip := BuildInfoProvider{
-			LogdogClientFunc: func(context.Context) (*coordinator.Client, error) {
-				return &coordinator.Client{
-					C:    &testClient,
-					Host: "example.com",
-				}, nil
-			},
-		}
+		testClient := fakelogs.NewClient()
+		c = rawpresentation.InjectFakeLogdogClient(c, testClient)
 
 		build := buildbot.Build{
 			Master:      "foo master",
@@ -149,7 +105,7 @@ func TestBuildInfo(t *testing.T) {
 		}
 
 		Convey("Load an invalid build", func() {
-			_, err := bip.GetBuildInfo(c,
+			_, err := GetBuildInfo(c,
 				&milo.BuildInfoRequest_BuildBot{
 					MasterName:  "foo master",
 					BuilderName: "bar builder",
@@ -161,24 +117,15 @@ func TestBuildInfo(t *testing.T) {
 
 		Convey("Can load a BuildBot build by log location.", func() {
 			build.Properties = append(build.Properties, []*buildbot.Property{
-				{Name: "log_location", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
+				{Name: "log_location", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
 			}...)
 			importBuild(c, &build)
-			testClient.resp = []interface{}{
-				datagramGetResponse("testproject", "foo/bar", &logdogStep),
-			}
+			writeDatagram(testClient, "foo/bar", "baz/annotations", &logdogStep)
 
-			resp, err := bip.GetBuildInfo(c, biReq.GetBuildbot(), "")
+			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "")
 			So(err, ShouldBeNil)
-			So(testClient.req, ShouldResemble, []interface{}{
-				&logdog.TailRequest{
-					Project: "testproject",
-					Path:    "foo/bar/+/baz/annotations",
-					State:   true,
-				},
-			})
 			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "testproject",
+				Project: "proj-foo",
 				Step: &miloProto.Step{
 					Command: &miloProto.Step_Command{
 						CommandLine: []string{"foo", "bar", "baz"},
@@ -187,7 +134,7 @@ func TestBuildInfo(t *testing.T) {
 					Property: []*miloProto.Step_Property{
 						{Name: "bar", Value: "log-bar"},
 						{Name: "foo", Value: "build-foo"},
-						{Name: "log_location", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
+						{Name: "log_location", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
 					},
 				},
 				AnnotationStream: &miloProto.LogdogStream{
@@ -201,24 +148,15 @@ func TestBuildInfo(t *testing.T) {
 		Convey("Can load a BuildBot build by annotation URL.", func() {
 			build.Properties = append(build.Properties, []*buildbot.Property{
 				{Name: "log_location", Value: "protocol://not/a/logdog/url"},
-				{Name: "logdog_annotation_url", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
+				{Name: "logdog_annotation_url", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
 			}...)
 			importBuild(c, &build)
-			testClient.resp = []interface{}{
-				datagramGetResponse("testproject", "foo/bar", &logdogStep),
-			}
+			writeDatagram(testClient, "foo/bar", "baz/annotations", &logdogStep)
 
-			resp, err := bip.GetBuildInfo(c, biReq.GetBuildbot(), "")
+			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "")
 			So(err, ShouldBeNil)
-			So(testClient.req, ShouldResemble, []interface{}{
-				&logdog.TailRequest{
-					Project: "testproject",
-					Path:    "foo/bar/+/baz/annotations",
-					State:   true,
-				},
-			})
 			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "testproject",
+				Project: "proj-foo",
 				Step: &miloProto.Step{
 					Command: &miloProto.Step_Command{
 						CommandLine: []string{"foo", "bar", "baz"},
@@ -228,7 +166,7 @@ func TestBuildInfo(t *testing.T) {
 						{Name: "bar", Value: "log-bar"},
 						{Name: "foo", Value: "build-foo"},
 						{Name: "log_location", Value: "protocol://not/a/logdog/url"},
-						{Name: "logdog_annotation_url", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
+						{Name: "logdog_annotation_url", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
 					},
 				},
 				AnnotationStream: &miloProto.LogdogStream{
@@ -242,24 +180,15 @@ func TestBuildInfo(t *testing.T) {
 		Convey("Can load a BuildBot build by tag.", func() {
 			build.Properties = append(build.Properties, []*buildbot.Property{
 				{Name: "logdog_prefix", Value: "foo/bar"},
-				{Name: "logdog_project", Value: "testproject"},
+				{Name: "logdog_project", Value: "proj-foo"},
 			}...)
 			importBuild(c, &build)
-			testClient.resp = []interface{}{
-				datagramGetResponse("testproject", "foo/bar", &logdogStep),
-			}
+			writeDatagram(testClient, "foo/bar", "annotations", &logdogStep)
 
-			resp, err := bip.GetBuildInfo(c, biReq.GetBuildbot(), "")
+			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "")
 			So(err, ShouldBeNil)
-			So(testClient.req, ShouldResemble, []interface{}{
-				&logdog.TailRequest{
-					Project: "testproject",
-					Path:    "foo/bar/+/annotations",
-					State:   true,
-				},
-			})
 			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "testproject",
+				Project: "proj-foo",
 				Step: &miloProto.Step{
 					Command: &miloProto.Step_Command{
 						CommandLine: []string{"foo", "bar", "baz"},
@@ -269,7 +198,7 @@ func TestBuildInfo(t *testing.T) {
 						{Name: "bar", Value: "log-bar"},
 						{Name: "foo", Value: "build-foo"},
 						{Name: "logdog_prefix", Value: "foo/bar"},
-						{Name: "logdog_project", Value: "testproject"},
+						{Name: "logdog_project", Value: "proj-foo"},
 					},
 				},
 				AnnotationStream: &miloProto.LogdogStream{
@@ -283,47 +212,29 @@ func TestBuildInfo(t *testing.T) {
 		Convey("Fails to load a BuildBot build by query if no project hint is provided.", func() {
 			importBuild(c, &build)
 
-			_, err = bip.GetBuildInfo(c, biReq.GetBuildbot(), "")
+			_, err = GetBuildInfo(c, biReq.GetBuildbot(), "")
 			So(err, ShouldErrLike, "annotation stream not found")
 		})
 
 		Convey("Can load a BuildBot build by query with a project hint.", func() {
 			importBuild(c, &build)
-			testClient.resp = []interface{}{
-				&logdog.QueryResponse{
-					Streams: []*logdog.QueryResponse_Stream{
-						{
-							Path: "foo/bar/+/annotations",
-						},
-						{
-							Path: "other/ignore/+/me",
-						},
-					},
-				},
-				datagramGetResponse("testproject", "foo/bar/+/annotations", &logdogStep),
-			}
-
-			resp, err := bip.GetBuildInfo(c, biReq.GetBuildbot(), "testproject")
-			So(err, ShouldBeNil)
-			So(testClient.req, ShouldResemble, []interface{}{
-				&logdog.QueryRequest{
-					Project:     "testproject",
-					ContentType: miloProto.ContentTypeAnnotations,
-					Tags: map[string]string{
-						"buildbot.master":      "foo master",
-						"buildbot.builder":     "bar builder",
-						"buildbot.buildnumber": "1337",
-					},
-				},
-				&logdog.TailRequest{
-					Project: "testproject",
-					Path:    "foo/bar/+/annotations",
-					State:   true,
-				},
+			writeDatagram(testClient, "foo/bar", "annotations", &logdogStep, map[string]string{
+				"buildbot.master":      build.Master,
+				"buildbot.builder":     build.Buildername,
+				"buildbot.buildnumber": strconv.Itoa(build.Number),
 			})
+			s, err := testClient.OpenTextStream("other/ignore", "me")
+			So(err, ShouldBeNil)
+			_, err = s.Write([]byte("Some stuff\nor\nomething"))
+			So(err, ShouldBeNil)
+			_, err = s.Write([]byte("some more stuff"))
+			So(err, ShouldBeNil)
+			So(s.Close(), ShouldBeNil)
 
+			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "proj-foo")
+			So(err, ShouldBeNil)
 			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "testproject",
+				Project: "proj-foo",
 				Step: &miloProto.Step{
 					Command: &miloProto.Step_Command{
 						CommandLine: []string{"foo", "bar", "baz"},
@@ -344,32 +255,12 @@ func TestBuildInfo(t *testing.T) {
 
 		Convey("Can load a BuildBot build by inferred name.", func() {
 			importBuild(c, &build)
-			testClient.resp = []interface{}{
-				&logdog.QueryResponse{},
-				datagramGetResponse("testproject", "foo/bar/+/annotations", &logdogStep),
-			}
+			writeDatagram(testClient, "bb/foo_master/bar_builder/1337", "annotations", &logdogStep)
 
-			resp, err := bip.GetBuildInfo(c, biReq.GetBuildbot(), "testproject")
+			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "proj-foo")
 			So(err, ShouldBeNil)
-			So(testClient.req, ShouldResemble, []interface{}{
-				&logdog.QueryRequest{
-					Project:     "testproject",
-					ContentType: miloProto.ContentTypeAnnotations,
-					Tags: map[string]string{
-						"buildbot.master":      "foo master",
-						"buildbot.builder":     "bar builder",
-						"buildbot.buildnumber": "1337",
-					},
-				},
-				&logdog.TailRequest{
-					Project: "testproject",
-					Path:    "bb/foo_master/bar_builder/1337/+/annotations",
-					State:   true,
-				},
-			})
-
 			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "testproject",
+				Project: "proj-foo",
 				Step: &miloProto.Step{
 					Command: &miloProto.Step_Command{
 						CommandLine: []string{"foo", "bar", "baz"},
