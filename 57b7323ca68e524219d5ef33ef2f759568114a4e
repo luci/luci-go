@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b4b04fda_e8cd6578",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-01T03:46:02Z",
+      "side": 1,
+      "message": "This is necessary to get the code to compile and test successfully.\n\nWhen https://chromium-review.googlesource.com/c/infra/infra/+/743806/ gets deployed to prod I\u0027ll regenerate the API and pass along this information.",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 15
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

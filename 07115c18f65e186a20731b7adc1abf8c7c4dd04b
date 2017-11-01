@@ -182,6 +182,30 @@
       "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b276f47_8c1d0e88",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-01T03:46:02Z",
+      "side": 1,
+      "message": "Let me know if you think what I\u0027ve done is satisfactory.\n\nRather than explicitly ask for a project in the configuration to validate, I just assume that the configuration\u0027s project as given by luci-config is the parent project of any Builder in the configuration. This makes adding cross-project builders easy in the future, as I can just add an optional \"project\" field to the configuration. This also saves a bunch of duplication in the configuration of the project, since we only support builders from the same project.",
+      "parentUuid": "2746c0b6_b29b167f",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 61
+      },
+      "revId": "07115c18f65e186a20731b7adc1abf8c7c4dd04b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
