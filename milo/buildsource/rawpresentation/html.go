@@ -28,10 +28,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// AcceptableLogdogHosts is the (hard-coded) list of accepted logdog hosts.
-//
-// It's exported so that tests may add additional hosts to it.
-var AcceptableLogdogHosts = stringset.NewFromSlice(
+// acceptableLogdogHosts is the (hard-coded) list of accepted logdog hosts.
+var acceptableLogdogHosts = stringset.NewFromSlice(
 	chromeinfra.LogDogHost,
 	chromeinfra.LogDogHostAppSpot,
 	chromeinfra.LogDogDevHost,
@@ -41,7 +39,7 @@ func resolveHost(host string) (string, error) {
 	if host == "" {
 		host = DefaultLogDogHost
 	}
-	if AcceptableLogdogHosts.Has(host) {
+	if acceptableLogdogHosts.Has(host) {
 		return host, nil
 	}
 	return "", errors.Reason("host %q is not whitelisted", host).Err()
@@ -65,16 +63,16 @@ func InjectFakeLogdogClient(c context.Context, client logdog.LogsClient) context
 // NewClient generates a new LogDog client that issues requests on behalf of the
 // current user.
 func NewClient(c context.Context, host string) (*coordinator.Client, error) {
-	var err error
-	if host, err = resolveHost(host); err != nil {
-		return nil, err
-	}
-
 	if client, _ := c.Value(&fakeLogKey).(logdog.LogsClient); client != nil {
 		return &coordinator.Client{
 			C:    client,
 			Host: "example.com",
 		}, nil
+	}
+
+	var err error
+	if host, err = resolveHost(host); err != nil {
+		return nil, err
 	}
 
 	// Initialize the LogDog client authentication.
