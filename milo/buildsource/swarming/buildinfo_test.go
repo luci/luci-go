@@ -31,29 +31,27 @@ import (
 )
 
 type testSwarmingService struct {
-	swarmingService
-
 	host string
 	req  swarming.SwarmingRpcsTaskRequest
 	res  swarming.SwarmingRpcsTaskResult
 	out  string
 }
 
-func (sf *testSwarmingService) getHost() string { return sf.host }
+func (sf *testSwarmingService) GetHost() string { return sf.host }
 
-func (sf *testSwarmingService) getSwarmingResult(c context.Context, taskID string) (
+func (sf *testSwarmingService) GetSwarmingResult(c context.Context, taskID string) (
 	*swarming.SwarmingRpcsTaskResult, error) {
 
 	return &sf.res, nil
 }
 
-func (sf *testSwarmingService) getSwarmingRequest(c context.Context, taskID string) (
+func (sf *testSwarmingService) GetSwarmingRequest(c context.Context, taskID string) (
 	*swarming.SwarmingRpcsTaskRequest, error) {
 
 	return &sf.req, nil
 }
 
-func (sf *testSwarmingService) getTaskOutput(c context.Context, taskID string) (string, error) {
+func (sf *testSwarmingService) GetTaskOutput(c context.Context, taskID string) (string, error) {
 	return sf.out, nil
 }
 
@@ -87,7 +85,7 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 		bip := BuildInfoProvider{
-			swarmingServiceFunc: func(context.Context, string) (swarmingService, error) {
+			swarmingServiceFunc: func(context.Context, string) (SwarmingService, error) {
 				return &testSvc, nil
 			},
 		}
