@@ -49,7 +49,11 @@ func TestDiskTokenCache(t *testing.T) {
 		})
 	})
 
-	Convey("DiskTokenCache works (parallel)", t, func() {
+	// TODO(vadimsh): This test is flaky on Windows, there's non zero probability
+	// that all 15 attempts (see testCacheInParallel) will hit "Access is denied"
+	// error. This can be "fixed" by increasing number of attempts or sleeping
+	// more between attempts. Both increase test runtime.
+	SkipConvey("DiskTokenCache works (parallel)", t, func() {
 		// testCacheInParallel is in proc_cache_test.go.
 		//
 		// Use real clock here to test real-world interaction when retrying disk
