@@ -62,7 +62,7 @@ func TestUpdateBuilder(t *testing.T) {
 			Convey("with finished build should error but update last finished build info", func() {
 				builds[6].Summary.Status = Failure
 				err := builder.Update(c, builds[6])
-				So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
+				So(BuildMessageOutOfOrderTag.In(err), ShouldEqual, true)
 				So(builder.LastFinishedStatus, ShouldEqual, Failure)
 				So(builder.LastFinishedBuildID, ShouldEqual, builds[6].BuildID)
 			})
@@ -99,7 +99,7 @@ func TestUpdateBuilder(t *testing.T) {
 				Convey("and not update last finished build info for build created earlier than last finished", func() {
 					builds[4].Summary.Status = Failure
 					err := builder.Update(c, builds[4])
-					So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
+					So(BuildMessageOutOfOrderTag.In(err), ShouldEqual, true)
 					So(builder.LastFinishedStatus, ShouldEqual, Success)
 					So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 				})
@@ -107,7 +107,7 @@ func TestUpdateBuilder(t *testing.T) {
 				Convey("but update last finished build info for build created later than last finished", func() {
 					builds[6].Summary.Status = Failure
 					err := builder.Update(c, builds[6])
-					So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
+					So(BuildMessageOutOfOrderTag.In(err), ShouldEqual, true)
 					So(builder.LastFinishedStatus, ShouldEqual, Failure)
 					So(builder.LastFinishedBuildID, ShouldEqual, builds[6].BuildID)
 				})
@@ -249,7 +249,7 @@ func TestUpdateBuilder(t *testing.T) {
 		Convey("last finished build info with finished build", func() {
 			builds[5].Summary.Status = Failure
 			err := builder.Update(c, builds[5])
-			So(err, ShouldHaveSameTypeAs, ErrBuildMessageOutOfOrder{})
+			So(BuildMessageOutOfOrderTag.In(err), ShouldEqual, true)
 			So(builder.LastFinishedStatus, ShouldEqual, Failure)
 			So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
 		})

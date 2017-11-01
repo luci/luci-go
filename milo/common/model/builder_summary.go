@@ -19,11 +19,17 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
-// ErrBuildMessageOutOfOrder indicates that a terminal build message arrived before any pending
+// BuildMessageOutOfOrderTag indicates that a terminal build message arrived before any pending
 // build messages.
-type ErrBuildMessageOutOfOrder struct{ error }
+var BuildMessageOutOfOrderTag = errors.BoolTag{
+	Key: errors.NewTagKey("Got out of order build messages."),
+}
 
 // pendingBuild holds information about builds that are still in progress for a builder.
 type pendingBuild struct {
@@ -78,7 +84,40 @@ func (b *BuilderSummary) SetInProgress(bp map[string]Status) {
 	}
 }
 
-// Update updates the provided BuilderSummary with the provided BuildSummary, if applicable.
+// UpdateBuilderForBuild updates the appropriate BuilderSummary for the provided BuildSummary.
+// In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete
+// and has a more recent creation time than the one stored in the BuilderSummary.
+// If there is no existing BuilderSummary for the BuildSummary provided, one is created.
+func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
+	if datastore.CurrentTransaction(c) == nil {
+		panic(fmt.Errorf("GetAndUpdateBuilderSummary must occur within transaction"))
+	}
+
+	// Get or create the relevant BuilderSummary.
+	builder := BuilderSummary{BuilderID: build.BuilderID}
+	switch err := datastore.Get(c, &builder); err {
+	case nil:
+	case datastore.ErrNoSuchEntity:
+		logging.Warningf(c, "creating new BuilderSummary for BuilderID: %s", build.BuilderID)
+		datastore.Put(c, &builder)
+	default:
+		return err
+	}
+
+	// Update BuilderSummary with new BuildSummary. If there's an BuildMessageOutOfOrderTag, we
+	// still want to try to update, so in fact, just log and ignore.
+	switch err := builder.Update(c, build); {
+	case err == nil:
+	case BuildMessageOutOfOrderTag.In(err):
+		logging.WithError(err).Warningf(c, "got out of order build messages, ignoring")
+	default:
+		return err
+	}
+
+	return datastore.Put(c, &builder)
+}
+
+// Update updates the given BuilderSummary with the provided BuildSummary.
 // In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete
 // and has a more recent creation time than the one stored in the BuilderSummary.
 func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
@@ -92,12 +131,11 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 	// The only kind of error we /should/ get is if a terminal build message arrives before any
 	// pending build messages. In that case, we still want to update the builder's last finished build
 	// info if applicable, and re-raise the error after. Otherwise, return the error immediately.
-	updateErr := b.updateInProgress(build)
-	if updateErr != nil {
-		if _, ok := updateErr.(ErrBuildMessageOutOfOrder); !ok {
-			return updateErr
-		}
+	err := b.updateInProgress(build)
+	if err != nil && !BuildMessageOutOfOrderTag.In(err) {
+		return err
 	}
+
 	if !build.Summary.Status.Terminal() {
 		return nil
 	}
@@ -105,7 +143,7 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 	// Check if we can bail from updating builder's last complete build state.
 	// TODO(jchinlee): Backfilled builds have the wrong creation time; use revision comparison.
 	if b.LastFinishedBuildID != "" && build.Created.Before(b.LastFinishedCreated) {
-		return updateErr
+		return err
 	}
 
 	b.LastFinishedCreated = build.Created
@@ -113,7 +151,7 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 	b.LastFinishedBuildID = build.BuildID
 
 	// Re-raise update error if applicable.
-	return updateErr
+	return err
 }
 
 // updateInProgress updates the InProgress builds, and returns whether the overall update
@@ -129,8 +167,9 @@ func (b *BuilderSummary) updateInProgress(build *BuildSummary) error {
 		if _, ok := bp[bid]; !ok {
 			// If the build was never InProgress, that's an error. This should never happen, as earlier
 			// parts of the pipeline take care of it, so throw an error.
-			return ErrBuildMessageOutOfOrder{
-				fmt.Errorf("finished build %v that was not in-progress for builder %s", bid, b.BuilderID)}
+			return errors.Reason(
+				"finished build %v that was not in-progress for builder %s", bid, b.BuilderID).Tag(
+				BuildMessageOutOfOrderTag).Err()
 		}
 
 		delete(bp, bid)
