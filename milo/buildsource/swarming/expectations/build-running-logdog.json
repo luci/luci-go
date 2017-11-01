@@ -18,14 +18,14 @@
       [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstdout",
+          "URL": "https://example.com/v/?s=proj-foo%2F2d8d62f6be545b10%2F%2B%2Fstdout",
           "AriaLabel": "logdog link for stdout"
         }
       ],
       [
         {
           "Label": "stderr",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstderr",
+          "URL": "https://example.com/v/?s=proj-foo%2F2d8d62f6be545b10%2F%2B%2Fstderr",
           "AriaLabel": "logdog link for stderr"
         }
       ]
@@ -53,7 +53,7 @@
     "CommitURL": "",
     "File": null,
     "Source": "",
-    "Project": "testproject"
+    "Project": "proj-foo"
   },
   "Components": [
     {
@@ -62,7 +62,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout",
+          "URL": "https://example.com/v/?s=proj-foo%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout",
           "AriaLabel": "logdog link for stdout"
         }
       ],
@@ -80,7 +80,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout",
+          "URL": "https://example.com/v/?s=proj-foo%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout",
           "AriaLabel": "logdog link for stdout"
         }
       ],
@@ -88,7 +88,7 @@
         [
           {
             "Label": "run_recipe",
-            "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0",
+            "URL": "https://example.com/v/?s=proj-foo%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0",
             "AriaLabel": "logdog link for run_recipe"
           }
         ]
@@ -109,7 +109,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout",
+          "URL": "https://example.com/v/?s=proj-foo%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout",
           "AriaLabel": "logdog link for stdout"
         }
       ],

@@ -18,8 +18,9 @@ import (
 	"testing"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/logdog/client/coordinator"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/fakelogs"
 	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 
 	"go.chromium.org/gae/impl/memory"
 
@@ -62,8 +63,8 @@ func TestBuildInfo(t *testing.T) {
 	Convey("A testing BuildInfoProvider", t, func() {
 		c := context.Background()
 		c = memory.Use(c)
+		c = rawpresentation.InjectFakeLogdogClient(c, fakelogs.NewClient())
 
-		testClient := testLogDogClient{}
 		testSvc := testSwarmingService{
 			host: "swarming.example.com",
 			req: swarming.SwarmingRpcsTaskRequest{
@@ -86,17 +87,7 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 		bip := BuildInfoProvider{
-			bl: BuildLoader{
-				logDogClientFunc: func(c context.Context, host string) (*coordinator.Client, error) {
-					if host == "" {
-						host = "example.com"
-					}
-					return &coordinator.Client{
-						C:    &testClient,
-						Host: host,
-					}, nil
-				},
-			},
+			bl: BuildLoader{},
 			swarmingServiceFunc: func(context.Context, string) (swarmingService, error) {
 				return &testSvc, nil
 			},

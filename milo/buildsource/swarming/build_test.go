@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -38,6 +39,10 @@ import (
 )
 
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
+
+func init() {
+	rawpresentation.AcceptableLogdogHosts.Add("example.com")
+}
 
 func load(name string) ([]byte, error) {
 	filename := filepath.Join("expectations", name)
@@ -69,14 +74,12 @@ func TestBuild(t *testing.T) {
 		})
 
 		for _, tc := range getTestCases(".") {
-			bl := BuildLoader{
-				logDogClientFunc: logDogClientFunc(tc),
-			}
-			svc := debugSwarmingService{tc}
+			bl := BuildLoader{}
 
 			fmt.Printf("Generating expectations for %s\n", tc)
 
-			build, err := bl.SwarmingBuildImpl(c, svc, tc.name)
+			c := tc.injectLogdogClient(c)
+			build, err := bl.SwarmingBuildImpl(c, debugSwarmingService{tc}, tc.name)
 			if err != nil {
 				panic(fmt.Errorf("Could not run swarmingBuildImpl for %s: %s", tc, err))
 			}
@@ -106,10 +109,9 @@ func TestBuild(t *testing.T) {
 
 		for _, tc := range getTestCases(".") {
 			Convey(fmt.Sprintf("Test Case: %s", tc.name), func() {
-				bl := BuildLoader{
-					logDogClientFunc: logDogClientFunc(tc),
-				}
+				bl := BuildLoader{}
 				svc := debugSwarmingService{tc}
+				c := tc.injectLogdogClient(c)
 
 				// Special case: The build-internal test case to check that ACLs should fail.
 				if tc.name == "build-internal" {
