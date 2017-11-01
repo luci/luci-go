@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5e23c2ee_89fb0540",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T23:19:22Z",
+      "side": 1,
+      "message": "Sure, if you prefer. I can never decide because when working with text proto you want singular but when referring to the field in code you want plural (rack.switch may have len \u003e 1).",
+      "parentUuid": "2f4b2670_4f396a88",
+      "range": {
+        "startLine": 26,
+        "startChar": 24,
+        "endLine": 26,
+        "endChar": 32
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b428d215_8089d245",
         "filename": "machine-db/appengine/frontend/settings.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2de4e9bd_be7d1649",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T23:19:22Z",
+      "side": 1,
+      "message": "Done. I just hadn\u0027t tested it this way.",
+      "parentUuid": "b428d215_8089d245",
+      "range": {
+        "startLine": 30,
+        "startChar": 5,
+        "endLine": 30,
+        "endChar": 21
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "27a6e0ff_13290501",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T23:19:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "978412a1_0b02c80e",
+      "range": {
+        "startLine": 71,
+        "startChar": 10,
+        "endLine": 71,
+        "endChar": 24
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "342f7723_78800c26",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T23:19:22Z",
+      "side": 1,
+      "message": "Can\u0027t, but you can specify the address of the local database (e.g. 127.0.0.1) or the address of the Cloud SQL database (see the \"IP address\" column on a GCP project\u0027s SQL page).\n\nI\u0027m also the only one developing this and I don\u0027t really start local instances.",
+      "parentUuid": "e6d16678_010eccf6",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 102
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "75987b84_e7741a45",
         "filename": "machine-db/appengine/frontend/settings.go",
         "patchSetId": 7
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "52b520fa_e34d5d0e",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T23:19:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75987b84_e7741a45",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 21
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d43faa69_4031378f",
         "filename": "machine-db/appengine/frontend/settings.go",
         "patchSetId": 7
@@ -137,6 +257,30 @@
       "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2345a7af_bddf9b34",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T23:19:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d43faa69_4031378f",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 99,
+        "endChar": 16
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
