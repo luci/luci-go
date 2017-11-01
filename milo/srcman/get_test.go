@@ -34,10 +34,6 @@ import (
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
 
-func init() {
-	rawpresentation.AcceptableLogdogHosts.Add("example.com")
-}
-
 func TestGet(t *testing.T) {
 	t.Parallel()
 

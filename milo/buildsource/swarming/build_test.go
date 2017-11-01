@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
-	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -39,10 +38,6 @@ import (
 )
 
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
-
-func init() {
-	rawpresentation.AcceptableLogdogHosts.Add("example.com")
-}
 
 func load(name string) ([]byte, error) {
 	filename := filepath.Join("expectations", name)
