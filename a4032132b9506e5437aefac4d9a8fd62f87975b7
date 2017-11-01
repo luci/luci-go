@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "b4b58365_2113a7ae",
+        "filename": "machine-db/api/config/v1/settings.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-01T19:32:04Z",
+      "side": 1,
+      "message": "All right, I figured it out. This entire string is the server address, e.g. 127.0.0.1:8000. On AppEngine you can just use project:region:sql-instance. Database is not specified here at all (i.e. you would still need to refer to tables as database.table or issue a USE statement).\n\nIn theory this actually means we implicitly support a local dev instance-- just set the Server setting to the IP address of either your local MySQL server or even the IP address of your Cloud SQL server.\n\nFrom these docs:\nhttps://github.com/go-sql-driver/mysql",
+      "parentUuid": "5d905a54_b6f91237",
+      "range": {
+        "startLine": 16,
+        "startChar": 1,
+        "endLine": 16,
+        "endChar": 21
+      },
+      "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04ce3dbc_3df9e1a1",
         "filename": "machine-db/appengine/frontend/cron.yaml",
         "patchSetId": 2
