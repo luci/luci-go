@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "15a510ca_d6a3a3dd",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T23:24:44Z",
+      "side": 1,
+      "message": "How are you going to create tables etc in the Cloud SQL database? Are you familiar with https://cloud.google.com/sql/docs/mysql/connect-admin-proxy?\n\nPlease do not use IP whitelists, this is garbage. Especially if you use them without client TLS certificate. Cloud SQL Proxy is the simple and effective solution. It uses unix domain sockets to represent the local server.\n\nI don\u0027t understand why you insist on ignoring existing code/tools in favor of inferior solutions... Please read https://chromium.googlesource.com/infra/infra/+/master/go/src/infra/tools/cloudsqlhelper/README.md",
+      "parentUuid": "342f7723_78800c26",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 102
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "75987b84_e7741a45",
         "filename": "machine-db/appengine/frontend/settings.go",
         "patchSetId": 7
