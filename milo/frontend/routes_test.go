@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
@@ -42,6 +43,10 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func init() {
+	rawpresentation.AcceptableLogdogHosts.Add("example.com")
+}
 
 type testPackage struct {
 	Data         func() []common.TestBundle

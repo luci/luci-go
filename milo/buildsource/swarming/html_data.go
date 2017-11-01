@@ -26,18 +26,19 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/gae/impl/memory"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	miloProto "go.chromium.org/luci/common/proto/milo"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/coordinator"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/fakelogs"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
@@ -99,6 +100,38 @@ func getTestCases(swarmingRelDir string) []*testCase {
 	}
 
 	return results
+}
+
+func (tc *testCase) injectLogdogClient(c context.Context) context.Context {
+	fCl := fakelogs.NewClient()
+	c = rawpresentation.InjectFakeLogdogClient(c, fCl)
+	if tc.annotations == "" {
+		return c
+	}
+
+	url, err := types.ParseURL(strpair.ParseMap(tc.getSwarmingResult().Tags).Get("log_location"))
+	if err != nil {
+		panic(err)
+	}
+	prefix, path := url.Path.Split()
+
+	s, err := fCl.OpenDatagramStream(prefix, path, &streamproto.Flags{
+		ContentType: miloProto.ContentTypeAnnotations,
+	})
+	if err != nil {
+		panic(err)
+	}
+	data, err := proto.Marshal(tc.getAnnotation())
+	if err != nil {
+		panic(err)
+	}
+	if _, err := s.Write(data); err != nil {
+		panic(err)
+	}
+	if err := s.Close(); err != nil {
+		panic(err)
+	}
+	return c
 }
 
 func (tc *testCase) getContent(name string) []byte {
@@ -178,73 +211,6 @@ func LogTestData() []common.TestBundle {
 	}
 }
 
-// testLogDogClient is a minimal functional LogsClient implementation.
-//
-// It retains its latest input parameter and returns its configured err (if not
-// nil) or resp.
-type testLogDogClient struct {
-	logdog.LogsClient
-
-	req  interface{}
-	resp interface{}
-	err  error
-}
-
-func (tc *testLogDogClient) Tail(ctx context.Context, in *logdog.TailRequest, opts ...grpc.CallOption) (
-	*logdog.GetResponse, error) {
-
-	tc.req = in
-	if tc.err != nil {
-		return nil, tc.err
-	}
-	if tc.resp == nil {
-		return nil, coordinator.ErrNoSuchStream
-	}
-	return tc.resp.(*logdog.GetResponse), nil
-}
-
-func logDogClientFunc(tc *testCase) func(context.Context, string) (*coordinator.Client, error) {
-	anno := tc.getAnnotation()
-	var resp interface{}
-	if anno != nil {
-		resp = datagramGetResponse("testproject", "foo/bar", tc.getAnnotation())
-	}
-
-	return func(c context.Context, host string) (*coordinator.Client, error) {
-		return &coordinator.Client{
-			Host: host,
-			C: &testLogDogClient{
-				resp: resp,
-			},
-		}, nil
-	}
-}
-
-func datagramGetResponse(project, prefix string, msg proto.Message) *logdog.GetResponse {
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-	return &logdog.GetResponse{
-		Project: project,
-		Desc: &logpb.LogStreamDescriptor{
-			Prefix:      prefix,
-			ContentType: miloProto.ContentTypeAnnotations,
-			StreamType:  logpb.StreamType_DATAGRAM,
-		},
-		State: &logdog.LogStreamState{},
-		Logs: []*logpb.LogEntry{
-			{
-				Content: &logpb.LogEntry_Datagram{
-					Datagram: &logpb.Datagram{
-						Data: data,
-					},
-				},
-			},
-		},
-	}
-}
-
 // BuildTestData returns sample test data for swarming build pages.
 func BuildTestData(swarmingRelDir string) []common.TestBundle {
 	basic := resp.MiloBuild{
@@ -272,10 +238,9 @@ func BuildTestData(swarmingRelDir string) []common.TestBundle {
 	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
 
 	for _, tc := range getTestCases(swarmingRelDir) {
+		c := tc.injectLogdogClient(c)
 		svc := debugSwarmingService{tc}
-		bl := BuildLoader{
-			logDogClientFunc: logDogClientFunc(tc),
-		}
+		bl := BuildLoader{}
 
 		build, err := bl.SwarmingBuildImpl(c, svc, tc.name)
 		if err != nil {

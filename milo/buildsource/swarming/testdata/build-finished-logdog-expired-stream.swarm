@@ -4,8 +4,8 @@
   "completed_ts": "2016-03-14T11:00:18.486020",
   "tags": [
     "allow_milo:1",
-    "luci_project:testproject",
-    "log_location:logdog://example.com/testproject/1a2b3c4d5e6f7890/+/annotations"
+    "luci_project:proj-foo",
+    "log_location:logdog://example.com/proj-foo/1a2b3c4d5e6f7890/+/annotations"
   ],
   "task_id": "1a2b3c4d5e6f7890",
   "exit_code": "1"

@@ -3,8 +3,8 @@
   "started_ts": "2016-03-14T10:00:01.850710",
   "tags": [
     "allow_milo:1",
-    "luci_project:testproject",
-    "log_location:logdog://example.com/testproject/2d8d62f6be545b10/+/annotations"
+    "luci_project:proj-foo",
+    "log_location:logdog://example.com/proj-foo/2d8d62f6be545b10/+/annotations"
   ],
   "task_id": "2d8d62f6be545b10"
 }

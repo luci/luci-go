@@ -488,25 +488,12 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 }
 
 // BuildLoader represents the ability to load a Milo build from a Swarming task.
-//
-// It exists so that the internal build loading functionality can be stubbed out
-// for testing.
-type BuildLoader struct {
-	// logdogClientFunc returns a coordinator Client instance for the supplied
-	// parameters.
-	//
-	// If nil, a production client will be generated.
-	logDogClientFunc func(c context.Context, host string) (*coordinator.Client, error)
-}
+type BuildLoader struct{}
 
 func (bl *BuildLoader) newEmptyAnnotationStream(c context.Context, addr *types.StreamAddr) (
 	*rawpresentation.AnnotationStream, error) {
 
-	fn := bl.logDogClientFunc
-	if fn == nil {
-		fn = rawpresentation.NewClient
-	}
-	client, err := fn(c, addr.Host)
+	client, err := rawpresentation.NewClient(c, addr.Host)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
 	}
@@ -689,7 +676,7 @@ func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService,
 	default:
 		logging.WithError(err).Errorf(c, "Failed to load LogDog annotation stream.")
 		build.Components = append(build.Components, infoComponent(model.InfraFailure,
-			"Error", "failed to load annotation stream"))
+			"Error", "failed to load annotation stream: "+err.Error()))
 	}
 
 	// Log links are linked directly to the logdog service.  This is used when
