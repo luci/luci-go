@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f507779f_a2cef369",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-01T01:21:18Z",
+      "side": 1,
+      "message": "Do we need this anymore?",
+      "range": {
+        "startLine": 491,
+        "startChar": 5,
+        "endLine": 491,
+        "endChar": 16
+      },
+      "revId": "588f7aeec8201ce513f15a94c7a9afaad2655120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
