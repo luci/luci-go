@@ -110,9 +110,12 @@ func updateSettings(c context.Context) error {
 			logging.Debugf(c, "revisions matched (%s), no need to update", cfg.Revision)
 			return nil
 		}
-		newSettings, err := extractSettings(cfg)
-		if err != nil {
-			return err
+		newSettings := Settings{Revision: cfg.Revision}
+		if err := proto.UnmarshalText(cfg.Content, &newSettings.Settings); err != nil {
+			return errors.Annotate(err, "unmarshalling proto").Err()
+		}
+		if err := validateSettings(&newSettings.Settings); err != nil {
+			return errors.Annotate(err, "validating settings").Err()
 		}
 		return datastore.Put(c, newSettings)
 	}, nil)

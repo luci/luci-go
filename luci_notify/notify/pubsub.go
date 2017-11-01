@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -37,7 +36,6 @@ import (
 )
 
 var (
-	errAccessDenied    = fmt.Errorf("access to build denied")
 	errBuilderDeleted  = fmt.Errorf("builder deleted between datastore.Get calls")
 	errBuildOutOfOrder = fmt.Errorf("found out-of-order build")
 )
@@ -51,17 +49,8 @@ func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
 	return nil
 }
 
-// IsBuildAllowed returns true if luci-notify is allowed to handle b.
-func isBuildAllowed(b *buildbucket.Build) bool {
-	// TODO(mknyszek): Do a real ACL check here on whether the service should
-	// be allowed to process the build. This is a conservative solution for now
-	// which ensures that the build is public.
-	tags := strpair.ParseMap(b.Tags["swarming_tag"])
-	return tags.Get("allow_milo") == "1"
-}
-
 func getBuilderID(b *buildbucket.Build) string {
-	return fmt.Sprintf("buildbucket/%s/%s", b.Bucket, b.Builder)
+	return fmt.Sprintf("buildbucket/%s/%s/%s", b.Project, b.Bucket, b.Builder)
 }
 
 func commitIndex(commits []gitiles.Commit, revision string) int {
@@ -216,8 +205,6 @@ func BuildbucketPubSubHandler(ctx *router.Context) {
 	switch {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "error while extracting build")
-	case !isBuildAllowed(build):
-		logging.WithError(errAccessDenied).Errorf(c, "error while checking build")
 	case !strings.HasPrefix(build.Bucket, "luci."):
 		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
 	case !build.Status.Completed():
