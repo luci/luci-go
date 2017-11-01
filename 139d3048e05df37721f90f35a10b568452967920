@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04194edf_835c6c86",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-01T00:04:09Z",
+      "side": 1,
+      "message": "I would use the Tag suffix and drop the Err prefix. Otherwise folks will read this as being an `error` (which it isn\u0027t)",
+      "range": {
+        "startLine": 30,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 29
+      },
+      "revId": "139d3048e05df37721f90f35a10b568452967920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bff4997e_b0b4af39",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-01T00:04:09Z",
+      "side": 1,
+      "message": "you should be able to put err inline with the switch here:\n\n  switch err :\u003d builder.Update(c, build); { // note the ;\n    ...\n  }",
+      "range": {
+        "startLine": 108,
+        "startChar": 7,
+        "endLine": 108,
+        "endChar": 8
+      },
+      "revId": "139d3048e05df37721f90f35a10b568452967920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50251c55_c7468e21",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-01T00:04:09Z",
+      "side": 1,
+      "message": "do we really still want/need to do the Put below?",
+      "range": {
+        "startLine": 111,
+        "startChar": 71,
+        "endLine": 111,
+        "endChar": 79
+      },
+      "revId": "139d3048e05df37721f90f35a10b568452967920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

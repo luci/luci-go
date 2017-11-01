@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "6d626a51_f27224a4",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-01T00:04:09Z",
+      "side": 1,
+      "message": "panic is basically as close to an assert as you can get.",
+      "parentUuid": "57e42273_903db1aa",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 79
+      },
+      "revId": "0efd0015671b325ac3560f088643b10f35c8abeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0250b69_42fc9f97",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
