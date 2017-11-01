@@ -487,26 +487,6 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 	return c.ToLogDogStreams()
 }
 
-func newEmptyAnnotationStream(c context.Context, addr *types.StreamAddr) (
-	*rawpresentation.AnnotationStream, error) {
-
-	client, err := rawpresentation.NewClient(c, addr.Host)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
-	}
-
-	as := rawpresentation.AnnotationStream{
-		Client:  client,
-		Project: addr.Project,
-		Path:    addr.Path,
-	}
-	if err := as.Normalize(); err != nil {
-		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
-	}
-
-	return &as, nil
-}
-
 // failedToStart is called in the case where logdog-only mode is on but the
 // stream doesn't exist and the swarming job is complete.  It modifies the build
 // to add information that would've otherwise been in the annotation stream.
@@ -575,10 +555,18 @@ func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID strin
 func streamFromLogDog(c context.Context, addr *types.StreamAddr) (*miloProto.Step, error) {
 	logging.Infof(c, "Loading build from LogDog stream at: %s", addr)
 
-	// If the LogDog stream is available, load the step from that.
-	as, err := newEmptyAnnotationStream(c, addr)
+	client, err := rawpresentation.NewClient(c, addr.Host)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create LogDog annotation stream").Err()
+		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
+	}
+
+	as := rawpresentation.AnnotationStream{
+		Client:  client,
+		Project: addr.Project,
+		Path:    addr.Path,
+	}
+	if err := as.Normalize(); err != nil {
+		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
 	}
 
 	return as.Fetch(c)
