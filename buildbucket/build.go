@@ -38,8 +38,10 @@ type Build struct {
 	ID           int64
 	CreationTime time.Time
 	CreatedBy    identity.Identity
-	Bucket       string
-	Builder      string
+	// TODO(mknyszek): Populate Project.
+	Project string
+	Bucket  string
+	Builder string
 	// Number identifies the build within the builder.
 	// Build numbers are monotonically increasing, mostly contiguous.
 	//
