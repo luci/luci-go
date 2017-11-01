@@ -37,25 +37,6 @@ import (
 	"go.chromium.org/luci/milo/common"
 )
 
-// BuildInfoProvider is a configuration that provides build information.
-//
-// In a production system, this will be completely defaults. For testing, the
-// various services and data sources may be substituted for testing stubs.
-type BuildInfoProvider struct {
-	// LogdogClientFunc returns a coordinator Client instance for the supplied
-	// parameters.
-	//
-	// If nil, a production client will be generated.
-	LogdogClientFunc func(c context.Context) (*coordinator.Client, error)
-}
-
-func (p *BuildInfoProvider) newLogdogClient(c context.Context) (*coordinator.Client, error) {
-	if p.LogdogClientFunc != nil {
-		return p.LogdogClientFunc(c)
-	}
-	return rawpresentation.NewClient(c, "")
-}
-
 // GetBuildInfo resolves a Milo protobuf Step for a given BuildBot build.
 //
 // On failure, it returns a (potentially-wrapped) gRPC error.
@@ -66,7 +47,7 @@ func (p *BuildInfoProvider) newLogdogClient(c context.Context) (*coordinator.Cli
 //	2) Resolves the LogDog annotation stream path from the BuildBot state.
 //	3) Fetches the LogDog annotation stream and resolves it into a Step.
 //	4) Merges some operational BuildBot build information into the Step.
-func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_BuildBot,
+func GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_BuildBot,
 	projectHint cfgtypes.ProjectName) (*milo.BuildInfoResponse, error) {
 
 	logging.Infof(c, "Loading build info for master %q, builder %q, build #%d",
@@ -88,7 +69,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	}
 
 	// Create a new LogDog client.
-	client, err := p.newLogdogClient(c)
+	client, err := rawpresentation.NewClient(c, "")
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to create LogDog client.")
 		return nil, grpcutil.Internal
