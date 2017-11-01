@@ -229,6 +229,9 @@ func consolePreview(c context.Context, def *common.Console) (*resp.Console, erro
 }
 
 func consoleHeader(c context.Context, project string, def *common.Console) (*resp.ConsoleHeader, error) {
+	if len(def.Header.ConsoleGroups) == 0 {
+		return nil, nil
+	}
 	consoleGroups := make([]resp.ConsoleGroup, len(def.Header.ConsoleGroups))
 	for i, group := range def.Header.ConsoleGroups {
 		for _, id := range group.ConsoleIds {
@@ -244,7 +247,6 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 		consoleGroups[i].Title.URL = group.Title.Url
 		consoleGroups[i].Consoles = summaries
 	}
-
 	return &resp.ConsoleHeader{ConsoleGroups: consoleGroups}, nil
 }
 
