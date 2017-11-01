@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ac7b0e10_85034d08",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-01T00:14:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04194edf_835c6c86",
+      "range": {
+        "startLine": 30,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 29
+      },
+      "revId": "139d3048e05df37721f90f35a10b568452967920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bff4997e_b0b4af39",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a470e555_abe3599b",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-01T00:14:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bff4997e_b0b4af39",
+      "range": {
+        "startLine": 108,
+        "startChar": 7,
+        "endLine": 108,
+        "endChar": 8
+      },
+      "revId": "139d3048e05df37721f90f35a10b568452967920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50251c55_c7468e21",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 5
@@ -59,6 +107,30 @@
       "writtenOn": "2017-11-01T00:04:09Z",
       "side": 1,
       "message": "do we really still want/need to do the Put below?",
+      "range": {
+        "startLine": 111,
+        "startChar": 71,
+        "endLine": 111,
+        "endChar": 79
+      },
+      "revId": "139d3048e05df37721f90f35a10b568452967920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "400d9ec5_58517ec0",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-01T00:14:22Z",
+      "side": 1,
+      "message": "We get a build message out-of-order error if a terminal build message comes in when that build is not in its BuilderSummary\u0027s InProgress list.\n\nIIUC that terminal build might update its BuilderSummary\u0027s last completed build state (e.g. if it was created after what\u0027s already logged), in which case we will still want to save that builder back into datastore.",
+      "parentUuid": "50251c55_c7468e21",
       "range": {
         "startLine": 111,
         "startChar": 71,
