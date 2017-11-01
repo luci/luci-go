@@ -158,7 +158,7 @@ func saveMaster(c context.Context, master *buildbot.Master, internal bool) int {
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not import master")
 		masterCounter.Add(c, 1, internal, fullname, "failure")
-		if buildstore.ErrTooBig.In(err) {
+		if buildstore.TooBigTag.In(err) {
 			// FIXME: there should have been a metric and alert.
 			return 0
 		}
@@ -271,7 +271,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 				c, 1, false, build.Master, build.Buildername, build.Finished, "Rejected")
 			logging.Warningf(c, "import of %s/%s/%d rejected", build.Master, build.Buildername, build.Number)
 			continue
-		case buildstore.ErrTooBig.In(err):
+		case buildstore.TooBigTag.In(err):
 			// This will never work, we don't want PubSub to retry.
 			logging.WithError(err).Errorf(
 				c, "Could not save build to datastore, failing permanently")

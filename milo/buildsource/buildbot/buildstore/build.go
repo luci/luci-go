@@ -35,8 +35,8 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 )
 
-// ErrTooBig indicates that entity was not saved because it was too large to store.
-var ErrTooBig = errors.BoolTag{
+// TooBigTag indicates that entity was not saved because it was too large to store.
+var TooBigTag = errors.BoolTag{
 	Key: errors.NewTagKey("entity was not saved because it was too large to store"),
 }
 
@@ -360,7 +360,7 @@ func (b *buildEntity) Save(withMeta bool) (datastore.PropertyMap, error) {
 	}
 	if len(data) > maxDataSize {
 		return nil, errors.Reason("build data is %d bytes, which is more than %d limit", len(data), maxDataSize).
-			Tag(ErrTooBig).
+			Tag(TooBigTag).
 			Err()
 	}
 	ps["data"] = datastore.MkPropertyNI(data)
