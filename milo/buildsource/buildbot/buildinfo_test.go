@@ -15,7 +15,6 @@
 package buildbot
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -35,19 +34,13 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func writeDatagram(c *fakelogs.Client, prefix, path types.StreamName, msg proto.Message, tags ...map[string]string) {
+func writeDatagram(c *fakelogs.Client, prefix, path types.StreamName, msg proto.Message) {
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}
-	var tagMap streamproto.TagMap
-	if len(tags) > 0 {
-		tagMap = streamproto.TagMap(tags[0])
-	}
-
 	s, err := c.OpenDatagramStream(prefix, path, &streamproto.Flags{
 		ContentType: miloProto.ContentTypeAnnotations,
-		Tags:        tagMap,
 	})
 	if err != nil {
 		panic(err)
@@ -145,70 +138,6 @@ func TestBuildInfo(t *testing.T) {
 			})
 		})
 
-		Convey("Can load a BuildBot build by annotation URL.", func() {
-			build.Properties = append(build.Properties, []*buildbot.Property{
-				{Name: "log_location", Value: "protocol://not/a/logdog/url"},
-				{Name: "logdog_annotation_url", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
-			}...)
-			importBuild(c, &build)
-			writeDatagram(testClient, "foo/bar", "baz/annotations", &logdogStep)
-
-			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "proj-foo",
-				Step: &miloProto.Step{
-					Command: &miloProto.Step_Command{
-						CommandLine: []string{"foo", "bar", "baz"},
-					},
-					Text: []string{"test step"},
-					Property: []*miloProto.Step_Property{
-						{Name: "bar", Value: "log-bar"},
-						{Name: "foo", Value: "build-foo"},
-						{Name: "log_location", Value: "protocol://not/a/logdog/url"},
-						{Name: "logdog_annotation_url", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
-					},
-				},
-				AnnotationStream: &miloProto.LogdogStream{
-					Server: "example.com",
-					Prefix: "foo/bar",
-					Name:   "baz/annotations",
-				},
-			})
-		})
-
-		Convey("Can load a BuildBot build by tag.", func() {
-			build.Properties = append(build.Properties, []*buildbot.Property{
-				{Name: "logdog_prefix", Value: "foo/bar"},
-				{Name: "logdog_project", Value: "proj-foo"},
-			}...)
-			importBuild(c, &build)
-			writeDatagram(testClient, "foo/bar", "annotations", &logdogStep)
-
-			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "proj-foo",
-				Step: &miloProto.Step{
-					Command: &miloProto.Step_Command{
-						CommandLine: []string{"foo", "bar", "baz"},
-					},
-					Text: []string{"test step"},
-					Property: []*miloProto.Step_Property{
-						{Name: "bar", Value: "log-bar"},
-						{Name: "foo", Value: "build-foo"},
-						{Name: "logdog_prefix", Value: "foo/bar"},
-						{Name: "logdog_project", Value: "proj-foo"},
-					},
-				},
-				AnnotationStream: &miloProto.LogdogStream{
-					Server: "example.com",
-					Prefix: "foo/bar",
-					Name:   "annotations",
-				},
-			})
-		})
-
 		Convey("Fails to load a BuildBot build by query if no project hint is provided.", func() {
 			importBuild(c, &build)
 
@@ -216,67 +145,5 @@ func TestBuildInfo(t *testing.T) {
 			So(err, ShouldErrLike, "annotation stream not found")
 		})
 
-		Convey("Can load a BuildBot build by query with a project hint.", func() {
-			importBuild(c, &build)
-			writeDatagram(testClient, "foo/bar", "annotations", &logdogStep, map[string]string{
-				"buildbot.master":      build.Master,
-				"buildbot.builder":     build.Buildername,
-				"buildbot.buildnumber": strconv.Itoa(build.Number),
-			})
-			s, err := testClient.OpenTextStream("other/ignore", "me")
-			So(err, ShouldBeNil)
-			_, err = s.Write([]byte("Some stuff\nor\nomething"))
-			So(err, ShouldBeNil)
-			_, err = s.Write([]byte("some more stuff"))
-			So(err, ShouldBeNil)
-			So(s.Close(), ShouldBeNil)
-
-			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "proj-foo")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "proj-foo",
-				Step: &miloProto.Step{
-					Command: &miloProto.Step_Command{
-						CommandLine: []string{"foo", "bar", "baz"},
-					},
-					Text: []string{"test step"},
-					Property: []*miloProto.Step_Property{
-						{Name: "bar", Value: "log-bar"},
-						{Name: "foo", Value: "build-foo"},
-					},
-				},
-				AnnotationStream: &miloProto.LogdogStream{
-					Server: "example.com",
-					Prefix: "foo/bar",
-					Name:   "annotations",
-				},
-			})
-		})
-
-		Convey("Can load a BuildBot build by inferred name.", func() {
-			importBuild(c, &build)
-			writeDatagram(testClient, "bb/foo_master/bar_builder/1337", "annotations", &logdogStep)
-
-			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "proj-foo")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "proj-foo",
-				Step: &miloProto.Step{
-					Command: &miloProto.Step_Command{
-						CommandLine: []string{"foo", "bar", "baz"},
-					},
-					Text: []string{"test step"},
-					Property: []*miloProto.Step_Property{
-						{Name: "bar", Value: "log-bar"},
-						{Name: "foo", Value: "build-foo"},
-					},
-				},
-				AnnotationStream: &miloProto.LogdogStream{
-					Server: "example.com",
-					Prefix: "bb/foo_master/bar_builder/1337",
-					Name:   "annotations",
-				},
-			})
-		})
 	})
 }
