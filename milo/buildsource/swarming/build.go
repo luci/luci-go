@@ -487,10 +487,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 	return c.ToLogDogStreams()
 }
 
-// BuildLoader represents the ability to load a Milo build from a Swarming task.
-type BuildLoader struct{}
-
-func (bl *BuildLoader) newEmptyAnnotationStream(c context.Context, addr *types.StreamAddr) (
+func newEmptyAnnotationStream(c context.Context, addr *types.StreamAddr) (
 	*rawpresentation.AnnotationStream, error) {
 
 	client, err := rawpresentation.NewClient(c, addr.Host)
@@ -575,11 +572,11 @@ func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID strin
 	return fr, logDogStreamAddr, err
 }
 
-func (bl *BuildLoader) streamFromLogDog(c context.Context, addr *types.StreamAddr) (*miloProto.Step, error) {
+func streamFromLogDog(c context.Context, addr *types.StreamAddr) (*miloProto.Step, error) {
 	logging.Infof(c, "Loading build from LogDog stream at: %s", addr)
 
 	// If the LogDog stream is available, load the step from that.
-	as, err := bl.newEmptyAnnotationStream(c, addr)
+	as, err := newEmptyAnnotationStream(c, addr)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create LogDog annotation stream").Err()
 	}
@@ -629,7 +626,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 
 // SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuild
 // representation of a build state given a Swarming TaskID.
-func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*resp.MiloBuild, error) {
+func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*resp.MiloBuild, error) {
 	// First, get the task result from swarming, and maybe the logs.
 	fr, logDogStreamAddr, err := swarmingFetchMaybeLogs(c, svc, taskID)
 	if err != nil {
@@ -650,7 +647,7 @@ func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService,
 
 	// Load the build from the LogDog service.  For known classes of errors, add
 	// steps in the build presentation to explain what may be going on.
-	step, err := bl.streamFromLogDog(c, logDogStreamAddr)
+	step, err := streamFromLogDog(c, logDogStreamAddr)
 	switch errors.Unwrap(err) {
 	case coordinator.ErrNoSuchStream:
 		// The stream was not found.  This could be due to one of two things:
@@ -861,7 +858,7 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 		return nil, err
 	}
 
-	return (&BuildLoader{}).SwarmingBuildImpl(c, sf, b.TaskID)
+	return SwarmingBuildImpl(c, sf, b.TaskID)
 }
 
 // GetLog implements buildsource.ID

@@ -87,7 +87,6 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 		bip := BuildInfoProvider{
-			bl: BuildLoader{},
 			swarmingServiceFunc: func(context.Context, string) (swarmingService, error) {
 				return &testSvc, nil
 			},
