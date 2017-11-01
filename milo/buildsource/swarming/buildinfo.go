@@ -86,30 +86,19 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 		"path":    stream.Path,
 	}.Infof(c, "Resolved LogDog annotation stream.")
 
-	as, err := newEmptyAnnotationStream(c, stream)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to create LogDog annotation stream.")
-		return nil, grpcutil.Internal
-	}
-
-	// Fetch LogDog annotation stream data.
-	step, err := as.Fetch(c)
-	if err != nil {
-		logging.WithError(err).Warningf(c, "Failed to load annotation stream.")
-		return nil, grpcutil.Internal
-	}
+	step, err := streamFromLogDog(c, stream)
 
 	// Add Swarming task parameters to the Milo step.
 	if err := addTaskToMiloStep(c, sf.getHost(), fr.res, step); err != nil {
 		return nil, err
 	}
 
-	prefix, name := as.Path.Split()
+	prefix, name := stream.Path.Split()
 	return &milo.BuildInfoResponse{
-		Project: string(as.Project),
+		Project: string(stream.Project),
 		Step:    step,
 		AnnotationStream: &miloProto.LogdogStream{
-			Server: as.Client.Host,
+			Server: stream.Host,
 			Prefix: string(prefix),
 			Name:   string(name),
 		},
