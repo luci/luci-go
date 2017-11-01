@@ -21,9 +21,9 @@
   <div class="form-group">
     <label for="{{$field.ID}}" class="col-sm-3 control-label">{{$field.Title}}</label>
     <div class="col-sm-9">
-      {{if eq $field.Type "text"}}
+      {{if or (eq $field.Type "text") (eq $field.Type "password")}}
         <input
-          type="text" class="form-control" aria-describedby="{{$field.ID}}-help"
+          type="{{$field.Type}}" class="form-control" aria-describedby="{{$field.ID}}-help"
           {{if $field.Placeholder}}
           placeholder="{{$field.Placeholder}}"
           {{end}}
