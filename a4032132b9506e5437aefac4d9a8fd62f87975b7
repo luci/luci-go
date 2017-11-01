@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "21e25a6d_1571c51d",
+        "filename": "machine-db/api/config/v1/settings.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-01T00:38:58Z",
+      "side": 1,
+      "message": "I guess it\u0027s the different styles of development. I find it immensely useful to be able to run stuff locally, to have short modify-observe-fix cycle. Also reusing single -dev instance becomes difficult when there are more than 1 person actively working on the project.\n\nRegardless, (database, username, password) tuples is not sufficient. It should be (server, database, username, password), where \u0027server\u0027 is something like \u0027machine-db:us-central1:db\u0027 (a reference to Cloud SQL v2 instance, \u003cproject\u003e:\u003czone\u003e:\u003cname\u003e) and \u0027database\u0027 is a name of mysql database hosted on this server. (It has to be created first... Crimson docs use \u0027cloudsqlhelper\u0027 for this https://chrome-internal.googlesource.com/infra/infra_internal/+/master/go/src/infra_internal/crimson/README.md).",
+      "parentUuid": "3936cd04_77e36a64",
+      "range": {
+        "startLine": 16,
+        "startChar": 1,
+        "endLine": 16,
+        "endChar": 21
+      },
+      "revId": "a4032132b9506e5437aefac4d9a8fd62f87975b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04ce3dbc_3df9e1a1",
         "filename": "machine-db/appengine/frontend/cron.yaml",
         "patchSetId": 2
