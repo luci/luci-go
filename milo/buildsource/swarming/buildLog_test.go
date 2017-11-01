@@ -9,14 +9,14 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/milo/buildsource/swarming/testdata"
 )
 
-var testSvc = &debugSwarmingService{
-	tc: &testCase{
-		name:        "build-patch-failure",
-		swarmResult: "build-patch-failure.swarm",
-		swarmOutput: "build-patch-failure",
-	},
+var testSvc = &testdata.TestCase{
+	Name:        "build-patch-failure",
+	SwarmResult: "build-patch-failure.swarm",
+	TaskOutput:  "build-patch-failure",
 }
 
 func TestBuildLogs(t *testing.T) {
