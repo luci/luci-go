@@ -74,12 +74,10 @@ func TestBuild(t *testing.T) {
 		})
 
 		for _, tc := range getTestCases(".") {
-			bl := BuildLoader{}
-
 			fmt.Printf("Generating expectations for %s\n", tc)
 
 			c := tc.injectLogdogClient(c)
-			build, err := bl.SwarmingBuildImpl(c, debugSwarmingService{tc}, tc.name)
+			build, err := SwarmingBuildImpl(c, debugSwarmingService{tc}, tc.name)
 			if err != nil {
 				panic(fmt.Errorf("Could not run swarmingBuildImpl for %s: %s", tc, err))
 			}
@@ -109,7 +107,6 @@ func TestBuild(t *testing.T) {
 
 		for _, tc := range getTestCases(".") {
 			Convey(fmt.Sprintf("Test Case: %s", tc.name), func() {
-				bl := BuildLoader{}
 				svc := debugSwarmingService{tc}
 				c := tc.injectLogdogClient(c)
 
@@ -120,12 +117,12 @@ func TestBuild(t *testing.T) {
 							Identity:       identity.AnonymousIdentity,
 							IdentityGroups: []string{"all"},
 						})
-						_, err := bl.SwarmingBuildImpl(c, svc, tc.name)
+						_, err := SwarmingBuildImpl(c, svc, tc.name)
 						So(err.Error(), ShouldResemble, "Not a Milo Job or access denied")
 					})
 				}
 
-				build, err := bl.SwarmingBuildImpl(c, svc, tc.name)
+				build, err := SwarmingBuildImpl(c, svc, tc.name)
 				So(err, ShouldBeNil)
 				So(build, shouldMatchExpectationsFor, tc.name+".json")
 			})

@@ -31,8 +31,6 @@ import (
 // In a production system, this will be completely defaults. For testing, the
 // various services and data sources may be substituted for testing stubs.
 type BuildInfoProvider struct {
-	bl BuildLoader
-
 	// swarmingServiceFunc returns a swarmingService instance for the supplied
 	// parameters.
 	//
@@ -88,7 +86,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 		"path":    stream.Path,
 	}.Infof(c, "Resolved LogDog annotation stream.")
 
-	as, err := p.bl.newEmptyAnnotationStream(c, stream)
+	as, err := newEmptyAnnotationStream(c, stream)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to create LogDog annotation stream.")
 		return nil, grpcutil.Internal

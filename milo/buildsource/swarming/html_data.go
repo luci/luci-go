@@ -240,9 +240,8 @@ func BuildTestData(swarmingRelDir string) []common.TestBundle {
 	for _, tc := range getTestCases(swarmingRelDir) {
 		c := tc.injectLogdogClient(c)
 		svc := debugSwarmingService{tc}
-		bl := BuildLoader{}
 
-		build, err := bl.SwarmingBuildImpl(c, svc, tc.name)
+		build, err := SwarmingBuildImpl(c, svc, tc.name)
 		if err != nil {
 			panic(fmt.Errorf("Error while processing %s: %s", tc.name, err))
 		}
