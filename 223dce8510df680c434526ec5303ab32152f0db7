@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "30e3e0b2_8c598377",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-02T18:22:11Z",
+      "side": 1,
+      "message": "nit: Context is super generic. Maybe ContextURIs\n\naside, I am glad you don\u0027t mind string math for this",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 8
+      },
+      "revId": "223dce8510df680c434526ec5303ab32152f0db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
