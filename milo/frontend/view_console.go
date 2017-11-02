@@ -243,9 +243,11 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 		if err != nil {
 			return nil, err
 		}
-		consoleGroups[i].Title.Label = group.Title.Text
-		consoleGroups[i].Title.URL = group.Title.Url
 		consoleGroups[i].Consoles = summaries
+		if group.Title != nil {
+			consoleGroups[i].Title.Label = group.Title.Text
+			consoleGroups[i].Title.URL = group.Title.Url
+		}
 	}
 	return &resp.ConsoleHeader{ConsoleGroups: consoleGroups}, nil
 }
