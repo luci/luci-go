@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/milo/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -36,8 +37,6 @@ func TestUpdateBuilder(t *testing.T) {
 	// Populate a few BuildSummaries. For convenience, ordered by creation time.
 	builds := make([]*BuildSummary, 10)
 	for i := 0; i < 10; i++ {
-		bld := &fakeBuild{i}
-		datastore.Put(c, bld)
 		bk := datastore.MakeKey(c, "fakeBuild", i)
 		builds[i] = &BuildSummary{
 			BuildKey:  bk,
@@ -45,10 +44,7 @@ func TestUpdateBuilder(t *testing.T) {
 			BuildID:   fmt.Sprintf("build_id/%d", i),
 			Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
 		}
-		datastore.Put(c, builds[i])
 	}
-
-	datastore.GetTestable(c).CatchupIndexes()
 
 	Convey("Updating appropriate builder having existing last finished build", t, func() {
 		builder := &BuilderSummary{
@@ -268,5 +264,29 @@ func TestUpdateBuilder(t *testing.T) {
 		builder := &BuilderSummary{BuilderID: "wrong"}
 		err := builder.Update(c, builds[5])
 		So(err.Error(), ShouldContainSubstring, "updating wrong builder")
+	})
+
+	Convey("Updating builder with build with consoles should overwrite builder consoles", t, func() {
+		builder := &BuilderSummary{BuilderID: "consoles"}
+		parent := datastore.NewKeyToks(c, []datastore.KeyTok{
+			{IntID: 0, StringID: "tok"},
+		})
+		build := &BuildSummary{
+			BuilderID: "consoles",
+			consoles: []*common.Console{
+				{
+					ID:     "id0",
+					Parent: parent,
+				},
+				{
+					ID:     "id1",
+					Parent: parent,
+				},
+			},
+		}
+
+		err := builder.Update(c, build)
+		So(err, ShouldBeNil)
+		So(builder.Consoles, ShouldResemble, []string{"tok/id0", "tok/id1"})
 	})
 }
