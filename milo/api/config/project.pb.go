@@ -96,8 +96,14 @@ func (m *Link) GetAlt() string {
 type Oncall struct {
 	// Name is the name of the oncall rotation being displayed.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	// Url is a url to a .js file/endpoint containing text displayed, as defined in
-	// infra_internal.services.sheriff.rotation and infra_internal.services.trooper.rotation
+	// Url is an URL to a json endpoint with the following format:
+	// {
+	//   "updated_unix_timestamp": <int>,
+	//   "emails": [
+	//     "email@somewhere.com",
+	//     "email@nowhere.com
+	//   ]
+	// }
 	Url string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
 }
 
@@ -187,10 +193,15 @@ func (m *ConsoleSummaryGroup) GetConsoleIds() []string {
 // console groups are laid out on the right.  Each oncall and links group
 // take up a row.
 type Header struct {
-	// Oncalls are a reference to oncall rotations, which is a URL to a .js
-	// file containing document.write("content"), as defined by
-	// infra_internal.services.sheriff.rotation and
-	// infra_internal.services.trooper.rotation
+	// Oncalls are a reference to oncall rotations, which is a URL to a json
+	// endpoint with the following format:
+	// {
+	//   "updated_unix_timestamp": <int>,
+	//   "emails": [
+	//     "email@somewhere.com",
+	//     "email@nowhere.com
+	//   ]
+	// }
 	Oncalls []*Oncall `protobuf:"bytes,1,rep,name=oncalls" json:"oncalls,omitempty"`
 	// Links is a list of named groups of web links.
 	Links []*LinkGroup `protobuf:"bytes,2,rep,name=links" json:"links,omitempty"`
