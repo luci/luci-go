@@ -78,6 +78,14 @@ type BuildSummary struct {
 	// when presenting this build to end users.
 	ProjectID string
 
+	// This contains URI to any contextually-relevant underlying tasks/systems
+	// associated with this build, in the form of:
+	//   * swarming://<host>/task/<taskID>
+	//   * swarming://<host>/bot/<botID>
+	//   * buildbot://<master>/build/<builder>/<number>
+	//   * buildbot://<master>/bot/<bot>
+	ContextURI []string
+
 	// The buildbucket buildsets associated with this Build, if any.
 	//
 	// Example:
