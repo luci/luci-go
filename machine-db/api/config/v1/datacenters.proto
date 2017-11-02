@@ -35,3 +35,9 @@ message DatacenterConfig {
   // The racks belonging to this datacenter.
   repeated RackConfig rack = 3;
 }
+
+// DatacentersConfig enumerates datacenter config files.
+message DatacentersConfig {
+  // The name of a datacenter config file.
+  repeated string datacenter = 1;
+}
