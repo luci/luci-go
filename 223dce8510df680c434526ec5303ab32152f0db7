@@ -22,6 +22,29 @@
       "revId": "223dce8510df680c434526ec5303ab32152f0db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe0cabbd_e32881f0",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T18:24:43Z",
+      "side": 1,
+      "message": "This seems like it could be useful.  Naming wise, because \"context\" is used in a lot of different contexts in the code (hah, see what I did there?), it\u0027s not my top choice for a name.  But since the format is documented well, it\u0027s probably okay.\n\nThe above comment can be improved by adding intent, specifically:\n* Used for querying / indexing\n* Used for display because schema is well-formed.",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 8
+      },
+      "revId": "223dce8510df680c434526ec5303ab32152f0db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
