@@ -103,7 +103,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		Version: build.UpdateTime.UnixNano(),
 	}
 
-	if shost, sid := build.Tags.Get("swarming_host"), build.Tags.Get("swarming_task_id"); shost != "" && sid != "" {
+	if shost, sid := build.Tags.Get("swarming_hostname"), build.Tags.Get("swarming_task_id"); shost != "" && sid != "" {
 		ret.ContextURI = append(ret.ContextURI, fmt.Sprintf("swarming://%s/task/%s", shost, sid))
 	}
 	// TODO(iannucci,nodir): get the bot context too
