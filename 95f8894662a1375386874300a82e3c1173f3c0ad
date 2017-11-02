@@ -70,6 +70,24 @@
       "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a1171713_3271e9a1",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T23:46:46Z",
+      "side": 1,
+      "message": "That\u0027s really odd, the bubbles there still know how to expand.",
+      "parentUuid": "71d0db6d_32893264",
+      "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
