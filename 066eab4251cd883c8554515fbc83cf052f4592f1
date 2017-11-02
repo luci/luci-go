@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a554d753_fff6aa53",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-02T22:11:08Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 76,
+        "startChar": 41,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "066eab4251cd883c8554515fbc83cf052f4592f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8658da2_37ebc918",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-02T22:11:08Z",
+      "side": 1,
+      "message": "the comment above says it returns one build and I believe it is the right API, but the function actually returns multiple builds.\n\nShould we just return the most recent build among all builds associated with a commit?",
+      "range": {
+        "startLine": 233,
+        "startChar": 75,
+        "endLine": 233,
+        "endChar": 77
+      },
+      "revId": "066eab4251cd883c8554515fbc83cf052f4592f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
