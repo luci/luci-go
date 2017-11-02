@@ -50,9 +50,9 @@
             <a href="{{ .Name.URL }}">{{ .Name.Label }}</a>
           </div>
           {{ range .Builders }}
-            <div class="console-header-build status-{{ .LastFinishedStatus }}">
-              <a href="#"><!-- TODO(mknyszek): Link to build. --></a>
-            </div>
+            <a href="/{{ .BuilderID }}" title="{{ .BuilderID }}" style="display: block; height: 100%; width: 100%; text-decoration: none;">
+              <div class="console-header-build status-{{ .LastFinishedStatus }}"></div>
+            </a>
           {{ end }}
         </div>
       {{ end }}
