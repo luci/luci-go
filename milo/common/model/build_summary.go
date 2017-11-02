@@ -78,6 +78,23 @@ type BuildSummary struct {
 	// when presenting this build to end users.
 	ProjectID string
 
+	// This contains URI to any contextually-relevant underlying tasks/systems
+	// associated with this build, in the form of:
+	//
+	//   * swarming://<host>/task/<taskID>
+	//   * swarming://<host>/bot/<botID>
+	//   * buildbot://<master>/build/<builder>/<number>
+	//   * buildbot://<master>/bot/<bot>
+	//
+	// This will be used for queries, and can be used to store semantically-sound
+	// clues about this Build (e.g. to identify the underlying swarming task so
+	// that we don't need to RPC back to the build source to find that out). This
+	// can also be used for link generation in the UI, since the schema for these
+	// URIs should be stable within Milo (so if swarming changes its URL format we
+	// can change the links in the UI code without map-reducing these
+	// ContextURIs).
+	ContextURI []string
+
 	// The buildbucket buildsets associated with this Build, if any.
 	//
 	// Example:

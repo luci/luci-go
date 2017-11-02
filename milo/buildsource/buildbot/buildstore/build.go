@@ -205,6 +205,11 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 		BuildID:   fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 	}
 
+	bs.ContextURI = []string{
+		fmt.Sprintf("buildbot://%s/build/%s/%d", b.Master, b.Buildername, b.Number),
+		fmt.Sprintf("buildbot://%s/bot/%s", b.Master, b.Slave),
+	}
+
 	bs.Summary.Start = b.Times.Start.Time
 	bs.Summary.End = b.Times.Finish.Time
 	bs.Summary.Status = b.Status()

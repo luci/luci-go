@@ -103,6 +103,11 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		Version: build.UpdateTime.UnixNano(),
 	}
 
+	if shost, sid := build.Tags.Get("swarming_host"), build.Tags.Get("swarming_task_id"); shost != "" && sid != "" {
+		ret.ContextURI = append(ret.ContextURI, fmt.Sprintf("swarming://%s/task/%s", shost, sid))
+	}
+	// TODO(iannucci,nodir): get the bot context too
+
 	// TODO(iannucci,nodir): support manifests/got_revision
 	for _, bset := range build.BuildSets {
 		if err := ret.AddManifestKeysFromBuildSet(c, bset); err != nil {
