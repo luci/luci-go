@@ -169,6 +169,8 @@ type BuilderRef struct {
 	ShortName string
 	// The most recent build summaries for this builder.
 	Build []*model.BuildSummary
+	// The most recent builder summary for this builder.
+	Builder *model.BuilderSummary
 }
 
 // Convenience function for writing to bytes.Buffer: in our case, the
@@ -197,7 +199,12 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		must(buffer.WriteString(`<div class="console-space"></div>`))
 	}
 	// Render builder link
-	must(buffer.WriteString(`<div>`))
+	if br.Builder != nil {
+		// This doesn't need to be escaped because it is a built in enum.
+		must(fmt.Fprintf(buffer, `<div class="status-%s">`, br.Builder.LastFinishedStatus))
+	} else {
+		must(buffer.WriteString(`<div>`))
+	}
 	must(fmt.Fprintf(
 		buffer, `<a class="console-builder-item" href="/%s" title="%s">%s</a>`,
 		template.HTMLEscapeString(br.Name),
