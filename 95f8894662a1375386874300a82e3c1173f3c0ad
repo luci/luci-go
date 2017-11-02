@@ -34,6 +34,24 @@
       "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71d0db6d_32893264",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-02T23:22:12Z",
+      "side": 1,
+      "message": "Done.\n\nWhen I try putting the \u003ca\u003e directly in the blob I get something like https://screenshot.googleplex.com/cuAnzAonVS7.png\n\nIs this api/resp/console.go:316? The bubbles there are already square and filled in one-by-one, maybe that\u0027s why?",
+      "parentUuid": "ac78b984_edcc76a4",
+      "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
