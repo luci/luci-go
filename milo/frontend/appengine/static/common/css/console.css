@@ -18,6 +18,7 @@
 .console-column {
   display: flex;
   flex-direction: column;
+  border-bottom: 1px solid silver;
 }
 
 .console-row {
@@ -110,6 +111,14 @@
   margin-right: 0.2em;
 }
 
+/* Legend */
+#legend {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1em;
+  font-weight: bold;
+}
+
 /* Commits */
 
 .console-commit-column {
@@ -119,11 +128,11 @@
 }
 
 .console-commit-column div:nth-child(even) {
-  background-color: #eeeeee;
+  background-color: #cccccc;
 }
 
 .console-commit-column div:nth-child(odd) {
-  background-color: #f2f2f2;
+  background-color: #eee;
 }
 
 .console-commit-item {
@@ -207,15 +216,14 @@
   display: flex;
   flex-grow: 1;
   flex-direction: column;
-  border-bottom: 1px solid silver;
 }
 
 .console-build-column div:nth-child(even) {
-  background-color: #eeeeee;
+  background-color: #cccccc;
 }
 
 .console-build-column div:nth-child(odd) {
-  background-color: #f2f2f2;
+  background-color: #eee;
 }
 
 /* Table Cells */

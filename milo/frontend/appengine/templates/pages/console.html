@@ -68,6 +68,21 @@
 </div>
 {{ end }}
 
+<!-- Legend -->
+<div id="legend">
+  <table>
+    <tr>
+      <td>Legend:&nbsp;&nbsp;</td>
+      <td class="status-Success" title="All tests passed">Passed</td>
+      <td class="status-Failure" title="There is a new failure. Take a look!">Failed</td>
+      <td class="status-Warning" title="It was failing before, and is still failing. Make sure you did not introduce new regressions">Failed&nbsp;Again</td>
+      <td class="status-Running" title="The tests are still running">Running</td>
+      <td class="status-Exception" title="Something went wrong with the test, there is no result">Exception</td>
+    </tr>
+  </table>
+</div>
+<div class="clear"></div>
+
 <!-- Container -->
 <div class="console-row">
 
