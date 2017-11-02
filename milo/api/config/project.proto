@@ -37,8 +37,14 @@ message Oncall {
   // Name is the name of the oncall rotation being displayed.
   string name = 1;
 
-  // Url is a url to a .js file/endpoint containing text displayed, as defined in
-  // infra_internal.services.sheriff.rotation and infra_internal.services.trooper.rotation
+  // Url is an URL to a json endpoint with the following format:
+  // {
+  //   "updated_unix_timestamp": <int>,
+  //   "emails": [
+  //     "email@somewhere.com",
+  //     "email@nowhere.com
+  //   ]
+  // }
   string url = 2;
 }
 
@@ -73,10 +79,15 @@ message ConsoleSummaryGroup {
 // console groups are laid out on the right.  Each oncall and links group
 // take up a row.
 message Header {
-  // Oncalls are a reference to oncall rotations, which is a URL to a .js
-  // file containing document.write("content"), as defined by
-  // infra_internal.services.sheriff.rotation and
-  // infra_internal.services.trooper.rotation
+  // Oncalls are a reference to oncall rotations, which is a URL to a json
+  // endpoint with the following format:
+  // {
+  //   "updated_unix_timestamp": <int>,
+  //   "emails": [
+  //     "email@somewhere.com",
+  //     "email@nowhere.com
+  //   ]
+  // }
   repeated Oncall oncalls = 1;
 
   // Links is a list of named groups of web links.
