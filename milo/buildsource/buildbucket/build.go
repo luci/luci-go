@@ -148,18 +148,6 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 	return result, nil
 }
 
-func (b *BuildID) GetLog(c context.Context, logname string) (
-	text string, closed bool, err error) {
-
-	id, err := strconv.ParseInt(b.ID, 10, 64)
-	if err != nil {
-		return "", false, errors.Annotate(err, "%s is not a valid number", b.ID).Err()
-	}
-	// TODO(nodir,hinoka): use annotations directly without fetching swarming task
-	sID, err := GetSwarmingID(c, id)
-	if err != nil {
-		return "", false, err
-	}
-	// Defer implementation over to swarming's BuildID.GetLog
-	return sID.GetLog(c, logname)
+func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {
+	return "", false, errors.New("buildbucket builds do not implement GetLog.")
 }
