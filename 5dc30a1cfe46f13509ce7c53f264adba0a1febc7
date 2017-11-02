@@ -262,6 +262,30 @@
     },
     {
       "key": {
+        "uuid": "b2dd9996_fd344dc4",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-02T00:29:20Z",
+      "side": 1,
+      "message": "Sorry for the confusion. I\u0027m really not intentionally trying to ignore the work you\u0027ve done on this project. Cloud SQL Helper is obviously useful, and should be used.\n\nI just want to avoid getting sucked into whatever development hell this project was in for the past couple years, and to that end I\u0027m starting fresh. I went out and gathered all user requirements for myself, proposed a new design, and now I\u0027m hoping to write this thing from beginning to end myself (which will also give me some much needed Go experience).\n\nI appreciate the feedback, design review, and code review even if I sometimes push back.",
+      "parentUuid": "974db809_ccca52c7",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 102
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75987b84_e7741a45",
         "filename": "machine-db/appengine/frontend/settings.go",
         "patchSetId": 7
