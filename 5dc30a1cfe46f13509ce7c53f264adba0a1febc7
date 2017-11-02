@@ -238,6 +238,30 @@
     },
     {
       "key": {
+        "uuid": "974db809_ccca52c7",
+        "filename": "machine-db/appengine/frontend/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-02T00:14:06Z",
+      "side": 1,
+      "message": "I didn\u0027t mean that local dev server is required for creating tables. I missed one step there. My reasoning was: \"Sana doesn\u0027t like unix domain sockets, but this is the only sane way to connect to Cloud SQL v2, therefore she\u0027s not using cloud sql proxy, and I wonder how she\u0027s going to create tables\". I didn\u0027t realize you don\u0027t like usage of unix sockets in dev server specifically :)\n\nWhatever, it is 20 lines of code. If I ever need to run this stuff locally, I\u0027ll add them myself.",
+      "parentUuid": "a07ff8dd_915038ff",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 102
+      },
+      "revId": "5dc30a1cfe46f13509ce7c53f264adba0a1febc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75987b84_e7741a45",
         "filename": "machine-db/appengine/frontend/settings.go",
         "patchSetId": 7
