@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package settings
 
 import (
 	"testing"
@@ -27,16 +27,16 @@ import (
 func TestDatabaseSettings(t *testing.T) {
 	t.Parallel()
 
-	Convey("NewDatabaseSettings works", t, func() {
-		s := NewSettings(context.Background())
+	Convey("New: ok", t, func() {
+		s := New(context.Background())
 		So(s, ShouldNotBeNil)
 		So(s.Server, ShouldEqual, "")
 		So(s.Username, ShouldEqual, "")
 		So(s.Password, ShouldEqual, "")
 	})
 
-	Convey("GetUncachedSettings returns defaults", t, func() {
-		s, e := GetUncachedSettings(context.Background())
+	Convey("GetUncached: returns defaults", t, func() {
+		s, e := GetUncached(context.Background())
 		So(s, ShouldNotBeNil)
 		So(s.Server, ShouldEqual, "")
 		So(s.Username, ShouldEqual, "")
@@ -44,7 +44,7 @@ func TestDatabaseSettings(t *testing.T) {
 		So(e, ShouldBeNil)
 	})
 
-	Convey("GetUncachedSettings returns settings", t, func() {
+	Convey("GetUncached: returns settings", t, func() {
 		c := settings.Use(context.Background(), settings.New(&settings.MemoryStorage{}))
 		expected := &DatabaseSettings{
 			Server:   "server",
@@ -54,7 +54,7 @@ func TestDatabaseSettings(t *testing.T) {
 		e := settings.Set(c, settingsKey, expected, "whoever", "for whatever reason")
 		So(e, ShouldBeNil)
 
-		actual, e := GetUncachedSettings(c)
+		actual, e := GetUncached(c)
 		So(actual, ShouldNotBeNil)
 		So(actual.Server, ShouldEqual, expected.Server)
 		So(actual.Username, ShouldEqual, expected.Username)
