@@ -131,9 +131,8 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.Console
 			ch <- func() error {
 				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", id)
 				return datastore.Run(c, q, func(bs *model.BuilderSummary) {
-					// It's safe to do this because we assume the ID has already been validated.
-					summaries[i].Name.Label = strings.SplitN(id, "/", 2)[1]
-					summaries[i].Name.URL = "/console/" + id
+					// It's safe to SplitN because we assume the ID has already been validated.
+					summaries[i].Name = resp.NewLink(strings.SplitN(id, "/", 2)[1], "/console/"+id, id)
 					summaries[i].Builders = append(summaries[i].Builders, bs)
 				})
 			}
