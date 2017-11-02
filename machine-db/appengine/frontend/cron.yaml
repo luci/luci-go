@@ -1,8 +1,12 @@
 cron:
-- description: "tsmon housekeeping task"
-  url: /internal/cron/ts_mon/housekeeping
-  schedule: every 1 minutes
-
 - description: "LUCI Config datastore cache periodic refresh"
   url: /admin/config/cache/manage
   schedule: every 10 minutes
+
+- description: "Config importer"
+  url: /internal/cron/import-config
+  schedule: every 10 minutes
+
+- description: "tsmon housekeeping task"
+  url: /internal/cron/ts_mon/housekeeping
+  schedule: every 1 minutes

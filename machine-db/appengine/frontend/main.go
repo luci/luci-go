@@ -24,25 +24,31 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/machine-db/api/crimson/v1"
+	"go.chromium.org/luci/machine-db/appengine/config"
+	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/appengine/model/datacenters"
 	"go.chromium.org/luci/server/router"
 )
 
 func init() {
 	mathrand.SeedRandomly()
-	InstallSettings()
+	databaseMiddleware := standard.Base().Extend(database.WithMiddleware)
 
 	r := router.New()
 	standard.InstallHandlers(r)
+	config.InstallHandlers(r, databaseMiddleware)
 	r.GET("/", standard.Base(), handler)
 
 	api := prpc.Server{}
+	crimson.RegisterDatacentersServer(&api, &datacenters.DatacentersServer{})
 	discovery.Enable(&api)
-	api.InstallHandlers(r, standard.Base())
+	api.InstallHandlers(r, databaseMiddleware)
 
 	http.DefaultServeMux.Handle("/", r)
 }
 
 func handler(c *router.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
-	c.Writer.WriteHeader(200)
+	c.Writer.WriteHeader(http.StatusOK)
 }
