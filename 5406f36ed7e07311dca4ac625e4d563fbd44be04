@@ -25,6 +25,57 @@
     },
     {
       "key": {
+        "uuid": "85e752c5_1a2d09e8",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T17:58:33Z",
+      "side": 1,
+      "message": "pass this through {{ . | obfuscateEmail }}  (Yes I know it\u0027s a pretty silly obfuscater, but better than nothing)\n\nAlso I think for this, I\u0027m thinking to match the current header, maybe chop off everything after the @, so it\u0027s more like\n\n\u003cspan title\u003d\"user@email.com\"\u003euser\u003c/span\u003e\n\nOr something like that.",
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a51dbf9_46e11275",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T17:58:33Z",
+      "side": 1,
+      "message": "{{ . | linkify }}",
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47bae90a_1c47c236",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T17:58:33Z",
+      "side": 1,
+      "message": "In luci, for tasks like these, we usually just write a normal function and use parallel.FanOutIn() to wrap it.\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/sync/parallel/workPool.go?q\u003dfanoutin\u0026sq\u003dpackage:chromium\u0026dr\u003dCSs\u0026l\u003d44\n\n\nSo make this into getOncallData(c, url) (resp.Oncall, error) { ... }\n\nAnd use FanOutIn(gen func(chan\u003c- func() error)) error\n\nOne more thing is to add a memcache layer here, with like a ~15min expiration.",
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d3b593c5_0d6b08e8",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -36,6 +87,30 @@
       "writtenOn": "2017-11-02T03:01:38Z",
       "side": 1,
       "message": "This may be unnecessary, but idk if it does any special CORS things.",
+      "range": {
+        "startLine": 236,
+        "startChar": 1,
+        "endLine": 236,
+        "endChar": 55
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3ab83a0_0df6072c",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T17:58:33Z",
+      "side": 1,
+      "message": "It doesn\u0027t.  It\u0027ll be better to use an anonymous transport for now since we don\u0027t have any security built in yet.  For example:\n* URL validation.  Since URLs aren\u0027t validated, this opens up a potential attack surface.\n\nInternal oncall rotations aren\u0027t part of the milestone atm either, we can work on this later.",
+      "parentUuid": "d3b593c5_0d6b08e8",
       "range": {
         "startLine": 236,
         "startChar": 1,
