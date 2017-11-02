@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package settings
 
 import (
 	"html/template"
@@ -37,8 +37,8 @@ type DatabaseSettings struct {
 	Database string `json:"database"`
 }
 
-// NewSettings returns a new instance of DatabaseSettings.
-func NewSettings(c context.Context) *DatabaseSettings {
+// New returns a new instance of DatabaseSettings.
+func New(c context.Context) *DatabaseSettings {
 	return &DatabaseSettings{
 		Server:   "",
 		Username: "",
@@ -47,14 +47,27 @@ func NewSettings(c context.Context) *DatabaseSettings {
 	}
 }
 
-// GetUncachedSettings returns the latest settings, bypassing the cache.
-func GetUncachedSettings(c context.Context) (*DatabaseSettings, error) {
+// Get returns the current settings. This may hit an outdated cache.
+func Get(c context.Context) (*DatabaseSettings, error) {
+	databaseSettings := &DatabaseSettings{}
+	switch err := settings.Get(c, settingsKey, databaseSettings); err {
+	case nil:
+		return databaseSettings, nil
+	case settings.ErrNoSettings:
+		return New(c), nil
+	default:
+		return nil, err
+	}
+}
+
+// GetUncached returns the latest settings, bypassing the cache.
+func GetUncached(c context.Context) (*DatabaseSettings, error) {
 	databaseSettings := &DatabaseSettings{}
 	switch err := settings.GetUncached(c, settingsKey, databaseSettings); err {
 	case nil:
 		return databaseSettings, nil
 	case settings.ErrNoSettings:
-		return NewSettings(c), nil
+		return New(c), nil
 	default:
 		return nil, err
 	}
@@ -102,7 +115,7 @@ func (DatabaseSettings) Overview(c context.Context) (template.HTML, error) {
 
 // ReadSettings returns settings for display.
 func (DatabaseSettings) ReadSettings(c context.Context) (map[string]string, error) {
-	databaseSettings, err := GetUncachedSettings(c)
+	databaseSettings, err := GetUncached(c)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +145,7 @@ func (DatabaseSettings) WriteSettings(c context.Context, values map[string]strin
 	return settings.SetIfChanged(c, settingsKey, databaseSettings, who, why)
 }
 
-// InstallSettings installs the database settings UI. The settings UI must already be installed.
-func InstallSettings() {
+// init registers the database settings UI.
+func init() {
 	settings.RegisterUIPage(settingsKey, DatabaseSettings{})
 }
