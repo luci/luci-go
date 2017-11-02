@@ -146,7 +146,7 @@
             <td> {{ .Status.String }} </td>
           {{ end }}
           <td>{{ .Link | linkify }}</td>
-          <td>
+          <td class="left">
             {{ $nb := len .Blame }}
             {{ if lt $nb 4 }}
               {{ range $i, $c := .Blame }}
