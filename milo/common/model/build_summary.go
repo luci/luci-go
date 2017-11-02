@@ -119,6 +119,13 @@ type BuildSummary struct {
 	//     messages.
 	Version int64
 
+	// consoles holds the console definitions returned by GetAllConsoles. It is
+	// populated by AddManifestKeysFromBuildSet, isn't written to the datastore,
+	// and is used to update the BuilderSummary's list of console strings.
+	// NB: this data may be stale in case of errors, but since it gets frequently
+	// refreshed, this should be not a problem.
+	consoles []*common.Console
+
 	// Ignore all extra fields when reading/writing
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
@@ -183,6 +190,7 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSet(c context.Context, bset buil
 			if err != nil {
 				return errors.Annotate(err, "getting consoles for %q", bs.BuilderID).Err()
 			}
+			bs.consoles = consoles
 			// HACK(iannucci): Until we have real manifest support, console definitions
 			// will specify their manifest as "REVISION", and we'll do lookups with null
 			// URL fields.
