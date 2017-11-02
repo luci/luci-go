@@ -239,6 +239,14 @@ message ServiceAccountRule {
   //  * A group reference ("group:<name>").
   repeated string proxy = 6;
 
+  // Same as 'proxy', except for proxies specified here the end_user check is
+  // skipped: these proxies can grab a token for _any_ service account listed
+  // in the rule, regardless of who the end user is.
+  //
+  // The trusted proxies are assumed to authorize the end user already and
+  // the token server trusts this decision (thus the name of the field).
+  repeated string trusted_proxy = 8;
+
   // Maximum allowed validity duration (sec) of OAuth token grants.
   //
   // The grant is minted by MintOAuthTokenGrant RPC (called, for example, when
