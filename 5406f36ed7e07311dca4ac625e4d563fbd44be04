@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "00fed178_46237b19",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T22:25:03Z",
+      "side": 1,
+      "message": "I\u0027ve obfuscated, but no title or chopping for now. I\u0027ll do it next PS.",
+      "parentUuid": "85e752c5_1a2d09e8",
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2a51dbf9_46e11275",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 1
@@ -59,6 +77,24 @@
     },
     {
       "key": {
+        "uuid": "32ac41f6_9a6c084a",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T22:25:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a51dbf9_46e11275",
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47bae90a_1c47c236",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -70,6 +106,24 @@
       "writtenOn": "2017-11-02T17:58:33Z",
       "side": 1,
       "message": "In luci, for tasks like these, we usually just write a normal function and use parallel.FanOutIn() to wrap it.\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/sync/parallel/workPool.go?q\u003dfanoutin\u0026sq\u003dpackage:chromium\u0026dr\u003dCSs\u0026l\u003d44\n\n\nSo make this into getOncallData(c, url) (resp.Oncall, error) { ... }\n\nAnd use FanOutIn(gen func(chan\u003c- func() error)) error\n\nOne more thing is to add a memcache layer here, with like a ~15min expiration.",
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7a0493c_92150382",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T22:25:03Z",
+      "side": 1,
+      "message": "Done, no memcache yet though (I\u0027ll do that next, once I\u0027m confident it works).",
+      "parentUuid": "47bae90a_1c47c236",
       "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -123,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "e51813e7_be6b61ed",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T22:25:03Z",
+      "side": 1,
+      "message": "Ahhhh good point, I\u0027ll drop the auth.",
+      "parentUuid": "a3ab83a0_0df6072c",
+      "range": {
+        "startLine": 236,
+        "startChar": 1,
+        "endLine": 236,
+        "endChar": 55
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38403166_eb6abfc7",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -143,6 +221,30 @@
       "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6e6e0a9_de4f5053",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T22:25:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "38403166_eb6abfc7",
+      "range": {
+        "startLine": 251,
+        "startChar": 15,
+        "endLine": 251,
+        "endChar": 21
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -190,6 +292,30 @@
       "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9fb7591_2cb19b2f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T22:25:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "296a1260_d34d5a36",
+      "range": {
+        "startLine": 263,
+        "startChar": 1,
+        "endLine": 263,
+        "endChar": 59
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
