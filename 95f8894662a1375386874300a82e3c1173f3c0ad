@@ -52,6 +52,24 @@
       "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dddd6437_9626182a",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T23:35:13Z",
+      "side": 1,
+      "message": "That\u0027s interesting, seems like something that shouldn\u0027t happen, but we can look at it later.",
+      "parentUuid": "71d0db6d_32893264",
+      "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
