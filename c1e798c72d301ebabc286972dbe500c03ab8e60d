@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd1401b7_74682374",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-02T22:29:39Z",
+      "side": 1,
+      "message": "It somewhat bothers me that a failed check for proxies.IsMember will error out when query.Proxy is actually a trustedProxy.\nBut looking into what the error conditions are, it\u0027s a call to authDB, so chances are second IsMember call will also fail, hence, I\u0027m OK. I guess I\u0027ll keep this as a proof that I did review your CL :)",
+      "range": {
+        "startLine": 222,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 2
+      },
+      "revId": "c1e798c72d301ebabc286972dbe500c03ab8e60d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
