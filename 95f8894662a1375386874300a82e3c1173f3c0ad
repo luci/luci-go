@@ -16,6 +16,24 @@
       "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac78b984_edcc76a4",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T22:24:09Z",
+      "side": 1,
+      "message": "+1 inline style is (apparently) bad and every time I do it I (apparently) feel bad\n\nexcept, I think putting the \u003ca\u003e inside the blob should be sufficient, it\u0027s what I do for the bubbles in the main console section thing (api/resp/console.go). that way you don\u0027t have to change any CSS I don\u0027t think.",
+      "parentUuid": "5594d12f_031e44a8",
+      "revId": "95f8894662a1375386874300a82e3c1173f3c0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
