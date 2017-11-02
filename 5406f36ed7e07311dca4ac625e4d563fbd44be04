@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbb40efb_3cc0a500",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T03:01:38Z",
+      "side": 1,
+      "message": "This is nearly identical to the proto struct. It might be worth substituting that in (unless it makes sense to keep model.Link).",
+      "range": {
+        "startLine": 96,
+        "startChar": 5,
+        "endLine": 96,
+        "endChar": 14
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3b593c5_0d6b08e8",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T03:01:38Z",
+      "side": 1,
+      "message": "This may be unnecessary, but idk if it does any special CORS things.",
+      "range": {
+        "startLine": 236,
+        "startChar": 1,
+        "endLine": 236,
+        "endChar": 55
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38403166_eb6abfc7",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T03:01:38Z",
+      "side": 1,
+      "message": "Maybe it would be better to make it []byte and then Unmarshal. It would at least suggest a better error message containing the data.",
+      "range": {
+        "startLine": 251,
+        "startChar": 15,
+        "endLine": 251,
+        "endChar": 21
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "393493ad_50a3ff5f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-02T03:01:38Z",
+      "side": 1,
+      "message": "This section could use some comments. It just spawns a goroutine for each URL and then waits on results (errors) later on.",
+      "range": {
+        "startLine": 263,
+        "startChar": 1,
+        "endLine": 263,
+        "endChar": 59
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
