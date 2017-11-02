@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c498ed9a_0f39845f",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T23:33:50Z",
+      "side": 1,
+      "message": "nit: aria labels should give context, so this should be \"Console \u003cshort name of console\u003e in project \u003cproject name\u003e\"",
+      "range": {
+        "startLine": 135,
+        "startChar": 85,
+        "endLine": 135,
+        "endChar": 87
+      },
+      "revId": "8753430cc9a7e8837dc1f1f88be7389c7ce9d4a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf0f7b79_428ed2e7",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T23:33:50Z",
+      "side": 1,
+      "message": "logging.WithError(err).Errorf(\"getting oncalls\")",
+      "revId": "8753430cc9a7e8837dc1f1f88be7389c7ce9d4a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "032ca596_4a5e9eb2",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T23:33:50Z",
+      "side": 1,
+      "message": "maybe \"\u003ctext\u003e in \u003cgroup name\u003e\"",
+      "range": {
+        "startLine": 296,
+        "startChar": 49,
+        "endLine": 296,
+        "endChar": 58
+      },
+      "revId": "8753430cc9a7e8837dc1f1f88be7389c7ce9d4a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d5289c2_4342523b",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-02T23:33:50Z",
+      "side": 1,
+      "message": "\"console group \u003ctext\u003e\"",
+      "range": {
+        "startLine": 318,
+        "startChar": 76,
+        "endLine": 318,
+        "endChar": 92
+      },
+      "revId": "8753430cc9a7e8837dc1f1f88be7389c7ce9d4a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
