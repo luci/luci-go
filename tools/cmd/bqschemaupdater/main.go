@@ -24,8 +24,7 @@ import (
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
-
-	"infra/libs/infraenv"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 type tableDef struct {
@@ -119,7 +118,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Create an Authenticator and use it for BigQuery operations.
-	authOpts := infraenv.DefaultAuthOptions()
+	authOpts := chromeinfra.DefaultAuthOptions()
 	authOpts.Scopes = []string{bigquery.Scope}
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, authOpts)
 
