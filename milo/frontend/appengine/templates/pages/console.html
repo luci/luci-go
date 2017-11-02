@@ -29,7 +29,32 @@
 <div class="console-header">
 {{ if $header.ConsoleGroups }}
   <div class="console-header-column" style="border-right: 1px solid silver">
+
+    <!-- Oncalls -->
+    <div class="console-header-oncalls">
+    {{ range $header.Oncalls }}
+      <div class="console-header-oncall-name">{{ .Name }}</div>
+      <div class="console-header-oncall-emails">
+      {{ range .Emails }}
+        <span>{{ . }}</span>
+      {{ end }}
+      </div>
+    {{ end }}
+    </div>
+
+    <!-- Links -->
+    <div class="console-header-links">
+    {{ range $header.Links }}
+      <div class="console-header-link-group-name">{{ .Name }}</div>
+      <div class="console-header-link-group">
+        {{ range .Links }}
+          <a href="{{ .URL }}">{{ .Label }}</a>
+        {{ end }}
+      </div>
+    {{ end }}
+    </div>
   </div>
+
   <div class="console-header-column">
   {{ range $header.ConsoleGroups }}
 

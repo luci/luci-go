@@ -59,6 +59,52 @@
   flex-grow: 1;
 }
 
+.console-header-oncalls {
+  display: flex;
+  flex-direction: column;
+}
+
+.console-header-oncall-name {
+  display: flex;
+  font-weight: bold;
+  font-size: 1.25em;
+  border-bottom: 1px solid silver;
+}
+
+.console-header-oncall-emails {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
+.console-header-oncall-emails span {
+  display: block;
+  flex-grow: 1;
+}
+
+.console-header-links {
+  display: flex;
+  flex-direction: column;
+}
+
+.console-header-link-group-name {
+  display: flex;
+  font-weight: bold;
+  font-size: 1.25em;
+  border-bottom: 1px solid silver;
+}
+
+.console-header-link-group {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
+.console-header-link-group a {
+  display: flex;
+  flex-grow: 1;
+}
+
 .console-header-group {
   display: flex;
   flex-direction: column;

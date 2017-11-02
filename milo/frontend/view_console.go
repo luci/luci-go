@@ -17,8 +17,11 @@ package frontend
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -29,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -228,9 +232,53 @@ func consolePreview(c context.Context, def *common.Console) (*resp.Console, erro
 	}, nil
 }
 
+func getOncallData(c context.Context, results chan<- error, url string, oncall *resp.Oncall) {
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		results <- errors.Annotate(err, "failed to get transport").Err()
+		return
+	}
+	response, err := (&http.Client{Transport: transport}).Get(url)
+	if err != nil {
+		results <- errors.Annotate(err, "failed to get data from %q", url).Err()
+		return
+	}
+	defer response.Body.Close()
+	dec := json.NewDecoder(response.Body)
+	var data struct {
+		Emails []string
+	}
+	if err := dec.Decode(&data); err != io.EOF && err != nil {
+		results <- errors.Annotate(err, "failed to decode JSON from %q", url).Err()
+		return
+	}
+	oncall.Emails = data.Emails
+	results <- nil
+}
+
 func consoleHeader(c context.Context, project string, def *common.Console) (*resp.ConsoleHeader, error) {
 	if len(def.Header.ConsoleGroups) == 0 {
 		return nil, nil
+	}
+	oncallResults := make(chan error, len(def.Header.Oncalls))
+	oncalls := make([]resp.Oncall, len(def.Header.Oncalls))
+	for i, oc := range def.Header.Oncalls {
+		oncalls[i] = resp.Oncall{Name: oc.Name}
+		go getOncallData(c, oncallResults, oc.Url, &oncalls[i])
+	}
+	links := make([]resp.LinkGroup, len(def.Header.Links))
+	for i, linkGroup := range def.Header.Links {
+		mlinks := make([]model.Link, len(linkGroup.Links))
+		for j, link := range linkGroup.Links {
+			mlinks[j] = model.Link{
+				Label: link.Text,
+				URL:   link.Url,
+			}
+		}
+		links[i] = resp.LinkGroup{
+			Name:  linkGroup.Name,
+			Links: mlinks,
+		}
 	}
 	consoleGroups := make([]resp.ConsoleGroup, len(def.Header.ConsoleGroups))
 	for i, group := range def.Header.ConsoleGroups {
@@ -247,7 +295,20 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 		consoleGroups[i].Title.URL = group.Title.Url
 		consoleGroups[i].Consoles = summaries
 	}
-	return &resp.ConsoleHeader{ConsoleGroups: consoleGroups}, nil
+	merr := errors.MultiError{}
+	for i := 0; i < len(def.Header.Oncalls); i++ {
+		if err := <-oncallResults; err != nil {
+			merr = append(merr, err)
+		}
+	}
+	if len(merr) > 0 {
+		return nil, merr
+	}
+	return &resp.ConsoleHeader{
+		Oncalls:       oncalls,
+		Links:         links,
+		ConsoleGroups: consoleGroups,
+	}, nil
 }
 
 // consoleRenderer is a wrapper around Console to provide additional methods.
@@ -372,6 +433,30 @@ func consoleTestData() []common.TestBundle {
 					Name:    "Test",
 					Project: "Testing",
 					Header: &resp.ConsoleHeader{
+						Oncalls: []resp.Oncall{
+							{
+								Name: "Sheriff",
+								Emails: []string{
+									"test@example.com",
+									"watcher@example.com",
+								},
+							},
+						},
+						Links: []resp.LinkGroup{
+							{
+								Name: "Some group",
+								Links: []model.Link{
+									{
+										Label: "LiNk",
+										URL:   "something",
+									},
+									{
+										Label: "LiNk2",
+										URL:   "something2",
+									},
+								},
+							},
+						},
 						ConsoleGroups: []resp.ConsoleGroup{
 							{
 								Title: model.Link{

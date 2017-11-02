@@ -81,6 +81,26 @@ type ConsoleSummary struct {
 	Builders []*model.BuilderSummary
 }
 
+// Oncall represents an oncall role with the current individuals in that role, represented
+// by their email addresses.
+type Oncall struct {
+	// Name is the name of the oncall role.
+	Name string
+
+	// Emails is a list of email addresses for the individuals who are currently in
+	// that role.
+	Emails []string
+}
+
+// LinkGroup represents a set of links grouped together by some category.
+type LinkGroup struct {
+	// Name is the name of the category this group of links belongs to.
+	Name string
+
+	// Links is a list of links in this link group.
+	Links []model.Link
+}
+
 // ConsoleGroup represents a group of console summaries which may optionally be titled.
 // Logically, it represents a group of consoles with some shared quality (e.g. tree closers).
 type ConsoleGroup struct {
@@ -94,14 +114,19 @@ type ConsoleGroup struct {
 // ConsoleHeader represents the header of a console view, containing a set of links,
 // oncall details, as well as a set of console summaries for other, relevant consoles.
 type ConsoleHeader struct {
+	// Oncalls is a list of oncall roles and the current people who fill that role
+	// that will be displayed in the header..
+	Oncalls []Oncall
+
+	// Links is a list of link groups to be displayed in the header.
+	Links []LinkGroup
+
 	// ConsoleGroups is a list of groups of console summaries to be displayed in
 	// the header.
 	//
 	// A console group without a title will have all of its console summaries
 	// appear "ungrouped" when rendered.
 	ConsoleGroups []ConsoleGroup
-
-	// TODO(mknyszek): Add Oncall and Links support.
 }
 
 // ConsoleElement represents a single renderable console element.
