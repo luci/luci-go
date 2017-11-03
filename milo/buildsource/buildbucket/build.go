@@ -17,7 +17,6 @@ package buildbucket
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"golang.org/x/net/context"
 
@@ -32,35 +31,52 @@ import (
 )
 
 // BuildID implements buildsource.ID, and is the buildbucket notion of a build.
-// It references a buildbucket build which may reference a swarming build.
 type BuildID struct {
 	// Project is the project which the build ID is supposed to reside in.
 	Project string
 
-	// ID is the Buildbucket's build ID (required)
-	ID string
+	// Address is the Buildbucket build address, see buildbucket.Build.Address.
+	Address string
 }
 
-// getBucketBuild fetches the buildbucket build given the ID.
-func fetchBuild(client *bbapi.Service, id int64) (*buildbucket.Build, error) {
-	response, err := client.Get(id).Do()
-
-	switch {
-	case err != nil:
-		// Generic error.
-		return nil, errors.Annotate(err, "fetching build %d", id).Err()
-	case response.HTTPStatusCode == http.StatusForbidden:
-		return nil, errors.New("access forbidden", common.CodeNoAccess)
-	case response.HTTPStatusCode == http.StatusNotFound,
-		response.Error != nil && response.Error.Reason == bbapi.ReasonNotFound:
-		return nil, errors.New("build not found", common.CodeNotFound)
-	case response.Error != nil:
-		return nil, fmt.Errorf(
-			"reason: %s, message: %s", response.Error.Reason, response.Error.Message)
+// getBucketBuild fetches the buildbucket build given the address.
+func fetchBuild(c context.Context, client *bbapi.Service, address string) (*buildbucket.Build, error) {
+	id, _, _, _, _, err := buildbucket.ParseAddress(address)
+	if err != nil {
+		return nil, errors.Annotate(
+			err, "invalid build address %q", address).Tag(common.CodeParameterError).Err()
 	}
 
+	var msg *bbapi.ApiCommonBuildMessage
+	if id != 0 {
+		response, err := client.Get(id).Context(c).Do()
+		switch {
+		case err != nil:
+			// Generic error.
+			return nil, errors.Annotate(err, "fetching build %d", id).Err()
+		case response.HTTPStatusCode == http.StatusForbidden:
+			return nil, errors.New("access forbidden", common.CodeNoAccess)
+		case response.HTTPStatusCode == http.StatusNotFound,
+			response.Error != nil && response.Error.Reason == bbapi.ReasonNotFound:
+			return nil, errors.New("build not found", common.CodeNotFound)
+		case response.Error != nil:
+			return nil, fmt.Errorf(
+				"reason: %s, message: %s", response.Error.Reason, response.Error.Message)
+		}
+		msg = response.Build
+	} else {
+		msgs, err := client.Search().Context(c).Tag(strpair.Format(buildbucket.TagBuildAddress, address)).Fetch(1, nil)
+		switch {
+		case err != nil:
+			// Generic error.
+			return nil, errors.Annotate(err, "fetching build %d", id).Err()
+		case len(msgs) == 0:
+			return nil, errors.New("build not found", common.CodeNotFound)
+		}
+		msg = msgs[0]
+	}
 	build := &buildbucket.Build{}
-	err = build.ParseMessage(response.Build)
+	err = build.ParseMessage(msg)
 	return build, err
 }
 
@@ -78,7 +94,7 @@ func swarmingRefFromTags(tags strpair.Map) (*swarming.BuildID, error) {
 }
 
 // GetSwarmingID returns the swarming task ID of a buildbucket build.
-func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, error) {
+func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -88,7 +104,7 @@ func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, error) {
 	if err != nil {
 		return nil, err
 	}
-	build, err := fetchBuild(client, id)
+	build, err := fetchBuild(c, client, buildAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -119,11 +135,6 @@ func getRespBuild(c context.Context, build *buildbucket.Build) (*resp.MiloBuild,
 // Get returns a resp.MiloBuild based off of the buildbucket ID given by
 // finding the coorisponding swarming build.
 func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
-	id, err := strconv.ParseInt(b.ID, 10, 64)
-	if err != nil {
-		return nil, errors.Annotate(
-			err, "%s is not a valid number", b.ID).Tag(common.CodeParameterError).Err()
-	}
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -133,7 +144,7 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 	if err != nil {
 		return nil, err
 	}
-	build, err := fetchBuild(client, id)
+	build, err := fetchBuild(c, client, b.Address)
 	if err != nil {
 		return nil, err
 	}

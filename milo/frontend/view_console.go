@@ -239,7 +239,7 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 				return nil, err
 			}
 		}
-		summaries, err := buildsource.GetConsoleSummaries(c, group.ConsoleIds)
+		summaries, err := buildsource.GetConsoleSummaries(c, project, group.ConsoleIds)
 		if err != nil {
 			return nil, err
 		}

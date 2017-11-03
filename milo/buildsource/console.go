@@ -16,6 +16,7 @@ package buildsource
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -122,20 +123,22 @@ func GetConsolePreview(c context.Context, def *common.Console) (ConsolePreview, 
 //
 // This list of console summaries directly corresponds to the input list of
 // console IDs.
-func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.ConsoleSummary, error) {
+func GetConsoleSummaries(c context.Context, project string, consoleIDs []string) ([]resp.ConsoleSummary, error) {
 	summaries := make([]resp.ConsoleSummary, len(consoleIDs))
 	err := parallel.WorkPool(4, func(ch chan<- func() error) {
-		for i, id := range consoleIDs {
+		for i, fullID := range consoleIDs {
 			i := i
-			id := id
+
+			// It's safe to do this because we assume the ID has already been validated.
+			parts := strings.SplitN(fullID, "/", 2)
+			project := parts[0]
+			id := parts[1]
+
+			summaries[i].Name.Label = id
+			summaries[i].Name.URL = fmt.Sprintf("/p/%s/consoles/%s", project, id)
 			ch <- func() error {
-				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", id)
-				return datastore.Run(c, q, func(bs *model.BuilderSummary) {
-					// It's safe to do this because we assume the ID has already been validated.
-					summaries[i].Name.Label = strings.SplitN(id, "/", 2)[1]
-					summaries[i].Name.URL = "/console/" + id
-					summaries[i].Builders = append(summaries[i].Builders, bs)
-				})
+				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", fullID)
+				return datastore.GetAll(c, q, &summaries[i].Builders)
 			}
 		}
 	})

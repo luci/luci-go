@@ -27,8 +27,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// TagBuilder is the key of builder name tag.
-const TagBuilder = "builder"
+const (
+	// TagBuilder is the key of builder name tag.
+	TagBuilder = "builder"
+	// TagBuildAddress is the key of the build address tag.
+	// See also Build.Address().
+	TagBuildAddress = "build_address"
+)
 
 // Build is a buildbucket build.
 // It is a more type-safe version of buildbucket.ApiCommonBuildMessage.
@@ -73,6 +78,8 @@ type Build struct {
 // Address returns an alternative identifier of the build.
 // If b has a number, the address is "<bucket>/<builder>/<number>".
 // Otherwise it is "<id>".
+//
+// See also ParseAddress.
 func (b *Build) Address() string {
 	if b.Number != nil {
 		return fmt.Sprintf("%s/%s/%d", b.Bucket, b.Builder, *b.Number)
@@ -170,7 +177,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		return err
 	}
 
-	address := tags.Get("build_address")
+	address := tags.Get(TagBuildAddress)
 	var number *int
 	if address == "" {
 		address = strconv.FormatInt(msg.Id, 10)
@@ -314,4 +321,26 @@ func ParseTimestamp(usec int64) time.Time {
 // FormatTimestamp converts t to a buildbucket timestamp.
 func FormatTimestamp(t time.Time) int64 {
 	return t.UnixNano() / 1000
+}
+
+// ParseAddress parses a build address returned by Build.Address().
+//
+// If id is non-zero, project, bucket and builder are zero.
+// If bucket, builder and number are non-zero, id is zero.
+func ParseAddress(address string) (id int64, project, bucket, builder string, number int, err error) {
+	parts := strings.Split(address, "/")
+	switch len(parts) {
+	case 1:
+		id, err = strconv.ParseInt(parts[0], 10, 64)
+	case 3:
+		var numberStr string
+		bucket, builder, numberStr = parts[0], parts[1], parts[2]
+		if strings.HasPrefix(bucket, "luci.") {
+			project = strings.Split(bucket, ".")[1]
+		}
+		number, err = strconv.Atoi(numberStr)
+	default:
+		err = fmt.Errorf("unrecognized build address format %q", address)
+	}
+	return
 }
