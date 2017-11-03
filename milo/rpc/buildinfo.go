@@ -53,7 +53,7 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 
 	case req.GetBuildbucket() != nil:
 		// Resolve the swarming host/task from buildbucket.
-		sID, err := buildbucket.GetSwarmingID(c, req.GetBuildbucket().GetId())
+		sID, _, err := buildbucket.GetSwarmingID(c, req.GetBuildbucket().GetId())
 		if err != nil {
 			return nil, err
 		}
