@@ -822,8 +822,6 @@ type SwarmingRpcsNewTaskRequest struct {
 
 	ServiceAccount string `json:"service_account,omitempty"`
 
-	ServiceAccountToken string `json:"service_account_token,omitempty"`
-
 	Tags []string `json:"tags,omitempty"`
 
 	User string `json:"user,omitempty"`

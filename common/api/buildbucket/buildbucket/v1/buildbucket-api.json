@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/KIhl3NPeROS_gZnF9WYPiKaN5G4\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/dYE7IFjE4FX8zcyITSl9cHcx1SQ\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -239,6 +239,9 @@
     "parameters_json": {
      "type": "string"
     },
+    "project": {
+     "type": "string"
+    },
     "result": {
      "type": "string",
      "enum": [
@@ -318,6 +321,7 @@
     "reason": {
      "type": "string",
      "enum": [
+      "BUILDER_NOT_FOUND",
       "BUILD_IS_COMPLETED",
       "BUILD_NOT_FOUND",
       "CANNOT_LEASE_BUILD",
@@ -326,6 +330,7 @@
       "LEASE_EXPIRED"
      ],
      "enumDescriptions": [
+      "",
       "",
       "",
       "",
@@ -1160,10 +1165,12 @@
      "type": "string",
      "enum": [
       "COMPLETED",
+      "INCOMPLETE",
       "SCHEDULED",
       "STARTED"
      ],
      "enumDescriptions": [
+      "",
       "",
       "",
       ""

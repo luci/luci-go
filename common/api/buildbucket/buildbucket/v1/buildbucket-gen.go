@@ -16,16 +16,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	context "golang.org/x/net/context"
+	ctxhttp "golang.org/x/net/context/ctxhttp"
+	gensupport "google.golang.org/api/gensupport"
+	googleapi "google.golang.org/api/googleapi"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	context "golang.org/x/net/context"
-	ctxhttp "golang.org/x/net/context/ctxhttp"
-	gensupport "google.golang.org/api/gensupport"
-	googleapi "google.golang.org/api/googleapi"
 )
 
 // Always reference these packages, just in case the auto-generated code
@@ -303,6 +302,8 @@ type ApiCommonBuildMessage struct {
 
 	ParametersJson string `json:"parameters_json,omitempty"`
 
+	Project string `json:"project,omitempty"`
+
 	// Possible values:
 	//   "CANCELED"
 	//   "FAILURE"
@@ -388,6 +389,7 @@ type ApiErrorMessage struct {
 	Message string `json:"message,omitempty"`
 
 	// Possible values:
+	//   "BUILDER_NOT_FOUND"
 	//   "BUILD_IS_COMPLETED"
 	//   "BUILD_NOT_FOUND"
 	//   "CANNOT_LEASE_BUILD"
@@ -3292,6 +3294,7 @@ func (c *SearchCall) StartCursor(startCursor string) *SearchCall {
 //
 // Possible values:
 //   "COMPLETED"
+//   "INCOMPLETE"
 //   "SCHEDULED"
 //   "STARTED"
 func (c *SearchCall) Status(status string) *SearchCall {
@@ -3482,10 +3485,12 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 	//     "status": {
 	//       "enum": [
 	//         "COMPLETED",
+	//         "INCOMPLETE",
 	//         "SCHEDULED",
 	//         "STARTED"
 	//       ],
 	//       "enumDescriptions": [
+	//         "",
 	//         "",
 	//         "",
 	//         ""

@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/g9b0yt4ExQXeqnec_vqAwkhdVEU\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/enLXlbupWTPq3NasHijDRxB8guI\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -491,9 +491,6 @@
      "type": "string"
     },
     "service_account": {
-     "type": "string"
-    },
-    "service_account_token": {
      "type": "string"
     },
     "tags": {
