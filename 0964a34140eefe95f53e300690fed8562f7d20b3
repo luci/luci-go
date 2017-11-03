@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4ef9101e_7452b9c8",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done, but if its ok I\u0027ll keep the CLs split. I wanted to define the interface separately from the implementation.",
+      "parentUuid": "883e43b2_fdd207fe",
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eca2d191_80bde501",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d027b56a_fb45c551",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eca2d191_80bde501",
+      "range": {
+        "startLine": 94,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 1
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "95a17a4d_2667d2ee",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a477dab_0e49294f",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 214,
+        "endChar": 2
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "432df5ba_941ce66b",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "380c080b_01cd2f5d",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "432df5ba_941ce66b",
+      "range": {
+        "startLine": 216,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 31
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09821e4a_3c2b0c11",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -104,6 +194,53 @@
         "startChar": 16,
         "endLine": 224,
         "endChar": 22
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc2df74d_ba31fec5",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09821e4a_3c2b0c11",
+      "range": {
+        "startLine": 224,
+        "startChar": 16,
+        "endLine": 224,
+        "endChar": 22
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1291c9f6_a92bbbec",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "I\u0027ve made this context-dependent too.",
+      "range": {
+        "startLine": 234,
+        "startChar": 24,
+        "endLine": 234,
+        "endChar": 31
       },
       "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -134,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "5c9dd2c5_9550c9bb",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "650e438d_3f68a015",
+      "range": {
+        "startLine": 251,
+        "startChar": 16,
+        "endLine": 251,
+        "endChar": 26
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20ce4a3b_996f0445",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -154,6 +315,30 @@
       "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "135d5624_7d867744",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20ce4a3b_996f0445",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 39
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "792e5f43_f4b5b64a",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec3e69ab_0c498452",
+      "range": {
+        "startLine": 255,
+        "startChar": 5,
+        "endLine": 255,
+        "endChar": 17
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a87b9c5_9514c8b9",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -191,6 +400,30 @@
       "writtenOn": "2017-11-03T02:33:46Z",
       "side": 1,
       "message": "it would be nice to add some sort of cancellation support later, to gracefully terminate on Ctrl+C",
+      "range": {
+        "startLine": 311,
+        "startChar": 15,
+        "endLine": 311,
+        "endChar": 27
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74e8c42a_aae04c9b",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "I won\u0027t do this in this CL, but I added a TODO. With the context cancel func it should be straight-forward to add.",
+      "parentUuid": "0a87b9c5_9514c8b9",
       "range": {
         "startLine": 311,
         "startChar": 15,
@@ -217,6 +450,24 @@
       "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfa99892_e68f5087",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:41:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ffd73f8_beddad22",
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
