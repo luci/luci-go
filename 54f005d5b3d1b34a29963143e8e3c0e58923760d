@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3dfd447_6054d9ca",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T16:22:18Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 11,
+        "startChar": 51,
+        "endLine": 11,
+        "endChar": 54
+      },
+      "revId": "54f005d5b3d1b34a29963143e8e3c0e58923760d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "726af6e3_1eb740c6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T16:22:18Z",
+      "side": 1,
+      "message": "thank you",
+      "revId": "54f005d5b3d1b34a29963143e8e3c0e58923760d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "df843d9c_7fbca9b7",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T16:22:18Z",
+      "side": 1,
+      "message": "i wish the first patchset was the original CL, and the second was the new one, so we don\u0027t need to review the same thing for the second time",
+      "revId": "54f005d5b3d1b34a29963143e8e3c0e58923760d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91b18ba2_2363e998",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T16:22:18Z",
+      "side": 1,
+      "message": "FWIU this will cause http 500 when a build is not found\nplease include the not-found tag is the entity is not found",
+      "revId": "54f005d5b3d1b34a29963143e8e3c0e58923760d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
