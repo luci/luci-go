@@ -389,7 +389,7 @@ func ConsoleHandler(c *router.Context) {
 		return
 	}
 	name := c.Params.ByName("name")
-	const defaultLimit = 25
+	const defaultLimit = 50
 	const maxLimit = 1000
 	limit := defaultLimit
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
