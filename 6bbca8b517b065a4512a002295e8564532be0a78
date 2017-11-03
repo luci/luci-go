@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f37e3e8_62eea4ce",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T19:27:43Z",
+      "side": 1,
+      "message": "It is not worth having methods not crash when called on nil. Remove lines 40-42.",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12d43d81_a96a4baf",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T19:27:43Z",
+      "side": 1,
+      "message": "case \"\", \"none\":",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3864cd37_b886cbf3",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T19:27:43Z",
+      "side": 1,
+      "message": "doesn\u0027t need to be exported.",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "802020dd_7b07fd01",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T19:27:43Z",
+      "side": 1,
+      "message": "\"json\" is really a bad name, we should have came up with something better like \"requests-file\". I\u0027m open to options.",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aba40a99_2c27af84",
+        "filename": "client/cmd/swarming/collect_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T19:27:43Z",
+      "side": 1,
+      "message": "you can fix the year on all new files.",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73073646_fbd4a226",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T19:27:43Z",
+      "side": 1,
+      "message": "no need to be in heap.",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

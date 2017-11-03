@@ -341,6 +341,24 @@
     },
     {
       "key": {
+        "uuid": "6efded07_d9a54683",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T19:27:43Z",
+      "side": 1,
+      "message": "\u003e In your proposal, do you mean to let trigger make more than one task request?\n\nYes. That\u0027s what --shard in the python implementation does.\n\n\u003e I see what you mean by the sharding being googletest-specific in the python client. I think for now I\u0027d like to avoid extending into such functionality; short-term (that is, before next week) I only need the ability to trigger a single task and wait on multiple. I can extend this further to support multiple trigger later so that we have real sharding support (Fuchsia\u0027s going to need it anyway).\n\nlgtm\n\n\u003e As a result I\u0027ve just simplified the JSON to just have Request, TaskID, and ViewURL, since only one task can actually be dumped into the JSON.\n\u003e \n\u003e Let me know if you think this is reasonable!",
+      "parentUuid": "af62f6e9_fa1a0106",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2561d790_261761c2",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 6
