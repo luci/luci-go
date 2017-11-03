@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "e9d2f1fd_1cdcb16f",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T21:00:01Z",
+      "side": 1,
+      "message": "ah hah! I know why it didn\u0027t propagate: it\u0027s because the changes you made were in console(). That\u0027s my bad.\n\nIf you want them to happen in both places I\u0027d suggest just modifying buildTreeFromDef() to create the beginning of a BuilderRef containing the Builder, and letting the caller finish it.\n\nOf course this doesn\u0027t need to be done now.",
+      "parentUuid": "f31f8652_a05f8ed5",
+      "range": {
+        "startLine": 204,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 85
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12c11c3b_1a09c6be",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1

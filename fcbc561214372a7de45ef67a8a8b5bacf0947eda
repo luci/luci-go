@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a66364e7_1d6d21d6",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T21:00:01Z",
+      "side": 1,
+      "message": "rather than concatenating, why not \"var extraStatus string\" and just assigning?",
+      "range": {
+        "startLine": 227,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 18
+      },
+      "revId": "fcbc561214372a7de45ef67a8a8b5bacf0947eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9c79a8f_4d5cd317",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T21:00:01Z",
+      "side": 1,
+      "message": "Since you changed how console previews work, I don\u0027t think this is referenced anywhere anymore?",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 1
+      },
+      "revId": "fcbc561214372a7de45ef67a8a8b5bacf0947eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
