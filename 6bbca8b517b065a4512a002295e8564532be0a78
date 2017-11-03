@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4a30286b_be1c7757",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:48:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f37e3e8_62eea4ce",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12d43d81_a96a4baf",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 8
@@ -33,6 +51,24 @@
       "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a043bb5_6c2e4db4",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:48:49Z",
+      "side": 1,
+      "message": "That\u0027s a neat trick! I didn\u0027t know you could do that in Go.",
+      "parentUuid": "12d43d81_a96a4baf",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "299adb4c_018a03d6",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:48:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3864cd37_b886cbf3",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "802020dd_7b07fd01",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 8
@@ -64,6 +118,24 @@
       "writtenOn": "2017-11-03T19:27:43Z",
       "side": 1,
       "message": "\"json\" is really a bad name, we should have came up with something better like \"requests-file\". I\u0027m open to options.",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88a103a3_4114e4d9",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:48:49Z",
+      "side": 1,
+      "message": "how about requests-json? there\u0027s still value I think in specifying the input format, since it makes it more explicit to the user what it\u0027s expecting.",
+      "parentUuid": "802020dd_7b07fd01",
       "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -93,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "50b18e86_fbbd505f",
+        "filename": "client/cmd/swarming/collect_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:48:49Z",
+      "side": 1,
+      "message": "Oops, forgot about this one.",
+      "parentUuid": "aba40a99_2c27af84",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73073646_fbd4a226",
         "filename": "client/cmd/swarming/trigger.go",
         "patchSetId": 8
@@ -107,6 +203,24 @@
       "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac899da0_5db5d7bd",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T19:48:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73073646_fbd4a226",
+      "revId": "6bbca8b517b065a4512a002295e8564532be0a78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
