@@ -59,11 +59,12 @@ type Rules struct {
 // It should be treated like read-only object. It is shared by many concurrent
 // requests.
 type Rule struct {
-	Rule          *admin.ServiceAccountRule // original proto with the rule
-	Revision      string                    // revision of the file with the rule
-	AllowedScopes stringset.Set             // parsed 'allowed_scope'
-	EndUsers      *identityset.Set          // parsed 'end_user'
-	Proxies       *identityset.Set          // parsed 'proxy'
+	Rule           *admin.ServiceAccountRule // original proto with the rule
+	Revision       string                    // revision of the file with the rule
+	AllowedScopes  stringset.Set             // parsed 'allowed_scope'
+	EndUsers       *identityset.Set          // parsed 'end_user'
+	Proxies        *identityset.Set          // parsed 'proxy'
+	TrustedProxies *identityset.Set          // parsed 'trusted_proxy'
 }
 
 // RulesQuery describes circumstances of using some service account.
@@ -210,17 +211,30 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 	}
 	logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Rule.Name, r.revision)
 
-	// If the 'Proxy' is in 'Proxies' list, we assume it's known to us and we
-	// trust it enough to start returning more detailed error messages.
-	switch known, err := rule.Proxies.IsMember(c, query.Proxy); {
+	// Trusted proxies are allowed to skip the end user check. We trust them to do
+	// it themselves.
+	switch isTrustedProxy, err := rule.TrustedProxies.IsMember(c, query.Proxy); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to check membership of caller %q", query.Proxy)
 		return nil, grpc.Errorf(codes.Internal, "membership check failed")
-	case !known:
+	case isTrustedProxy:
+		return rule, nil
+	}
+
+	switch isProxy, err := rule.Proxies.IsMember(c, query.Proxy); {
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Failed to check membership of caller %q", query.Proxy)
+		return nil, grpc.Errorf(codes.Internal, "membership check failed")
+	case !isProxy:
+		// If the 'Proxy' is not in 'Proxies' and 'TrustedProxies' lists, we assume
+		// it's a total stranger and keep error messages not very detailed, to avoid
+		// leaking internal configuration.
 		logging.Errorf(c, "Caller %q is not authorized to use account %q", query.Proxy, query.ServiceAccount)
 		return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
 	}
 
+	// Here the proxy is in 'Proxies' list, but in 'TrustedProxies' list. Check
+	// that the end user is authorized by the rule.
 	switch known, err := rule.EndUsers.IsMember(c, query.EndUser); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to check membership of end user %q", query.EndUser)
@@ -263,16 +277,22 @@ func makeRule(ruleProto *admin.ServiceAccountRule, defaults *admin.ServiceAccoun
 		return nil, fmt.Errorf("bad 'proxy' set - %s", err)
 	}
 
+	trustedProxies, err := identityset.FromStrings(ruleProto.TrustedProxy, nil)
+	if err != nil {
+		return nil, fmt.Errorf("bad 'trusted_proxy' set - %s", err)
+	}
+
 	if ruleProto.MaxGrantValidityDuration == 0 {
 		ruleProto.MaxGrantValidityDuration = defaults.MaxGrantValidityDuration
 	}
 
 	return &Rule{
-		Rule:          ruleProto,
-		Revision:      rev,
-		AllowedScopes: allowedScopes,
-		EndUsers:      endUsers,
-		Proxies:       proxies,
+		Rule:           ruleProto,
+		Revision:       rev,
+		AllowedScopes:  allowedScopes,
+		EndUsers:       endUsers,
+		Proxies:        proxies,
+		TrustedProxies: trustedProxies,
 	}, nil
 }
 

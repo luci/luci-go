@@ -46,6 +46,7 @@ rules {
 	end_user: "group:enduser-group"
 	proxy: "user:proxy@example.com"
 	proxy: "group:proxy-group"
+	trusted_proxy: "user:trusted-proxy@example.com"
 }
 rules {
 	name: "rule 2"
@@ -87,6 +88,9 @@ func TestRules(t *testing.T) {
 			"group:proxy-group",
 			"user:proxy@example.com",
 		})
+		So(rule.TrustedProxies.ToStrings(), ShouldResemble, []string{
+			"user:trusted-proxy@example.com",
+		})
 		So(rule.Rule.MaxGrantValidityDuration, ShouldEqual, 72000)
 
 		So(cfg.Rule("def@robots.com").Rule.Name, ShouldEqual, "rule 1")
@@ -104,11 +108,21 @@ func TestRules(t *testing.T) {
 			Identity: "user:unused@example.com",
 		})
 
-		Convey("Happy path", func() {
+		Convey("Happy path using 'proxy'", func() {
 			r, err := cfg.Check(ctx, &RulesQuery{
 				ServiceAccount: "abc@robots.com",
 				Proxy:          "user:proxy@example.com",
 				EndUser:        "user:enduser@example.com",
+			})
+			So(err, ShouldBeNil)
+			So(r.Rule.Name, ShouldEqual, "rule 1")
+		})
+
+		Convey("Happy path using 'trusted_proxy'", func() {
+			r, err := cfg.Check(ctx, &RulesQuery{
+				ServiceAccount: "abc@robots.com",
+				Proxy:          "user:trusted-proxy@example.com",
+				EndUser:        "user:someone-random@example.com",
 			})
 			So(err, ShouldBeNil)
 			So(r.Rule.Name, ShouldEqual, "rule 1")
