@@ -194,6 +194,8 @@ type BuilderRef struct {
 	ShortName string
 	// The most recent build summaries for this builder.
 	Build []*model.BuildSummary
+	// The most recent builder summary for this builder.
+	Builder *model.BuilderSummary
 }
 
 // Convenience function for writing to bytes.Buffer: in our case, the
@@ -221,10 +223,14 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	for i := 0; i < (maxDepth - depth); i++ {
 		must(buffer.WriteString(`<div class="console-space"></div>`))
 	}
-	// Render builder link
 	must(buffer.WriteString(`<div>`))
+	var extraStatus string
+	if br.Builder != nil {
+		extraStatus += fmt.Sprintf("console-%s", br.Builder.LastFinishedStatus)
+	}
 	must(fmt.Fprintf(
-		buffer, `<a class="console-builder-item" href="/%s" title="%s">%s</a>`,
+		buffer, `<span class="%s"><a class="console-builder-item" href="/%s" title="%s">%s</a></span>`,
+		template.HTMLEscapeString(extraStatus),
 		template.HTMLEscapeString(br.Name),
 		template.HTMLEscapeString(br.Name),
 		template.HTMLEscapeString(br.ShortName)))
@@ -272,7 +278,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			state = empty
 		}
 	default:
-		panic("Rendering zero builds should have been caught earlier.")
+		// This is probably a console preview.
 	}
 	// Execute state machine for determining cell type.
 	for i, build := range br.Build {

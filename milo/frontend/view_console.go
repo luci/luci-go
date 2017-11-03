@@ -142,6 +142,19 @@ func buildTreeFromDef(def *common.Console, factory builderRefFactory) (*resp.Cat
 	return categoryTree, depth
 }
 
+func getBuilderSummaries(c context.Context, project, name string) (map[string]*model.BuilderSummary, error) {
+	consoleID := project + "/" + name
+	consoleSummary, err := buildsource.GetConsoleSummary(c, consoleID)
+	if err != nil {
+		return nil, err
+	}
+	builderSummaries := map[string]*model.BuilderSummary{}
+	for _, builder := range consoleSummary.Builders {
+		builderSummaries[builder.BuilderID] = builder
+	}
+	return builderSummaries, nil
+}
+
 func console(c context.Context, project, name string, limit int) (*resp.Console, error) {
 	tStart := clock.Now(c)
 	def, err := getConsoleDef(c, project, name)
@@ -181,6 +194,11 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		}
 	}
 
+	builderSummaries, err := getBuilderSummaries(c, project, name)
+	if err != nil {
+		return nil, err
+	}
+
 	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *resp.BuilderRef {
 		// Group together all builds for this builder.
 		builds := make([]*model.BuildSummary, len(commits))
@@ -190,10 +208,15 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 				builds[row] = summaries[0]
 			}
 		}
+		builder, ok := builderSummaries[name]
+		if !ok {
+			logging.Warningf(c, "could not find builder summary for %s", name)
+		}
 		return &resp.BuilderRef{
 			Name:      name,
 			ShortName: shortname,
 			Build:     builds,
+			Builder:   builder,
 		}
 	})
 
@@ -213,16 +236,20 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 	}, nil
 }
 
-func consolePreview(c context.Context, def *common.Console) (*resp.Console, error) {
-	pv, err := buildsource.GetConsolePreview(c, def)
+func consolePreview(c context.Context, project string, def *common.Console) (*resp.Console, error) {
+	builderSummaries, err := getBuilderSummaries(c, project, def.ID)
 	if err != nil {
 		return nil, err
 	}
 	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *resp.BuilderRef {
+		builder, ok := builderSummaries[name]
+		if !ok {
+			logging.Warningf(c, "could not find builder summary for %s", name)
+		}
 		return &resp.BuilderRef{
 			Name:      name,
 			ShortName: shortname,
-			Build:     []*model.BuildSummary{pv[buildsource.BuilderID(name)]},
+			Builder:   builder,
 		}
 	})
 	return &resp.Console{
@@ -314,11 +341,11 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 		if err != nil {
 			return nil, err
 		}
-		consoleGroups[i].Consoles = summaries
 		if group.Title != nil {
 			ariaLabel := fmt.Sprintf("console group %s", group.Title.Text)
 			consoleGroups[i].Title = resp.NewLink(group.Title.Text, group.Title.Url, ariaLabel)
 		}
+		consoleGroups[i].Consoles = summaries
 	}
 
 	return &resp.ConsoleHeader{
@@ -403,7 +430,7 @@ func ConsolesHandler(c *router.Context, projectName string) {
 	}
 	var consoles []fullConsole
 	for _, def := range cons {
-		respConsole, err := consolePreview(c.Context, def)
+		respConsole, err := consolePreview(c.Context, projectName, def)
 		if err != nil {
 			logging.WithError(err).Errorf(c.Context, "failed to generate resp console")
 			continue
@@ -438,6 +465,10 @@ func consoleTestData() []common.TestBundle {
 				},
 			},
 			nil,
+		},
+		Builder: &model.BuilderSummary{
+			BuilderID:          "tester",
+			LastFinishedStatus: model.InfraFailure,
 		},
 	}
 	root := resp.NewCategory("Root")
