@@ -22,6 +22,30 @@
       "revId": "2e98aebc39da0a03a661061f8fb647750db51b06",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d10047c2_0310c3da",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:19:22Z",
+      "side": 1,
+      "message": "It\u0027s ok. Better to be consistent.",
+      "parentUuid": "d474f616_7a193086",
+      "range": {
+        "startLine": 139,
+        "startChar": 11,
+        "endLine": 139,
+        "endChar": 21
+      },
+      "revId": "2e98aebc39da0a03a661061f8fb647750db51b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

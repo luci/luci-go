@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd435086_e009e5a1",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:19:22Z",
+      "side": 1,
+      "message": "nit: please use - for referencing flags, as customary in go",
+      "range": {
+        "startLine": 111,
+        "startChar": 178,
+        "endLine": 111,
+        "endChar": 180
+      },
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "032bc99e_d2030afa",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:19:22Z",
+      "side": 1,
+      "message": "ugh.... do we have isolate download client in Go? I don\u0027t the we do...",
+      "range": {
+        "startLine": 112,
+        "startChar": 97,
+        "endLine": 112,
+        "endChar": 203
+      },
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
