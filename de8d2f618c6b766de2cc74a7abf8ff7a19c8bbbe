@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f31f8652_a05f8ed5",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-03T00:22:13Z",
+      "side": 1,
+      "message": "It didn\u0027t seem to propagate, but i\u0027ll keep and eye out!  I\u0027ll probably drop the bubbles.",
+      "parentUuid": "0dc6fbd9_27afa3aa",
+      "range": {
+        "startLine": 204,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 85
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12c11c3b_1a09c6be",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b508c74_04993f92",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-03T00:22:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12c11c3b_1a09c6be",
+      "range": {
+        "startLine": 235,
+        "startChar": 1,
+        "endLine": 238,
+        "endChar": 2
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "60744df1_0cbdf2e5",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-03T00:22:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b09672d2_1d1bbe44",
+      "range": {
+        "startLine": 240,
+        "startChar": 10,
+        "endLine": 240,
+        "endChar": 25
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04323232_8ee1ba45",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1befb0f_b2a01320",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-03T00:22:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04323232_8ee1ba45",
+      "range": {
+        "startLine": 243,
+        "startChar": 36,
+        "endLine": 243,
+        "endChar": 67
+      },
+      "revId": "de8d2f618c6b766de2cc74a7abf8ff7a19c8bbbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
