@@ -131,7 +131,11 @@ func (s *stackContext) render() lines {
 	}
 	sort.Sort(keys)
 	for _, key := range keys {
-		ret = append(ret, fmt.Sprintf("tag[%q]: %#v", key.description, s.tags[key]))
+		if key != nil {
+			ret = append(ret, fmt.Sprintf("tag[%q]: %#v", key.description, s.tags[key]))
+		} else {
+			ret = append(ret, fmt.Sprintf("tag[nil]: %#v", s.tags[key]))
+		}
 	}
 
 	return ret
