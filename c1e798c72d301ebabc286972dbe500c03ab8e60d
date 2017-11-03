@@ -22,6 +22,30 @@
       "revId": "c1e798c72d301ebabc286972dbe500c03ab8e60d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "84009be7_41f99552",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T03:00:23Z",
+      "side": 1,
+      "message": "Ok, modified slightly to exit earlier if isTrustedProxy is true. No need to check anything else in this case.\n\n(Also, don\u0027t tell anyone, but IsMember currently never returns errors. It just a future friendly API for times when it starts to return errors).",
+      "parentUuid": "cd1401b7_74682374",
+      "range": {
+        "startLine": 222,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 2
+      },
+      "revId": "c1e798c72d301ebabc286972dbe500c03ab8e60d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
