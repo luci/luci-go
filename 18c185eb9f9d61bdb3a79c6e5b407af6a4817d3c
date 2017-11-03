@@ -2,6 +2,74 @@
   "comments": [
     {
       "key": {
+        "uuid": "d9fc78bf_101ad950",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "you can use this year instead.",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64463715_ecd3b0af",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "I don\u0027t think this needs to be exported.",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b7642c0_64f93215",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "if they are TaskOutputOption , you need to define accordingly,\n\n  TaskOutputNone TaskOutputOption \u003d 0",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f847062e_3e892cdd",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "Use pointer everywhere consistently.",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fd435086_e009e5a1",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -42,6 +110,91 @@
         "endLine": 112,
         "endChar": 203
       },
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35abd0c4_e22641aa",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "no need to put it in the heap, you can use \u0026input on the next line but that\u0027s it.",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eb5afc0_ead1e55c",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "if err \u003d cl.Close(); err !\u003d nil {\n  printError(a, err)\n  return 1\n}\nreturn 0",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "142fa3b0_4067f427",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "I\u0027d vote for *not* having a format compatible with the python client. In particular I think the sharding support in the client is a misfeature and should be removed, or at least it should be fixed in a much better way. So while creating a Go version we could make it much better from the start, and it wouldn\u0027t take more time to implement.\n\nThe idea is that at trigger time, we could specify a list of task requests. At collect, we would collect a list of tasks. But the task shards wouldn\u0027t have to be googletest specific anymore. wdyt?",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2561d790_261761c2",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "When they match, you don\u0027t need to specify them. So I\u0027d recommend to remove the `json` stuff.",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa3d3c4d_be65d316",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:48:01Z",
+      "side": 1,
+      "message": "it\u0027s the default value, so not needed.",
       "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
