@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "883e43b2_fdd207fe",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:50:12Z",
+      "side": 1,
+      "message": "This should go in the initial CL. I\u0027ll focus on the initial CL for now. IMHO you should just merge both, it\u0027s fine.",
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eca2d191_80bde501",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -180,6 +197,23 @@
         "endLine": 311,
         "endChar": 27
       },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ffd73f8_beddad22",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-03T13:50:12Z",
+      "side": 1,
+      "message": "Don\u0027t keep it, I want to roll out SHA256 in early 2018. Hard coding the length was an error.",
       "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
