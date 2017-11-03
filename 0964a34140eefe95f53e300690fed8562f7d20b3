@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eca2d191_80bde501",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "this is pretty meaningless constructor, just use TaskResult{...} directly, will be clearer",
+      "range": {
+        "startLine": 94,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 1
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a477dab_0e49294f",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "create it in \u0027main\u0027 and share from all goroutines, it is sharable",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 214,
+        "endChar": 2
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "432df5ba_941ce66b",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "this one too actually",
+      "range": {
+        "startLine": 216,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 31
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09821e4a_3c2b0c11",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "call.Context(ctx).Do() \n\n(once you add context plumbing as suggested below)",
+      "range": {
+        "startLine": 224,
+        "startChar": 16,
+        "endLine": 224,
+        "endChar": 22
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "650e438d_3f68a015",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "please use https://godoc.org/go.chromium.org/luci/common/clock#Now",
+      "range": {
+        "startLine": 251,
+        "startChar": 16,
+        "endLine": 251,
+        "endChar": 26
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20ce4a3b_996f0445",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "consider using context.Context for this, e.g make \u0027main\u0027 prepare a context with deadline and pass it down to pollForTaskResult.\n\nThen use https://godoc.org/go.chromium.org/luci/common/clock#After to sleep, it is context-aware and will wakeup sooner if the context is canceled.\n\nThis would also simplify adding Ctrl+C: just cancel the root context on the signal.",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 39
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec3e69ab_0c498452",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "we need to distinguish transient errors (HTTP \u003e\u003d500, connection timeouts, etc) from fatal errors (HTTP \u003c500). Retrying on fatal errors is waste of time.",
+      "range": {
+        "startLine": 255,
+        "startChar": 5,
+        "endLine": 255,
+        "endChar": 17
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a87b9c5_9514c8b9",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-03T02:33:46Z",
+      "side": 1,
+      "message": "it would be nice to add some sort of cancellation support later, to gracefully terminate on Ctrl+C",
+      "range": {
+        "startLine": 311,
+        "startChar": 15,
+        "endLine": 311,
+        "endChar": 27
+      },
+      "revId": "0964a34140eefe95f53e300690fed8562f7d20b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
