@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9075fa00_e066fbbc",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-03T23:36:07Z",
+      "side": 1,
+      "message": "interesting that this works with nils.",
+      "range": {
+        "startLine": 132,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 16
+      },
+      "revId": "313d8cdfbaea8f53f987f33643b461e5c9e1c9a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
