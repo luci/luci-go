@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a263f4aa_192df875",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9fc78bf_101ad950",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "64463715_ecd3b0af",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -33,6 +51,24 @@
       "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "103b21fb_79f2ffb1",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64463715_ecd3b0af",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "750803bd_3c3a19e2",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b7642c0_64f93215",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f847062e_3e892cdd",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -67,6 +121,24 @@
       "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "226cf3f0_64190e08",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f847062e_3e892cdd",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -93,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "87be3ce7_272f5436",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "See my comment below, I just dropped this altogether for now.",
+      "parentUuid": "fd435086_e009e5a1",
+      "range": {
+        "startLine": 111,
+        "startChar": 178,
+        "endLine": 111,
+        "endChar": 180
+      },
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "032bc99e_d2030afa",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -104,6 +200,30 @@
       "writtenOn": "2017-11-03T02:19:22Z",
       "side": 1,
       "message": "ugh.... do we have isolate download client in Go? I don\u0027t the we do...",
+      "range": {
+        "startLine": 112,
+        "startChar": 97,
+        "endLine": 112,
+        "endChar": 203
+      },
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f2f2417_74aea726",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "We don\u0027t. I\u0027ve omitted this option for now, since right now the focus for me is just to have collect working. Let me know if this sounds ok to you!",
+      "parentUuid": "032bc99e_d2030afa",
       "range": {
         "startLine": 112,
         "startChar": 97,
@@ -133,6 +253,24 @@
     },
     {
       "key": {
+        "uuid": "7ca47a97_ef8098d1",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35abd0c4_e22641aa",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3eb5afc0_ead1e55c",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 6
@@ -150,6 +288,24 @@
     },
     {
       "key": {
+        "uuid": "4f2e1135_0b5efeb2",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3eb5afc0_ead1e55c",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "142fa3b0_4067f427",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 6
@@ -161,6 +317,24 @@
       "writtenOn": "2017-11-03T13:48:01Z",
       "side": 1,
       "message": "I\u0027d vote for *not* having a format compatible with the python client. In particular I think the sharding support in the client is a misfeature and should be removed, or at least it should be fixed in a much better way. So while creating a Go version we could make it much better from the start, and it wouldn\u0027t take more time to implement.\n\nThe idea is that at trigger time, we could specify a list of task requests. At collect, we would collect a list of tasks. But the task shards wouldn\u0027t have to be googletest specific anymore. wdyt?",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af62f6e9_fa1a0106",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "In your proposal, do you mean to let trigger make more than one task request? I see what you mean by the sharding being googletest-specific in the python client. I think for now I\u0027d like to avoid extending into such functionality; short-term (that is, before next week) I only need the ability to trigger a single task and wait on multiple. I can extend this further to support multiple trigger later so that we have real sharding support (Fuchsia\u0027s going to need it anyway).\n\nAs a result I\u0027ve just simplified the JSON to just have Request, TaskID, and ViewURL, since only one task can actually be dumped into the JSON.\n\nLet me know if you think this is reasonable!",
+      "parentUuid": "142fa3b0_4067f427",
       "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -184,6 +358,24 @@
     },
     {
       "key": {
+        "uuid": "0ff273ec_81ed5647",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2561d790_261761c2",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa3d3c4d_be65d316",
         "filename": "client/cmd/swarming/trigger.go",
         "patchSetId": 6
@@ -198,6 +390,24 @@
       "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38058ce7_e823d17d",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T18:19:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa3d3c4d_be65d316",
+      "revId": "18c185eb9f9d61bdb3a79c6e5b407af6a4817d3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
