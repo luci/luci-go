@@ -15,16 +15,16 @@
 package buildbucket
 
 import (
-	"fmt"
-	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/buildbucket"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
@@ -41,66 +41,67 @@ type BuildID struct {
 	ID string
 }
 
-// getBucketBuild fetches the buildbucket build given the ID.
-func fetchBuild(client *bbapi.Service, id int64) (*buildbucket.Build, error) {
-	response, err := client.Get(id).Do()
-
-	switch {
-	case err != nil:
-		// Generic error.
-		return nil, errors.Annotate(err, "fetching build %d", id).Err()
-	case response.HTTPStatusCode == http.StatusForbidden:
-		return nil, errors.New("access forbidden", common.CodeNoAccess)
-	case response.HTTPStatusCode == http.StatusNotFound,
-		response.Error != nil && response.Error.Reason == bbapi.ReasonNotFound:
-		return nil, errors.New("build not found", common.CodeNotFound)
-	case response.Error != nil:
-		return nil, fmt.Errorf(
-			"reason: %s, message: %s", response.Error.Reason, response.Error.Message)
-	}
-
-	build := &buildbucket.Build{}
-	err = build.ParseMessage(response.Build)
-	return build, err
-}
-
-// swarmingRefFromTags resolves the swarming hostname and task ID from a
-// set of buildbucket tags.
-func swarmingRefFromTags(tags strpair.Map) (*swarming.BuildID, error) {
-	var host, task string
-	if host = tags.Get("swarming_hostname"); host == "" {
-		return nil, errors.New("no swarming hostname tag")
-	}
-	if task = tags.Get("swarming_task_id"); task == "" {
-		return nil, errors.New("no swarming task id")
-	}
-	return &swarming.BuildID{Host: host, TaskID: task}, nil
-}
-
 // GetSwarmingID returns the swarming task ID of a buildbucket build.
-func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, error) {
+func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, *model.BuildSummary, error) {
 	host, err := getHost(c)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	// Fetch the Swarming task ID from Buildbucket.
+
+	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, host, id)}
+	switch err := datastore.Get(c, bs); err {
+	case nil:
+	case datastore.ErrNoSuchEntity:
+		logging.Warningf(c, "failed to load BuildSummary for: %q", bs.BuildKey)
+		return nil, nil, errors.New("could not find build", common.CodeNotFound)
+	default:
+		return nil, nil, err
+	}
+
+	for _, ctx := range bs.ContextURI {
+		u, err := url.Parse(ctx)
+		if err != nil {
+			continue
+		}
+		if u.Scheme == "swarming" && len(u.Path) > 1 {
+			toks := strings.Split(u.Path[1:], "/")
+			if toks[0] == "task" {
+				return &swarming.BuildID{Host: u.Host, TaskID: toks[1]}, bs, nil
+			}
+		}
+	}
+
+	// DEPRECATED(2017-12-01) {{
+	// This makes an RPC to buildbucket to obtain the swarming task ID.
+	// Now that we include this data in the BuildSummary.ContextUI we should never
+	// need to do this extra RPC. However, we have this codepath in place for old
+	// builds.
+	//
+	// After the deprecation date, this code can be removed; the only effect will
+	// be that buildbucket builds before 2017-11-03 will not render.
 	client, err := newBuildbucketClient(c, host)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	build, err := fetchBuild(client, id)
+	resp, err := client.Get(id).Context(c).Do()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return swarmingRefFromTags(build.Tags)
+	tags := strpair.ParseMap(resp.Build.Tags)
+	if shost, sid := tags.Get("swarming_hostname"), tags.Get("swarming_task_id"); shost != "" && sid != "" {
+		return &swarming.BuildID{Host: shost, TaskID: sid}, bs, nil
+	}
+	// }}
+
+	return nil, nil, errors.New("no swarming task context")
 }
 
 // getRespBuild fetches the full build state from Swarming and LogDog if
 // available, otherwise returns an empty "pending build".
-func getRespBuild(c context.Context, build *buildbucket.Build) (*resp.MiloBuild, error) {
+func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*resp.MiloBuild, error) {
 	// TODO(nodir,hinoka): squash getRespBuild with toMiloBuild.
 
-	if build.Status == buildbucket.StatusScheduled {
+	if build.Summary.Status == model.NotRun {
 		// Hasn't started yet, so definitely no build ready yet, return a pending
 		// build.
 		return &resp.MiloBuild{
@@ -109,10 +110,6 @@ func getRespBuild(c context.Context, build *buildbucket.Build) (*resp.MiloBuild,
 	}
 
 	// TODO(nodir,hinoka,iannucci): use annotations directly without fetching swarming task
-	sID, err := swarmingRefFromTags(build.Tags)
-	if err != nil {
-		return nil, err
-	}
 	return sID.Get(c)
 }
 
@@ -124,20 +121,13 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 		return nil, errors.Annotate(
 			err, "%s is not a valid number", b.ID).Tag(common.CodeParameterError).Err()
 	}
-	host, err := getHost(c)
+
+	sID, bs, err := GetSwarmingID(c, id)
 	if err != nil {
 		return nil, err
 	}
-	// Fetch the Swarming task ID from Buildbucket.
-	client, err := newBuildbucketClient(c, host)
-	if err != nil {
-		return nil, err
-	}
-	build, err := fetchBuild(client, id)
-	if err != nil {
-		return nil, err
-	}
-	result, err := getRespBuild(c, build)
+
+	result, err := getRespBuild(c, bs, sID)
 	if err != nil {
 		return nil, err
 	}
@@ -149,5 +139,5 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 }
 
 func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {
-	return "", false, errors.New("buildbucket builds do not implement GetLog.")
+	return "", false, errors.New("buildbucket builds do not implement GetLog")
 }
