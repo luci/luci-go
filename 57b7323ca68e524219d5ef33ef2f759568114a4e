@@ -22,6 +22,116 @@
       "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee8defa1_44cc88e1",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T00:11:17Z",
+      "side": 1,
+      "message": "it was deployed https://apis-explorer.appspot.com/apis-explorer/?base\u003dhttps://cr-buildbucket.appspot.com/_ah/api#p/buildbucket/v1/buildbucket.search?bucket\u003dluci.fuchsia.try\u0026_h\u003d1\u0026",
+      "parentUuid": "b4b04fda_e8cd6578",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 15
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ed3c6d9_9e7a294a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T00:11:17Z",
+      "side": 1,
+      "message": "we don\u0027t have to assume that. Actually checking this condition is easy",
+      "range": {
+        "startLine": 70,
+        "startChar": 59,
+        "endLine": 71,
+        "endChar": 64
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f05b4fc_2ca5bedb",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T00:11:17Z",
+      "side": 1,
+      "message": "i believe we should turn this query into an ancestor query, so it is filtered by the project of the builder",
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b12c26f5_210c5d63",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T00:11:17Z",
+      "side": 1,
+      "message": "please wrap variables in \u003c\u003e, so that it is clear that buildbucket is a constant (unlike others)",
+      "range": {
+        "startLine": 26,
+        "startChar": 55,
+        "endLine": 26,
+        "endChar": 74
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49a3de85_58ef7046",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-03T00:11:17Z",
+      "side": 1,
+      "message": "projectID\nprojectName means something else",
+      "range": {
+        "startLine": 36,
+        "startChar": 41,
+        "endLine": 36,
+        "endChar": 52
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
