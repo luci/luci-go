@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "508ded1e_b6a6f442",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T00:56:30Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fbb40efb_3cc0a500",
+      "range": {
+        "startLine": 96,
+        "startChar": 5,
+        "endLine": 96,
+        "endChar": 14
+      },
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "85e752c5_1a2d09e8",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 1
@@ -57,6 +81,24 @@
       "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "448f148f_012d6a80",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-03T00:56:30Z",
+      "side": 1,
+      "message": "This CL is steadily growing in size, this can be addressed in a future CL.",
+      "parentUuid": "00fed178_46237b19",
+      "revId": "5406f36ed7e07311dca4ac625e4d563fbd44be04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
