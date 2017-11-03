@@ -45,6 +45,7 @@ func TestValidation(t *testing.T) {
 					end_user: "group:enduser-group"
 					proxy: "user:proxy@example.com"
 					proxy: "group:proxy-group"
+					trusted_proxy: "user:trusted@example.com"
 					max_grant_validity_duration: 3600
 				}
 
@@ -148,6 +149,17 @@ func TestValidation(t *testing.T) {
 					name: "rule 1"
 					proxy: "group:"
 					proxy: "user:not an email"
+				}
+			`,
+			Errors: []string{"bad group entry", "bad value"},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					trusted_proxy: "group:"
+					trusted_proxy: "user:not an email"
 				}
 			`,
 			Errors: []string{"bad group entry", "bad value"},

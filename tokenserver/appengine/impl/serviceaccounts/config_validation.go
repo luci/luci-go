@@ -88,6 +88,7 @@ func validateRule(title string, r *admin.ServiceAccountRule, ctx *validation.Con
 	validateScopes("allowed_scope", r.AllowedScope, ctx)
 	validateIdSet("end_user", r.EndUser, ctx)
 	validateIdSet("proxy", r.Proxy, ctx)
+	validateIdSet("trusted_proxy", r.TrustedProxy, ctx)
 	validateMaxGrantValidityDuration(r.MaxGrantValidityDuration, ctx)
 }
 
