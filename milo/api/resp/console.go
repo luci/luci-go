@@ -74,18 +74,38 @@ type Console struct {
 type ConsoleSummary struct {
 	// Name is a Link that contains the name of the console as well as a relative URL
 	// to the console's page.
-	Name model.Link
+	Name *Link
 
 	// Builders contains a list of builders for a given console and some data about
 	// the latest state for each builder.
 	Builders []*model.BuilderSummary
 }
 
+// Oncall represents an oncall role with the current individuals in that role, represented
+// by their email addresses.
+type Oncall struct {
+	// Name is the name of the oncall role.
+	Name string `json:"-"`
+
+	// Emails is a list of email addresses for the individuals who are currently in
+	// that role.
+	Emails []string
+}
+
+// LinkGroup represents a set of links grouped together by some category.
+type LinkGroup struct {
+	// Name is the name of the category this group of links belongs to.
+	Name string
+
+	// Links is a list of links in this link group.
+	Links []*Link
+}
+
 // ConsoleGroup represents a group of console summaries which may optionally be titled.
 // Logically, it represents a group of consoles with some shared quality (e.g. tree closers).
 type ConsoleGroup struct {
 	// Title is the title for this group of consoles and may link to anywhere.
-	Title model.Link
+	Title *Link
 
 	// Consoles is the list of console summaries contained without this group.
 	Consoles []ConsoleSummary
@@ -94,14 +114,19 @@ type ConsoleGroup struct {
 // ConsoleHeader represents the header of a console view, containing a set of links,
 // oncall details, as well as a set of console summaries for other, relevant consoles.
 type ConsoleHeader struct {
+	// Oncalls is a list of oncall roles and the current people who fill that role
+	// that will be displayed in the header..
+	Oncalls []Oncall
+
+	// Links is a list of link groups to be displayed in the header.
+	Links []LinkGroup
+
 	// ConsoleGroups is a list of groups of console summaries to be displayed in
 	// the header.
 	//
 	// A console group without a title will have all of its console summaries
 	// appear "ungrouped" when rendered.
 	ConsoleGroups []ConsoleGroup
-
-	// TODO(mknyszek): Add Oncall and Links support.
 }
 
 // ConsoleElement represents a single renderable console element.

@@ -16,6 +16,7 @@ package buildsource
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -129,11 +130,18 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.Console
 			i := i
 			id := id
 			ch <- func() error {
+				// It's safe to SplitN because we assume the ID has already been validated.
+				consoleComponents := strings.SplitN(id, "/", 2)
+				consoleProject := consoleComponents[0]
+				consoleName := consoleComponents[1]
+
+				// Set Name label.
+				ariaLabel := fmt.Sprintf("Console %s in project %s", consoleName, consoleProject)
+				summaries[i].Name = resp.NewLink(consoleName, "/console/"+id, ariaLabel)
+
+				// Populate with builder summaries.
 				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", id)
 				return datastore.Run(c, q, func(bs *model.BuilderSummary) {
-					// It's safe to do this because we assume the ID has already been validated.
-					summaries[i].Name.Label = strings.SplitN(id, "/", 2)[1]
-					summaries[i].Name.URL = "/console/" + id
 					summaries[i].Builders = append(summaries[i].Builders, bs)
 				})
 			}

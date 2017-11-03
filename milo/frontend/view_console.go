@@ -17,18 +17,23 @@ package frontend
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -228,10 +233,76 @@ func consolePreview(c context.Context, def *common.Console) (*resp.Console, erro
 	}, nil
 }
 
+func getOncallData(c context.Context, name, url string) (resp.Oncall, error) {
+	result := resp.Oncall{Name: name}
+
+	// Get JSON from URL.
+	transport := urlfetch.Get(c)
+	response, err := (&http.Client{Transport: transport}).Get(url)
+	if err != nil {
+		return result, errors.Annotate(err, "failed to get data from %q", url).Err()
+	}
+	defer response.Body.Close()
+
+	bytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return result, errors.Annotate(err, "failed to read response body from %q", url).Err()
+	}
+
+	// Parse JSON into resp.Oncall.
+	if err := json.Unmarshal(bytes, &result); err != nil {
+		return result, errors.Annotate(err, "failed to decode JSON %q from %q", string(bytes[:]), url).Err()
+	}
+	return result, nil
+}
+
 func consoleHeader(c context.Context, project string, def *common.Console) (*resp.ConsoleHeader, error) {
-	if len(def.Header.ConsoleGroups) == 0 {
+	// Return nil if the header is empty.
+	switch {
+	case len(def.Header.Oncalls) != 0:
+		// continue
+	case len(def.Header.Links) != 0:
+		// continue
+	case len(def.Header.ConsoleGroups) != 0:
+		// continue
+	default:
 		return nil, nil
 	}
+
+	// Get oncall data from URLs.
+	oncalls := make([]resp.Oncall, len(def.Header.Oncalls))
+	err := parallel.FanOutIn(func(gen chan<- func() error) {
+		for i, oc := range def.Header.Oncalls {
+			i := i
+			oc := oc
+			gen <- func() error {
+				oncall, err := getOncallData(c, oc.Name, oc.Url)
+				oncalls[i] = oncall
+				return err
+			}
+		}
+	})
+	if err != nil {
+		logging.WithError(err).Errorf(c, "getting oncalls")
+	}
+
+	// Restructure links as resp data structures.
+	//
+	// This should be a one-to-one transformation.
+	links := make([]resp.LinkGroup, len(def.Header.Links))
+	for i, linkGroup := range def.Header.Links {
+		mlinks := make([]*resp.Link, len(linkGroup.Links))
+		for j, link := range linkGroup.Links {
+			ariaLabel := fmt.Sprintf("%s in %s", link.Text, linkGroup.Name)
+			mlinks[j] = resp.NewLink(link.Text, link.Url, ariaLabel)
+		}
+		links[i] = resp.LinkGroup{
+			Name:  linkGroup.Name,
+			Links: mlinks,
+		}
+	}
+
+	// Set up console summaries for the header.
 	consoleGroups := make([]resp.ConsoleGroup, len(def.Header.ConsoleGroups))
 	for i, group := range def.Header.ConsoleGroups {
 		for _, id := range group.ConsoleIds {
@@ -245,11 +316,16 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 		}
 		consoleGroups[i].Consoles = summaries
 		if group.Title != nil {
-			consoleGroups[i].Title.Label = group.Title.Text
-			consoleGroups[i].Title.URL = group.Title.Url
+			ariaLabel := fmt.Sprintf("console group %s", group.Title.Text)
+			consoleGroups[i].Title = resp.NewLink(group.Title.Text, group.Title.Url, ariaLabel)
 		}
 	}
-	return &resp.ConsoleHeader{ConsoleGroups: consoleGroups}, nil
+
+	return &resp.ConsoleHeader{
+		Oncalls:       oncalls,
+		Links:         links,
+		ConsoleGroups: consoleGroups,
+	}, nil
 }
 
 // consoleRenderer is a wrapper around Console to provide additional methods.
@@ -374,18 +450,30 @@ func consoleTestData() []common.TestBundle {
 					Name:    "Test",
 					Project: "Testing",
 					Header: &resp.ConsoleHeader{
+						Oncalls: []resp.Oncall{
+							{
+								Name: "Sheriff",
+								Emails: []string{
+									"test@example.com",
+									"watcher@example.com",
+								},
+							},
+						},
+						Links: []resp.LinkGroup{
+							{
+								Name: "Some group",
+								Links: []*resp.Link{
+									resp.NewLink("LiNk", "something", ""),
+									resp.NewLink("LiNk2", "something2", ""),
+								},
+							},
+						},
 						ConsoleGroups: []resp.ConsoleGroup{
 							{
-								Title: model.Link{
-									Label: "bah",
-									URL:   "something",
-								},
+								Title: resp.NewLink("bah", "something2", ""),
 								Consoles: []resp.ConsoleSummary{
 									{
-										Name: model.Link{
-											Label: "hurrah",
-											URL:   "something2",
-										},
+										Name: resp.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
 											{
 												LastFinishedStatus: model.Success,
@@ -403,10 +491,7 @@ func consoleTestData() []common.TestBundle {
 							{
 								Consoles: []resp.ConsoleSummary{
 									{
-										Name: model.Link{
-											Label: "hurrah",
-											URL:   "something2",
-										},
+										Name: resp.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
 											{
 												LastFinishedStatus: model.Success,
@@ -421,19 +506,13 @@ func consoleTestData() []common.TestBundle {
 						{
 							AuthorEmail: "x@example.com",
 							CommitTime:  time.Date(12, 12, 12, 12, 12, 12, 0, time.UTC),
-							Revision: &resp.Link{Link: model.Link{
-								Label: "16029831029810",
-								URL:   "blah blah blah",
-							}},
+							Revision:    resp.NewLink("12031802913871659324", "blah blah blah", ""),
 							Description: "Me too.",
 						},
 						{
 							AuthorEmail: "y@example.com",
 							CommitTime:  time.Date(12, 12, 12, 12, 12, 11, 0, time.UTC),
-							Revision: &resp.Link{Link: model.Link{
-								Label: "120931820931802913",
-								URL:   "blah blah blah 1",
-							}},
+							Revision:    resp.NewLink("120931820931802913", "blah blah blah 1", ""),
 							Description: "I did something.",
 						},
 					},

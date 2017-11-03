@@ -27,29 +27,62 @@
 {{ if $console.Header }}
 {{ $header := $console.Header }}
 <div class="console-header">
-{{ if $header.ConsoleGroups }}
-  <div class="console-header-column" style="border-right: 1px solid silver">
+  <div class="console-header-column-lists">
+
+    <!-- Oncalls -->
+    <div class="console-header-group">
+      <div class="console-header-group-title">Oncalls</div>
+      <div class="console-header-list">
+      {{ range $header.Oncalls }}
+        <div class="console-header-list-row">
+          <div class="console-header-list-name">{{ .Name }}</div>
+          <div class="console-header-oncall">
+          {{ range .Emails }}
+            <span>{{ . | obfuscateEmail }}</span>
+          {{ end }}
+          </div>
+        </div>
+      {{ end }}
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div class="console-header-group">
+      <div class="console-header-group-title">Links</div>
+      <div class="console-header-list">
+      {{ range $header.Links }}
+        <div class="console-header-list-row">
+          <div class="console-header-list-name">{{ .Name }}</div>
+          <div class="console-header-link-group">
+          {{ range .Links }}
+            {{ . | linkify }}
+          {{ end }}
+          </div>
+        </div>
+      {{ end }}
+      </div>
+    </div>
   </div>
-  <div class="console-header-column">
+
+{{ if $header.ConsoleGroups }}
+  <div class="console-header-column-summaries">
   {{ range $header.ConsoleGroups }}
 
     <!-- Header Group -->
     <!-- If the title is nil, don't wrap it in a special div. -->
-    {{ if .Title.Label }}
+    {{ if .Title }}
     <div class="console-header-group">
       <div class="console-header-group-title">
-        <a href="{{ .Title.URL }}">
-          {{ .Title.Label }}
-        </a>
+        {{ .Title | linkify }}
       </div>
     {{ end }}
       <div class="console-column">
       {{ range .Consoles }}
         <div class="console-header-summary">
           <div class="console-header-name">
-            <a href="{{ .Name.URL }}">{{ .Name.Label }}</a>
-            {{ $console_name := .Name.Label }}
+            {{ .Name | linkify }}
           </div>
+          {{ $console_name := .Name.Link.Label }}
           {{ range .Builders }}
             <a class="console-header-builder-status"
                href="/{{ .LastFinishedBuildID }}"
