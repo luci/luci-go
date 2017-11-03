@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/FKCTQ_XhtjDk6-QY6UD_5ZEpMN0\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/Zlsck0JvMfbtBPR2bHGDwh30tp8\"",
  "discoveryVersion": "v1",
  "id": "config:v1",
  "name": "config",
@@ -334,6 +334,45 @@
      "type": "string"
     }
    }
+  },
+  "LuciConfigValidateConfigRequestMessage": {
+   "id": "LuciConfigValidateConfigRequestMessage",
+   "type": "object",
+   "properties": {
+    "config_set": {
+     "type": "string"
+    },
+    "files": {
+     "type": "array",
+     "items": {
+      "$ref": "LuciConfigValidateConfigRequestMessageFile"
+     }
+    }
+   }
+  },
+  "LuciConfigValidateConfigRequestMessageFile": {
+   "id": "LuciConfigValidateConfigRequestMessageFile",
+   "type": "object",
+   "properties": {
+    "content": {
+     "type": "string"
+    },
+    "path": {
+     "type": "string"
+    }
+   }
+  },
+  "LuciConfigValidateConfigResponseMessage": {
+   "id": "LuciConfigValidateConfigResponseMessage",
+   "type": "object",
+   "properties": {
+    "messages": {
+     "type": "array",
+     "items": {
+      "$ref": "ComponentsConfigEndpointValidationMessage"
+     }
+    }
+   }
   }
  },
  "methods": {
@@ -540,6 +579,21 @@
    "parameterOrder": [
     "config_set"
    ],
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "validate_config": {
+   "id": "config.validate_config",
+   "path": "validate-config",
+   "httpMethod": "POST",
+   "request": {
+    "$ref": "LuciConfigValidateConfigRequestMessage",
+    "parameterName": "resource"
+   },
+   "response": {
+    "$ref": "LuciConfigValidateConfigResponseMessage"
+   },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
    ]

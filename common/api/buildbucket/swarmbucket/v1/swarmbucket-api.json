@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/-tpaQvqePUiNASyG1MDxZ9OlgAs\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/snIPT1YiVhkSe4BNRdyhQm_l_oA\"",
  "discoveryVersion": "v1",
  "id": "swarmbucket:v1",
  "name": "swarmbucket",
@@ -171,9 +171,6 @@
    "id": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
    "type": "object",
    "properties": {
-    "api_explorer_link": {
-     "type": "boolean"
-    },
     "build_request": {
      "$ref": "ApiPutRequestMessage"
     }
@@ -183,11 +180,24 @@
    "id": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage",
    "type": "object",
    "properties": {
-    "api_explorer_link": {
-     "type": "string"
-    },
     "task_definition": {
      "type": "string"
+    }
+   }
+  },
+  "SwarmingSwarmbucketApiSetNextBuildNumberRequest": {
+   "id": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+   "type": "object",
+   "properties": {
+    "bucket": {
+     "type": "string"
+    },
+    "builder": {
+     "type": "string"
+    },
+    "next_number": {
+     "type": "string",
+     "format": "int64"
     }
    }
   }
@@ -216,6 +226,19 @@
    },
    "response": {
     "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "set_next_build_number": {
+   "id": "swarmbucket.set_next_build_number",
+   "path": "set_next_build_number",
+   "httpMethod": "POST",
+   "description": "Sets the build number that will be used for the next build.",
+   "request": {
+    "$ref": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+    "parameterName": "resource"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

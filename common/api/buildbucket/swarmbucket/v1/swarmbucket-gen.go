@@ -233,11 +233,9 @@ func (s *SwarmingSwarmbucketApiGetBuildersResponseMessage) MarshalJSON() ([]byte
 }
 
 type SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage struct {
-	ApiExplorerLink bool `json:"api_explorer_link,omitempty"`
-
 	BuildRequest *ApiPutRequestMessage `json:"build_request,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "ApiExplorerLink") to
+	// ForceSendFields is a list of field names (e.g. "BuildRequest") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -245,13 +243,12 @@ type SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "ApiExplorerLink") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
+	// NullFields is a list of field names (e.g. "BuildRequest") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
 }
 
@@ -262,15 +259,13 @@ func (s *SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage) MarshalJSON() ([
 }
 
 type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
-	ApiExplorerLink string `json:"api_explorer_link,omitempty"`
-
 	TaskDefinition string `json:"task_definition,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "ApiExplorerLink") to
+	// ForceSendFields is a list of field names (e.g. "TaskDefinition") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -278,7 +273,7 @@ type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "ApiExplorerLink") to
+	// NullFields is a list of field names (e.g. "TaskDefinition") to
 	// include in API requests with the JSON null value. By default, fields
 	// with empty values are omitted from API requests. However, any field
 	// with an empty value appearing in NullFields will be sent to the
@@ -290,6 +285,36 @@ type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
 
 func (s *SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage) MarshalJSON() ([]byte, error) {
 	type noMethod SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+type SwarmingSwarmbucketApiSetNextBuildNumberRequest struct {
+	Bucket string `json:"bucket,omitempty"`
+
+	Builder string `json:"builder,omitempty"`
+
+	NextNumber int64 `json:"next_number,omitempty,string"`
+
+	// ForceSendFields is a list of field names (e.g. "Bucket") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Bucket") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingSwarmbucketApiSetNextBuildNumberRequest) MarshalJSON() ([]byte, error) {
+	type noMethod SwarmingSwarmbucketApiSetNextBuildNumberRequest
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -531,6 +556,97 @@ func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucketA
 	//   },
 	//   "response": {
 	//     "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/userinfo.email"
+	//   ]
+	// }
+
+}
+
+// method id "swarmbucket.set_next_build_number":
+
+type SetNextBuildNumberCall struct {
+	s                                               *Service
+	swarmingswarmbucketapisetnextbuildnumberrequest *SwarmingSwarmbucketApiSetNextBuildNumberRequest
+	urlParams_                                      gensupport.URLParams
+	ctx_                                            context.Context
+	header_                                         http.Header
+}
+
+// SetNextBuildNumber: Sets the build number that will be used for the
+// next build.
+func (s *Service) SetNextBuildNumber(swarmingswarmbucketapisetnextbuildnumberrequest *SwarmingSwarmbucketApiSetNextBuildNumberRequest) *SetNextBuildNumberCall {
+	c := &SetNextBuildNumberCall{s: s, urlParams_: make(gensupport.URLParams)}
+	c.swarmingswarmbucketapisetnextbuildnumberrequest = swarmingswarmbucketapisetnextbuildnumberrequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *SetNextBuildNumberCall) Fields(s ...googleapi.Field) *SetNextBuildNumberCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *SetNextBuildNumberCall) Context(ctx context.Context) *SetNextBuildNumberCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *SetNextBuildNumberCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *SetNextBuildNumberCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingswarmbucketapisetnextbuildnumberrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "set_next_build_number")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "swarmbucket.set_next_build_number" call.
+func (c *SetNextBuildNumberCall) Do(opts ...googleapi.CallOption) error {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if err != nil {
+		return err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return err
+	}
+	return nil
+	// {
+	//   "description": "Sets the build number that will be used for the next build.",
+	//   "httpMethod": "POST",
+	//   "id": "swarmbucket.set_next_build_number",
+	//   "path": "set_next_build_number",
+	//   "request": {
+	//     "$ref": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+	//     "parameterName": "resource"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
