@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "468e3042_8ee84f76",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-03T22:57:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a66364e7_1d6d21d6",
+      "range": {
+        "startLine": 227,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 18
+      },
+      "revId": "fcbc561214372a7de45ef67a8a8b5bacf0947eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e170b42_fc330b98",
         "filename": "milo/api/resp/console.go",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "498821db_f2d55204",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-03T22:57:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e170b42_fc330b98",
+      "range": {
+        "startLine": 281,
+        "startChar": 32,
+        "endLine": 281,
+        "endChar": 39
+      },
+      "revId": "fcbc561214372a7de45ef67a8a8b5bacf0947eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9c79a8f_4d5cd317",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 6
@@ -68,6 +116,30 @@
       "revId": "fcbc561214372a7de45ef67a8a8b5bacf0947eda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2515762_30ef0fee",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-03T22:57:22Z",
+      "side": 1,
+      "message": "So you\u0027re right! Removing.",
+      "parentUuid": "f9c79a8f_4d5cd317",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 1
+      },
+      "revId": "fcbc561214372a7de45ef67a8a8b5bacf0947eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
