@@ -129,13 +129,9 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.Console
 			i := i
 			id := id
 			ch <- func() error {
-				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", id)
-				return datastore.Run(c, q, func(bs *model.BuilderSummary) {
-					// It's safe to do this because we assume the ID has already been validated.
-					summaries[i].Name.Label = strings.SplitN(id, "/", 2)[1]
-					summaries[i].Name.URL = "/console/" + id
-					summaries[i].Builders = append(summaries[i].Builders, bs)
-				})
+				var err error
+				summaries[i], err = GetConsoleSummary(c, id)
+				return err
 			}
 		}
 	})
@@ -143,4 +139,17 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.Console
 		return nil, err
 	}
 	return summaries, nil
+}
+
+// GetConsoleSummary returns a single console summary from the datastore.
+func GetConsoleSummary(c context.Context, consoleID string) (resp.ConsoleSummary, error) {
+	summary := resp.ConsoleSummary{}
+	q := datastore.NewQuery("BuilderSummary").Eq("Consoles", consoleID)
+	err := datastore.Run(c, q, func(bs *model.BuilderSummary) {
+		// It's safe to do this because we assume the ID has already been validated.
+		summary.Name.Label = strings.SplitN(consoleID, "/", 2)[1]
+		summary.Name.URL = "/console/" + consoleID
+		summary.Builders = append(summary.Builders, bs)
+	})
+	return summary, err
 }
