@@ -15,10 +15,13 @@
 package buildbucket
 
 import (
+	"encoding/hex"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -96,6 +99,51 @@ func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, *model.Build
 	return nil, nil, errors.New("no swarming task context")
 }
 
+// mixInSimplisticBlamelist populates the resp.Blame field from the
+// commit/gitiles buildset (if any).
+//
+// HACK(iannucci) - Getting the frontend to render a proper blamelist will
+// require some significant refactoring. To do this properly, we'll need:
+//   * The frontend to get BuildSummary from the backend.
+//   * BuildSummary to have a .PreviousBuild() API.
+//   * The frontend to obtain the annotation streams itself (so it could see
+//     the SourceManifest objects inside of them). Currently getRespBuild defers
+//     to swarming's implementation of buildsource.ID.Get(), which only returns
+//     the resp object.
+func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *resp.MiloBuild) error {
+	_, hist, err := build.PreviousByGitilesCommit(c)
+	switch err {
+	case nil:
+	case model.ErrUnknownPreviousBuild:
+		return nil
+	default:
+		return err
+	}
+
+	gc := build.GitilesCommit()
+	rb.Blame = make([]*resp.Commit, len(hist.Commits))
+	for i, c := range hist.Commits {
+		rev := hex.EncodeToString(c.Hash)
+		rb.Blame[i] = &resp.Commit{
+			AuthorName:  c.AuthorName,
+			AuthorEmail: c.AuthorEmail,
+			Repo:        gc.RepoURL(),
+			Description: c.Msg,
+			// TODO(iannucci): also include the diffstat.
+
+			// TODO(iannucci): this use of links is very sloppy; the frontend should
+			// know how to render a Commit without having Links embedded in it.
+			Revision: resp.NewLink(
+				rev,
+				gc.RepoURL()+"/+/"+rev, fmt.Sprintf("commit by %s", c.AuthorEmail)),
+		}
+
+		rb.Blame[i].CommitTime, _ = ptypes.Timestamp(c.CommitTime)
+	}
+
+	return nil
+}
+
 // getRespBuild fetches the full build state from Swarming and LogDog if
 // available, otherwise returns an empty "pending build".
 func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*resp.MiloBuild, error) {
@@ -110,7 +158,15 @@ func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.Bu
 	}
 
 	// TODO(nodir,hinoka,iannucci): use annotations directly without fetching swarming task
-	return sID.Get(c)
+	ret, err := sID.Get(c)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := mixInSimplisticBlamelist(c, build, ret); err != nil {
+		return nil, err
+	}
+	return ret, err
 }
 
 // Get returns a resp.MiloBuild based off of the buildbucket ID given by
