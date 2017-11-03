@@ -262,6 +262,30 @@
   margin-right: -0.2em;
 }
 
+.console-Success a.console-builder-item {
+  background-color: #8d4;
+  border-color: #4F8530;
+}
+
+.console-Failure a.console-builder-item {
+  background-color: #e88;
+  border-color: #A77272;
+  color: #000;
+  font-weight: bold;
+}
+
+.console-InfraFailure a.console-builder-item {
+  background-color: #ac39ac;
+  border-color: #ACA0B3;
+  color: #ffffff;
+}
+
+.console-Exception a.console-builder-item {
+  background-color: #ac39ac;
+  border-color: #ACA0B3;
+  color: #ffffff;
+}
+
 .console-builder-item {
   display: flex;
   border: 1px solid silver;

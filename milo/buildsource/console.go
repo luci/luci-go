@@ -130,20 +130,9 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.Console
 			i := i
 			id := id
 			ch <- func() error {
-				// It's safe to SplitN because we assume the ID has already been validated.
-				consoleComponents := strings.SplitN(id, "/", 2)
-				consoleProject := consoleComponents[0]
-				consoleName := consoleComponents[1]
-
-				// Set Name label.
-				ariaLabel := fmt.Sprintf("Console %s in project %s", consoleName, consoleProject)
-				summaries[i].Name = resp.NewLink(consoleName, "/console/"+id, ariaLabel)
-
-				// Populate with builder summaries.
-				q := datastore.NewQuery("BuilderSummary").Eq("Consoles", id)
-				return datastore.Run(c, q, func(bs *model.BuilderSummary) {
-					summaries[i].Builders = append(summaries[i].Builders, bs)
-				})
+				var err error
+				summaries[i], err = GetConsoleSummary(c, id)
+				return err
 			}
 		}
 	})
@@ -151,4 +140,24 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.Console
 		return nil, err
 	}
 	return summaries, nil
+}
+
+// GetConsoleSummary returns a single console summary from the datastore.
+func GetConsoleSummary(c context.Context, consoleID string) (resp.ConsoleSummary, error) {
+	summary := resp.ConsoleSummary{}
+	// It's safe to SplitN because we assume the ID has already been validated.
+	consoleComponents := strings.SplitN(consoleID, "/", 2)
+	consoleProject := consoleComponents[0]
+	consoleName := consoleComponents[1]
+
+	// Set Name label.
+	ariaLabel := fmt.Sprintf("Console %s in project %s", consoleName, consoleProject)
+	summary.Name = resp.NewLink(consoleName, "/console/"+consoleID, ariaLabel)
+
+	// Populate with builder summaries.
+	q := datastore.NewQuery("BuilderSummary").Eq("Consoles", consoleID)
+	err := datastore.Run(c, q, func(bs *model.BuilderSummary) {
+		summary.Builders = append(summary.Builders, bs)
+	})
+	return summary, err
 }
