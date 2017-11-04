@@ -22,6 +22,8 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -37,18 +39,13 @@ type BuildID struct {
 	// Project is the project which the build ID is supposed to reside in.
 	Project string
 
-	// ID is the Buildbucket's build ID (required)
-	ID string
+	// Address is the Buildbucket's build address (required)
+	Address string
 }
 
 // GetSwarmingID returns the swarming task ID of a buildbucket build.
-func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, *model.BuildSummary, error) {
-	host, err := getHost(c)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, host, id)}
+func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *model.BuildSummary, error) {
+	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, buildAddress)}
 	switch err := datastore.Get(c, bs); err {
 	case nil:
 	case datastore.ErrNoSuchEntity:
@@ -79,15 +76,39 @@ func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, *model.Build
 	//
 	// After the deprecation date, this code can be removed; the only effect will
 	// be that buildbucket builds before 2017-11-03 will not render.
+	host, err := getHost(c)
+	if err != nil {
+		return nil, nil, err
+	}
 	client, err := newBuildbucketClient(c, host)
 	if err != nil {
 		return nil, nil, err
 	}
-	resp, err := client.Get(id).Context(c).Do()
-	if err != nil {
-		return nil, nil, err
+
+	var msg *bbapi.ApiCommonBuildMessage
+	if id, err := strconv.ParseInt(buildAddress, 10, 64); err != nil {
+		resp, err := client.Get(id).Context(c).Do()
+		switch {
+		case err != nil:
+			return nil, nil, err
+		case resp.Error.Reason == bbapi.ReasonNotFound:
+			return nil, nil, errors.Reason("build %d not found", id).Tag(common.CodeNotFound).Err()
+		}
+		msg = resp.Build
+	} else {
+		msgs, err := client.Search().
+			Context(c).
+			Tag(strpair.Format(buildbucket.TagBuildAddress, buildAddress)).
+			Fetch(1, nil)
+		switch {
+		case err != nil:
+			return nil, nil, err
+		case len(msgs) == 0:
+			return nil, nil, errors.Reason("build %q not found", buildAddress).Tag(common.CodeNotFound).Err()
+		}
+		msg = msgs[0]
 	}
-	tags := strpair.ParseMap(resp.Build.Tags)
+	tags := strpair.ParseMap(msg.Tags)
 	if shost, sid := tags.Get("swarming_hostname"), tags.Get("swarming_task_id"); shost != "" && sid != "" {
 		return &swarming.BuildID{Host: shost, TaskID: sid}, bs, nil
 	}
@@ -116,13 +137,7 @@ func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.Bu
 // Get returns a resp.MiloBuild based off of the buildbucket ID given by
 // finding the coorisponding swarming build.
 func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
-	id, err := strconv.ParseInt(b.ID, 10, 64)
-	if err != nil {
-		return nil, errors.Annotate(
-			err, "%s is not a valid number", b.ID).Tag(common.CodeParameterError).Err()
-	}
-
-	sID, bs, err := GetSwarmingID(c, id)
+	sID, bs, err := GetSwarmingID(c, b.Address)
 	if err != nil {
 		return nil, err
 	}

@@ -122,17 +122,15 @@ func GetConsoleSummary(c context.Context, consoleID string) (resp.ConsoleSummary
 	summary := resp.ConsoleSummary{}
 	// It's safe to SplitN because we assume the ID has already been validated.
 	consoleComponents := strings.SplitN(consoleID, "/", 2)
-	consoleProject := consoleComponents[0]
-	consoleName := consoleComponents[1]
+	project := consoleComponents[0]
+	name := consoleComponents[1]
 
 	// Set Name label.
-	ariaLabel := fmt.Sprintf("Console %s in project %s", consoleName, consoleProject)
-	summary.Name = resp.NewLink(consoleName, "/console/"+consoleID, ariaLabel)
+	ariaLabel := fmt.Sprintf("Console %s in project %s", name, project)
+	summary.Name = resp.NewLink(name, fmt.Sprintf("/p/%s/consoles/%s", project, name), ariaLabel)
 
 	// Populate with builder summaries.
 	q := datastore.NewQuery("BuilderSummary").Eq("Consoles", consoleID)
-	err := datastore.Run(c, q, func(bs *model.BuilderSummary) {
-		summary.Builders = append(summary.Builders, bs)
-	})
+	err := datastore.GetAll(c, q, &summary.Builders)
 	return summary, err
 }

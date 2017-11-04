@@ -15,16 +15,17 @@
 package rpc
 
 import (
+	"strconv"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
-
-	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 )
 
 // BuildInfoService is a BuildInfoServer implementation.
@@ -53,7 +54,7 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 
 	case req.GetBuildbucket() != nil:
 		// Resolve the swarming host/task from buildbucket.
-		sID, _, err := buildbucket.GetSwarmingID(c, req.GetBuildbucket().GetId())
+		sID, _, err := buildbucket.GetSwarmingID(c, strconv.FormatInt(req.GetBuildbucket().GetId(), 10))
 		if err != nil {
 			return nil, err
 		}
