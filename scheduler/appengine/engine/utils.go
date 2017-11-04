@@ -173,6 +173,44 @@ func mutateTriggersList(blob *[]byte, cb func(*[]*internal.Trigger)) error {
 	return nil
 }
 
+// marshalTimersList serializes list of timers.
+//
+// Panics on errors.
+func marshalTimersList(t []*internal.Timer) []byte {
+	if len(t) == 0 {
+		return nil
+	}
+	blob, err := proto.Marshal(&internal.TimerList{Timers: t})
+	if err != nil {
+		panic(err)
+	}
+	return blob
+}
+
+// unmarshalTimersList deserializes list of timers.
+func unmarshalTimersList(blob []byte) ([]*internal.Timer, error) {
+	if len(blob) == 0 {
+		return nil, nil
+	}
+	list := internal.TimerList{}
+	if err := proto.Unmarshal(blob, &list); err != nil {
+		return nil, err
+	}
+	return list.Timers, nil
+}
+
+// mutateTimersList deserializes the list, calls a callback, which modifies
+// the list and serializes it back.
+func mutateTimersList(blob *[]byte, cb func(*[]*internal.Timer)) error {
+	list, err := unmarshalTimersList(*blob)
+	if err != nil {
+		return err
+	}
+	cb(&list)
+	*blob = marshalTimersList(list)
+	return nil
+}
+
 // opsCache "remembers" recently executed operations, and skips executing them
 // if they already were done.
 //
