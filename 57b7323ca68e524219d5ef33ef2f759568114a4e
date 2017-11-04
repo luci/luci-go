@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "7cd94c8f_9a895786",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-04T00:57:43Z",
+      "side": 1,
+      "message": "Awesome! Relevant changes made.",
+      "parentUuid": "ee8defa1_44cc88e1",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 15
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ed3c6d9_9e7a294a",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 3
@@ -60,6 +84,30 @@
       "writtenOn": "2017-11-03T00:11:17Z",
       "side": 1,
       "message": "we don\u0027t have to assume that. Actually checking this condition is easy",
+      "range": {
+        "startLine": 70,
+        "startChar": 59,
+        "endLine": 71,
+        "endChar": 64
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "677bf327_1f1ba773",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-04T00:57:43Z",
+      "side": 1,
+      "message": "I\u0027ll clarify, what I meant here is that if no project is specified (as it is now, because there\u0027s no project field) it assumes that the builder/bucket is part of the project that this configuration is in. Perhaps this is a bad assumption, and we should always make it explicit, but I figured this would simplify configs.\n\nI modified the language in this comment to to make this more clear, but if you think adding a required project field is better, we can go with that.",
+      "parentUuid": "3ed3c6d9_9e7a294a",
       "range": {
         "startLine": 70,
         "startChar": 59,
@@ -89,6 +137,24 @@
     },
     {
       "key": {
+        "uuid": "0aec4be6_390b44a0",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-04T00:57:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f05b4fc_2ca5bedb",
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b12c26f5_210c5d63",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 3
@@ -112,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "68da98f3_9e4c17fe",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-04T00:57:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b12c26f5_210c5d63",
+      "range": {
+        "startLine": 26,
+        "startChar": 55,
+        "endLine": 26,
+        "endChar": 74
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49a3de85_58ef7046",
         "filename": "luci_notify/notify/notify_test.go",
         "patchSetId": 3
@@ -132,6 +222,30 @@
       "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91ee7138_96279d35",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-04T00:57:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49a3de85_58ef7046",
+      "range": {
+        "startLine": 36,
+        "startChar": 41,
+        "endLine": 36,
+        "endChar": 52
+      },
+      "revId": "57b7323ca68e524219d5ef33ef2f759568114a4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
