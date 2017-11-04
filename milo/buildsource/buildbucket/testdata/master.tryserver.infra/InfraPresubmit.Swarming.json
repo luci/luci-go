@@ -4,6 +4,7 @@
       "status": "STARTED",
       "created_ts": "1467329012899830",
       "tags": [
+        "build_address:luci.infra.try/Infra Presubmit (Swarming)/100",
         "builder:Infra Presubmit (Swarming)",
         "buildset:patch/gerrit/chromium-review.googlesource.com/1/2",
         "master:master.tryserver.infra",
@@ -16,6 +17,7 @@
         "swarming_tag:builder:Infra Presubmit (Swarming)",
         "swarming_tag:buildset:patch/rietveld/codereview.chromium.org/2114743004/1",
         "swarming_tag:cpu:x86-64",
+        "swarming_tag:luci_project:infra",
         "swarming_tag:master:master.tryserver.infra",
         "swarming_tag:os:Ubuntu-14.04",
         "swarming_tag:pool:Chrome",
@@ -30,7 +32,7 @@
         "swarming_dimension:pool:Chrome"
       ],
       "url": "https://luci-milo-dev.example.com/swarming/prod/2fbc7169a3b9a010",
-      "bucket": "master.tryserver.infra",
+      "bucket": "luci.infra.try",
       "status_changed_ts": "1467329102962030",
       "started_ts": "1467329102962030",
       "created_by": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",
@@ -56,6 +58,7 @@
         "swarming_tag:builder:Infra Presubmit (Swarming)",
         "swarming_tag:buildset:patch/rietveld/codereview.chromium.org/2112113002/1",
         "swarming_tag:cpu:x86-64",
+        "swarming_tag:luci_project:infra",
         "swarming_tag:master:master.tryserver.infra",
         "swarming_tag:os:Ubuntu-14.04",
         "swarming_tag:pool:Chrome",
@@ -70,7 +73,7 @@
         "swarming_dimension:pool:Chrome"
       ],
       "url": "https://luci-milo-dev.example.com/swarming/prod/2fbc5f57c3a4b910",
-      "bucket": "master.tryserver.infra",
+      "bucket": "luci.infra.try",
       "result_details_json": "{\"ui\":{\"info\": \"Build succeeded\"}, \"swarming\": {\"task_result\": {\"completed_ts\": \"2016-06-30T23:05:24.426430\", \"created_ts\": \"2016-06-30T23:03:47.904400\", \"bot_version\": \"e7a3c3e4a97f26bbf4b2cd36efc7fa367e19220c\", \"task_id\": \"2fbc5f57c3a4b910\", \"tags\": [\"allow_milo:1\", \"buildbucket_bucket:master.tryserver.infra\", \"buildbucket_hostname:cr-buildbucket.appspot.com\", \"builder:Infra Presubmit (Swarming)\", \"buildset:patch/rietveld/codereview.chromium.org/2112113002/1\", \"cpu:x86-64\", \"master:master.tryserver.infra\", \"os:Ubuntu-14.04\", \"pool:Chrome\", \"priority:100\", \"recipe_name:run_presubmit\", \"recipe_repository:https://chromium.googlesource.com/chromium/tools/build\", \"recipe_revision:\", \"user:\", \"user_agent:cq\"], \"internal_failure\": false, \"name\": \"buildbucket-master.tryserver.infra-Infra Presubmit (Swarming)\", \"bot_dimensions\": [{\"value\": [\"8\"], \"key\": \"cores\"}, {\"value\": [\"x86\", \"x86-64\", \"x86-64-avx2\"], \"key\": \"cpu\"}, {\"value\": [\"none\"], \"key\": \"gpu\"}, {\"value\": [\"swarm668-c4\"], \"key\": \"id\"}, {\"value\": [\"n1-standard-8\"], \"key\": \"machine_type\"}, {\"value\": [\"Linux\", \"Ubuntu\", \"Ubuntu-14.04\"], \"key\": \"os\"}, {\"value\": [\"Chrome\", \"QO\"], \"key\": \"pool\"}, {\"value\": [\"us-central1-b\"], \"key\": \"zone\"}], \"server_versions\": [\"2174-04f4c68\"], \"exit_code\": \"0\", \"try_number\": \"1\", \"failure\": false, \"costs_usd\": [0.010940526460807823], \"state\": \"COMPLETED\", \"modified_ts\": \"2016-06-30T23:05:24.426430\", \"user\": \"\", \"duration\": 86.316526889801025, \"etag\": \"\\\"gaJHHV0EOm6X5R9LefcQ1Vn0P2k/siJ1QAz7DZZE-AW2IzzPbu8j_Xo\\\"\", \"started_ts\": \"2016-06-30T23:03:50.996950\", \"kind\": \"swarming#taskItem\", \"bot_id\": \"swarm668-c4\"}}}",
       "status_changed_ts": "1467327924930590",
       "created_by": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",

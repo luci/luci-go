@@ -27,8 +27,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// TagBuilder is the key of builder name tag.
-const TagBuilder = "builder"
+const (
+	// TagBuilder is the key of builder name tag.
+	TagBuilder = "builder"
+	// TagBuildAddress is the key of the build address tag.
+	// See also Build.Address().
+	TagBuildAddress = "build_address"
+)
 
 // Build is a buildbucket build.
 // It is a more type-safe version of buildbucket.ApiCommonBuildMessage.
@@ -170,7 +175,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		return err
 	}
 
-	address := tags.Get("build_address")
+	address := tags.Get(TagBuildAddress)
 	var number *int
 	if address == "" {
 		address = strconv.FormatInt(msg.Id, 10)

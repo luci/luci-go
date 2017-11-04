@@ -10,6 +10,7 @@
   "builder:Infra Win Tester",
   "buildset:patch/rietveld/codereview.chromium.org/2225073005/1",
   "cpu:x86-64",
+  "luci_project:infra",
   "master:luci.infra.try",
   "os:Windows-7-SP1",
   "pool:Chrome",

@@ -250,9 +250,10 @@ func tagsToMap(tags []string) map[string]string {
 func addBuilderLink(c context.Context, build *resp.MiloBuild, tags map[string]string) {
 	bucket := tags["buildbucket_bucket"]
 	builder := tags["builder"]
+	project := tags["luci_project"]
 	if bucket != "" && builder != "" {
 		build.Summary.ParentLabel = resp.NewLink(
-			builder, fmt.Sprintf("/buildbucket/%s/%s", bucket, builder),
+			builder, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder),
 			fmt.Sprintf("buildbucket builder %s on bucket %s", builder, bucket))
 	}
 }
