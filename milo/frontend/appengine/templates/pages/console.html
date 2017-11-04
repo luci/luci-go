@@ -32,34 +32,44 @@
     <!-- Oncalls -->
     <div class="console-header-group">
       <div class="console-header-group-title">Oncalls</div>
-      <div class="console-header-list">
-      {{ range $header.Oncalls }}
-        <div class="console-header-list-row">
-          <div class="console-header-list-name">{{ .Name }}</div>
-          <div class="console-header-oncall">
-          {{ range .Emails }}
-            <span>{{ . | obfuscateEmail }}</span>
-          {{ end }}
+      <div class="console-column">
+        <div class="exp-header-groups">
+        {{ range $header.Oncalls }}
+          <div class="exp-header-group">
+            <div class="exp-header-group-title">
+              {{ .Name }}
+            </div>
+            <div class="exp-header-group-content">
+              {{ if gt (len .Emails) 0 }}
+                {{ range .Emails }}
+                  <span>&ensp;{{ . | obfuscateEmail }}&ensp;</span>
+                {{ end }}
+              {{ else }}
+                <span>&lt;none&gt;</span>
+              {{ end }}
+            </div>
           </div>
+        {{ end }}
         </div>
-      {{ end }}
       </div>
     </div>
 
     <!-- Links -->
     <div class="console-header-group">
       <div class="console-header-group-title">Links</div>
-      <div class="console-header-list">
-      {{ range $header.Links }}
-        <div class="console-header-list-row">
-          <div class="console-header-list-name">{{ .Name }}</div>
-          <div class="console-header-link-group">
-          {{ range .Links }}
-            {{ . | linkify }}
-          {{ end }}
+      <div class="console-column">
+        <div class="exp-header-groups">
+        {{ range $header.Links }}
+          <div class="exp-header-links-group">
+            <div class="exp-header-group-title">{{ .Name }}</div>
+            <div class="exp-header-group-content">
+            {{ range .Links }}
+              <span>&ensp;{{ . | linkify }}&ensp;</span>
+            {{ end }}
+            </div>
           </div>
+        {{ end }}
         </div>
-      {{ end }}
       </div>
     </div>
   </div>

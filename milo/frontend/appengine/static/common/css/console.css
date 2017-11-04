@@ -13,6 +13,43 @@
  * limitations under the License.
  */
 
+/* Experimental */
+
+.exp-header-groups {
+  display: flex;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+}
+
+.exp-header-group {
+  display: flex;
+  flex-direction: column;
+  margin: 0.5em;
+  max-width: 45%;
+}
+
+.exp-header-links-group {
+  display: flex;
+  flex-direction: column;
+  margin: 0.5em;
+  max-width: 80%;
+}
+
+.exp-header-group-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: bold;
+  min-height: 1.25em;
+}
+
+.exp-header-group-content {
+  display: flex;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+  min-height: 1.25em;
+}
+
 /* Generic */
 
 .console-column {
@@ -144,7 +181,7 @@
 .console-header-summary {
   display: flex;
   align-items: center;
-  padding: 1em;
+  padding: 0.5em;
 }
 
 .console-header-summary * {
