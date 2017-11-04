@@ -2,7 +2,7 @@
   "Summary": {
     "ParentLabel": {
       "Label": "Infra Win Tester",
-      "URL": "/buildbucket/luci.infra.try/Infra Win Tester",
+      "URL": "/p//builder/luci.infra.try/Infra Win Tester",
       "AriaLabel": "buildbucket builder Infra Win Tester on bucket luci.infra.try"
     },
     "Label": "308998ca182a0210",

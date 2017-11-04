@@ -24,6 +24,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"strconv"
+
 	"golang.org/x/net/context"
 )
 
@@ -53,7 +55,7 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 
 	case req.GetBuildbucket() != nil:
 		// Resolve the swarming host/task from buildbucket.
-		sID, _, err := buildbucket.GetSwarmingID(c, req.GetBuildbucket().GetId())
+		sID, _, err := buildbucket.GetSwarmingID(c, strconv.FormatInt(req.GetBuildbucket().GetId(), 10))
 		if err != nil {
 			return nil, err
 		}

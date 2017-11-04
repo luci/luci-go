@@ -76,7 +76,7 @@ func PubSubHandler(ctx *router.Context) {
 //
 // This is the portion of the summarization process which cannot fail (i.e. is
 // pure-data).
-func generateSummary(c context.Context, hostname string, build buildbucket.Build) (*model.BuildSummary, error) {
+func generateSummary(c context.Context, build buildbucket.Build) (*model.BuildSummary, error) {
 	// HACK(iannucci,nodir) - crbug.com/776300 - The project and annotation URL
 	// should be directly represented on the Build. This is a leaky abstraction;
 	// swarming isn't relevant to either value.
@@ -86,10 +86,13 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 	ret := &model.BuildSummary{
 		ProjectID:     project,
 		AnnotationURL: swarmTags.Get("log_location"),
-		BuildKey:      MakeBuildKey(c, hostname, build.ID),
+		BuildKey:      MakeBuildKey(c, build.Address()),
 		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
 		BuildID:       fmt.Sprintf("buildbucket/%s", build.Address()),
 		BuildSet:      build.Tags[buildbucket.TagBuildSet],
+		ContextURI: []string{
+			fmt.Sprintf("buildbucket://build/%d", build.ID),
+		},
 
 		SelfLink: fmt.Sprintf("/p/%s/builds/b%d", project, build.ID),
 
@@ -143,8 +146,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	}
 
 	event := struct {
-		Build    bucketApi.ApiCommonBuildMessage `json:"build"`
-		Hostname string                          `json:"hostname"`
+		Build bucketApi.ApiCommonBuildMessage `json:"build"`
 	}{}
 	if err := json.Unmarshal(bData, &event); err != nil {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
@@ -159,15 +161,14 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	status = build.Status.String()
 	isLUCI = strings.HasPrefix(bucket, "luci.")
 
-	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%v",
-		event.Hostname, bucket, build.Builder, status, build)
+	logging.Debugf(c, "Received build %s (%s)\n%v", build.Address(), status, build)
 
 	if !isLUCI || build.Builder == "" {
 		logging.Infof(c, "This is not an ingestable build, ignoring")
 		return nil
 	}
 
-	bs, err := generateSummary(c, event.Hostname, build)
+	bs, err := generateSummary(c, build)
 	if err != nil {
 		return err
 	}
@@ -203,7 +204,6 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 //
 // There's currently no model associated with this key, but it's used as
 // a parent for a model.BuildSummary.
-func MakeBuildKey(c context.Context, host string, buildID int64) *datastore.Key {
-	return datastore.MakeKey(c,
-		"buildbucket.Build", fmt.Sprintf("%s:%d", host, buildID))
+func MakeBuildKey(c context.Context, buildAddress string) *datastore.Key {
+	return datastore.MakeKey(c, "buildbucket.Build", buildAddress)
 }
