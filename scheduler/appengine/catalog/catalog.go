@@ -44,7 +44,7 @@ import (
 
 var (
 	// jobIDRe is used to validate job ID field.
-	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-\.]{1,100}$`)
+	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-\. ]{1,100}$`)
 
 	// TODO(tandrii): deprecate these metrics once scheduler implements validation
 	// endpoint which luci-config will use to pre-validate configs before giving

@@ -77,9 +77,9 @@ func TestProtoValidation(t *testing.T) {
 
 		c.RegisterTaskManager(fakeTaskManager{})
 		So(call(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
-		So(call(&messages.Job{Id: "bad id"}), ShouldErrLike, "not valid value for 'id' field")
+		So(call(&messages.Job{Id: "bad'id"}), ShouldErrLike, "not valid value for 'id' field")
 		So(call(&messages.Job{
-			Id:   "good",
+			Id:   "good id can have spaces and . and -",
 			Noop: &messages.NoopTask{},
 		}), ShouldBeNil)
 		So(call(&messages.Job{
