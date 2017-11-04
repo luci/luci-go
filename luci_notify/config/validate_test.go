@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/testing/assertions"
 
 	"go.chromium.org/luci/luci_notify/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidation(t *testing.T) {

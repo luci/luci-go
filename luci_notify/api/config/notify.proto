@@ -67,7 +67,10 @@ message Notification {
   Email email = 4;
 }
 
-// Builder is a message that defines a buildbucket builder.
+// Builder is a message that defines a buildbucket builder. All builders are
+// assumed to be part of the same project as this configuration.
+//
+// TODO(mknyszek): Allow cross-project builders.
 message Builder {
   // Bucket is the buildbucket bucket that the builder is a part of.
   //
