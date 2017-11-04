@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5f4b21a_a4a3dfeb",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-04T01:30:25Z",
+      "side": 1,
+      "message": "references",
+      "range": {
+        "startLine": 70,
+        "startChar": 29,
+        "endLine": 70,
+        "endChar": 36
+      },
+      "revId": "354b8cc0327b7729e2317a3c86426100918e0e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "321b98b9_d50d1738",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-04T01:30:25Z",
+      "side": 1,
+      "message": "i don\u0027t think there is code in luci-notify that assumes that the builder is actually defined. I think we can simply change the paragraph above to\n\n  Builder references a buildbucket builder in the current project.\n\nand remove this paragraph. When we add support for builders in other projects, we will remove \"in the current project\" and add project field that defaults to the current project",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 2
+      },
+      "revId": "354b8cc0327b7729e2317a3c86426100918e0e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8090318b_6bbafd04",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-04T01:30:25Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 102,
+        "startChar": 47,
+        "endLine": 102,
+        "endChar": 54
+      },
+      "revId": "354b8cc0327b7729e2317a3c86426100918e0e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
