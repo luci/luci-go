@@ -23,7 +23,7 @@ import (
 // Builder represents the state of the last build seen from a particular
 // builder in order to implement certain notification triggers (i.e. on change).
 type Builder struct {
-	// ID is the builder's canonical ID (e.g. buildbucket/bucket/name).
+	// ID is the builder's canonical ID (e.g. buildbucket/<project>/<bucket>/<name>).
 	ID string `gae:"$id"`
 
 	// Status is current status of the builder.

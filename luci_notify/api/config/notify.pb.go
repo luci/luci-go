@@ -170,6 +170,11 @@ func (m *Notification_Email) GetRecipients() []string {
 }
 
 // Builder is a message that defines a buildbucket builder.
+//
+// Builders are implicitly assumed part of the project that this configuration
+// is associated with, unless explicitly specified otherwise.
+//
+// TODO(mknyszek): Add an optional project field for cross-project builders.
 type Builder struct {
 	// Bucket is the buildbucket bucket that the builder is a part of.
 	//
