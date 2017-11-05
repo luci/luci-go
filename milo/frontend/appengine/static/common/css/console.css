@@ -70,51 +70,42 @@
   flex-direction: column;
 }
 
-.console-header-list-row {
+.console-header-groups {
   display: flex;
-  border-bottom: 1px solid silver;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
 }
 
-.console-header-list-name {
+.console-header-oncalls-group {
   display: flex;
+  flex-direction: column;
+  margin: 0.5em;
+  max-width: 45%;
+}
+
+.console-header-links-group {
+  display: flex;
+  flex-direction: column;
+  margin: 0.5em;
+  max-width: 80%;
+}
+
+.console-header-group-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-weight: bold;
-  font-size: 1.25em;
   min-height: 1.25em;
-  width: 20%;
-  padding: 0.3em;
 }
 
-.console-header-oncall {
+.console-header-group-content {
   display: flex;
   justify-content: space-evenly;
-  align-items: center;
-  flex-grow: 1;
-  min-height: 1.25em;
   flex-wrap: wrap;
+  min-height: 1.25em;
 }
 
-.console-header-oncall span {
-  display: flex;
-  justify-content: center;
-  flex-grow: 1;
-  min-height: 1.25em;
-  padding: 0.2em;
-}
-
-.console-header-link-group {
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  flex-grow: 1;
-  min-height: 1.25em;
-  flex-wrap: wrap;
-}
-
-.console-header-link-group a {
-  display: flex;
-  justify-content: center;
-  flex-grow: 1;
-  min-height: 1.25em;
+.console-header-group-content span {
   padding: 0.2em;
 }
 
@@ -144,7 +135,7 @@
 .console-header-summary {
   display: flex;
   align-items: center;
-  padding: 1em;
+  padding: 0.5em;
 }
 
 .console-header-summary * {
