@@ -33,9 +33,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func extractNotifiers(c context.Context, cfgName string, cfg *notifyConfig.ProjectConfig) []*config.Notifier {
+func extractNotifiers(c context.Context, projectID string, cfg *notifyConfig.ProjectConfig) []*config.Notifier {
 	var notifiers []*config.Notifier
-	parentKey := datastore.MakeKey(c, "Project", cfgName)
+	parentKey := datastore.MakeKey(c, "Project", projectID)
 	for _, n := range cfg.Notifiers {
 		notifiers = append(notifiers, config.NewNotifier(parentKey, n))
 	}
@@ -43,7 +43,7 @@ func extractNotifiers(c context.Context, cfgName string, cfg *notifyConfig.Proje
 }
 
 func notifyDummyBuild(status buildbucket.Status) *buildbucket.Build {
-	return testutil.TestBuild("hello", "test-builder", status)
+	return testutil.TestBuild("test", "hello", "test-builder", status)
 }
 
 func TestNotify(t *testing.T) {

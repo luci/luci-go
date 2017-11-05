@@ -38,6 +38,7 @@ type Build struct {
 	ID           int64
 	CreationTime time.Time
 	CreatedBy    identity.Identity
+	Project      string
 	Bucket       string
 	Builder      string
 	// Number identifies the build within the builder.
@@ -227,6 +228,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		ID:               msg.Id,
 		CreationTime:     ParseTimestamp(msg.CreatedTs),
 		CreatedBy:        createdBy,
+		Project:          msg.Project,
 		Bucket:           msg.Bucket,
 		Builder:          builder,
 		Number:           number,

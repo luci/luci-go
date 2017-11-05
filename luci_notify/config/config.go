@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -134,19 +136,24 @@ func updateProjects(c context.Context) error {
 		// This looks like "projects/<project name>"
 		splitPath := strings.SplitN(cfg.ConfigSet, "/", 2)
 		if len(splitPath) != 2 {
-			return fmt.Errorf("invalid config set %s", cfg.ConfigSet)
+			merr = append(merr, fmt.Errorf("invalid config set %s", cfg.ConfigSet))
+			continue
 		}
 		projectName := splitPath[1]
 
 		// All found projects are considered 'alive'.
 		liveProjects.Add(projectName)
 
-		project, err := extractProjectConfig(&cfg)
-		if err != nil {
-			merr = append(merr, err)
+		project := notifyConfig.ProjectConfig{}
+		if err := proto.UnmarshalText(cfg.Content, &project); err != nil {
+			merr = append(merr, errors.Annotate(err, "unmarshalling proto").Err())
 			continue
 		}
-		if err := updateProject(c, projectName, project, &cfg); err != nil {
+		if err := validateProjectConfig(cfg.ConfigSet, &project); err != nil {
+			merr = append(merr, errors.Annotate(err, "validating config").Err())
+			continue
+		}
+		if err := updateProject(c, projectName, &project, &cfg); err != nil {
 			err = errors.Annotate(err, "processing %s", cfg.ConfigSet).Err()
 			merr = append(merr, err)
 		}

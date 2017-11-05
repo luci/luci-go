@@ -46,7 +46,7 @@ var (
 )
 
 func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime time.Time, revision string) *buildbucket.Build {
-	build := testutil.TestBuild("hello", builder, status)
+	build := testutil.TestBuild("test", "hello", builder, status)
 	build.BuildSets = []buildbucket.BuildSet{buildbucket.BuildSet(&buildbucket.GitilesCommit{
 		Host:     "test.googlesource.com",
 		Project:  "test",
@@ -68,7 +68,7 @@ func TestHandleBuild(t *testing.T) {
 		c = memlogger.Use(c)
 
 		// Add Notifiers to datastore and update indexes.
-		notifiers := extractNotifiers(c, cfgName, cfg)
+		notifiers := extractNotifiers(c, "test", cfg)
 		for _, n := range notifiers {
 			datastore.Put(c, n)
 		}
@@ -93,6 +93,7 @@ func TestHandleBuild(t *testing.T) {
 				So(len(messages), ShouldEqual, 0)
 				return
 			}
+			So(len(messages), ShouldEqual, 1)
 
 			// Put the recipients into sets so prevent flakiness.
 			actualRecipients := stringset.NewFromSlice(messages[0].To...)
@@ -125,7 +126,7 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`no revision`, func() {
-			build := testutil.TestBuild("hello", "test-builder-1", buildbucket.StatusSuccess)
+			build := testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)
 			testSuccess(build)
 			grepLog("revision")
 		})

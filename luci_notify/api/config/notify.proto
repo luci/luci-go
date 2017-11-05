@@ -67,7 +67,7 @@ message Notification {
   Email email = 4;
 }
 
-// Builder is a message that defines a buildbucket builder.
+// Builder references a buildbucket builder in the current project.
 message Builder {
   // Bucket is the buildbucket bucket that the builder is a part of.
   //

@@ -18,12 +18,8 @@ import (
 	"net/mail"
 	"regexp"
 
-	"github.com/golang/protobuf/proto"
-
-	configInterface "go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 )
 
@@ -36,21 +32,6 @@ const (
 	uniqueFieldError   = "field %q must be unique in %s"
 	badEmailError      = "recipient %q is not a valid RFC 5322 email address"
 )
-
-// extractProjectConfig attempts to unmarshal the configuration out of the
-// luci-config message and then validate it.
-func extractProjectConfig(cfg *configInterface.Config) (*notifyConfig.ProjectConfig, error) {
-	project := notifyConfig.ProjectConfig{}
-	if err := proto.UnmarshalText(cfg.Content, &project); err != nil {
-		err = errors.Annotate(err, "unmarshalling proto").Err()
-		return nil, err
-	}
-	if err := validateProjectConfig(cfg.ConfigSet, &project); err != nil {
-		err = errors.Annotate(err, "validating config").Err()
-		return nil, err
-	}
-	return &project, nil
-}
 
 // validateNotification is a helper function for validateConfig which validates
 // an individual notification configuration.
@@ -110,20 +91,6 @@ func validateProjectConfig(configName string, projectCfg *notifyConfig.ProjectCo
 		c.Exit()
 	}
 	return c.Finalize()
-}
-
-// extractSettings attempts to unmarshal a service-level configuration into a
-// specified location, and then tries to validate it.
-func extractSettings(cfg *configInterface.Config) (*Settings, error) {
-	settings := Settings{Revision: cfg.Revision}
-	err := proto.UnmarshalText(cfg.Content, &settings.Settings)
-	if err != nil {
-		return nil, errors.Annotate(err, "unmarshalling proto").Err()
-	}
-	if err := validateSettings(&settings.Settings); err != nil {
-		return nil, errors.Annotate(err, "validating settings").Err()
-	}
-	return &settings, nil
 }
 
 // validateSettings returns an error if the service configuration violates any

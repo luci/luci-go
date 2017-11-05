@@ -24,8 +24,9 @@ import (
 
 // TestBuild creates a minimal dummy buildbucket.Build struct for use in
 // testing.
-func TestBuild(bucket, builder string, status buildbucket.Status) *buildbucket.Build {
+func TestBuild(project, bucket, builder string, status buildbucket.Status) *buildbucket.Build {
 	return &buildbucket.Build{
+		Project: project,
 		Bucket:  bucket,
 		Builder: builder,
 		Status:  status,
