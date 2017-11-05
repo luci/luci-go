@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0184bd2b_73fa50fe",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-05T19:44:54Z",
+      "side": 1,
+      "message": "Oops! Good point, that would be very misleading.",
+      "parentUuid": "c5f4b21a_a4a3dfeb",
+      "range": {
+        "startLine": 70,
+        "startChar": 29,
+        "endLine": 70,
+        "endChar": 36
+      },
+      "revId": "354b8cc0327b7729e2317a3c86426100918e0e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "321b98b9_d50d1738",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "70a70d70_cafa52d7",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-05T19:44:54Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "321b98b9_d50d1738",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 2
+      },
+      "revId": "354b8cc0327b7729e2317a3c86426100918e0e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8090318b_6bbafd04",
         "filename": "luci_notify/config/notifier.go",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "354b8cc0327b7729e2317a3c86426100918e0e5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a730d8f5_85971dbd",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-05T19:44:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8090318b_6bbafd04",
+      "range": {
+        "startLine": 102,
+        "startChar": 47,
+        "endLine": 102,
+        "endChar": 54
+      },
+      "revId": "354b8cc0327b7729e2317a3c86426100918e0e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
