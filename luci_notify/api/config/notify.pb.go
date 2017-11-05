@@ -169,7 +169,7 @@ func (m *Notification_Email) GetRecipients() []string {
 	return nil
 }
 
-// Builder is a message that defines a buildbucket builder.
+// Builder references a buildbucket builder in the current project.
 type Builder struct {
 	// Bucket is the buildbucket bucket that the builder is a part of.
 	//

@@ -81,7 +81,7 @@ func NewNotifier(parent *datastore.Key, cfg *notifyConfig.Notifier) *Notifier {
 	var builderIDs []string
 	for _, b := range cfg.Builders {
 		if b.Name != "" {
-			id := fmt.Sprintf("buildbucket/%s/%s", b.Bucket, b.Name)
+			id := fmt.Sprintf("buildbucket/%s/%s/%s", parent.StringID(), b.Bucket, b.Name)
 			builderIDs = append(builderIDs, id)
 		}
 	}
@@ -99,9 +99,10 @@ func NewNotifier(parent *datastore.Key, cfg *notifyConfig.Notifier) *Notifier {
 }
 
 // LookupNotifiers retrieves all notifiers from the datastore for a particular builder ID.
-func LookupNotifiers(c context.Context, builderID string) ([]*Notifier, error) {
+func LookupNotifiers(c context.Context, project, builderID string) ([]*Notifier, error) {
 	var notifiers []*Notifier
-	query := datastore.NewQuery("Notifier").Eq("BuilderIDs", builderID)
+	parentKey := datastore.MakeKey(c, "Project", project)
+	query := datastore.NewQuery("Notifier").Ancestor(parentKey).Eq("BuilderIDs", builderID)
 	err := datastore.GetAll(c, query, &notifiers)
 	return notifiers, err
 }
