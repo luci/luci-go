@@ -45,7 +45,7 @@ func WithProcessCache(c context.Context, cache *lru.Cache) context.Context {
 
 // ProcessCache returns process-global cache that is installed into the Context.
 //
-// If no process-global cache is installed, this will return panic.
+// If no process-global cache is installed, this will panic.
 func ProcessCache(c context.Context) *lru.Cache {
 	pc, _ := c.Value(&processCacheKey).(*lru.Cache)
 	if pc == nil {
@@ -57,17 +57,13 @@ func ProcessCache(c context.Context) *lru.Cache {
 // WithRequestCache initializes context-bound local cache and adds it to the
 // Context.
 //
-// If the supplied cache is nil, a cache with unbounded size will be used. This
-// is not necessarily bad, since the lifetime of the cache is still scoped to
-// a single request.
+// The cache has unbounded size. This is fine, since the lifetime of the cache
+// is still scoped to a single request.
 //
 // It can be used as a second fast layer of caching in front of memcache.
 // It is never trimmed, only released at once upon the request completion.
-func WithRequestCache(c context.Context, cache *lru.Cache) context.Context {
-	if cache == nil {
-		cache = lru.New(0)
-	}
-	return context.WithValue(c, &requestCacheKey, cache)
+func WithRequestCache(c context.Context) context.Context {
+	return context.WithValue(c, &requestCacheKey, lru.New(0))
 }
 
 // RequestCache retrieves a per-request in-memory cache to the Context. If no

@@ -47,7 +47,7 @@ func TestMemcache(t *testing.T) {
 
 		Convey("Memcache works (with per-request cache)", func() {
 			cache := &Memcache{Namespace: "blah"}
-			ctx = caching.WithRequestCache(ctx, nil)
+			ctx = caching.WithRequestCache(ctx)
 			doTest(ctx, cache)
 			So(counter.GetMulti.Total(), ShouldEqual, 2)
 			So(counter.SetMulti.Total(), ShouldEqual, 2)
