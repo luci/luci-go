@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0cc3a610_cb3e12d8",
+        "filename": "server/auth/openid/json_web_keys.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-06T19:56:50Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2a3811a0_df81885f",
+      "range": {
+        "startLine": 40,
+        "startChar": 24,
+        "endLine": 40,
+        "endChar": 28
+      },
+      "revId": "9dffe270931199b0e85bf099d09b9ce5c072279e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a272c42d_ee56395d",
         "filename": "server/auth/openid/json_web_keys.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4749c9e2_1b9e8b96",
+        "filename": "server/auth/openid/json_web_keys.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-06T19:56:50Z",
+      "side": 1,
+      "message": "good ref! Spent 15 minutes reading.",
+      "parentUuid": "a272c42d_ee56395d",
+      "range": {
+        "startLine": 85,
+        "startChar": 24,
+        "endLine": 85,
+        "endChar": 33
+      },
+      "revId": "9dffe270931199b0e85bf099d09b9ce5c072279e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa8d3a79_ac85c4a0",
         "filename": "server/auth/openid/json_web_keys_test.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "9dffe270931199b0e85bf099d09b9ce5c072279e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa25362e_4d7b4a7f",
+        "filename": "server/auth/openid/json_web_keys_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-06T19:56:50Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "aa8d3a79_ac85c4a0",
+      "range": {
+        "startLine": 136,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 11
+      },
+      "revId": "9dffe270931199b0e85bf099d09b9ce5c072279e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
