@@ -33,16 +33,24 @@
     <div class="console-header-group">
       <div class="console-header-group-title">Oncalls</div>
       <div class="console-header-list">
-      {{ range $header.Oncalls }}
-        <div class="console-header-list-row">
-          <div class="console-header-list-name">{{ .Name }}</div>
-          <div class="console-header-oncall">
-          {{ range .Emails }}
-            <span>{{ . | obfuscateEmail }}</span>
-          {{ end }}
+        <div class="console-header-groups">
+        {{ range $header.Oncalls }}
+          <div class="console-header-oncalls-group">
+            <div class="console-header-group-name">
+              {{ .Name }}
+            </div>
+            <div class="console-header-group-content">
+              {{ if gt (len .Emails) 0 }}
+                {{ range .Emails }}
+                  <span>{{ . | obfuscateEmail }}</span>
+                {{ end }}
+              {{ else }}
+                <span>&lt;none&gt;</span>
+              {{ end }}
+            </div>
           </div>
+        {{ end }}
         </div>
-      {{ end }}
       </div>
     </div>
 
@@ -50,16 +58,18 @@
     <div class="console-header-group">
       <div class="console-header-group-title">Links</div>
       <div class="console-header-list">
-      {{ range $header.Links }}
-        <div class="console-header-list-row">
-          <div class="console-header-list-name">{{ .Name }}</div>
-          <div class="console-header-link-group">
-          {{ range .Links }}
-            {{ . | linkify }}
-          {{ end }}
+        <div class="console-header-groups">
+        {{ range $header.Links }}
+          <div class="console-header-links-group">
+            <div class="console-header-group-name">{{ .Name }}</div>
+            <div class="console-header-group-content">
+            {{ range .Links }}
+              <span>{{ . | linkify }}</span>
+            {{ end }}
+            </div>
           </div>
+        {{ end }}
         </div>
-      {{ end }}
       </div>
     </div>
   </div>
