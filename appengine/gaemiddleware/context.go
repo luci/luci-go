@@ -135,7 +135,7 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 
 	// Install global process and request LRU caches.
 	c = caching.WithProcessCache(c, globalLRUCache)
-	c = caching.WithRequestCache(c, nil)
+	c = caching.WithRequestCache(c)
 
 	c = e.WithInitialRequest(c, req)
 
