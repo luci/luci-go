@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2a3811a0_df81885f",
+        "filename": "server/auth/openid/json_web_keys.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-06T19:11:55Z",
+      "side": 1,
+      "message": "see https://www.googleapis.com/oauth2/v3/certs",
+      "range": {
+        "startLine": 40,
+        "startChar": 24,
+        "endLine": 40,
+        "endChar": 28
+      },
+      "revId": "9dffe270931199b0e85bf099d09b9ce5c072279e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a272c42d_ee56395d",
+        "filename": "server/auth/openid/json_web_keys.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-06T19:11:55Z",
+      "side": 1,
+      "message": "see for example https://jwt.io/introduction/",
+      "range": {
+        "startLine": 85,
+        "startChar": 24,
+        "endLine": 85,
+        "endChar": 33
+      },
+      "revId": "9dffe270931199b0e85bf099d09b9ce5c072279e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa8d3a79_ac85c4a0",
+        "filename": "server/auth/openid/json_web_keys_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-06T19:11:55Z",
+      "side": 1,
+      "message": "I\u0027ve also manually tested it successfully validates real ID token (produced by Google). Didn\u0027t want to commit my ID token in the source code though...",
+      "range": {
+        "startLine": 136,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 11
+      },
+      "revId": "9dffe270931199b0e85bf099d09b9ce5c072279e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
