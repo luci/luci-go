@@ -205,7 +205,7 @@ func (o *opsCache) Do(c context.Context, key string, cb func() error) error {
 	case err == memcache.ErrCacheMiss:
 		break
 	default:
-		return transient.Tag.Apply(err)
+		logging.WithError(err).Warningf(c, "opsCache failed to check memcache, will proceed executing op")
 	}
 
 	// Do it.
@@ -221,7 +221,7 @@ func (o *opsCache) Do(c context.Context, key string, cb func() error) error {
 	item.SetValue([]byte("ok"))
 	item.SetExpiration(24 * time.Hour)
 	if err := memcache.Set(c, item); err != nil {
-		logging.WithError(err).Warningf(c, "Failed to write item to memcache")
+		logging.WithError(err).Warningf(c, "opsCache failed to write item to memcache")
 	}
 
 	return nil
