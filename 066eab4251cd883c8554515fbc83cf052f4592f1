@@ -95,6 +95,30 @@
       "revId": "066eab4251cd883c8554515fbc83cf052f4592f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92b39dcc_a8af26a5",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-06T19:30:52Z",
+      "side": 1,
+      "message": "buildbucket ids are monorically decreasing int64s (newest -\u003e oldest), but\nbuildbucket.MakeBuildKey was sorted lexicographically and nothing in BuildSummary doc says that parent key order is guaranteed to correspond newest-to-oldest order. I think doing a sort here is the right thing to do",
+      "parentUuid": "ab4421c4_462d184e",
+      "range": {
+        "startLine": 233,
+        "startChar": 75,
+        "endLine": 233,
+        "endChar": 77
+      },
+      "revId": "066eab4251cd883c8554515fbc83cf052f4592f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
