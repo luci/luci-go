@@ -115,6 +115,14 @@ func (s *Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
 	return &s.serviceInfo, nil
 }
 
+// KeyForTest returns the RSA key used internally by the test signer.
+//
+// It is not part of the signing.Signer interface. It should be used only from
+// tests.
+func (s *Signer) KeyForTest() *rsa.PrivateKey {
+	return s.priv
+}
+
 ////
 
 type notRandom struct {
