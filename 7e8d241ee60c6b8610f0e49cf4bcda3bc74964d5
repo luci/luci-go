@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40ef4adb_07ae5778",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-07T20:15:31Z",
+      "side": 1,
+      "message": "This broke certain calls because a build summary without swarming task context can no longer fallthrough to the code on L76\n\nhttps://luci-milo.appspot.com/rpcexplorer/services/milo.BuildInfo/Get?request\u003d{%20%20%20%20%22buildbucket%22:%20{%20%20%20%20%20%20%20%20%22id%22:%20%228964271951535341712%22%20%20%20%20}}",
+      "revId": "7e8d241ee60c6b8610f0e49cf4bcda3bc74964d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
