@@ -12,25 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package caching implements common server object caches.
-//
-// Two caches are defined:
-// - A process-global LRU cache, which may retain data in between requests.
-// - A per-request cache, which can be installed into the Context that is
-//   servicing an individual request, and will be purged at the end of that
-//   request.
 package caching
 
 import (
-	"go.chromium.org/luci/common/data/caching/lru"
-
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/data/caching/lru"
 )
 
-var (
-	processCacheKey = "server.caching Process Cache"
-	requestCacheKey = "server.caching Per-Request Cache"
-)
+var processCacheKey = "server.caching Process Cache"
 
 // WithProcessCache installs a process-global cache into the supplied Context.
 //
@@ -52,25 +42,4 @@ func ProcessCache(c context.Context) *lru.Cache {
 		panic("server/caching: no process cache installed in Context")
 	}
 	return pc
-}
-
-// WithRequestCache initializes context-bound local cache and adds it to the
-// Context.
-//
-// The cache has unbounded size. This is fine, since the lifetime of the cache
-// is still scoped to a single request.
-//
-// It can be used as a second fast layer of caching in front of memcache.
-// It is never trimmed, only released at once upon the request completion.
-func WithRequestCache(c context.Context) context.Context {
-	return context.WithValue(c, &requestCacheKey, lru.New(0))
-}
-
-// RequestCache retrieves a per-request in-memory cache to the Context. If no
-// request cache is installed, this will return nil.
-//
-// Note that while ProcessCache is required, RequestCache is optional.
-func RequestCache(c context.Context) *lru.Cache {
-	rc, _ := c.Value(&requestCacheKey).(*lru.Cache)
-	return rc
 }
