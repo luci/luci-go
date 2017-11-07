@@ -18,16 +18,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
@@ -40,38 +38,39 @@ type BuildID struct {
 	// Project is the project which the build ID is supposed to reside in.
 	Project string
 
-	// ID is the Buildbucket's build ID (required)
-	ID string
+	// Address is the Buildbucket's build address (required)
+	Address string
 }
 
 // GetSwarmingID returns the swarming task ID of a buildbucket build.
-func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, *model.BuildSummary, error) {
+func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *model.BuildSummary, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, host, id)}
+	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, host, buildAddress)}
 	switch err := datastore.Get(c, bs); err {
 	case nil:
-	case datastore.ErrNoSuchEntity:
-		logging.Warningf(c, "failed to load BuildSummary for: %q", bs.BuildKey)
-		return nil, nil, errors.New("could not find build", common.CodeNotFound)
-	default:
-		return nil, nil, err
-	}
-
-	for _, ctx := range bs.ContextURI {
-		u, err := url.Parse(ctx)
-		if err != nil {
-			continue
-		}
-		if u.Scheme == "swarming" && len(u.Path) > 1 {
-			toks := strings.Split(u.Path[1:], "/")
-			if toks[0] == "task" {
-				return &swarming.BuildID{Host: u.Host, TaskID: toks[1]}, bs, nil
+		for _, ctx := range bs.ContextURI {
+			u, err := url.Parse(ctx)
+			if err != nil {
+				continue
+			}
+			if u.Scheme == "swarming" && len(u.Path) > 1 {
+				toks := strings.Split(u.Path[1:], "/")
+				if toks[0] == "task" {
+					return &swarming.BuildID{Host: u.Host, TaskID: toks[1]}, bs, nil
+				}
 			}
 		}
+		return nil, nil, errors.New("no swarming task context")
+
+	case datastore.ErrNoSuchEntity:
+		// continue to the fallback code below.
+
+	default:
+		return nil, nil, err
 	}
 
 	// DEPRECATED(2017-12-01) {{
@@ -86,17 +85,22 @@ func GetSwarmingID(c context.Context, id int64) (*swarming.BuildID, *model.Build
 	if err != nil {
 		return nil, nil, err
 	}
-	resp, err := client.Get(id).Context(c).Do()
-	if err != nil {
-		return nil, nil, err
+	build, err := buildbucket.GetByAddress(c, client, buildAddress)
+	switch {
+	case err != nil:
+		return nil, nil, errors.Annotate(err, "could not get build at %q", buildAddress).Err()
+	case build == nil:
+		return nil, nil, errors.Reason("build at %q not found", buildAddress).Tag(common.CodeNotFound).Err()
 	}
-	tags := strpair.ParseMap(resp.Build.Tags)
-	if shost, sid := tags.Get("swarming_hostname"), tags.Get("swarming_task_id"); shost != "" && sid != "" {
-		return &swarming.BuildID{Host: shost, TaskID: sid}, bs, nil
+
+	shost := build.Tags.Get("swarming_hostname")
+	sid := build.Tags.Get("swarming_task_id")
+	if shost == "" || sid == "" {
+		return nil, nil, errors.New("not a valid LUCI build")
 	}
+	return &swarming.BuildID{Host: shost, TaskID: sid}, nil, nil
 	// }}
 
-	return nil, nil, errors.New("no swarming task context")
 }
 
 // mixInSimplisticBlamelist populates the resp.Blame field from the
@@ -163,35 +167,23 @@ func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.Bu
 		return nil, err
 	}
 
-	if err := mixInSimplisticBlamelist(c, build, ret); err != nil {
-		return nil, err
+	if build != nil {
+		if err := mixInSimplisticBlamelist(c, build, ret); err != nil {
+			return nil, err
+		}
 	}
-	return ret, err
+
+	return ret, nil
 }
 
 // Get returns a resp.MiloBuild based off of the buildbucket ID given by
 // finding the coorisponding swarming build.
 func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
-	id, err := strconv.ParseInt(b.ID, 10, 64)
-	if err != nil {
-		return nil, errors.Annotate(
-			err, "%s is not a valid number", b.ID).Tag(common.CodeParameterError).Err()
-	}
-
-	sID, bs, err := GetSwarmingID(c, id)
+	sID, bs, err := GetSwarmingID(c, b.Address)
 	if err != nil {
 		return nil, err
 	}
-
-	result, err := getRespBuild(c, bs, sID)
-	if err != nil {
-		return nil, err
-	}
-
-	if result.Trigger.Project != b.Project {
-		return nil, errors.New("invalid project", common.CodeParameterError)
-	}
-	return result, nil
+	return getRespBuild(c, bs, sID)
 }
 
 func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {

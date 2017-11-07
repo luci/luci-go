@@ -21,14 +21,21 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 )
 
-// TagBuilder is the key of builder name tag.
-const TagBuilder = "builder"
+const (
+	// TagBuilder is the key of builder name tag.
+	TagBuilder = "builder"
+	// TagBuildAddress is the key of the build address tag.
+	// See also Build.Address().
+	TagBuildAddress = "build_address"
+)
 
 // Build is a buildbucket build.
 // It is a more type-safe version of buildbucket.ApiCommonBuildMessage.
@@ -74,6 +81,8 @@ type Build struct {
 // Address returns an alternative identifier of the build.
 // If b has a number, the address is "<bucket>/<builder>/<number>".
 // Otherwise it is "<id>".
+//
+// See also ParseBuildAddress.
 func (b *Build) Address() string {
 	if b.Number != nil {
 		return fmt.Sprintf("%s/%s/%d", b.Bucket, b.Builder, *b.Number)
@@ -171,7 +180,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		return err
 	}
 
-	address := tags.Get("build_address")
+	address := tags.Get(TagBuildAddress)
 	var number *int
 	if address == "" {
 		address = strconv.FormatInt(msg.Id, 10)
@@ -222,6 +231,12 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		if parsed := ParseBuildSet(t); parsed != nil {
 			bs = append(bs, parsed)
 		}
+	}
+
+	project := msg.Project
+	if project == "" {
+		// old builds do not have project attribute.
+		project = projectFromBucket(msg.Bucket)
 	}
 
 	*b = Build{
@@ -316,4 +331,87 @@ func ParseTimestamp(usec int64) time.Time {
 // FormatTimestamp converts t to a buildbucket timestamp.
 func FormatTimestamp(t time.Time) int64 {
 	return t.UnixNano() / 1000
+}
+
+// projectFromBucket tries to retrieve project id from bucket name.
+// Returns "" on failure.
+func projectFromBucket(bucket string) string {
+	// Buildbucket guarantees that buckets that start with "luci."
+	// have "luci.<project id>." prefix.
+	parts := strings.Split(bucket, ".")
+	if len(parts) >= 3 && parts[0] == "luci" {
+		return parts[1]
+	}
+	return ""
+}
+
+// ParseBuildAddress parses a build address returned by Build.Address().
+//
+// If id is non-zero, project, bucket and builder are zero.
+// If bucket is non-zero, id is zero.
+func ParseBuildAddress(address string) (id int64, project, bucket, builder string, number int, err error) {
+	parts := strings.Split(address, "/")
+	switch len(parts) {
+	case 4:
+		// future-proof
+		project = parts[0]
+		parts = parts[1:]
+		fallthrough
+	case 3:
+		var numberStr string
+		bucket, builder, numberStr = parts[0], parts[1], parts[2]
+		if project == "" {
+			project = projectFromBucket(bucket)
+		}
+		number, err = strconv.Atoi(numberStr)
+	case 1:
+		id, err = strconv.ParseInt(parts[0], 10, 64)
+	default:
+		err = fmt.Errorf("unrecognized build address format %q", address)
+	}
+	return
+}
+
+// ValidateBuildAddress returns an error if the build address is invalid.
+func ValidateBuildAddress(address string) error {
+	_, _, _, _, _, err := ParseBuildAddress(address)
+	return err
+}
+
+// GetByAddress fetches a build by its address.
+// Returns (nil, nil) if build is not found.
+func GetByAddress(c context.Context, client *buildbucket.Service, address string) (*Build, error) {
+	id, _, _, _, _, err := ParseBuildAddress(address)
+	if err != nil {
+		return nil, err
+	}
+	var msg *buildbucket.ApiCommonBuildMessage
+	if id != 0 {
+		res, err := client.Get(id).Context(c).Do()
+		switch {
+		case err != nil:
+			return nil, err
+		case res.Error.Reason == buildbucket.ReasonNotFound:
+			return nil, nil
+		default:
+			msg = res.Build
+		}
+	} else {
+		msgs, err := client.Search().
+			Context(c).
+			Tag(strpair.Format(TagBuildAddress, address)).
+			Fetch(1, nil)
+		switch {
+		case err != nil:
+			return nil, err
+		case len(msgs) == 0:
+			return nil, nil
+		default:
+			msg = msgs[0]
+		}
+	}
+
+	var build Build
+	err = build.ParseMessage(msg)
+	return &build, err
 }

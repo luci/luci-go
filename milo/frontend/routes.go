@@ -17,6 +17,7 @@ package frontend
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -66,20 +67,30 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
 	r.GET("/admin/stats", cronMW, StatsHandler)
 
-	// New Style URLs go here
-	// BuildBucket build.
+	// Builds.
 	r.GET("/p/:project/builds/b:id", htmlMW, func(c *router.Context) {
 		BuildHandler(c, &buildbucket.BuildID{
 			Project: c.Params.ByName("project"),
-			ID:      c.Params.ByName("id"),
+			Address: c.Params.ByName("id"),
+		})
+	})
+	r.GET("/p/:project/builders/:bucket/:builder/:number", htmlMW, func(c *router.Context) {
+		BuildHandler(c, &buildbucket.BuildID{
+			Project: c.Params.ByName("project"),
+			Address: fmt.Sprintf("%s/%s/%s",
+				c.Params.ByName("bucket"),
+				c.Params.ByName("builder"),
+				c.Params.ByName("number")),
 		})
 	})
 
 	// Console
-	r.GET("/console/:project/:name", htmlMW, ConsoleHandler)
-	r.GET("/console/:project", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/consoles/:name", htmlMW, ConsoleHandler)
+	r.GET("/console/:project/:name", frontendMW, movedPermanently("/p/:project/consoles/:name"))
+	r.GET("/p/:project/consoles", htmlMW, func(c *router.Context) {
 		ConsolesHandler(c, c.Params.ByName("project"))
 	})
+	r.GET("/console/:project", frontendMW, movedPermanently("/p/:project/consoles/"))
 
 	// Swarming
 	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, func(c *router.Context) {
@@ -105,10 +116,18 @@ func Run(templatePath string) {
 	})
 
 	// Buildbucket
-	r.GET("/buildbucket/:bucket/:builder", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/builders/:bucket/:builder", htmlMW, func(c *router.Context) {
+		// TODO(nodir): use project parameter.
+		// Besides implementation, requires deleting the redirect for
+		// /buildbucket/:bucket/:builder
+		// because it assumes that project is not used here and
+		// simply passes project=chromium.
+
 		BuilderHandler(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbucket/%s/%s", c.Params.ByName("bucket"), c.Params.ByName("builder"))))
 	})
+	// TODO(nodir): delete this redirect and the chromium project assumption with it
+	r.GET("/buildbucket/:bucket/:builder", frontendMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
 
 	// Buildbot
 	r.GET("/buildbot/:master/:builder/:build", htmlMW.Extend(emulationMiddleware), func(c *router.Context) {
@@ -163,4 +182,26 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 	}
 
 	return buildstore.WithDefaultEmulationOptions(c), nil
+}
+
+// movedPermanently returns a handler that responds with HTTP 301
+// (Moved Permanently) with a location specified by the pathTemplate.
+//
+// TODO(nodir,iannucci): delete all usages.
+func movedPermanently(pathTemplate string) router.Handler {
+	if !strings.HasPrefix(pathTemplate, "/") {
+		panic("pathTemplate must start with /")
+	}
+
+	return func(c *router.Context) {
+		parts := strings.Split(pathTemplate, "/")
+		for i, p := range parts {
+			if strings.HasPrefix(p, ":") {
+				parts[i] = c.Params.ByName(p[1:])
+			}
+		}
+		u := *c.Request.URL
+		u.Path = strings.Join(parts, "/")
+		http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
+	}
 }

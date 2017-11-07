@@ -9,6 +9,7 @@
   "cores:8",
   "cron_invocation_id:9183652815541395264",
   "cron_job_id:infra-experimental/buildbucket-job-estaab-infra-waterfall-test",
+  "luci_project:infra",
   "master:master.estaab-infra-waterfall-test",
   "os:Ubuntu-12.04",
   "pool:default",
