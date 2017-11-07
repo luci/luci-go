@@ -2,7 +2,7 @@
   "Summary": {
     "ParentLabel": {
       "Label": "Infra Win Tester",
-      "URL": "/buildbucket/luci.infra.try/Infra Win Tester",
+      "URL": "/p/infra/builders/luci.infra.try/Infra Win Tester",
       "AriaLabel": "buildbucket builder Infra Win Tester on bucket luci.infra.try"
     },
     "Label": "308998ca182a0210",
@@ -45,7 +45,21 @@
       "Task expired"
     ]
   },
-  "Trigger": null,
+  "Trigger": {
+    "AuthorName": "",
+    "AuthorEmail": "",
+    "CommitTime": "0001-01-01T00:00:00Z",
+    "Repo": "",
+    "Branch": "",
+    "RequestRevision": null,
+    "Revision": null,
+    "Description": "",
+    "Changelist": null,
+    "CommitURL": "",
+    "File": null,
+    "Source": "",
+    "Project": "infra"
+  },
   "Components": null,
   "PropertyGroup": [
     {

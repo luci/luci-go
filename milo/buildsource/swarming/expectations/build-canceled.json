@@ -2,7 +2,7 @@
   "Summary": {
     "ParentLabel": {
       "Label": "infra-continuous-precise-32",
-      "URL": "/buildbucket/estaab-infra-waterfall-test/infra-continuous-precise-32",
+      "URL": "/p/infra/builders/estaab-infra-waterfall-test/infra-continuous-precise-32",
       "AriaLabel": "buildbucket builder infra-continuous-precise-32 on bucket estaab-infra-waterfall-test"
     },
     "Label": "2d8d62f6be545b10",
@@ -59,7 +59,21 @@
       "Task cancelled by user"
     ]
   },
-  "Trigger": null,
+  "Trigger": {
+    "AuthorName": "",
+    "AuthorEmail": "",
+    "CommitTime": "0001-01-01T00:00:00Z",
+    "Repo": "",
+    "Branch": "",
+    "RequestRevision": null,
+    "Revision": null,
+    "Description": "",
+    "Changelist": null,
+    "CommitURL": "",
+    "File": null,
+    "Source": "",
+    "Project": "infra"
+  },
   "Components": [
     {
       "Label": "recipe bootstrap",

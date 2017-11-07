@@ -4,9 +4,9 @@
   "CurrentBuilds": [
     {
       "Link": {
-        "Label": "2fbc7169a3b9a010",
-        "URL": "/swarming/prod/2fbc7169a3b9a010",
-        "AriaLabel": "build ID 9008387734773878544"
+        "Label": "100",
+        "URL": "/p//builders/luci.infra.try/Infra Presubmit (Swarming)/100",
+        "AriaLabel": "build #100"
       },
       "Status": "Running",
       "PendingTime": {
@@ -52,9 +52,9 @@
   "FinishedBuilds": [
     {
       "Link": {
-        "Label": "2fbc5f57c3a4b910",
-        "URL": "/swarming/prod/2fbc5f57c3a4b910",
-        "AriaLabel": "build ID 9008388977193267696"
+        "Label": "9008388977193267696",
+        "URL": "/p//builds/b9008388977193267696",
+        "AriaLabel": "build #9008388977193267696"
       },
       "Status": "Success",
       "PendingTime": {

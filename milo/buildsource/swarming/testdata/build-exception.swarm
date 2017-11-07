@@ -4,7 +4,8 @@
   "completed_ts": "2016-03-14T11:00:18.486020",
   "started_ts": "2016-03-14T10:00:01.850710",
   "tags": [
-    "allow_milo:1"
+    "allow_milo:1",
+    "luci_project:infra"
   ],
   "task_id": "2d8d62f6be545b10"
 }

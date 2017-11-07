@@ -3,6 +3,7 @@
  "bot_version": "02233557e20b68d33d7812c0465b582ed288a9bb",
  "task_id": "2d8d62f6be545b10",
  "tags": [
+  "luci_project:infra",
   "buildbucket_bucket:estaab-infra-waterfall-test",
   "buildbucket_hostname:cr-buildbucket-dev.appspot.com",
   "builder:infra-continuous-precise-32",
