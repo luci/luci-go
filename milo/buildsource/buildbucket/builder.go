@@ -17,7 +17,6 @@ package buildbucket
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -25,7 +24,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
@@ -66,7 +64,7 @@ func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
 // toMiloBuild converts a buildbucket build to a milo build.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
+func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
 	var b buildbucket.Build
 	if err := b.ParseMessage(msg); err != nil {
 		return nil, err
@@ -144,31 +142,19 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*resp.Bui
 		break
 	}
 
-	if b.URL != "" {
-		result.Link = resp.NewLink(strconv.FormatInt(b.ID, 10), b.URL,
-			fmt.Sprintf("build ID %d", b.ID))
-
-		// compute the best link label
-		if b.Number != nil {
-			result.Link.Label = strconv.Itoa(*b.Number)
-			result.Link.AriaLabel = fmt.Sprintf("build number %s", result.Link.Label)
-		} else if taskID := b.Tags.Get("swarming_task_id"); taskID != "" {
-			result.Link.Label = taskID
-		}
-
-		// map milo links to itself
-		switch u, err := url.Parse(b.URL); {
-		case err != nil:
-			logging.Errorf(c, "invalid URL in build %d: %s", b.ID, err)
-		case u.Host == info.DefaultVersionHostname(c):
-			u.Host = ""
-			u.Scheme = ""
-			result.Link.URL = u.String()
-			// we could redirect Buildbot URLs back to Milo, but it is not worth it
-			// because this view is not used for buildbot builds.
-		}
+	if b.Number != nil {
+		numStr := strconv.Itoa(*b.Number)
+		result.Link = resp.NewLink(
+			numStr,
+			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
+			fmt.Sprintf("build #%s", numStr))
+	} else {
+		idStr := strconv.FormatInt(b.ID, 10)
+		result.Link = resp.NewLink(
+			idStr,
+			fmt.Sprintf("/p/%s/builds/b%s", b.Project, idStr),
+			fmt.Sprintf("build #%s", idStr))
 	}
-
 	return result, nil
 }
 
@@ -189,7 +175,7 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 	}
 
 	for _, bb := range res.Builds {
-		mb, err := toMiloBuild(c, bb)
+		mb, err := toMiloBuild(bb)
 		if err != nil {
 			return err
 		}
@@ -249,7 +235,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Bui
 			return err
 		}
 		for _, m := range msgs {
-			b, err := toMiloBuild(c, m)
+			b, err := toMiloBuild(m)
 			if err != nil {
 				return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
 			}

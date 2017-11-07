@@ -89,7 +89,7 @@ func TestPubSub(t *testing.T) {
 	}
 
 	Convey("New in-process build", t, func() {
-		bKey := MakeBuildKey(c, "hostname", 1234)
+		bKey := MakeBuildKey(c, "hostname", "1234")
 		buildExp := buildBase
 		buildExp.Id = 1234
 		buildExp.Status = "STARTED"
@@ -135,7 +135,7 @@ func TestPubSub(t *testing.T) {
 	})
 
 	Convey("Completed build", t, func() {
-		bKey := MakeBuildKey(c, "hostname", 2234)
+		bKey := MakeBuildKey(c, "hostname", "2234")
 		buildExp := buildBase
 		buildExp.Id = 2234
 		buildExp.Status = "COMPLETED"

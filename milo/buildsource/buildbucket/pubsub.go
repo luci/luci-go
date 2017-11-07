@@ -86,11 +86,13 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 	ret := &model.BuildSummary{
 		ProjectID:     project,
 		AnnotationURL: swarmTags.Get("log_location"),
-		BuildKey:      MakeBuildKey(c, hostname, build.ID),
+		BuildKey:      MakeBuildKey(c, hostname, build.Address()),
 		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
 		BuildID:       fmt.Sprintf("buildbucket/%s", build.Address()),
 		BuildSet:      build.Tags[buildbucket.TagBuildSet],
-
+		ContextURI: []string{
+			fmt.Sprintf("buildbucket://%s/build/%d", hostname, build.ID),
+		},
 		SelfLink: fmt.Sprintf("/p/%s/builds/b%d", project, build.ID),
 
 		Created: build.CreationTime,
@@ -203,7 +205,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 //
 // There's currently no model associated with this key, but it's used as
 // a parent for a model.BuildSummary.
-func MakeBuildKey(c context.Context, host string, buildID int64) *datastore.Key {
+func MakeBuildKey(c context.Context, host, buildAddress string) *datastore.Key {
 	return datastore.MakeKey(c,
-		"buildbucket.Build", fmt.Sprintf("%s:%d", host, buildID))
+		"buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
 }

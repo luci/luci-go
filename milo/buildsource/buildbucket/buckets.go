@@ -17,6 +17,7 @@ package buildbucket
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -47,11 +48,19 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 
 	result.BuilderGroups = make([]resp.BuilderGroup, len(r.Buckets))
 	for i, bucket := range r.Buckets {
+		// TODO(nodir): instead of assuming luci.<project>. bucket prefix,
+		// expect project explicitly in bucket struct.
+		if !strings.HasPrefix(bucket.Name, "luci.") {
+			continue
+		}
+		// buildbucket guarantees that buckets that start with "luci.",
+		// start with "luci.<project id>." prefix.
+		project := strings.Split(bucket.Name, ".")[1]
 		group := resp.BuilderGroup{Name: bucket.Name}
 		group.Builders = make([]resp.Link, len(bucket.Builders))
 		for j, builder := range bucket.Builders {
 			group.Builders[j] = *resp.NewLink(
-				builder.Name, fmt.Sprintf("/buildbucket/%s/%s", bucket.Name, builder.Name),
+				builder.Name, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket.Name, builder.Name),
 				fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Name, bucket.Name))
 		}
 		result.BuilderGroups[i] = group
