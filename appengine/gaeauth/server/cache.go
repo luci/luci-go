@@ -76,18 +76,14 @@ func (m *Memcache) cacheContext(c context.Context) context.Context {
 // getLocal fetches the item from the context-bound cache, checking its
 // expiration. It trusts callers not to modify the returned byte array.
 func (m *Memcache) getLocal(c context.Context, key string) []byte {
-	if pc := caching.RequestCache(c); pc != nil {
-		e, _ := pc.Get(c, key)
-		if e != nil {
-			return e.([]byte)
-		}
+	e, _ := caching.RequestCache(c).Get(c, key)
+	if e != nil {
+		return e.([]byte)
 	}
 	return nil
 }
 
 // setLocal puts a copy of 'val' in the context-bound cache.
 func (m *Memcache) setLocal(c context.Context, key string, val []byte, exp time.Duration) {
-	if pc := caching.RequestCache(c); pc != nil {
-		pc.Put(c, key, append([]byte(nil), val...), exp)
-	}
+	caching.RequestCache(c).Put(c, key, append([]byte(nil), val...), exp)
 }
