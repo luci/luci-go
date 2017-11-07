@@ -117,6 +117,6 @@ func updateSettings(c context.Context) error {
 		if err := validateSettings(&newSettings.Settings); err != nil {
 			return errors.Annotate(err, "validating settings").Err()
 		}
-		return datastore.Put(c, newSettings)
+		return datastore.Put(c, &newSettings)
 	}, nil)
 }
