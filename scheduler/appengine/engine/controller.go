@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
@@ -50,8 +51,10 @@ type taskController struct {
 	saved    Invocation          // what have been given initially or saved in Save()
 	state    task.State          // state mutated by TaskManager
 	debugLog string              // mutated by DebugLog
-	timers   []invocationTimer   // mutated by AddTimer
-	triggers []*internal.Trigger // mutated by EmitTrigger
+	timers   []*internal.Timer   // new timers, mutated by AddTimer
+	triggers []*internal.Trigger // new outgoing triggers, mutated by EmitTrigger
+
+	consumedTimers stringset.Set // timers popped in consumeTimer
 }
 
 // controllerForInvocation returns new instance of taskController configured
@@ -86,6 +89,34 @@ func (ctl *taskController) populateState() {
 	}
 }
 
+// consumeTimer removes the given timer from the invocation, if it is there.
+//
+// Returns true if it was there, false if it wasn't, or an error on
+// deserialization errors.
+//
+// We can't modify 'saved' in place, since it is supposed to always match
+// what is (or has been) in the datastore. So delay the entity modification
+// until Save() call.
+func (ctl *taskController) consumeTimer(timerID string) (bool, error) {
+	if ctl.consumedTimers != nil && ctl.consumedTimers.Has(timerID) {
+		return false, nil // already consumed
+	}
+	timers, err := unmarshalTimersList(ctl.saved.PendingTimersRaw)
+	if err != nil {
+		return false, err
+	}
+	for _, t := range timers {
+		if t.Id == timerID {
+			if ctl.consumedTimers == nil {
+				ctl.consumedTimers = stringset.New(1)
+			}
+			ctl.consumedTimers.Add(timerID)
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // JobID is part of task.Controller interface.
 func (ctl *taskController) JobID() string {
 	return ctl.saved.jobID()
@@ -118,11 +149,26 @@ func (ctl *taskController) DebugLog(format string, args ...interface{}) {
 }
 
 // AddTimer is part of Controller interface.
-func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, name string, payload []byte) {
-	ctl.DebugLog("Scheduling timer %q after %s", name, delay)
-	ctl.timers = append(ctl.timers, invocationTimer{
-		Delay:   delay,
-		Name:    name,
+func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, title string, payload []byte) {
+	// ID for the new timer. It is guaranteed to be unique when we land the
+	// transaction because all ctl.saved modifications are serialized in time (see
+	// MutationsCount checks in Save), and we include serial number of such
+	// modification into the timer id (and suffix it with the index of the timer
+	// emitted by this particular modification). If two modification happen
+	// concurrently, they may temporary get same timer ID, but only one will
+	// actually land.
+	timerID := fmt.Sprintf("%s:%d:%d:%d",
+		ctl.JobID(), ctl.InvocationID(),
+		ctl.saved.MutationsCount, len(ctl.timers))
+
+	ctl.DebugLog("Scheduling timer %q (%s) after %s", title, timerID, delay)
+
+	now := clock.Now(ctx)
+	ctl.timers = append(ctl.timers, &internal.Timer{
+		Id:      timerID, // note: ignored in v1
+		Created: google.NewTimestamp(now),
+		Eta:     google.NewTimestamp(now.Add(delay)),
+		Title:   title,
 		Payload: payload,
 	})
 }
@@ -190,18 +236,38 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 	saving.TaskData = append([]byte(nil), ctl.state.TaskData...)
 	saving.ViewURL = ctl.state.ViewURL
 	saving.DebugLog += ctl.debugLog
-	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 && len(ctl.triggers) == 0 { // no changes at all?
+
+	// Cleanup all consumed timers.
+	if ctl.consumedTimers != nil {
+		err := mutateTimersList(&saving.PendingTimersRaw, func(out *[]*internal.Timer) {
+			filtered := make([]*internal.Timer, 0, len(*out))
+			for _, t := range *out {
+				if !ctl.consumedTimers.Has(t.Id) {
+					filtered = append(filtered, t)
+				}
+			}
+			*out = filtered
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// No changes at all? Skip transaction.
+	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 && len(ctl.triggers) == 0 {
 		return nil
 	}
+
 	saving.MutationsCount++
 
 	// Update local copy of Invocation with what's in the datastore on success.
 	defer func() {
 		if err == nil {
 			ctl.saved = saving
-			ctl.debugLog = ""  // debug log was successfully flushed
-			ctl.timers = nil   // timers were successfully scheduled
-			ctl.triggers = nil // triggers were successfully emitted
+			ctl.debugLog = ""        // debug log was successfully flushed
+			ctl.timers = nil         // new timers were successfully scheduled
+			ctl.triggers = nil       // new triggers were successfully emitted
+			ctl.consumedTimers = nil // pending timers were consumed
 		}
 	}()
 
@@ -213,7 +279,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 			saving.Finished.Sub(saving.Started), saving.Status)
 		// Finished invocations can't schedule timers.
 		for _, t := range ctl.timers {
-			saving.debugLog(ctx, "Ignoring timer %s...", t.Name)
+			saving.debugLog(ctx, "Ignoring timer %q (%s)...", t.Title, t.Id)
 		}
 		ctl.timers = nil
 	}

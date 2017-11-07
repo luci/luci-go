@@ -52,7 +52,7 @@ type Trigger struct {
 func (m *Trigger) Reset()                    { *m = Trigger{} }
 func (m *Trigger) String() string            { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()               {}
-func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 type isTrigger_Payload interface {
 	isTrigger_Payload()
@@ -213,7 +213,7 @@ type NoopTriggerData struct {
 func (m *NoopTriggerData) Reset()                    { *m = NoopTriggerData{} }
 func (m *NoopTriggerData) String() string            { return proto.CompactTextString(m) }
 func (*NoopTriggerData) ProtoMessage()               {}
-func (*NoopTriggerData) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*NoopTriggerData) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *NoopTriggerData) GetData() string {
 	if m != nil {
@@ -233,7 +233,7 @@ type GitilesTriggerData struct {
 func (m *GitilesTriggerData) Reset()                    { *m = GitilesTriggerData{} }
 func (m *GitilesTriggerData) String() string            { return proto.CompactTextString(m) }
 func (*GitilesTriggerData) ProtoMessage()               {}
-func (*GitilesTriggerData) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*GitilesTriggerData) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *GitilesTriggerData) GetRepo() string {
 	if m != nil {
@@ -264,7 +264,7 @@ type TriggerList struct {
 func (m *TriggerList) Reset()                    { *m = TriggerList{} }
 func (m *TriggerList) String() string            { return proto.CompactTextString(m) }
 func (*TriggerList) ProtoMessage()               {}
-func (*TriggerList) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*TriggerList) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 func (m *TriggerList) GetTriggers() []*Trigger {
 	if m != nil {
@@ -281,10 +281,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 388 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x91, 0x4d, 0x8b, 0x14, 0x31,
 	0x10, 0x86, 0xed, 0xf9, 0x9e, 0x5a, 0x3f, 0x83, 0x42, 0x98, 0x8b, 0x43, 0xcb, 0xc2, 0x9c, 0xd2,

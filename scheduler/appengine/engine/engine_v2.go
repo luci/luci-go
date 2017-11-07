@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -54,10 +55,24 @@ func (ctl *jobControllerV2) onJobForceInvocation(c context.Context, job *Job) (F
 	return resolvedFutureInvocation{invID: invs[0].ID}, nil
 }
 
-func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []*internal.Trigger) error {
+func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocation, timers []*internal.Timer, triggers []*internal.Trigger) error {
 	assertInTransaction(c)
 
-	// TODO(vadimsh): Implement timers.
+	if fresh.Status.Final() && len(timers) > 0 {
+		panic("finished invocations must not emit timer, ensured by taskController")
+	}
+
+	// Register new timers in the Invocation entity. Used to reject duplicate
+	// task queue calls: only tasks that reference a timer in the pending timers
+	// set are accepted.
+	if len(timers) != 0 {
+		err := mutateTimersList(&fresh.PendingTimersRaw, func(out *[]*internal.Timer) {
+			*out = append(*out, timers...)
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	// Register emitted triggers in the Invocation entity. Used mostly for UI.
 	if len(triggers) != 0 {
@@ -100,8 +115,28 @@ func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocat
 		tasks = append(tasks, &tq.Task{Payload: fanOutTriggersTask})
 	}
 
-	if len(timers) != 0 {
-		// TODO(vadimsh): Emit invocation timers.
+	// When emitting more than 1 timer (this is rare) use an intermediary task,
+	// to avoid getting close to limit of number of tasks in a transaction. When
+	// emitting 1 timer (most common case), don't bother, since we aren't winning
+	// anything.
+	switch {
+	case len(timers) == 1:
+		tasks = append(tasks, &tq.Task{
+			ETA: google.TimeFromProto(timers[0].Eta),
+			Payload: &internal.TimerTask{
+				JobId: fresh.JobID,
+				InvId: fresh.ID,
+				Timer: timers[0],
+			},
+		})
+	case len(timers) > 1:
+		tasks = append(tasks, &tq.Task{
+			Payload: &internal.ScheduleTimersTask{
+				JobId:  fresh.JobID,
+				InvId:  fresh.ID,
+				Timers: timers,
+			},
+		})
 	}
 
 	return ctl.eng.cfg.Dispatcher.AddTask(c, tasks...)

@@ -198,6 +198,13 @@ type Invocation struct {
 	// Use OutgoingTriggers() function to grab them in deserialized form.
 	OutgoingTriggersRaw []byte `gae:",noindex"`
 
+	// PendingTimersRaw is a serialized list of pending invocation timers (v2).
+	//
+	// Timers are emitted by Controller's AddTimer call.
+	//
+	// Use PendingTimers() function to grab them in deserialized form.
+	PendingTimersRaw []byte `gae:",noindex"`
+
 	// Revision is revision number of config.cfg when this invocation was created.
 	// For informational purpose.
 	Revision string `gae:",noindex"`
@@ -271,6 +278,7 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.TriggeredBy == other.TriggeredBy &&
 		bytes.Equal(e.IncomingTriggersRaw, other.IncomingTriggersRaw) &&
 		bytes.Equal(e.OutgoingTriggersRaw, other.OutgoingTriggersRaw) &&
+		bytes.Equal(e.PendingTimersRaw, other.PendingTimersRaw) &&
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		bytes.Equal(e.Task, other.Task) &&
@@ -370,6 +378,13 @@ func (e *Invocation) IncomingTriggers() ([]*internal.Trigger, error) {
 // It is deserialized on the fly from OutgoingTriggersRaw.
 func (e *Invocation) OutgoingTriggers() ([]*internal.Trigger, error) {
 	return unmarshalTriggersList(e.OutgoingTriggersRaw)
+}
+
+// PendingTimers is a list of not-yet-consumed invocation timers.
+//
+// It is deserialized on the fly from PendingTimersRaw.
+func (e *Invocation) PendingTimers() ([]*internal.Timer, error) {
+	return unmarshalTimersList(e.PendingTimersRaw)
 }
 
 // cleanupUnreferencedInvocations tries to delete given invocations.

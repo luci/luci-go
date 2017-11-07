@@ -563,3 +563,127 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		})
 	})
 }
+
+func TestInvocationTimers(t *testing.T) {
+	t.Parallel()
+
+	Convey("with fake env", t, func() {
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+
+		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tq.CreateQueues()
+
+		const testJobID = "project/job-v2"
+		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+			{
+				JobID:    testJobID,
+				Revision: "rev1",
+				Schedule: "triggered",
+				Task:     noopTaskBytes(),
+				Acls:     aclOne,
+			},
+		}), ShouldBeNil)
+
+		Convey("happy path", func() {
+			const testInvID int64 = 9200093523825174512
+
+			// Force launch the job.
+			_, err := e.ForceInvocation(auth.WithState(c, asUserOne), testJobID)
+			So(err, ShouldBeNil)
+
+			// See handelTimer. Name of the timer => time since epoch.
+			callTimes := map[string]time.Duration{}
+
+			// Eventually it runs the task which emits a bunch of timers and then
+			// some more, and then stops.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+				ctl.AddTimer(ctx, time.Minute, "1 min", []byte{1})
+				ctl.AddTimer(ctx, 2*time.Minute, "2 min", []byte{2})
+				ctl.State().Status = task.StatusRunning
+				return nil
+			}
+			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
+				callTimes[name] = clock.Now(ctx).Sub(epoch)
+				switch name {
+				case "1 min": // ignore
+				case "2 min":
+					// Call us again later.
+					ctl.AddTimer(ctx, time.Minute, "stop", []byte{3})
+				case "stop":
+					ctl.AddTimer(ctx, time.Minute, "ignored-timer", nil)
+					ctl.State().Status = task.StatusSucceeded
+				}
+				return nil
+			}
+			tasks, _, err := tq.RunSimulation(c, nil)
+			So(err, ShouldBeNil)
+
+			timerMsg := func(idSuffix string, created, eta time.Duration, title string, payload []byte) *internal.Timer {
+				return &internal.Timer{
+					Id:      fmt.Sprintf("%s:%d:%s", testJobID, testInvID, idSuffix),
+					Created: google.NewTimestamp(epoch.Add(created)),
+					Eta:     google.NewTimestamp(epoch.Add(eta)),
+					Title:   title,
+					Payload: payload,
+				}
+			}
+
+			// Individual timers emitted by the test. Note that 1 extra sec comes from
+			// the delay added by kickLaunchInvocationsBatchTask.
+			timer1 := timerMsg("1:0", time.Second, time.Second+time.Minute, "1 min", []byte{1})
+			timer2 := timerMsg("1:1", time.Second, time.Second+2*time.Minute, "2 min", []byte{2})
+			timer3 := timerMsg("3:0", time.Second+2*time.Minute, time.Second+3*time.Minute, "stop", []byte{3})
+
+			// All 'handleTimer' ticks happened at expected moments in time.
+			So(callTimes, ShouldResemble, map[string]time.Duration{
+				"1 min": time.Second + time.Minute,
+				"2 min": time.Second + 2*time.Minute,
+				"stop":  time.Second + 3*time.Minute,
+			})
+
+			// All the tasks we've just executed.
+			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				// Triggering job begins execution.
+				&internal.LaunchInvocationsBatchTask{
+					Tasks: []*internal.LaunchInvocationTask{{JobId: testJobID, InvId: testInvID}},
+				},
+				&internal.LaunchInvocationTask{
+					JobId: testJobID, InvId: testInvID,
+				},
+
+				// Request to schedule a bunch of timers.
+				&internal.ScheduleTimersTask{
+					JobId:  testJobID,
+					InvId:  testInvID,
+					Timers: []*internal.Timer{timer1, timer2},
+				},
+
+				// Actual individual timers.
+				&internal.TimerTask{
+					JobId: testJobID,
+					InvId: testInvID,
+					Timer: timer1,
+				},
+				&internal.TimerTask{
+					JobId: testJobID,
+					InvId: testInvID,
+					Timer: timer2,
+				},
+
+				// One more, scheduled from handleTimer.
+				&internal.TimerTask{
+					JobId: testJobID,
+					InvId: testInvID,
+					Timer: timer3,
+				},
+
+				// End of the invocation.
+				&internal.InvocationFinishedTask{
+					JobId: testJobID, InvId: testInvID,
+				},
+				&internal.TriageJobStateTask{JobId: testJobID},
+			})
+		})
+	})
+}

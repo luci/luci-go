@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
@@ -247,6 +248,8 @@ func (e *engineImpl) init() {
 	e.cfg.Dispatcher.RegisterTask(&internal.InvocationFinishedTask{}, e.invocationFinishedTask, "completions", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.FanOutTriggersTask{}, e.fanOutTriggersTask, "triggers", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.EnqueueTriggersTask{}, e.enqueueTriggersTask, "triggers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.ScheduleTimersTask{}, e.scheduleTimersTask, "timers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.TimerTask{}, e.timerTask, "timers", nil)
 }
 
 // jobController is a part of engine that directly deals with state transitions
@@ -266,7 +269,7 @@ type jobController interface {
 	onJobAbort(c context.Context, job *Job) (invs []int64, err error)
 	onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error)
 
-	onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []*internal.Trigger) error
+	onInvUpdating(c context.Context, old, fresh *Invocation, timers []*internal.Timer, triggers []*internal.Trigger) error
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1404,6 +1407,8 @@ func (e *engineImpl) executeInvAction(c context.Context, payload *actionTaskPayl
 // invocationTimerTick is called via Task Queue to handle AddTimer callbacks.
 //
 // See also handlePubSubMessage, it is quite similar.
+//
+// v1 only! See timerTask for v2, it is slightly different.
 func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID int64, timer *invocationTimer) error {
 	action := fmt.Sprintf("timer %q tick", timer.Name)
 	return e.withController(c, jobID, invID, action, func(c context.Context, ctl *taskController) error {
@@ -1964,6 +1969,69 @@ func (e *engineImpl) enqueueTriggersTask(c context.Context, tqTask proto.Message
 	}
 
 	return e.kickTriageJobStateTask(c, msg.JobId)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Timers handling (v2 engine).
+
+// scheduleTimersTask adds a bunch of TimerTask tasks.
+//
+// It is emitted by Invocation transaction when it wants to schedule multiple
+// timers.
+func (e *engineImpl) scheduleTimersTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.ScheduleTimersTask)
+
+	tasks := make([]*tq.Task, len(msg.Timers))
+	for i, timer := range msg.Timers {
+		tasks[i] = &tq.Task{
+			ETA: google.TimeFromProto(timer.Eta),
+			Payload: &internal.TimerTask{
+				JobId: msg.JobId,
+				InvId: msg.InvId,
+				Timer: timer,
+			},
+		}
+	}
+
+	return e.cfg.Dispatcher.AddTask(c, tasks...)
+}
+
+// timerTask corresponds to a tick of a timer added via AddTimer.
+func (e *engineImpl) timerTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.TimerTask)
+	timer := msg.Timer
+	action := fmt.Sprintf("timer %q (%s)", timer.Title, timer.Id)
+
+	return e.withController(c, msg.JobId, msg.InvId, action, func(c context.Context, ctl *taskController) error {
+		// Pop the timer from the pending set, if it is still there. Return a fatal
+		// error if it isn't to stop this task from being redelivered.
+		switch consumed, err := ctl.consumeTimer(timer.Id); {
+		case err != nil:
+			return err
+		case !consumed:
+			return fmt.Errorf("no such timer: %s", timer.Id)
+		}
+
+		// Let the task manager handle the timer. It may add new timers.
+		ctl.DebugLog("Handling timer %q (%s)", timer.Title, timer.Id)
+		err := ctl.manager.HandleTimer(c, ctl, timer.Title, timer.Payload)
+		switch {
+		case err == nil:
+			return nil // success! save the invocation
+		case transient.Tag.In(err):
+			return err // ask for redelivery on transient errors, don't touch the invocation
+		}
+
+		// On fatal errors, move the invocation to failed state (if not already).
+		if ctl.State().Status != task.StatusFailed {
+			ctl.DebugLog("Fatal error when handling timer, aborting invocation - %s", err)
+			ctl.State().Status = task.StatusFailed
+		}
+
+		// Need to save the invocation, even on fatal errors (to indicate that the
+		// timer has been consumed). So return nil.
+		return nil
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
