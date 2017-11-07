@@ -42,7 +42,7 @@
             <div class="console-header-group-content">
               {{ if gt (len .Emails) 0 }}
                 {{ range .Emails }}
-                  <span>{{ . | obfuscateEmail }}</span>
+                  <span>{{ . | userFromEmail }}</span>
                 {{ end }}
               {{ else }}
                 <span>&lt;none&gt;</span>
@@ -138,15 +138,16 @@
     <div class="console-row">
       <div class="console-commit-column">
       {{ range $console.Commit }}
-        <div class="console-commit-item">{{ .CommitTime | localTime "N/A" }}</div>
+        <div class="console-commit-item">{{ .CommitTime | localTimeSince "N/A" }}</div>
       {{ end }}
       </div>
       <div class="console-commit-column">
       {{ range $console.Commit }}
         <div class="console-commit-item">
           <a href="{{.Revision.URL}}">
-            <span class="commit" title="{{ .Description }}">
-              {{ .AuthorEmail }}
+            <span class="commit" title="{{ .AuthorName }} ({{ .AuthorEmail }})
+{{ .Description }}">
+              {{ .AuthorEmail | userFromEmail }}
             </span>
           </a>
         </div>

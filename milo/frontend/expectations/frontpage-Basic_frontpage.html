@@ -57,11 +57,16 @@ Encountered error while loading front page: couldn&#39;t find ice cream
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.makeTimesLocalSince();
   milo.annotateDurations();
   $(document).tooltip({
     show: false,
     hide: false
   });
+  setInterval(function(){
+    milo.makeTimesLocal();
+    milo.makeTimesLocalSince();
+  }, 60 * 1000);
 })();
 </script>
 <script>

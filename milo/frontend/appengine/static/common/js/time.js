@@ -34,6 +34,26 @@
   };
 
   /**
+   * Given a Date, return a time since string between that date a now.
+   * Also return the time string in Local time, MTV time, and UTC
+   * time.
+   */
+  milo.formatDateSince = function(t) {
+    var mt = moment.tz(t, milo.tz);
+    if (!mt.isValid()) {
+      return null;
+    }
+    var hover = mt.format("YYYY-MM-DD LT (z)");
+    hover += "\n" + moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD LT [(MTV)]");
+    hover += "\n" + moment.tz(mt, "UTC").format("YYYY-MM-DD LT [(UTC)]");
+
+    return {
+      main: mt.fromNow(),
+      hover: hover
+    }
+  };
+
+  /**
    * Given two Dates (or a Date and null, prepresenting "now"), return
    * a duration string, with a hover string of the start/end time in the user's
    * timezone and locale.
@@ -55,6 +75,25 @@
       hover += et.format("YYYY-MM-DD LT (z)");
     }
     return hover;
+  };
+
+  milo.makeTimesLocalSince = function() {
+    var timeSpans = document.getElementsByClassName('local-time-since');
+    for (var i = 0; i < timeSpans.length; i++) {
+      var span = timeSpans[i];
+      try {
+        var oldTimestamp = span.innerText;
+        var timestamp = span.getAttribute('data-timestamp');
+        var date = new Date(parseInt(timestamp, 10));
+        var newTimestamp = milo.formatDateSince(date);
+        if (newTimestamp != null) {
+          span.innerText = newTimestamp.main;
+          span.setAttribute("title", newTimestamp.hover);
+        }
+      } catch (e) {
+        console.error('could not convert time of span', span, 'to local:', e)
+      }
+    }
   };
 
   milo.makeTimesLocal = function() {

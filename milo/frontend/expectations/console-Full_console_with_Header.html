@@ -58,9 +58,9 @@
             <div class="console-header-group-content">
               
                 
-                  <span>test<span style="display:none">ohnoyoudont</span>@example.com</span>
+                  <span>test</span>
                 
-                  <span>watcher<span style="display:none">ohnoyoudont</span>@example.com</span>
+                  <span>watcher</span>
                 
               
             </div>
@@ -196,25 +196,27 @@
     <div class="console-row">
       <div class="console-commit-column">
       
-        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357446871">Wednesday, 12-Dec-12 12:12:12 UTC</span></div>
+        <div class="console-commit-item"><span class="local-time-since" data-timestamp="-6418357446871">Wednesday, 12-Dec-12 12:12:12 UTC</span></div>
       
-        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357447871">Wednesday, 12-Dec-12 12:12:11 UTC</span></div>
+        <div class="console-commit-item"><span class="local-time-since" data-timestamp="-6418357447871">Wednesday, 12-Dec-12 12:12:11 UTC</span></div>
       
       </div>
       <div class="console-commit-column">
       
         <div class="console-commit-item">
           <a href="blah%20blah%20blah">
-            <span class="commit" title="Me too.">
-              x@example.com
+            <span class="commit" title=" (x@example.com)
+Me too.">
+              x
             </span>
           </a>
         </div>
       
         <div class="console-commit-item">
           <a href="blah%20blah%20blah%201">
-            <span class="commit" title="I did something.">
-              y@example.com
+            <span class="commit" title=" (y@example.com)
+I did something.">
+              y
             </span>
           </a>
         </div>
@@ -251,11 +253,16 @@
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.makeTimesLocalSince();
   milo.annotateDurations();
   $(document).tooltip({
     show: false,
     hide: false
   });
+  setInterval(function(){
+    milo.makeTimesLocal();
+    milo.makeTimesLocalSince();
+  }, 60 * 1000);
 })();
 </script>
 <script>

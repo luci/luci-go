@@ -45,19 +45,21 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
+	"faviconMIMEType": faviconMIMEType,
+	"formatTime":      formatTime,
 	"humanDuration":   humanDuration,
-	"parseRFC3339":    parseRFC3339,
 	"linkify":         linkify,
 	"linkifySet":      linkifySet,
-	"obfuscateEmail":  obfuscateEmail,
 	"localTime":       localTime,
+	"localTimeSince":  localTimeSince,
+	"obfuscateEmail":  obfuscateEmail,
+	"pagedURL":        pagedURL,
+	"parseRFC3339":    parseRFC3339,
+	"percent":         percent,
 	"shortHash":       shortHash,
 	"startswith":      strings.HasPrefix,
 	"sub":             sub,
-	"pagedURL":        pagedURL,
-	"formatTime":      formatTime,
-	"percent":         percent,
-	"faviconMIMEType": faviconMIMEType,
+	"userFromEmail":   userFromEmail,
 }
 
 // localTime returns a <span> element with t in human format
@@ -70,6 +72,21 @@ func localTime(ifZero string, t time.Time) template.HTML {
 	milliseconds := t.UnixNano() / 1e6
 	return template.HTML(fmt.Sprintf(
 		`<span class="local-time" data-timestamp="%d">%s</span>`,
+		milliseconds,
+		t.Format(time.RFC850)))
+}
+
+// localTimeSince returns a <span> element with t in human format
+// that will be converted to a relative time in the browser, with the local
+// time on-hover.
+// Recommended usage: {{ .Date | localTimeSince "N/A" }}
+func localTimeSince(ifZero string, t time.Time) template.HTML {
+	if t.IsZero() {
+		return template.HTML(template.HTMLEscapeString(ifZero))
+	}
+	milliseconds := t.UnixNano() / 1e6
+	return template.HTML(fmt.Sprintf(
+		`<span class="local-time-since" data-timestamp="%d">%s</span>`,
 		milliseconds,
 		t.Format(time.RFC850)))
 }
@@ -186,6 +203,15 @@ func shortHash(s string) string {
 		return s[0:6]
 	}
 	return s
+}
+
+// userFromEmail returns the username portion of an email address.
+func userFromEmail(email string) string {
+	esplit := strings.SplitN(email, "@", 2)
+	if len(esplit) > 0 {
+		return esplit[0]
+	}
+	return email
 }
 
 // GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from

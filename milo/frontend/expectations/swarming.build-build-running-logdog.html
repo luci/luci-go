@@ -307,11 +307,16 @@ $(document).ready(function() {
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.makeTimesLocalSince();
   milo.annotateDurations();
   $(document).tooltip({
     show: false,
     hide: false
   });
+  setInterval(function(){
+    milo.makeTimesLocal();
+    milo.makeTimesLocalSince();
+  }, 60 * 1000);
 })();
 </script>
 <script>
