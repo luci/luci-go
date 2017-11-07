@@ -75,17 +75,35 @@
   </div>
 
 {{ if $header.ConsoleGroups }}
-  <div class="console-header-column-summaries">
+  <div class="exp-console-header-column-summaries">
   {{ range $header.ConsoleGroups }}
 
     <!-- Header Group -->
     <!-- If the title is nil, don't wrap it in a special div. -->
     {{ if .Title }}
-    <div class="console-header-group">
+    <div class="exp-console-header-group">
       <div class="console-header-group-title">
         {{ .Title | linkify }}
       </div>
     {{ end }}
+      <div class="exp-console-header-builders">
+      {{ range .Consoles }}
+        <div class="exp-console-header-summary">
+          <div class="console-header-name">
+            {{ .Name | linkify }}
+          </div>
+          {{ $console_name := .Name.Link.Label }}
+          {{ range .Builders }}
+            <a class="exp-console-header-builder-status"
+               href="/{{ .LastFinishedBuildID }}"
+               title="{{ .LastFinishedBuildID }}">
+              <div class="exp-console-header-build status-{{ .LastFinishedStatus }}"></div>
+            </a>
+          {{ end }}
+        </div>
+      {{ end }}
+      </div>
+      <!--
       <div class="console-column">
       {{ range .Consoles }}
         <div class="console-header-summary">
@@ -104,6 +122,7 @@
         </div>
       {{ end }}
       </div>
+      -->
     <!-- If the title is nil, don't wrap it in a special div. -->
     {{ if .Title }}
     </div>
