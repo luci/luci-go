@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "0207e874_6ad61988",
+        "filename": "server/caching/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-07T05:09:35Z",
+      "side": 1,
+      "message": "i don\u0027t see how this is going to be used as a key, since you are essentially registering a real one here. Maybe description?",
+      "range": {
+        "startLine": 42,
+        "startChar": 26,
+        "endLine": 42,
+        "endChar": 29
+      },
+      "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e32a3380_4963e50f",
         "filename": "server/caching/process.go",
         "patchSetId": 1
@@ -22,6 +45,30 @@
       "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b03287be_bf576f5f",
+        "filename": "server/caching/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-07T05:09:35Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e32a3380_4963e50f",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 25
+      },
+      "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
