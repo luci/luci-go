@@ -64,7 +64,7 @@
             <div class="console-header-group-name">{{ .Name }}</div>
             <div class="console-header-group-content">
             {{ range .Links }}
-              <span>{{ . | linkify }}</span>
+              <span>{{ .HTML }}</span>
             {{ end }}
             </div>
           </div>
@@ -83,14 +83,14 @@
     {{ if .Title }}
     <div class="console-header-group">
       <div class="console-header-group-title">
-        {{ .Title | linkify }}
+        {{ .Title.HTML }}
       </div>
     {{ end }}
       <div class="console-header-summaries">
       {{ range .Consoles }}
         <div class="console-header-summary">
           <div class="console-header-name">
-            {{ .Name | linkify }}
+            {{ .Name.HTML }}
           </div>
           {{ $console_name := .Name.Link.Label }}
           {{ range .Builders }}

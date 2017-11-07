@@ -18,7 +18,9 @@
 package ui
 
 import (
+	"bytes"
 	"encoding/json"
+	"html/template"
 	"strings"
 	"time"
 
@@ -285,4 +287,49 @@ type Link struct {
 // NewLink does just about what you'd expect.
 func NewLink(label, url, ariaLabel string) *Link {
 	return &Link{Link: model.Link{Label: label, URL: url}, AriaLabel: ariaLabel}
+}
+
+/// HTML methods.
+
+var (
+	linkifyTemplate = template.Must(
+		template.New("linkify").
+			Parse(
+				`<a href="{{.URL}}"{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}>` +
+					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
+					`{{else if .Alias}}[{{.Label}}]` +
+					`{{else}}{{.Label}}{{end}}` +
+					`</a>`))
+
+	linkifySetTemplate = template.Must(
+		template.New("linkifySet").
+			Parse(
+				`{{ range $i, $link := . }}` +
+					`{{ if gt $i 0 }} {{ end }}` +
+					`{{ $link.HTML }}` +
+					`{{ end }}`))
+)
+
+// HTML renders this Link as HTML.
+func (l *Link) HTML() template.HTML {
+	if l == nil {
+		return ""
+	}
+	buf := bytes.Buffer{}
+	if err := linkifyTemplate.Execute(&buf, l); err != nil {
+		panic(err)
+	}
+	return template.HTML(buf.Bytes())
+}
+
+// HTML renders this LinkSet as HTML.
+func (l LinkSet) HTML() template.HTML {
+	if len(l) == 0 {
+		return ""
+	}
+	buf := bytes.Buffer{}
+	if err := linkifySetTemplate.Execute(&buf, l); err != nil {
+		panic(err)
+	}
+	return template.HTML(buf.Bytes())
 }

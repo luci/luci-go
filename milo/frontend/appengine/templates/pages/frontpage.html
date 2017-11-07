@@ -11,12 +11,12 @@ Encountered error while loading front page: {{ .error }}
 
 {{ range .frontpage.CIServices }}
   <h2> {{ .Name }}
-    {{ if .Host }} ({{ .Host | linkify }}) {{ end }}
+    {{ if .Host }} ({{ .Host.HTML }}) {{ end }}
   </h2>
   {{ range .BuilderGroups }}
     <h3> {{ .Name }} </h3>
     {{ range .Builders }}
-      <li>{{ . | linkify }}</li>
+      <li>{{ .HTML }}</li>
     {{ else }}
       No builders found...
     {{ end }}

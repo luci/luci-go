@@ -12,7 +12,7 @@
     {{ range $i, $c := . -}}
       {{- if gt $i 0 }}, {{ end -}}
       {{- if .Changelist -}}
-        {{- .Changelist | linkify -}}
+        {{- .Changelist.HTML -}}
         {{- if .AuthorEmail -}}
           by {{- .AuthorEmail -}}
         {{- end -}}
@@ -67,7 +67,7 @@
           <tr><th>Name</th><th>Status</th></tr>
           {{ range .Bots }}
             <tr>
-              <td>{{ .Name | linkify }}</td>
+              <td>{{ .Name.HTML }}</td>
               <td class="status-{{ .Status.String }}">{{ .Status.String }}</td>
             </tr>
           {{ end }}
@@ -82,7 +82,7 @@
     <h2>Current Builds ({{len .Builder.CurrentBuilds}}):</h2>
     <ul>
     {{ range .Builder.CurrentBuilds }}
-      <li>{{ .Link | linkify }}
+      <li>{{ .Link.HTML }}
         {{ with .Blame }}{{ template "blamelist" }}{{ end }}
         [Running for: {{ .ExecutionTime.Duration | humanDuration }}]
         {{ range .Text }} {{ . }}{{ end }}
@@ -98,7 +98,7 @@
   {{ if .Builder.PendingBuilds -}}
 		<h2>Pending Build Requests (
 			{{- if gt .Builder.PendingBuildNum (len .Builder.PendingBuilds) -}}
-				{{ .Builder.PendingBuildNum }} showing 
+				{{ .Builder.PendingBuildNum }} showing
 			{{ end -}}{{- len .Builder.PendingBuilds -}}):</h2>
     <ul>
     {{- range .Builder.PendingBuilds -}}
@@ -145,14 +145,14 @@
           {{ else }}
             <td> {{ .Status.String }} </td>
           {{ end }}
-          <td>{{ .Link | linkify }}</td>
+          <td>{{ .Link.HTML }}</td>
           <td class="left">
             {{ $nb := len .Blame }}
             {{ if lt $nb 4 }}
               {{ range $i, $c := .Blame }}
                 {{ if gt $i 0 }},{{ end }}
                 {{ if .Changelist }}
-                  {{ .Changelist | linkify }}
+                  {{ .Changelist.HTML }}
                   {{ if .AuthorEmail }}
                     by {{ .AuthorEmail }}
                   {{ end }}

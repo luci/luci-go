@@ -15,7 +15,6 @@
 package frontend
 
 import (
-	"bytes"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -38,7 +37,6 @@ import (
 	"go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // A collection of useful templating functions
@@ -47,8 +45,6 @@ import (
 var funcMap = template.FuncMap{
 	"humanDuration":   humanDuration,
 	"parseRFC3339":    parseRFC3339,
-	"linkify":         linkify,
-	"linkifySet":      linkifySet,
 	"obfuscateEmail":  obfuscateEmail,
 	"localTime":       localTime,
 	"shortHash":       shortHash,
@@ -141,37 +137,6 @@ func parseRFC3339(s string) time.Time {
 // formatTime takes a time object and returns a formatted RFC3339 string.
 func formatTime(t time.Time) string {
 	return t.Format(time.RFC3339)
-}
-
-// linkifyTemplate is the template used in "linkify". Because the template,
-// itself recursively invokes "linkify", we will initialize it in explicitly
-// in "init()".
-//
-// linkifySetTemplate is the template used in "linkifySet".
-var linkifyTemplate, linkifySetTemplate *template.Template
-
-// linkify turns a resp.LinkSet struct into a canonical link.
-func linkify(link *ui.Link) template.HTML {
-	if link == nil {
-		return ""
-	}
-	buf := bytes.Buffer{}
-	if err := linkifyTemplate.Execute(&buf, link); err != nil {
-		panic(err)
-	}
-	return template.HTML(buf.Bytes())
-}
-
-// linkifySet turns a resp.Link struct into a canonical link.
-func linkifySet(linkSet ui.LinkSet) template.HTML {
-	if len(linkSet) == 0 {
-		return ""
-	}
-	buf := bytes.Buffer{}
-	if err := linkifySetTemplate.Execute(&buf, linkSet); err != nil {
-		panic(err)
-	}
-	return template.HTML(buf.Bytes())
 }
 
 // sub subtracts one number from another, because apparently go templates aren't
@@ -274,27 +239,6 @@ func faviconMIMEType(fileURL string) string {
 		return "image/gif"
 	}
 	return ""
-}
-
-func init() {
-	linkifySetTemplate = template.Must(
-		template.New("linkifySet").
-			Funcs(template.FuncMap{
-				"linkify": linkify,
-			}).Parse(
-			`{{ range $i, $link := . }}` +
-				`{{ if gt $i 0 }} {{ end }}` +
-				`{{ $link | linkify}}` +
-				`{{ end }}`))
-
-	linkifyTemplate = template.Must(
-		template.New("linkify").
-			Parse(
-				`<a href="{{.URL}}"{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}>` +
-					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
-					`{{else if .Alias}}[{{.Label}}]` +
-					`{{else}}{{.Label}}{{end}}` +
-					`</a>`))
 }
 
 // getTemplateBundles is used to render HTML templates. It provides base args
