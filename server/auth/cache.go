@@ -46,12 +46,6 @@ type Cache interface {
 	//
 	// Any returned error is transient error.
 	Set(c context.Context, key string, value []byte, exp time.Duration) error
-
-	// WithLocalMutex calls 'f' under a process-local mutex assigned to the 'key'.
-	//
-	// It is used to ensure only one goroutine is updating the item matching the
-	// given key.
-	WithLocalMutex(c context.Context, key string, f func())
 }
 
 // tokenCache knows how to keep tokens in a cache represented by Cache.
@@ -163,9 +157,9 @@ func (tc *tokenCache) Fetch(c context.Context, cache Cache, key string, minTTL t
 	return tok, nil
 }
 
-// WithLocalMutex calls Cache.WithLocalMutex with correct cache key.
-func (tc *tokenCache) WithLocalMutex(c context.Context, cache Cache, key string, f func()) {
-	cache.WithLocalMutex(c, tc.itemKey(key), f)
+// WithMutex calls 'f' under a lock that corresponds to the given key.
+func (tc *tokenCache) WithMutex(locks *mutexpool.P, key string, f func()) {
+	locks.WithMutex("token:"+tc.itemKey(key), f)
 }
 
 // itemKey derives the short key to use in the underlying cache.
@@ -218,7 +212,7 @@ func fetchOrMintToken(ctx context.Context, op *fetchOrMintTokenOp) (*cachedToken
 		err   error
 		label string
 	}
-	op.Cache.WithLocalMutex(ctx, op.Config.Cache, op.CacheKey, func() {
+	op.Cache.WithMutex(op.Config.locks, op.CacheKey, func() {
 		// Recheck the cache now that we have the lock, maybe someone updated the
 		// cache while we were waiting.
 		switch cached, err := op.Cache.Fetch(ctx, op.Config.Cache, op.CacheKey, op.MinTTL); {
@@ -278,8 +272,6 @@ type memoryCacheKey string
 type MemoryCache struct {
 	// LRU is the instantiated, underlying LRU cache.
 	LRU *lru.Cache
-
-	locks mutexpool.P
 }
 
 // NewMemoryCache returns a new LRU-based Cache instance with the supplied
@@ -308,12 +300,4 @@ func (mc *MemoryCache) Get(c context.Context, key string) ([]byte, error) {
 func (mc *MemoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
 	mc.LRU.Put(c, memoryCacheKey(key), value, exp)
 	return nil
-}
-
-// WithLocalMutex calls 'f' under a process-local mutex assigned to the 'key'.
-//
-// It is used to ensure only one goroutine is updating the item matching the
-// given key.
-func (mc *MemoryCache) WithLocalMutex(c context.Context, key string, f func()) {
-	mc.locks.WithMutex(memoryCacheKey(key), f)
 }
