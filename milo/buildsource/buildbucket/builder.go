@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -64,7 +65,7 @@ func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
 // toMiloBuild converts a buildbucket build to a milo build.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*ui.BuildSummary, error) {
+func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.BuildSummary, error) {
 	var b buildbucket.Build
 	if err := b.ParseMessage(msg); err != nil {
 		return nil, err
@@ -99,20 +100,31 @@ func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*ui.BuildSummary, error) {
 		}
 	}
 
-	schedulingDuration, _ := b.SchedulingDuration()
-	runDuration, _ := b.RunDuration()
+	duration := func(start, end time.Time) time.Duration {
+		if start.IsZero() {
+			return 0
+		}
+		if end.IsZero() {
+			end = clock.Now(c)
+		}
+		if end.Before(start) {
+			return 0
+		}
+		return end.Sub(start)
+	}
+
 	result := &ui.BuildSummary{
 		Revision: resultDetails.Properties.GotRevision,
 		Status:   parseStatus(b.Status),
 		PendingTime: ui.Interval{
 			Started:  b.CreationTime,
 			Finished: b.StartTime,
-			Duration: schedulingDuration,
+			Duration: duration(b.CreationTime, b.StartTime),
 		},
 		ExecutionTime: ui.Interval{
 			Started:  b.StartTime,
 			Finished: b.CompletionTime,
-			Duration: runDuration,
+			Duration: duration(b.StartTime, b.CompletionTime),
 		},
 	}
 	if result.Revision == "" {
@@ -175,7 +187,7 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 	}
 
 	for _, bb := range res.Builds {
-		mb, err := toMiloBuild(bb)
+		mb, err := toMiloBuild(c, bb)
 		if err != nil {
 			return err
 		}
@@ -235,7 +247,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 			return err
 		}
 		for _, m := range msgs {
-			b, err := toMiloBuild(m)
+			b, err := toMiloBuild(c, m)
 			if err != nil {
 				return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
 			}
