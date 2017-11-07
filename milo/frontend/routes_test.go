@@ -31,11 +31,11 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/buildsource/swarming/testdata"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/settings"
@@ -56,7 +56,7 @@ var (
 		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
 		{consoleTestData, "console", "console.html"},
 		{func() []common.TestBundle {
-			return testdata.BuildTestData("../buildsource/swarming", func(c context.Context, svc testdata.SwarmingService, taskID string) (*resp.MiloBuild, error) {
+			return testdata.BuildTestData("../buildsource/swarming", func(c context.Context, svc testdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
 				return swarming.SwarmingBuildImpl(c, svc, taskID)
 			})
 		}, "swarming.build", "build.html"},
@@ -160,12 +160,12 @@ func buildbotBuildTestData() []common.TestBundle {
 
 // buildbotBuilderTestData returns sample test data for builder pages.
 func buildbotBuilderTestData() []common.TestBundle {
-	l := resp.NewLink("Some current build", "https://some.url/path", "")
+	l := ui.NewLink("Some current build", "https://some.url/path", "")
 	return []common.TestBundle{
 		{
 			Description: "Basic Test no builds",
 			Data: templates.Args{
-				"Builder": &resp.Builder{
+				"Builder": &ui.Builder{
 					Name: "Sample Builder",
 				},
 			},
@@ -173,21 +173,21 @@ func buildbotBuilderTestData() []common.TestBundle {
 		{
 			Description: "Basic Test with builds",
 			Data: templates.Args{
-				"Builder": &resp.Builder{
+				"Builder": &ui.Builder{
 					Name: "Sample Builder",
-					MachinePool: &resp.MachinePool{
+					MachinePool: &ui.MachinePool{
 						Total:        15,
 						Disconnected: 13,
 						Idle:         5,
 						Busy:         8,
 					},
-					CurrentBuilds: []*resp.BuildSummary{
+					CurrentBuilds: []*ui.BuildSummary{
 						{Link: l, Revision: "deadbeef"},
 					},
-					PendingBuilds: []*resp.BuildSummary{
+					PendingBuilds: []*ui.BuildSummary{
 						{Link: l, Revision: "deadbeef"},
 					},
-					FinishedBuilds: []*resp.BuildSummary{
+					FinishedBuilds: []*ui.BuildSummary{
 						{Link: l, Revision: "deadbeef"},
 					},
 				},

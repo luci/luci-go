@@ -32,23 +32,23 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // getBanner parses the OS information from the build and maybe returns a banner.
-func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
-	osLogo := func() *resp.Logo {
-		result := &resp.Logo{}
+func getBanner(c context.Context, b *buildbot.Build) *ui.LogoBanner {
+	osLogo := func() *ui.Logo {
+		result := &ui.Logo{}
 		switch b.OSFamily {
 		case "windows":
-			result.LogoBase = resp.Windows
+			result.LogoBase = ui.Windows
 		case "Darwin":
-			result.LogoBase = resp.OSX
+			result.LogoBase = ui.OSX
 		case "Debian":
-			result.LogoBase = resp.Ubuntu
+			result.LogoBase = ui.Ubuntu
 		default:
 			return nil
 		}
@@ -56,8 +56,8 @@ func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
 		return result
 	}()
 	if osLogo != nil {
-		return &resp.LogoBanner{
-			OS: []resp.Logo{*osLogo},
+		return &ui.LogoBanner{
+			OS: []ui.Logo{*osLogo},
 		}
 	}
 	return nil
@@ -65,7 +65,7 @@ func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
 
 // summary extracts the top level summary from a buildbot build as a
 // BuildComponent
-func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
+func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
 	// TODO(hinoka): use b.toStatus()
 	// Status
 	var status model.Status
@@ -80,14 +80,14 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 	if b.Internal {
 		host = "uberchromegw.corp.google.com/i"
 	}
-	bot := resp.NewLink(
+	bot := ui.NewLink(
 		b.Slave,
 		fmt.Sprintf("https://%s/%s/buildslaves/%s", host, b.Master, b.Slave),
 		fmt.Sprintf("Buildbot buildslave %s", b.Slave))
 
-	var source *resp.Link
+	var source *ui.Link
 	if !b.Emulated {
-		source = resp.NewLink(
+		source = ui.NewLink(
 			fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
 			fmt.Sprintf("https://%s/%s/builders/%s/builds/%d",
 				host, b.Master, b.Buildername, b.Number),
@@ -95,12 +95,12 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 	}
 
 	// The link to the builder page.
-	parent := resp.NewLink(b.Buildername, ".", fmt.Sprintf("Parent builder %s", b.Buildername))
+	parent := ui.NewLink(b.Buildername, ".", fmt.Sprintf("Parent builder %s", b.Buildername))
 
 	// Do a best effort lookup for the bot information to fill in OS/Platform info.
 	banner := getBanner(c, b)
 
-	sum := resp.BuildComponent{
+	sum := ui.BuildComponent{
 		ParentLabel: parent,
 		Label:       fmt.Sprintf("#%d", b.Number),
 		Banner:      banner,
@@ -110,7 +110,7 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 		Bot:         bot,
 		Source:      source,
 		Duration:    b.Times.Duration(),
-		Type:        resp.Summary, // This is more or less ignored.
+		Type:        ui.Summary, // This is more or less ignored.
 		LevelsDeep:  1,
 		Text:        []string{}, // Status messages.  Eg "This build failed on..xyz"
 	}
@@ -122,12 +122,12 @@ var rLineBreak = regexp.MustCompile("<br */?>")
 
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
-func components(b *buildbot.Build) (result []*resp.BuildComponent) {
+func components(b *buildbot.Build) (result []*ui.BuildComponent) {
 	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
 		}
-		bc := &resp.BuildComponent{
+		bc := &ui.BuildComponent{
 			Label: step.Name,
 		}
 		// Step text sometimes contains <br>, which we want to parse into new lines.
@@ -146,7 +146,7 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 
 		// Raise the interesting-ness if the step is not "Success".
 		if bc.Status != model.Success {
-			bc.Verbosity = resp.Interesting
+			bc.Verbosity = ui.Interesting
 		}
 
 		remainingAliases := stringset.New(len(step.Aliases))
@@ -154,19 +154,19 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 			remainingAliases.Add(linkAnchor)
 		}
 
-		getLinksWithAliases := func(logLink *resp.Link, isLog bool) resp.LinkSet {
+		getLinksWithAliases := func(logLink *ui.Link, isLog bool) ui.LinkSet {
 			// Generate alias links.
-			var aliases resp.LinkSet
+			var aliases ui.LinkSet
 			if remainingAliases.Del(logLink.Label) {
 				stepAliases := step.Aliases[logLink.Label]
-				aliases = make(resp.LinkSet, len(stepAliases))
+				aliases = make(ui.LinkSet, len(stepAliases))
 				for i, alias := range stepAliases {
 					aliases[i] = alias.Link()
 				}
 			}
 
 			// Step log link takes primary, with aliases as secondary.
-			links := make(resp.LinkSet, 1, 1+len(aliases))
+			links := make(ui.LinkSet, 1, 1+len(aliases))
 			links[0] = logLink
 
 			for _, a := range aliases {
@@ -185,7 +185,7 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 			case "stderr":
 				ariaName = "standard error"
 			}
-			logLink := resp.NewLink(l.Name, l.URL, fmt.Sprintf("log %s for step %s", ariaName, step.Name))
+			logLink := ui.NewLink(l.Name, l.URL, fmt.Sprintf("log %s for step %s", ariaName, step.Name))
 
 			links := getLinksWithAliases(logLink, true)
 			if logLink.Label == "stdio" {
@@ -204,7 +204,7 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			logLink := resp.NewLink(name, step.Urls[name], fmt.Sprintf("step link %s for step %s", name, step.Name))
+			logLink := ui.NewLink(name, step.Urls[name], fmt.Sprintf("step link %s for step %s", name, step.Name))
 
 			bc.SubLink = append(bc.SubLink, getLinksWithAliases(logLink, false))
 		}
@@ -215,7 +215,7 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 			sort.Strings(unusedAliases)
 
 			for _, label := range unusedAliases {
-				var baseLink resp.LinkSet
+				var baseLink ui.LinkSet
 				for _, alias := range step.Aliases[label] {
 					aliasLink := alias.Link()
 					if len(baseLink) == 0 {
@@ -273,8 +273,8 @@ type Prop struct {
 
 // properties extracts all properties from buildbot builds and groups them into
 // property groups.
-func properties(b *buildbot.Build) (result []*resp.PropertyGroup) {
-	groups := map[string]*resp.PropertyGroup{}
+func properties(b *buildbot.Build) (result []*ui.PropertyGroup) {
+	groups := map[string]*ui.PropertyGroup{}
 	allProps := map[string]Prop{}
 	for _, prop := range b.Properties {
 		allProps[prop.Name] = Prop{
@@ -286,10 +286,10 @@ func properties(b *buildbot.Build) (result []*resp.PropertyGroup) {
 		value := prop.Value
 		groupName := prop.Group
 		if _, ok := groups[groupName]; !ok {
-			groups[groupName] = &resp.PropertyGroup{GroupName: groupName}
+			groups[groupName] = &ui.PropertyGroup{GroupName: groupName}
 		}
 		vs := parseProp(value)
-		groups[groupName].Property = append(groups[groupName].Property, &resp.Property{
+		groups[groupName].Property = append(groups[groupName].Property, &ui.Property{
 			Key:   key,
 			Value: vs,
 		})
@@ -313,15 +313,15 @@ func properties(b *buildbot.Build) (result []*resp.PropertyGroup) {
 
 // blame extracts the commit and blame information from a buildbot build and
 // returns it as a list of Commits.
-func blame(b *buildbot.Build) (result []*resp.Commit) {
+func blame(b *buildbot.Build) (result []*ui.Commit) {
 	if b.Sourcestamp != nil {
 		for _, c := range b.Sourcestamp.Changes {
 			files := c.GetFiles()
-			result = append(result, &resp.Commit{
+			result = append(result, &ui.Commit{
 				AuthorEmail: c.Who,
 				Repo:        c.Repository,
 				CommitTime:  time.Unix(int64(c.When), 0).UTC(),
-				Revision:    resp.NewLink(c.Revision, c.Revlink, fmt.Sprintf("commit by %s", c.Who)),
+				Revision:    ui.NewLink(c.Revision, c.Revlink, fmt.Sprintf("commit by %s", c.Who)),
 				Description: c.Comments,
 				File:        files,
 			})
@@ -332,8 +332,8 @@ func blame(b *buildbot.Build) (result []*resp.Commit) {
 
 // sourcestamp extracts the source stamp from various parts of a buildbot build,
 // including the properties.
-func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
-	ss := &resp.Trigger{}
+func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
+	ss := &ui.Trigger{}
 	rietveld := ""
 	gerrit := ""
 	gotRevision := ""
@@ -388,19 +388,19 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
 		switch {
 		case rietveld != "":
 			rietveld = strings.TrimRight(rietveld, "/")
-			ss.Changelist = resp.NewLink(
+			ss.Changelist = ui.NewLink(
 				fmt.Sprintf("Rietveld CL %d", issue),
 				fmt.Sprintf("%s/%d", rietveld, issue), "")
 		case gerrit != "":
 			gerrit = strings.TrimRight(gerrit, "/")
-			ss.Changelist = resp.NewLink(
+			ss.Changelist = ui.NewLink(
 				fmt.Sprintf("Gerrit CL %d", issue),
 				fmt.Sprintf("%s/c/%d", gerrit, issue), "")
 		}
 	}
 
 	if gotRevision != "" {
-		ss.Revision = resp.NewLink(gotRevision, "", fmt.Sprintf("got revision %s", gotRevision))
+		ss.Revision = ui.NewLink(gotRevision, "", fmt.Sprintf("got revision %s", gotRevision))
 		if repository != "" {
 			ss.Revision.URL = repository + "/+/" + gotRevision
 		}
@@ -408,9 +408,9 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
 	return ss
 }
 
-func renderBuild(c context.Context, b *buildbot.Build) *resp.MiloBuild {
+func renderBuild(c context.Context, b *buildbot.Build) *ui.MiloBuild {
 	// TODO(hinoka): Do all fields concurrently.
-	return &resp.MiloBuild{
+	return &ui.MiloBuild{
 		Trigger:       sourcestamp(c, b),
 		Summary:       summary(c, b),
 		Components:    components(b),
@@ -420,7 +420,7 @@ func renderBuild(c context.Context, b *buildbot.Build) *resp.MiloBuild {
 }
 
 // DebugBuild fetches a debugging build for testing.
-func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildNum int) (*resp.MiloBuild, error) {
+func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildNum int) (*ui.MiloBuild, error) {
 	fname := fmt.Sprintf("%s.%d.json", builder, buildNum)
 	// ../buildbot below assumes that
 	// - this code is not executed by tests outside of this dir
@@ -438,7 +438,7 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 }
 
 // Build fetches a buildbot build and translates it into a miloBuild.
-func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloBuild, error) {
+func Build(c context.Context, master, builder string, buildNum int) (*ui.MiloBuild, error) {
 	if err := buildstore.CanAccessMaster(c, master); err != nil {
 		return nil, err
 	}
@@ -465,7 +465,7 @@ type BuildID struct {
 func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic("not implemented") }
 
 // Get implements buildsource.ID.
-func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
+func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	num, err := strconv.ParseInt(b.BuildNumber, 10, 0)
 	if err != nil {
 		return nil, errors.Annotate(err, "BuildNumber is not a number").

@@ -21,19 +21,19 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
-func GetAllBuilders(c context.Context) (*resp.CIService, error) {
+func GetAllBuilders(c context.Context) (*ui.CIService, error) {
 	settings := common.GetSettings(c)
 	bucketSettings := settings.Buildbucket
 	if bucketSettings == nil {
 		return nil, errors.New("buildbucket settings missing in config")
 	}
-	result := &resp.CIService{
+	result := &ui.CIService{
 		Name: "Swarmbucket",
-		Host: resp.NewLink(bucketSettings.Name, "https://"+bucketSettings.Host,
+		Host: ui.NewLink(bucketSettings.Name, "https://"+bucketSettings.Host,
 			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
 	}
 	client, err := newSwarmbucketClient(c, bucketSettings.Host)
@@ -46,7 +46,7 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 		return nil, err
 	}
 
-	result.BuilderGroups = make([]resp.BuilderGroup, len(r.Buckets))
+	result.BuilderGroups = make([]ui.BuilderGroup, len(r.Buckets))
 	for i, bucket := range r.Buckets {
 		// TODO(nodir): instead of assuming luci.<project>. bucket prefix,
 		// expect project explicitly in bucket struct.
@@ -56,10 +56,10 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 		// buildbucket guarantees that buckets that start with "luci.",
 		// start with "luci.<project id>." prefix.
 		project := strings.Split(bucket.Name, ".")[1]
-		group := resp.BuilderGroup{Name: bucket.Name}
-		group.Builders = make([]resp.Link, len(bucket.Builders))
+		group := ui.BuilderGroup{Name: bucket.Name}
+		group.Builders = make([]ui.Link, len(bucket.Builders))
 		for j, builder := range bucket.Builders {
-			group.Builders[j] = *resp.NewLink(
+			group.Builders[j] = *ui.NewLink(
 				builder.Name, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket.Name, builder.Name),
 				fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Name, bucket.Name))
 		}

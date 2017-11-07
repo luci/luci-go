@@ -37,10 +37,10 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
 )
 
@@ -120,11 +120,11 @@ func validateConsoleID(consoleID, project string) error {
 	return nil
 }
 
-type builderRefFactory func(name, shortname string) *resp.BuilderRef
+type builderRefFactory func(name, shortname string) *ui.BuilderRef
 
-func buildTreeFromDef(def *common.Console, factory builderRefFactory) (*resp.Category, int) {
+func buildTreeFromDef(def *common.Console, factory builderRefFactory) (*ui.Category, int) {
 	// Build console table tree from builders.
-	categoryTree := resp.NewCategory("")
+	categoryTree := ui.NewCategory("")
 	depth := 0
 	for col, b := range def.Builders {
 		meta := def.BuilderMetas[col]
@@ -155,7 +155,7 @@ func getBuilderSummaries(c context.Context, project, name string) (map[string]*m
 	return builderSummaries, nil
 }
 
-func console(c context.Context, project, name string, limit int) (*resp.Console, error) {
+func console(c context.Context, project, name string, limit int) (*ui.Console, error) {
 	tStart := clock.Now(c)
 	def, err := getConsoleDef(c, project, name)
 	if err != nil {
@@ -181,16 +181,16 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 	}
 
 	// Build list of commits.
-	commits := make([]resp.Commit, len(commitInfo.Commits))
+	commits := make([]ui.Commit, len(commitInfo.Commits))
 	for row, commit := range commitInfo.Commits {
-		commits[row] = resp.Commit{
+		commits[row] = ui.Commit{
 			AuthorName:  commit.AuthorName,
 			AuthorEmail: commit.AuthorEmail,
 			CommitTime:  google.TimeFromProto(commit.CommitTime),
 			Repo:        def.RepoURL,
 			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
 			Description: commit.Msg,
-			Revision:    resp.NewLink(commitNames[row], def.RepoURL+"/+/"+commitNames[row], fmt.Sprintf("commit by %s", commit.AuthorEmail)),
+			Revision:    ui.NewLink(commitNames[row], def.RepoURL+"/+/"+commitNames[row], fmt.Sprintf("commit by %s", commit.AuthorEmail)),
 		}
 	}
 
@@ -199,7 +199,7 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		return nil, err
 	}
 
-	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *resp.BuilderRef {
+	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *ui.BuilderRef {
 		// Group together all builds for this builder.
 		builds := make([]*model.BuildSummary, len(commits))
 		id := buildsource.BuilderID(name)
@@ -212,7 +212,7 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		if !ok {
 			logging.Warningf(c, "could not find builder summary for %s", name)
 		}
-		return &resp.BuilderRef{
+		return &ui.BuilderRef{
 			Name:      name,
 			ShortName: shortname,
 			Build:     builds,
@@ -225,7 +225,7 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		return nil, err
 	}
 
-	return &resp.Console{
+	return &ui.Console{
 		Name:       def.Title,
 		Project:    project,
 		Header:     header,
@@ -236,23 +236,23 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 	}, nil
 }
 
-func consolePreview(c context.Context, project string, def *common.Console) (*resp.Console, error) {
+func consolePreview(c context.Context, project string, def *common.Console) (*ui.Console, error) {
 	builderSummaries, err := getBuilderSummaries(c, project, def.ID)
 	if err != nil {
 		return nil, err
 	}
-	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *resp.BuilderRef {
+	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *ui.BuilderRef {
 		builder, ok := builderSummaries[name]
 		if !ok {
 			logging.Warningf(c, "could not find builder summary for %s", name)
 		}
-		return &resp.BuilderRef{
+		return &ui.BuilderRef{
 			Name:      name,
 			ShortName: shortname,
 			Builder:   builder,
 		}
 	})
-	return &resp.Console{
+	return &ui.Console{
 		Name:       def.Title,
 		Table:      *categoryTree,
 		MaxDepth:   depth + 1,
@@ -260,8 +260,8 @@ func consolePreview(c context.Context, project string, def *common.Console) (*re
 	}, nil
 }
 
-func getOncallData(c context.Context, name, url string) (resp.Oncall, error) {
-	result := resp.Oncall{Name: name}
+func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
+	result := ui.Oncall{Name: name}
 
 	// Get JSON from URL.
 	transport := urlfetch.Get(c)
@@ -283,7 +283,7 @@ func getOncallData(c context.Context, name, url string) (resp.Oncall, error) {
 	return result, nil
 }
 
-func consoleHeader(c context.Context, project string, def *common.Console) (*resp.ConsoleHeader, error) {
+func consoleHeader(c context.Context, project string, def *common.Console) (*ui.ConsoleHeader, error) {
 	// Return nil if the header is empty.
 	switch {
 	case len(def.Header.Oncalls) != 0:
@@ -297,7 +297,7 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 	}
 
 	// Get oncall data from URLs.
-	oncalls := make([]resp.Oncall, len(def.Header.Oncalls))
+	oncalls := make([]ui.Oncall, len(def.Header.Oncalls))
 	err := parallel.FanOutIn(func(gen chan<- func() error) {
 		for i, oc := range def.Header.Oncalls {
 			i := i
@@ -316,21 +316,21 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 	// Restructure links as resp data structures.
 	//
 	// This should be a one-to-one transformation.
-	links := make([]resp.LinkGroup, len(def.Header.Links))
+	links := make([]ui.LinkGroup, len(def.Header.Links))
 	for i, linkGroup := range def.Header.Links {
-		mlinks := make([]*resp.Link, len(linkGroup.Links))
+		mlinks := make([]*ui.Link, len(linkGroup.Links))
 		for j, link := range linkGroup.Links {
 			ariaLabel := fmt.Sprintf("%s in %s", link.Text, linkGroup.Name)
-			mlinks[j] = resp.NewLink(link.Text, link.Url, ariaLabel)
+			mlinks[j] = ui.NewLink(link.Text, link.Url, ariaLabel)
 		}
-		links[i] = resp.LinkGroup{
+		links[i] = ui.LinkGroup{
 			Name:  linkGroup.Name,
 			Links: mlinks,
 		}
 	}
 
 	// Set up console summaries for the header.
-	consoleGroups := make([]resp.ConsoleGroup, len(def.Header.ConsoleGroups))
+	consoleGroups := make([]ui.ConsoleGroup, len(def.Header.ConsoleGroups))
 	for i, group := range def.Header.ConsoleGroups {
 		for _, id := range group.ConsoleIds {
 			if err := validateConsoleID(id, project); err != nil {
@@ -343,12 +343,12 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 		}
 		if group.Title != nil {
 			ariaLabel := fmt.Sprintf("console group %s", group.Title.Text)
-			consoleGroups[i].Title = resp.NewLink(group.Title.Text, group.Title.Url, ariaLabel)
+			consoleGroups[i].Title = ui.NewLink(group.Title.Text, group.Title.Url, ariaLabel)
 		}
 		consoleGroups[i].Consoles = summaries
 	}
 
-	return &resp.ConsoleHeader{
+	return &ui.ConsoleHeader{
 		Oncalls:       oncalls,
 		Links:         links,
 		ConsoleGroups: consoleGroups,
@@ -357,7 +357,7 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*res
 
 // consoleRenderer is a wrapper around Console to provide additional methods.
 type consoleRenderer struct {
-	*resp.Console
+	*ui.Console
 }
 
 // ConsoleTable generates the main console table html.
@@ -373,12 +373,12 @@ func (c consoleRenderer) ConsoleTable() template.HTML {
 	return template.HTML(buffer.String())
 }
 
-func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*resp.Link, error) {
+func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*ui.Link, error) {
 	_, _, builderName, err := buildsource.BuilderID(bs.BuilderID).Split()
 	if err != nil {
 		return nil, err
 	}
-	return resp.NewLink(builderName, "/"+bs.BuilderID, fmt.Sprintf("builder %s", builderName)), nil
+	return ui.NewLink(builderName, "/"+bs.BuilderID, fmt.Sprintf("builder %s", builderName)), nil
 }
 
 // ConsoleHandler renders the console page.
@@ -455,7 +455,7 @@ func ConsolesHandler(c *router.Context, projectName string) {
 }
 
 func consoleTestData() []common.TestBundle {
-	builder := &resp.BuilderRef{
+	builder := &ui.BuilderRef{
 		Name:      "tester",
 		ShortName: "tst",
 		Build: []*model.BuildSummary{
@@ -471,17 +471,17 @@ func consoleTestData() []common.TestBundle {
 			LastFinishedStatus: model.InfraFailure,
 		},
 	}
-	root := resp.NewCategory("Root")
+	root := ui.NewCategory("Root")
 	root.AddBuilder([]string{"cat1", "cat2"}, builder)
 	return []common.TestBundle{
 		{
 			Description: "Full console with Header",
 			Data: templates.Args{
-				"Console": consoleRenderer{&resp.Console{
+				"Console": consoleRenderer{&ui.Console{
 					Name:    "Test",
 					Project: "Testing",
-					Header: &resp.ConsoleHeader{
-						Oncalls: []resp.Oncall{
+					Header: &ui.ConsoleHeader{
+						Oncalls: []ui.Oncall{
 							{
 								Name: "Sheriff",
 								Emails: []string{
@@ -490,21 +490,21 @@ func consoleTestData() []common.TestBundle {
 								},
 							},
 						},
-						Links: []resp.LinkGroup{
+						Links: []ui.LinkGroup{
 							{
 								Name: "Some group",
-								Links: []*resp.Link{
-									resp.NewLink("LiNk", "something", ""),
-									resp.NewLink("LiNk2", "something2", ""),
+								Links: []*ui.Link{
+									ui.NewLink("LiNk", "something", ""),
+									ui.NewLink("LiNk2", "something2", ""),
 								},
 							},
 						},
-						ConsoleGroups: []resp.ConsoleGroup{
+						ConsoleGroups: []ui.ConsoleGroup{
 							{
-								Title: resp.NewLink("bah", "something2", ""),
-								Consoles: []resp.ConsoleSummary{
+								Title: ui.NewLink("bah", "something2", ""),
+								Consoles: []ui.ConsoleSummary{
 									{
-										Name: resp.NewLink("hurrah", "something2", ""),
+										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
 											{
 												LastFinishedStatus: model.Success,
@@ -520,9 +520,9 @@ func consoleTestData() []common.TestBundle {
 								},
 							},
 							{
-								Consoles: []resp.ConsoleSummary{
+								Consoles: []ui.ConsoleSummary{
 									{
-										Name: resp.NewLink("hurrah", "something2", ""),
+										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
 											{
 												LastFinishedStatus: model.Success,
@@ -533,17 +533,17 @@ func consoleTestData() []common.TestBundle {
 							},
 						},
 					},
-					Commit: []resp.Commit{
+					Commit: []ui.Commit{
 						{
 							AuthorEmail: "x@example.com",
 							CommitTime:  time.Date(12, 12, 12, 12, 12, 12, 0, time.UTC),
-							Revision:    resp.NewLink("12031802913871659324", "blah blah blah", ""),
+							Revision:    ui.NewLink("12031802913871659324", "blah blah blah", ""),
 							Description: "Me too.",
 						},
 						{
 							AuthorEmail: "y@example.com",
 							CommitTime:  time.Date(12, 12, 12, 12, 12, 11, 0, time.UTC),
-							Revision:    resp.NewLink("120931820931802913", "blah blah blah 1", ""),
+							Revision:    ui.NewLink("120931820931802913", "blah blah blah 1", ""),
 							Description: "I did something.",
 						},
 					},

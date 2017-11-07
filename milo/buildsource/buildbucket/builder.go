@@ -32,9 +32,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // fetchBuilds fetches builds given a criteria.
@@ -64,7 +64,7 @@ func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
 // toMiloBuild converts a buildbucket build to a milo build.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
+func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*ui.BuildSummary, error) {
 	var b buildbucket.Build
 	if err := b.ParseMessage(msg); err != nil {
 		return nil, err
@@ -101,15 +101,15 @@ func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
 
 	schedulingDuration, _ := b.SchedulingDuration()
 	runDuration, _ := b.RunDuration()
-	result := &resp.BuildSummary{
+	result := &ui.BuildSummary{
 		Revision: resultDetails.Properties.GotRevision,
 		Status:   parseStatus(b.Status),
-		PendingTime: resp.Interval{
+		PendingTime: ui.Interval{
 			Started:  b.CreationTime,
 			Finished: b.StartTime,
 			Duration: schedulingDuration,
 		},
-		ExecutionTime: resp.Interval{
+		ExecutionTime: ui.Interval{
 			Started:  b.StartTime,
 			Finished: b.CompletionTime,
 			Duration: runDuration,
@@ -130,10 +130,10 @@ func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
 		}
 
 		// support only one CL per build.
-		result.Blame = []*resp.Commit{{
-			Changelist: resp.NewLink(fmt.Sprintf("Gerrit CL %d", cl.Change), cl.URL(),
+		result.Blame = []*ui.Commit{{
+			Changelist: ui.NewLink(fmt.Sprintf("Gerrit CL %d", cl.Change), cl.URL(),
 				fmt.Sprintf("gerrit changelist %d", cl.Change)),
-			RequestRevision: resp.NewLink(params.Properties.Revision, "", fmt.Sprintf("request revision %s", params.Properties.Revision)),
+			RequestRevision: ui.NewLink(params.Properties.Revision, "", fmt.Sprintf("request revision %s", params.Properties.Revision)),
 		}}
 
 		if len(params.Changes) == 1 {
@@ -144,13 +144,13 @@ func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
 
 	if b.Number != nil {
 		numStr := strconv.Itoa(*b.Number)
-		result.Link = resp.NewLink(
+		result.Link = ui.NewLink(
 			numStr,
 			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
 			fmt.Sprintf("build #%s", numStr))
 	} else {
 		idStr := strconv.FormatInt(b.ID, 10)
-		result.Link = resp.NewLink(
+		result.Link = ui.NewLink(
 			idStr,
 			fmt.Sprintf("/p/%s/builds/b%s", b.Project, idStr),
 			fmt.Sprintf("build #%s", idStr))
@@ -158,7 +158,7 @@ func toMiloBuild(msg *bbapi.ApiCommonBuildMessage) (*resp.BuildSummary, error) {
 	return result, nil
 }
 
-func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuilds int, target *resp.Builder) error {
+func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuilds int, target *ui.Builder) error {
 	// ../buildbucket below assumes that
 	// - this code is not executed by tests outside of this dir
 	// - this dir is a sibling of frontend dir
@@ -207,7 +207,7 @@ func getHost(c context.Context) (string, error) {
 }
 
 // GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
-func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Builder, error) {
+func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Builder, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -217,7 +217,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Bui
 		limit = 20
 	}
 
-	result := &resp.Builder{
+	result := &ui.Builder{
 		Name: builder,
 	}
 	if host == "debug" {

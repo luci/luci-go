@@ -33,10 +33,10 @@ import (
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -218,16 +218,16 @@ func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req sw
 	return &fr, logErr
 }
 
-func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
-	props := &resp.PropertyGroup{GroupName: "Swarming"}
+func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *ui.PropertyGroup {
+	props := &ui.PropertyGroup{GroupName: "Swarming"}
 	if len(sr.CostsUsd) == 1 {
-		props.Property = append(props.Property, &resp.Property{
+		props.Property = append(props.Property, &ui.Property{
 			Key:   "Cost of job (USD)",
 			Value: fmt.Sprintf("$%.2f", sr.CostsUsd[0]),
 		})
 	}
 	if sr.State == TaskCompleted || sr.State == TaskTimedOut {
-		props.Property = append(props.Property, &resp.Property{
+		props.Property = append(props.Property, &ui.Property{
 			Key:   "Exit Code",
 			Value: fmt.Sprintf("%d", sr.ExitCode),
 		})
@@ -247,19 +247,19 @@ func tagsToMap(tags []string) map[string]string {
 }
 
 // addBuilderLink adds a link to the buildbucket builder view.
-func addBuilderLink(c context.Context, build *resp.MiloBuild, tags map[string]string) {
+func addBuilderLink(c context.Context, build *ui.MiloBuild, tags map[string]string) {
 	bucket := tags["buildbucket_bucket"]
 	builder := tags["builder"]
 	project := tags["luci_project"]
 	if bucket != "" && builder != "" {
-		build.Summary.ParentLabel = resp.NewLink(
+		build.Summary.ParentLabel = ui.NewLink(
 			builder, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder),
 			fmt.Sprintf("buildbucket builder %s on bucket %s", builder, bucket))
 	}
 }
 
 // addBanner adds an OS banner derived from "os" swarming tag, if present.
-func addBanner(build *resp.MiloBuild, tags map[string]string) {
+func addBanner(build *ui.MiloBuild, tags map[string]string) {
 	os := tags["os"]
 	var ver string
 	parts := strings.SplitN(os, "-", 2)
@@ -268,22 +268,22 @@ func addBanner(build *resp.MiloBuild, tags map[string]string) {
 		ver = parts[1]
 	}
 
-	var base resp.LogoBase
+	var base ui.LogoBase
 	switch os {
 	case "Ubuntu":
-		base = resp.Ubuntu
+		base = ui.Ubuntu
 	case "Windows":
-		base = resp.Windows
+		base = ui.Windows
 	case "Mac":
-		base = resp.OSX
+		base = ui.OSX
 	case "Android":
-		base = resp.Android
+		base = ui.Android
 	default:
 		return
 	}
 
-	build.Summary.Banner = &resp.LogoBanner{
-		OS: []resp.Logo{{
+	build.Summary.Banner = &ui.LogoBanner{
+		OS: []ui.Logo{{
 			LogoBase: base,
 			Subtitle: ver,
 			Count:    1,
@@ -376,7 +376,7 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 	return nil
 }
 
-func addBuildsetInfo(build *resp.MiloBuild, tags map[string]string) {
+func addBuildsetInfo(build *ui.MiloBuild, tags map[string]string) {
 	buildset := tags["buildset"]
 	if !strings.HasPrefix(buildset, "patch/") {
 		// Buildset isn't a patch, ignore.
@@ -393,16 +393,16 @@ func addBuildsetInfo(build *resp.MiloBuild, tags map[string]string) {
 			return
 		}
 		if build.Trigger == nil {
-			build.Trigger = &resp.Trigger{}
+			build.Trigger = &ui.Trigger{}
 		}
-		build.Trigger.Changelist = resp.NewLink(
+		build.Trigger.Changelist = ui.NewLink(
 			"Gerrit CL", fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]),
 			fmt.Sprintf("gerrit changelist number %s", parts[1]))
 
 	}
 }
 
-func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
+func addRecipeLink(build *ui.MiloBuild, tags map[string]string) {
 	name := tags["recipe_name"]
 	repoURL := tags["recipe_repository"]
 	revision := tags["recipe_revision"]
@@ -421,24 +421,24 @@ func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
 			}
 			name += " @ " + revision
 		}
-		build.Summary.Recipe = resp.NewLink(name, repoURL, fmt.Sprintf("recipe %s", name))
+		build.Summary.Recipe = ui.NewLink(name, repoURL, fmt.Sprintf("recipe %s", name))
 	}
 }
 
 // addProjectInfo adds the luci_project swarming tag to the build.
-func addProjectInfo(build *resp.MiloBuild, tags map[string]string) {
+func addProjectInfo(build *ui.MiloBuild, tags map[string]string) {
 	if proj, ok := tags["luci_project"]; ok {
 		if build.Trigger == nil {
-			build.Trigger = &resp.Trigger{}
+			build.Trigger = &ui.Trigger{}
 		}
 		build.Trigger.Project = proj
 	}
 }
 
-func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
+func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *ui.MiloBuild) error {
 	build.Summary.Label = sr.TaskId
-	build.Summary.Type = resp.Recipe
-	build.Summary.Source = resp.NewLink(
+	build.Summary.Type = ui.Recipe
+	build.Summary.Source = ui.NewLink(
 		"Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String(),
 		fmt.Sprintf("swarming task %s", sr.TaskId))
 
@@ -456,7 +456,7 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 
 	// Add a link to the bot.
 	if sr.BotId != "" {
-		build.Summary.Bot = resp.NewLink(sr.BotId, botPageURL(host, sr.BotId),
+		build.Summary.Bot = ui.NewLink(sr.BotId, botPageURL(host, sr.BotId),
 			fmt.Sprintf("swarming bot %s", sr.BotId))
 	}
 
@@ -491,7 +491,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 // failedToStart is called in the case where logdog-only mode is on but the
 // stream doesn't exist and the swarming job is complete.  It modifies the build
 // to add information that would've otherwise been in the annotation stream.
-func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.SwarmingRpcsTaskResult, host string) error {
+func failedToStart(c context.Context, build *ui.MiloBuild, res *swarming.SwarmingRpcsTaskResult, host string) error {
 	var err error
 	build.Summary.Status = model.InfraFailure
 	build.Summary.Started, err = time.Parse(SwarmingTimeLayout, res.StartedTs)
@@ -508,7 +508,7 @@ func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.Swarm
 	infoComp.Started = build.Summary.Started
 	infoComp.Finished = build.Summary.Finished
 	infoComp.Duration = build.Summary.Duration
-	infoComp.Verbosity = resp.Interesting
+	infoComp.Verbosity = ui.Interesting
 	build.Components = append(build.Components, infoComp)
 	return addTaskToBuild(c, host, res, build)
 }
@@ -555,8 +555,8 @@ func swarmingFetchMaybeLogs(c context.Context, svc SwarmingService, taskID strin
 
 // buildFromLogs returns a milo build from just the swarming log and result data.
 // TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
-func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*resp.MiloBuild, error) {
-	var build resp.MiloBuild
+func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*ui.MiloBuild, error) {
+	var build ui.MiloBuild
 	var step *miloProto.Step
 	var lds *rawpresentation.Streams
 	// Log links are built relative to swarming URLs
@@ -571,8 +571,8 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 		lds, err = streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
 			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error())
-			comp.SubLink = append(comp.SubLink, resp.LinkSet{
-				resp.NewLink("swarming task", taskURL.String(), ""),
+			comp.SubLink = append(comp.SubLink, ui.LinkSet{
+				ui.NewLink("swarming task", taskURL.String(), ""),
 			})
 			build.Components = append(build.Components, comp)
 		} else if lds.MainStream != nil {
@@ -595,7 +595,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 
 // SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuild
 // representation of a build state given a Swarming TaskID.
-func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*resp.MiloBuild, error) {
+func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*ui.MiloBuild, error) {
 	// First, get the task result from swarming, and maybe the logs.
 	fr, logDogStreamAddr, err := swarmingFetchMaybeLogs(c, svc, taskID)
 	if err != nil {
@@ -612,7 +612,7 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 
 	// Create an empty build here first because we might want to add some
 	// system-level messages.
-	var build resp.MiloBuild
+	var build ui.MiloBuild
 
 	// Load the build from the LogDog service.  For known classes of errors, add
 	// steps in the build presentation to explain what may be going on.
@@ -671,9 +671,9 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 
 // infoComponent is a helper function to return a resp build step with the
 // given status, label, and step text.
-func infoComponent(st model.Status, label, text string) *resp.BuildComponent {
-	return &resp.BuildComponent{
-		Type:   resp.Summary,
+func infoComponent(st model.Status, label, text string) *ui.BuildComponent {
+	return &ui.BuildComponent{
+		Type:   ui.Summary,
 		Label:  label,
 		Text:   []string{text},
 		Status: st,
@@ -739,12 +739,12 @@ const URLBase = "/swarming/task"
 // It should be the swarming task id.
 type swarmingURLBuilder string
 
-func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
+func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 	switch t := l.Value.(type) {
 	case *miloProto.Link_LogdogStream:
 		ls := t.LogdogStream
 
-		link := resp.NewLink(l.Label, fmt.Sprintf("%s/%s/%s", URLBase, b, ls.Name), "")
+		link := ui.NewLink(l.Label, fmt.Sprintf("%s/%s/%s", URLBase, b, ls.Name), "")
 		if link.Label == "" {
 			link.Label = ls.Name
 		}
@@ -752,7 +752,7 @@ func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 		return link
 
 	case *miloProto.Link_Url:
-		return resp.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
+		return ui.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 
 	default:
 		return nil
@@ -813,7 +813,7 @@ func (b *BuildID) validate() error {
 }
 
 // Get implements buildsource.ID
-func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
+func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	if err := b.validate(); err != nil {
 		return nil, err
 	}

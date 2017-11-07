@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resp
+package ui
 
 // Settings denotes a full renderable Milo settings page.
 type Settings struct {

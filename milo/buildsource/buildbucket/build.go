@@ -26,10 +26,10 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // BuildID implements buildsource.ID, and is the buildbucket notion of a build.
@@ -114,7 +114,7 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 //     the SourceManifest objects inside of them). Currently getRespBuild defers
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
-func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *resp.MiloBuild) error {
+func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *ui.MiloBuild) error {
 	_, hist, err := build.PreviousByGitilesCommit(c)
 	switch err {
 	case nil:
@@ -125,10 +125,10 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 	}
 
 	gc := build.GitilesCommit()
-	rb.Blame = make([]*resp.Commit, len(hist.Commits))
+	rb.Blame = make([]*ui.Commit, len(hist.Commits))
 	for i, c := range hist.Commits {
 		rev := hex.EncodeToString(c.Hash)
-		rb.Blame[i] = &resp.Commit{
+		rb.Blame[i] = &ui.Commit{
 			AuthorName:  c.AuthorName,
 			AuthorEmail: c.AuthorEmail,
 			Repo:        gc.RepoURL(),
@@ -137,7 +137,7 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 
 			// TODO(iannucci): this use of links is very sloppy; the frontend should
 			// know how to render a Commit without having Links embedded in it.
-			Revision: resp.NewLink(
+			Revision: ui.NewLink(
 				rev,
 				gc.RepoURL()+"/+/"+rev, fmt.Sprintf("commit by %s", c.AuthorEmail)),
 		}
@@ -150,14 +150,14 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 
 // getRespBuild fetches the full build state from Swarming and LogDog if
 // available, otherwise returns an empty "pending build".
-func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*resp.MiloBuild, error) {
+func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*ui.MiloBuild, error) {
 	// TODO(nodir,hinoka): squash getRespBuild with toMiloBuild.
 
 	if build.Summary.Status == model.NotRun {
 		// Hasn't started yet, so definitely no build ready yet, return a pending
 		// build.
-		return &resp.MiloBuild{
-			Summary: resp.BuildComponent{Status: model.NotRun},
+		return &ui.MiloBuild{
+			Summary: ui.BuildComponent{Status: model.NotRun},
 		}, nil
 	}
 
@@ -178,7 +178,7 @@ func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.Bu
 
 // Get returns a resp.MiloBuild based off of the buildbucket ID given by
 // finding the coorisponding swarming build.
-func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
+func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	sID, bs, err := GetSwarmingID(c, b.Address)
 	if err != nil {
 		return nil, err
