@@ -22,6 +22,30 @@
       "revId": "9a0f38ad34fc0b55dccfa23a5bc908d5ab4f8670",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f681890f_5f10e11d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-07T20:23:53Z",
+      "side": 0,
+      "message": "nothing checks it. Long term, i believe (project, bucket name) must be a bucket identifier. Today bucket name is the identifier. We can start using project (as opposed to checking) when we include project id in the bucket id",
+      "parentUuid": "bf50bdd2_448bcf7f",
+      "range": {
+        "startLine": 135,
+        "startChar": 3,
+        "endLine": 135,
+        "endChar": 40
+      },
+      "revId": "9a0f38ad34fc0b55dccfa23a5bc908d5ab4f8670",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
