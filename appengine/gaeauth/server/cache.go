@@ -23,7 +23,6 @@ import (
 	mc "go.chromium.org/gae/service/memcache"
 
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 )
@@ -31,8 +30,6 @@ import (
 // Memcache implements auth.Cache on top of GAE memcache and per-request state.
 type Memcache struct {
 	Namespace string
-
-	locks mutexpool.P
 }
 
 var _ auth.Cache = (*Memcache)(nil)
@@ -69,11 +66,6 @@ func (m *Memcache) Set(c context.Context, key string, value []byte, exp time.Dur
 		return transient.Tag.Apply(err)
 	}
 	return nil
-}
-
-// WithLocalMutex calls 'f' under local mutex.
-func (m *Memcache) WithLocalMutex(c context.Context, key string, f func()) {
-	m.locks.WithMutex(key, f)
 }
 
 // cacheContext returns properly namespaced luci/gae context.

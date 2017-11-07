@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
 )
@@ -84,6 +85,12 @@ type Config struct {
 	// server is known to be very slow and deadlines tuned for production
 	// environment are too limiting.
 	IsDevMode bool
+
+	// locks is a process local mutex pool used internally to serialize some heavy
+	// operations to avoid doing them multiple times.
+	//
+	// Auto-initialized by setConfig if nil, so can be assumed to always be set.
+	locks *mutexpool.P
 }
 
 // ModifyConfig makes a context with a derived configuration.
@@ -118,6 +125,9 @@ var cfgContextKey = "auth.Config context key"
 
 // setConfig replaces the configuration in the context.
 func setConfig(c context.Context, cfg *Config) context.Context {
+	if cfg.locks == nil {
+		cfg.locks = &mutexpool.P{}
+	}
 	return context.WithValue(c, &cfgContextKey, cfg)
 }
 
