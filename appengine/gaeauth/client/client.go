@@ -36,6 +36,8 @@ import (
 	"go.chromium.org/luci/server/caching"
 )
 
+var procCacheHandle = caching.RegisterProcessCache("go.chromium.org/luci/appengine/gaeauth/client", 0)
+
 // GetAccessToken returns an OAuth access token representing app's service
 // account.
 //
@@ -50,7 +52,7 @@ func GetAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
 	// refresh it earlier with some probability. That avoids a situation when
 	// parallel requests that use access tokens suddenly see the cache expired
 	// and rush to refresh the token all at once.
-	pc := caching.ProcessCache(c)
+	pc := caching.ProcessCache(c, procCacheHandle)
 	if tokIface, ok := pc.Get(c, cacheKey); ok {
 		tok := tokIface.(*oauth2.Token)
 		if !closeToExpRandomized(c, tok.Expiry) {

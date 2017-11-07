@@ -20,26 +20,67 @@ import (
 	"go.chromium.org/luci/common/data/caching/lru"
 )
 
+type registeredCache struct {
+	key      string
+	capacity int
+}
+
+var registeredCaches []registeredCache
+
+// Handle is indirect pointer to a registered process cache.
+//
+// Grab it via RegisterProcessCache during module init time, and pass it to
+// ProcessCache to get an lru.Cache.
+type Handle int
+
+// RegisterProcessCache is used during init time to declare an intent that a
+// package wants to use a process-global LRU cache of given capacity (or 0 for
+// unlimited).
+//
+// The actual cache itself will be stored in ProcessCacheData inside the
+// context.
+func RegisterProcessCache(key string, capacity int) Handle {
+	// TODO: check the key is not used yet.
+	registeredCaches = append(registeredCaches, registeredCache{key, capacity})
+	return Handle(len(registeredCaches) - 1)
+}
+
 var processCacheKey = "server.caching Process Cache"
 
-// WithProcessCache installs a process-global cache into the supplied Context.
+// ProcessCacheData internally holds all process-cached data.
+//
+// It is opaque to the API users. Use package-level function ProcessCache to
+// get a reference to an actual lru.Cache.
+//
+// Each instance of ProcessCacheData is its own universe of global data. This is
+// useful in unit tests as replacement for global variables.
+type ProcessCacheData struct {
+	caches []*lru.Cache // handle => lru.Cache
+}
+
+// WithProcessCache installs a process-global cache storage into the supplied
+// Context.
 //
 // It can be used as a fast layer of caching for information whose value extends
 // past the lifespan of a single request.
 //
 // For information whose cached value is limited to a single request, use
 // RequestCache.
-func WithProcessCache(c context.Context, cache *lru.Cache) context.Context {
-	return context.WithValue(c, &processCacheKey, cache)
+func WithProcessCache(c context.Context, data *ProcessCacheData) context.Context {
+	data.caches = make([]*lru.Cache, len(registeredCaches))
+	for i, params := range registeredCaches {
+		data.caches[i] = lru.New(params.capacity)
+	}
+	return context.WithValue(c, &processCacheKey, data)
 }
 
 // ProcessCache returns process-global cache that is installed into the Context.
 //
 // If no process-global cache is installed, this will panic.
-func ProcessCache(c context.Context) *lru.Cache {
-	pc, _ := c.Value(&processCacheKey).(*lru.Cache)
+func ProcessCache(c context.Context, h Handle) *lru.Cache {
+	pc, _ := c.Value(&processCacheKey).(*ProcessCacheData)
 	if pc == nil {
 		panic("server/caching: no process cache installed in Context")
 	}
-	return pc
+	return pc.caches[int(h)]
 }
