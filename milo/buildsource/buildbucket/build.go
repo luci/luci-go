@@ -64,7 +64,7 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 				}
 			}
 		}
-		return nil, nil, errors.New("no swarming task context")
+		// continue to the fallback code below.
 
 	case datastore.ErrNoSuchEntity:
 		// continue to the fallback code below.
