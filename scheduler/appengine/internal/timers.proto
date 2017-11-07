@@ -1,0 +1,60 @@
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package internal.timers;
+
+option go_package = "internal";
+
+import "google/protobuf/timestamp.proto";
+
+
+// Timer can be emitted by any invocation if it wants to be poked later.
+//
+// Timers are scoped to single invocation and owned by it, so we don't include
+// invocation reference here. It is always available from the context of calls.
+message Timer {
+  // Unique in time identifier of this timer, auto-generated.
+  //
+  // It is used to deduplicate and hence provide idempotency for adding
+  // timers.
+  //
+  // Set by the engine, can't be overridden.
+  string id = 1;
+
+  // Timestamp when the timer was created.
+  //
+  // Set by the engine, can't be overridden.
+  google.protobuf.Timestamp created = 2;
+
+  // Target time when this timer activates.
+  //
+  // Should be provided by whoever emits the timer.
+  google.protobuf.Timestamp eta = 3;
+
+  // User friendly name for this timer that shows up in UI.
+  //
+  // Can be provided by whoever emits the timer. Doesn't have to be unique.
+  string title = 4;
+
+  // Arbitrary optional payload passed verbatim to the invocation.
+  bytes payload = 5;
+}
+
+
+// TimerList is what we store in datastore entities.
+message TimerList {
+  repeated Timer timers = 1;
+}

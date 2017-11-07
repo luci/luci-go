@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
@@ -80,7 +81,7 @@ func (ctl *jobControllerV1) onJobForceInvocation(c context.Context, job *Job) (F
 	return &nonceFutureInvocation{jobID: job.JobID, nonce: nonce}, nil
 }
 
-func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []*internal.Trigger) error {
+func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocation, timers []*internal.Timer, triggers []*internal.Trigger) error {
 	assertInTransaction(c)
 
 	jobID := fresh.jobID()
@@ -88,7 +89,16 @@ func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocat
 	eng := ctl.eng
 
 	if len(timers) > 0 {
-		if err := eng.enqueueInvTimers(c, jobID, invID, timers); err != nil {
+		// v1 uses older struct for timers,
+		timersV1 := make([]invocationTimer, len(timers))
+		for i, t := range timers {
+			timersV1[i] = invocationTimer{
+				Delay:   google.TimeFromProto(t.Eta).Sub(google.TimeFromProto(t.Created)),
+				Name:    t.Title,
+				Payload: t.Payload,
+			}
+		}
+		if err := eng.enqueueInvTimers(c, jobID, invID, timersV1); err != nil {
 			return err
 		}
 	}
