@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 )
 
+var cfgContextKey = "auth.Config context key"
+
 // DBProvider is a callback that returns most recent DB instance.
 //
 // DB represents a snapshot of user groups used for authorization checks.
@@ -79,18 +81,26 @@ type Config struct {
 	// library assumes full ownership of the keyspace).
 	Cache Cache
 
+	// Locks is a process-local mutex pool used internally to serialize some heavy
+	// operations to avoid doing them multiple times.
+	//
+	// Must be initialized by whoever creates the initial Config struct.
+	Locks *mutexpool.P
+
 	// IsDevMode is true when running the server locally during development.
 	//
 	// Setting this to true changes default deadlines. For instance, GAE dev
 	// server is known to be very slow and deadlines tuned for production
 	// environment are too limiting.
 	IsDevMode bool
+}
 
-	// locks is a process local mutex pool used internally to serialize some heavy
-	// operations to avoid doing them multiple times.
-	//
-	// Auto-initialized by setConfig if nil, so can be assumed to always be set.
-	locks *mutexpool.P
+// SetConfig completely replaces the configuration in the context.
+func SetConfig(c context.Context, cfg *Config) context.Context {
+	if cfg.Locks == nil {
+		panic("auth.Config.Locks must not be nil")
+	}
+	return context.WithValue(c, &cfgContextKey, cfg)
 }
 
 // ModifyConfig makes a context with a derived configuration.
@@ -101,9 +111,11 @@ func ModifyConfig(c context.Context, cb func(Config) Config) context.Context {
 	var cfg Config
 	if cur := getConfig(c); cur != nil {
 		cfg = *cur
+	} else {
+		cfg.Locks = &mutexpool.P{}
 	}
 	cfg = cb(cfg)
-	return setConfig(c, &cfg)
+	return SetConfig(c, &cfg)
 }
 
 func (cfg *Config) anonymousClient(ctx context.Context) *http.Client {
@@ -119,16 +131,6 @@ func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 		return t
 	}
 	return time.Minute
-}
-
-var cfgContextKey = "auth.Config context key"
-
-// setConfig replaces the configuration in the context.
-func setConfig(c context.Context, cfg *Config) context.Context {
-	if cfg.locks == nil {
-		cfg.locks = &mutexpool.P{}
-	}
-	return context.WithValue(c, &cfgContextKey, cfg)
 }
 
 // getConfig returns the config stored in the context (or nil if not there).

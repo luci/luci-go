@@ -234,10 +234,11 @@ func (m fakeAuthMethod) LogoutURL(c context.Context, dest string) (string, error
 }
 
 func injectTestDB(c context.Context, d authdb.DB) context.Context {
-	return setConfig(c, &Config{
-		DBProvider: func(c context.Context) (authdb.DB, error) {
+	return ModifyConfig(c, func(cfg Config) Config {
+		cfg.DBProvider = func(c context.Context) (authdb.DB, error) {
 			return d, nil
-		},
+		}
+		return cfg
 	})
 }
 

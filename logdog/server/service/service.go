@@ -41,6 +41,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/runtime/profiling"
+	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/grpc/prpc"
@@ -622,37 +623,36 @@ func (s *Service) getUserAgent() string { return s.Name + " / " + s.serviceID }
 // withAuthService configures service-wide authentication and installs it into
 // the supplied Context.
 func (s *Service) withAuthService(c context.Context) context.Context {
-	return serverAuth.ModifyConfig(c, func(serverAuth.Config) serverAuth.Config {
-		return serverAuth.Config{
-			DBProvider: nil, // We don't need to store an auth DB.
-			Signer:     nil, // We don't need to sign anything.
-			AccessTokenProvider: func(ic context.Context, scopes []string) (*oauth2.Token, error) {
-				// Create a new Authenticator for the supplied scopes.
-				//
-				// Pass our outer Context, since we don't want the cached Authenticator
-				// instance to be permanently bound to the inner Context.
-				a, err := s.authenticatorForScopes(c, scopes)
-				if err != nil {
-					log.Fields{
-						"scopes":     scopes,
-						log.ErrorKey: err,
-					}.Errorf(c, "Failed to create authenticator.")
-					return nil, err
-				}
-				tok, err := a.GetAccessToken(minAuthTokenLifetime)
-				if err != nil {
-					log.Fields{
-						"scopes":     scopes,
-						log.ErrorKey: err,
-					}.Errorf(c, "Failed to mint access token.")
-				}
-				return tok, err
-			},
-			AnonymousTransport: func(ic context.Context) http.RoundTripper {
-				return s.unauthenticatedTransport()
-			},
-			Cache: serverAuth.NewMemoryCache(authCacheSize),
-		}
+	return serverAuth.SetConfig(c, &serverAuth.Config{
+		DBProvider: nil, // We don't need to store an auth DB.
+		Signer:     nil, // We don't need to sign anything.
+		AccessTokenProvider: func(ic context.Context, scopes []string) (*oauth2.Token, error) {
+			// Create a new Authenticator for the supplied scopes.
+			//
+			// Pass our outer Context, since we don't want the cached Authenticator
+			// instance to be permanently bound to the inner Context.
+			a, err := s.authenticatorForScopes(c, scopes)
+			if err != nil {
+				log.Fields{
+					"scopes":     scopes,
+					log.ErrorKey: err,
+				}.Errorf(c, "Failed to create authenticator.")
+				return nil, err
+			}
+			tok, err := a.GetAccessToken(minAuthTokenLifetime)
+			if err != nil {
+				log.Fields{
+					"scopes":     scopes,
+					log.ErrorKey: err,
+				}.Errorf(c, "Failed to mint access token.")
+			}
+			return tok, err
+		},
+		AnonymousTransport: func(ic context.Context) http.RoundTripper {
+			return s.unauthenticatedTransport()
+		},
+		Cache: serverAuth.NewMemoryCache(authCacheSize),
+		Locks: &mutexpool.P{},
 	})
 }
 
