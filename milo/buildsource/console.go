@@ -27,9 +27,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // ConsoleRow is one row of a particular console.
@@ -98,8 +98,8 @@ type ConsolePreview map[BuilderID]*model.BuildSummary
 //
 // This list of console summaries directly corresponds to the input list of
 // console IDs.
-func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.ConsoleSummary, error) {
-	summaries := make([]resp.ConsoleSummary, len(consoleIDs))
+func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]ui.ConsoleSummary, error) {
+	summaries := make([]ui.ConsoleSummary, len(consoleIDs))
 	err := parallel.WorkPool(4, func(ch chan<- func() error) {
 		for i, id := range consoleIDs {
 			i := i
@@ -118,8 +118,8 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]resp.Console
 }
 
 // GetConsoleSummary returns a single console summary from the datastore.
-func GetConsoleSummary(c context.Context, consoleID string) (resp.ConsoleSummary, error) {
-	summary := resp.ConsoleSummary{}
+func GetConsoleSummary(c context.Context, consoleID string) (ui.ConsoleSummary, error) {
+	summary := ui.ConsoleSummary{}
 	// It's safe to SplitN because we assume the ID has already been validated.
 	consoleComponents := strings.SplitN(consoleID, "/", 2)
 	project := consoleComponents[0]
@@ -127,7 +127,7 @@ func GetConsoleSummary(c context.Context, consoleID string) (resp.ConsoleSummary
 
 	// Set Name label.
 	ariaLabel := fmt.Sprintf("Console %s in project %s", name, project)
-	summary.Name = resp.NewLink(name, fmt.Sprintf("/p/%s/consoles/%s", project, name), ariaLabel)
+	summary.Name = ui.NewLink(name, fmt.Sprintf("/p/%s/consoles/%s", project, name), ariaLabel)
 
 	// Populate with builder summaries.
 	q := datastore.NewQuery("BuilderSummary").Eq("Consoles", consoleID)

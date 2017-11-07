@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // Step represents a single step in a buildbot build.
@@ -68,8 +68,8 @@ type LinkAlias struct {
 	Text string `json:"text"`
 }
 
-func (a *LinkAlias) Link() *resp.Link {
-	return resp.NewLink(a.Text, a.URL, fmt.Sprintf("alias link for %s", a.Text))
+func (a *LinkAlias) Link() *ui.Link {
+	return ui.NewLink(a.Text, a.URL, fmt.Sprintf("alias link for %s", a.Text))
 }
 
 type Property struct {

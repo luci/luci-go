@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resp
+package ui
 
 // Collection of structs to describe how to lay out the front page of Milo.
 // There is an implicit hierarchy of Master -> Builder.

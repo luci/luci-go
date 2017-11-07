@@ -5,7 +5,6 @@
   * milo.go - Main router and entry point into app.
   * static/ - CSS and JS assets.  All assets go under a named subfolder.
   * templates/ - HTML assets for use with go templates.
-* api/resp/ - Response structs supported by Milo.
 * common/miloerror - Error subclass used to pass HTTP statuses.
 * client/cmd/backfill - Git data backfiller.
 

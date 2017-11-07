@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // URLBuilder constructs URLs for various link types.
@@ -33,7 +33,7 @@ type URLBuilder interface {
 	// LinkURL returns the URL associated with the supplied Link.
 	//
 	// If no URL could be built for that Link, nil will be returned.
-	BuildLink(l *miloProto.Link) *resp.Link
+	BuildLink(l *miloProto.Link) *ui.Link
 }
 
 // HACK(hinoka): This should be a part of recipes, but just hardcoding a list
@@ -47,9 +47,9 @@ var builtIn = map[string]struct{}{
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
 func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildCompletedTime,
-	now time.Time) []*resp.BuildComponent {
+	now time.Time) []*ui.BuildComponent {
 
-	comp := &resp.BuildComponent{Label: anno.Name}
+	comp := &ui.BuildComponent{Label: anno.Name}
 	switch anno.Status {
 	case miloProto.Status_RUNNING:
 		comp.Status = model.Running
@@ -95,15 +95,15 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	switch comp.Status {
 	case model.NotRun, model.Running:
 		if isMain {
-			comp.Verbosity = resp.Hidden
+			comp.Verbosity = ui.Hidden
 		}
 
 	case model.Success:
 		if _, ok := builtIn[anno.Name]; ok || isMain {
-			comp.Verbosity = resp.Hidden
+			comp.Verbosity = ui.Hidden
 		}
 	case model.InfraFailure, model.Failure:
-		comp.Verbosity = resp.Interesting
+		comp.Verbosity = ui.Interesting
 	}
 
 	// Main link is a link to the stdout.
@@ -118,14 +118,14 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	}
 
 	if anno.Link != nil {
-		comp.MainLink = resp.LinkSet{ub.BuildLink(anno.Link)}
+		comp.MainLink = ui.LinkSet{ub.BuildLink(anno.Link)}
 
 		// If we also have a STDOUT stream, add it to our OtherLinks.
 		if stdoutLink != nil {
 			anno.OtherLinks = append([]*miloProto.Link{stdoutLink}, anno.OtherLinks...)
 		}
 	} else if stdoutLink != nil {
-		comp.MainLink = resp.LinkSet{ub.BuildLink(stdoutLink)}
+		comp.MainLink = ui.LinkSet{ub.BuildLink(stdoutLink)}
 	}
 
 	// Add STDERR link, if available.
@@ -141,12 +141,12 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	// Sub link is for one link per log that isn't stdout.
 	for _, link := range anno.GetOtherLinks() {
 		if l := ub.BuildLink(link); l != nil {
-			comp.SubLink = append(comp.SubLink, resp.LinkSet{l})
+			comp.SubLink = append(comp.SubLink, ui.LinkSet{l})
 		}
 	}
 
 	// This should always be a step.
-	comp.Type = resp.Step
+	comp.Type = ui.Step
 
 	// This should always be 0
 	comp.LevelsDeep = 0
@@ -172,7 +172,7 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	comp.Text = append(comp.Text, anno.Text...)
 
 	ss := anno.GetSubstep()
-	results := []*resp.BuildComponent{}
+	results := []*ui.BuildComponent{}
 	results = append(results, comp)
 	// Process nested steps.
 	for _, substep := range ss {
@@ -196,7 +196,7 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
 // build.Summary.Finished must be set.
 func AddLogDogToBuild(
-	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *resp.MiloBuild) {
+	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *ui.MiloBuild) {
 	now := clock.Now(c)
 
 	// Now fill in each of the step components.
@@ -218,9 +218,9 @@ func AddLogDogToBuild(
 					build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
 			}
 			build.Components = append(build.Components, bs)
-			propGroup := &resp.PropertyGroup{GroupName: bs.Label}
+			propGroup := &ui.PropertyGroup{GroupName: bs.Label}
 			for _, prop := range anno.Property {
-				propGroup.Property = append(propGroup.Property, &resp.Property{
+				propGroup.Property = append(propGroup.Property, &ui.Property{
 					Key:   prop.Name,
 					Value: prop.Value,
 				})
@@ -231,9 +231,9 @@ func AddLogDogToBuild(
 	}
 
 	// Take care of properties
-	propGroup := &resp.PropertyGroup{GroupName: "Main"}
+	propGroup := &ui.PropertyGroup{GroupName: "Main"}
 	for _, prop := range mainAnno.Property {
-		propGroup.Property = append(propGroup.Property, &resp.Property{
+		propGroup.Property = append(propGroup.Property, &ui.Property{
 			Key:   prop.Name,
 			Value: prop.Value,
 		})
@@ -253,9 +253,9 @@ func AddLogDogToBuild(
 		err := json.Unmarshal([]byte(jrev), &rev)
 		if err == nil {
 			if build.Trigger == nil {
-				build.Trigger = &resp.Trigger{}
+				build.Trigger = &ui.Trigger{}
 			}
-			build.Trigger.Revision = resp.NewLink(
+			build.Trigger.Revision = ui.NewLink(
 				rev, fmt.Sprintf("https://crrev.com/%s", rev), fmt.Sprintf("revision %s", rev))
 		}
 	}

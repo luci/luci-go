@@ -14,7 +14,7 @@
 
 //go:generate stringer -type=BotStatus
 
-package resp
+package ui
 
 import (
 	"time"

@@ -10,10 +10,10 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // BuilderID is the universal ID of a builder, and has the form:
@@ -56,7 +56,7 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 
 // Get allows you to obtain the resp.Builder that corresponds with this
 // BuilderID.
-func (b BuilderID) Get(c context.Context, limit int, cursor string) (*resp.Builder, error) {
+func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder, error) {
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
 	source, group, builder, err := b.Split()
 	if err != nil {
