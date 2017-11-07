@@ -40,7 +40,7 @@
   <div class="content">
     <h1>
       {{ if .Build.Summary.ParentLabel }}
-        Builder {{ .Build.Summary.ParentLabel | linkify }}
+        Builder {{ .Build.Summary.ParentLabel.HTML }}
       {{ end }}
       Build {{.Build.Summary.Label}}
       {{ if .Build.Summary.Banner }}
@@ -102,15 +102,15 @@
       {{ end }}
 
       {{ if .Commit.RequestRevision }}
-        <tr><td class="left">Revision</td><td>{{ .Commit.RequestRevision | linkify }}</td></tr>
+        <tr><td class="left">Revision</td><td>{{ .Commit.RequestRevision.HTML }}</td></tr>
       {{ end }}
 
       {{ if .Commit.Revision }}
-        <tr><td class="left">Got Revision</td><td>{{ .Commit.Revision | linkify }}</td></tr>
+        <tr><td class="left">Got Revision</td><td>{{ .Commit.Revision.HTML }}</td></tr>
       {{ end }}
 
       {{ if .Commit.Changelist }}
-        <tr><td class="left">Patch</td><td>{{ .Commit.Changelist | linkify }}</td></tr>
+        <tr><td class="left">Patch</td><td>{{ .Commit.Changelist.HTML }}</td></tr>
       {{ end }}
 
       </table>
@@ -142,7 +142,7 @@
 
         {{ if .Build.Summary.Recipe }}
         <li>
-          Recipe: {{ .Build.Summary.Recipe | linkify }}
+          Recipe: {{ .Build.Summary.Recipe.HTML }}
         </li>
         {{ end }}
       </ul>
@@ -180,7 +180,7 @@
               </div>
               <ul>
                 {{ range .SubLink  }}
-                <li class="sublink">{{ . | linkifySet }}</li>
+                <li class="sublink">{{ .HTML }}</li>
                 {{ end }}
               </ul>
             </li>
@@ -207,7 +207,7 @@
             </div>
             <ul>
               {{ if .MainLink }}
-                <li class="sublink">{{.MainLink | linkifySet}}</li>
+                <li class="sublink">{{.MainLink.HTML}}</li>
                 {{- if eq .Verbosity.String "Interesting" -}}
                   {{ range .MainLink }}
                     <link rel="prerender" href="{{.URL}}">
@@ -216,7 +216,7 @@
                 {{ end }}
               {{- end }}
               {{ range .SubLink }}
-                <li class="sublink">{{. | linkifySet}}</li>
+                <li class="sublink">{{.HTML}}</li>
               {{ end }}
               {{ if not (or .MainLink .SubLink) }}
                 <li class="sublink"> - no logs - </li>
@@ -309,7 +309,7 @@
             </tr>
             <tr>
               <td class="left">Revision</td>
-              <td class="value">{{ .Revision | linkify }}</td>
+              <td class="value">{{ .Revision.HTML }}</td>
             </tr>
           </tbody>
         </table>
