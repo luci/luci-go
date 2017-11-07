@@ -36,9 +36,9 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/api/proto"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // A collection of useful templating functions
@@ -151,7 +151,7 @@ func formatTime(t time.Time) string {
 var linkifyTemplate, linkifySetTemplate *template.Template
 
 // linkify turns a resp.LinkSet struct into a canonical link.
-func linkify(link *resp.Link) template.HTML {
+func linkify(link *ui.Link) template.HTML {
 	if link == nil {
 		return ""
 	}
@@ -163,7 +163,7 @@ func linkify(link *resp.Link) template.HTML {
 }
 
 // linkifySet turns a resp.Link struct into a canonical link.
-func linkifySet(linkSet resp.LinkSet) template.HTML {
+func linkifySet(linkSet ui.LinkSet) template.HTML {
 	if len(linkSet) == 0 {
 		return ""
 	}

@@ -7,7 +7,7 @@ package buildsource
 import (
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // ID represents a universal 'build' ID. Each subpackage of buildsource
@@ -17,7 +17,7 @@ import (
 // The frontend constructs an ID from the appropriate buildsource, then calls
 // its .Get() method to get the generic MiloBuild representation.
 type ID interface {
-	Get(c context.Context) (*resp.MiloBuild, error)
+	Get(c context.Context) (*ui.MiloBuild, error)
 
 	// GetLog is only implemented by swarming; this is for serving the deprecated
 	//   swarming/task/<id>/steps/<logname>

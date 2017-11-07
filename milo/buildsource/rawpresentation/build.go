@@ -32,9 +32,9 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation/internal"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 const (
@@ -165,7 +165,7 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	return as.cs.Step, nil
 }
 
-func (as *AnnotationStream) toMiloBuild(c context.Context) *resp.MiloBuild {
+func (as *AnnotationStream) toMiloBuild(c context.Context) *ui.MiloBuild {
 	prefix, name := as.Path.Split()
 
 	// Prepare a Streams object with only one stream.
@@ -181,7 +181,7 @@ func (as *AnnotationStream) toMiloBuild(c context.Context) *resp.MiloBuild {
 	}
 
 	var (
-		build resp.MiloBuild
+		build ui.MiloBuild
 		ub    = ViewerURLBuilder{
 			Host:    as.Client.Host,
 			Project: as.Project,
@@ -211,7 +211,7 @@ func NewURLBuilder(addr *types.StreamAddr) *ViewerURLBuilder {
 }
 
 // BuildLink implements URLBuilder.
-func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
+func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 	switch t := l.Value.(type) {
 	case *miloProto.Link_LogdogStream:
 		ls := t.LogdogStream
@@ -227,14 +227,14 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 		}
 
 		u := viewer.GetURL(server, b.Project, prefix.Join(types.StreamName(ls.Name)))
-		link := resp.NewLink(l.Label, u, fmt.Sprintf("logdog link for %s", l.Label))
+		link := ui.NewLink(l.Label, u, fmt.Sprintf("logdog link for %s", l.Label))
 		if link.Label == "" {
 			link.Label = ls.Name
 		}
 		return link
 
 	case *miloProto.Link_Url:
-		link := resp.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
+		link := ui.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 		if link.Label == "" {
 			link.Label = "unnamed"
 		}
@@ -257,7 +257,7 @@ type BuildID struct {
 func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic("not implemented") }
 
 // Get implements buildsource.ID.
-func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
+func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	as := AnnotationStream{
 		Project: b.Project,
 		Path:    b.Path,

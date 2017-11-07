@@ -37,10 +37,10 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/templates"
@@ -216,12 +216,12 @@ type SwarmingService interface {
 	GetTaskOutput(c context.Context, taskID string) (string, error)
 }
 
-type SwarmingBuildImplFn func(c context.Context, svc SwarmingService, taskID string) (*resp.MiloBuild, error)
+type SwarmingBuildImplFn func(c context.Context, svc SwarmingService, taskID string) (*ui.MiloBuild, error)
 
 // BuildTestData returns sample test data for swarming build pages.
 func BuildTestData(swarmingRelDir string, swarmingBuildImpl SwarmingBuildImplFn) []common.TestBundle {
-	basic := resp.MiloBuild{
-		Summary: resp.BuildComponent{
+	basic := ui.MiloBuild{
+		Summary: ui.BuildComponent{
 			Label:    "Test swarming build",
 			Status:   model.Success,
 			Started:  time.Date(2016, 1, 2, 15, 4, 5, 999999999, time.UTC),

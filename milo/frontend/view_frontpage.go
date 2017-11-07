@@ -19,15 +19,15 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 func frontpageHandler(c *router.Context) {
-	fp := resp.FrontPage{}
-	var mBuildbot, mBuildbucket *resp.CIService
+	fp := ui.FrontPage{}
+	var mBuildbot, mBuildbucket *ui.CIService
 
 	err := parallel.FanOutIn(func(ch chan<- func() error) {
 		ch <- func() (err error) {
@@ -54,16 +54,16 @@ func frontpageHandler(c *router.Context) {
 
 func frontpageTestData() []common.TestBundle {
 	data := &templates.Args{
-		"frontpage": resp.FrontPage{
-			CIServices: []resp.CIService{
+		"frontpage": ui.FrontPage{
+			CIServices: []ui.CIService{
 				{
 					Name: "Module 1",
-					BuilderGroups: []resp.BuilderGroup{
+					BuilderGroups: []ui.BuilderGroup{
 						{
 							Name: "Example master A",
-							Builders: []resp.Link{
-								*resp.NewLink("Example builder", "/master1/buildera", "Example label"),
-								*resp.NewLink("Example builder 2", "/master1/builderb", "Example label 2"),
+							Builders: []ui.Link{
+								*ui.NewLink("Example builder", "/master1/buildera", "Example label"),
+								*ui.NewLink("Example builder 2", "/master1/builderb", "Example label 2"),
 							},
 						},
 					},

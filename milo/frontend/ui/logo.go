@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resp
+package ui
 
 // A collection of structs used for defining OS, platform, and device logos.
 // Each logo defined in this file should have a matching icon in the

@@ -15,7 +15,7 @@
 //go:generate stringer -type=Verbosity
 //go:generate stringer -type=ComponentType
 
-package resp
+package ui
 
 import (
 	"encoding/json"
