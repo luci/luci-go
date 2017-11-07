@@ -18,6 +18,7 @@ package standard
 import (
 	"net/http"
 
+	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -58,6 +59,7 @@ var (
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,
 		Cache:               globalAuthCache,
+		Locks:               &mutexpool.P{},
 		IsDevMode:           appengine.IsDevAppServer(),
 	}
 
@@ -75,8 +77,7 @@ var classicEnv = gaemiddleware.Environment{
 	},
 	WithConfig: gaeconfig.Use,
 	WithAuth: func(c context.Context) context.Context {
-		c = auth.ModifyConfig(c, func(auth.Config) auth.Config { return globalAuthConfig })
-		return c
+		return auth.SetConfig(c, &globalAuthConfig)
 	},
 	MonitoringMiddleware: globalTsMonState.Middleware,
 

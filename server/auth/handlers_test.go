@@ -31,10 +31,16 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-var cfgWithTransport = Config{
-	AnonymousTransport: func(context.Context) http.RoundTripper {
-		return http.DefaultTransport
-	},
+func withSigner(s signing.Signer) router.MiddlewareChain {
+	return router.NewMiddlewareChain(
+		func(c *router.Context, next router.Handler) {
+			c.Context = ModifyConfig(c.Context, func(cfg Config) Config {
+				cfg.Signer = s
+				return cfg
+			})
+			next(c)
+		},
+	)
 }
 
 func TestCertificatesHandler(t *testing.T) {
@@ -42,18 +48,18 @@ func TestCertificatesHandler(t *testing.T) {
 
 	call := func(s signing.Signer) (*signing.PublicCertificates, error) {
 		r := router.New()
-		InstallHandlers(r, router.NewMiddlewareChain(
-			func(c *router.Context, next router.Handler) {
-				c.Context = setConfig(c.Context, &Config{Signer: s})
-				next(c)
-			},
-		))
+		InstallHandlers(r, withSigner(s))
 		ts := httptest.NewServer(r)
 		// Note: there are two contexts. One for outter /certificates call
 		// (this one), and another for /certificates request handler (it is setup
 		// in the middleware chain above).
 		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
-		ctx = setConfig(ctx, &cfgWithTransport)
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
+			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
+				return http.DefaultTransport
+			}
+			return cfg
+		})
 		return signing.FetchCertificates(ctx, ts.URL+"/auth/api/v1/server/certificates")
 	}
 
@@ -80,13 +86,7 @@ func TestServiceInfoHandler(t *testing.T) {
 	Convey("Works", t, func() {
 		r := router.New()
 		signer := &phonySigner{}
-
-		InstallHandlers(r, router.NewMiddlewareChain(
-			func(ctx *router.Context, next router.Handler) {
-				ctx.Context = setConfig(context.Background(), &Config{Signer: signer})
-				next(ctx)
-			},
-		))
+		InstallHandlers(r, withSigner(signer))
 
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/api/v1/server/info", nil)

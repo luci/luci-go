@@ -83,7 +83,7 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 
 	// Not cached, or invalid cache. Regenerate and add to cache under lock.
 	var exp time.Duration
-	cfg.locks.WithMutex("oauth:"+string(cacheKey), func() {
+	cfg.Locks.WithMutex("oauth:"+string(cacheKey), func() {
 		if user, exp, err = m.authenticateAgainstGoogle(c, cfg, accessToken); err != nil {
 			return
 		}

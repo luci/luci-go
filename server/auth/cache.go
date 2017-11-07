@@ -212,7 +212,7 @@ func fetchOrMintToken(ctx context.Context, op *fetchOrMintTokenOp) (*cachedToken
 		err   error
 		label string
 	}
-	op.Cache.WithMutex(op.Config.locks, op.CacheKey, func() {
+	op.Cache.WithMutex(op.Config.Locks, op.CacheKey, func() {
 		// Recheck the cache now that we have the lock, maybe someone updated the
 		// cache while we were waiting.
 		switch cached, err := op.Cache.Fetch(ctx, op.Config.Cache, op.CacheKey, op.MinTTL); {

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -78,6 +79,7 @@ var (
 		AccessTokenProvider: authClient.GetAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
 		Cache:               &auth.MemoryCache{LRU: ProcessCache},
+		Locks:               &mutexpool.P{},
 		IsDevMode:           !metadata.OnGCE(),
 	}
 )
@@ -118,8 +120,7 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 	},
 	WithConfig: gaeconfig.UseFlex,
 	WithAuth: func(c context.Context) context.Context {
-		c = auth.ModifyConfig(c, func(auth.Config) auth.Config { return globalAuthConfig })
-		return c
+		return auth.SetConfig(c, &globalAuthConfig)
 	},
 	MonitoringMiddleware: nil, // TODO: Add monitoring middleware.
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
