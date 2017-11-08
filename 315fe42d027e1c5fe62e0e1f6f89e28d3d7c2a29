@@ -34,6 +34,24 @@
       "revId": "315fe42d027e1c5fe62e0e1f6f89e28d3d7c2a29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6f18df7b_a4fb8cf6",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-08T04:26:30Z",
+      "side": 1,
+      "message": "with nothing i think\ngoogle site verification needs this file only once. I assume the site is already verified, so perhaps we don\u0027t need this anymore?",
+      "parentUuid": "7667692c_db7d470c",
+      "revId": "315fe42d027e1c5fe62e0e1f6f89e28d3d7c2a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
