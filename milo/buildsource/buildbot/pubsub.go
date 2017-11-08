@@ -162,6 +162,10 @@ func saveMaster(c context.Context, master *buildbot.Master, internal bool) int {
 			// FIXME: there should have been a metric and alert.
 			return 0
 		}
+		if err == buildstore.ErrImportRejected {
+			// Permanent failure, don't retry.
+			return 0
+		}
 		// This is transient, we do want PubSub to retry.
 		return http.StatusInternalServerError
 	}
