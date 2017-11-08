@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/milo/api/proto"
+	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/server/caching"
 )
 
