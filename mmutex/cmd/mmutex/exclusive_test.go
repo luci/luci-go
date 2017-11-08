@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -36,6 +37,8 @@ func TestExclusive(t *testing.T) {
 			panic(err)
 		}
 		lockFilePath := filepath.Join(lockFileDir, "mmutex.lock")
+		drainFilePath := filepath.Join(lockFileDir, "mmutex.drain")
+
 		defer func() {
 			os.Remove(lockFileDir)
 		}()
@@ -57,14 +60,14 @@ func TestExclusive(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunExclusive(command, lockFilePath, 0, 0), ShouldBeNil)
+			So(RunExclusive(command, lockFilePath, drainFilePath, 0, 0), ShouldBeNil)
 
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("returns error from the command", func() {
-			So(RunExclusive([]string{"nonexistent_command"}, lockFilePath, 0, 0), ShouldErrLike, "executable file not found")
+			So(RunExclusive([]string{"nonexistent_command"}, lockFilePath, drainFilePath, 0, 0), ShouldErrLike, "executable file not found")
 		})
 
 		Convey("times out if exclusive lock isn't released", func() {
@@ -76,7 +79,7 @@ func TestExclusive(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunExclusive([]string{"echo", "should_fail"}, lockFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive([]string{"echo", "should_fail"}, lockFilePath, drainFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("times out if shared lock isn't released", func() {
@@ -88,7 +91,7 @@ func TestExclusive(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunExclusive(createCommand([]string{"echo", "should_fail"}), lockFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive(createCommand([]string{"echo", "should_fail"}), lockFilePath, drainFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("respects timeout", func() {
@@ -101,14 +104,39 @@ func TestExclusive(t *testing.T) {
 			defer handle.Unlock()
 
 			start := time.Now()
-			RunExclusive(createCommand([]string{"echo", "should_succeed"}), lockFilePath, 5*time.Millisecond, 0)
+			RunExclusive(createCommand([]string{"echo", "should_succeed"}), lockFilePath, drainFilePath, 5*time.Millisecond, 0)
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
-		// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
-	})
+		Convey("creates drainfile", func() {
+			// Start goroutine that calls RunExclusive(), waiting for a file to exist.
+			done := make(chan bool)
 
-	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
-		So(RunExclusive(createCommand([]string{"echo", "should_succeed"}), "", 0, 0), ShouldBeNil)
+			awaitedFilePath := filepath.Join(lockFileDir, "awaitedFilePath.txt")
+			fmt.Println(awaitedFilePath)
+			go func(done chan bool) {
+				RunExclusive(createCommand([]string{"./await_file.sh", awaitedFilePath}), lockFilePath, drainFilePath, 5*time.Second, 0)
+				done <- true
+			}(done)
+
+			_, err := os.Stat(drainFilePath)
+			So(err, ShouldBeNil)
+
+			os.OpenFile(awaitedFilePath, os.O_CREATE, 0755)
+			<-done
+		})
+
+		Convey("deletes drainfile", func() {
+			// Start goroutine that calls RunExclusive(), waiting for a file to exist.
+			// Create the file.
+			// Check that the drain file doesn't exist.
+			// Check that the command was successful.
+		})
+
+		Convey("waits for no drainfile", func() {
+			// Start goroutine that calls RunExclusive(), waiting for a file to exist.
+			// Call RunExclusive() on this thread with a low timeout. Verify that it times out.
+			// Create the file.
+		})
 	})
 }

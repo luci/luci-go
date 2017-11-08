@@ -25,11 +25,11 @@ import (
 )
 
 var lockFileName = "mmutex.lock"
+var drainFileName = "mmutex.drain"
 var lockFileEnvVariable = "MMUTEX_LOCK_DIR"
 
-// Returns the lock file path based on the environment variable, or an empty string if no
-// lock file should be used.
-func computeLockFilePath(env subcommands.Env) (string, error) {
+// Returns the lock file directory based on the environment variable, or an empty string if no lock file should be used.
+func computeLockFileDir(env subcommands.Env) (string, error) {
 	envVar := env[lockFileEnvVariable]
 	if !envVar.Exists {
 		return "", nil
@@ -45,7 +45,29 @@ func computeLockFilePath(env subcommands.Env) (string, error) {
 		return "", nil
 	}
 
+	return lockFileDir, nil
+}
+
+// Returns the lock file path based on the environment variable, or an empty string if no
+// lock file should be used.
+func computeLockFilePath(env subcommands.Env) (string, error) {
+	lockFileDir, err := computeLockFileDir(env)
+	if lockFileDir == "" || err != nil {
+		return lockFileDir, err
+	}
+
 	return filepath.Join(lockFileDir, lockFileName), nil
+}
+
+// Returns the drain file path based on the environment variable, or an empty string if no
+// lock file should be used.
+func computeDrainFilePath(env subcommands.Env) (string, error) {
+	lockFileDir, err := computeLockFileDir(env)
+	if lockFileDir == "" || err != nil {
+		return lockFileDir, err
+	}
+
+	return filepath.Join(lockFileDir, drainFileName), nil
 }
 
 var application = &subcommands.DefaultApplication{
