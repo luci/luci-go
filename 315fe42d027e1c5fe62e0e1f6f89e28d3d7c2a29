@@ -52,6 +52,24 @@
       "revId": "315fe42d027e1c5fe62e0e1f6f89e28d3d7c2a29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7c29f40_eb596389",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T06:25:26Z",
+      "side": 1,
+      "message": "I was under the impression that Google site verification checks every 30 days. I did lose luci-notify-dev because this was broken, but it didn\u0027t seem to affect pubsub, so I\u0027m not sure what the real policy is...",
+      "parentUuid": "6f18df7b_a4fb8cf6",
+      "revId": "315fe42d027e1c5fe62e0e1f6f89e28d3d7c2a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
