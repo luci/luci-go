@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d35ef0c7_b7b7429a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T01:54:17Z",
+      "side": 1,
+      "message": "I\u0027m not a huge fan of this abstraction, but Notify() from before was getting unwieldy. I couldn\u0027t just get the email sender out of the settings in Notify() because that would result in a cross-group transaction, which I don\u0027t think is something we want?\n\nWith that said, the benefits of this are that when something other than email is supported, adding it will be more straight-forward since less state will need to be passed around explicitly.\n\n*shrug*",
+      "range": {
+        "startLine": 69,
+        "startChar": 5,
+        "endLine": 69,
+        "endChar": 23
+      },
+      "revId": "c8836decaaced9417fb1c8faf0bc28bca82ee15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
