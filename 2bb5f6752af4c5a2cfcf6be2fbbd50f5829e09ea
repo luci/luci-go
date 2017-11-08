@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ee25f0a_f85ed73e",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-08T22:40:09Z",
+      "side": 1,
+      "message": "probably just the timeout. The polling interval is going to always be separate I think.",
+      "range": {
+        "startLine": 65,
+        "startChar": 46,
+        "endLine": 65,
+        "endChar": 67
+      },
+      "revId": "2bb5f6752af4c5a2cfcf6be2fbbd50f5829e09ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
