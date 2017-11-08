@@ -24,6 +24,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
@@ -138,16 +139,20 @@ func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, o
 	return nil
 }
 
+// InitDispatcher registers the send email task with the given dispatcher.
 func InitDispatcher(d *tq.Dispatcher) {
 	d.RegisterTask(&internal.EmailTask{}, SendEmail, "email", nil)
 }
 
 // SendEmail is a push queue handler that attempts to send an email.
 func SendEmail(c context.Context, task proto.Message) error {
+	appID := info.AppID(c)
+	sender := fmt.Sprintf("%s <noreply@%s.appspotmail.com>", appID, appID)
+
 	// TODO(mknyszek): Query Milo for additional build information.
 	emailTask := task.(*internal.EmailTask)
 	return mail.Send(c, &mail.Message{
-		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
+		Sender:   sender,
 		To:       emailTask.Recipients,
 		Subject:  emailTask.Subject,
 		HTMLBody: emailTask.Body,
