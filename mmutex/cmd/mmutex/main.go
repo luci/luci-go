@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/maruel/subcommands"
 
@@ -26,6 +27,8 @@ import (
 
 var lockFileName = "mmutex.lock"
 var lockFileEnvVariable = "MMUTEX_LOCK_DIR"
+var fslockTimeout = 2 * time.Hour
+var fslockPollingInterval = 5 * time.Second
 
 // Returns the lock file path based on the environment variable, or an empty string if no
 // lock file should be used.
