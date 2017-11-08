@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ccd86b2_50d85dff",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-08T18:46:31Z",
+      "side": 1,
+      "message": "put runFunc at the end, then declare it inline with the call, e.g.\n\n  return runExclusive(lockFilePath, drainFilePath, timeout, pollingInterval, func() error {\n    return runCommand(command)\n  })\n\nI would also strongly consider making a lockOptions struct:\n\n  type lockOptions struct {\n    lockFilePath string\n    drainFilePath string\n    timeout time.Time\n    pollingInterval time.Duration\n  }\n\nAdditionally, I would reconsider having all of these things be part of the public API; mmutex is supposed to implement a protocol where all of these are defined as part of the protocol (i.e. they\u0027re derived from env.\n\nAdditionally additionally, I would remove `timeout` here, and instead pass a context.Context and use it\u0027s built-in cancellation functionality. Go\u0027s stdlib also has support for context.Context cancellation of subprocesses, which is the recommended way to do that.",
+      "range": {
+        "startLine": 76,
+        "startChar": 21,
+        "endLine": 76,
+        "endChar": 28
+      },
+      "revId": "e1c56773b5278b5b2334a606016f637b0bbb58c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b59a9d84_574db185",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-08T18:46:31Z",
+      "side": 1,
+      "message": "use the `\"go.chromium.org/luci/common/errors\".Annotate(err, \"additional information\").Err()` function for this. It will also collect a stack trace, and allows multiple annotations as it goes back up the stack.",
+      "range": {
+        "startLine": 89,
+        "startChar": 33,
+        "endLine": 89,
+        "endChar": 52
+      },
+      "revId": "e1c56773b5278b5b2334a606016f637b0bbb58c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
