@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
 
 package milo
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
-//go:generate go install go.chromium.org/luci/grpc/cmd/svcdec
-//go:generate cproto
-//go:generate svcdec -type BuildbotServer -type BuildInfoServer
+// IsEmulated returns true iff the given buildNumber should be emulated.
+func (m *EmulationOptions) IsEmulated(buildNumber int) bool {
+	if m == nil || m.StartFrom < 0 {
+		return false
+	}
+	return buildNumber >= int(m.StartFrom)
+}

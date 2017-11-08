@@ -285,6 +285,7 @@ type EmulationOptions struct {
 	// for a given builder.
 	// Buildbot builds will be returned up to this number-1.
 	// LUCI builds will be returned starting from this number.
+	// If this number is < 0, emulation is turned off for this builder.
 	StartFrom int32 `protobuf:"varint,1,opt,name=start_from,json=startFrom" json:"start_from,omitempty"`
 	// The LUCI bucket corresponding to the master of the builder in question.
 	Bucket string `protobuf:"bytes,2,opt,name=bucket" json:"bucket,omitempty"`

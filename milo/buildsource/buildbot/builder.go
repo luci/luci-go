@@ -203,7 +203,9 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	} else if opt != nil {
 		linkParams = url.Values{}
 		linkParams.Set("em-bucket", opt.Bucket)
-		linkParams.Set("em-start", strconv.Itoa(int(opt.StartFrom)))
+		if opt.StartFrom >= 0 {
+			linkParams.Set("em-start", strconv.Itoa(int(opt.StartFrom)))
+		}
 	}
 
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
