@@ -44,7 +44,19 @@ type cmdExclusiveRun struct {
 }
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunExclusive(args, c.fslockTimeout, c.fslockPollingInterval); err != nil {
+	lockFilePath, err := computeLockFilePath(env)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+
+	drainFilePath, err := computeLockFilePath(env)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+
+	if err = RunExclusive(args, lockFilePath, drainFilePath, c.fslockTimeout, c.fslockPollingInterval); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return lib.GetExitCode(exitErr)
 		}
@@ -57,12 +69,30 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 	}
 }
 
-func RunExclusive(command []string, timeout time.Duration, pollingInterval time.Duration) error {
+func RunExclusive(command []string, lockFilePath string, drainFilePath string, timeout time.Duration, pollingInterval time.Duration) error {
+	runFunc := func() error {
+		return runCommand(command)
+	}
+	return runExclusive(runFunc, lockFilePath, drainFilePath, timeout, pollingInterval)
+}
+
+func runExclusive(runFunc func() error, lockFilePath string, drainFilePath string, timeout time.Duration, pollingInterval time.Duration) error {
+	if len(lockFilePath) == 0 || len(drainFilePath) == 0 {
+		return runFunc()
+	}
+
+	// TODO(charliea): Wait until no drain file exists...
+	// TODO(charliea): Create the drain file.
+
+	// _, err := os.OpenFile(drainFilePath, os.O_CREATE, 0755)
+	// if err != nil {
+	// 	// TODO(charliea): Consider wrapping this error to add context about when it happened.
+	// 	return err
+	// }
+	// defer os.Remove(drainFilePath)
+
 	blocker := lib.CreateBlockerUntil(time.Now().Add(timeout), pollingInterval)
-	return fslock.WithBlocking(LockFilePath, blocker, func() error {
-		cmd := exec.Command(command[0], command[1:]...)
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-		return cmd.Run()
+	return fslock.WithBlocking(lockFilePath, blocker, func() error {
+		return runFunc()
 	})
 }
