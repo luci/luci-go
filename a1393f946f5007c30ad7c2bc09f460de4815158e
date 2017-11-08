@@ -22,6 +22,30 @@
       "revId": "a1393f946f5007c30ad7c2bc09f460de4815158e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b8ef8cf_8f664b07",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T19:14:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1705758_8237ebc8",
+      "range": {
+        "startLine": 149,
+        "startChar": 24,
+        "endLine": 149,
+        "endChar": 35
+      },
+      "revId": "a1393f946f5007c30ad7c2bc09f460de4815158e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
