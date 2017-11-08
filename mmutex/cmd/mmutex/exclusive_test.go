@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/danjacques/gofslock/fslock"
+	"github.com/maruel/subcommands"
 	. "github.com/smartystreets/goconvey/convey"
 
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -35,7 +36,16 @@ func TestExclusive(t *testing.T) {
 		if lockFileDir, err = ioutil.TempDir("", ""); err != nil {
 			panic(err)
 		}
-		lockFilePath := filepath.Join(lockFileDir, "mmutex.lock")
+		env := subcommands.Env{
+			lockFileEnvVariable: subcommands.EnvVar{
+				Value:  lockFileDir,
+				Exists: true,
+			},
+		}
+		lockFilePath, err := computeLockFilePath(env)
+		if err != nil {
+			panic(err)
+		}
 		defer func() {
 			os.Remove(lockFileDir)
 		}()
@@ -57,14 +67,14 @@ func TestExclusive(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunExclusive(command, lockFilePath, 0, 0), ShouldBeNil)
+			So(RunExclusive(command, env, 0, 0), ShouldBeNil)
 
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("returns error from the command", func() {
-			So(RunExclusive([]string{"nonexistent_command"}, lockFilePath, 0, 0), ShouldErrLike, "executable file not found")
+			So(RunExclusive([]string{"nonexistent_command"}, env, 0, 0), ShouldErrLike, "executable file not found")
 		})
 
 		Convey("times out if exclusive lock isn't released", func() {
@@ -76,7 +86,7 @@ func TestExclusive(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunExclusive([]string{"echo", "should_fail"}, lockFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive([]string{"echo", "should_fail"}, env, 0, 0), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("times out if shared lock isn't released", func() {
@@ -88,7 +98,7 @@ func TestExclusive(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunExclusive(createCommand([]string{"echo", "should_fail"}), lockFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive(createCommand([]string{"echo", "should_fail"}), env, 0, 0), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("respects timeout", func() {
@@ -101,7 +111,7 @@ func TestExclusive(t *testing.T) {
 			defer handle.Unlock()
 
 			start := time.Now()
-			RunExclusive(createCommand([]string{"echo", "should_succeed"}), lockFilePath, 5*time.Millisecond, 0)
+			RunExclusive(createCommand([]string{"echo", "should_succeed"}), env, 5*time.Millisecond, 0)
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
@@ -109,6 +119,6 @@ func TestExclusive(t *testing.T) {
 	})
 
 	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
-		So(RunExclusive(createCommand([]string{"echo", "should_succeed"}), "", 0, 0), ShouldBeNil)
+		So(RunExclusive(createCommand([]string{"echo", "should_succeed"}), subcommands.Env{}, 0, 0), ShouldBeNil)
 	})
 }

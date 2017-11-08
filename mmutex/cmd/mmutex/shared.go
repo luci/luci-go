@@ -44,13 +44,7 @@ type cmdSharedRun struct {
 }
 
 func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	lockFilePath, err := computeLockFilePath(env)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-
-	if err = RunShared(args, lockFilePath, c.fslockTimeout, c.fslockPollingInterval); err != nil {
+	if err := RunShared(args, env, c.fslockTimeout, c.fslockPollingInterval); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return lib.GetExitCode(exitErr)
 		}
@@ -63,7 +57,11 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 	}
 }
 
-func RunShared(command []string, lockFilePath string, timeout time.Duration, pollingInterval time.Duration) error {
+func RunShared(command []string, env subcommands.Env, timeout time.Duration, pollingInterval time.Duration) error {
+	lockFilePath, err := computeLockFilePath(env)
+	if err != nil {
+		return err
+	}
 	if len(lockFilePath) == 0 {
 		return runCommand(command)
 	}
