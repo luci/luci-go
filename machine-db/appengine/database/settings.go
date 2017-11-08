@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package database
 
 import (
 	"html/template"
@@ -44,6 +44,19 @@ func NewSettings(c context.Context) *DatabaseSettings {
 		Username: "",
 		Password: "",
 		Database: "",
+	}
+}
+
+// GetSettings returns the current settings. This may hit an outdated cache.
+func GetSettings(c context.Context) (*DatabaseSettings, error) {
+	databaseSettings := &DatabaseSettings{}
+	switch err := settings.Get(c, settingsKey, databaseSettings); err {
+	case nil:
+		return databaseSettings, nil
+	case settings.ErrNoSettings:
+		return NewSettings(c), nil
+	default:
+		return nil, err
 	}
 }
 

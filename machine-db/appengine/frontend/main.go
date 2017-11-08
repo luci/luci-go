@@ -24,18 +24,22 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/machine-db/api/crimson/v1"
+	"go.chromium.org/luci/machine-db/appengine/database"
 	"go.chromium.org/luci/server/router"
 )
 
 func init() {
 	mathrand.SeedRandomly()
-	InstallSettings()
+	database.InstallSettings()
 
 	r := router.New()
 	standard.InstallHandlers(r)
+	database.InstallConfigHandlers(r)
 	r.GET("/", standard.Base(), handler)
 
 	api := prpc.Server{}
+	crimson.RegisterDatacentersServer(&api, &database.DatacentersServer{})
 	discovery.Enable(&api)
 	api.InstallHandlers(r, standard.Base())
 
@@ -44,5 +48,5 @@ func init() {
 
 func handler(c *router.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
-	c.Writer.WriteHeader(200)
+	c.Writer.WriteHeader(http.StatusOK)
 }
