@@ -106,9 +106,9 @@ func TestNotify(t *testing.T) {
 		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
 
-		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
+		c := memory.UseWithAppID(context.Background(), "luci-notify-test")
 		c = clock.Set(c, testclock.New(time.Now()))
-		user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
+		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
 
 		// Get notifiers from test config.
 		notifiers := extractNotifiers(c, cfgName, cfg)
