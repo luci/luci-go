@@ -57,7 +57,7 @@ func getBuild(c context.Context, master, builder string, number int, fetchAnnota
 	if err != nil {
 		return nil, err
 	}
-	if emOptions != nil && number >= int(emOptions.StartFrom) {
+	if emOptions.IsEmulated(number) {
 		return getEmulatedBuild(c, master, emOptions.Bucket, builder, number, fetchAnnotations, fetchChanges)
 	}
 	return getDatastoreBuild(c, master, builder, number)

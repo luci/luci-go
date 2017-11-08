@@ -151,7 +151,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 						return err
 					}
 					for _, b := range res.Builds {
-						if b.Number < int(opt.StartFrom) {
+						if !opt.IsEmulated(b.Number) {
 							// the rest of res.Builds are buildbot builds
 							// ignore them.
 							break
@@ -163,7 +163,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 						}
 					}
 					for _, num := range buildbotCurrent {
-						if num < int(opt.StartFrom) {
+						if !opt.IsEmulated(num) {
 							builder.CurrentBuilds = append(builder.CurrentBuilds, num)
 						}
 					}
