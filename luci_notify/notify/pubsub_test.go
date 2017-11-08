@@ -64,10 +64,10 @@ func TestHandleBuild(t *testing.T) {
 		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
 
-		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
+		c := memory.UseWithAppID(context.Background(), "luci-notify-test")
 		c = clock.Set(c, testclock.New(time.Now()))
 		c = memlogger.Use(c)
-		user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
+		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
 
 		// Add Notifiers to datastore and update indexes.
 		notifiers := extractNotifiers(c, "test", cfg)
