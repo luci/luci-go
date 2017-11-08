@@ -61,6 +61,7 @@ func Run(templatePath string) {
 	cronMW := backendMW.Extend(gaemiddleware.RequireCron)
 
 	r.GET("/", htmlMW, frontpageHandler)
+	r.GET("/p", frontendMW, movedPermanently("/"))
 
 	// Admin and cron endpoints.
 	r.GET("/admin/update", cronMW, UpdateConfigHandler)
@@ -87,10 +88,11 @@ func Run(templatePath string) {
 	// Console
 	r.GET("/p/:project/consoles/:name", htmlMW, ConsoleHandler)
 	r.GET("/console/:project/:name", frontendMW, movedPermanently("/p/:project/consoles/:name"))
-	r.GET("/p/:project/consoles", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project", htmlMW, func(c *router.Context) {
 		ConsolesHandler(c, c.Params.ByName("project"))
 	})
-	r.GET("/console/:project", frontendMW, movedPermanently("/p/:project/consoles/"))
+	r.GET("/p/:project/consoles", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/console/:project", frontendMW, movedPermanently("/p/:project"))
 
 	// Swarming
 	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, func(c *router.Context) {
