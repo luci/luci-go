@@ -266,20 +266,21 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 		} else {
 			me := err.(errors.MultiError)
 			// one of the errors was NSE; bail.
-			if me[0] != datastore.ErrNoSuchEntity || me[1] != datastore.ErrNoSuchEntity {
-				return err
+			for _, ierr := range me {
+				if ierr != nil && ierr != datastore.ErrNoSuchEntity {
+					return errors.Annotate(ierr, "getting existing build summary").Err()
+				}
 			}
 
 			// One or the other was NES; don't care, just record both entries to get
 			// up to date.
 		}
 
-		if err := datastore.Put(c, (*buildEntity)(b), bs); err != nil {
-			return err
-		}
-
-		return model.UpdateBuilderForBuild(c, bs)
-	}, &datastore.TransactionOptions{XG: true})
+		return datastore.Put(c, (*buildEntity)(b), bs)
+	}, &datastore.TransactionOptions{})
+	if err == nil {
+		err = model.UpdateBuilderForBuild(c, bs)
+	}
 	return
 }
 

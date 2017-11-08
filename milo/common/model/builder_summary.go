@@ -89,10 +89,6 @@ func (b *BuilderSummary) SetInProgress(bp map[string]Status) {
 // and has a more recent creation time than the one stored in the BuilderSummary.
 // If there is no existing BuilderSummary for the BuildSummary provided, one is created.
 func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
-	if datastore.CurrentTransaction(c) == nil {
-		panic(fmt.Errorf("GetAndUpdateBuilderSummary must occur within transaction"))
-	}
-
 	// Get or create the relevant BuilderSummary.
 	builder := BuilderSummary{BuilderID: build.BuilderID}
 	switch err := datastore.Get(c, &builder); err {
