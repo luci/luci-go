@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9d9904a5_55fa58f0",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T23:12:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86aa4131_7b1b2907",
+      "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78f5d2d0_021c80e4",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 10
@@ -33,6 +51,24 @@
       "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be1a1b9a_70869e67",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T23:12:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78f5d2d0_021c80e4",
+      "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "3db57a9f_2d6d07c0",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T23:12:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7f1b031a_a88e54fc",
+      "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9d8a5f9_3bc10181",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 10
@@ -67,6 +121,24 @@
       "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4303a75_d72f1313",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T23:12:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9d8a5f9_3bc10181",
+      "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "6eba1e3b_105f42d7",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T23:12:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4703f1e4_cb6739cc",
+      "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "560e5d0c_958a5147",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 10
@@ -101,6 +191,24 @@
       "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34beb562_ed4c91af",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T23:12:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "560e5d0c_958a5147",
+      "revId": "56066711c717bf021487d8d1fa454f8fb827d754",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
