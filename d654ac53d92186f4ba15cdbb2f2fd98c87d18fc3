@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b153970b_bb604679",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T00:15:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0fce7a66_1e0195c8",
+      "revId": "d654ac53d92186f4ba15cdbb2f2fd98c87d18fc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "65db3fcd_55ec1cad",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 7
@@ -39,6 +57,30 @@
       "revId": "d654ac53d92186f4ba15cdbb2f2fd98c87d18fc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abf6c04d_d867d2b2",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-08T00:15:32Z",
+      "side": 1,
+      "message": "Done, and I also reversed the order of build and oldStatus (whats in place of builder) to be consistent with shouldNotify.",
+      "parentUuid": "65db3fcd_55ec1cad",
+      "range": {
+        "startLine": 185,
+        "startChar": 41,
+        "endLine": 185,
+        "endChar": 72
+      },
+      "revId": "d654ac53d92186f4ba15cdbb2f2fd98c87d18fc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
