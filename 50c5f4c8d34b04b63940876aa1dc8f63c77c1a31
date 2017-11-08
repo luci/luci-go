@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "b9ed652c_2867450d",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-08T07:43:24Z",
+      "side": 1,
+      "message": "nit: why not `procCacheHandle.Get(c)` ? Would make callsites nicer, and reduce the number of top-level functions in the caching package.",
+      "range": {
+        "startLine": 55,
+        "startChar": 7,
+        "endLine": 55,
+        "endChar": 47
+      },
+      "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0207e874_6ad61988",
         "filename": "server/caching/process.go",
         "patchSetId": 1
@@ -18,6 +41,29 @@
         "startChar": 26,
         "endLine": 42,
         "endChar": 29
+      },
+      "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae110963_80e5a646",
+        "filename": "server/caching/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-08T07:43:24Z",
+      "side": 1,
+      "message": "since we\u0027re panicing anyway, maybe drop the `, _` to get a type-related panic if it\u0027s a bad type (somehow)",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 9
       },
       "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
