@@ -2,6 +2,144 @@
   "comments": [
     {
       "key": {
+        "uuid": "70f7fb4f_1ea76ccb",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "consider decoupling HTTP logic from the actual import logic, e.g.\n\nfunc configImportHandler(c *router.Context) {\n  err :\u003d importConfigs(c.Context)\n  if err \u003d\u003d nil {\n     // http 200\n  } else {\n     // http non-200\n  }\n}\n\n\nThis will make the code somewhat simpler and easier to test.",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 52
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8fbf495_6ec50c0a",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "I think it would be more transparent to have this in the root config file, rather than hardcode it in the code\n\ne.g. \u0027datacenter: \"datacenters/blah.cfg\"\u0027 gives clear idea where to look next when browsing configs",
+      "range": {
+        "startLine": 53,
+        "startChar": 32,
+        "endLine": 53,
+        "endChar": 44
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4799b2b_13dba569",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "consider using https://godoc.org/go.chromium.org/luci/common/config/validation#Context to collect all validation errors (it is similar to python API).\n\nUsage example: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/tokenserver/appengine/impl/delegation/config_validation.go?type\u003dcs\u0026q\u003dvalidation.Context+lang:go\u0026sq\u003dpackage:chromium\u0026l\u003d30",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 24
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b1702c0_25dc0ef4",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "nit: use stringset https://godoc.org/go.chromium.org/luci/common/data/stringset#New",
+      "range": {
+        "startLine": 86,
+        "startChar": 16,
+        "endLine": 86,
+        "endChar": 41
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10835297_b3aea91e",
+        "filename": "machine-db/appengine/database/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "nit: group . imports together",
+      "range": {
+        "startLine": 20,
+        "startChar": 1,
+        "endLine": 20,
+        "endChar": 45
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51aa77d5_93614b4f",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "I think this package organization will not be sustainable. We\u0027ll have giant \u0027database\u0027 package with everything.\n\nConsider dedicating \u0027database\u0027 only to establishing *sql.DB instance, and move datacenters stuff to another package dedicated to the datacenters e.g. \u0027model/datacenters\u0027.",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9992a613_9d7760cf",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -13,6 +151,162 @@
       "writtenOn": "2017-11-08T01:48:37Z",
       "side": 1,
       "message": "You were storing the db pointer as a context value [1], but I don\u0027t believe this is correct. According to the context docs, context values should be request-scoped [2], while the sql docs say that the open connection should be called once and shared globally [3]. Therefore I believe that singleton is the right approach, that way every concurrent request in the same instance of the app will share the same database connection.\n\n[1] https://chrome-internal.googlesource.com/infra/infra_internal/+/4e3f4742a24613c69ddb92d0facfdde5c7294836/go/src/infra_internal/crimson/server/crimsondb/crimsondb.go#737\n[2] https://golang.org/pkg/context/\n[3] https://golang.org/pkg/database/sql/#Open",
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab4da072_a73c4fd0",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "The database handle was stored as a global variable (see https://chrome-internal.googlesource.com/infra/infra_internal/+/4e3f4742a24613c69ddb92d0facfdde5c7294836/go/src/infra_internal/crimson/server/crimsondb/crimsondb.go#734) and was shared between requests. It was put into the context just for easier mocking in tests.\n\nThe problem with global variables is that they are shared by everything. In particular, using global variables complicates tests, because tests now share state (and can\u0027t run in parallel anymore if this state is mocked). \n\nOne solution to this is to make functions/methods accept implementations (real ones or mocks) via arguments, e.g. imaging you want to mock the database in EnsureDatacenters:\n  \n  func EnsureDatacenters(c context.Context, datacenters []*config.DatacenterConfig, db DBInterface) error {\n    ...\n  }\n\nThen the prod code would be:\n\n db, _ :\u003d getDatabaseConnection(c)\n EnsureDatacenters(c, datacenters, db) \n\nAnd testing code would be:\n\n db :\u003d NewMockedDB()\n EnsureDatacenters(c, datacenters, db) \n\nThis is fine, but becomes cumbersome very fast, since in most cases this \u0027db\u0027 (or similar variables) must be passed down the stack to other functions.\n\nThis is where context comes in. It incapsulates all such sort-of-global-but-not-really variables. Since we always pass context down the stack, all functions get access to the stuff inside the context.\n\nSo the prod code becomes:\n\n  db, _ :\u003d getDatabaseConnection(c)\n  ctx :\u003d WithDatabase(ctx, db)\n  EnsureDatacenters(c, datacenters)\n\nAnd testing code correspondingly becomes:\n\n  db :\u003d NewMockedDB(c)\n  ctx :\u003d WithDatabase(ctx, db)\n  EnsureDatacenters(c, datacenters)\n\nYou\u0027ll see this pattern very often in luci-go codebase. (It is sometimes over-abused...).",
+      "parentUuid": "9992a613_9d7760cf",
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c6aa474_1891fda4",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "this looks very weird :)\n\nAs I said below, there\u0027s no need to use RLock around db at outer functions. \n\nThe logic of this function should be similar to:\n\n  connectionString :\u003d \u003cfetched from settings\u003e\n  \n  // Optimistic path: already have the DB cached.\n  dbLock.RLock()\n  curDB, curConStr :\u003d db, dbConnectionString\n  dbLock.RUnlock()\n  if curConStr \u003d\u003d connectionString {\n    return curDB\n  }\n\n  // Pessimistic path.\n  dbLock.Lock()\n  defer dbLock.Unlock()\n  \n  if dbConnectionString \u003d\u003d connectionString {\n    return db // someone else initialized it already\n  }\n \n  dbConnectionString \u003d connectionString\n  db \u003d \u003cinitialize\u003e\n\n  return db",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 15
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "800516f7_ab71e467",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "why? *sql.DB object itself is thread-safe, so once getDatabaseConnection(c) returns an instance we can safely use it regardless of what happens in other goroutines.",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 23
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ade4d067_18fe2550",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "where this table is defined? how do I create it if I\u0027m setting up my own instance of machine-db?",
+      "range": {
+        "startLine": 108,
+        "startChar": 29,
+        "endLine": 108,
+        "endChar": 68
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "672e3e5f_e86efe86",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "log errors only at the top of the stack (configImportHandler, they are already logged there), otherwise logs will have a lot of duplicated error message.",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 67
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd22338e_669e9873",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "it would be more efficient to use\n\nDELETE FROM `datacenters` WHERE `id` IN (\u003cid1\u003e, \u003cid2\u003e, \u003cid3\u003e, ...)\n\nProbably not a big deal for config handler, but for a RPC handler (where we care about latency) it would be a big deal.",
+      "range": {
+        "startLine": 128,
+        "startChar": 11,
+        "endLine": 128,
+        "endChar": 29
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f839043_2e19f332",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-08T23:11:20Z",
+      "side": 1,
+      "message": "not strictly necessary, since the defer will close it too",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 18
+      },
       "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
