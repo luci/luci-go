@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9992a613_9d7760cf",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-08T01:48:37Z",
+      "side": 1,
+      "message": "You were storing the db pointer as a context value [1], but I don\u0027t believe this is correct. According to the context docs, context values should be request-scoped [2], while the sql docs say that the open connection should be called once and shared globally [3]. Therefore I believe that singleton is the right approach, that way every concurrent request in the same instance of the app will share the same database connection.\n\n[1] https://chrome-internal.googlesource.com/infra/infra_internal/+/4e3f4742a24613c69ddb92d0facfdde5c7294836/go/src/infra_internal/crimson/server/crimsondb/crimsondb.go#737\n[2] https://golang.org/pkg/context/\n[3] https://golang.org/pkg/database/sql/#Open",
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
