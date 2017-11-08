@@ -16,6 +16,24 @@
       "revId": "bee896decafdfda281a007920c61bc10e2427a41",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e047446b_3cf68374",
+        "filename": "milo/api/proto/generate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-08T02:15:40Z",
+      "side": 0,
+      "message": "properly fixed in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/758099",
+      "parentUuid": "fd137454_6b9f165c",
+      "revId": "bee896decafdfda281a007920c61bc10e2427a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
