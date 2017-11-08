@@ -25,9 +25,11 @@ handlers:
   login: admin
 
 # Google site verification file.
-- url: /googlea0e72f69fe7a802f.html
+# TODO(mknyszek): Remove this handler.
+- url: /googlea0e72f69fe7a802f\.html
   secure: always
-  static_dir: static
+  static_files: static/googlea0e72f69fe7a802f.html
+  upload: static/googlea0e72f69fe7a802f\.html
 
 # Everything else goes here.
 - url: /.*

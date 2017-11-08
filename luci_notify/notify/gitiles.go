@@ -17,6 +17,7 @@ package notify
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -28,13 +29,12 @@ import (
 // gitilesHistory is an implementation of a testutil.HistoryFunc intended to be used
 // in production (not for testing).
 func gitilesHistory(c context.Context, repoURL, oldRevision, newRevision string) ([]gitiles.Commit, error) {
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
-		"https://www.googleapis.com/auth/gerritcodereview",
-	))
+	c, _ = context.WithTimeout(c, 30*time.Second)
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-	client := gitiles.Client{Client: &http.Client{Transport: transport}}
+	client := gitiles.Client{Client: &http.Client{Transport: transport}, Auth: true}
 	// With this range, if newCommit.Revision == oldRevision we'll get one commit.
 	treeish := fmt.Sprintf("%s~1..%s", oldRevision, newRevision)
 	commits, err := client.Log(c, repoURL, treeish)
