@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b53894c7_125a0c6a",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-08T23:40:04Z",
+      "side": 1,
+      "message": "\u003d\u003d maskAlive ?",
+      "revId": "271bfca3d1f2d611fb1bdf17d8feca9b065eb29c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
