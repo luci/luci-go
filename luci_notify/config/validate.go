@@ -104,5 +104,11 @@ func validateSettings(settings *notifyConfig.Settings) error {
 	case validation.ValidateHostname(settings.MiloHost) != nil:
 		c.Error(invalidFieldError, "milo_host")
 	}
+
+	if settings.EmailSender == "" {
+		c.Error(requiredFieldError, "email_sender")
+	} else if _, err := mail.ParseAddress(settings.EmailSender); err != nil {
+		c.Error(badEmailError, settings.EmailSender)
+	}
 	return c.Finalize()
 }

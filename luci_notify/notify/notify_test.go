@@ -108,7 +108,8 @@ func TestNotify(t *testing.T) {
 
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		c = clock.Set(c, testclock.New(time.Now()))
-		user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
+		emailSender := "noreply@luci-notify-test.appspotmail.com"
+		user.GetTestable(c).Login(emailSender, "", false)
 
 		// Get notifiers from test config.
 		notifiers := extractNotifiers(c, cfgName, cfg)
@@ -129,7 +130,8 @@ func TestNotify(t *testing.T) {
 
 		test := func(notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder, emailExpect ...string) {
 			// Test Notify.
-			err := Notify(c, dispatcher, notifiers, builder.Status, build)
+			sender := NewSender(c, emailSender, notifiers, builder.Status, build)
+			err := sender.Notify(c, dispatcher)
 			So(err, ShouldBeNil)
 
 			// Verify sent messages.

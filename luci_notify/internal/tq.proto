@@ -10,13 +10,16 @@ package internal;
 
 // EmailTask represents a single email notification to be dispatched.
 message EmailTask {
+  // Sender is the email address to send emails from.
+  string sender = 1;
+
   // Recipients is a list of email addresses to send the email to.
-  repeated string recipients = 1;
+  repeated string recipients = 2;
 
   // Subject is the subject line of the email to be sent.
-  string subject = 2;
+  string subject = 3;
 
   // Body is an HTML-formatted string containing the body of the email
   // to be sent.
-  string body = 3;
+  string body = 4;
 }

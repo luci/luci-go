@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
 
+	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -67,7 +69,17 @@ func TestHandleBuild(t *testing.T) {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		c = clock.Set(c, testclock.New(time.Now()))
 		c = memlogger.Use(c)
-		user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
+
+		// Login to send email.
+		emailSender := "noreply@luci-notify-test.appspotmail.com"
+		user.GetTestable(c).Login(emailSender, "", false)
+
+		// Put settings in datastore.
+		settings := config.Settings{
+			Revision: "1209384712039",
+			Settings: notifyConfig.Settings{EmailSender: emailSender},
+		}
+		datastore.Put(c, &settings)
 
 		// Add Notifiers to datastore and update indexes.
 		notifiers := extractNotifiers(c, "test", cfg)

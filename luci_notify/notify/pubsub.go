@@ -89,6 +89,12 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 		return nil
 	}
 
+	settings := config.Settings{}
+	if err := datastore.Get(c, &settings); err != nil {
+		return errors.Annotate(err, "getting settings for email").Err()
+	}
+	emailSender := settings.Settings.EmailSender
+
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builder := &Builder{ID: builderID}
 	switch err := datastore.Get(c, builder); {
@@ -99,9 +105,9 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
 			switch err := datastore.Get(c, builder); {
 			case err == datastore.ErrNoSuchEntity:
-				// Notify, but avoid on_change notification by setting Status to StatusUnknown.
-				builder.Status = StatusUnknown
-				if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+				// Notify, but avoid on_change notification through StatusUnknown.
+				sender := NewSender(c, emailSender, notifiers, StatusUnknown, build)
+				if err := sender.Notify(c, d); err != nil {
 					return err
 				}
 				// Initialize the Builder in the datastore.
@@ -132,7 +138,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
 		// Notify about the build, but ignore on_change by creating a builder with an unknown status.
-		return Notify(c, d, notifiers, StatusUnknown, build)
+		return NewSender(c, emailSender, notifiers, StatusUnknown, build).Notify(c, d)
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -170,9 +176,10 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 		// Since on_change only occurs when Builder Status != StatusUnknown, set builder
 		// to a new builder with exactly this property.
 		if outOfOrder {
-			return Notify(c, d, notifiers, StatusUnknown, build)
+			return NewSender(c, emailSender, notifiers, StatusUnknown, build).Notify(c, d)
 		}
-		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+		sender := NewSender(c, emailSender, notifiers, builder.Status, build)
+		if err := sender.Notify(c, d); err != nil {
 			return err
 		}
 		return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build))

@@ -15,4 +15,12 @@ message Settings {
   //
   // Required.
   string milo_host = 1;
+
+  // EmailSender is the email address from which luci-notify sends emails.
+  //
+  // Note that this much be an authorized email sender according to Google
+  // App Engine's rules.
+  //
+  // Required.
+  string email_sender = 2;
 }

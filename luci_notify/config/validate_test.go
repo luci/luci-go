@@ -110,8 +110,27 @@ func TestValidation(t *testing.T) {
 				So(err, assertions.ShouldErrLike, expect)
 			})
 		}
-		testValidation(`empty`, ``, requiredFieldError, "milo_host")
-		testValidation(`bad hostname`, `milo_host: "9mNRn29%^^%#"`, invalidFieldError, "milo_host")
-		testValidation(`good`, `milo_host: "luci-milo.example.com"`, "")
+		testValidation(`empty milo host`, `
+			email_sender: "luci-notify@example.com"
+		`, requiredFieldError, "milo_host")
+
+		testValidation(`bad milo hostname`, `
+			milo_host: "9mNRn29%^^%#"
+			email_sender: "luci-notify@example.com"
+		`, invalidFieldError, "milo_host")
+
+		testValidation(`empty email sender`, `
+			milo_host: "luci-milo.example.com"
+		`, requiredFieldError, "email_sender")
+
+		testValidation(`bad email sender`, `
+			milo_host: "luci-milo.example.com"
+			email_sender: "ah@@@@ku"
+		`, badEmailError, "ah@@@@ku")
+
+		testValidation(`good`, `
+			milo_host: "luci-milo.example.com"
+			email_sender: "luci-notify@example.com"
+		`, "")
 	})
 }

@@ -63,28 +63,21 @@ luci-notify has detected a new {{ .Build.Status }} on builder "{{ .Build.Builder
 
 <a href="{{ .Build.URL }}">Full details are available here.</a>`))
 
-// createEmailTask constructs an EmailTask to be dispatched onto the task queue.
-func createEmailTask(c context.Context, recipients []string, oldStatus buildbucket.Status, build *buildbucket.Build) (*tq.Task, error) {
-	templateContext := map[string]interface{}{
-		"OldStatus": oldStatus.String(),
-		"Build":     build,
-	}
-	var bodyBuffer bytes.Buffer
-	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
-		return nil, errors.Annotate(err, "constructing email body").Err()
-	}
-	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
-		build.Status,
-		build.Builder,
-		build.Bucket)
+// NotificationSender is a collection of state common to both the recipient aggregation
+// and notification dispatch steps of the notifying process. It contains the state and logic
+// necessary to construct notifications and dispatch them onto the task queue.
+type NotificationSender struct {
+	// EmailSender is the email address to send emails from.
+	EmailSender string
 
-	return &tq.Task{
-		Payload: &internal.EmailTask{
-			Recipients: recipients,
-			Subject:    subject,
-			Body:       bodyBuffer.String(),
-		},
-	}, nil
+	// EmailRecipients are the recipients to send emails to.
+	EmailRecipients []string
+
+	// OldStatus is the buildbucket status for a builder prior to Build.
+	OldStatus buildbucket.Status
+
+	// Build is the most recent buildbucket build recieved for a builder.
+	Build *buildbucket.Build
 }
 
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
@@ -109,9 +102,8 @@ func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.
 	return false
 }
 
-// Notify consolidates and filters recipients from a list of Notifiers and dispatches
-// notifications if necessary.
-func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucket.Status, build *buildbucket.Build) error {
+// NewSender constructs a new NotificationSender by consolidating and filtering recipients from a list of Notifiers.
+func NewSender(c context.Context, emailSender string, notifiers []*config.Notifier, oldStatus buildbucket.Status, build *buildbucket.Build) *NotificationSender {
 	recipientSet := stringset.New(0)
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
@@ -126,11 +118,47 @@ func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, o
 		}
 
 	}
-	if recipientSet.Len() == 0 {
+	return &NotificationSender{
+		EmailSender:     emailSender,
+		EmailRecipients: recipientSet.ToSlice(),
+		OldStatus:       oldStatus,
+		Build:           build,
+	}
+}
+
+// createEmailTask constructs an EmailTask to be dispatched onto the task queue.
+func (n *NotificationSender) createEmailTask(c context.Context) (*tq.Task, error) {
+	templateContext := map[string]interface{}{
+		"OldStatus": n.OldStatus.String(),
+		"Build":     n.Build,
+	}
+	var bodyBuffer bytes.Buffer
+	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
+		return nil, errors.Annotate(err, "constructing email body").Err()
+	}
+	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
+		n.Build.Status,
+		n.Build.Builder,
+		n.Build.Bucket)
+
+	// TODO(mknyszek): Query Milo for additional build information.
+	return &tq.Task{
+		Payload: &internal.EmailTask{
+			Sender:     n.EmailSender,
+			Recipients: n.EmailRecipients,
+			Subject:    subject,
+			Body:       bodyBuffer.String(),
+		},
+	}, nil
+}
+
+// Notify creates an email task and dispatches it onto the task queue.
+func (n *NotificationSender) Notify(c context.Context, d *tq.Dispatcher) error {
+	if len(n.EmailRecipients) == 0 {
 		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
-	task, err := createEmailTask(c, recipientSet.ToSlice(), oldStatus, build)
+	task, err := n.createEmailTask(c)
 	if err != nil {
 		return errors.Annotate(err, "failed to create email task").Err()
 	}
@@ -138,16 +166,16 @@ func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, o
 	return nil
 }
 
+// InitDispatcher initializes a dispatcher by registering the SendEmail task.
 func InitDispatcher(d *tq.Dispatcher) {
 	d.RegisterTask(&internal.EmailTask{}, SendEmail, "email", nil)
 }
 
 // SendEmail is a push queue handler that attempts to send an email.
 func SendEmail(c context.Context, task proto.Message) error {
-	// TODO(mknyszek): Query Milo for additional build information.
 	emailTask := task.(*internal.EmailTask)
 	return mail.Send(c, &mail.Message{
-		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
+		Sender:   emailTask.Sender,
 		To:       emailTask.Recipients,
 		Subject:  emailTask.Subject,
 		HTMLBody: emailTask.Body,
