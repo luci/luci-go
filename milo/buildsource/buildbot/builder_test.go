@@ -23,20 +23,16 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
-	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBuilder(t *testing.T) {
-	t.Parallel()
+	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
+	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+	fakeTime := unixTime(123)
 
-	Convey(`TestBuilder`, t, func() {
-		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
-		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-		c = caching.WithRequestCache(c)
-		fakeTime := unixTime(123)
-
+	Convey(`A test Environment`, t, func() {
 		// Seed a builder with 10 builds.
 		for i := 0; i < 10; i++ {
 			importBuild(c, &buildbot.Build{

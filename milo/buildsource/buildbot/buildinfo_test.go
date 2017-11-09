@@ -29,7 +29,6 @@ import (
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
-	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -60,7 +59,6 @@ func TestBuildInfo(t *testing.T) {
 	Convey("A testing BuildInfoProvider", t, func() {
 		c := context.Background()
 		c = memory.Use(c)
-		c = caching.WithRequestCache(c)
 
 		testClient := fakelogs.NewClient()
 		c = rawpresentation.InjectFakeLogdogClient(c, testClient)

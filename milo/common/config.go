@@ -74,8 +74,6 @@ type Console struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
-// ErrConsoleNotFound is returned from GetConsole if the requested console
-// isn't known to exist.
 var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
 
 // BuilderMeta is a struct containing metadata about a builder.
@@ -90,9 +88,9 @@ func (b *BuilderMeta) ParseCategory() []string {
 	return strings.Split(b.Category, "|")
 }
 
-// GetProjectID retrieves the project ID of the console out of the Console's
+// GetProjectName retrieves the project name of the console out of the Console's
 // parent key.
-func (con *Console) GetProjectID() string {
+func (con *Console) GetProjectName() string {
 	return con.Parent.StringID()
 }
 
@@ -406,28 +404,21 @@ func UpdateConsoles(c context.Context) error {
 	return merr
 }
 
-type consolesCacheKey string
-
-// GetAllConsoles returns all Consoles (across all projects) which contian the
-// builder ID. If builderID is empty, then this retrieves all Consoles.
+// GetAllConsoles returns all registered projects with the builder name.
+// If builderName is empty, then this retrieves all Consoles.
 //
-// TODO-perf(iannucci): Maybe memcache this too.
-func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
-	itm, err := caching.RequestCache(c).GetOrCreate(c, consolesCacheKey(builderID), func() (interface{}, time.Duration, error) {
-		q := datastore.NewQuery("Console")
-		if builderID != "" {
-			q = q.Eq("Builders", builderID)
-		}
-		con := []*Console{}
-		err := datastore.GetAll(c, q, &con)
-
-		return con, 0, errors.
-			Annotate(err, "getting consoles for %q", builderID).
-			Tag(transient.Tag).
-			Err()
-	})
-	con, _ := itm.([]*Console)
-	return con, err
+// TODO-perf(iannucci,hinoka): This gets called in a LOT of places; we should
+// profile this to see if we can rework it into something cached, ESPECIALLY
+// since this data changes infrequently, and we actually get an 'update' event
+// in the form of the UpdateConsoles function.
+func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
+	q := datastore.NewQuery("Console")
+	if builderName != "" {
+		q = q.Eq("Builders", builderName)
+	}
+	con := []*Console{}
+	err := datastore.GetAll(c, q, &con)
+	return con, transient.Tag.Apply(err)
 }
 
 // GetProjectConsoles returns all consoles for the given project.

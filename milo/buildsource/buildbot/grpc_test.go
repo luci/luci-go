@@ -29,18 +29,14 @@ import (
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common/model"
-	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGRPC(t *testing.T) {
-	t.Parallel()
-
 	Convey(`A test environment`, t, func() {
 		c := memory.Use(context.Background())
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-		c = caching.WithRequestCache(c)
 
 		name := "testmaster"
 		bname := "testbuilder"
