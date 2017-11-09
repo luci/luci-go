@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "5818c31c_97f91d9b",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T03:52:18Z",
+      "side": 1,
+      "message": "Good idea. Done. Except named it LRU, it makes callsites more readable since procCache.LRU(c).Get(c, ...) reads better than procCache.Get(c).Get(c, ...).",
+      "parentUuid": "e492644f_335829af",
+      "range": {
+        "startLine": 55,
+        "startChar": 7,
+        "endLine": 55,
+        "endChar": 47
+      },
+      "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0207e874_6ad61988",
         "filename": "server/caching/process.go",
         "patchSetId": 1
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "db7dbf7d_2ba942c5",
+        "filename": "server/caching/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T03:52:18Z",
+      "side": 1,
+      "message": "I was planing to use it for monitoring metrics (\"how much stuff is in a cache with such-and-such name\"), but it can be added later. Removed for now.",
+      "parentUuid": "0207e874_6ad61988",
+      "range": {
+        "startLine": 42,
+        "startChar": 26,
+        "endLine": 42,
+        "endChar": 29
+      },
+      "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae110963_80e5a646",
         "filename": "server/caching/process.go",
         "patchSetId": 1
@@ -92,6 +140,30 @@
       "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7aabf29_2e651d1a",
+        "filename": "server/caching/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T03:52:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae110963_80e5a646",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 9
+      },
+      "revId": "50c5f4c8d34b04b63940876aa1dc8f63c77c1a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
