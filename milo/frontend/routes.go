@@ -60,15 +60,43 @@ func Run(templatePath string) {
 	backendMW := baseMW.Extend(middleware.WithContextTimeout(10 * time.Minute))
 	cronMW := backendMW.Extend(gaemiddleware.RequireCron)
 
-	r.GET("/", htmlMW, frontpageHandler)
-	r.GET("/p", frontendMW, movedPermanently("/"))
-
 	// Admin and cron endpoints.
 	r.GET("/admin/update", cronMW, UpdateConfigHandler)
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
 	r.GET("/admin/stats", cronMW, StatsHandler)
 
-	// Builds.
+	// Overview
+	r.GET("/", htmlMW, frontpageHandler)
+	r.GET("/p", frontendMW, movedPermanently("/"))
+
+	// Project
+	r.GET("/p/:project", htmlMW, func(c *router.Context) {
+		ConsolesHandler(c, c.Params.ByName("project"))
+	})
+	r.GET("/p/:project/consoles", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/p/:project/builders", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/p/:project/builds", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/console/:project", frontendMW, movedPermanently("/p/:project"))
+
+	// Console
+	r.GET("/p/:project/consoles/:name", htmlMW, ConsoleHandler)
+	r.GET("/console/:project/:name", frontendMW, movedPermanently("/p/:project/consoles/:name"))
+
+	// Builder
+	r.GET("/p/:project/builders/:bucket/:builder", htmlMW, func(c *router.Context) {
+		// TODO(nodir): use project parameter.
+		// Besides implementation, requires deleting the redirect for
+		// /buildbucket/:bucket/:builder
+		// because it assumes that project is not used here and
+		// simply passes project=chromium.
+
+		BuilderHandler(c, buildsource.BuilderID(
+			fmt.Sprintf("buildbucket/%s/%s", c.Params.ByName("bucket"), c.Params.ByName("builder"))))
+	})
+	// TODO(nodir): delete this redirect and the chromium project assumption with it
+	r.GET("/buildbucket/:bucket/:builder", frontendMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
+
+	// Builds
 	r.GET("/p/:project/builds/b:id", htmlMW, func(c *router.Context) {
 		BuildHandler(c, &buildbucket.BuildID{
 			Project: c.Params.ByName("project"),
@@ -84,15 +112,6 @@ func Run(templatePath string) {
 				c.Params.ByName("number")),
 		})
 	})
-
-	// Console
-	r.GET("/p/:project/consoles/:name", htmlMW, ConsoleHandler)
-	r.GET("/console/:project/:name", frontendMW, movedPermanently("/p/:project/consoles/:name"))
-	r.GET("/p/:project", htmlMW, func(c *router.Context) {
-		ConsolesHandler(c, c.Params.ByName("project"))
-	})
-	r.GET("/p/:project/consoles", frontendMW, movedPermanently("/p/:project"))
-	r.GET("/console/:project", frontendMW, movedPermanently("/p/:project"))
 
 	// Swarming
 	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, func(c *router.Context) {
@@ -116,20 +135,6 @@ func Run(templatePath string) {
 	r.GET("/swarming/prod/:id", htmlMW, func(c *router.Context) {
 		BuildHandler(c, &swarming.BuildID{TaskID: c.Params.ByName("id")})
 	})
-
-	// Buildbucket
-	r.GET("/p/:project/builders/:bucket/:builder", htmlMW, func(c *router.Context) {
-		// TODO(nodir): use project parameter.
-		// Besides implementation, requires deleting the redirect for
-		// /buildbucket/:bucket/:builder
-		// because it assumes that project is not used here and
-		// simply passes project=chromium.
-
-		BuilderHandler(c, buildsource.BuilderID(
-			fmt.Sprintf("buildbucket/%s/%s", c.Params.ByName("bucket"), c.Params.ByName("builder"))))
-	})
-	// TODO(nodir): delete this redirect and the chromium project assumption with it
-	r.GET("/buildbucket/:bucket/:builder", frontendMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
 
 	// Buildbot
 	r.GET("/buildbot/:master/:builder/:build", htmlMW.Extend(emulationMiddleware), func(c *router.Context) {
