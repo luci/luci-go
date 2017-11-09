@@ -53,11 +53,16 @@ func (Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) { ret
 
 ////
 
-type cacheKey int
+var procCache = caching.RegisterProcessCache(2)
+
+const (
+	certCacheKey = 0
+	infoCacheKey = 1
+)
 
 // cachedCerts caches this app certs in local memory for 1 hour.
 func getCachedCerts(c context.Context) (*signing.PublicCertificates, error) {
-	v, err := caching.ProcessCache(c).GetOrCreate(c, cacheKey(0), func() (interface{}, time.Duration, error) {
+	v, err := procCache.LRU(c).GetOrCreate(c, certCacheKey, func() (interface{}, time.Duration, error) {
 		aeCerts, err := info.PublicCertificates(c)
 		if err != nil {
 			return nil, 0, err
@@ -91,7 +96,7 @@ func getCachedCerts(c context.Context) (*signing.PublicCertificates, error) {
 //
 // This info is static during lifetime of the process.
 func getCachedInfo(c context.Context) (*signing.ServiceInfo, error) {
-	v, err := caching.ProcessCache(c).GetOrCreate(c, cacheKey(1), func() (interface{}, time.Duration, error) {
+	v, err := procCache.LRU(c).GetOrCreate(c, infoCacheKey, func() (interface{}, time.Duration, error) {
 		account, err := info.ServiceAccount(c)
 		if err != nil {
 			return nil, 0, err

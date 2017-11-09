@@ -36,6 +36,8 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 )
 
+var procCache = caching.RegisterProcessCache(64)
+
 const (
 	// RefetchCAPeriod is how often to check CA entity in the datastore.
 	//
@@ -124,8 +126,6 @@ type CertChecker struct {
 	ca lazyslot.Slot // knows how to load CA cert and config
 }
 
-type proccacheKey string
-
 // CheckCertificate checks validity of a given certificate.
 //
 // It looks at the cert issuer, loads corresponding CertChecker and calls its
@@ -144,7 +144,7 @@ func CheckCertificate(c context.Context, cert *x509.Certificate) (*certconfig.CA
 // It caches CertChecker objects in local memory and reuses them between
 // requests.
 func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
-	checker, err := caching.ProcessCache(c).GetOrCreate(c, proccacheKey(cn), func() (interface{}, time.Duration, error) {
+	checker, err := procCache.LRU(c).GetOrCreate(c, cn, func() (interface{}, time.Duration, error) {
 		// To avoid storing CertChecker for non-existent CAs in local memory forever,
 		// we do a datastore check when creating the checker. It happens once during
 		// the process lifetime.

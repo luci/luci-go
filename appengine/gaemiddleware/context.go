@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/caching/cacheContext"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/caching"
@@ -37,10 +36,6 @@ import (
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/appengine/gaesettings"
 )
-
-// ProcessCache is a process-global LRU cache. It may be shared between
-// multiple subsystems.
-var ProcessCache = lru.New(65535)
 
 // Environment is a middleware environment. Its parameters define how the
 // middleware is applied, and which services are enlisted.
@@ -96,12 +91,15 @@ type Environment struct {
 
 	once sync.Once
 
+	// processCacheData holds all global LRU caches.
+	processCacheData *caching.ProcessCacheData
 	// globalSettings holds global app settings lazily updated from the datastore.
 	globalSettings *settings.Settings
 }
 
 // init is called once atomically right before handling the first request.
 func (e *Environment) init() {
+	e.processCacheData = caching.NewProcessCacheData()
 	e.globalSettings = settings.New(gaesettings.Storage{})
 	if e.Prepare != nil {
 		e.Prepare()
@@ -147,7 +145,7 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 	c = logging.SetLevel(c, logging.Debug)
 
 	// Install global process and request LRU caches.
-	c = caching.WithProcessCache(c, ProcessCache)
+	c = caching.WithProcessCacheData(c, e.processCacheData)
 	c = caching.WithRequestCache(c)
 
 	c = e.WithInitialRequest(c, req)

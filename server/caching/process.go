@@ -15,31 +15,113 @@
 package caching
 
 import (
+	"sync/atomic"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/caching/lru"
 )
 
-var processCacheKey = "server.caching Process Cache"
-
-// WithProcessCache installs a process-global cache into the supplied Context.
-//
-// It can be used as a fast layer of caching for information whose value extends
-// past the lifespan of a single request.
-//
-// For information whose cached value is limited to a single request, use
-// RequestCache.
-func WithProcessCache(c context.Context, cache *lru.Cache) context.Context {
-	return context.WithValue(c, &processCacheKey, cache)
+type registeredCache struct {
+	// TODO(vadimsh): Add a name here and start exporting LRU cache sizes as
+	// monitoring metrics.
+	capacity int
 }
 
-// ProcessCache returns process-global cache that is installed into the Context.
+var (
+	processCacheKey       = "server.caching Process Cache"
+	registeredCaches      []registeredCache
+	registrationForbidden uint32
+)
+
+// Handle is indirect pointer to a registered process cache.
 //
-// If no process-global cache is installed, this will panic.
-func ProcessCache(c context.Context) *lru.Cache {
-	pc, _ := c.Value(&processCacheKey).(*lru.Cache)
-	if pc == nil {
-		panic("server/caching: no process cache installed in Context")
+// Grab it via RegisterProcessCache during module init time, and use its
+// LRU() method to access an actual LRU cache associated with this handle.
+//
+// The cache itself lives inside the context. See WithProcessCacheData.
+type Handle int
+
+// LRU returns global lru.Cache referenced by this handle.
+//
+// If the context doesn't have ProcessCacheData installed, this will panic.
+func (h Handle) LRU(c context.Context) *lru.Cache {
+	return c.Value(&processCacheKey).(*ProcessCacheData).caches[int(h)]
+}
+
+// RegisterProcessCache is used during init time to declare an intent that a
+// package wants to use a process-global LRU cache of given capacity (or 0 for
+// unlimited).
+//
+// The actual cache itself will be stored in ProcessCacheData inside the
+// context.
+func RegisterProcessCache(capacity int) Handle {
+	if atomic.LoadUint32(&registrationForbidden) == 1 {
+		// Note: this panic may happen if NewProcessCacheData is called during
+		// init time, before some RegisterProcessCache call. Use NewProcessCacheData
+		// only from main() (or code under main), not in init().
+		panic("can't call RegisterProcessCache after NewProcessCacheData is called")
 	}
-	return pc
+	registeredCaches = append(registeredCaches, registeredCache{capacity})
+	return Handle(len(registeredCaches) - 1)
+}
+
+// ProcessCacheData holds all process-cached data (internally).
+//
+// It is opaque to the API users. Use NewProcessCacheData in your main() or
+// below (i.e. any other place _other_ than init()) to allocate it, then inject
+// it into the context via WithProcessCacheData, and finally access it through
+// handles registered during init() time via RegisterProcessCache to get
+// a reference to an actual lru.Cache.
+//
+// Each instance of ProcessCacheData is its own universe of global data. This is
+// useful in unit tests as replacement for global variables.
+type ProcessCacheData struct {
+	caches []*lru.Cache // handle => lru.Cache, never nil once initialized
+}
+
+// NewProcessCacheData allocates and initializes all registered LRU caches.
+//
+// It returns a fat stateful object that holds all the cached data. Retain it
+// and share between requests etc. to actually benefit from the cache.
+//
+// NewProcessCacheData must be called after init() time (either in main or
+// code called from main).
+func NewProcessCacheData() *ProcessCacheData {
+	// Once NewProcessCacheData is used (after init-time is done), we forbid
+	// registering new caches. All RegisterProcessCache calls should happen during
+	// module init time.
+	atomic.StoreUint32(&registrationForbidden, 1)
+	d := &ProcessCacheData{
+		caches: make([]*lru.Cache, len(registeredCaches)),
+	}
+	for i, params := range registeredCaches {
+		d.caches[i] = lru.New(params.capacity)
+	}
+	return d
+}
+
+// WithProcessCacheData installs a process-global cache storage into the
+// supplied context.
+//
+// The actual storage space ('data' argument) for the cache must be allocated
+// via NewProcessCacheData and retained in some global variable to benefit from
+// caching.
+func WithProcessCacheData(c context.Context, data *ProcessCacheData) context.Context {
+	if data.caches == nil {
+		panic("use NewProcessCacheData to allocated ProcessCacheData")
+	}
+	return context.WithValue(c, &processCacheKey, data)
+}
+
+// WithEmptyProcessCache installs an empty process-global cache storage into
+// the context.
+//
+// Useful in main() when initializing a root context (used as a basis for all
+// other contexts) or in unit tests to "reset" the cache state.
+//
+// Note that using WithEmptyProcessCache when initializing per-request context
+// makes no sense, since each request will get its own cache.
+func WithEmptyProcessCache(c context.Context) context.Context {
+	return WithProcessCacheData(c, NewProcessCacheData())
 }

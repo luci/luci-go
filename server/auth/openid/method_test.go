@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -39,7 +38,7 @@ import (
 func TestFullFlow(t *testing.T) {
 	Convey("with test context", t, func(c C) {
 		ctx := context.Background()
-		ctx = caching.WithProcessCache(ctx, lru.New(0))
+		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
 		ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))

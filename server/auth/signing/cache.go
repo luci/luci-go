@@ -12,34 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gaesecrets
+package signing
 
 import (
-	"testing"
-
-	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/secrets"
-
-	"golang.org/x/net/context"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestWorks(t *testing.T) {
-	Convey("gaesecrets.Store works", t, func() {
-		c := Use(memory.Use(context.Background()), nil)
-		c = caching.WithEmptyProcessCache(c)
+var procCache = caching.RegisterProcessCache(512)
 
-		// Autogenerates one.
-		s1, err := secrets.GetSecret(c, "key1")
-		So(err, ShouldBeNil)
-		So(len(s1.Current.ID), ShouldEqual, 8)
-		So(len(s1.Current.Blob), ShouldEqual, 32)
-
-		// Returns same one.
-		s2, err := secrets.GetSecret(c, "key1")
-		So(err, ShouldBeNil)
-		So(s2, ShouldResemble, s1)
-	})
-}
+type serviceInfoCacheKey string
+type certsCacheKey string
