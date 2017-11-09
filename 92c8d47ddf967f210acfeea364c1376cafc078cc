@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5afd6113_02214fe8",
+        "filename": "appengine/gaemiddleware/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T05:05:12Z",
+      "side": 1,
+      "message": "Comment on https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/759333 instead",
+      "parentUuid": "c1f65c22_4c84e777",
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3efe69c_ed971f1f",
         "filename": "milo/common/config.go",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2017-11-09T04:59:00Z",
       "side": 1,
       "message": "does not make sense to me\nthere is only one usage and there is only one constant key",
+      "range": {
+        "startLine": 39,
+        "startChar": 45,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe5f3df5_a5da81a8",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T05:05:12Z",
+      "side": 1,
+      "message": "This is for the future when someone adds another cache key and forgets to update the capacity. It would work, but without any caching.",
+      "parentUuid": "a3efe69c_ed971f1f",
       "range": {
         "startLine": 39,
         "startChar": 45,
@@ -76,6 +118,30 @@
       "writtenOn": "2017-11-09T04:59:00Z",
       "side": 1,
       "message": "i read this as \"if i want to use WithProcessCache, i must call NewProcessCacheData(), *save it to a global variable*, and then call WithProcessCacheData()\". WithEmptyProcessCache does not do that.",
+      "range": {
+        "startLine": 108,
+        "startChar": 26,
+        "endLine": 108,
+        "endChar": 63
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "228d5955_3f179c4b",
+        "filename": "server/caching/process.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T05:05:12Z",
+      "side": 1,
+      "message": "If you are writing main() that initializes the root context you can use WithEmptyProcessCache and don\u0027t bother with global variable. On GAE we are not given opportunity to initialize root context though and must resort to global variable.\n\nAny constructive suggestions how to change the comment?",
+      "parentUuid": "21c2ce2d_111781c7",
       "range": {
         "startLine": 108,
         "startChar": 26,
