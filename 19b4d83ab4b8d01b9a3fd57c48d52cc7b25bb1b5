@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dbadbc47_1149e8e5",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T08:20:30Z",
+      "side": 1,
+      "message": "what T stands for? type? please inline the type",
+      "range": {
+        "startLine": 218,
+        "startChar": 18,
+        "endLine": 218,
+        "endChar": 19
+      },
+      "revId": "19b4d83ab4b8d01b9a3fd57c48d52cc7b25bb1b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
