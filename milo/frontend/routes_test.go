@@ -62,6 +62,7 @@ var (
 		}, "swarming.build", "build.html"},
 		{testdata.LogTestData, "swarming.log", "log.html"},
 		{frontpageTestData, "frontpage", "frontpage.html"},
+		{searchTestData, "search", "search.html"},
 	}
 )
 
