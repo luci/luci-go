@@ -29,6 +29,8 @@ import (
 )
 
 func TestTime(t *testing.T) {
+	t.Parallel()
+
 	Convey("Marshal and Unmarshal Identity", t, func() {
 		// Nanoseconds must be zero because the string format in between
 		// does not contain nanoseconds.
