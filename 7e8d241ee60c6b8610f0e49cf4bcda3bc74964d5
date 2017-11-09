@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "33e7aa69_d6812868",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-09T01:32:44Z",
+      "side": 1,
+      "message": "This should be case res.Error !\u003d nil \u0026\u0026 res.Error.Reason \u003d\u003d ....:",
+      "revId": "7e8d241ee60c6b8610f0e49cf4bcda3bc74964d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "40ef4adb_07ae5778",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 7
