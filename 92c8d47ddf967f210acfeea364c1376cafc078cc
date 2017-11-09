@@ -108,6 +108,30 @@
     },
     {
       "key": {
+        "uuid": "6459542a_ae704770",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T06:43:53Z",
+      "side": 1,
+      "message": "this is what i wrote before i saw your comment:\n\nin several places in this CL there are constant, independent cache keys used in a proc cache like this. They do not actually benefit from LRU, in fact we probably don\u0027t want LRU there, but rather just a context-scoped global variable. lru.Cache is an overkill for such use case (it has a mutex which is not needed here for independent cache keys, there is a linked list and a map), and we have to make up limits like 64.\n\nSince you are a performance geek... did you consider something more lightweight for globals like this?\n\nvar serviceConfigCache \u003d caching.RegisterProcessCacheItem()\n...\nitem, err :\u003d serviceConfigCache.GetOrCreate(c, func() (interface{}, time.Duration, error) {\n  // make it\n})\n\nthe lookup would be faster because it is an index in a slice, as opposed to map lookups and possible linked list item moving (https://chromium.googlesource.com/infra/luci/luci-go/+/adf70fae5e8ce119992dfaca1e58f7c4d8076bac/common/data/caching/lru/lru.go#154).",
+      "parentUuid": "fe5f3df5_a5da81a8",
+      "range": {
+        "startLine": 39,
+        "startChar": 45,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6327a2b2_7385cc96",
         "filename": "server/auth/signing/cache.go",
         "patchSetId": 2
@@ -166,6 +190,30 @@
       "side": 1,
       "message": "If you are writing main() that initializes the root context you can use WithEmptyProcessCache and don\u0027t bother with global variable. On GAE we are not given opportunity to initialize root context though and must resort to global variable.\n\nAny constructive suggestions how to change the comment?",
       "parentUuid": "21c2ce2d_111781c7",
+      "range": {
+        "startLine": 108,
+        "startChar": 26,
+        "endLine": 108,
+        "endChar": 63
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3d8b65f_e06b4c25",
+        "filename": "server/caching/process.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T06:43:53Z",
+      "side": 1,
+      "message": "now i see what you meant. So this is the same case as in the last paragraph of WithEmptyProcessCache comment. I\u0027d merge this paragraph there and recommend using WithProcessCacheData in such case.",
+      "parentUuid": "228d5955_3f179c4b",
       "range": {
         "startLine": 108,
         "startChar": 26,
