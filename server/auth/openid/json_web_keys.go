@@ -36,24 +36,28 @@ type JSONWebKeySet struct {
 	keys map[string]rsa.PublicKey // key ID => the key
 }
 
-// ParseJSONWebKeySet unmarshals serialized representation of JSON Web Key set.
-func ParseJSONWebKeySet(blob []byte) (*JSONWebKeySet, error) {
-	// See https://www.iana.org/assignments/jose/jose.xhtml#web-key-parameters.
-	// We care only about RSA public keys (thus use 'n' and 'e').
-	var parsed struct {
-		Keys []struct {
-			Kty string `json:"kty"`
-			Alg string `json:"alg"`
-			Use string `json:"use"`
-			Kid string `json:"kid"`
-			N   string `json:"n"` // raw URL-safe base64, NOT standard base64
-			E   string `json:"e"` // same
-		} `json:"keys"`
-	}
-	if err := json.Unmarshal(blob, &parsed); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON web key - %s", err)
-	}
+// JSONWebKeySetStruct defines the JSON structure of JSONWebKeySet.
+//
+// Read it from the wire and pass to NewJSONWebKeySet to get a usable object.
+//
+// See https://www.iana.org/assignments/jose/jose.xhtml#web-key-parameters.
+// We care only about RSA public keys (thus use 'n' and 'e').
+type JSONWebKeySetStruct struct {
+	Keys []JSONWebKeyStruct `json:"keys"`
+}
 
+// JSONWebKeyStruct defines the JSON structure of a single key in the key set.
+type JSONWebKeyStruct struct {
+	Kty string `json:"kty"`
+	Alg string `json:"alg"`
+	Use string `json:"use"`
+	Kid string `json:"kid"`
+	N   string `json:"n"` // raw URL-safe base64, NOT standard base64
+	E   string `json:"e"` // same
+}
+
+// NewJSONWebKeySet makes the keyset from raw JSON Web Key set struct.
+func NewJSONWebKeySet(parsed *JSONWebKeySetStruct) (*JSONWebKeySet, error) {
 	// Pick keys used to verify RS256 signatures.
 	keys := make(map[string]rsa.PublicKey, len(parsed.Keys))
 	for _, k := range parsed.Keys {

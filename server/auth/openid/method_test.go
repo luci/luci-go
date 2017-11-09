@@ -15,6 +15,7 @@
 package openid
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -22,21 +23,26 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/settings"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFullFlow(t *testing.T) {
+	t.Parallel()
+
 	Convey("with test context", t, func(c C) {
 		ctx := context.Background()
 		ctx = caching.WithProcessCache(ctx, lru.New(0))
@@ -45,16 +51,37 @@ func TestFullFlow(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
 		ctx = testsecrets.Use(ctx)
 
+		// Prepare the the signing keys and the ID token.
+		const signingKeyID = "signing-key"
+		const clientID = "client_id"
+		signer := signingtest.NewSigner(0, nil)
+		idToken := idTokenForTest(ctx, &IDToken{
+			Iss:           "https://issuer.example.com",
+			EmailVerified: true,
+			Sub:           "user_id_sub",
+			Email:         "user@example.com",
+			Name:          "Some Dude",
+			Picture:       "https://picture/url/s64/photo.jpg",
+			Aud:           clientID,
+			Iat:           clock.Now(ctx).Unix(),
+			Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
+		}, signingKeyID, signer)
+		jwks := jwksForTest(signingKeyID, &signer.KeyForTest().PublicKey)
+
 		var ts *httptest.Server
 		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
 
 			case "/discovery":
 				w.Write([]byte(fmt.Sprintf(`{
+					"issuer": "https://issuer.example.com",
 					"authorization_endpoint": "%s/authorization",
 					"token_endpoint": "%s/token",
-					"userinfo_endpoint": "%s/userinfo"
+					"jwks_uri": "%s/jwks"
 				}`, ts.URL, ts.URL, ts.URL)))
+
+			case "/jwks":
+				json.NewEncoder(w).Encode(jwks)
 
 			case "/token":
 				c.So(r.ParseForm(), ShouldBeNil)
@@ -65,16 +92,7 @@ func TestFullFlow(t *testing.T) {
 					"code":          {"omg_auth_code"},
 					"grant_type":    {"authorization_code"},
 				})
-				w.Write([]byte(`{"token_type": "Bearer", "access_token": "token_blah"}`))
-
-			case "/userinfo":
-				c.So(r.Header.Get("Authorization"), ShouldEqual, "Bearer token_blah")
-				w.Write([]byte(`{
-					"sub": "user_id_sub",
-					"email": "user@example.com",
-					"name": "Some Dude",
-					"picture": "https://picture/url/photo.jpg"
-				}`))
+				w.Write([]byte(fmt.Sprintf(`{"id_token": "%s"}`, idToken)))
 
 			default:
 				http.Error(w, "Not found", http.StatusNotFound)
@@ -83,7 +101,7 @@ func TestFullFlow(t *testing.T) {
 
 		cfg := Settings{
 			DiscoveryURL: ts.URL + "/discovery",
-			ClientID:     "client_id",
+			ClientID:     clientID,
 			ClientSecret: "client_secret",
 			RedirectURI:  "http://fake/redirect",
 		}
@@ -133,7 +151,7 @@ func TestFullFlow(t *testing.T) {
 			})
 
 			// Pretend we've done it. OpenID redirects user's browser to callback URI.
-			// `callbackHandler` will call /token and /userinfo fake endpoints exposed
+			// `callbackHandler` will call /token and /jwks fake endpoints exposed
 			// by testserver.
 			callbackParams := url.Values{}
 			callbackParams.Set("code", "omg_auth_code")
