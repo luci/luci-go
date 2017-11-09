@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "4378c1a2_7c9bff88",
+        "filename": "server/auth/openid/json_web_keys.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-09T05:04:43Z",
+      "side": 1,
+      "message": "that\u0027s actually even better than what i asked for.",
+      "parentUuid": "dc131f37_7266c4a5",
+      "range": {
+        "startLine": 49,
+        "startChar": 66,
+        "endLine": 49,
+        "endChar": 70
+      },
+      "revId": "f734ccaed42a093769e76e2807abd7132b4145aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef83e2cc_b88218f5",
         "filename": "server/auth/openid/method_test.go",
         "patchSetId": 1
