@@ -103,8 +103,6 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		},
 
 		Version: build.UpdateTime.UnixNano(),
-
-		Experimental: build.Experimental,
 	}
 
 	if shost, sid := build.Tags.Get("swarming_hostname"), build.Tags.Get("swarming_task_id"); shost != "" && sid != "" {
