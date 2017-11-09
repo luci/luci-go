@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6fb2e130_a47be3bc",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-09T19:44:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c23535cf_efe15b23",
+      "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c54e2ba0_1d2ddf61",
         "filename": "mmutex/cmd/mmutex/exclusive_test.go",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2017-11-09T19:22:29Z",
       "side": 1,
       "message": "var cbGen(err error) func()error {\n  return func() error {\n    return err\n  }\n} \n\nthen you can call it like:\n  cbGen(nil)\n  cbGen(errors.New(\"some error\"))\n\nto pass it to runExclusive",
+      "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26c179cd_4f842787",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-09T19:44:40Z",
+      "side": 1,
+      "message": "I\u0027ll go with \"fnThatReturns\" instead, which I feel like is a decent balance of readability and length.",
+      "parentUuid": "c54e2ba0_1d2ddf61",
       "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -56,6 +92,30 @@
       "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "077d9aa9_3c45df4f",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-09T19:44:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c1cd965_20813add",
+      "range": {
+        "startLine": 85,
+        "startChar": 19,
+        "endLine": 85,
+        "endChar": 32
+      },
+      "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
