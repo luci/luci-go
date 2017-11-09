@@ -71,6 +71,7 @@ type Build struct {
 	StartTime        time.Time
 	UpdateTime       time.Time
 	Canary           bool
+	Experimental     bool
 
 	// fields set on build completion
 
@@ -212,6 +213,18 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		return errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
 
+	// TODO(iannucci,nodir) - Remove the need for this by exposing this boolean as
+	// an explicit part of the buildbucket API.
+	type experimentalT struct {
+		Properties struct {
+			Runtime struct {
+				IsExperimental bool `json:"is_experimental"`
+			} `json:"$recipe_engine/runtime"`
+		}
+	}
+	experimental := &experimentalT{}
+	_ = parseJSON(msg.ParametersJson, experimental)
+
 	output := struct {
 		Properties interface{}
 		Error      struct {
@@ -260,6 +273,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 		StartTime:        ParseTimestamp(msg.StartedTs),
 		UpdateTime:       ParseTimestamp(msg.UpdatedTs),
 		Canary:           msg.Canary,
+		Experimental:     experimental.Properties.Runtime.IsExperimental,
 
 		CompletionTime: ParseTimestamp(msg.CompletedTs),
 		Output: Output{
