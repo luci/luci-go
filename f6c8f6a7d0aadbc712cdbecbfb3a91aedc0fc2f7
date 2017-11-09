@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "104bac64_760aeda5",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70f7fb4f_1ea76ccb",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 52
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d8fbf495_6ec50c0a",
         "filename": "machine-db/appengine/database/config.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ebd3563_172d7256",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "https://chrome-internal-review.googlesource.com/c/infradata/config/+/499096",
+      "parentUuid": "d8fbf495_6ec50c0a",
+      "range": {
+        "startLine": 53,
+        "startChar": 32,
+        "endLine": 53,
+        "endChar": 44
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "71c01eca_42e70117",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Thanks, I was looking for the Go version of this but I couldn\u0027t find it. Some other apps are not using it so I thought it didn\u0027t exist.",
+      "parentUuid": "f4799b2b_13dba569",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 24
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7b1702c0_25dc0ef4",
         "filename": "machine-db/appengine/database/config.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12089221_dba62f95",
+        "filename": "machine-db/appengine/database/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b1702c0_25dc0ef4",
+      "range": {
+        "startLine": 86,
+        "startChar": 16,
+        "endLine": 86,
+        "endChar": 41
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "cac5ce67_07fe0470",
+        "filename": "machine-db/appengine/database/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10835297_b3aea91e",
+      "range": {
+        "startLine": 20,
+        "startChar": 1,
+        "endLine": 20,
+        "endChar": 45
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51aa77d5_93614b4f",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -137,6 +257,30 @@
       "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59d40f50_405fb478",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51aa77d5_93614b4f",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -175,6 +319,24 @@
     },
     {
       "key": {
+        "uuid": "f2f07f70_ccc0d73d",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Got it, but I\u0027m not sure where the best place in the context-passing chain is to install the database. For example, currently importConfigs calls EnsureDatacenters, and EnsureDatacenters needs the db directly (it doesn\u0027t call anything else that needs the db). I see three options:\n1. EnsureDatacenters is the first thing that needs the db, so it calls getDatabaseConnection itself. It doesn\u0027t install it in the context because nothing else needs it.\n2. importConfigs \"knows\" (should it know?) that EnsureDatacenters will need the db, so it calls getDatabaseConnection and installs it in the context before calling EnsureDatacenters.\n3. Some middleware knows that eventually the db will be needed by this HTTP handler, so it calls getDatabaseConnection and installs it in the context for importConfigs. importConfigs doesn\u0027t know or care about this value, but when it calls EnsureDatacenters, EnsureDatacenters expects and uses it.\n\nI think #1 or #3 is best because it should either be as close to where it\u0027s needed as possible or just generally installed for most (all?) HTTP handlers. #2 doesn\u0027t seem right because it means importConfigs has too much knowledge of what EnsureDatacenters is actually doing to ensure datacenters.\n\nFor now I\u0027ve done #3 but let me know if you think some other option is better.",
+      "parentUuid": "ab4da072_a73c4fd0",
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c6aa474_1891fda4",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -195,6 +357,30 @@
       "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5be5ebd_5b8f9a71",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "I assumed that since we\u0027re returning a pointer here, we want to avoid changing the underlying value at the memory address the pointer refers to for as long as anyone has access to the pointer, in case they dereference it and suddenly it refers to some other database connection.\n\nIn other words if we return db and db is a *sql.DB, I don\u0027t want some other concurrent request to do *db \u003d sql.Open(...). I see now that I am not setting *db, I\u0027m setting db, so the pointer itself is changing when there\u0027s a new connection string.\n\nAnyways, this is done.",
+      "parentUuid": "4c6aa474_1891fda4",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 15
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -221,6 +407,30 @@
     },
     {
       "key": {
+        "uuid": "8107e8e0_564b73b0",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "800516f7_ab71e467",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 23
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ade4d067_18fe2550",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -232,6 +442,30 @@
       "writtenOn": "2017-11-08T23:11:20Z",
       "side": 1,
       "message": "where this table is defined? how do I create it if I\u0027m setting up my own instance of machine-db?",
+      "range": {
+        "startLine": 108,
+        "startChar": 29,
+        "endLine": 108,
+        "endChar": 68
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bd56cf2_563f7658",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "It\u0027s already created, I\u0027ll check in migrate configs and a README explaining to use cloudsqlhelper + migrate configs to set up machine-db next. I could do it in the same CL if you prefer but I\u0027m worried the CL will be too big, and I wanted to get machine-db to actually do stuff in this CL.",
+      "parentUuid": "ade4d067_18fe2550",
       "range": {
         "startLine": 108,
         "startChar": 29,
@@ -267,6 +501,30 @@
     },
     {
       "key": {
+        "uuid": "858aa734_45634f28",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Currently this avoids duplicate errors because configImportHandler logs everything except EnsureDatacenters errors, but done.",
+      "parentUuid": "672e3e5f_e86efe86",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 67
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd22338e_669e9873",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -290,6 +548,30 @@
     },
     {
       "key": {
+        "uuid": "96ac7a70_1fac3b4f",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Added TODO.",
+      "parentUuid": "cd22338e_669e9873",
+      "range": {
+        "startLine": 128,
+        "startChar": 11,
+        "endLine": 128,
+        "endChar": 29
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f839043_2e19f332",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -301,6 +583,30 @@
       "writtenOn": "2017-11-08T23:11:20Z",
       "side": 1,
       "message": "not strictly necessary, since the defer will close it too",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 18
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3047550_bbb1da78",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-09T02:55:22Z",
+      "side": 1,
+      "message": "Done, if it still closes the right statement once I change what this variable refers to below.",
+      "parentUuid": "2f839043_2e19f332",
       "range": {
         "startLine": 131,
         "startChar": 1,
