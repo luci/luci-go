@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -83,8 +82,6 @@ func newCombinedPsBody(bs []*buildbot.Build, m *buildbot.Master, internal bool) 
 }
 
 func TestPubSub(t *testing.T) {
-	t.Parallel()
-
 	Convey(`A test Environment`, t, func() {
 		c := gaetesting.TestingContextWithAppID("dev~luci-milo")
 		datastore.GetTestable(c).AutoIndex(true)
@@ -95,7 +92,6 @@ func TestPubSub(t *testing.T) {
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
 		})
-		c = caching.WithRequestCache(c)
 		// Update the service config so that the settings are loaded.
 		_, err := common.UpdateServiceConfig(c)
 		So(err, ShouldBeNil)
