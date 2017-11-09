@@ -9,6 +9,7 @@ that can be found in the LICENSE file. -->
 <title>{{template "title" .}}</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI Search" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
@@ -18,7 +19,8 @@ that can be found in the LICENSE file. -->
 
 <body class="interface">
   <header>
-    <a href="/" alt="Home">Luci</a>
+    <a href="/" aria-label="Home page">home</a> |
+    <a href="/search" aria-label="Search page">search</a>
     <div>
       {{ if .IsAnonymous }}
         <a href="{{.LoginURL}}" alt="Login">login</a>

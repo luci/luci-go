@@ -62,6 +62,8 @@ func Run(templatePath string) {
 
 	r.GET("/", htmlMW, frontpageHandler)
 	r.GET("/p", frontendMW, movedPermanently("/"))
+	r.GET("/search", htmlMW, searchHandler)
+	r.GET("/opensearch.xml", frontendMW, searchXmlHandler)
 
 	// Admin and cron endpoints.
 	r.GET("/admin/update", cronMW, UpdateConfigHandler)

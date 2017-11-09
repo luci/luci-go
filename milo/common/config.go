@@ -74,6 +74,23 @@ type Console struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+// Project is a datastore entity representing a single project.  Its children
+// are consoles.
+type Project struct {
+	ID      string `gae:"$id"`
+	LogoURL string
+}
+
+// Project returns the name of the project the console is a part of, extracted
+// from the parent key.  If the underlying entity does not have a proper parent
+// key, this returns "".
+func (c *Console) Project() string {
+	if c.Parent == nil {
+		return ""
+	}
+	return c.Parent.StringID()
+}
+
 var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
 
 // BuilderMeta is a struct containing metadata about a builder.
@@ -297,7 +314,12 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 	knownConsoles := stringset.New(len(proj.Consoles))
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
-	parentKey := datastore.MakeKey(c, "Project", projectName)
+	project := Project{ID: projectName, LogoURL: proj.LogoUrl}
+	if err := datastore.Put(c, &project); err != nil {
+		return nil, err
+	}
+	parentKey := datastore.KeyForObj(c, &project)
+	// Save the project into the datastore.
 	for _, pc := range proj.Consoles {
 		knownConsoles.Add(pc.Id)
 		con, err := GetConsole(c, projectName, pc.Id)
@@ -419,6 +441,27 @@ func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
 	con := []*Console{}
 	err := datastore.GetAll(c, q, &con)
 	return con, transient.Tag.Apply(err)
+}
+
+// GetAllProjects returns all projects the current user has access to.
+func GetAllProjects(c context.Context) ([]Project, error) {
+	q := datastore.NewQuery("Project")
+	projs := []Project{}
+	err := datastore.GetAll(c, q, &projs)
+	if err != nil {
+		return nil, err
+	}
+	result := []Project{}
+	for _, proj := range projs {
+		allowed, err := IsAllowed(c, proj.ID)
+		switch {
+		case err != nil:
+			return nil, err
+		case allowed:
+			result = append(result, proj)
+		}
+	}
+	return result, nil
 }
 
 // GetProjectConsoles returns all consoles for the given project.

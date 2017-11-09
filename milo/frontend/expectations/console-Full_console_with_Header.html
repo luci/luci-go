@@ -7,6 +7,7 @@
 <title>Test Console</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI Search" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
@@ -21,7 +22,8 @@
 
 <body class="interface">
   <header>
-    <a href="/" alt="Home">Luci</a>
+    <a href="/" aria-label="Home page">home</a> |
+    <a href="/search" aria-label="Search page">search</a>
     <div>
       
         <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">login</a>
