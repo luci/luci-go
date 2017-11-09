@@ -30,21 +30,16 @@ var cmdShared = &subcommands.Command{
 	UsageLine: "shared [options] -- <command>",
 	ShortDesc: "acquires a shared lock before running the command",
 	CommandRun: func() subcommands.CommandRun {
-		c := &cmdSharedRun{}
-		c.Flags.DurationVar(&c.fslockTimeout, "fslock-timeout", 2*time.Hour, "Lock acquisition timeout")
-		c.Flags.DurationVar(&c.fslockPollingInterval, "fslock-polling-interval", 5*time.Second, "Lock acquisition polling interval")
-		return c
+		return &cmdSharedRun{}
 	},
 }
 
 type cmdSharedRun struct {
 	subcommands.CommandRunBase
-	fslockTimeout         time.Duration
-	fslockPollingInterval time.Duration
 }
 
 func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunShared(args, env, c.fslockTimeout, c.fslockPollingInterval); err != nil {
+	if err := RunShared(args, env); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return lib.GetExitCode(exitErr)
 		}
@@ -57,7 +52,7 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 	}
 }
 
-func RunShared(command []string, env subcommands.Env, timeout time.Duration, pollingInterval time.Duration) error {
+func RunShared(command []string, env subcommands.Env) error {
 	lockFilePath, err := computeLockFilePath(env)
 	if err != nil {
 		return err
@@ -66,7 +61,8 @@ func RunShared(command []string, env subcommands.Env, timeout time.Duration, pol
 		return runCommand(command)
 	}
 
-	blocker := lib.CreateBlockerUntil(time.Now().Add(timeout), pollingInterval)
+	// TODO(charliea): Replace fslockTimeout with a Context.
+	blocker := lib.CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
 	return fslock.WithSharedBlocking(lockFilePath, blocker, func() error {
 		return runCommand(command)
 	})
