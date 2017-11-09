@@ -22,6 +22,30 @@
       "revId": "2bb5f6752af4c5a2cfcf6be2fbbd50f5829e09ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "828cc210_8dda1196",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-09T15:29:49Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "5ee25f0a_f85ed73e",
+      "range": {
+        "startLine": 65,
+        "startChar": 46,
+        "endLine": 65,
+        "endChar": 67
+      },
+      "revId": "2bb5f6752af4c5a2cfcf6be2fbbd50f5829e09ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
