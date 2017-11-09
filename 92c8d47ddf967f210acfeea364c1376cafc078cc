@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "2270f227_7a7aaeab",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-09T07:00:07Z",
+      "side": 1,
+      "message": "nit: document what stuff goes in here?",
+      "range": {
+        "startLine": 105,
+        "startChar": 4,
+        "endLine": 105,
+        "endChar": 13
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02e2a485_577beffe",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-09T07:00:07Z",
+      "side": 1,
+      "message": "nit: name return values",
+      "range": {
+        "startLine": 114,
+        "startChar": 49,
+        "endLine": 114,
+        "endChar": 55
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1133786d_6d9a2af2",
+        "filename": "appengine/gaeauth/server/gaesigner/signer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-09T07:00:07Z",
+      "side": 1,
+      "message": "why not just \"cert\" and \"info\"?",
+      "range": {
+        "startLine": 65,
+        "startChar": 43,
+        "endLine": 65,
+        "endChar": 55
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c1f65c22_4c84e777",
         "filename": "appengine/gaemiddleware/context.go",
         "patchSetId": 2
@@ -120,6 +189,30 @@
       "side": 1,
       "message": "this is what i wrote before i saw your comment:\n\nin several places in this CL there are constant, independent cache keys used in a proc cache like this. They do not actually benefit from LRU, in fact we probably don\u0027t want LRU there, but rather just a context-scoped global variable. lru.Cache is an overkill for such use case (it has a mutex which is not needed here for independent cache keys, there is a linked list and a map), and we have to make up limits like 64.\n\nSince you are a performance geek... did you consider something more lightweight for globals like this?\n\nvar serviceConfigCache \u003d caching.RegisterProcessCacheItem()\n...\nitem, err :\u003d serviceConfigCache.GetOrCreate(c, func() (interface{}, time.Duration, error) {\n  // make it\n})\n\nthe lookup would be faster because it is an index in a slice, as opposed to map lookups and possible linked list item moving (https://chromium.googlesource.com/infra/luci/luci-go/+/adf70fae5e8ce119992dfaca1e58f7c4d8076bac/common/data/caching/lru/lru.go#154).",
       "parentUuid": "fe5f3df5_a5da81a8",
+      "range": {
+        "startLine": 39,
+        "startChar": 45,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a77e9f64_3f442af2",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-09T07:00:07Z",
+      "side": 1,
+      "message": "This sgtm. I think this would also apply to the cert/info thing above.",
+      "parentUuid": "56cc1dae_f724ab03",
       "range": {
         "startLine": 39,
         "startChar": 45,
