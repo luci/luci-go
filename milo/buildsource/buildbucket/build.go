@@ -153,14 +153,6 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*ui.MiloBuild, error) {
 	// TODO(nodir,hinoka): squash getRespBuild with toMiloBuild.
 
-	if build.Summary.Status == model.NotRun {
-		// Hasn't started yet, so definitely no build ready yet, return a pending
-		// build.
-		return &ui.MiloBuild{
-			Summary: ui.BuildComponent{Status: model.NotRun},
-		}, nil
-	}
-
 	// TODO(nodir,hinoka,iannucci): use annotations directly without fetching swarming task
 	ret, err := sID.Get(c)
 	if err != nil {
