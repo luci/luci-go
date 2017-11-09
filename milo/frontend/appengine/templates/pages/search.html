@@ -1,0 +1,52 @@
+{{define "title"}}Milo{{end}}
+
+{{define "head"}}
+<script src="/static/common/js/search.js"></script>
+<link rel="stylesheet" href="/static/common/css/search.css" type="text/css">
+{{end}}
+
+{{define "body"}}
+<div class="search">
+  <form action="/search" method="GET">
+    <input id="search-text" type="text" name="q" placeholder="Search for builders..." autofocus>
+  </form>
+</div>
+
+<div id="search-content">
+{{ range .search.CIServices }}
+  <h2> {{ .Name }}
+    {{ if .Host }} ({{ .Host.HTML }}) {{ end }}
+  </h2>
+  {{ range .BuilderGroups }}
+    <div class="builder-group">
+      <h3 class="builder-group-name" data="{{ .Name }}"> {{ .Name }} </h3>
+      {{ range .Builders }}
+        <li class="builder-name" data="{{ .Label }}">{{ .HTML }}</li>
+      {{ else }}
+        No builders found...
+      {{ end }}
+    </div>
+  {{ else }}
+    Nothing to see here...
+  {{ end }}
+{{ end }}
+</div>
+
+<script>
+(function () {
+  'use strict';
+  $("#search-text").change(function() {
+    milo.filter("#search-content", $(this).val());
+  });
+  $("#search-text").keyup(function() {
+    milo.filter("#search-content", $(this).val());
+  });
+  var q = milo.getUrlParameter("q");
+  if (q != "") {
+    $("#search-text").val(q);
+    milo.filter("#search-content", q);
+  }
+})();
+</script>
+
+{{end}} <!-- Body -->

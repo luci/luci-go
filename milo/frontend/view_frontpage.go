@@ -15,67 +15,64 @@
 package frontend
 
 import (
+	"context"
+	"sort"
+
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/milo/buildsource/buildbot"
-	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/frontend/ui"
 )
 
+type Frontpage struct {
+	Projects []Project
+}
+
+type Project struct {
+	common.Project
+	Consoles []*common.Console
+}
+
 func frontpageHandler(c *router.Context) {
-	fp := ui.FrontPage{}
-	var mBuildbot, mBuildbucket *ui.CIService
-
-	err := parallel.FanOutIn(func(ch chan<- func() error) {
-		ch <- func() (err error) {
-			mBuildbot, err = buildbot.GetAllBuilders(c.Context)
-			return err
-		}
-		ch <- func() (err error) {
-			mBuildbucket, err = buildbucket.GetAllBuilders(c.Context)
-			return err
-		}
-	})
-
-	fp.CIServices = append(fp.CIServices, *mBuildbucket)
-	fp.CIServices = append(fp.CIServices, *mBuildbot)
-	errMsg := ""
+	projs, err := GetAllProjects(c.Context)
 	if err != nil {
-		errMsg = err.Error()
+		panic(err)
 	}
 	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
-		"frontpage": fp,
-		"error":     errMsg,
+		"frontpage": Frontpage{Projects: projs},
 	})
 }
 
-func frontpageTestData() []common.TestBundle {
-	data := &templates.Args{
-		"frontpage": ui.FrontPage{
-			CIServices: []ui.CIService{
-				{
-					Name: "Module 1",
-					BuilderGroups: []ui.BuilderGroup{
-						{
-							Name: "Example master A",
-							Builders: []ui.Link{
-								*ui.NewLink("Example builder", "/master1/buildera", "Example label"),
-								*ui.NewLink("Example builder 2", "/master1/builderb", "Example label 2"),
-							},
-						},
-					},
-				},
-			},
-		},
-		"error": "couldn't find ice cream",
+// GetAllUserConsoles returns all consoles the current user has access to.
+func GetAllProjects(c context.Context) ([]Project, error) {
+	projects, err := common.GetAllProjects(c)
+	if err != nil {
+		return nil, err
 	}
-	return []common.TestBundle{
-		{
-			Description: "Basic frontpage",
-			Data:        *data,
-		},
+	projMap := make(map[string]*Project, len(projects))
+	for _, project := range projects {
+		projMap[project.ID] = &Project{Project: project}
 	}
+	// We get all consoles and filter it out after because GetAllConsoles() has
+	// a fast path.
+	consoles, err := common.GetAllConsoles(c, "")
+	if err != nil {
+		return nil, err
+	}
+	for _, con := range consoles {
+		if proj, ok := projMap[con.Project()]; ok {
+			proj.Consoles = append(proj.Consoles, con)
+		}
+	}
+
+	projNames := make([]string, 0, len(projMap))
+	for _, proj := range projMap {
+		projNames = append(projNames, proj.ID)
+	}
+	sort.Strings(projNames)
+	result := make([]Project, len(projMap))
+	for i, name := range projNames {
+		result[i] = *projMap[name]
+	}
+	return result, nil
 }
