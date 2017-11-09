@@ -391,7 +391,7 @@ func GetByAddress(c context.Context, client *buildbucket.Service, address string
 		switch {
 		case err != nil:
 			return nil, err
-		case res.Error.Reason == buildbucket.ReasonNotFound:
+		case res.Error != nil && res.Error.Reason == buildbucket.ReasonNotFound:
 			return nil, nil
 		default:
 			msg = res.Build
