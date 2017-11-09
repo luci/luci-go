@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "62a0785a_10fec1c6",
+        "filename": "appengine/gaemiddleware/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T01:55:08Z",
+      "side": 1,
+      "message": "this will be gone in the next CL that pimps the process cache system\n\nWas easier to introduce this variable here for now.",
+      "range": {
+        "startLine": 43,
+        "startChar": 4,
+        "endLine": 43,
+        "endChar": 33
+      },
+      "revId": "3b4099844d068beaf047b7dc120dfa6e6a1f4d9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
