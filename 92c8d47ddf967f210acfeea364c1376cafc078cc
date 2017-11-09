@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "56cc1dae_f724ab03",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-09T06:25:26Z",
+      "side": 1,
+      "message": "I thought more about this on my way home. The root of the issue that it makes no sense to have LRU with capacity 1 :) (or any other small predefined capacity). We are abusing this LRU cache to hold data we know in advance we\u0027ll need.\n\nSo I\u0027m considering extending \u0027caching\u0027 API to allow something like:\n\n  var serviceConfigCache \u003d caching.RegisterCacheSlot()\n\n  func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {\n    item, err :\u003d serviceConfigCache.Fetch(c, func(...) {\n      ...\n    })\n    ...\n  }\n\nI\u0027m also really-really tempted to make these cache slots backed internally (at least optionally) by https://godoc.org/go.chromium.org/luci/common/data/caching/lazyslot, since it already implements necessary refresh logic and has nice performance and resiliency characteristics. For example, in this specific Milo case, lazyslot would be appropriate, since Milo requests can tolerate slightly stale ServiceConfig if fetching takes a long time or fails for some reason. By using lazyslot Milo requests won\u0027t all block on refreshing the config (like they do now, since lru.GetOrCreate has a mutex inside which is locked on cache expiration).\n\nWdyt?",
+      "parentUuid": "fe5f3df5_a5da81a8",
+      "range": {
+        "startLine": 39,
+        "startChar": 45,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6327a2b2_7385cc96",
         "filename": "server/auth/signing/cache.go",
         "patchSetId": 2
