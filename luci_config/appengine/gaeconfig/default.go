@@ -51,6 +51,8 @@ const (
 	devCfgDir = "devcfg"
 )
 
+var procCache = serverCaching.RegisterLRUCache(1024)
+
 // cacheConfig defines how a LUCI Config backend handles caching.
 type cacheConfig struct {
 	// GlobalCache, if not nil, installs a cache layer immediately after the
@@ -145,7 +147,7 @@ func useImpl(c context.Context, be backend.B) context.Context {
 
 			// Cache configurations in memory for local consistency. This will cache
 			// individual configuration perspectives for individual users.
-			be = caching.LRUBackend(be, serverCaching.ProcessCache(c), s.CacheExpiration())
+			be = caching.LRUBackend(be, procCache.LRU(c), s.CacheExpiration())
 
 			return be
 		},
@@ -166,7 +168,7 @@ func UseFlex(c context.Context) context.Context {
 	// write to datastore.
 	ccfg := cacheConfig{
 		GlobalCache: func(c context.Context, be backend.B, s *Settings) backend.B {
-			return caching.LRUBackend(be, serverCaching.ProcessCache(c), s.CacheExpiration())
+			return caching.LRUBackend(be, procCache.LRU(c), s.CacheExpiration())
 		},
 	}
 	return installConfigBackend(c, mustFetchCachedSettings(c), nil, ccfg)

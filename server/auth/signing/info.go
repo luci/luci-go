@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
-	"go.chromium.org/luci/server/caching"
 )
 
 // ServiceInfo describes identity of some service.
@@ -37,8 +36,6 @@ type ServiceInfo struct {
 	ServiceAccountName string `json:"service_account_name,omitempty"`
 }
 
-type serviceInfoKey string
-
 // FetchServiceInfo fetches information about the service from the given URL.
 //
 // The server is expected to reply with JSON described by ServiceInfo struct
@@ -46,7 +43,7 @@ type serviceInfoKey string
 //
 // LUCI services serve the service info at /auth/api/v1/server/info.
 func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
-	info, err := caching.ProcessCache(c).GetOrCreate(c, serviceInfoKey(url), func() (interface{}, time.Duration, error) {
+	info, err := procCache.LRU(c).GetOrCreate(c, serviceInfoCacheKey(url), func() (interface{}, time.Duration, error) {
 		info := &ServiceInfo{}
 		req := internal.Request{
 			Method: "GET",
@@ -88,7 +85,6 @@ func FetchServiceInfoFromLUCIService(c context.Context, serviceURL string) (*Ser
 //
 // 'serviceURL' is root URL of the service (e.g. 'https://example.com').
 func FetchLUCIServiceIdentity(c context.Context, serviceURL string) (identity.Identity, error) {
-	// TODO(vadimsh): Cache "aggressively".
 	info, err := FetchServiceInfoFromLUCIService(c, serviceURL)
 	if err != nil {
 		return "", err

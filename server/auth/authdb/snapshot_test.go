@@ -23,7 +23,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/auth/identity"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
@@ -130,7 +129,7 @@ func TestSnapshotDB(t *testing.T) {
 		calls := 0
 
 		ctx := context.Background()
-		ctx = caching.WithProcessCache(ctx, lru.New(0))
+		ctx = caching.WithEmptyProcessCache(ctx)
 
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
 			calls++

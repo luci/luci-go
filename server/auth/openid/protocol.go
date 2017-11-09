@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/luci/server/tokens"
 )
 
+var procCache = caching.RegisterLRUCache(64)
+
 // openIDStateToken is used to generate `state` parameter used in OpenID flow to
 // pass state between our app and authentication backend.
 var openIDStateToken = tokens.TokenKind{
@@ -74,7 +76,7 @@ func (d *discoveryDoc) signingKeys(c context.Context) (*JSONWebKeySet, error) {
 		return keys, time.Hour * 6, nil
 	}
 
-	cached, err := caching.ProcessCache(c).GetOrCreate(c, signingKeysCacheKey(d.JwksURI), fetcher)
+	cached, err := procCache.LRU(c).GetOrCreate(c, signingKeysCacheKey(d.JwksURI), fetcher)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +106,7 @@ func fetchDiscoveryDoc(c context.Context, url string) (*discoveryDoc, error) {
 	}
 
 	// Cache the document in the process cache.
-	cached, err := caching.ProcessCache(c).GetOrCreate(c, discoveryDocCacheKey(url), fetcher)
+	cached, err := procCache.LRU(c).GetOrCreate(c, discoveryDocCacheKey(url), fetcher)
 	if err != nil {
 		return nil, err
 	}

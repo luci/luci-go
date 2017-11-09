@@ -28,7 +28,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/internal"
-	"go.chromium.org/luci/server/caching"
 )
 
 // CertsCacheExpiration defines how long to cache fetched certificates in local
@@ -84,8 +83,6 @@ func (t JSONTime) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.FormatInt(ts, 10)), nil
 }
 
-type proccacheKey string
-
 // FetchCertificates fetches certificates from the given URL.
 //
 // The server is expected to reply with JSON described by PublicCertificates
@@ -94,7 +91,7 @@ type proccacheKey string
 //
 // LUCI services serve certificates at /auth/api/v1/server/certificates.
 func FetchCertificates(c context.Context, url string) (*PublicCertificates, error) {
-	certs, err := caching.ProcessCache(c).GetOrCreate(c, proccacheKey("url:"+url), func() (interface{}, time.Duration, error) {
+	certs, err := procCache.LRU(c).GetOrCreate(c, certsCacheKey("url:"+url), func() (interface{}, time.Duration, error) {
 		certs := &PublicCertificates{}
 		req := internal.Request{
 			Method: "GET",
@@ -148,7 +145,7 @@ func FetchCertificatesForServiceAccount(c context.Context, email string) (*Publi
 		return nil, fmt.Errorf("signature: not a google service account %q", email)
 	}
 
-	certs, err := caching.ProcessCache(c).GetOrCreate(c, proccacheKey("email:"+email), func() (interface{}, time.Duration, error) {
+	certs, err := procCache.LRU(c).GetOrCreate(c, certsCacheKey("email:"+email), func() (interface{}, time.Duration, error) {
 		// Ask Google backend for a dict "key id => x509 PEM encoded cert".
 		keysAndCerts := map[string]string{}
 		req := internal.Request{

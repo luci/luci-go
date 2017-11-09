@@ -36,6 +36,8 @@ import (
 	"go.chromium.org/luci/milo/api/config"
 )
 
+var procCache = caching.RegisterLRUCache(64)
+
 // Console is a datastore entity representing a single console.
 type Console struct {
 	// Parent is a key to the parent Project entity where this console was
@@ -206,7 +208,7 @@ func GetSettings(c context.Context) *config.Settings {
 func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	// This maker function is used to do the actual fetch of the ServiceConfig
 	// from datastore.  It is called if the ServiceConfig is not in proc cache.
-	item, err := caching.ProcessCache(c).GetOrCreate(c, ServiceConfigID, func() (interface{}, time.Duration, error) {
+	item, err := procCache.LRU(c).GetOrCreate(c, ServiceConfigID, func() (interface{}, time.Duration, error) {
 		msg := ServiceConfig{ID: ServiceConfigID}
 		err := datastore.Get(c, &msg)
 		if err != nil {
