@@ -41,15 +41,50 @@ var openIDStateToken = tokens.TokenKind{
 // discoveryDoc describes subset of OpenID Discovery JSON document.
 // See https://developers.google.com/identity/protocols/OpenIDConnect#discovery.
 type discoveryDoc struct {
+	Issuer                string `json:"issuer"`
 	AuthorizationEndpoint string `json:"authorization_endpoint"`
 	TokenEndpoint         string `json:"token_endpoint"`
-	UserinfoEndpoint      string `json:"userinfo_endpoint"`
+	JwksURI               string `json:"jwks_uri"`
+}
+
+type signingKeysCacheKey string
+
+// signingKeys returns a JSON Web Key set fetched from the location specified
+// in the discovery document.
+//
+// It fetches them on the first use and then keeps them cached in the process
+// cache for 6h.
+//
+// May return both fatal and transient errors.
+func (d *discoveryDoc) signingKeys(c context.Context) (*JSONWebKeySet, error) {
+	fetcher := func() (interface{}, time.Duration, error) {
+		raw := &JSONWebKeySetStruct{}
+		req := internal.Request{
+			Method: "GET",
+			URL:    d.JwksURI,
+			Out:    raw,
+		}
+		if err := req.Do(c); err != nil {
+			return nil, 0, err
+		}
+		keys, err := NewJSONWebKeySet(raw)
+		if err != nil {
+			return nil, 0, err
+		}
+		return keys, time.Hour * 6, nil
+	}
+
+	cached, err := caching.ProcessCache(c).GetOrCreate(c, signingKeysCacheKey(d.JwksURI), fetcher)
+	if err != nil {
+		return nil, err
+	}
+	return cached.(*JSONWebKeySet), nil
 }
 
 type discoveryDocCacheKey string
 
 // fetchDiscoveryDoc fetches discovery document from given URL. It is cached in
-// local memory for 24 hours.
+// the process cache for 24 hours.
 func fetchDiscoveryDoc(c context.Context, url string) (*discoveryDoc, error) {
 	if url == "" {
 		return nil, ErrNotConfigured
@@ -126,18 +161,16 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 		return "", nil, ErrNotConfigured
 	}
 
-	// Grab endpoint for auth code exchange from discovery doc.
+	// Validate the discover doc has necessary fields to proceed.
 	discovery, err := fetchDiscoveryDoc(c, cfg.DiscoveryURL)
-	if err != nil {
+	switch {
+	case err != nil:
 		return "", nil, err
-	}
-	if discovery.TokenEndpoint == "" {
+	case discovery.TokenEndpoint == "":
 		return "", nil, errors.New("openid: bad discovery doc, empty token_endpoint")
 	}
-	if discovery.UserinfoEndpoint == "" {
-		return "", nil, errors.New("openid: bad discovery doc, empty userinfo_endpoint")
-	}
 
+	// Prepare a request to exchange authorization code for the ID token.
 	v := url.Values{}
 	v.Set("code", code)
 	v.Set("client_id", cfg.ClientID)
@@ -146,11 +179,10 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 	v.Set("grant_type", "authorization_code")
 	payload := v.Encode()
 
-	// Send POST to token endpoint with URL-encoded parameters to get back
-	// access token dict.
+	// Send POST to the token endpoint with URL-encoded parameters to get back the
+	// ID token. There's more stuff in the reply, we don't need it.
 	var token struct {
-		TokenType   string `json:"token_type"`
-		AccessToken string `json:"access_token"`
+		IDToken string `json:"id_token"`
 	}
 	req := internal.Request{
 		Method: "POST",
@@ -165,49 +197,50 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 		return "", nil, err
 	}
 
-	// Use access token to fetch user profile.
-	var profile struct {
-		Sub     string `json:"sub"`
-		Email   string `json:"email"`
-		Name    string `json:"name"`
-		Picture string `json:"picture"`
+	// Unpack the ID token to grab the user information from it.
+	return userFromIDToken(c, token.IDToken, cfg, discovery)
+}
+
+// userFromIDToken validates the ID token and extracts user information from it.
+func userFromIDToken(c context.Context, token string, cfg *Settings, discovery *discoveryDoc) (uid string, u *auth.User, err error) {
+	// Validate the discover doc has necessary fields to proceed.
+	switch {
+	case discovery.Issuer == "":
+		return "", nil, errors.New("openid: bad discovery doc, empty issuer")
+	case discovery.JwksURI == "":
+		return "", nil, errors.New("openid: bad discovery doc, empty jwks_uri")
 	}
-	req = internal.Request{
-		Method: "GET",
-		URL:    discovery.UserinfoEndpoint,
-		Headers: map[string]string{
-			"Authorization": token.TokenType + " " + token.AccessToken,
-		},
-		Out: &profile,
+
+	// Grab the signing keys needed to verify the token. This is almost always
+	// hitting the local process cache and thus must be fast.
+	signingKeys, err := discovery.signingKeys(c)
+	if err != nil {
+		return "", nil, err
 	}
-	if err := req.Do(c); err != nil {
+
+	// Unpack the ID token to grab the user information from it.
+	verifiedToken, err := VerifyIDToken(c, token, signingKeys, discovery.Issuer, cfg.ClientID)
+	if err != nil {
 		return "", nil, err
 	}
 
 	// Ignore non https:// URLs for pictures. We serve all pages over HTTPS and
 	// don't want to break this rule just for a pretty picture.
-	picture := profile.Picture
+	picture := verifiedToken.Picture
 	if picture != "" && !strings.HasPrefix(picture, "https://") {
 		picture = ""
 	}
 
-	// Google avatars sometimes look weird if used directly. Resized version
-	// always looks fine. 's64' is documented, for example, here:
-	// https://cloud.google.com/appengine/docs/python/images
-	if picture != "" && strings.HasSuffix(picture, "/photo.jpg") {
-		picture = picture[:len(picture)-len("/photo.jpg")] + "/s64/photo.jpg"
-	}
-
-	// Validate email is not malicious.
-	id, err := identity.MakeIdentity("user:" + profile.Email)
+	// Build the identity string from the email. This essentially validates it.
+	id, err := identity.MakeIdentity("user:" + verifiedToken.Email)
 	if err != nil {
 		return "", nil, err
 	}
 
-	return profile.Sub, &auth.User{
+	return verifiedToken.Sub, &auth.User{
 		Identity: id,
-		Email:    profile.Email,
-		Name:     profile.Name,
+		Email:    verifiedToken.Email,
+		Name:     verifiedToken.Name,
 		Picture:  picture,
 	}, nil
 }
