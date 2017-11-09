@@ -10,8 +10,8 @@
   <h1>All Consoles</h1>
   {{ range .Consoles }}
     <h3>
-      <a href="/console/{{.GetProjectName}}/{{.ID}}">
-        {{ .GetProjectName }} / {{ .ID }}
+      <a href="/console/{{.GetProjectID}}/{{.ID}}">
+        {{ .GetProjectID }} / {{ .ID }}
       </a>
     </h3>
     <p> <b>Repo</b>: {{ .RepoURL }} </p>
