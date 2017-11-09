@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7dbf1d86_7e4a8bb9",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-09T20:40:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75c22dd7_07a52c21",
+      "revId": "6299487b6e93cd2845bbcc3709204a589805e68d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "72c6edcd_11f8d07b",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 14
@@ -33,6 +51,24 @@
       "revId": "6299487b6e93cd2845bbcc3709204a589805e68d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a16cf763_de7a7738",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-09T20:40:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72c6edcd_11f8d07b",
+      "revId": "6299487b6e93cd2845bbcc3709204a589805e68d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
