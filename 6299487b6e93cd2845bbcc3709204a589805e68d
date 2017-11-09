@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "75c22dd7_07a52c21",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-09T20:18:17Z",
+      "side": 1,
+      "message": "Make it write to an io.Writer, then use fmt.Fprintf().",
+      "revId": "6299487b6e93cd2845bbcc3709204a589805e68d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72c6edcd_11f8d07b",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-09T20:18:17Z",
+      "side": 1,
+      "message": "Just }, no need for else.",
+      "revId": "6299487b6e93cd2845bbcc3709204a589805e68d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
