@@ -70,17 +70,11 @@ var (
 // classicEnv is an AppEngine Classic GAE environment configuration. This is the
 // default AppEngine environment for simple (all-classic) layouts.
 var classicEnv = gaemiddleware.Environment{
-	PassthroughPanics: appengine.IsDevAppServer(),
-	WithInitialRequest: func(c context.Context, req *http.Request) context.Context {
-		// Install our production services.
-		return prod.Use(c, req)
-	},
-	WithConfig: gaeconfig.Use,
-	WithAuth: func(c context.Context) context.Context {
-		return auth.SetConfig(c, &globalAuthConfig)
-	},
+	PassthroughPanics:    appengine.IsDevAppServer(),
+	WithInitialRequest:   prod.Use,
+	WithConfig:           gaeconfig.Use,
+	WithAuth:             func(c context.Context) context.Context { return auth.SetConfig(c, &globalAuthConfig) },
 	MonitoringMiddleware: globalTsMonState.Middleware,
-
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
 		gaeauth.InstallHandlers(r, base)
 		tsmon.InstallHandlers(r, base)

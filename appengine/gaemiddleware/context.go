@@ -16,6 +16,9 @@ package gaemiddleware
 
 import (
 	"net/http"
+	"sync"
+
+	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/dscache"
 	"go.chromium.org/gae/filter/readonly"
@@ -33,12 +36,13 @@ import (
 
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/appengine/gaesettings"
-
-	"golang.org/x/net/context"
 )
 
 // Environment is a middleware environment. Its parameters define how the
 // middleware is applied, and which services are enlisted.
+//
+// This is low-level API. Use either 'gaemiddeware/standard' or
+// 'gaemiddeware/flex' packages to target a specific flavor of GAE environment.
 type Environment struct {
 	// PassthroughPanics, if true, instructs the Environment not to install panic
 	// catching middleware.
@@ -56,6 +60,9 @@ type Environment struct {
 	// the assumptions of that caching layer. For example, if a Flex VM is being
 	// used in conjunction with a non-read-only Classic AppEngine instance.
 	DSReadOnly bool
+
+	// Prepare will be called once after init() time, but before serving requests.
+	Prepare func()
 
 	// WithInitialRequest is called at the very beginning of the handler. It
 	// contains a reference to the handler's HTTP request.
@@ -82,6 +89,8 @@ type Environment struct {
 	// ExtraHandlers, if not nil, is used to install additional handlers when
 	// InstallHandlers is called.
 	ExtraHandlers func(r *router.Router, base router.MiddlewareChain)
+
+	once sync.Once
 }
 
 var (
@@ -129,6 +138,10 @@ func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base route
 // 'Production' here means the services will use real GAE APIs (not mocks or
 // stubs), so With should never be used from unit tests.
 func (e *Environment) With(c context.Context, req *http.Request) context.Context {
+	if e.Prepare != nil {
+		e.once.Do(e.Prepare)
+	}
+
 	// Set an initial logging level. We'll configure this to be more specific
 	// later once we can load settings.
 	c = logging.SetLevel(c, logging.Debug)
