@@ -16,6 +16,9 @@ package gaemiddleware
 
 import (
 	"net/http"
+	"sync"
+
+	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/dscache"
 	"go.chromium.org/gae/filter/readonly"
@@ -33,12 +36,17 @@ import (
 
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/appengine/gaesettings"
-
-	"golang.org/x/net/context"
 )
+
+// ProcessCache is a process-global LRU cache. It may be shared between
+// multiple subsystems.
+var ProcessCache = lru.New(65535)
 
 // Environment is a middleware environment. Its parameters define how the
 // middleware is applied, and which services are enlisted.
+//
+// This is low-level API. Use either 'gaemiddeware/standard' or
+// 'gaemiddeware/flex' packages to target a specific flavor of GAE environment.
 type Environment struct {
 	// PassthroughPanics, if true, instructs the Environment not to install panic
 	// catching middleware.
@@ -56,6 +64,9 @@ type Environment struct {
 	// the assumptions of that caching layer. For example, if a Flex VM is being
 	// used in conjunction with a non-read-only Classic AppEngine instance.
 	DSReadOnly bool
+
+	// Prepare will be called once after init() time, but before serving requests.
+	Prepare func()
 
 	// WithInitialRequest is called at the very beginning of the handler. It
 	// contains a reference to the handler's HTTP request.
@@ -82,20 +93,22 @@ type Environment struct {
 	// ExtraHandlers, if not nil, is used to install additional handlers when
 	// InstallHandlers is called.
 	ExtraHandlers func(r *router.Router, base router.MiddlewareChain)
-}
 
-var (
-	// globalLRUCache holds state cached between requests.
-	//
-	// TODO: We should choose a maximum LRU size here to stop this from growing
-	//   indefinitely. However, it's replacing an indefinitely-growing cache, so
-	//   for now this is acceptable.
-	// TODO: This should replace uses of globalProcessCache.
-	globalLRUCache = lru.New(0)
+	prepareOnce sync.Once
 
 	// globalSettings holds global app settings lazily updated from the datastore.
-	globalSettings = settings.New(gaesettings.Storage{})
-)
+	globalSettings *settings.Settings
+}
+
+// prepare is called before handling a request, it initializes global state.
+func (e *Environment) prepare() {
+	e.prepareOnce.Do(func() {
+		e.globalSettings = settings.New(gaesettings.Storage{})
+		if e.Prepare != nil {
+			e.Prepare()
+		}
+	})
+}
 
 // InstallHandlers installs handlers for an Environment's framework routes.
 //
@@ -129,12 +142,15 @@ func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base route
 // 'Production' here means the services will use real GAE APIs (not mocks or
 // stubs), so With should never be used from unit tests.
 func (e *Environment) With(c context.Context, req *http.Request) context.Context {
+	// Ensure one-time initialization happened.
+	e.prepare()
+
 	// Set an initial logging level. We'll configure this to be more specific
 	// later once we can load settings.
 	c = logging.SetLevel(c, logging.Debug)
 
 	// Install global process and request LRU caches.
-	c = caching.WithProcessCache(c, globalLRUCache)
+	c = caching.WithProcessCache(c, ProcessCache)
 	c = caching.WithRequestCache(c)
 
 	c = e.WithInitialRequest(c, req)
@@ -145,7 +161,7 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 	}
 
 	// These are needed to use fetchCachedSettings.
-	c = settings.Use(c, globalSettings)
+	c = settings.Use(c, e.globalSettings)
 
 	// Fetch and apply configuration stored in the datastore.
 	cachedSettings := fetchCachedSettings(c)

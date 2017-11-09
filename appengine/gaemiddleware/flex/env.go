@@ -18,16 +18,13 @@ package flex
 
 import (
 	"net/http"
-	"sync"
 
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
 	authClient "go.chromium.org/luci/appengine/gaeauth/client"
@@ -43,16 +40,6 @@ import (
 )
 
 var (
-	// ProcessCache is a process-global LRU cache. It may be shared between
-	// multiple subsystems.
-	ProcessCache = lru.New(65535)
-
-	// globalInitOnce initializes our global Flex configuration once per
-	// process.
-	//
-	// This initialization requires being run in a Flex enviornment.
-	globalInitOnce sync.Once
-
 	// globalFlex is the global luci/gae cloud Flex services definition.
 	globalFlex *cloud.Flex
 
@@ -78,40 +65,33 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: authClient.GetAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
-		Cache:               &auth.MemoryCache{LRU: ProcessCache},
+		Cache:               &auth.MemoryCache{LRU: gaemiddleware.ProcessCache},
 		Locks:               &mutexpool.P{},
 		IsDevMode:           !metadata.OnGCE(),
 	}
 )
-
-func initGlobalFlex() {
-	globalInitOnce.Do(func() {
-		// Context to use for initialization.
-		c := context.Background()
-
-		globalFlex = &cloud.Flex{
-			Cache: ProcessCache,
-		}
-
-		var err error
-		if globalFlexConfig, err = globalFlex.Configure(c); err != nil {
-			panic(errors.Annotate(err, "could not create Flex config").Err())
-		}
-	})
-}
 
 // ReadOnlyFlex is an Environment designed for cooperative Flex support
 // environments.
 var ReadOnlyFlex = gaemiddleware.Environment{
 	DSDisableCache: true,
 	DSReadOnly:     true,
+	Prepare: func() {
+		// Context to use for initialization.
+		c := context.Background()
+		globalFlex = &cloud.Flex{
+			Cache: gaemiddleware.ProcessCache,
+		}
+		var err error
+		if globalFlexConfig, err = globalFlex.Configure(c); err != nil {
+			panic(errors.Annotate(err, "could not create Flex config").Err())
+		}
+	},
 	WithInitialRequest: func(c context.Context, req *http.Request) context.Context {
 		// Install the HTTP inbound request into the Context.
 		c = withHTTPRequest(c, req)
-		c = caching.WithProcessCache(c, ProcessCache)
 
 		// Install our Cloud services.
-		initGlobalFlex()
 		flexReq := globalFlex.Request(req)
 		c = globalFlexConfig.Use(c, flexReq)
 
