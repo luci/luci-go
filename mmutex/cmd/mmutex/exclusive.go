@@ -53,18 +53,26 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 }
 
 func RunExclusive(command []string, env subcommands.Env) error {
+	commandFn := func() error {
+		return runCommand(command)
+	}
+	return runExclusive(commandFn, env)
+}
+
+// Implementation of RunExclusive that allows for testing without real command execution.
+func runExclusive(command func() error, env subcommands.Env) error {
 	lockFilePath, err := computeLockFilePath(env)
 	if err != nil {
 		return err
 	}
 
 	if len(lockFilePath) == 0 {
-		return runCommand(command)
+		return command()
 	}
 
 	// TODO(charliea): Replace fslockTimeout a Context.
 	blocker := lib.CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
-		return runCommand(command)
+		return command()
 	})
 }

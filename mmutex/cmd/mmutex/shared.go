@@ -53,17 +53,25 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 }
 
 func RunShared(command []string, env subcommands.Env) error {
+	commandFn := func() error {
+		return runCommand(command)
+	}
+	return runShared(commandFn, env)
+}
+
+// Implementation of RunShared that allows for testing without real command execution.
+func runShared(command func() error, env subcommands.Env) error {
 	lockFilePath, err := computeLockFilePath(env)
 	if err != nil {
 		return err
 	}
 	if len(lockFilePath) == 0 {
-		return runCommand(command)
+		return command()
 	}
 
 	// TODO(charliea): Replace fslockTimeout with a Context.
 	blocker := lib.CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
 	return fslock.WithSharedBlocking(lockFilePath, blocker, func() error {
-		return runCommand(command)
+		return command()
 	})
 }

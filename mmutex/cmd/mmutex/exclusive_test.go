@@ -26,10 +26,13 @@ import (
 	"github.com/maruel/subcommands"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExclusive(t *testing.T) {
+	var returnNilFn = func() error { return nil }
+
 	Convey("RunExclusive", t, func() {
 		var lockFileDir string
 		var err error
@@ -76,7 +79,10 @@ func TestExclusive(t *testing.T) {
 		})
 
 		Convey("returns error from the command", func() {
-			So(RunExclusive([]string{"nonexistent_command"}, env), ShouldErrLike, "executable file not found")
+			returnErrorFn := func() error {
+				return errors.Reason("test error").Err()
+			}
+			So(runExclusive(returnErrorFn, env), ShouldErrLike, "test error")
 		})
 
 		Convey("times out if exclusive lock isn't released", func() {
@@ -89,7 +95,7 @@ func TestExclusive(t *testing.T) {
 			defer handle.Unlock()
 
 			fslockTimeout = 0
-			So(RunExclusive([]string{"echo", "should_fail"}, env), ShouldErrLike, "fslock: lock is held")
+			So(runExclusive(returnNilFn, env), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("times out if shared lock isn't released", func() {
@@ -101,7 +107,7 @@ func TestExclusive(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunExclusive(createCommand([]string{"echo", "should_fail"}), env), ShouldErrLike, "fslock: lock is held")
+			So(runExclusive(returnNilFn, env), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("respects timeout", func() {
@@ -120,7 +126,7 @@ func TestExclusive(t *testing.T) {
 			}()
 
 			start := time.Now()
-			RunExclusive(createCommand([]string{"echo", "should_succeed"}), env)
+			runExclusive(returnNilFn, env)
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
@@ -128,6 +134,6 @@ func TestExclusive(t *testing.T) {
 	})
 
 	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
-		So(RunExclusive(createCommand([]string{"echo", "should_succeed"}), subcommands.Env{}), ShouldBeNil)
+		So(runExclusive(returnNilFn, subcommands.Env{}), ShouldBeNil)
 	})
 }
