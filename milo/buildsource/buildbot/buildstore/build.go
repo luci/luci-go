@@ -184,13 +184,16 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 	for _, f := range funcs {
 		if bset, err := f.CB(); err == nil {
 			bs.BuildSet = append(bs.BuildSet, bset.String())
+			if err := bs.AddManifestKeysFromBuildSet(c, bset); err != nil {
+				return err
+			}
 			logging.Infof(c, "applied %s: %q", f.Name, bset)
 		} else if err != errMissingProperties {
 			logging.WithError(err).Warningf(c, "failed to apply %s", f.Name)
 		}
 	}
 
-	return bs.AddManifestKeysFromBuildSets(c)
+	return nil
 }
 
 // summarizeBuild creates a build summary from the buildbot build.
@@ -201,9 +204,6 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
 		BuildID:   fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 	}
-
-	v, _ := b.PropertyValue("$recipe_engine/runtime").(map[string]interface{})
-	bs.Experimental, _ = v["is_experimental"].(bool)
 
 	bs.ContextURI = []string{
 		fmt.Sprintf("buildbot://%s/build/%s/%d", b.Master, b.Buildername, b.Number),

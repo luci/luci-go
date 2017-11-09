@@ -19,7 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
+	"path"
 	"strings"
 	"testing"
 
@@ -58,54 +58,56 @@ func shouldMatchExpectationsFor(actualContents interface{}, expectedFilename ...
 }
 
 func TestBuild(t *testing.T) {
-	t.Parallel()
+	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
+	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 
-	Convey(`TestBuild`, t, func() {
-		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
-		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-		c = caching.WithRequestCache(c)
+	if *generate {
+		for _, tc := range TestCases {
+			fmt.Printf("Generating expectations for %s/%d\n", tc.Builder, tc.Build)
+			build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
+			if err != nil {
+				panic(fmt.Errorf("Could not run build() for %s/%d: %s", tc.Builder, tc.Build, err))
+			}
+			buildJSON, err := json.MarshalIndent(build, "", "  ")
+			if err != nil {
+				panic(fmt.Errorf("Could not JSON marshal %s/%d: %s", tc.Builder, tc.Build, err))
+			}
+			fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
+			fpath := path.Join("expectations", fname)
+			err = ioutil.WriteFile(fpath, []byte(buildJSON), 0644)
+			if err != nil {
+				panic(fmt.Errorf("Encountered error while trying to write to %s: %s", fpath, err))
+			}
+		}
+		return
+	}
 
-		if *generate {
-			for _, tc := range TestCases {
-				fmt.Printf("Generating expectations for %s/%d\n", tc.Builder, tc.Build)
+	Convey(`A test Environment`, t, func() {
+		c = testconfig.WithCommonClient(c, memcfg.New(bbACLConfigs))
+		c = auth.WithState(c, &authtest.FakeState{
+			Identity:       identity.AnonymousIdentity,
+			IdentityGroups: []string{"all"},
+		})
+		c = caching.WithProcessCache(c, &lru.Cache{})
+
+		for _, tc := range TestCases {
+			Convey(fmt.Sprintf("Test Case: %s/%d", tc.Builder, tc.Build), func() {
 				build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
 				So(err, ShouldBeNil)
-				buildJSON, err := json.MarshalIndent(build, "", "  ")
-				So(err, ShouldBeNil)
 				fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
-				fpath := filepath.Join("expectations", fname)
-				So(ioutil.WriteFile(fpath, []byte(buildJSON), 0644), ShouldBeNil)
-			}
-			return
+				So(build, shouldMatchExpectationsFor, fname)
+			})
 		}
 
-		Convey(`A test Environment`, func() {
-			c = testconfig.WithCommonClient(c, memcfg.New(bbACLConfigs))
-			c = auth.WithState(c, &authtest.FakeState{
-				Identity:       identity.AnonymousIdentity,
-				IdentityGroups: []string{"all"},
+		Convey(`Disallow anonomyous users from accessing internal builds`, func() {
+			importBuild(c, &buildbot.Build{
+				Master:      "fake",
+				Buildername: "fake",
+				Number:      1,
+				Internal:    true,
 			})
-			c = caching.WithProcessCache(c, &lru.Cache{})
-
-			for _, tc := range TestCases {
-				Convey(fmt.Sprintf("Test Case: %s/%d", tc.Builder, tc.Build), func() {
-					build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
-					So(err, ShouldBeNil)
-					fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
-					So(build, shouldMatchExpectationsFor, fname)
-				})
-			}
-
-			Convey(`Disallow anonomyous users from accessing internal builds`, func() {
-				importBuild(c, &buildbot.Build{
-					Master:      "fake",
-					Buildername: "fake",
-					Number:      1,
-					Internal:    true,
-				})
-				_, err := Build(c, "fake", "fake", 1)
-				So(common.ErrorTag.In(err), ShouldEqual, common.CodeUnauthorized)
-			})
+			_, err := Build(c, "fake", "fake", 1)
+			So(common.ErrorTag.In(err), ShouldEqual, common.CodeUnauthorized)
 		})
 	})
 }
