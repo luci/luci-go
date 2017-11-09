@@ -18,9 +18,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
 
-	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/mmutex/lib"
@@ -53,24 +51,7 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 }
 
 func RunShared(env subcommands.Env, command []string) error {
-	return runShared(env, func() error {
+	return lib.RunShared(env, func() error {
 		return runCommand(command)
-	})
-}
-
-// Implementation of RunShared that allows for testing without real command execution.
-func runShared(env subcommands.Env, command func() error) error {
-	lockFilePath, err := computeLockFilePath(env)
-	if err != nil {
-		return err
-	}
-	if len(lockFilePath) == 0 {
-		return command()
-	}
-
-	// TODO(charliea): Replace fslockTimeout with a Context.
-	blocker := lib.CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
-	return fslock.WithSharedBlocking(lockFilePath, blocker, func() error {
-		return command()
 	})
 }
