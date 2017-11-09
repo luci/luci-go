@@ -26,10 +26,17 @@ import (
 	"github.com/maruel/subcommands"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestShared(t *testing.T) {
+	var fnThatReturns = func(err error) func() error {
+		return func() error {
+			return err
+		}
+	}
+
 	Convey("RunShared", t, func() {
 		var lockFileDir string
 		var err error
@@ -67,14 +74,14 @@ func TestShared(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunShared(command, env), ShouldBeNil)
+			So(RunShared(env, command), ShouldBeNil)
 
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("returns error from the command", func() {
-			So(RunShared([]string{"nonexistent_command"}, env), ShouldErrLike, "executable file not found")
+			So(runShared(env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
 		})
 
 		Convey("times out if an exclusive lock isn't released", func() {
@@ -93,7 +100,7 @@ func TestShared(t *testing.T) {
 			}()
 
 			start := time.Now()
-			So(RunShared([]string{"echo", "should_fail"}, env), ShouldErrLike, "fslock: lock is held")
+			So(runShared(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
@@ -106,14 +113,14 @@ func TestShared(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunShared(createCommand([]string{"echo", "should_succeed"}), env), ShouldBeNil)
+			So(runShared(env, fnThatReturns(nil)), ShouldBeNil)
 		})
 
-		// TODO(charliea): Add a test to ensure that RunShared() treats the presence of a drain file the
+		// TODO(charliea): Add a test to ensure that runShared() treats the presence of a drain file the
 		// same as a held lock.
 	})
 
 	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
-		So(RunShared(createCommand([]string{"echo", "should_succeed"}), subcommands.Env{}), ShouldBeNil)
+		So(runShared(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }

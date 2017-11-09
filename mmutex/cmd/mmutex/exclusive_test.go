@@ -26,10 +26,17 @@ import (
 	"github.com/maruel/subcommands"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExclusive(t *testing.T) {
+	var fnThatReturns = func(err error) func() error {
+		return func() error {
+			return err
+		}
+	}
+
 	Convey("RunExclusive", t, func() {
 		var lockFileDir string
 		var err error
@@ -69,14 +76,14 @@ func TestExclusive(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunExclusive(command, env), ShouldBeNil)
+			So(RunExclusive(env, command), ShouldBeNil)
 
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("returns error from the command", func() {
-			So(RunExclusive([]string{"nonexistent_command"}, env), ShouldErrLike, "executable file not found")
+			So(runExclusive(env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
 		})
 
 		Convey("times out if exclusive lock isn't released", func() {
@@ -89,7 +96,7 @@ func TestExclusive(t *testing.T) {
 			defer handle.Unlock()
 
 			fslockTimeout = 0
-			So(RunExclusive([]string{"echo", "should_fail"}, env), ShouldErrLike, "fslock: lock is held")
+			So(runExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("times out if shared lock isn't released", func() {
@@ -101,7 +108,7 @@ func TestExclusive(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunExclusive(createCommand([]string{"echo", "should_fail"}), env), ShouldErrLike, "fslock: lock is held")
+			So(runExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("respects timeout", func() {
@@ -120,7 +127,7 @@ func TestExclusive(t *testing.T) {
 			}()
 
 			start := time.Now()
-			RunExclusive(createCommand([]string{"echo", "should_succeed"}), env)
+			runExclusive(env, fnThatReturns(nil))
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
@@ -128,6 +135,6 @@ func TestExclusive(t *testing.T) {
 	})
 
 	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
-		So(RunExclusive(createCommand([]string{"echo", "should_succeed"}), subcommands.Env{}), ShouldBeNil)
+		So(runExclusive(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }

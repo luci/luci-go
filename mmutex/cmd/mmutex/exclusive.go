@@ -39,7 +39,7 @@ type cmdExclusiveRun struct {
 }
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunExclusive(args, env); err != nil {
+	if err := RunExclusive(env, args); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return lib.GetExitCode(exitErr)
 		}
@@ -52,19 +52,26 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 	}
 }
 
-func RunExclusive(command []string, env subcommands.Env) error {
+func RunExclusive(env subcommands.Env, command []string) error {
+	return runExclusive(env, func() error {
+		return runCommand(command)
+	})
+}
+
+// Implementation of RunExclusive that allows for testing without real command execution.
+func runExclusive(env subcommands.Env, command func() error) error {
 	lockFilePath, err := computeLockFilePath(env)
 	if err != nil {
 		return err
 	}
 
 	if len(lockFilePath) == 0 {
-		return runCommand(command)
+		return command()
 	}
 
 	// TODO(charliea): Replace fslockTimeout a Context.
 	blocker := lib.CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
-		return runCommand(command)
+		return command()
 	})
 }
