@@ -60,7 +60,7 @@ type BuilderSummary struct {
 
 	// Consoles lists consoles of which this builder is part.
 	// Elements of this list should be of the form
-	// <common.Console.GetProjectName()>/<common.Console.ID>.
+	// <common.Console.GetProjectID()>/<common.Console.ID>.
 	Consoles []string // indexed on this
 
 	// InProgress tracks builds that are currently still in progress.
