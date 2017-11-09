@@ -202,6 +202,9 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 		BuildID:   fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 	}
 
+	v, _ := b.PropertyValue("$recipe_engine/runtime").(map[string]interface{})
+	bs.Experimental, _ = v["is_experimental"].(bool)
+
 	bs.ContextURI = []string{
 		fmt.Sprintf("buildbot://%s/build/%s/%d", b.Master, b.Buildername, b.Number),
 		fmt.Sprintf("buildbot://%s/bot/%s", b.Master, b.Slave),
