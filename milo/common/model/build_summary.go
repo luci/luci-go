@@ -143,6 +143,14 @@ type BuildSummary struct {
 	//     messages.
 	Version int64
 
+	// Experimental indicates that even though this build belongs to the indicated
+	// Builder, it's considered experimental (e.g. "not in production"). The meaning
+	// of this varies by builder, but generally it indicates that this build did
+	// not write to production services and/or was not running the production
+	// version of this Builder's job definition (e.g. a modified not-committed
+	// recipe).
+	Experimental bool
+
 	// Ignore all extra fields when reading/writing
 	_ datastore.PropertyMap `gae:"-,extra"`
 }

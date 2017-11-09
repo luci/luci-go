@@ -71,6 +71,14 @@ func PubSubHandler(ctx *router.Context) {
 	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
+// TODO(iannucci,nodir) - Remove the need for this by exposing this boolean as
+// an explicit part of the buildbucket API.
+type recipeProperties struct {
+	Runtime struct {
+		IsExperimental bool `json:"is_experimental"`
+	} `json:"$recipe_engine/runtime"`
+}
+
 // generateSummary takes a decoded buildbucket event and generates
 // a model.BuildSummary from it.
 //
@@ -103,6 +111,8 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		},
 
 		Version: build.UpdateTime.UnixNano(),
+
+		Experimental: build.Input.Properties.(*recipeProperties).Runtime.IsExperimental,
 	}
 
 	if shost, sid := build.Tags.Get("swarming_hostname"), build.Tags.Get("swarming_task_id"); shost != "" && sid != "" {
@@ -147,6 +157,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	}
 
 	build := buildbucket.Build{}
+	build.Input.Properties = &recipeProperties{}
 	if err := build.ParseMessage(&event.Build); err != nil {
 		return errors.Annotate(err, "could not parse buildbucket.Build").Err()
 	}
