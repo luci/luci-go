@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a45f1f64_fe0536dc",
+        "filename": "milo/buildsource/buildbot/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "since you are modifying this code...\n\nwouldn\u0027t it be less code to use So here?",
+      "range": {
+        "startLine": 72,
+        "startChar": 4,
+        "endLine": 74,
+        "endChar": 5
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad130c11_a73d5403",
+        "filename": "milo/buildsource/buildbot/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "filepath, in case someone develops on Windows :)",
+      "range": {
+        "startLine": 80,
+        "startChar": 13,
+        "endLine": 80,
+        "endChar": 17
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "384119e9_3986eb1b",
+        "filename": "milo/buildsource/buildbot/builder_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "since you are modifying this code...\n\nthis convey is the only one in the top-level one. Strictly speaking, the top-level convey also defines test env. I think this convey can be inlined. We would have less indentation below",
+      "range": {
+        "startLine": 40,
+        "startChar": 2,
+        "endLine": 40,
+        "endChar": 39
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe502f60_5a3659ea",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "it does not return projects\n\"returns consoles with the builder name from all projects\"",
+      "range": {
+        "startLine": 411,
+        "startChar": 19,
+        "endLine": 411,
+        "endChar": 49
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a439fd85_566024d0",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "this kinda worries me. If the version is what we expect, isn\u0027t this an actual error that we shouldn\u0027t ignore?",
+      "range": {
+        "startLine": 166,
+        "startChar": 3,
+        "endLine": 166,
+        "endChar": 11
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa37e4ce_9d7ab00e",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "we may want to move this logic to a place closer to manifesty things, or at least extract to a separate function",
+      "range": {
+        "startLine": 155,
+        "startChar": 2,
+        "endLine": 167,
+        "endChar": 3
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21148d39_bc33547c",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "consider inverting the condition and indenting the rest of the code",
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9476ffcb_66e711f5",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "inconsistent format string and args",
+      "range": {
+        "startLine": 229,
+        "startChar": 20,
+        "endLine": 229,
+        "endChar": 101
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cd9e37c_43298a3a",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:05:23Z",
+      "side": 1,
+      "message": "this should have been called ID. Project name means something different",
+      "range": {
+        "startLine": 241,
+        "startChar": 37,
+        "endLine": 241,
+        "endChar": 41
+      },
+      "revId": "b47bd0c12a4ce63693b074364b9815bba94546f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
