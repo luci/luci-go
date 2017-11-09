@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"sort"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/cmpbin"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	milo "go.chromium.org/luci/milo/api/proto"
@@ -47,6 +49,8 @@ import (
 //
 // The list of interested consoles is compiled at build summarization time.
 type ManifestKey []byte
+
+const currentManifestKeyVersion = 0
 
 // BuildSummary is a datastore model which is used for storing staandardized
 // summarized build data, and is used for backend-agnostic views (i.e. builders,
@@ -139,15 +143,33 @@ type BuildSummary struct {
 	//     messages.
 	Version int64
 
-	// consoles holds the console definitions returned by GetAllConsoles. It is
-	// populated by AddManifestKeysFromBuildSet, isn't written to the datastore,
-	// and is used to update the BuilderSummary's list of console strings.
-	// NB: this data may be stale in case of errors, but since it gets frequently
-	// refreshed, this should be not a problem.
-	consoles []*common.Console
-
 	// Ignore all extra fields when reading/writing
 	_ datastore.PropertyMap `gae:"-,extra"`
+}
+
+// GetConsoleNames extracts the "<project>/<console>" names from the
+// BuildSummary's current ManifestKeys.
+func (bs *BuildSummary) GetConsoleNames() []string {
+	ret := stringset.New(0)
+	for _, mk := range bs.ManifestKeys {
+		r := bytes.NewReader(mk)
+		vers, _, err := cmpbin.ReadUint(r)
+		if err != nil || vers != currentManifestKeyVersion {
+			continue
+		}
+		proj, _, err := cmpbin.ReadString(r)
+		if err != nil {
+			continue
+		}
+		console, _, err := cmpbin.ReadString(r)
+		if err != nil {
+			continue
+		}
+		ret.Add(fmt.Sprintf("%s/%s", proj, console))
+	}
+	retSlice := ret.ToSlice()
+	sort.Strings(retSlice)
+	return retSlice
 }
 
 // AddManifestKey adds a new entry to ManifestKey.
@@ -178,7 +200,7 @@ func (p PartialManifestKey) AddRevision(revision []byte) ManifestKey {
 // the given parameters.
 func NewPartialManifestKey(project, console, manifest, repoURL string) PartialManifestKey {
 	var buf bytes.Buffer
-	cmpbin.WriteUint(&buf, 0) // version
+	cmpbin.WriteUint(&buf, currentManifestKeyVersion) // version
 	cmpbin.WriteString(&buf, project)
 	cmpbin.WriteString(&buf, console)
 	cmpbin.WriteString(&buf, manifest)
@@ -186,39 +208,41 @@ func NewPartialManifestKey(project, console, manifest, repoURL string) PartialMa
 	return PartialManifestKey(buf.Bytes())
 }
 
-// AddManifestKeysFromBuildSet takes a buildbucket.BuildSet, and then
-// potentially adds one or more ManifestKey's to the BuildSummary for it.
+// AddManifestKeysFromBuildSets potentially adds one or more ManifestKey's to
+// the BuildSummary for any defined BuildSets..
 //
-// This assumes that bs.BuilderID has already been populated. Otherwise this
-// will return an error.
-func (bs *BuildSummary) AddManifestKeysFromBuildSet(c context.Context, bset buildbucket.BuildSet) error {
+// This assumes that bs.BuilderID and bs.BuildSet have already been populated.
+// If BuilderID is not populated, this will return an error.
+func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 	if bs.BuilderID == "" {
 		return errors.New("BuilderID is empty")
 	}
 
-	if commit, ok := bset.(*buildbucket.GitilesCommit); ok {
-		revision, err := hex.DecodeString(commit.Revision)
-		switch {
-		case err != nil:
-			logging.WithError(err).Warningf(c, "failed to decode revision: %v", commit.Revision)
+	for _, bsetRaw := range bs.BuildSet {
+		if commit, ok := buildbucket.ParseBuildSet(bsetRaw).(*buildbucket.GitilesCommit); ok {
+			revision, err := hex.DecodeString(commit.Revision)
+			switch {
+			case err != nil:
+				logging.WithError(err).Warningf(c, "failed to decode revision: %v", commit.Revision)
 
-		case len(revision) != sha1.Size:
-			logging.Warningf(c, "wrong revision size %d v %d: %v", len(revision), sha1.Size, commit.Revision)
+			case len(revision) != sha1.Size:
+				logging.Warningf(c, "wrong revision size %d v %d: %v", len(revision), sha1.Size, commit.Revision)
 
-		default:
-			consoles, err := common.GetAllConsoles(c, bs.BuilderID)
-			if err != nil {
-				return errors.Annotate(err, "getting consoles for %q", bs.BuilderID).Err()
-			}
-			bs.consoles = consoles
-			// HACK(iannucci): Until we have real manifest support, console definitions
-			// will specify their manifest as "REVISION", and we'll do lookups with null
-			// URL fields.
-			for _, con := range consoles {
-				bs.AddManifestKey(con.GetProjectName(), con.ID, "REVISION", "", revision)
+			default:
+				consoles, err := common.GetAllConsoles(c, bs.BuilderID)
+				if err != nil {
+					return err
+				}
 
-				bs.AddManifestKey(con.GetProjectName(), con.ID, "BUILD_SET/GitilesCommit",
-					commit.RepoURL(), revision)
+				// HACK(iannucci): Until we have real manifest support, console definitions
+				// will specify their manifest as "REVISION", and we'll do lookups with null
+				// URL fields.
+				for _, con := range consoles {
+					bs.AddManifestKey(con.GetProjectName(), con.ID, "REVISION", "", revision)
+
+					bs.AddManifestKey(con.GetProjectName(), con.ID, "BUILD_SET/GitilesCommit",
+						commit.RepoURL(), revision)
+				}
 			}
 		}
 	}

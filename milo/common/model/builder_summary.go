@@ -124,10 +124,7 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 	}
 
 	// Update console strings list.
-	b.Consoles = make([]string, 0, len(build.consoles))
-	for _, con := range build.consoles {
-		b.Consoles = append(b.Consoles, fmt.Sprintf("%s/%s", con.GetProjectName(), con.ID))
-	}
+	b.Consoles = build.GetConsoleNames()
 
 	// Update builder's InProgress with given build.
 	// The only kind of error we /should/ get is if a terminal build message arrives before any
