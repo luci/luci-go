@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c1f65c22_4c84e777",
+        "filename": "appengine/gaemiddleware/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:59:00Z",
+      "side": 1,
+      "message": "i think it would be less error-prone if init itself did e.once.Do(func() {...})",
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3efe69c_ed971f1f",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:59:00Z",
+      "side": 1,
+      "message": "does not make sense to me\nthere is only one usage and there is only one constant key",
+      "range": {
+        "startLine": 39,
+        "startChar": 45,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6327a2b2_7385cc96",
+        "filename": "server/auth/signing/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:59:00Z",
+      "side": 1,
+      "message": "all these magical numbers would be more readable if proc cache variables had name that hints the usage. E.g. \"this cache is used for foo. We are ok storing up to 512 foos\"\n\nin this particular case, I\u0027d prefer two proc cache variables, for service infos and certs. Then we don\u0027t need cache key types",
+      "range": {
+        "startLine": 21,
+        "startChar": 4,
+        "endLine": 21,
+        "endChar": 13
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21c2ce2d_111781c7",
+        "filename": "server/caching/process.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:59:00Z",
+      "side": 1,
+      "message": "i read this as \"if i want to use WithProcessCache, i must call NewProcessCacheData(), *save it to a global variable*, and then call WithProcessCacheData()\". WithEmptyProcessCache does not do that.",
+      "range": {
+        "startLine": 108,
+        "startChar": 26,
+        "endLine": 108,
+        "endChar": 63
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17573a8e_ef82b79d",
+        "filename": "tokenserver/appengine/impl/certchecker/certchecker.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:59:00Z",
+      "side": 1,
+      "message": "certCheckerCache, etc",
+      "range": {
+        "startLine": 39,
+        "startChar": 4,
+        "endLine": 39,
+        "endChar": 13
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
