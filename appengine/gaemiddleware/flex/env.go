@@ -19,6 +19,7 @@ package flex
 import (
 	"net/http"
 
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/mutexpool"
@@ -65,7 +66,7 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: authClient.GetAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
-		Cache:               &auth.MemoryCache{LRU: gaemiddleware.ProcessCache},
+		Cache:               &auth.MemoryCache{LRU: lru.New(65535)},
 		Locks:               &mutexpool.P{},
 		IsDevMode:           !metadata.OnGCE(),
 	}
@@ -80,7 +81,7 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		// Context to use for initialization.
 		c := context.Background()
 		globalFlex = &cloud.Flex{
-			Cache: gaemiddleware.ProcessCache,
+			Cache: lru.New(65535),
 		}
 		var err error
 		if globalFlexConfig, err = globalFlex.Configure(c); err != nil {

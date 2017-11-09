@@ -142,7 +142,7 @@ func LoadCAUniqueIDToCNMap(c context.Context) (map[int64]string, error) {
 // It uses cached CAUniqueIDToCNMap for lookups. Returns empty string if there's
 // no such CA.
 func GetCAByUniqueID(c context.Context, id int64) (string, error) {
-	mapper, err := caching.ProcessCache(c).GetOrCreate(c, mapperCacheKey(0), func() (interface{}, time.Duration, error) {
+	mapper, err := mapperCache.LRU(c).GetOrCreate(c, 0, func() (interface{}, time.Duration, error) {
 		return makeIDToCNmapper(), 0, nil
 	})
 	if err != nil {
@@ -151,7 +151,7 @@ func GetCAByUniqueID(c context.Context, id int64) (string, error) {
 	return mapper.(*idToCNmapper).getCAByUniqueID(c, id)
 }
 
-type mapperCacheKey int
+var mapperCache = caching.RegisterProcessCache(1)
 
 // idToCNmapper is stored in process cache, it does "unique ID -> CN name"
 // mapping.
