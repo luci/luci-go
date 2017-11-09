@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c23535cf_efe15b23",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-09T19:22:29Z",
+      "side": 1,
+      "message": "put func last, inline callback",
+      "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c54e2ba0_1d2ddf61",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-09T19:22:29Z",
+      "side": 1,
+      "message": "var cbGen(err error) func()error {\n  return func() error {\n    return err\n  }\n} \n\nthen you can call it like:\n  cbGen(nil)\n  cbGen(errors.New(\"some error\"))\n\nto pass it to runExclusive",
+      "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c1cd965_20813add",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-09T19:22:29Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 85,
+        "startChar": 19,
+        "endLine": 85,
+        "endChar": 32
+      },
+      "revId": "31d0017abefe6d199459e68e158bd223673a09c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
