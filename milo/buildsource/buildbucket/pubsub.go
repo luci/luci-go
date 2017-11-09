@@ -111,13 +111,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 	// TODO(iannucci,nodir): get the bot context too
 
 	// TODO(iannucci,nodir): support manifests/got_revision
-	for _, bset := range build.BuildSets {
-		if err := ret.AddManifestKeysFromBuildSet(c, bset); err != nil {
-			return nil, errors.Annotate(err, "failed to add manifest keys for %q", bset).Err()
-		}
-	}
-
-	return ret, nil
+	return ret, ret.AddManifestKeysFromBuildSets(c)
 }
 
 // pubSubHandlerImpl takes the http.Request, expects to find
