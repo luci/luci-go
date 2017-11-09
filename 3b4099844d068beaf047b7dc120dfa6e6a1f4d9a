@@ -22,6 +22,46 @@
       "revId": "3b4099844d068beaf047b7dc120dfa6e6a1f4d9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4312d269_06f419ea",
+        "filename": "appengine/gaemiddleware/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T10:06:00Z",
+      "side": 1,
+      "message": "nit: initOnce\nso it is more clear what do we do once",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 5
+      },
+      "revId": "3b4099844d068beaf047b7dc120dfa6e6a1f4d9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7103b86_4f12f459",
+        "filename": "appengine/gaemiddleware/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T10:06:00Z",
+      "side": 1,
+      "message": "i think it would be less error-prone if init itself did e.once.Do(func() {...})",
+      "revId": "3b4099844d068beaf047b7dc120dfa6e6a1f4d9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
