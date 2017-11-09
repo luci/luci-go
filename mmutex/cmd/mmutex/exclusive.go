@@ -30,21 +30,16 @@ var cmdExclusive = &subcommands.Command{
 	UsageLine: "exclusive [options] -- <command>",
 	ShortDesc: "acquires an exclusive lock before running the command",
 	CommandRun: func() subcommands.CommandRun {
-		c := &cmdExclusiveRun{}
-		c.Flags.DurationVar(&c.fslockTimeout, "fslock-timeout", 2*time.Hour, "Lock acquisition timeout")
-		c.Flags.DurationVar(&c.fslockPollingInterval, "fslock-polling-interval", 5*time.Second, "Lock acquisition polling interval")
-		return c
+		return &cmdExclusiveRun{}
 	},
 }
 
 type cmdExclusiveRun struct {
 	subcommands.CommandRunBase
-	fslockTimeout         time.Duration
-	fslockPollingInterval time.Duration
 }
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunExclusive(args, env, c.fslockTimeout, c.fslockPollingInterval); err != nil {
+	if err := RunExclusive(args, env); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return lib.GetExitCode(exitErr)
 		}
@@ -57,7 +52,7 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 	}
 }
 
-func RunExclusive(command []string, env subcommands.Env, timeout time.Duration, pollingInterval time.Duration) error {
+func RunExclusive(command []string, env subcommands.Env) error {
 	lockFilePath, err := computeLockFilePath(env)
 	if err != nil {
 		return err
@@ -67,7 +62,8 @@ func RunExclusive(command []string, env subcommands.Env, timeout time.Duration, 
 		return runCommand(command)
 	}
 
-	blocker := lib.CreateBlockerUntil(time.Now().Add(timeout), pollingInterval)
+	// TODO(charliea): Replace fslockTimeout a Context.
+	blocker := lib.CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
 		return runCommand(command)
 	})

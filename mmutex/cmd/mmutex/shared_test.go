@@ -67,14 +67,14 @@ func TestShared(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunShared(command, env, 0, 0), ShouldBeNil)
+			So(RunShared(command, env), ShouldBeNil)
 
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("returns error from the command", func() {
-			So(RunShared([]string{"nonexistent_command"}, env, 0, 0), ShouldErrLike, "executable file not found")
+			So(RunShared([]string{"nonexistent_command"}, env), ShouldErrLike, "executable file not found")
 		})
 
 		Convey("times out if an exclusive lock isn't released", func() {
@@ -86,8 +86,14 @@ func TestShared(t *testing.T) {
 			}
 			defer handle.Unlock()
 
+			oldFslockTimeout := fslockTimeout
+			fslockTimeout = 5 * time.Millisecond
+			defer func() {
+				fslockTimeout = oldFslockTimeout
+			}()
+
 			start := time.Now()
-			So(RunShared([]string{"echo", "should_fail"}, env, 5*time.Millisecond, 0), ShouldErrLike, "fslock: lock is held")
+			So(RunShared([]string{"echo", "should_fail"}, env), ShouldErrLike, "fslock: lock is held")
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
@@ -100,7 +106,7 @@ func TestShared(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunShared(createCommand([]string{"echo", "should_succeed"}), env, 0, 0), ShouldBeNil)
+			So(RunShared(createCommand([]string{"echo", "should_succeed"}), env), ShouldBeNil)
 		})
 
 		// TODO(charliea): Add a test to ensure that RunShared() treats the presence of a drain file the
@@ -108,6 +114,6 @@ func TestShared(t *testing.T) {
 	})
 
 	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
-		So(RunShared(createCommand([]string{"echo", "should_succeed"}), subcommands.Env{}, 0, 0), ShouldBeNil)
+		So(RunShared(createCommand([]string{"echo", "should_succeed"}), subcommands.Env{}), ShouldBeNil)
 	})
 }
