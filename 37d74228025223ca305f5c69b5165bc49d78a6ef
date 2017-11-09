@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85cb07bc_8b4ef113",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-09T04:16:22Z",
+      "side": 1,
+      "message": "let\u0027s keep buildbucket-specific hacks in buildbucket package.\nplease move this to buildbucket.Buld.ParseMessage and leave a todo for me to switch to the buildMessage.experimental when it is implemented",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 1
+      },
+      "revId": "37d74228025223ca305f5c69b5165bc49d78a6ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
