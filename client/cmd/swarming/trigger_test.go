@@ -178,8 +178,8 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 	})
 }
 
-func TestTriggerParse_RawAndIsolateServer(t *testing.T) {
-	Convey(`Make sure that Parse handles raw-cmd and isolate-server arguments.`, t, func() {
+func TestTriggerParse_RawArgs(t *testing.T) {
+	Convey(`Make sure that Parse allows both -raw-cmd and -isolated`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
 
@@ -188,11 +188,10 @@ func TestTriggerParse_RawAndIsolateServer(t *testing.T) {
 			"-dimension", "os=Ubuntu",
 			"-isolated", "0123456789012345678901234567890123456789",
 			"-raw-cmd",
-			"-isolate-server", "http://localhost:10050",
 		})
 
-		err = c.Parse([]string{"args1"})
-		So(err, ShouldResemble, errors.New("can't use both -raw-cmd and -isolate-server"))
+		err = c.Parse([]string{"arg1", "arg2"})
+		So(err, ShouldBeNil)
 	})
 }
 
@@ -202,7 +201,6 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 		c.Init(auth.Options{})
 		c.commonFlags.serverURL = "http://localhost:9050"
 		c.isolateServer = "http://localhost:10050"
-		c.isolated = "1234567890123456789012345678901234567890"
 		c.rawCmd = true
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
@@ -228,33 +226,13 @@ func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 		So(result.Properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
 			Isolated:       "1234567890123456789012345678901234567890",
 			Isolatedserver: "http://localhost:10050",
-			Namespace:      "default-zip",
-		})
-	})
-}
-
-func TestProcessTriggerOptions_EatDashDash(t *testing.T) {
-	Convey(`Make sure that processing trigger options handles extra dash in arguments.`, t, func() {
-		c := triggerRun{}
-		c.Init(auth.Options{})
-		c.commonFlags.serverURL = "http://localhost:9050"
-		c.isolateServer = "http://localhost:10050"
-		c.isolated = "1234567890123456789012345678901234567890"
-
-		result, err := c.processTriggerOptions([]string{"--", "arg1", "arg2"}, nil)
-		So(err, ShouldBeNil)
-		So(result.Properties.Command, ShouldBeNil)
-		So(result.Properties.ExtraArgs, ShouldResemble, []string{"arg1", "arg2"})
-		So(result.Properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
-			Isolated:       "1234567890123456789012345678901234567890",
-			Isolatedserver: "http://localhost:10050",
-			Namespace:      "default-zip",
+			Namespace:      "default-gzip",
 		})
 	})
 }
 
 func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
-	Convey(`Make sure that processing trigger options handles cipd packagess.`, t, func() {
+	Convey(`Make sure that processing trigger options handles cipd packages.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
 		c.cipdPackage = map[string]string{
