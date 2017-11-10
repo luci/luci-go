@@ -243,7 +243,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Bui
 			case model.NotRun:
 				result.PendingBuilds = append(result.PendingBuilds, b)
 			case model.Running:
-				result.PendingBuilds = append(result.CurrentBuilds, b)
+				result.CurrentBuilds = append(result.CurrentBuilds, b)
 			default:
 				result.FinishedBuilds = append(result.FinishedBuilds, b)
 			}
