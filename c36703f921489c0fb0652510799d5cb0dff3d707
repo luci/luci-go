@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1c78c92c_8e15d50d",
+        "filename": "machine-db/appengine/database/setup/dbs.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-10T22:17:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22d0036e_13db73ed",
+      "range": {
+        "startLine": 5,
+        "startChar": 1,
+        "endLine": 6,
+        "endChar": 19
+      },
+      "revId": "c36703f921489c0fb0652510799d5cb0dff3d707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3004e6e4_bfd6250f",
         "filename": "machine-db/appengine/database/setup/dbs.yaml",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-11-10T20:05:42Z",
       "side": 1,
       "message": "It is irrelevant, the main authorization layer is Cloud SQL Proxy that depends on \"gcloud auth\" credentials.",
+      "range": {
+        "startLine": 8,
+        "startChar": 60,
+        "endLine": 8,
+        "endChar": 77
+      },
+      "revId": "c36703f921489c0fb0652510799d5cb0dff3d707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "afd7773a_973623ad",
+        "filename": "machine-db/appengine/database/setup/dbs.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-10T22:17:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3004e6e4_bfd6250f",
       "range": {
         "startLine": 8,
         "startChar": 60,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "57bce4f1_4b480499",
+        "filename": "machine-db/appengine/database/setup/migrations/001_initialize_datacenters.down.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-10T22:17:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dbbf465e_946cf868",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 20
+      },
+      "revId": "c36703f921489c0fb0652510799d5cb0dff3d707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "100dbac7_b77c96b1",
         "filename": "machine-db/appengine/database/setup/migrations/001_initialize_datacenters.up.sql",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "c36703f921489c0fb0652510799d5cb0dff3d707",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f4fac1b_20214e17",
+        "filename": "machine-db/appengine/database/setup/migrations/001_initialize_datacenters.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-10T22:17:34Z",
+      "side": 1,
+      "message": "Did you see the comment on lines 15-16? Anyways, done, I don\u0027t really care either way (and removed reference to foreign key constraints from the comment above).",
+      "parentUuid": "100dbac7_b77c96b1",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "c36703f921489c0fb0652510799d5cb0dff3d707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
