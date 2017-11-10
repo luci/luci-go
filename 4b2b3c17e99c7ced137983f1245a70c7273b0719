@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d18b80bf_dd4938c6",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T23:10:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b651242_305f9522",
+      "range": {
+        "startLine": 100,
+        "startChar": 28,
+        "endLine": 104,
+        "endChar": 27
+      },
+      "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e39b211_87b321f4",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "bbbe3d4d_2a12c72f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T23:10:56Z",
+      "side": 1,
+      "message": "Logging so can\u0027t do that now.",
+      "parentUuid": "2e39b211_87b321f4",
+      "range": {
+        "startLine": 269,
+        "startChar": 3,
+        "endLine": 269,
+        "endChar": 45
+      },
+      "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b55c2c64_05ebc846",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 5
@@ -62,6 +110,24 @@
       "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d4ed555_b08a5f3e",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T23:10:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b55c2c64_05ebc846",
+      "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
