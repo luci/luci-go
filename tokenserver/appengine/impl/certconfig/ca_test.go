@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -75,7 +74,7 @@ func TestCAUniqueIDToCNMapLoadStore(t *testing.T) {
 func TestGetCAByUniqueID(t *testing.T) {
 	Convey("GetCAByUniqueID works", t, func() {
 		ctx := gaetesting.TestingContext()
-		ctx = caching.WithProcessCache(ctx, lru.New(0))
+		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx, clk := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
 		// Empty now.
