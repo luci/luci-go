@@ -157,21 +157,10 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 				Reason: NoSuchCA,
 			}
 		}
-		checker := &CertChecker{
+		return &CertChecker{
 			CN:  cn,
 			CRL: certconfig.NewCRLChecker(cn, certconfig.CRLShardCount, refetchCRLPeriod(c)),
-		}
-		checker.ca.Fetcher = func(c context.Context, _ lazyslot.Value) (lazyslot.Value, error) {
-			ca, err := checker.refetchCA(c)
-			if err != nil {
-				return lazyslot.Value{}, err
-			}
-			return lazyslot.Value{
-				Value:      ca,
-				Expiration: clock.Now(c).Add(refetchCAPeriod(c)),
-			}, nil
-		}
-		return checker, 0, nil
+		}, 0, nil
 	})
 	if err != nil {
 		return nil, err
@@ -181,12 +170,17 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 
 // GetCA returns CA entity with ParsedConfig and ParsedCert fields set.
 func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
-	value, err := ch.ca.Get(c)
+	value, err := ch.ca.Get(c, func(c context.Context, prev interface{}) (ca interface{}, exp time.Duration, err error) {
+		ca, err = ch.refetchCA(c)
+		if err == nil {
+			exp = refetchCAPeriod(c)
+		}
+		return
+	})
 	if err != nil {
 		return nil, err
 	}
-	// See Fetcher in GetCertChecker, it puts *certconfig.CA in the ch.ca slot.
-	ca := value.Value.(*certconfig.CA)
+	ca := value.(*certconfig.CA)
 	// Empty 'ca' means 'refetchCA' could not find it in the datastore. May happen
 	// if CA entity was deleted after GetCertChecker call. It could have been also
 	// "soft-deleted" by setting Removed == true.
