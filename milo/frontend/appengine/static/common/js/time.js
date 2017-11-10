@@ -24,11 +24,11 @@
       return null;
     }
     var hover = mt.fromNow();
-    hover += "\n" + moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD LT [(MTV)]");
-    hover += "\n" + moment.tz(mt, "UTC").format("YYYY-MM-DD LT [(UTC)]");
+    hover += "\n" + moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD HH:mm [(MTV)]");
+    hover += "\n" + moment.tz(mt, "UTC").format("YYYY-MM-DD HH:mm [(UTC)]");
 
     return {
-      main: mt.format("YYYY-MM-DD LT (z)"),
+      main: mt.format("YYYY-MM-DD HH:mm (z)"),
       hover: hover
     }
   };
@@ -43,7 +43,7 @@
     if (!st.isValid()) {
       return null;
     }
-    var hover = st.format("[Started: ] YYYY-MM-DD LT (z)")
+    var hover = st.format("[Started: ] YYYY-MM-DD HH:mm (z)")
     hover += "\nEnded: "
     if (end == null) {
       hover += "N/A";
@@ -52,7 +52,7 @@
       if (!et.isValid()) {
         return null
       }
-      hover += et.format("YYYY-MM-DD LT (z)");
+      hover += et.format("YYYY-MM-DD HH:mm (z)");
     }
     return hover;
   };
