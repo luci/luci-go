@@ -23,7 +23,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,7 +41,7 @@ I69yAHZUpJ9lzcwmHcaCJ76m/jDINZrYoL/4aSlDEGgHmw==
 
 func TestFetchCertificates(t *testing.T) {
 	Convey("Works", t, func() {
-		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+		ctx := caching.WithEmptyProcessCache(context.Background())
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(fmt.Sprintf(`{
@@ -61,7 +60,7 @@ func TestFetchCertificates(t *testing.T) {
 	})
 
 	Convey("Errors", t, func() {
-		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+		ctx := caching.WithEmptyProcessCache(context.Background())
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "fail", 401)
@@ -71,7 +70,7 @@ func TestFetchCertificates(t *testing.T) {
 	})
 
 	Convey("Bad JSON", t, func() {
-		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+		ctx := caching.WithEmptyProcessCache(context.Background())
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(fmt.Sprintf(`{
@@ -100,7 +99,7 @@ func TestFetchCertificatesForServiceAccount(t *testing.T) {
 			}`))
 		}))
 
-		c := caching.WithProcessCache(context.Background(), lru.New(0))
+		c := caching.WithEmptyProcessCache(context.Background())
 		c = context.WithValue(c, robotCertURLKey(0), ts.URL+"/")
 		certs, err := FetchCertificatesForServiceAccount(c, "robot@robots.gserviceaccount.com")
 		So(err, ShouldBeNil)

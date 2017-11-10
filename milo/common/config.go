@@ -201,12 +201,14 @@ func GetSettings(c context.Context) *config.Settings {
 	return &settings
 }
 
+var serviceCfgCache = caching.RegisterCacheSlot()
+
 // GetCurrentServiceConfig gets the service config for the instance from either
 // process cache or datastore cache.
 func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	// This maker function is used to do the actual fetch of the ServiceConfig
 	// from datastore.  It is called if the ServiceConfig is not in proc cache.
-	item, err := caching.ProcessCache(c).GetOrCreate(c, ServiceConfigID, func() (interface{}, time.Duration, error) {
+	item, err := serviceCfgCache.Fetch(c, func(interface{}) (interface{}, time.Duration, error) {
 		msg := ServiceConfig{ID: ServiceConfigID}
 		err := datastore.Get(c, &msg)
 		if err != nil {
