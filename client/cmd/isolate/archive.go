@@ -47,6 +47,8 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.isolateFlags.Init(&c.Flags)
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.BoolVar(&c.expArchive, "exparchive", false, "Whether to use the new exparchive implementation, which tars small files before uploading them.")
+			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
+				"Write isolated digests of archived trees to this file as JSON")
 			return &c
 		},
 	}
@@ -57,6 +59,7 @@ type archiveRun struct {
 	isolateFlags
 	loggingFlags loggingFlags
 	expArchive   bool
+	dumpJSON     string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -93,10 +96,10 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 
 	if c.expArchive {
 		al.operation = logpb.IsolateClientEvent_ARCHIVE.Enum()
-		return doExpArchive(ctx, client, &c.ArchiveOptions, "", al)
+		return doExpArchive(ctx, client, &c.ArchiveOptions, c.dumpJSON, al)
 	}
 	al.operation = logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
-	return doArchive(ctx, client, &c.ArchiveOptions, al)
+	return doArchive(ctx, client, &c.ArchiveOptions, c.dumpJSON, al)
 }
 
 // archiveLogger reports stats to eventlog and stderr.
@@ -147,7 +150,7 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 }
 
 // doArchive performs the archive operation for an isolate specified by archiveOpts.
-func doArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, al archiveLogger) error {
+func doArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, al archiveLogger) error {
 	arch := archiver.New(ctx, client, os.Stdout)
 	CancelOnCtrlC(arch)
 	item := isolate.Archive(arch, archiveOpts)
@@ -156,7 +159,16 @@ func doArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *
 	if err = item.Error(); err != nil {
 		al.Printf("%s  %s\n", filepath.Base(archiveOpts.Isolate), err)
 	} else {
-		al.Printf("%s  %s\n", item.Digest(), filepath.Base(archiveOpts.Isolate))
+		filename := filepath.Base(archiveOpts.Isolate)
+		name := filename[:len(filename)-len(filepath.Ext(filename))]
+		summary := IsolatedSummary{
+			Name:   name,
+			Digest: item.Digest(),
+		}
+		printSummary(al, summary)
+		if err := dumpSummaryJSON(dumpJSON, summary); err != nil {
+			al.Printf("failed to dump json: %v", err)
+		}
 	}
 	if err2 := arch.Close(); err == nil {
 		err = err2
