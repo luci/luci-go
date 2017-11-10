@@ -373,6 +373,17 @@ func (c consoleRenderer) ConsoleTable() template.HTML {
 	return template.HTML(buffer.String())
 }
 
+// ConsoleSummary generates the html for the console's builders in the console list.
+//
+// It is similar to ConsoleTable, but flattens the structure.
+func (c consoleRenderer) ConsoleSummary() template.HTML {
+	var buffer bytes.Buffer
+	for _, column := range c.Table.Children {
+		column.RenderHTML(&buffer, 1, -1)
+	}
+	return template.HTML(buffer.String())
+}
+
 func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*ui.Link, error) {
 	_, _, builderName, err := buildsource.BuilderID(bs.BuilderID).Split()
 	if err != nil {

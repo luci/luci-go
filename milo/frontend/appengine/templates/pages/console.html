@@ -88,17 +88,17 @@
     {{ end }}
       <div class="console-header-summaries">
       {{ range .Consoles }}
-        <div class="console-header-summary">
+        <div class="console-builder-summary">
           <div class="console-header-name">
             {{ .Name.HTML }}
           </div>
           {{ $console_name := .Name.Link.Label }}
           {{ range .Builders }}
-            <a class="console-header-builder-status"
+            <a class="console-builder-status"
                href="/{{ .LastFinishedBuildID }}"
                title="{{ .LastFinishedBuildID }}"
                aria-label="builder {{ .BuilderID }} on console {{ $console_name }} has last status {{ .LastFinishedStatus }}">
-              <div class="console-header-build status-{{ .LastFinishedStatus }}"></div>
+              <div class="console-header-builder status-{{ .LastFinishedStatus }}"></div>
             </a>
           {{ end }}
         </div>

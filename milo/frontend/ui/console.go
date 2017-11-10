@@ -217,7 +217,30 @@ const (
 )
 
 // RenderHTML renders a BuilderRef as HTML with its builds in a column.
+// If maxDepth is negative, render the HTML as flat rather than nested.
 func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
+	// If render the HTML as flat rather than nested, we don't need to recurse at all and should just
+	// return after rendering the BuilderSummary.
+	if maxDepth < 0 {
+		if br.Builder != nil {
+			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="/%s" title="%s">`,
+				template.HTMLEscapeString(br.Builder.LastFinishedBuildID),
+				template.HTMLEscapeString(br.Builder.LastFinishedBuildID),
+			))
+			must(fmt.Fprintf(buffer, `<div class="console-list-builder status-%s"></div>`,
+				template.HTMLEscapeString(br.Builder.LastFinishedStatus.String()),
+			))
+		} else {
+			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="/%s" title="%s">`,
+				template.HTMLEscapeString(br.Name),
+				template.HTMLEscapeString(br.Name),
+			))
+			must(buffer.WriteString(`<div class="console-list-builder"></div>`))
+		}
+		must(buffer.WriteString(`</a>`))
+		return
+	}
+
 	must(buffer.WriteString(`<div class="console-builder-column" style="flex-grow: 1">`))
 	// Add spaces if we haven't hit maximum depth to keep the grid consistent.
 	for i := 0; i < (maxDepth - depth); i++ {
@@ -354,14 +377,27 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 }
 
 // RenderHTML renders the Category struct and its children as HTML into a buffer.
+// If maxDepth is negative, skip the labels to render the HTML as flat rather than nested.
 func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
-	must(buffer.WriteString(`<div class="console-column">`))
-	must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>
-				  <div class="console-top-row">`,
-		template.HTMLEscapeString(c.Name),
-	))
+	if maxDepth > 0 {
+		must(buffer.WriteString(`<div class="console-column">`))
+		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>
+						<div class="console-top-row">`,
+			template.HTMLEscapeString(c.Name),
+		))
+	} else if depth <= 1 {
+		must(buffer.WriteString(`<div class="console-builder-summary">`))
+	}
+
 	for _, child := range c.Children {
 		child.RenderHTML(buffer, depth+1, maxDepth)
 	}
-	must(buffer.WriteString(`</div></div>`))
+
+	if maxDepth > 0 {
+		must(buffer.WriteString(`</div></div>`))
+	} else {
+		if depth <= 1 {
+			must(buffer.WriteString(`</div>`))
+		}
+	}
 }
