@@ -44,6 +44,20 @@
   min-height: 2.5em;
 }
 
+/* Tree Status */
+
+.tree-status {
+	margin-bottom: 1em;
+	padding: 0.5em;
+	font-weight: normal;
+	font-size: 16px;
+	font-family: Verdana, Cursor;
+	text-align: center;
+	border-top-right-radius: 24px;
+	border-top-left-radius: 24px;
+	box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+}
+
 /* Header */
 
 .console-header {
@@ -52,6 +66,8 @@
   border-radius: 0.5em;
   border: 1px solid silver;
   margin-bottom: 2em;
+  background-color: rgb(239, 239, 239);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);
 }
 
 .console-header-column-lists {
