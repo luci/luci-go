@@ -28,6 +28,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -260,27 +261,79 @@ func consolePreview(c context.Context, project string, def *common.Console) (*ui
 	}, nil
 }
 
-func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
-	result := ui.Oncall{Name: name}
+// getJsonData fetches data from the given URL into the target, caching it
+// for expiration seconds in memcache.
+func getJsonData(c context.Context, url string, expiration int, target interface{}) error {
+	key := "url:" + url
+	// Try memcache first.
+	item, err := memcache.GetKey(c, key)
+	if err == nil {
+		err = json.Unmarshal(item.Value(), target)
+		if err == nil {
+			return nil
+		}
+	}
 
-	// Get JSON from URL.
+	// Fetch it from the app.
 	transport := urlfetch.Get(c)
 	response, err := (&http.Client{Transport: transport}).Get(url)
 	if err != nil {
-		return result, errors.Annotate(err, "failed to get data from %q", url).Err()
+		return errors.Annotate(err, "failed to get data from %q", url).Err()
 	}
 	defer response.Body.Close()
 
 	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return result, errors.Annotate(err, "failed to read response body from %q", url).Err()
+		return errors.Annotate(err, "failed to read response body from %q", url).Err()
 	}
 
 	// Parse JSON into resp.Oncall.
-	if err := json.Unmarshal(bytes, &result); err != nil {
-		return result, errors.Annotate(err, "failed to decode JSON %q from %q", string(bytes[:]), url).Err()
+	if err := json.Unmarshal(bytes, target); err != nil {
+		return errors.Annotate(
+			err, "failed to decode JSON %q from %q", string(bytes[:]), url).Err()
 	}
-	return result, nil
+
+	// Save data into memcache on a best-effort basis.
+	item = memcache.NewItem(c, key).
+		SetValue(bytes).
+		SetExpiration(time.Duration(expiration * 1000 * 1000))
+	err = memcache.Set(c, item)
+	if err != nil {
+		logging.WithError(err).Warningf(c, "could not save url data %s into memcache", url)
+	}
+	return nil
+}
+
+// getTreeStatus returns the current tree status from the chromium-status app.
+// This never errors, instead it constructs a fake purple TreeStatus
+func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
+	q := url.Values{}
+	q.Add("format", "json")
+	url := url.URL{
+		Scheme:   "https",
+		Host:     host,
+		Path:     "current",
+		RawQuery: q.Encode(),
+	}
+
+	status := &ui.TreeStatus{}
+	err := getJsonData(c, url.String(), 30, &status)
+	if err != nil {
+		// Generate a fake tree status.
+		status = &ui.TreeStatus{
+			GeneralState: "maintenance",
+			Message:      "could not load tree status: " + err.Error(),
+		}
+	}
+
+	return status
+}
+
+// getOncallData fetches oncall data and caches it for 10 minutes.
+func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
+	result := ui.Oncall{Name: name}
+	err := getJsonData(c, url, 600, &result)
+	return result, err
 }
 
 func consoleHeader(c context.Context, project string, def *common.Console) (*ui.ConsoleHeader, error) {
@@ -348,10 +401,16 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*ui.
 		consoleGroups[i].Consoles = summaries
 	}
 
+	var treeStatus *ui.TreeStatus
+	if def.Header.TreeStatusHost != "" {
+		treeStatus = getTreeStatus(c, def.Header.TreeStatusHost)
+	}
+
 	return &ui.ConsoleHeader{
 		Oncalls:       oncalls,
 		Links:         links,
 		ConsoleGroups: consoleGroups,
+		TreeStatus:    treeStatus,
 	}, nil
 }
 

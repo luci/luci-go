@@ -81,6 +81,27 @@ type ConsoleSummary struct {
 	Builders []*model.BuilderSummary
 }
 
+// TreeStatus represents the very top bar of the console, above the header.
+type TreeStatus struct {
+	// Username is the name of the user who changed the status last.
+	Username        string `json:"username"`
+	CanCommitFreely bool   `json:"can_commit_freely"`
+	// GeneralState is the general state of the tree, which also indicates
+	// the color of the tree.  Values are:
+	// * "maintenance" - Purple
+	// * "throttled"   - Yellow
+	// * "closed"      - Red
+	// * "open"        - Green
+	GeneralState string `json:"general_state"`
+	Key          int64  `json:"key"`
+	// Date is when the tree was last updated.
+	Date string `json:"date"`
+	// Message is a human readable description of the tree.
+	Message string `json:"message"`
+	// URL is a link to the status page.
+	URL *Link
+}
+
 // Oncall represents an oncall role with the current individuals in that role, represented
 // by their email addresses.
 type Oncall struct {
@@ -127,6 +148,9 @@ type ConsoleHeader struct {
 	// A console group without a title will have all of its console summaries
 	// appear "ungrouped" when rendered.
 	ConsoleGroups []ConsoleGroup
+
+	// TreeStatus indicates the status of the tree if it is not nil.
+	TreeStatus *TreeStatus
 }
 
 // ConsoleElement represents a single renderable console element.
