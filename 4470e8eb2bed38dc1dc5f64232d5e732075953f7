@@ -16,6 +16,24 @@
       "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb1dc0c0_d99fbc86",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-10T03:00:27Z",
+      "side": 1,
+      "message": "That\u0027s true, and a bunch of things in this file have confused me. \n\nAccording to the documentation, trigger shouldn\u0027t take any arguments aside from \u0027--\u0027 and everything after it. Everything is an option which is parsed earlier than processTriggerOptions. \n\nI can modify this code to, rather than ignore these arguments, to error if it sees them at the parse stage, and properly parse the command at that point.",
+      "parentUuid": "baf0a426_bfdb71ae",
+      "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
