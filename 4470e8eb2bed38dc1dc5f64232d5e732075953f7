@@ -70,6 +70,24 @@
       "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cd6250d_95b7c134",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-10T18:57:00Z",
+      "side": 1,
+      "message": "If you want to pass \u0026\u0026, you can use \u0027\u0026\u0026\u0027 or \\\u0026\\\u0026. But since the swarming bot is not using a shell to start the command, this is somewhat pointless _unless_ you also directly start bash -c as your command or something like that.\n\nI think the code was trying to imitate python, but that\u0027 unnecessary.",
+      "parentUuid": "f0aaf003_0f06b6d8",
+      "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
