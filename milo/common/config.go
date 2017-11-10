@@ -88,9 +88,9 @@ func (b *BuilderMeta) ParseCategory() []string {
 	return strings.Split(b.Category, "|")
 }
 
-// GetProjectName retrieves the project name of the console out of the Console's
+// GetProjectID retrieves the project ID of the console out of the Console's
 // parent key.
-func (con *Console) GetProjectName() string {
+func (con *Console) GetProjectID() string {
 	return con.Parent.StringID()
 }
 
