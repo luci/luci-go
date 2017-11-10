@@ -141,31 +141,8 @@ func New(storage Storage) *Settings {
 		storage: storage,
 		values: lazyslot.Slot{
 			Timeout: 15 * time.Second, // retry for 15 sec at most
-			Fetcher: func(c context.Context, _ lazyslot.Value) (result lazyslot.Value, err error) {
-				err = retry.Retry(c, transient.Only(retry.Default), func() error {
-					ctx, _ := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
-					result, err = attemptToFetchSettings(ctx, storage)
-					return err
-				}, nil)
-				if err != nil {
-					result = lazyslot.Value{}
-				}
-				return
-			},
 		},
 	}
-}
-
-// attemptToFetchSettings is called in a retry loop when loading settings.
-func attemptToFetchSettings(c context.Context, storage Storage) (lazyslot.Value, error) {
-	bundle, err := storage.FetchAllSettings(c)
-	if err != nil {
-		return lazyslot.Value{}, err
-	}
-	return lazyslot.Value{
-		Value:      bundle,
-		Expiration: bundle.Exp,
-	}, nil
 }
 
 // GetStorage returns underlying Storage instance.
@@ -179,11 +156,23 @@ func (s *Settings) GetStorage() Storage {
 // to pass correct type and pass same type to all calls. If the setting is not
 // set returns ErrNoSettings.
 func (s *Settings) Get(c context.Context, key string, value interface{}) error {
-	lazyValue, err := s.values.Get(c)
+	bundle, err := s.values.Get(c, func(c context.Context, prev interface{}) (interface{}, time.Duration, error) {
+		var bundle *Bundle
+		err := retry.Retry(c, transient.Only(retry.Default), func() (err error) {
+			c, done := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
+			defer done()
+			bundle, err = s.storage.FetchAllSettings(c)
+			return
+		}, nil)
+		if err != nil {
+			return nil, 0, err
+		}
+		return bundle, bundle.Exp.Sub(clock.Now(c)), nil
+	})
 	if err != nil {
 		return err
 	}
-	return lazyValue.Value.(*Bundle).get(key, value)
+	return bundle.(*Bundle).get(key, value)
 }
 
 // GetUncached is like Get, by always fetches settings from the storage.
