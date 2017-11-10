@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baf0a426_bfdb71ae",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-11-10T02:03:18Z",
+      "side": 1,
+      "message": "This code doesn\u0027t seem to be correct; it\u0027s effectively ignoring unknown arguments, e.g.\n\nswarming trigger foo -- bar\n\nwould have foo be silently ignored IIUC.",
+      "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
