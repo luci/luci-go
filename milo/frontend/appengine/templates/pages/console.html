@@ -26,6 +26,18 @@
 <!-- Header -->
 {{ if $console.Header }}
 {{ $header := $console.Header }}
+
+<!-- Tree Status -->
+{{ with $header.TreeStatus }}
+  <div class="tree-status tree-status-{{ .GeneralState }}">
+    <a title="Last updated at {{ .Date }} by {{ .Username }}"
+       href="{{ .URL }}"
+       aria-label="Tree status: {{ .Message }}.  Last updated at {{ .Date }} by {{ .Username }}">
+      {{ .Message }}
+    </a>
+  </div>
+{{ end }}
+
 <div class="console-header">
   <div class="console-header-column-lists">
 

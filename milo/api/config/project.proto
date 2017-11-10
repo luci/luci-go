@@ -95,10 +95,18 @@ message Header {
 
   // ConsoleGroups are groups of console summaries, each optionally named.
   repeated ConsoleSummaryGroup console_groups = 3;
+
+  // TreeStatusHost is the hostname of the chromium-status instance where
+  // the tree status of this console is hosted.  If provided, this will appear
+  // as the bar at the very top of the page.
+  string tree_status_host = 4;
+
 }
 
 // Console is a waterfall definition consisting of one or more builders.
 message Console {
+  reserved 8;
+
   // Id is the reference to the console, and will be the address to make the
   // console reachable from /console/<Project>/<ID>.
   string id = 1;
@@ -127,11 +135,6 @@ message Console {
   // This field is optional. The favicon URL must have a host of
   // storage.googleapis.com.
   string favicon_url = 7;
-
-  // TreeStatusHost is the hostname of the chromium-status instance where
-  // the tree status of this console is hosted.  If provided, this will appear
-  // as the bar at the very top of the page.
-  string tree_status_host = 8;
 
   // Header is a collection of links, rotation information, and console summaries
   // displayed under the tree status but above the main console content.
