@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "596f385a_e24fa3e5",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:31:02Z",
+      "side": 1,
+      "message": "why do we need a variable? .Emails is as short and as fast and one variable less\n\ndid you mean to make a variable for the number of emails?",
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49161488_b46f187a",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:31:02Z",
+      "side": 1,
+      "message": "does not use $emails",
+      "range": {
+        "startLine": 44,
+        "startChar": 28,
+        "endLine": 44,
+        "endChar": 35
+      },
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c30f389_028cadca",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:31:02Z",
+      "side": 1,
+      "message": "in an offline conversation, you explained that this is parsed from an external JSON. This was not obvious from reading this comment. Please mention that this struct corresponds to the oncall format and include a link where this format is defined",
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b8406a7_8b873a4c",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:31:02Z",
+      "side": 1,
+      "message": "emails.",
+      "range": {
+        "startLine": 93,
+        "startChar": 85,
+        "endLine": 93,
+        "endChar": 92
+      },
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
