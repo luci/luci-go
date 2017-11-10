@@ -2,6 +2,172 @@
   "comments": [
     {
       "key": {
+        "uuid": "f9e7d6c0_5b1d8b3f",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "unnecessary\n\n{{with pipeline}} T1 {{end}}\n\tIf the value of the pipeline is empty, no output is generated;\n\totherwise, dot is set to the value of the pipeline and T1 is\n\texecuted.\n\nfrom https://godoc.org/text/template",
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "780b345b_965679a6",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "unnecessary:\n\n{{pipeline}}\n\tThe default textual representation (the same as would be\n\tprinted by fmt.Print) of the value of the pipeline is copied\n\tto the output.",
+      "range": {
+        "startLine": 31,
+        "startChar": 20,
+        "endLine": 31,
+        "endChar": 27
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67a20343_ca03a246",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "should use ` | localTime \"\" ` like other pages",
+      "range": {
+        "startLine": 32,
+        "startChar": 65,
+        "endLine": 32,
+        "endChar": 76
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9602496_43a4b596",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "please express this using consts of a new type rather than comments",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 95,
+        "endChar": 27
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a704a492_2d6b7617",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "please document format",
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3fb2cb2_8713a49a",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "use time.Duration",
+      "range": {
+        "startLine": 266,
+        "startChar": 59,
+        "endLine": 266,
+        "endChar": 62
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b8ebd58_b0c5b143",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "nit: getJSONData\nbecause Go",
+      "range": {
+        "startLine": 266,
+        "startChar": 8,
+        "endLine": 266,
+        "endChar": 12
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "656c6e8b_14f69520",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "nit: consider combining two one line:\n\nif err \u003d json.Unmarshal(item.Value(), target); err \u003d\u003d nil {",
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "514f9a90_9360ddd9",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 4
@@ -18,6 +184,166 @@
         "startChar": 20,
         "endLine": 290,
         "endChar": 32
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ddd5265_58fef8d6",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "no need to copy entire body, %q understands []byte\njust bytes",
+      "range": {
+        "startLine": 293,
+        "startChar": 44,
+        "endLine": 293,
+        "endChar": 60
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "127e500b_4896498e",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "we did this before, kind of. Consider reusing item. I think it will result in less code overall\n\n  item :\u003d memcache.NewItem(c, \"url:\" + url)\n  if memcache.Get(item) \u003d\u003d nil { ...\n\nand here\n\n  memcache.SetValue(...)...",
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d60381ca_c7a9f16f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "nit: consider combining with pre line",
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3ad5933_491d8eec",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "we use %q in other places in this function. Let\u0027s be consistent",
+      "range": {
+        "startLine": 302,
+        "startChar": 63,
+        "endLine": 302,
+        "endChar": 64
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7b2a49f_08711316",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "this is a pointer of a pointer",
+      "range": {
+        "startLine": 320,
+        "startChar": 41,
+        "endLine": 320,
+        "endChar": 48
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d00180e_ce642a77",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "nit: consider combining",
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a24b2d8_6bebb53f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "i am not sure we should expose internal guts to users. I think this should be \"LUCI internal server error\" or something and we should log the error",
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ec27bd4_fdabb78d",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T19:24:17Z",
+      "side": 1,
+      "message": "why we are passing name if it is (presumably) going to be replaced with the one that is retrieved from the status app?",
+      "range": {
+        "startLine": 334,
+        "startChar": 20,
+        "endLine": 334,
+        "endChar": 31
       },
       "revId": "6846590f36967dc4f30f571b72ffa806600db096",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
