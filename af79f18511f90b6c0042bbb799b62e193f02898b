@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0a77fdbc_d356d77d",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-10T05:07:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cac54316_ddfb3ece",
+      "range": {
+        "startLine": 39,
+        "startChar": 23,
+        "endLine": 39,
+        "endChar": 28
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9445707c_c3e76a6f",
         "filename": "common/data/caching/lazyslot/lazyslot.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec0612da_3adfc03e",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-10T05:07:37Z",
+      "side": 1,
+      "message": "This was added mostly to simplify panic management. When fetcher panics, the defer sees both \u0027value\u0027 and \u0027err\u0027 being nil, and this is how it knows the fetcher paniced. If you insist I can add bool there too...",
+      "parentUuid": "9445707c_c3e76a6f",
+      "range": {
+        "startLine": 70,
+        "startChar": 10,
+        "endLine": 70,
+        "endChar": 61
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "447e3ae9_a5225f48",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-10T05:07:37Z",
+      "side": 1,
+      "message": "No, fetcher returns time.Duration so if I change exp to be time.Time, line 106 wont\u0027 work anymore. There\u0027ll be more lines of code overall.",
+      "parentUuid": "ffb1fea2_60138fdd",
+      "range": {
+        "startLine": 100,
+        "startChar": 14,
+        "endLine": 100,
+        "endChar": 22
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "420ea86d_7598ed52",
         "filename": "common/data/caching/lazyslot/lazyslot.go",
         "patchSetId": 3
@@ -85,6 +157,24 @@
       "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f44602c_4270baea",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-10T05:07:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "420ea86d_7598ed52",
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -108,6 +198,30 @@
       "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10a35de5_e6f34160",
+        "filename": "server/auth/authdb/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-10T05:07:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4617a22_53222a6c",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 8
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
