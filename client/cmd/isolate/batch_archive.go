@@ -251,13 +251,8 @@ func doBatchExpArchive(ctx context.Context, client *isolatedclient.Client, al ar
 		return err
 	}
 
-	if dumpJSONPath != "" {
-		f, err := os.OpenFile(dumpJSONPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-		if err != nil {
-			return err
-		}
-		writeSummaryJSON(f, isolSummaries...)
-		f.Close()
+	if err := dumpSummaryJSON(dumpJSONPath, isolSummaries...); err != nil {
+		return err
 	}
 
 	al.LogSummary(ctx, int64(checker.Hit.Count), int64(checker.Miss.Count), units.Size(checker.Hit.Bytes), units.Size(checker.Miss.Bytes), digests(isolSummaries))

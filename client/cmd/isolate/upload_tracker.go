@@ -186,6 +186,27 @@ type IsolatedSummary struct {
 	Digest isolated.HexDigest
 }
 
+func dumpSummaryJSON(filename string, summaries ...IsolatedSummary) error {
+	if len(filename) == 0 {
+		return nil
+	}
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	m := map[string]isolated.HexDigest{}
+	for _, summary := range summaries {
+		m[summary.Name] = summary.Digest
+	}
+	return json.NewEncoder(f).Encode(m)
+}
+
+func printSummary(al archiveLogger, summary IsolatedSummary) {
+	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
+}
+
 // Finalize creates and uploads the isolate JSON at the isolatePath, and closes the checker and uploader.
 // It returns the isolate name and digest.
 // Finalize should only be called after UploadDeps.
