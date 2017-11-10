@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cac54316_ddfb3ece",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T04:33:24Z",
+      "side": 1,
+      "message": "Value is no longer a symbol, please make it lowercase",
+      "range": {
+        "startLine": 39,
+        "startChar": 23,
+        "endLine": 39,
+        "endChar": 28
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9445707c_c3e76a6f",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T04:33:24Z",
+      "side": 1,
+      "message": "why? what if I want to return nil? I\u0027d have to have to make up a sentinel value. We could add `hasCurrent bool` to Slot",
+      "range": {
+        "startLine": 70,
+        "startChar": 10,
+        "endLine": 70,
+        "endChar": 61
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffb1fea2_60138fdd",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T04:33:24Z",
+      "side": 1,
+      "message": "nit: if you make exp time.Time, then you can a simpler defer\n\n  defer s.finishFetch(value, exp)\n\nand in L114 we\u0027d write exp \u003d setExp(c, s.retryDelay())",
+      "range": {
+        "startLine": 100,
+        "startChar": 14,
+        "endLine": 100,
+        "endChar": 22
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "420ea86d_7598ed52",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T04:33:24Z",
+      "side": 1,
+      "message": "i think it is ok",
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4617a22_53222a6c",
+        "filename": "server/auth/authdb/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T04:33:24Z",
+      "side": 1,
+      "message": "now we can inline this, up to you",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 8
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
