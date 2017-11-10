@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "99c6729c_952bc034",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2270f227_7a7aaeab",
+      "range": {
+        "startLine": 105,
+        "startChar": 4,
+        "endLine": 105,
+        "endChar": 13
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "02e2a485_577beffe",
         "filename": "appengine/gaeauth/client/client.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "026d224f_b72c92e3",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "02e2a485_577beffe",
+      "range": {
+        "startLine": 114,
+        "startChar": 49,
+        "endLine": 114,
+        "endChar": 55
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -225,6 +273,30 @@
     },
     {
       "key": {
+        "uuid": "a66304b7_f72171ba",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a77e9f64_3f442af2",
+      "range": {
+        "startLine": 39,
+        "startChar": 45,
+        "endLine": 39,
+        "endChar": 47
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6327a2b2_7385cc96",
         "filename": "server/auth/signing/cache.go",
         "patchSetId": 2
@@ -245,6 +317,30 @@
       "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c85ea74_d61fb00f",
+        "filename": "server/auth/signing/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6327a2b2_7385cc96",
+      "range": {
+        "startLine": 21,
+        "startChar": 4,
+        "endLine": 21,
+        "endChar": 13
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -363,6 +459,30 @@
       "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12493930_d888fb8c",
+        "filename": "tokenserver/appengine/impl/certchecker/certchecker.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17573a8e_ef82b79d",
+      "range": {
+        "startLine": 39,
+        "startChar": 4,
+        "endLine": 39,
+        "endChar": 13
+      },
+      "revId": "92c8d47ddf967f210acfeea364c1376cafc078cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

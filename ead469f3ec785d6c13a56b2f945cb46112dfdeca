@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4e63f1d_5711f432",
+        "filename": "appengine/gaemiddleware/context.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "nit: ensurePrepared?",
+      "range": {
+        "startLine": 101,
+        "startChar": 22,
+        "endLine": 101,
+        "endChar": 29
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "663ed984_8dc5f73e",
+        "filename": "server/auth/openid/protocol.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "discovery",
+      "range": {
+        "startLine": 207,
+        "startChar": 17,
+        "endLine": 207,
+        "endChar": 25
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a81c68d_ed626dd0",
+        "filename": "server/auth/openid/protocol.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "there is identity.User, but it is inconvenient to use here :(",
+      "range": {
+        "startLine": 236,
+        "startChar": 34,
+        "endLine": 236,
+        "endChar": 40
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3f688ad0_709eb73e",
+        "filename": "server/caching/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 58,
+        "startChar": 33,
+        "endLine": 58,
+        "endChar": 36
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a297bb18_fd7a28bd",
+        "filename": "server/caching/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 72,
+        "startChar": 69,
+        "endLine": 72,
+        "endChar": 72
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce3a30e4_f3650c5c",
+        "filename": "server/caching/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 88,
+        "startChar": 33,
+        "endLine": 88,
+        "endChar": 36
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d17bec53_87b45971",
+        "filename": "server/caching/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "do we want to document ExpiresImmediately behavior? if so, it might be simpler reusing lazyslot.Fetcher which already does that",
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8817bd5_6a838255",
+        "filename": "server/caching/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 108,
+        "startChar": 69,
+        "endLine": 108,
+        "endChar": 72
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f88a3f44_9331faa4",
+        "filename": "server/caching/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T07:41:52Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 172,
+        "startChar": 44,
+        "endLine": 172,
+        "endChar": 45
+      },
+      "revId": "ead469f3ec785d6c13a56b2f945cb46112dfdeca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
