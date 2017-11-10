@@ -178,31 +178,12 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 	})
 }
 
-func TestTriggerParse_RawAndIsolateServer(t *testing.T) {
-	Convey(`Make sure that Parse handles raw-cmd and isolate-server arguments.`, t, func() {
-		c := triggerRun{}
-		c.Init(auth.Options{})
-
-		err := c.GetFlags().Parse([]string{
-			"-server", "http://localhost:9050",
-			"-dimension", "os=Ubuntu",
-			"-isolated", "0123456789012345678901234567890123456789",
-			"-raw-cmd",
-			"-isolate-server", "http://localhost:10050",
-		})
-
-		err = c.Parse([]string{"args1"})
-		So(err, ShouldResemble, errors.New("can't use both -raw-cmd and -isolate-server"))
-	})
-}
-
 func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 	Convey(`Make sure that processing trigger options handles raw-args.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
 		c.commonFlags.serverURL = "http://localhost:9050"
 		c.isolateServer = "http://localhost:10050"
-		c.isolated = "1234567890123456789012345678901234567890"
 		c.rawCmd = true
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
@@ -228,7 +209,7 @@ func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 		So(result.Properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
 			Isolated:       "1234567890123456789012345678901234567890",
 			Isolatedserver: "http://localhost:10050",
-			Namespace:      "default-zip",
+			Namespace:      "default-gzip",
 		})
 	})
 }
@@ -248,7 +229,7 @@ func TestProcessTriggerOptions_EatDashDash(t *testing.T) {
 		So(result.Properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
 			Isolated:       "1234567890123456789012345678901234567890",
 			Isolatedserver: "http://localhost:10050",
-			Namespace:      "default-zip",
+			Namespace:      "default-gzip",
 		})
 	})
 }

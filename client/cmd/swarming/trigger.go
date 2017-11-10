@@ -114,7 +114,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 
 	// Isolate server.
 	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
-	c.Flags.StringVar(&c.namespace, "namespace", "default-zip", "The namespace to use on the Isolate Server.")
+	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
 
 	// Task group.
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
@@ -129,7 +129,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.IntVar(&c.deadline, "deadline", 0, "TODO(rogerta)")
 	c.Flags.Int64Var(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
-	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is used as-is without run_isolated. In this case, no isolated hash is expected.")
+	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
@@ -275,13 +275,16 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 			c.taskName = fmt.Sprintf("%s/%s/%s", c.user, namePartFromDimensions(c.dimensions), c.isolated)
 		}
 
+		extraArgs = commands
+		commands = nil
+	}
+
+	if len(c.isolated) > 0 {
 		inputsRefs = &swarming.SwarmingRpcsFilesRef{
 			Isolated:       c.isolated,
 			Isolatedserver: c.isolateServer,
 			Namespace:      c.namespace,
 		}
-		extraArgs = commands
-		commands = nil
 	}
 
 	properties := swarming.SwarmingRpcsTaskProperties{
