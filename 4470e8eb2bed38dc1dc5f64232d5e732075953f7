@@ -52,6 +52,24 @@
       "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0aaf003_0f06b6d8",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-10T04:26:58Z",
+      "side": 1,
+      "message": "OK so I was actually very confused about this, because it seems like checking for \u0027--\u0027 and ignoring previous arguments is pointless, but then I had a thought.\n\nI think the issue may be that on Windows \u0027--\u0027 isn\u0027t actually supported. I think the original author intended for \u0027--\u0027 to be the universal separator for commands across every platform. That\u0027s why positional arguments before a \u0027--\u0027, are ignored here, but if the separator isn\u0027t found then the arguments are just used directly.\n\nI\u0027ve removed this logic because there\u0027s probably a better solution to this problem. One option is to just make the commands a regular positional argument, but note that this prevents commands such as \"sleep 10 \u0026\u0026 /bin/ls\" because \"\u0026\u0026\" is eaten by bash (though this was already impossible).",
+      "parentUuid": "a0efbc62_9e93b42c",
+      "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
