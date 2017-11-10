@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2b9f6199_6d0fe60e",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T23:11:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "596f385a_e24fa3e5",
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49161488_b46f187a",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4655119e_2e12da8e",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T23:11:51Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "49161488_b46f187a",
+      "range": {
+        "startLine": 44,
+        "startChar": 28,
+        "endLine": 44,
+        "endChar": 35
+      },
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -89,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "a9468714_d348c79b",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T23:11:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db792792_4dacb4a1",
+      "range": {
+        "startLine": 46,
+        "startChar": 60,
+        "endLine": 46,
+        "endChar": 73
+      },
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c30f389_028cadca",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 5
@@ -126,6 +192,30 @@
       "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17393b36_10785761",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T23:11:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b8406a7_8b873a4c",
+      "range": {
+        "startLine": 93,
+        "startChar": 85,
+        "endLine": 93,
+        "endChar": 92
+      },
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
