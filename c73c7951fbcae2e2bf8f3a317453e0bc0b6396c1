@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a398ab0_f3124861",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T18:17:11Z",
+      "side": 1,
+      "message": "nit: else if?",
+      "revId": "c73c7951fbcae2e2bf8f3a317453e0bc0b6396c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa21bad7_b971c00a",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T18:17:11Z",
+      "side": 1,
+      "message": "While you\u0027re here... add aria-label\u003d\"console {{ .Def.Title }}\"",
+      "revId": "c73c7951fbcae2e2bf8f3a317453e0bc0b6396c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83ed77d5_bb94025a",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T18:17:11Z",
+      "side": 1,
+      "message": "idea: We basically only support googlesource.com URLs for repo.  So this could just be\n\u003ca href\u003d\"{{ .Def.RepoURL }}/+/{{ .Def.Ref }}\"\u003e(repo)\u003c/a\u003e\n\nIt\u0027ll save a tiny bit of horizontal space.",
+      "revId": "c73c7951fbcae2e2bf8f3a317453e0bc0b6396c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfb1a5ff_bbb54495",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T18:17:11Z",
+      "side": 1,
+      "message": "nit: de-indent this (this matches the {{range}} tag)",
+      "revId": "c73c7951fbcae2e2bf8f3a317453e0bc0b6396c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "347c7c49_73cd4da5",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 382,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-10T18:17:11Z",
+      "side": 1,
+      "message": "Isn\u0027t \"-1\" sufficient?",
+      "range": {
+        "startLine": 382,
+        "startChar": 32,
+        "endLine": 382,
+        "endChar": 43
+      },
+      "revId": "c73c7951fbcae2e2bf8f3a317453e0bc0b6396c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
