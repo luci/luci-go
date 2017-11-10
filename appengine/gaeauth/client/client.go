@@ -50,15 +50,15 @@ func GetAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
 	// refresh it earlier with some probability. That avoids a situation when
 	// parallel requests that use access tokens suddenly see the cache expired
 	// and rush to refresh the token all at once.
-	pc := caching.ProcessCache(c)
-	if tokIface, ok := pc.Get(c, cacheKey); ok {
+	lru := tokensCache.LRU(c)
+	if tokIface, ok := lru.Get(c, cacheKey); ok {
 		tok := tokIface.(*oauth2.Token)
 		if !closeToExpRandomized(c, tok.Expiry) {
 			return tok, nil
 		}
 	}
 
-	tokIface, err := pc.Create(c, cacheKey, func() (interface{}, time.Duration, error) {
+	tokIface, err := lru.Create(c, cacheKey, func() (interface{}, time.Duration, error) {
 		// The token needs to be refreshed.
 		logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
 		accessToken, exp, err := info.AccessToken(c, scopes...)
@@ -102,7 +102,8 @@ func (ts *tokenSource) Token() (*oauth2.Token, error) {
 
 //// Internal stuff.
 
-type cacheKey string
+// normalized scopes string => *oauth2.Token.
+var tokensCache = caching.RegisterLRUCache(100)
 
 const (
 	// expirationMinLifetime is minimal possible lifetime of a returned token.
@@ -111,7 +112,7 @@ const (
 	expirationRandomization = 3 * time.Minute
 )
 
-func normalizeScopes(scopes []string) ([]string, cacheKey) {
+func normalizeScopes(scopes []string) (normalized []string, cacheKey string) {
 	if len(scopes) == 0 {
 		scopes = []string{auth.OAuthScopeEmail}
 	} else {
@@ -125,7 +126,7 @@ func normalizeScopes(scopes []string) ([]string, cacheKey) {
 		scopes = set.ToSlice()
 		sort.Strings(scopes)
 	}
-	return scopes, cacheKey(strings.Join(scopes, "\n"))
+	return scopes, strings.Join(scopes, "\n")
 }
 
 func closeToExpRandomized(c context.Context, exp time.Time) bool {

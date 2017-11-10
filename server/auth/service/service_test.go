@@ -30,7 +30,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
@@ -41,7 +40,7 @@ import (
 
 func TestPubSubWorkflow(t *testing.T) {
 	Convey("PubSub pull workflow works", t, func(c C) {
-		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+		ctx := caching.WithEmptyProcessCache(context.Background())
 
 		fakeSigner := signingtest.NewSigner(0, nil)
 		certs, _ := fakeSigner.Certificates(ctx)

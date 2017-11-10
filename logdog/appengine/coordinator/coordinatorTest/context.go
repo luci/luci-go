@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -193,7 +192,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	// Get our starting context. This installs, among other things, in-memory
 	// gae, settings, and logger.
 	c := e.Tumble.Context()
-	c = caching.WithProcessCache(c, lru.New(0))
+	c = caching.WithEmptyProcessCache(c)
 	if *testGoLogger {
 		c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
 	}

@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	commonConfig "go.chromium.org/luci/common/config"
 	memConfig "go.chromium.org/luci/common/config/impl/memory"
-	"go.chromium.org/luci/common/data/caching/lru"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
@@ -71,7 +70,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		c, clk := testclock.UseTime(context.Background(), ds.RoundTime(testclock.TestTimeUTC))
 
 		c = memory.Use(c)
-		c = caching.WithProcessCache(c, lru.New(0))
+		c = caching.WithEmptyProcessCache(c)
 
 		// Install fake auth state.
 		var authState authtest.FakeState

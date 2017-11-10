@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/caching/cacheContext"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/caching"
@@ -37,10 +36,6 @@ import (
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/appengine/gaesettings"
 )
-
-// ProcessCache is a process-global LRU cache. It may be shared between
-// multiple subsystems.
-var ProcessCache = lru.New(65535)
 
 // Environment is a middleware environment. Its parameters define how the
 // middleware is applied, and which services are enlisted.
@@ -96,13 +91,16 @@ type Environment struct {
 
 	prepareOnce sync.Once
 
+	// processCacheData holds all global LRU caches.
+	processCacheData *caching.ProcessCacheData
 	// globalSettings holds global app settings lazily updated from the datastore.
 	globalSettings *settings.Settings
 }
 
-// prepare is called before handling a request, it initializes global state.
-func (e *Environment) prepare() {
+// ensurePrepared is called before handling requests to initialize global state.
+func (e *Environment) ensurePrepared() {
 	e.prepareOnce.Do(func() {
+		e.processCacheData = caching.NewProcessCacheData()
 		e.globalSettings = settings.New(gaesettings.Storage{})
 		if e.Prepare != nil {
 			e.Prepare()
@@ -143,14 +141,14 @@ func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base route
 // stubs), so With should never be used from unit tests.
 func (e *Environment) With(c context.Context, req *http.Request) context.Context {
 	// Ensure one-time initialization happened.
-	e.prepare()
+	e.ensurePrepared()
 
 	// Set an initial logging level. We'll configure this to be more specific
 	// later once we can load settings.
 	c = logging.SetLevel(c, logging.Debug)
 
 	// Install global process and request LRU caches.
-	c = caching.WithProcessCache(c, ProcessCache)
+	c = caching.WithProcessCacheData(c, e.processCacheData)
 	c = caching.WithRequestCache(c)
 
 	c = e.WithInitialRequest(c, req)

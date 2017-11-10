@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
@@ -88,7 +87,7 @@ func TestBuild(t *testing.T) {
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
 		})
-		c = caching.WithProcessCache(c, &lru.Cache{})
+		c = caching.WithEmptyProcessCache(c)
 
 		for _, tc := range TestCases {
 			Convey(fmt.Sprintf("Test Case: %s/%d", tc.Builder, tc.Build), func() {

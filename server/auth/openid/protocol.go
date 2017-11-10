@@ -29,6 +29,11 @@ import (
 	"go.chromium.org/luci/server/tokens"
 )
 
+var (
+	discoveryDocCache = caching.RegisterLRUCache(8) // URL string => *discoveryDoc
+	signingKeysCache  = caching.RegisterLRUCache(8) // URL string => *JSONWebKeySet
+)
+
 // openIDStateToken is used to generate `state` parameter used in OpenID flow to
 // pass state between our app and authentication backend.
 var openIDStateToken = tokens.TokenKind{
@@ -46,8 +51,6 @@ type discoveryDoc struct {
 	TokenEndpoint         string `json:"token_endpoint"`
 	JwksURI               string `json:"jwks_uri"`
 }
-
-type signingKeysCacheKey string
 
 // signingKeys returns a JSON Web Key set fetched from the location specified
 // in the discovery document.
@@ -74,14 +77,12 @@ func (d *discoveryDoc) signingKeys(c context.Context) (*JSONWebKeySet, error) {
 		return keys, time.Hour * 6, nil
 	}
 
-	cached, err := caching.ProcessCache(c).GetOrCreate(c, signingKeysCacheKey(d.JwksURI), fetcher)
+	cached, err := signingKeysCache.LRU(c).GetOrCreate(c, d.JwksURI, fetcher)
 	if err != nil {
 		return nil, err
 	}
 	return cached.(*JSONWebKeySet), nil
 }
-
-type discoveryDocCacheKey string
 
 // fetchDiscoveryDoc fetches discovery document from given URL. It is cached in
 // the process cache for 24 hours.
@@ -104,7 +105,7 @@ func fetchDiscoveryDoc(c context.Context, url string) (*discoveryDoc, error) {
 	}
 
 	// Cache the document in the process cache.
-	cached, err := caching.ProcessCache(c).GetOrCreate(c, discoveryDocCacheKey(url), fetcher)
+	cached, err := discoveryDocCache.LRU(c).GetOrCreate(c, url, fetcher)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +204,7 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 
 // userFromIDToken validates the ID token and extracts user information from it.
 func userFromIDToken(c context.Context, token string, cfg *Settings, discovery *discoveryDoc) (uid string, u *auth.User, err error) {
-	// Validate the discover doc has necessary fields to proceed.
+	// Validate the discovery doc has necessary fields to proceed.
 	switch {
 	case discovery.Issuer == "":
 		return "", nil, errors.New("openid: bad discovery doc, empty issuer")
