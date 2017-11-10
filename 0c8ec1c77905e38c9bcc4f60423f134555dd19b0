@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "db792792_4dacb4a1",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T21:59:19Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "7d60df50_f37006e8",
+      "range": {
+        "startLine": 46,
+        "startChar": 60,
+        "endLine": 46,
+        "endChar": 73
+      },
+      "revId": "0c8ec1c77905e38c9bcc4f60423f134555dd19b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c30f389_028cadca",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 5
