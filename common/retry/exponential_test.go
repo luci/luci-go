@@ -24,6 +24,8 @@ import (
 )
 
 func TestExponentialBackoff(t *testing.T) {
+	t.Parallel()
+
 	Convey(`An ExponentialBackoff Iterator, using an instrumented context`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		l := ExponentialBackoff{}

@@ -24,6 +24,8 @@ import (
 )
 
 func TestLimited(t *testing.T) {
+	t.Parallel()
+
 	Convey(`A Limited Iterator, using an instrumented context`, t, func() {
 		ctx, clock := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		l := Limited{}
