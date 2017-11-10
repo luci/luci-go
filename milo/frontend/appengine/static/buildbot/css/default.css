@@ -439,13 +439,13 @@ div.BuildWaterfall {
 }
 
 /* LastBuild, BuildStep states */
-.success, .status-Success, .status-Idle {
+.success, .status-Success, .status-Idle, .tree-status-open {
   color: #000;
   background-color: #8d4;
   border-color: #4F8530;
 }
 
-.failure, .status-Failure {
+.failure, .status-Failure, .tree-status-closed {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
@@ -489,7 +489,7 @@ div.BuildWaterfall {
   border-color: #AADDEE;
 }
 
-.exception, .retry, .status-Exception, .status-Disconnected {
+.exception, .retry, .status-Exception, .status-Disconnected, .tree-status-maintenance {
   color: #FFFFFF;
   background-color: #c6c;
   border-color: #ACA0B3;
@@ -501,7 +501,7 @@ div.BuildWaterfall {
   border-color: #ccc;
 }
 
-.running, .waiting, td.building, .status-Running, .status-Busy {
+.running, .waiting, td.building, .status-Running, .status-Busy, .tree-status-throttled {
   color: #000;
   background-color: #fd3;
   border-color: #C5C56D;
