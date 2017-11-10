@@ -157,21 +157,10 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 				Reason: NoSuchCA,
 			}
 		}
-		checker := &CertChecker{
+		return &CertChecker{
 			CN:  cn,
 			CRL: certconfig.NewCRLChecker(cn, certconfig.CRLShardCount, refetchCRLPeriod(c)),
-		}
-		checker.ca.Fetcher = func(c context.Context, _ lazyslot.Value) (lazyslot.Value, error) {
-			ca, err := checker.refetchCA(c)
-			if err != nil {
-				return lazyslot.Value{}, err
-			}
-			return lazyslot.Value{
-				Value:      ca,
-				Expiration: clock.Now(c).Add(refetchCAPeriod(c)),
-			}, nil
-		}
-		return checker, 0, nil
+		}, 0, nil
 	})
 	if err != nil {
 		return nil, err
@@ -181,16 +170,21 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 
 // GetCA returns CA entity with ParsedConfig and ParsedCert fields set.
 func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
-	value, err := ch.ca.Get(c)
+	value, err := ch.ca.Get(c, func(interface{}) (ca interface{}, exp time.Duration, err error) {
+		ca, err = ch.refetchCA(c)
+		if err == nil {
+			exp = refetchCAPeriod(c)
+		}
+		return
+	})
 	if err != nil {
 		return nil, err
 	}
-	// See Fetcher in GetCertChecker, it puts *certconfig.CA in the ch.ca slot.
-	ca := value.Value.(*certconfig.CA)
-	// Empty 'ca' means 'refetchCA' could not find it in the datastore. May happen
+	ca, _ := value.(*certconfig.CA)
+	// nil 'ca' means 'refetchCA' could not find it in the datastore. May happen
 	// if CA entity was deleted after GetCertChecker call. It could have been also
 	// "soft-deleted" by setting Removed == true.
-	if ca.CN == "" || ca.Removed {
+	if ca == nil || ca.Removed {
 		return nil, Error{
 			error:  fmt.Errorf("no such CA %q", ch.CN),
 			Reason: NoSuchCA,
@@ -282,16 +276,15 @@ func refetchCRLPeriod(c context.Context) time.Duration {
 
 // refetchCA is called lazily whenever we need to fetch the CA entity.
 //
-// If CA entity has disappeared since CertChecker was created, it returns empty
-// certconfig.CA struct (that will be cached in ch.ca as usual). It acts as an
-// indicator to GetCA to return NoSuchCA error, since returning a error here
-// would just cause a retry of 'refetchCA' later, and returning (nil, nil) is
-// forbidden (per lazyslot.Slot API).
+// If CA entity has disappeared since CertChecker was created, it returns nil
+// (that will be cached in ch.ca as usual). It acts as an indicator to GetCA to
+// return NoSuchCA error, since returning a error here would just cause a retry
+// of 'refetchCA' later.
 func (ch *CertChecker) refetchCA(c context.Context) (*certconfig.CA, error) {
 	ca := &certconfig.CA{CN: ch.CN}
 	switch err := ds.Get(c, ca); {
 	case err == ds.ErrNoSuchEntity:
-		return &certconfig.CA{}, nil // GetCA knows that empty struct means "no such CA"
+		return nil, nil
 	case err != nil:
 		return nil, transient.Tag.Apply(err)
 	}
