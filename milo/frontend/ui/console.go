@@ -87,6 +87,14 @@ type Oncall struct {
 	// Name is the name of the oncall role.
 	Name string `json:"-"`
 
+	// Primary is the username of the primary oncall.  This is used in lieu of emails.
+	// This is filled in from the remote JSON.
+	Primary string
+
+	// Secondaries are the usernames of the secondary oncalls.  This is used in lieu of emails.
+	// This is filled in from the remote JSON.
+	Secondaries []string
+
 	// Emails is a list of email addresses for the individuals who are currently in
 	// that role.
 	Emails []string

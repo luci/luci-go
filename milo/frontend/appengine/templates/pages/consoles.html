@@ -17,7 +17,7 @@
       <img src="{{ .Render.FaviconURL }}" />
     {{ end }}
       <a class="console-header-name"
-         href="/console/{{ .Def.GetProjectName }}/{{ .Def.ID }}"
+         href="/console/{{ .Def.GetProjectID }}/{{ .Def.ID }}"
          aria-label="console {{ .Def.Title }}">{{ .Def.Title }}</a>
       <a href="{{ .Def.RepoURL }}/+/{{ .Def.Ref }}">(repo)</a>
     {{ .Render.ConsoleSummary }}
