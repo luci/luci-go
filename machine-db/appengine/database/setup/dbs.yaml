@@ -1,0 +1,9 @@
+databases:
+# Use the "id" value as the value for cloudsqlhelper's db flag.
+- id: dev
+  # This is the value of the "Instance connection name" in Cloud SQL.
+  cloud_sql_instance: machine-db-dev:us-central1:crimson
+  db: crimson
+  user: root
+  # Remove this if you did not set a password for your user.
+  require_password: true
