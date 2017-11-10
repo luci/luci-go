@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb4ead2f_41e51f46",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T05:31:03Z",
+      "side": 1,
+      "message": "panicked",
+      "range": {
+        "startLine": 165,
+        "startChar": 37,
+        "endLine": 165,
+        "endChar": 44
+      },
+      "revId": "11a3a0adf13208573ade0f2139358376ff0d42d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

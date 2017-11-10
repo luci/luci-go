@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "595f9852_f2ca2e3e",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T05:31:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "447e3ae9_a5225f48",
+      "range": {
+        "startLine": 100,
+        "startChar": 14,
+        "endLine": 100,
+        "endChar": 22
+      },
+      "revId": "af79f18511f90b6c0042bbb799b62e193f02898b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "420ea86d_7598ed52",
         "filename": "common/data/caching/lazyslot/lazyslot.go",
         "patchSetId": 3
