@@ -22,6 +22,23 @@
       "revId": "11a3a0adf13208573ade0f2139358376ff0d42d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d766b468_1381c745",
+        "filename": "server/auth/authdb/cache.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T05:33:48Z",
+      "side": 1,
+      "message": "now this looks a bit strange because we pass a context but don\u0027t get it back\n\nconsider explaining in Get\u0027s comment that ctx is used only to get current time\n\nbut, do you we really need clock there? tests can use small expirations",
+      "revId": "11a3a0adf13208573ade0f2139358376ff0d42d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
