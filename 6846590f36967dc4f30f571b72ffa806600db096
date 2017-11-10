@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "514f9a90_9360ddd9",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-10T19:04:12Z",
+      "side": 1,
+      "message": "s/resp.Oncall/target",
+      "range": {
+        "startLine": 290,
+        "startChar": 20,
+        "endLine": 290,
+        "endChar": 32
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
