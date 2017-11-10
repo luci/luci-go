@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "17711a6b_52a2f063",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T22:18:54Z",
+      "side": 1,
+      "message": "oh right, this is aria-label",
+      "parentUuid": "900620df_91333147",
+      "range": {
+        "startLine": 32,
+        "startChar": 65,
+        "endLine": 32,
+        "endChar": 76
+      },
+      "revId": "6846590f36967dc4f30f571b72ffa806600db096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9602496_43a4b596",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 4

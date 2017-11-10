@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b651242_305f9522",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T22:18:54Z",
+      "side": 1,
+      "message": "I think this belongs to consts above\n\n  // TreeMaintenance is colored purple\n  TreeMaintenance \u003d ...\n  // TreeThrottled\n  TreeThrottled \u003d ...\n  ...\n\nalternatively, we can delete this",
+      "range": {
+        "startLine": 100,
+        "startChar": 28,
+        "endLine": 104,
+        "endChar": 27
+      },
+      "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e39b211_87b321f4",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T22:18:54Z",
+      "side": 1,
+      "message": "this can be simplified:\n\n  if memcache.Get(c, item) \u003d\u003d nil",
+      "range": {
+        "startLine": 269,
+        "startChar": 3,
+        "endLine": 269,
+        "endChar": 45
+      },
+      "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b55c2c64_05ebc846",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T22:18:54Z",
+      "side": 1,
+      "message": "if err, this means our memcache is broken. I think it is worth logging that",
+      "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f76ed0d3_18ae8789",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-10T22:18:54Z",
+      "side": 1,
+      "message": "it might be, if someone adds \"name\" property to the sheriff JSON (not too hard to imagine), which break milo. Ideally we don\u0027t conflate our and others\u0027 data and keep two structs, but since this case it is so simple, we can get away with setting Name after getJSONData call.",
+      "revId": "4b2b3c17e99c7ced137983f1245a70c7273b0719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
