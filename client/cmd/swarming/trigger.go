@@ -114,7 +114,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 
 	// Isolate server.
 	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
-	c.Flags.StringVar(&c.namespace, "namespace", "default-zip", "The namespace to use on the Isolate Server.")
+	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
 
 	// Task group.
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
@@ -129,7 +129,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.IntVar(&c.deadline, "deadline", 0, "TODO(rogerta)")
 	c.Flags.Int64Var(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
-	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is used as-is without run_isolated. In this case, no isolated hash is expected.")
+	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
@@ -147,18 +147,10 @@ func (c *triggerRun) Parse(args []string) error {
 		return errors.New("please at least specify one dimension")
 	}
 
-	if c.rawCmd {
-		if len(args) == 0 {
-			return errors.New("arguments with -raw-cmd should be passed after -- as command delimiter")
-		}
-
-		if len(c.isolateServer) > 0 {
-			return errors.New("can't use both -raw-cmd and -isolate-server")
-		}
-	} else {
-		if len(c.isolated) == 0 {
-			return errors.New("please use -isolated to specify hash or -raw-cmd")
-		}
+	if c.rawCmd && len(args) == 0 {
+		return errors.New("arguments with -raw-cmd should be passed after -- as command delimiter")
+	} else if !c.rawCmd && len(c.isolated) == 0 {
+		return errors.New("please use -isolated to specify hash or -raw-cmd")
 	}
 
 	if len(c.user) == 0 {
@@ -227,7 +219,7 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 
 		if !c.defaultFlags.Quiet {
 			fmt.Println("To collect results use:")
-			fmt.Printf("  swarming collect -server %s -json %s\n", c.serverURL, c.dumpJSON)
+			fmt.Printf("  swarming collect -server %s -requests-json %s\n", c.serverURL, c.dumpJSON)
 		}
 	} else if !c.defaultFlags.Quiet {
 		fmt.Println("To collect results use:")
@@ -250,38 +242,23 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 
 	if c.rawCmd {
 		commands = args
-		inputsRefs = nil
-		if len(c.taskName) == 0 {
-			c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
-		}
 	} else {
-		separator := -1
-		for i, v := range args {
-			if v == "--" {
-				separator = i
-				break
-			}
-		}
+		extraArgs = args
+	}
 
-		if len(args) > 0 {
-			if separator != -1 {
-				commands = args[separator+1:]
-			} else {
-				commands = args
-			}
-		}
+	if len(c.taskName) == 0 {
+		c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
+	}
 
+	if len(c.isolated) > 0 {
 		if len(c.taskName) == 0 {
-			c.taskName = fmt.Sprintf("%s/%s/%s", c.user, namePartFromDimensions(c.dimensions), c.isolated)
+			c.taskName = fmt.Sprintf("%s/%s", c.taskName, c.isolated)
 		}
-
 		inputsRefs = &swarming.SwarmingRpcsFilesRef{
 			Isolated:       c.isolated,
 			Isolatedserver: c.isolateServer,
 			Namespace:      c.namespace,
 		}
-		extraArgs = commands
-		commands = nil
 	}
 
 	properties := swarming.SwarmingRpcsTaskProperties{
