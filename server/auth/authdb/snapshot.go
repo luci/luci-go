@@ -90,18 +90,6 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 		tokenServiceURL: authDB.GetTokenServerUrl(),
 	}
 
-	// Load all trusted certificates lazily and refresh each hour.
-	db.certs.Fetcher = func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
-		mapping, err := db.fetchTrustedCerts(c)
-		if err != nil {
-			return lazyslot.Value{}, err
-		}
-		return lazyslot.Value{
-			Value:      mapping,
-			Expiration: clock.Now(c).Add(time.Hour),
-		}, nil
-	}
-
 	// Set of all allowed clientIDs.
 	db.clientIDs = make(map[string]struct{}, 2+len(authDB.GetOauthAdditionalClientIds()))
 	db.clientIDs[googleAPIExplorerClientID] = struct{}{}
@@ -289,11 +277,17 @@ func (db *SnapshotDB) isMemberImpl(c context.Context, id identity.Identity, grou
 
 // GetCertificates returns a bundle with certificates of a trusted signer.
 func (db *SnapshotDB) GetCertificates(c context.Context, signerID identity.Identity) (*signing.PublicCertificates, error) {
-	val, err := db.certs.Get(c)
+	mapping, _, err := db.certs.Get(c, func(c context.Context, prev interface{}) (interface{}, time.Time, error) {
+		mapping, err := db.fetchTrustedCerts(c)
+		if err != nil {
+			return nil, time.Time{}, err
+		}
+		return mapping, clock.Now(c).Add(time.Hour), nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	trustedCertsMap := val.Value.(certMap)
+	trustedCertsMap := mapping.(certMap)
 	return trustedCertsMap[signerID], nil
 }
 
@@ -337,7 +331,7 @@ func (db *SnapshotDB) GetTokenServiceURL(c context.Context) (string, error) {
 
 //// Implementation details.
 
-// fetchTrustedCerts is called by db.certs to fetch certificates.
+// fetchTrustedCerts is called by GetCertificates to fetch certificates.
 //
 // We currently trust only the token server, as provided by the auth service.
 func (db *SnapshotDB) fetchTrustedCerts(c context.Context) (certMap, error) {

@@ -226,21 +226,12 @@ type shardCache struct {
 // It will cache shards in local memory, refetching them if necessary after
 // 'cacheDuration' interval.
 func NewCRLChecker(cn string, shardCount int, cacheDuration time.Duration) *CRLChecker {
-	checker := &CRLChecker{
+	return &CRLChecker{
 		cn:            cn,
 		shardCount:    shardCount,
-		shards:        make([]lazyslot.Slot, 0, shardCount),
+		shards:        make([]lazyslot.Slot, shardCount),
 		cacheDuration: cacheDuration,
 	}
-	for idx := 0; idx < shardCount; idx++ {
-		idx := idx
-		checker.shards = append(checker.shards, lazyslot.Slot{
-			Fetcher: func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
-				return checker.refetchShard(c, idx, prev)
-			},
-		})
-	}
-	return checker
 }
 
 // IsRevokedSN returns true if given serial number is in the CRL.
@@ -259,39 +250,41 @@ func (ch *CRLChecker) IsRevokedSN(c context.Context, sn *big.Int) (bool, error) 
 
 // shard returns a shard given its index.
 func (ch *CRLChecker) shard(c context.Context, idx int) (shards.Shard, error) {
-	val, err := ch.shards[idx].Get(c) // this will lazy-load the shard
+	val, _, err := ch.shards[idx].Get(c, func(c context.Context, prev interface{}) (interface{}, time.Time, error) {
+		prevState, _ := prev.(shardCache)
+		newState, err := ch.refetchShard(c, idx, prevState)
+		if err != nil {
+			return nil, time.Time{}, err
+		}
+		return newState, clock.Now(c).Add(ch.cacheDuration), nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	// lazyslot.Get always returns non-nil val.Value on success. It is safe to
-	// cast it to whatever we put in the Value (which is always shardCache, see
+	// lazyslot.Get always returns non-nil val on success. It is safe to cast it
+	// to whatever we returned in the callback (which is always shardCache, see
 	// refetchShard).
-	return val.Value.(shardCache).shard, nil
+	return val.(shardCache).shard, nil
 }
 
-// refetchShard is called by lazyslot.Slot to fetch a new version of a shard.
-func (ch *CRLChecker) refetchShard(c context.Context, idx int, prev lazyslot.Value) (lazyslot.Value, error) {
-	prevState := shardCache{}
-	if prev.Value != nil {
-		prevState = prev.Value.(shardCache)
-	}
-
+// refetchShard is called by 'shard' to fetch a new version of a shard.
+func (ch *CRLChecker) refetchShard(c context.Context, idx int, prevState shardCache) (newState shardCache, err error) {
 	// Have something locally already? Quickly fetch CRLShardHeader to check
 	// whether we need to pull a heavy CRLShardBody.
 	hdr := CRLShardHeader{ID: shardEntityID(ch.cn, ch.shardCount, idx)}
 	if prevState.sha1 != "" {
-		switch err := ds.Get(c, &hdr); {
+		switch err = ds.Get(c, &hdr); {
 		case err == ds.ErrNoSuchEntity:
-			return lazyslot.Value{}, fmt.Errorf("shard header %q is missing", hdr.ID)
+			err = fmt.Errorf("shard header %q is missing", hdr.ID)
+			return
 		case err != nil:
-			return lazyslot.Value{}, transient.Tag.Apply(err)
+			err = transient.Tag.Apply(err)
+			return
 		}
 		// The currently cached copy is still good enough?
 		if hdr.SHA1 == prevState.sha1 {
-			return lazyslot.Value{
-				Value:      prevState,
-				Expiration: clock.Now(c).Add(ch.cacheDuration),
-			}, nil
+			newState = prevState
+			return
 		}
 	}
 
@@ -299,28 +292,25 @@ func (ch *CRLChecker) refetchShard(c context.Context, idx int, prev lazyslot.Val
 	// the cache. Need to fetch a new copy, unzip and deserialize it. This entity
 	// is prepared by updateCRLShard.
 	body := CRLShardBody{Parent: ds.KeyForObj(c, &hdr)}
-	switch err := ds.Get(c, &body); {
+	switch err = ds.Get(c, &body); {
 	case err == ds.ErrNoSuchEntity:
-		return lazyslot.Value{}, fmt.Errorf("shard body %q is missing", hdr.ID)
+		err = fmt.Errorf("shard body %q is missing", hdr.ID)
+		return
 	case err != nil:
-		return lazyslot.Value{}, transient.Tag.Apply(err)
+		err = transient.Tag.Apply(err)
+		return
 	}
 
 	// Unzip and deserialize.
 	blob, err := utils.ZlibDecompress(body.ZippedData)
 	if err != nil {
-		return lazyslot.Value{}, err
+		return
 	}
 	shard, err := shards.ParseShard(blob)
 	if err != nil {
-		return lazyslot.Value{}, err
+		return
 	}
 
-	return lazyslot.Value{
-		Value: shardCache{
-			shard: shard,
-			sha1:  body.SHA1,
-		},
-		Expiration: clock.Now(c).Add(ch.cacheDuration),
-	}, nil
+	newState = shardCache{shard: shard, sha1: body.SHA1}
+	return
 }
