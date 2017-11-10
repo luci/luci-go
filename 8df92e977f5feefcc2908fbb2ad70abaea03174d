@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0305976c_bba40226",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-10T21:56:39Z",
+      "side": 1,
+      "message": "Doesn\u0027t this mean that if an error occurs while checking a user\u0027s access to a single project, the entire operation will fail? Is that what we want?",
+      "range": {
+        "startLine": 458,
+        "startChar": 2,
+        "endLine": 458,
+        "endChar": 17
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e89146fa_c15f20f4",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-10T21:56:39Z",
+      "side": 1,
+      "message": "Nit: tabs where they should be spaces, and alignment",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8736fad1_64d2bbb3",
+        "filename": "milo/frontend/view_frontpage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-10T21:56:39Z",
+      "side": 1,
+      "message": "Related to comment on GetAllProjects: do we want to fail everything if there\u0027s an error checking access to a single project?",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 31,
+        "endChar": 12
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
