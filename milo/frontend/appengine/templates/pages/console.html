@@ -23,6 +23,16 @@
   <h1>{{ $console.Name }}</h1>
 </div>
 
+<!-- Tree Status -->
+{{ if $console.Header.TreeStatus }}
+{{ with $console.Header.TreeStatus  }}
+  <div class="tree-status tree-status-{{ .GeneralState }}"
+       title="Last updated {{ .Date }} by {{ .Username }}">
+    {{ .Message }}
+  </div>
+{{ end }}
+{{ end }}
+
 <!-- Header -->
 {{ if $console.Header }}
 {{ $header := $console.Header }}
