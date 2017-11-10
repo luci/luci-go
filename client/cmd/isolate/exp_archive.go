@@ -15,10 +15,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -29,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
 	logpb "go.chromium.org/luci/common/eventlog/proto"
-	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
@@ -126,30 +123,12 @@ func doExpArchive(ctx context.Context, client *isolatedclient.Client, archiveOpt
 	}
 
 	printSummary(al, isolSummary)
-	if dumpJSON != "" {
-		f, err := os.OpenFile(dumpJSON, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-		if err != nil {
-			return err
-		}
-		writeSummaryJSON(f, isolSummary)
-		f.Close()
+	if err := dumpSummaryJSON(dumpJSON, isolSummary); err != nil {
+		return err
 	}
 
 	al.LogSummary(ctx, int64(checker.Hit.Count), int64(checker.Miss.Count), units.Size(checker.Hit.Bytes), units.Size(checker.Miss.Bytes), []string{string(isolSummary.Digest)})
 	return nil
-}
-
-func writeSummaryJSON(w io.Writer, summaries ...IsolatedSummary) error {
-	m := make(map[string]isolated.HexDigest)
-	for _, summary := range summaries {
-		m[summary.Name] = summary.Digest
-	}
-
-	return json.NewEncoder(w).Encode(m)
-}
-
-func printSummary(al archiveLogger, summary IsolatedSummary) {
-	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
 }
 
 func (c *expArchiveRun) parseFlags(args []string) error {
