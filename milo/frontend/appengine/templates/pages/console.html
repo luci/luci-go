@@ -40,9 +40,18 @@
               {{ .Name }}
             </div>
             <div class="console-header-group-content">
-              {{ if gt (len .Emails) 0 }}
-                {{ range .Emails }}
-                  <span>{{ . | obfuscateEmail }}</span>
+              {{ $numEmails := (len .Emails) }}
+              {{ if gt $numEmails 0 }}
+                {{ range $i, $email := .Emails }}
+                  <span>{{ . | obfuscateEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
+                {{ end }}
+              {{ else if .Primary }}
+                <span>{{ .Primary }}</span>
+                {{if .Secondaries }}
+                  (primary)
+                  {{ range .Secondaries }}
+                    <span>, {{ . }}</span>
+                  {{ end }}
                 {{ end }}
               {{ else }}
                 <span>&lt;none&gt;</span>
