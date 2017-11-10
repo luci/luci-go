@@ -478,6 +478,30 @@
     },
     {
       "key": {
+        "uuid": "75e67c33_ee43ce74",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-10T22:27:37Z",
+      "side": 1,
+      "message": "Done in https://chromium.googlesource.com/infra/luci/luci-go/+/806a981d54a95e0d86e6adef6312aab4731b81a8.",
+      "parentUuid": "7bd56cf2_563f7658",
+      "range": {
+        "startLine": 108,
+        "startChar": 29,
+        "endLine": 108,
+        "endChar": 68
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "672e3e5f_e86efe86",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
