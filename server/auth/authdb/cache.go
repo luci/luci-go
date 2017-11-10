@@ -36,30 +36,24 @@ type DBCacheUpdater func(c context.Context, prev DB) (DB, error)
 // Even though the return value is technically a function, treat it as a heavy
 // stateful object, since it has the cache of DB in its closure.
 func NewDBCache(updater DBCacheUpdater) func(c context.Context) (DB, error) {
-	cacheSlot := lazyslot.Slot{
-		Fetcher: func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
-			var prevDB DB
-			if prev.Value != nil {
-				prevDB = prev.Value.(DB)
-			}
-			newDB, err := updater(c, prevDB)
-			if err != nil {
-				return lazyslot.Value{}, err
-			}
-			expTime := 5*time.Second + time.Duration(mathrand.Get(c).Intn(5000))*time.Millisecond
-			return lazyslot.Value{
-				Value:      newDB,
-				Expiration: clock.Now(c).Add(expTime),
-			}, nil
-		},
+	cacheSlot := lazyslot.Slot{}
+
+	fetcher := func(c context.Context, prev interface{}) (interface{}, time.Time, error) {
+		prevDB, _ := prev.(DB)
+		newDB, err := updater(c, prevDB)
+		if err != nil {
+			return nil, time.Time{}, err
+		}
+		expTime := 5*time.Second + time.Duration(mathrand.Get(c).Intn(5000))*time.Millisecond
+		return newDB, clock.Now(c).Add(expTime), nil
 	}
 
 	// Actual factory that just grabs DB from the cache (triggering lazy refetch).
 	return func(c context.Context) (DB, error) {
-		val, err := cacheSlot.Get(c)
+		val, _, err := cacheSlot.Get(c, fetcher)
 		if err != nil {
 			return nil, err
 		}
-		return val.Value.(DB), nil
+		return val.(DB), nil
 	}
 }

@@ -17,7 +17,6 @@ package policy
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -82,8 +81,7 @@ type Policy struct {
 	// Users of Policy should type-cast it to an appropriate type.
 	Prepare func(cfg ConfigBundle, revision string) (Queryable, error)
 
-	once  sync.Once
-	cache *lazyslot.Slot // holds and updates in-memory cache of Queryable
+	cache lazyslot.Slot // holds and updates in-memory cache of Queryable
 }
 
 // Queryable is validated and parsed configs in a form optimized for queries.
@@ -200,18 +198,15 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 //
 // Returns ErrNoPolicy if the policy config wasn't imported yet.
 func (p *Policy) Queryable(c context.Context) (Queryable, error) {
-	p.once.Do(func() {
-		p.cache = &lazyslot.Slot{Fetcher: p.grabQueryable}
-	})
-	val, err := p.cache.Get(c)
+	val, _, err := p.cache.Get(c, p.grabQueryable)
 	if err != nil {
 		return nil, err
 	}
-	return val.Value.(Queryable), nil
+	return val.(Queryable), nil
 }
 
 // grabQueryable is called whenever cached Queryable in p.cache expires.
-func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazyslot.Value, err error) {
+func (p *Policy) grabQueryable(c context.Context, prev interface{}) (val interface{}, exp time.Time, err error) {
 	c = logging.SetField(c, "policy", p.Name)
 
 	logging.Infof(c, "Checking version of the policy in the datastore")
@@ -226,12 +221,9 @@ func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazy
 	}
 
 	// Reuse existing Queryable object if configs didn't change.
-	prevQ, _ := prev.Value.(Queryable)
+	prevQ, _ := prev.(Queryable)
 	if prevQ != nil && prevQ.ConfigRevision() == hdr.Revision {
-		return lazyslot.Value{
-			Value:      prevQ,
-			Expiration: nextCheckTime(c),
-		}, nil
+		return prevQ, nextCheckTime(c), nil
 	}
 
 	// Fetch new configs.
@@ -273,10 +265,7 @@ func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazy
 		return
 	}
 
-	return lazyslot.Value{
-		Value:      queryable,
-		Expiration: nextCheckTime(c),
-	}, nil
+	return queryable, nextCheckTime(c), nil
 }
 
 // nextCheckTime returns a random time from [now+4 min, now+5 min).

@@ -143,7 +143,7 @@ func LoadCAUniqueIDToCNMap(c context.Context) (map[int64]string, error) {
 // no such CA.
 func GetCAByUniqueID(c context.Context, id int64) (string, error) {
 	mapper, err := caching.ProcessCache(c).GetOrCreate(c, mapperCacheKey(0), func() (interface{}, time.Duration, error) {
-		return makeIDToCNmapper(), 0, nil
+		return &idToCNmapper{}, 0, nil
 	})
 	if err != nil {
 		return "", err
@@ -161,25 +161,17 @@ type idToCNmapper struct {
 	mapping lazyslot.Slot
 }
 
-func makeIDToCNmapper() *idToCNmapper {
-	return &idToCNmapper{
-		mapping: lazyslot.Slot{
-			Fetcher: func(c context.Context, _ lazyslot.Value) (lazyslot.Value, error) {
-				val, err := LoadCAUniqueIDToCNMap(c)
-				return lazyslot.Value{
-					Value:      val,
-					Expiration: clock.Now(c).Add(time.Minute),
-				}, err
-			},
-		},
-	}
-}
-
 func (m *idToCNmapper) getCAByUniqueID(c context.Context, id int64) (string, error) {
-	val, err := m.mapping.Get(c)
+	val, _, err := m.mapping.Get(c, func(c context.Context, prev interface{}) (interface{}, time.Time, error) {
+		val, err := LoadCAUniqueIDToCNMap(c)
+		if err != nil {
+			return nil, time.Time{}, err
+		}
+		return val, clock.Now(c).Add(time.Minute), nil
+	})
 	if err != nil {
 		return "", err
 	}
-	mapping := val.Value.(map[int64]string)
+	mapping := val.(map[int64]string)
 	return mapping[id], nil
 }
