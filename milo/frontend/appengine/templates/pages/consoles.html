@@ -10,22 +10,21 @@
 {{define "body"}}
 <h1>{{ .ProjectName }} Consoles</h1>
 
+<div class="console-column">
 {{ range .Consoles }}
-  <div style="margin-top: 3em" class="console-title">
-  {{ if .Render.FaviconURL }}
-    <img src="{{ .Render.FaviconURL }}" />
-  {{ end }}
-    <h2>
-      <a href="/console/{{ .Def.GetProjectID }}/{{ .Def.ID }}">{{ .Def.Title }}</a>
-    </h2>
-  </div>
-  <p> <b>Repo</b>: <a href="{{ .Def.RepoURL }}"> {{ .Def.RepoURL }} </a></p>
-  <p> <b>Ref</b>: {{ .Def.Ref }} </p>
-  <div class="console-row">
-    {{ .Render.ConsoleTable }}
+  <div class="console-title">
+    {{ if .Render.FaviconURL }}
+      <img src="{{ .Render.FaviconURL }}" />
+    {{ end }}
+      <a class="console-header-name"
+         href="/console/{{ .Def.GetProjectName }}/{{ .Def.ID }}"
+         aria-label="console {{ .Def.Title }}">{{ .Def.Title }}</a>
+      <a href="{{ .Def.RepoURL }}/+/{{ .Def.Ref }}">(repo)</a>
+    {{ .Render.ConsoleSummary }}
   </div>
 {{ else }}
   <h4> No consoles defined </h4>
 {{ end }}
+</div>
 
 {{end}} <!-- Body -->

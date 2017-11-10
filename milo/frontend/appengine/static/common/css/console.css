@@ -34,13 +34,14 @@
   align-items: center;
 }
 
-.console-title * {
-  margin-right: 1em;
-}
-
 .console-title img {
   width: 16px;
   height: 16px;
+}
+
+.console-title span {
+  font-weight: bold;
+  min-height: 2.5em;
 }
 
 /* Header */
@@ -140,24 +141,14 @@
   align-items: center;
 }
 
-.console-header-summary {
-  display: flex;
-  flex-grow: 1;
-  align-items: center;
-  padding: 0.5em;
-}
-
-.console-header-summary * {
-  margin: 0.1em;
-}
-
 .console-header-name {
   display: flex;
   flex-direction: row;
   font-weight: bold;
+  padding: 0.5em;
 }
 
-.console-header-build {
+.console-header-builder {
   display: flex;
   flex-grow: 1;
   min-height: 2em;
@@ -166,13 +157,6 @@
   border-width: 1px;
   border-style: solid;
   border-radius: 0.25em;
-}
-
-.console-header-builder-status {
-  display: block;
-  height: 100%;
-  width: 100%;
-  text-decoration: none;
 }
 
 /* Legend */
@@ -251,6 +235,24 @@
 }
 
 /* Builders */
+
+.console-builder-summary {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  padding: 0.5em;
+}
+
+.console-builder-summary * {
+  margin: 0.05em;
+}
+
+.console-builder-status {
+  display: block;
+  height: 100%;
+  width: 100%;
+  text-decoration: none;
+}
 
 .console-builder-column {
   display: flex;
@@ -372,5 +374,14 @@
   cursor: default;
 }
 
+/* Console List */
 
-
+.console-list-builder {
+  display: flex;
+  flex-grow: 1;
+  min-height: 2em;
+  max-height: 2em;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 0.25em;
+}
