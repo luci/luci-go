@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4c14fba0_87274fb8",
+        "filename": "common/data/caching/lazyslot/lazyslot.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-10T06:22:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fb4ead2f_41e51f46",
+      "range": {
+        "startLine": 165,
+        "startChar": 37,
+        "endLine": 165,
+        "endChar": 44
+      },
+      "revId": "11a3a0adf13208573ade0f2139358376ff0d42d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d766b468_1381c745",
         "filename": "server/auth/authdb/cache.go",
         "patchSetId": 6
@@ -39,6 +63,24 @@
       "revId": "11a3a0adf13208573ade0f2139358376ff0d42d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99ef4a00_9cd73ef6",
+        "filename": "server/auth/authdb/cache.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-10T06:22:10Z",
+      "side": 1,
+      "message": "yes, we do really need clock there. Mixing time.Now() and clock.Now() leads to pain and suffering. We also need context for logging (there\u0027s one logging call in lazyslot).\n\nBesides, I was just trying to make the API look similar to https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/data/caching/lru/lru.go#300",
+      "parentUuid": "d766b468_1381c745",
+      "revId": "11a3a0adf13208573ade0f2139358376ff0d42d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
