@@ -23,6 +23,17 @@
   <h1>{{ $console.Name }}</h1>
 </div>
 
+<!-- Tree Status -->
+{{ with $console.Header.TreeStatus  }}
+  <div class="tree-status tree-status-{{ .GeneralState }}">
+    <a title="Last updated at {{ .Date }} by {{ .Username }}"
+       href="{{ .URL }}"
+       aria-label="Tree status: {{ .Message }}.  Last updated at {{ .Date }} by {{ .Username }}">
+      {{ .Message }}
+    </a>
+  </div>
+{{ end }}
+
 <!-- Header -->
 {{ if $console.Header }}
 {{ $header := $console.Header }}

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"net/url"
 
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -81,14 +82,46 @@ type ConsoleSummary struct {
 	Builders []*model.BuilderSummary
 }
 
+type TreeStatusState string
+
+const (
+	TreeMaintenance TreeStatusState = "maintenance"
+	TreeThrottled                   = "throttled"
+	TreeClosed                      = "closed"
+	TreeOpen                        = "open"
+)
+
+// TreeStatus represents the very top bar of the console, above the header.
+type TreeStatus struct {
+	// Username is the name of the user who changed the status last.
+	Username        string `json:"username"`
+	CanCommitFreely bool   `json:"can_commit_freely"`
+	// GeneralState is the general state of the tree, which also indicates
+	// the color of the tree.  Values to color mappings are:
+	// * "maintenance" - Purple
+	// * "throttled"   - Yellow
+	// * "closed"      - Red
+	// * "open"        - Green
+	GeneralState TreeStatusState `json:"general_state"`
+	Key          int64           `json:"key"`
+	// Date is when the tree was last updated.  The format is YYYY-mm-DD HH:MM:SS.ssssss
+	// and implicitly UTC.  eg. "2017-11-10 14:29:21.804080"
+	Date string `json:"date"`
+	// Message is a human readable description of the tree.
+	Message string `json:"message"`
+	// URL is a link to the root status page.  This is generated on the Milo side,
+	// not provided by the status app.
+	URL *url.URL
+}
+
 // Oncall represents an oncall role with the current individuals in that role, represented
 // by their email addresses.
 type Oncall struct {
-	// Name is the name of the oncall role.
+	// Name is the name of the oncall role.  This is set by Milo.
 	Name string `json:"-"`
 
 	// Emails is a list of email addresses for the individuals who are currently in
-	// that role.
+	// that role.  This is loaded from the sheriffing json.
 	Emails []string
 }
 
@@ -127,6 +160,9 @@ type ConsoleHeader struct {
 	// A console group without a title will have all of its console summaries
 	// appear "ungrouped" when rendered.
 	ConsoleGroups []ConsoleGroup
+
+	// TreeStatus indicates the status of the tree if it is not nil.
+	TreeStatus *TreeStatus
 }
 
 // ConsoleElement represents a single renderable console element.
