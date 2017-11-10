@@ -20,8 +20,6 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-
-	"go.chromium.org/luci/common/clock"
 )
 
 // MemoryStorage implements Storage interface, using memory as a backend. Useful
@@ -34,7 +32,7 @@ type MemoryStorage struct {
 }
 
 // FetchAllSettings fetches all latest settings at once.
-func (m *MemoryStorage) FetchAllSettings(c context.Context) (*Bundle, error) {
+func (m *MemoryStorage) FetchAllSettings(c context.Context) (*Bundle, time.Duration, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	values := make(map[string]*json.RawMessage, len(m.values))
@@ -46,7 +44,7 @@ func (m *MemoryStorage) FetchAllSettings(c context.Context) (*Bundle, error) {
 			values[k] = &raw
 		}
 	}
-	return &Bundle{Values: values, Exp: clock.Now(c).Add(m.Expiration)}, nil
+	return &Bundle{Values: values}, m.Expiration, nil
 }
 
 // UpdateSetting updates a setting at the given key.

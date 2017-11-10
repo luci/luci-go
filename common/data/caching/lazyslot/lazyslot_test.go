@@ -34,119 +34,186 @@ func TestLazySlot(t *testing.T) {
 		lock := sync.Mutex{}
 		counter := 0
 
-		s := Slot{
-			Fetcher: func(c context.Context, prev Value) (Value, error) {
-				lock.Lock()
-				defer lock.Unlock()
-				counter++
-				return Value{counter, clk.Now().Add(time.Second)}, nil
-			},
+		fetcher := func(prev interface{}) (interface{}, time.Duration, error) {
+			lock.Lock()
+			defer lock.Unlock()
+			counter++
+			return counter, time.Second, nil
 		}
+
+		s := Slot{}
 
 		// Initial fetch.
 		So(s.current, ShouldBeNil)
-		v, err := s.Get(c)
+		v, err := s.Get(c, fetcher)
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 1)
+		So(v.(int), ShouldEqual, 1)
 
 		// Still fresh.
-		v, err = s.Get(c)
+		v, err = s.Get(c, fetcher)
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 1)
+		So(v.(int), ShouldEqual, 1)
 
 		// Expires and refreshed.
 		clk.Add(5 * time.Second)
-		v, err = s.Get(c)
+		v, err = s.Get(c, fetcher)
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 2)
+		So(v.(int), ShouldEqual, 2)
+	})
+
+	Convey("Initial failed fetch causes errors", t, func() {
+		c, _ := newContext()
+
+		s := Slot{}
+
+		// Initial failed fetch.
+		failErr := errors.New("fail")
+		_, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return nil, 0, failErr
+		})
+		So(err, ShouldEqual, failErr)
+
+		// Subsequence successful fetch.
+		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 1, 0, nil
+		})
+		So(err, ShouldBeNil)
+		So(val, ShouldResemble, 1)
 	})
 
 	Convey("Returns stale copy while fetching", t, func(conv C) {
 		c, clk := newContext()
 
 		// Put initial value.
-		s := Slot{
-			Fetcher: func(c context.Context, prev Value) (Value, error) {
-				return Value{1, clk.Now().Add(time.Second)}, nil
-			},
-		}
-		v, err := s.Get(c)
+		s := Slot{}
+		v, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 1, time.Second, nil
+		})
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 1)
+		So(v.(int), ShouldEqual, 1)
+
+		fetching := make(chan bool)
+		resume := make(chan bool)
+		fetcher := func(prev interface{}) (interface{}, time.Duration, error) {
+			fetching <- true
+			<-resume
+			return 2, time.Second, nil
+		}
 
 		// Make it expire. Start blocking fetch of the new value.
 		clk.Add(5 * time.Second)
-		fetching := make(chan bool)
-		resume := make(chan bool)
-		s.Fetcher = func(c context.Context, prev Value) (Value, error) {
-			fetching <- true
-			<-resume
-			return Value{2, clk.Now().Add(time.Second)}, nil
-		}
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			v, err := s.Get(c)
+			v, err := s.Get(c, fetcher)
 			conv.So(err, ShouldBeNil)
-			conv.So(v.Value.(int), ShouldEqual, 2)
+			conv.So(v.(int), ShouldEqual, 2)
 		}()
 
 		// Wait until we hit the body of the fetcher callback.
 		<-fetching
 
 		// Concurrent Get() returns stale copy right away (does not deadlock).
-		v, err = s.Get(c)
+		v, err = s.Get(c, fetcher)
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 1)
+		So(v.(int), ShouldEqual, 1)
 
 		// Wait until another goroutine finishes the fetch.
 		resume <- true
 		wg.Wait()
 
 		// Returns new value now.
-		v, err = s.Get(c)
+		v, err = s.Get(c, fetcher)
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 2)
+		So(v.(int), ShouldEqual, 2)
 	})
 
 	Convey("Recovers from panic", t, func() {
 		c, clk := newContext()
 
 		// Initial value.
-		s := Slot{
-			Fetcher: func(c context.Context, prev Value) (Value, error) {
-				return Value{1, clk.Now().Add(time.Second)}, nil
-			},
-		}
-		v, err := s.Get(c)
+		s := Slot{}
+		v, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 1, time.Second, nil
+		})
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 1)
+		So(v.(int), ShouldEqual, 1)
 
 		// Make it expire. Start panicing fetch.
 		clk.Add(5 * time.Second)
-		s.Fetcher = func(c context.Context, prev Value) (Value, error) {
-			panic("omg")
-		}
-		So(func() { s.Get(c) }, ShouldPanicWith, "omg")
+		So(func() {
+			s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+				panic("omg")
+			})
+		}, ShouldPanicWith, "omg")
 
 		// Doesn't deadlock.
-		s.Fetcher = func(c context.Context, prev Value) (Value, error) {
-			return Value{2, clk.Now().Add(time.Second)}, nil
-		}
-		v, err = s.Get(c)
+		v, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 2, time.Second, nil
+		})
 		So(err, ShouldBeNil)
-		So(v.Value.(int), ShouldEqual, 2)
+		So(v.(int), ShouldEqual, 2)
 	})
 
-	Convey("Checks for nil", t, func() {
+	Convey("Nil value is allowed", t, func() {
 		c, clk := newContext()
-		s := Slot{
-			Fetcher: func(c context.Context, prev Value) (Value, error) {
-				return Value{nil, clk.Now().Add(time.Second)}, nil
-			},
-		}
-		So(func() { s.Get(c) }, ShouldPanicWith, "lazyslot.Slot Fetcher returned nil value")
+		s := Slot{}
+
+		// Initial nil fetch.
+		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return nil, time.Second, nil
+		})
+		So(err, ShouldBeNil)
+		So(val, ShouldBeNil)
+
+		// Some time later this nil expires and we fetch something else.
+		clk.Add(2 * time.Second)
+		val, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			So(prev, ShouldBeNil)
+			return 1, time.Second, nil
+		})
+		So(err, ShouldBeNil)
+		So(val, ShouldResemble, 1)
+	})
+
+	Convey("Zero expiration means never expires", t, func() {
+		c, clk := newContext()
+		s := Slot{}
+
+		// Initial fetch.
+		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 1, 0, nil
+		})
+		So(err, ShouldBeNil)
+		So(val, ShouldResemble, 1)
+
+		// Many years later still cached.
+		clk.Add(200000 * time.Hour)
+		val, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 2, time.Second, nil
+		})
+		So(err, ShouldBeNil)
+		So(val, ShouldResemble, 1)
+	})
+
+	Convey("ExpiresImmediately means expires at the same instant", t, func() {
+		c, _ := newContext()
+		s := Slot{}
+
+		// Initial fetch.
+		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 1, ExpiresImmediately, nil
+		})
+		So(err, ShouldBeNil)
+		So(val, ShouldResemble, 1)
+
+		// No time moved, but refetch still happened.
+		val, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			return 2, time.Second, nil
+		})
+		So(err, ShouldBeNil)
+		So(val, ShouldResemble, 2)
 	})
 
 	Convey("Retries failed refetch later", t, func() {
@@ -156,22 +223,18 @@ func TestLazySlot(t *testing.T) {
 		var valueToReturn int
 
 		fetchCalls := 0
-
-		s := Slot{
-			Fetcher: func(c context.Context, prev Value) (Value, error) {
-				fetchCalls++
-				return Value{
-					Value:      valueToReturn,
-					Expiration: clk.Now().Add(time.Minute),
-				}, errorToReturn
-			},
+		fetcher := func(prev interface{}) (interface{}, time.Duration, error) {
+			fetchCalls++
+			return valueToReturn, time.Minute, errorToReturn
 		}
+
+		s := Slot{}
 
 		// Initial fetch.
 		valueToReturn = 1
 		errorToReturn = nil
-		val, err := s.Get(c)
-		So(val.Value, ShouldResemble, 1)
+		val, err := s.Get(c, fetcher)
+		So(val, ShouldResemble, 1)
 		So(err, ShouldBeNil)
 		So(fetchCalls, ShouldEqual, 1)
 
@@ -179,20 +242,18 @@ func TestLazySlot(t *testing.T) {
 		clk.Add(30 * time.Second)
 		valueToReturn = 2
 		errorToReturn = nil
-		val, err = s.Get(c)
-		So(val.Value, ShouldResemble, 1) // still cached copy
+		val, err = s.Get(c, fetcher)
+		So(val, ShouldResemble, 1) // still cached copy
 		So(err, ShouldBeNil)
 		So(fetchCalls, ShouldEqual, 1)
 
 		// After 31 the cache copy expires, we attempt to update it, but something
-		// goes horribly wrong. Get(...) returns the old copy, with expiration time
-		// bumped to now+5 sec.
+		// goes horribly wrong. Get(...) returns the old copy.
 		clk.Add(31 * time.Second)
 		valueToReturn = 3
 		errorToReturn = errors.New("omg")
-		val, err = s.Get(c)
-		So(val.Value, ShouldResemble, 1) // still cached copy
-		So(val.Expiration, ShouldResemble, clk.Now().Add(5*time.Second))
+		val, err = s.Get(c, fetcher)
+		So(val, ShouldResemble, 1) // still cached copy
 		So(err, ShouldBeNil)
 		So(fetchCalls, ShouldEqual, 2) // attempted to fetch
 
@@ -200,8 +261,8 @@ func TestLazySlot(t *testing.T) {
 		clk.Add(time.Second)
 		valueToReturn = 4
 		errorToReturn = nil
-		val, err = s.Get(c)
-		So(val.Value, ShouldResemble, 1) // still cached copy
+		val, err = s.Get(c, fetcher)
+		So(val, ShouldResemble, 1) // still cached copy
 		So(err, ShouldBeNil)
 		So(fetchCalls, ShouldEqual, 2)
 
@@ -209,8 +270,8 @@ func TestLazySlot(t *testing.T) {
 		clk.Add(5 * time.Second)
 		valueToReturn = 5
 		errorToReturn = nil
-		val, err = s.Get(c)
-		So(val.Value, ShouldResemble, 5) // new copy
+		val, err = s.Get(c, fetcher)
+		So(val, ShouldResemble, 5) // new copy
 		So(err, ShouldBeNil)
 		So(fetchCalls, ShouldEqual, 3)
 	})

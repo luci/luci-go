@@ -86,7 +86,7 @@ func (s Storage) expirationDuration(c context.Context) time.Duration {
 }
 
 // FetchAllSettings fetches all latest settings at once.
-func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
+func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, time.Duration, error) {
 	c = defaultContext(c)
 	logging.Debugf(c, "Fetching app settings from the datastore")
 
@@ -95,19 +95,16 @@ func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
 	case err == ds.ErrNoSuchEntity:
 		break
 	case err != nil:
-		return nil, transient.Tag.Apply(err)
+		return nil, 0, transient.Tag.Apply(err)
 	}
 
 	pairs := map[string]*json.RawMessage{}
 	if latest.Value != "" {
 		if err := json.Unmarshal([]byte(latest.Value), &pairs); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
-	return &settings.Bundle{
-		Values: pairs,
-		Exp:    clock.Now(c).Add(s.expirationDuration(c)),
-	}, nil
+	return &settings.Bundle{Values: pairs}, s.expirationDuration(c), nil
 }
 
 // UpdateSetting updates a setting at the given key.

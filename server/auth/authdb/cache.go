@@ -19,7 +19,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 )
@@ -36,30 +35,18 @@ type DBCacheUpdater func(c context.Context, prev DB) (DB, error)
 // Even though the return value is technically a function, treat it as a heavy
 // stateful object, since it has the cache of DB in its closure.
 func NewDBCache(updater DBCacheUpdater) func(c context.Context) (DB, error) {
-	cacheSlot := lazyslot.Slot{
-		Fetcher: func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
-			var prevDB DB
-			if prev.Value != nil {
-				prevDB = prev.Value.(DB)
-			}
-			newDB, err := updater(c, prevDB)
-			if err != nil {
-				return lazyslot.Value{}, err
-			}
-			expTime := 5*time.Second + time.Duration(mathrand.Get(c).Intn(5000))*time.Millisecond
-			return lazyslot.Value{
-				Value:      newDB,
-				Expiration: clock.Now(c).Add(expTime),
-			}, nil
-		},
-	}
-
-	// Actual factory that just grabs DB from the cache (triggering lazy refetch).
+	cacheSlot := lazyslot.Slot{}
 	return func(c context.Context) (DB, error) {
-		val, err := cacheSlot.Get(c)
+		val, err := cacheSlot.Get(c, func(prev interface{}) (db interface{}, exp time.Duration, err error) {
+			prevDB, _ := prev.(DB)
+			if db, err = updater(c, prevDB); err == nil {
+				exp = 5*time.Second + time.Duration(mathrand.Get(c).Intn(5000))*time.Millisecond
+			}
+			return
+		})
 		if err != nil {
 			return nil, err
 		}
-		return val.Value.(DB), nil
+		return val.(DB), nil
 	}
 }

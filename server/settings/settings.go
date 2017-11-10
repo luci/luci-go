@@ -44,11 +44,9 @@ var (
 	ErrBadType = errors.New("settings: bad type")
 )
 
-// Bundle contains all latest settings along with the timestamp when they need
-// to be refetched. Stored in lazyslot.Slot.
+// Bundle contains all latest settings.
 type Bundle struct {
 	Values map[string]*json.RawMessage // immutable
-	Exp    time.Time
 
 	lock     sync.RWMutex           // protects 'unpacked'
 	unpacked map[string]interface{} // deserialized RawMessages
@@ -107,7 +105,9 @@ func (b *Bundle) get(key string, value interface{}) error {
 // them there. Methods of Storage can be called concurrently.
 type Storage interface {
 	// FetchAllSettings fetches all latest settings at once.
-	FetchAllSettings(c context.Context) (*Bundle, error)
+	//
+	// Returns the settings and the duration they should be cached for by default.
+	FetchAllSettings(c context.Context) (*Bundle, time.Duration, error)
 
 	// UpdateSetting updates a setting at the given key.
 	UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error
@@ -137,35 +137,7 @@ type Settings struct {
 // New creates new Settings object that uses given Storage to fetch and save
 // settings.
 func New(storage Storage) *Settings {
-	return &Settings{
-		storage: storage,
-		values: lazyslot.Slot{
-			Timeout: 15 * time.Second, // retry for 15 sec at most
-			Fetcher: func(c context.Context, _ lazyslot.Value) (result lazyslot.Value, err error) {
-				err = retry.Retry(c, transient.Only(retry.Default), func() error {
-					ctx, _ := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
-					result, err = attemptToFetchSettings(ctx, storage)
-					return err
-				}, nil)
-				if err != nil {
-					result = lazyslot.Value{}
-				}
-				return
-			},
-		},
-	}
-}
-
-// attemptToFetchSettings is called in a retry loop when loading settings.
-func attemptToFetchSettings(c context.Context, storage Storage) (lazyslot.Value, error) {
-	bundle, err := storage.FetchAllSettings(c)
-	if err != nil {
-		return lazyslot.Value{}, err
-	}
-	return lazyslot.Value{
-		Value:      bundle,
-		Expiration: bundle.Exp,
-	}, nil
+	return &Settings{storage: storage}
 }
 
 // GetStorage returns underlying Storage instance.
@@ -179,11 +151,31 @@ func (s *Settings) GetStorage() Storage {
 // to pass correct type and pass same type to all calls. If the setting is not
 // set returns ErrNoSettings.
 func (s *Settings) Get(c context.Context, key string, value interface{}) error {
-	lazyValue, err := s.values.Get(c)
+	bundle, err := s.values.Get(c, func(interface{}) (interface{}, time.Duration, error) {
+		c, done := clock.WithTimeout(c, 15*time.Second) // retry for 15 sec total
+		defer done()
+		var bundle *Bundle
+		var exp time.Duration
+		err := retry.Retry(c, transient.Only(retry.Default), func() (err error) {
+			c, done := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
+			defer done()
+			bundle, exp, err = s.storage.FetchAllSettings(c)
+			return
+		}, nil)
+		if err != nil {
+			return nil, 0, err
+		}
+		// Meaning of 0 in FetchAllSettings is different from how lazyslot
+		// understands it.
+		if exp == 0 {
+			exp = lazyslot.ExpiresImmediately
+		}
+		return bundle, exp, nil
+	})
 	if err != nil {
 		return err
 	}
-	return lazyValue.Value.(*Bundle).get(key, value)
+	return bundle.(*Bundle).get(key, value)
 }
 
 // GetUncached is like Get, by always fetches settings from the storage.
@@ -191,7 +183,7 @@ func (s *Settings) Get(c context.Context, key string, value interface{}) error {
 // Do not use GetUncached in performance critical parts, it is much heavier than
 // Get.
 func (s *Settings) GetUncached(c context.Context, key string, value interface{}) error {
-	bundle, err := s.storage.FetchAllSettings(c)
+	bundle, _, err := s.storage.FetchAllSettings(c)
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/auth/identity"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -88,18 +87,6 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 		Rev:            rev,
 
 		tokenServiceURL: authDB.GetTokenServerUrl(),
-	}
-
-	// Load all trusted certificates lazily and refresh each hour.
-	db.certs.Fetcher = func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
-		mapping, err := db.fetchTrustedCerts(c)
-		if err != nil {
-			return lazyslot.Value{}, err
-		}
-		return lazyslot.Value{
-			Value:      mapping,
-			Expiration: clock.Now(c).Add(time.Hour),
-		}, nil
 	}
 
 	// Set of all allowed clientIDs.
@@ -289,11 +276,14 @@ func (db *SnapshotDB) isMemberImpl(c context.Context, id identity.Identity, grou
 
 // GetCertificates returns a bundle with certificates of a trusted signer.
 func (db *SnapshotDB) GetCertificates(c context.Context, signerID identity.Identity) (*signing.PublicCertificates, error) {
-	val, err := db.certs.Get(c)
+	mapping, err := db.certs.Get(c, func(interface{}) (interface{}, time.Duration, error) {
+		mapping, err := db.fetchTrustedCerts(c)
+		return mapping, time.Hour, err
+	})
 	if err != nil {
 		return nil, err
 	}
-	trustedCertsMap := val.Value.(certMap)
+	trustedCertsMap := mapping.(certMap)
 	return trustedCertsMap[signerID], nil
 }
 
@@ -337,7 +327,7 @@ func (db *SnapshotDB) GetTokenServiceURL(c context.Context) (string, error) {
 
 //// Implementation details.
 
-// fetchTrustedCerts is called by db.certs to fetch certificates.
+// fetchTrustedCerts is called by GetCertificates to fetch certificates.
 //
 // We currently trust only the token server, as provided by the auth service.
 func (db *SnapshotDB) fetchTrustedCerts(c context.Context) (certMap, error) {

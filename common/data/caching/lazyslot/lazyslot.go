@@ -30,35 +30,37 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-// Value is what's stored in a Slot. It is treated as immutable value.
-type Value struct {
-	// Value is whatever fetcher returned.
-	Value interface{}
-	// Expiration is time when this value expires and should be refetched.
-	Expiration time.Time
-}
-
-// Fetcher knows how to load a new value.
+// ExpiresImmediately can be returned by the fetcher callback to indicate that
+// the item must be refreshed on the next access.
 //
-// If it returns no errors, it MUST return non-nil Value.Value or Slot.Get will
-// panic.
-type Fetcher func(c context.Context, prev Value) (Value, error)
+// This is sometimes useful in tests with "frozen" time to disable caching.
+const ExpiresImmediately time.Duration = -1
 
-// Slot holds a cached Value and refreshes it when it expires.
+// Fetcher knows how to load a new value or refresh the existing one.
+//
+// It receives the previously known value when refreshing it.
+//
+// If the returned expiration duration is zero, the returned value never
+// expires. If the returned expiration duration is equal to ExpiresImmediately,
+// then the very next Get(...) will trigger another refresh (this is sometimes
+// useful in tests with "frozen" time to disable caching).
+type Fetcher func(prev interface{}) (updated interface{}, exp time.Duration, err error)
+
+// Slot holds a cached value and refreshes it when it expires.
 //
 // Only one goroutine will be busy refreshing, all others will see a slightly
 // stale copy of the value during the refresh.
 type Slot struct {
-	Fetcher    Fetcher       // used to actually load the value on demand
-	Timeout    time.Duration // how long to allow to fetch, 15 sec by default.
 	RetryDelay time.Duration // how long to wait before fetching after a failure, 5 sec by default
 
-	lock              sync.RWMutex    // protects the guts below
-	current           *Value          // currently known value or nil if not fetched
-	currentFetcherCtx context.Context // non-nil if some goroutine is fetching now
+	lock        sync.RWMutex // protects the guts below
+	initialized bool         // true if fetched the initial value already
+	current     interface{}  // currently known value (may be nil)
+	exp         time.Time    // when the currently known value expires or time.Time{} if never
+	fetching    bool         // true if some goroutine is fetching the value now
 }
 
-// Get returns stored value if it is still fresh.
+// Get returns stored value if it is still fresh or refetches it if it's stale.
 //
 // It may return slightly stale copy if some other goroutine is fetching a new
 // copy now. If there's no cached copy at all, blocks until it is retrieved.
@@ -74,134 +76,132 @@ type Slot struct {
 // seconds from now, effectively scheduling a retry at some later time.
 // RetryDelay is 5 sec by default.
 //
-// Panics if Fetcher doesn't produce a non-nil value and doesn't return an
-// error. It must either return an error or an non-nil value.
-func (s *Slot) Get(c context.Context) (result Value, err error) {
-	// state is populate in the anonymous function below.
-	var state struct {
-		C         context.Context
-		Fetcher   Fetcher
-		PrevValue Value
+// The passed context is used for logging and for getting time.
+func (s *Slot) Get(c context.Context, fetcher Fetcher) (value interface{}, err error) {
+	now := clock.Now(c)
+
+	// Fast path. Checks a cached value exists and it is still fresh or some
+	// goroutine is already updating it (in that case we return a stale copy).
+	ok := false
+	s.lock.RLock()
+	if s.initialized && (s.fetching || isFresh(s.exp, now)) {
+		value = s.current
+		ok = true
 	}
-
-	result, err, done := func() (result Value, err error, done bool) {
-		now := clock.Now(c)
-
-		// Fast path. Checks a cached value exists and it is still fresh or some
-		// goroutine is already updating it (in that case we return a stale copy).
-		s.lock.RLock()
-		if s.current != nil && (now.Before(s.current.Expiration) || s.currentFetcherCtx != nil) {
-			result = *s.current
-			done = true
-		}
-		s.lock.RUnlock()
-		if done {
-			return
-		}
-
-		// Slow path. This lock protects the guts of the slot and makes sure only
-		// one goroutine is doing an initial fetch.
-		s.lock.Lock()
-		defer s.lock.Unlock()
-
-		// A cached value exists and it is still fresh? Return it right away.
-		if s.current != nil && now.Before(s.current.Expiration) {
-			result = *s.current
-			done = true
-			return
-		}
-
-		// Fetching the value for the first time ever? Do it under the lock because
-		// there's nothing to return yet. All goroutines would have to wait for this
-		// initial fetch to complete. They'll all block on s.lock.RLock() above.
-		if s.current == nil {
-			result, err = initialFetch(s.makeFetcherCtx(c), s.Fetcher)
-			if err == nil {
-				s.current = &result
-			}
-			done = true
-			return
-		}
-
-		// We have a cached copy but it has expired. Maybe some other goroutine is
-		// fetching it already? Returns the cached stale copy if so.
-		if s.currentFetcherCtx != nil {
-			result = *s.current
-			done = true
-			return
-		}
-
-		// No one is fetching the value now, we should do it. Prepare a new context
-		// that will be used to do the fetch once lock is released.
-		s.currentFetcherCtx = s.makeFetcherCtx(c)
-
-		// Copy lock-protected guts into local variables before releasing the lock.
-		state.C = s.currentFetcherCtx
-		state.Fetcher = s.Fetcher
-		state.PrevValue = *s.current
-		return
-	}()
-	if done {
+	s.lock.RUnlock()
+	if ok {
 		return
 	}
 
-	// Finish the fetch and update the cached value.
-	return func() (result Value, err error) {
-		defer func() {
-			s.lock.Lock()
-			defer s.lock.Unlock()
-			s.currentFetcherCtx = nil
-			// result.Value is not nil iff fetch succeeded and didn't panic.
-			if result.Value != nil {
-				s.current = &result
-			}
-		}()
-		return refetch(state.C, state.Fetcher, state.PrevValue, s.RetryDelay), nil
-	}()
-}
-
-// makeFetcherCtx prepares a context to use for fetch operation.
-//
-// Must be called under the lock.
-func (s *Slot) makeFetcherCtx(c context.Context) context.Context {
-	timeout := 15 * time.Second
-	if s.Timeout != 0 {
-		timeout = s.Timeout
+	// Slow path. Attempt to start the fetch if no one beat us to it.
+	shouldFetch, value, err := s.initiateFetch(c, fetcher, now)
+	if !shouldFetch {
+		// Either someone did the fetch already, or the initial fetch failed. In
+		// either case 'value' and 'err' are already set, so just return them.
+		return
 	}
-	fetcherCtx, _ := clock.WithTimeout(c, timeout)
-	return fetcherCtx
-}
 
-// initialFetch is called to load the value for the first time.
-func initialFetch(ctx context.Context, cb Fetcher) (result Value, err error) {
-	result, err = cb(ctx, Value{})
-	switch {
-	case err == nil && result.Value == nil:
-		panic("lazyslot.Slot Fetcher returned nil value")
-	case err != nil:
-		result = Value{}
+	// 'value' here is currently known value that we are going to refresh. Need
+	// to clear the variable to make sure 'defer' below sees nil on panic.
+	prevValue := value
+	value = nil
+
+	// The current goroutine won the contest and now is responsible for refetching
+	// the value. Do it, but be cautious to fix the state in case of a panic.
+	var completed bool
+	var exp time.Duration
+	defer func() { s.finishFetch(completed, value, setExpiry(c, exp)) }()
+
+	value, exp, err = fetcher(prevValue)
+	completed = true // we didn't panic!
+
+	// Log the error and return the previous value, bumping its expiration time by
+	// retryDelay to trigger a retry at some later time.
+	if err != nil {
+		logging.WithError(err).Errorf(c, "lazyslot: failed to update instance of %T", prevValue)
+		value = prevValue
+		exp = s.retryDelay()
+		err = nil
 	}
+
 	return
 }
 
-// refetch attempts to update the previously known cached value.
+// initiateFetch modifies state of Slot to indicate that the current goroutine
+// is going to do the fetch if no one is fetching it now.
 //
-// On an error it logs it and returns the previous value (bumping its expiration
-// time by retryDelay, to trigger a retry at some later time).
-func refetch(ctx context.Context, cb Fetcher, prev Value, retryDelay time.Duration) Value {
-	switch result, err := cb(ctx, prev); {
-	case err == nil && result.Value == nil:
-		panic("lazyslot.Slot Fetcher returned nil value")
-	case err != nil:
-		logging.WithError(err).Errorf(ctx, "lazyslot: failed to update instance of %T", prev.Value)
-		if retryDelay == 0 {
-			retryDelay = 5 * time.Second
-		}
-		return Value{
-			Value:      prev.Value,
-			Expiration: clock.Now(ctx).Add(retryDelay),
-		}
-	default:
-		return result
+// Returns:
+//   * (true, known value, nil) if the current goroutine should refetch.
+//   * (false, known value, nil) if the fetch is no longer necessary.
+//   * (false, nil, err) if the initial fetch failed.
+func (s *Slot) initiateFetch(c context.Context, fetcher Fetcher, now time.Time) (bool, interface{}, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// A cached value exists and it is still fresh? Return it right away. Someone
+	// refetched it already.
+	if s.initialized && isFresh(s.exp, now) {
+		return false, s.current, nil
 	}
+
+	// Fetching the value for the first time ever? Do it under the lock because
+	// there's nothing to return yet. All goroutines would have to wait for this
+	// initial fetch to complete. They'll all block on s.lock.RLock() in Get(...).
+	if !s.initialized {
+		result, exp, err := fetcher(nil)
+		if err != nil {
+			return false, nil, err
+		}
+		s.initialized = true
+		s.current = result
+		s.exp = setExpiry(c, exp)
+		return false, s.current, nil
+	}
+
+	// We have a cached copy but it has expired. Maybe some other goroutine is
+	// fetching it already? Return the cached stale copy if so.
+	if s.fetching {
+		return false, s.current, nil
+	}
+
+	// No one is fetching the value now, we should do it. Make other goroutines
+	// know we'll be fetching. Return the current value as well, to pass it to
+	// the fetch callback.
+	s.fetching = true
+	return true, s.current, nil
+}
+
+// finishFetch switches the Slot back to "not fetching" state, remembering the
+// fetched value.
+//
+// 'completed' is false if the fetch panicked.
+func (s *Slot) finishFetch(completed bool, result interface{}, exp time.Time) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.fetching = false
+	if completed {
+		s.current = result
+		s.exp = exp
+	}
+}
+
+func (s *Slot) retryDelay() time.Duration {
+	if s.RetryDelay == 0 {
+		return 5 * time.Second
+	}
+	return s.RetryDelay
+}
+
+func isFresh(exp, now time.Time) bool {
+	return exp.IsZero() || now.Before(exp)
+}
+
+func setExpiry(c context.Context, exp time.Duration) time.Time {
+	switch {
+	case exp == 0:
+		return time.Time{}
+	case exp < 0: // including ExpiresImmediately
+		return clock.Now(c) // this would make isFresh return false
+	}
+	return clock.Now(c).Add(exp)
 }
