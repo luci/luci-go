@@ -26,6 +26,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// messageCacheKey => proto.Message
+var messageCache = caching.RegisterLRUCache(4096)
+
 type messageCacheKey struct {
 	cset cfgtypes.ConfigSet
 	path string
@@ -59,8 +62,7 @@ func (mc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path str
 	// slamming the config service, particularly at startup.
 	var v interface{}
 	var err error
-	pc := caching.ProcessCache(c)
-	v, err = pc.GetOrCreate(c, key, func() (interface{}, time.Duration, error) {
+	v, err = messageCache.LRU(c).GetOrCreate(c, key, func() (interface{}, time.Duration, error) {
 		// Not in cache or expired. Reload...
 		if err := mc.GetUncached(c, cset, path, msg); err != nil {
 			return nil, 0, err

@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/caching"
-	serverCaching "go.chromium.org/luci/server/caching"
 
 	"golang.org/x/net/context"
 )
@@ -79,7 +78,7 @@ func (o *CacheOptions) WrapBackend(c context.Context, base backend.B) context.Co
 
 		// Add a proccache-based config cache.
 		if o.CacheExpiration > 0 {
-			be = caching.LRUBackend(be, serverCaching.ProcessCache(c), o.CacheExpiration)
+			be = caching.LRUBackend(be, messageCache.LRU(c), o.CacheExpiration)
 		}
 
 		return be

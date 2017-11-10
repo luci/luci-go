@@ -72,6 +72,9 @@ func Use(c context.Context, cfg *Config) context.Context {
 	})
 }
 
+// full secret key (including prefix) => secrets.Secret.
+var secretsCache = caching.RegisterLRUCache(100)
+
 // storeImpl is implementation of secrets.Store bound to a GAE context.
 type storeImpl struct {
 	cfg Config
@@ -80,8 +83,7 @@ type storeImpl struct {
 
 // GetSecret returns a secret by its key.
 func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
-	cacheKey := secrets.Key(s.cfg.Prefix + ":" + string(k))
-	secret, err := caching.ProcessCache(s.ctx).GetOrCreate(s.ctx, cacheKey, func() (interface{}, time.Duration, error) {
+	secret, err := secretsCache.LRU(s.ctx).GetOrCreate(s.ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
 		secret, err := s.getSecretFromDatastore(k)
 		if err != nil {
 			return nil, 0, err

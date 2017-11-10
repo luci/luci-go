@@ -34,7 +34,6 @@ import (
 	commonAuth "go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/config/impl/filesystem"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
@@ -81,9 +80,6 @@ var (
 	CoordinatorScopes = []string{
 		commonAuth.OAuthScopeEmail,
 	}
-
-	// ProcessCache is the global process LRU cache.
-	ProcessCache = lru.New(65535)
 )
 
 // projectConfigCacheDuration is the amount of time to cache a project's
@@ -237,7 +233,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	}
 
 	// Install process-wide cache.
-	c = serverCaching.WithProcessCache(c, ProcessCache)
+	c = serverCaching.WithEmptyProcessCache(c)
 
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.

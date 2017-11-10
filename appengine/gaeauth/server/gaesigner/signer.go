@@ -53,11 +53,14 @@ func (Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) { ret
 
 ////
 
-type cacheKey int
+var (
+	certCache = caching.RegisterCacheSlot()
+	infoCache = caching.RegisterCacheSlot()
+)
 
 // cachedCerts caches this app certs in local memory for 1 hour.
 func getCachedCerts(c context.Context) (*signing.PublicCertificates, error) {
-	v, err := caching.ProcessCache(c).GetOrCreate(c, cacheKey(0), func() (interface{}, time.Duration, error) {
+	v, err := certCache.Fetch(c, func(interface{}) (interface{}, time.Duration, error) {
 		aeCerts, err := info.PublicCertificates(c)
 		if err != nil {
 			return nil, 0, err
@@ -73,7 +76,6 @@ func getCachedCerts(c context.Context) (*signing.PublicCertificates, error) {
 		if err != nil {
 			return nil, 0, err
 		}
-
 		return &signing.PublicCertificates{
 			AppID:              inf.AppID,
 			ServiceAccountName: inf.ServiceAccountName,
@@ -91,7 +93,7 @@ func getCachedCerts(c context.Context) (*signing.PublicCertificates, error) {
 //
 // This info is static during lifetime of the process.
 func getCachedInfo(c context.Context) (*signing.ServiceInfo, error) {
-	v, err := caching.ProcessCache(c).GetOrCreate(c, cacheKey(1), func() (interface{}, time.Duration, error) {
+	v, err := infoCache.Fetch(c, func(interface{}) (interface{}, time.Duration, error) {
 		account, err := info.ServiceAccount(c)
 		if err != nil {
 			return nil, 0, err
