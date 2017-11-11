@@ -145,7 +145,7 @@ func buildbotBuildTestData() []common.TestBundle {
 		build, err := buildbot.DebugBuild(c, "../buildsource/buildbot", tc.Builder, tc.Build)
 		if err != nil {
 			panic(fmt.Errorf(
-				"Encountered error while building debug/%s/%s.\n%s",
+				"Encountered error while building debug/%s/%d.\n%s",
 				tc.Builder, tc.Build, err))
 		}
 		bundles = append(bundles, common.TestBundle{

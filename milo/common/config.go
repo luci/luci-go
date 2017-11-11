@@ -41,34 +41,22 @@ type Console struct {
 	// Parent is a key to the parent Project entity where this console was
 	// defined in.
 	Parent *datastore.Key `gae:"$parent"`
+
 	// ID is the ID of the console.
 	ID string `gae:"$id"`
-	// Title is the name of the console intended for humans.
-	Title string
-	// RepoURL and Ref combined defines the commits the show up on the left
-	// hand side of a Console.
-	RepoURL string
-	// RepoURL and Ref combined defines the commits the show up on the left
-	// hand side of a Console.
-	Ref string
-	// ManifestName is the name of the manifest to look for when querying for
-	// builds under this console.
-	ManifestName string
-	// URL is the URL to the luci-config definition of this console.
-	URL string
-	// FaviconURL is the URL to the favicon to be displayed on this console's page.
-	FaviconURL string
-	// Revision is the luci-config reivision from when this Console was retrieved.
-	Revision string
-	// Builders is a list of universal builder IDs.  This is indexed.
+
+	// The URL to the luci-config definition of this console.
+	ConfigURL string
+
+	// The luci-config reivision from when this Console was retrieved.
+	ConfigRevision string `gae:",noindex"`
+
+	// (indexed) All builder IDs mentioned by this console config.
 	Builders []string
-	// BuilderMeta is an expanded set of builders containing additional metadata.
-	// This should always match the Builders field.
-	BuilderMetas []BuilderMeta
-	// Header is a copy of the Header structure from the proto definition which is
-	// used for rendering the console's header. It is serialized as JSON bytes
-	// before a datastore Put and deserialized after a Get via the PLS interface.
-	Header config.Header
+
+	// Def is the actual underlying proto Console definition.
+	Def config.Console `gae:",noindex"`
+
 	// _ is a "black hole" which absorbs any extra props found during a
 	// datastore Get. These props are not written back on a datastore Put.
 	_ datastore.PropertyMap `gae:"-,extra"`
@@ -78,68 +66,10 @@ type Console struct {
 // isn't known to exist.
 var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
 
-// BuilderMeta is a struct containing metadata about a builder.
-type BuilderMeta struct {
-	Category  string
-	ShortName string
-}
-
-// ParseCategory takes a BuilderMeta's Category and parses it into a list of
-// subcategories. The top-level category is listed first.
-func (b *BuilderMeta) ParseCategory() []string {
-	return strings.Split(b.Category, "|")
-}
-
 // GetProjectID retrieves the project ID of the console out of the Console's
 // parent key.
 func (con *Console) GetProjectID() string {
 	return con.Parent.StringID()
-}
-
-// NewConsole creates a fully populated console out of the luci-config proto
-// definition of a console.
-func NewConsole(project *datastore.Key, URL, revision string, con *config.Console) *Console {
-	header := config.Header{}
-	if con.Header != nil {
-		header = *con.Header
-	}
-	return &Console{
-		Parent:       project,
-		ID:           con.Id,
-		Title:        con.Name,
-		RepoURL:      con.RepoUrl,
-		Ref:          con.Ref,
-		ManifestName: con.ManifestName,
-		Revision:     revision,
-		URL:          URL,
-		FaviconURL:   con.FaviconUrl,
-		Builders:     BuilderFromProto(con.Builders),
-		BuilderMetas: BuilderRefFromProto(con.Builders),
-		Header:       header,
-	}
-}
-
-// BuilderFromProto tranforms a luci-config proto builder format into the datastore
-// format.
-func BuilderFromProto(cb []*config.Builder) []string {
-	builders := make([]string, len(cb))
-	for i, b := range cb {
-		builders[i] = b.Name
-	}
-	return builders
-}
-
-// BuilderRefFromProto tranforms a luci-config proto builder format into the
-// BuilderMeta format.
-func BuilderRefFromProto(cb []*config.Builder) []BuilderMeta {
-	builders := make([]BuilderMeta, len(cb))
-	for i, b := range cb {
-		builders[i] = BuilderMeta{
-			Category:  b.Category,
-			ShortName: b.ShortName,
-		}
-	}
-	return builders
 }
 
 // LuciConfigURL returns a user friendly URL that specifies where to view
@@ -310,14 +240,20 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 			// continue
 		case nil:
 			// Check if revisions match, if so just skip it.
-			if con.Revision == cfg.Revision {
+			if con.ConfigRevision == cfg.Revision {
 				continue
 			}
 		default:
 			return nil, errors.Annotate(err, "checking %s", pc.Id).Err()
 		}
-		URL := LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision)
-		con = NewConsole(parentKey, URL, cfg.Revision, pc)
+		con = &Console{
+			Parent:         parentKey,
+			ID:             pc.Id,
+			ConfigURL:      LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision),
+			ConfigRevision: cfg.Revision,
+			Builders:       pc.AllBuilderIDs(),
+			Def:            *pc,
+		}
 		if err = datastore.Put(c, con); err != nil {
 			return nil, errors.Annotate(err, "saving %s", pc.Id).Err()
 		}

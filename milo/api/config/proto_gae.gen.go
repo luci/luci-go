@@ -22,12 +22,12 @@ import (
 	"go.chromium.org/gae/service/datastore"
 )
 
-var _ datastore.PropertyConverter = (*Header)(nil)
+var _ datastore.PropertyConverter = (*Console)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
-// 'Header' to serialize to an unindexed '[]byte' when used with the
+// 'Console' to serialize to an unindexed '[]byte' when used with the
 // "go.chromium.org/gae" library.
-func (p *Header) ToProperty() (prop datastore.Property, err error) {
+func (p *Console) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
 		prop.SetValue(data, datastore.NoIndex)
@@ -36,8 +36,8 @@ func (p *Header) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded 'Header' when used with the "go.chromium.org/gae" library.
-func (p *Header) FromProperty(prop datastore.Property) error {
+// into an embedded 'Console' when used with the "go.chromium.org/gae" library.
+func (p *Console) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {
 		return err
