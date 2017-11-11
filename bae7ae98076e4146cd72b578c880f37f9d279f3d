@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1fcc302_38628d9d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T06:40:56Z",
+      "side": 1,
+      "message": "nit: consider changing the switch so that you can write\n\ncase gitiles.HTTPStatus(err) \u003d\u003d http.StatusForbidden:",
+      "revId": "bae7ae98076e4146cd72b578c880f37f9d279f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52c444ff_9ca3d26d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T06:40:56Z",
+      "side": 1,
+      "message": "this assumes that blamelist is not critical to the caller.\nplease return a special error or an error with a tag, so that it is the caller\u0027s decision to skip blamelist",
+      "revId": "bae7ae98076e4146cd72b578c880f37f9d279f3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
