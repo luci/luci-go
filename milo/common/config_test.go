@@ -63,7 +63,7 @@ func TestConfig(t *testing.T) {
 				cs, err := GetConsole(c, "foo", "default")
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "default")
-				So(cs.RepoURL, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
+				So(cs.Def.RepoUrl, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
 			})
 		})
 	})

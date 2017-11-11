@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -44,7 +44,7 @@ type ConsoleRow struct {
 // GetConsoleRows returns a row-oriented collection of BuildSummary
 // objects. Each row corresponds to the similarly-indexed commit in the
 // `commits` slice.
-func GetConsoleRows(c context.Context, project string, console *common.Console, commits, builders []string) ([]*ConsoleRow, error) {
+func GetConsoleRows(c context.Context, project string, console *config.Console, commits []string) ([]*ConsoleRow, error) {
 	rawCommits := make([][]byte, len(commits))
 	for i, c := range commits {
 		var err error
@@ -53,17 +53,17 @@ func GetConsoleRows(c context.Context, project string, console *common.Console, 
 		}
 	}
 
-	builderSet := stringset.NewFromSlice(builders...)
+	builderSet := stringset.NewFromSlice(console.AllBuilderIDs()...)
 
 	ret := make([]*ConsoleRow, len(commits))
-	url := console.RepoURL
+	url := console.RepoUrl
 	// HACK(iannucci): This little hack should be removed when console definitions
 	// no longer use a manifest name of "REVISION". REVISION was used to index the
 	// 'got_revision' value before manifests were implemented.
 	if console.ManifestName == "REVISION" {
 		url = ""
 	}
-	partialKey := model.NewPartialManifestKey(project, console.ID, console.ManifestName, url)
+	partialKey := model.NewPartialManifestKey(project, console.Id, console.ManifestName, url)
 	q := datastore.NewQuery("BuildSummary")
 	err := parallel.WorkPool(4, func(ch chan<- func() error) {
 		for i := range rawCommits {

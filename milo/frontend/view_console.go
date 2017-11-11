@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -49,13 +50,13 @@ import (
 // If the user is not a reader of the project, this will return a 404.
 // TODO(hinoka): If the user is not a reader of any of of the builders returned,
 // that builder will be removed from list of results.
-func getConsoleDef(c context.Context, project, name string) (*common.Console, error) {
+func getConsoleDef(c context.Context, project, name string) (*config.Console, error) {
 	cs, err := common.GetConsole(c, project, name)
 	if err != nil {
 		return nil, err
 	}
 	// TODO(hinoka): Remove builders that the user does not have access to.
-	return cs, nil
+	return &cs.Def, nil
 }
 
 // shortname calculates a short name (3 char max long name) out of a full name
@@ -98,8 +99,8 @@ func validateFaviconURL(faviconURL string) error {
 	return nil
 }
 
-func getFaviconURL(c context.Context, def *common.Console) string {
-	faviconURL := def.FaviconURL
+func getFaviconURL(c context.Context, def *config.Console) string {
+	faviconURL := def.FaviconUrl
 	if err := validateFaviconURL(faviconURL); err != nil {
 		logging.WithError(err).Warningf(c, "invalid favicon URL")
 		faviconURL = ""
@@ -123,18 +124,17 @@ func validateConsoleID(consoleID, project string) error {
 
 type builderRefFactory func(name, shortname string) *ui.BuilderRef
 
-func buildTreeFromDef(def *common.Console, factory builderRefFactory) (*ui.Category, int) {
+func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Category, int) {
 	// Build console table tree from builders.
 	categoryTree := ui.NewCategory("")
 	depth := 0
-	for col, b := range def.Builders {
-		meta := def.BuilderMetas[col]
-		short := meta.ShortName
+	for _, b := range def.Builders {
+		short := b.ShortName
 		if short == "" {
-			short = shortname(b)
+			short = shortname(b.Name)
 		}
-		builderRef := factory(b, short)
-		categories := meta.ParseCategory()
+		builderRef := factory(b.Name, short)
+		categories := b.ParseCategory()
 		if len(categories) > depth {
 			depth = len(categories)
 		}
@@ -162,7 +162,7 @@ func console(c context.Context, project, name string, limit int) (*ui.Console, e
 	if err != nil {
 		return nil, err
 	}
-	commitInfo, err := git.GetHistory(c, def.RepoURL, def.Ref, limit)
+	commitInfo, err := git.GetHistory(c, def.RepoUrl, def.Ref, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func console(c context.Context, project, name string, limit int) (*ui.Console, e
 		commitNames[i] = hex.EncodeToString(commit.Hash)
 	}
 
-	rows, err := buildsource.GetConsoleRows(c, project, def, commitNames, def.Builders)
+	rows, err := buildsource.GetConsoleRows(c, project, def, commitNames)
 	tConsole := clock.Now(c)
 	logging.Debugf(c, "Loading the console took a total of %s.", tConsole.Sub(tGitiles))
 	if err != nil {
@@ -188,10 +188,10 @@ func console(c context.Context, project, name string, limit int) (*ui.Console, e
 			AuthorName:  commit.AuthorName,
 			AuthorEmail: commit.AuthorEmail,
 			CommitTime:  google.TimeFromProto(commit.CommitTime),
-			Repo:        def.RepoURL,
+			Repo:        def.RepoUrl,
 			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
 			Description: commit.Msg,
-			Revision:    ui.NewLink(commitNames[row], def.RepoURL+"/+/"+commitNames[row], fmt.Sprintf("commit by %s", commit.AuthorEmail)),
+			Revision:    ui.NewLink(commitNames[row], def.RepoUrl+"/+/"+commitNames[row], fmt.Sprintf("commit by %s", commit.AuthorEmail)),
 		}
 	}
 
@@ -221,13 +221,13 @@ func console(c context.Context, project, name string, limit int) (*ui.Console, e
 		}
 	})
 
-	header, err := consoleHeader(c, project, def)
+	header, err := consoleHeader(c, project, def.GetHeader())
 	if err != nil {
 		return nil, err
 	}
 
 	return &ui.Console{
-		Name:       def.Title,
+		Name:       def.Name,
 		Project:    project,
 		Header:     header,
 		Commit:     commits,
@@ -237,8 +237,8 @@ func console(c context.Context, project, name string, limit int) (*ui.Console, e
 	}, nil
 }
 
-func consolePreview(c context.Context, project string, def *common.Console) (*ui.Console, error) {
-	builderSummaries, err := getBuilderSummaries(c, project, def.ID)
+func consolePreview(c context.Context, project string, def *config.Console) (*ui.Console, error) {
+	builderSummaries, err := getBuilderSummaries(c, project, def.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func consolePreview(c context.Context, project string, def *common.Console) (*ui
 		}
 	})
 	return &ui.Console{
-		Name:       def.Title,
+		Name:       def.Name,
 		Table:      *categoryTree,
 		MaxDepth:   depth + 1,
 		FaviconURL: getFaviconURL(c, def),
@@ -269,9 +269,8 @@ func getJSONData(c context.Context, url string, expiration time.Duration, target
 	if err := memcache.Get(c, item); err == nil {
 		if err = json.Unmarshal(item.Value(), target); err == nil {
 			return nil
-		} else {
-			logging.WithError(err).Warningf(c, "couldn't load stored item from datastore")
 		}
+		logging.WithError(err).Warningf(c, "couldn't load stored item from datastore")
 	} else if err != memcache.ErrCacheMiss {
 		logging.WithError(err).Errorf(c, "memcache is having issues")
 	}
@@ -337,23 +336,27 @@ func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
 	return result, err
 }
 
-func consoleHeader(c context.Context, project string, def *common.Console) (*ui.ConsoleHeader, error) {
+func consoleHeader(c context.Context, project string, header *config.Header) (*ui.ConsoleHeader, error) {
+	if header == nil {
+		return nil, nil
+	}
+
 	// Return nil if the header is empty.
 	switch {
-	case len(def.Header.Oncalls) != 0:
+	case len(header.Oncalls) != 0:
 		// continue
-	case len(def.Header.Links) != 0:
+	case len(header.Links) != 0:
 		// continue
-	case len(def.Header.ConsoleGroups) != 0:
+	case len(header.ConsoleGroups) != 0:
 		// continue
 	default:
 		return nil, nil
 	}
 
 	// Get oncall data from URLs.
-	oncalls := make([]ui.Oncall, len(def.Header.Oncalls))
+	oncalls := make([]ui.Oncall, len(header.Oncalls))
 	err := parallel.FanOutIn(func(gen chan<- func() error) {
-		for i, oc := range def.Header.Oncalls {
+		for i, oc := range header.Oncalls {
 			i := i
 			oc := oc
 			gen <- func() error {
@@ -370,8 +373,8 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*ui.
 	// Restructure links as resp data structures.
 	//
 	// This should be a one-to-one transformation.
-	links := make([]ui.LinkGroup, len(def.Header.Links))
-	for i, linkGroup := range def.Header.Links {
+	links := make([]ui.LinkGroup, len(header.Links))
+	for i, linkGroup := range header.Links {
 		mlinks := make([]*ui.Link, len(linkGroup.Links))
 		for j, link := range linkGroup.Links {
 			ariaLabel := fmt.Sprintf("%s in %s", link.Text, linkGroup.Name)
@@ -384,8 +387,8 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*ui.
 	}
 
 	// Set up console summaries for the header.
-	consoleGroups := make([]ui.ConsoleGroup, len(def.Header.ConsoleGroups))
-	for i, group := range def.Header.ConsoleGroups {
+	consoleGroups := make([]ui.ConsoleGroup, len(header.ConsoleGroups))
+	for i, group := range header.ConsoleGroups {
 		for _, id := range group.ConsoleIds {
 			if err := validateConsoleID(id, project); err != nil {
 				return nil, err
@@ -403,9 +406,9 @@ func consoleHeader(c context.Context, project string, def *common.Console) (*ui.
 	}
 
 	var treeStatus *ui.TreeStatus
-	if def.Header.TreeStatusHost != "" {
-		treeStatus = getTreeStatus(c, def.Header.TreeStatusHost)
-		treeStatus.URL = &url.URL{Scheme: "https", Host: def.Header.TreeStatusHost}
+	if header.TreeStatusHost != "" {
+		treeStatus = getTreeStatus(c, header.TreeStatusHost)
+		treeStatus.URL = &url.URL{Scheme: "https", Host: header.TreeStatusHost}
 	}
 
 	return &ui.ConsoleHeader{
@@ -497,19 +500,21 @@ func ConsolesHandler(c *router.Context, projectName string) {
 		return
 	}
 	type fullConsole struct {
-		Def    *common.Console
-		Render consoleRenderer
+		ProjectID string
+		Def       *config.Console
+		Render    consoleRenderer
 	}
 	var consoles []fullConsole
-	for _, def := range cons {
-		respConsole, err := consolePreview(c.Context, projectName, def)
+	for _, con := range cons {
+		respConsole, err := consolePreview(c.Context, projectName, &con.Def)
 		if err != nil {
 			logging.WithError(err).Errorf(c.Context, "failed to generate resp console")
 			continue
 		}
 		full := fullConsole{
-			Def:    def,
-			Render: consoleRenderer{respConsole},
+			ProjectID: con.GetProjectID(),
+			Def:       &con.Def,
+			Render:    consoleRenderer{respConsole},
 		}
 		consoles = append(consoles, full)
 	}
