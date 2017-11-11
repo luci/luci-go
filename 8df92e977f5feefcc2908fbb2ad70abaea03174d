@@ -374,6 +374,23 @@
     },
     {
       "key": {
+        "uuid": "e34a991d_c5858ee2",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:14:17Z",
+      "side": 1,
+      "message": "for (const urlVar of sURLVariables) {",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4cb10a3d_4daab946",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
