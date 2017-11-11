@@ -88,6 +88,24 @@
     },
     {
       "key": {
+        "uuid": "befc108f_7184dda6",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:26:15Z",
+      "side": 1,
+      "message": "e.g. we could just pass boolean relative parameter",
+      "parentUuid": "948164f3_3db340f3",
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5727b270_a7925b22",
         "filename": "milo/frontend/appengine/static/common/js/time.js",
         "patchSetId": 1
