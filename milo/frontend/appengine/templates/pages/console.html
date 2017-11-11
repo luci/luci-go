@@ -55,7 +55,7 @@
               {{ $numEmails := (len .Emails) }}
               {{ if gt $numEmails 0 }}
                 {{ range $i, $email := .Emails }}
-                  <span>{{ . | obfuscateEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
+                  <span>{{ . | userFromEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
                 {{ end }}
               {{ else if .Primary }}
                 <span>{{ .Primary }}</span>
@@ -171,8 +171,9 @@
       {{ range $console.Commit }}
         <div class="console-commit-item">
           <a href="{{.Revision.URL}}">
-            <span class="commit" title="{{ .Description }}">
-              {{ .AuthorEmail }}
+            <span class="commit" title="{{ .AuthorName }} ({{ .AuthorEmail }})
+{{ .Description }}">
+              {{ .AuthorEmail | userFromEmail }}
             </span>
           </a>
         </div>

@@ -43,17 +43,21 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
+	"faviconMIMEType": faviconMIMEType,
+	"formatTime":      formatTime,
 	"humanDuration":   humanDuration,
-	"parseRFC3339":    parseRFC3339,
-	"obfuscateEmail":  obfuscateEmail,
 	"localTime":       localTime,
+	"localTimeSince":  localTimeSince,
+	"obfuscateEmail":  obfuscateEmail,
+	"obfuscateEmail":  obfuscateEmail,
+	"pagedURL":        pagedURL,
+	"parseRFC3339":    parseRFC3339,
+	"parseRFC3339":    parseRFC3339,
+	"percent":         percent,
 	"shortHash":       shortHash,
 	"startswith":      strings.HasPrefix,
 	"sub":             sub,
-	"pagedURL":        pagedURL,
-	"formatTime":      formatTime,
-	"percent":         percent,
-	"faviconMIMEType": faviconMIMEType,
+	"userFromEmail":   userFromEmail,
 }
 
 // localTime returns a <span> element with t in human format
@@ -151,6 +155,15 @@ func shortHash(s string) string {
 		return s[0:6]
 	}
 	return s
+}
+
+// userFromEmail returns the username portion of an email address.
+func userFromEmail(email string) string {
+	esplit := strings.SplitN(email, "@", 2)
+	if len(esplit) > 0 {
+		return esplit[0]
+	}
+	return email
 }
 
 // GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from
