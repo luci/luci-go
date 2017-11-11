@@ -17,6 +17,7 @@ package buildbucket
 import (
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -25,6 +26,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
@@ -121,6 +123,9 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 	case model.ErrUnknownPreviousBuild:
 		return nil
 	default:
+		if gitiles.HTTPStatus(err) == http.StatusForbidden {
+			return nil
+		}
 		return err
 	}
 
