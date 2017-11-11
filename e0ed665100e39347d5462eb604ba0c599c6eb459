@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "5b2ce64f_ca53041a",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T04:40:05Z",
+      "side": 1,
+      "message": "nit: s/show/include/? \"show\" may be interpreted as \"show me experimental ones, not the prod ones\". Optional.",
+      "range": {
+        "startLine": 145,
+        "startChar": 7,
+        "endLine": 145,
+        "endChar": 11
+      },
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2da89768_b5c32d79",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T04:40:05Z",
+      "side": 1,
+      "message": "since you make breaking changes, can make the new repeated field \"id\", and add name to id?",
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "308d6941_243e9eeb",
+        "filename": "milo/api/config/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T04:40:05Z",
+      "side": 1,
+      "message": "i think we just need to take the last one, whatever the len is?",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 2
+      },
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6ef0bcd8_942af9dc",
         "filename": "milo/api/config/util.go",
         "patchSetId": 2
@@ -25,6 +88,63 @@
     },
     {
       "key": {
+        "uuid": "4f3c3dc2_1e7cbd0c",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T04:40:05Z",
+      "side": 1,
+      "message": "what if builder ids have dups?\n\nI am not sure about this if it requires such a long explanation.\n\nwould [][]*model.BuildSummary work?",
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00fc4ca2_df1d87d8",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T04:40:05Z",
+      "side": 1,
+      "message": "this id is not necessarily unique. I think we should use column index as id",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 23
+      },
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cc64380_afcf3749",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T04:40:05Z",
+      "side": 1,
+      "message": "supernit: swap \u0026\u0026 operands. most of the time Experimental will be false",
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8712edd6_2805cf1a",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 2
@@ -36,6 +156,29 @@
       "writtenOn": "2017-11-11T02:52:08Z",
       "side": 1,
       "message": "cid for columnId, right?",
+      "range": {
+        "startLine": 92,
+        "startChar": 8,
+        "endLine": 92,
+        "endChar": 11
+      },
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "add19b40_566a2eca",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T04:40:05Z",
+      "side": 1,
+      "message": "could be just i",
       "range": {
         "startLine": 92,
         "startChar": 8,
