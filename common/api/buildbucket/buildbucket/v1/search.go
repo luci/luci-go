@@ -73,15 +73,24 @@ func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, limit int, ret re
 	// We will be mutating c.
 	// Guarantee that it will remain the same by the time function exits.
 	origCtx := c.ctx_
-	const cursorKey = "start_cursor"
+	const (
+		cursorKey = "start_cursor"
+		fieldsKey = "fields"
+	)
 	origCursor := c.urlParams_.Get(cursorKey)
+	origFields := c.urlParams_.Get(fieldsKey)
 	defer func() {
-		// these calls are equivalent to c.Context(origCtx) and
-		// c.StartCursor(origCursor). Use the low-level API to
-		// be consistent with reads.
+		// Use the low-level API to be consistent with reads.
 		c.ctx_ = origCtx
 		c.urlParams_.Set(cursorKey, origCursor)
+		c.urlParams_.Set(fieldsKey, origFields)
 	}()
+
+	// ensure "next_cursor" is included
+	c.urlParams_.Set(fieldsKey, googleapi.CombineFields([]googleapi.Field{
+		googleapi.Field(origFields),
+		"next_cursor",
+	}))
 
 	// Make a non-nil context used by default in this function.
 	ctx := origCtx
