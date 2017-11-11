@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "328705f8_ced3b2d2",
+        "filename": "appengine/gaemiddleware/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T05:26:02Z",
+      "side": 1,
+      "message": "please make sure we don\u0027t return nil\nsee another comment in the protocol",
+      "range": {
+        "startLine": 46,
+        "startChar": 9,
+        "endLine": 46,
+        "endChar": 21
+      },
+      "revId": "341b8cef19c8f736c373143683b526bf68d7776c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d88d91b8_53f32184",
+        "filename": "server/caching/global.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T05:26:02Z",
+      "side": 1,
+      "message": "nit: the",
+      "range": {
+        "startLine": 31,
+        "startChar": 27,
+        "endLine": 31,
+        "endChar": 28
+      },
+      "revId": "341b8cef19c8f736c373143683b526bf68d7776c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84b4a226_8eb6f60d",
+        "filename": "server/caching/global.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T05:26:02Z",
+      "side": 1,
+      "message": "i\u0027d like to make sure that it is possible to distinguish empty slice from cache miss\n\ncan we also say that we return non-nil empty slice if it is there but empty? also implement it",
+      "revId": "341b8cef19c8f736c373143683b526bf68d7776c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
