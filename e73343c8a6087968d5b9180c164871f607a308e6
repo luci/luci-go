@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19396d01_e8575cd1",
+        "filename": "milo/api/config/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T00:55:11Z",
+      "side": 1,
+      "message": "why was it called name if it is an ID 🤔\ni guess now it is hard to change because we have configs :(",
+      "range": {
+        "startLine": 29,
+        "startChar": 18,
+        "endLine": 29,
+        "endChar": 22
+      },
+      "revId": "e73343c8a6087968d5b9180c164871f607a308e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8ff72851_7c6ffc9c",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T00:55:11Z",
+      "side": 1,
+      "message": "since we are doing breaking changes in this entity, please rename this field to something like ConfigURL. It is not obvious at all that \"Console.URL\" is a url of the config where console is defined.",
+      "revId": "e73343c8a6087968d5b9180c164871f607a308e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "905e4351_6116e83e",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T00:55:11Z",
+      "side": 1,
+      "message": "ConfigRevision",
+      "revId": "e73343c8a6087968d5b9180c164871f607a308e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89188a03_431ad3a4",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 504,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T00:55:11Z",
+      "side": 1,
+      "message": "nit: con\nbecause cons",
+      "range": {
+        "startLine": 504,
+        "startChar": 8,
+        "endLine": 504,
+        "endChar": 15
+      },
+      "revId": "e73343c8a6087968d5b9180c164871f607a308e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
