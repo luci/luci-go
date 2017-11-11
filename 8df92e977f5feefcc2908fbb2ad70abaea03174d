@@ -248,6 +248,24 @@
     },
     {
       "key": {
+        "uuid": "7b6ad6fa_a30d79d3",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T22:49:17Z",
+      "side": 1,
+      "message": "or rather .find(\".filterable\")\n\nthen we can explicitly specify what may be filterable, and at the same do not dictate div/li structure",
+      "parentUuid": "258b5a4d_59cab8bc",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e89146fa_c15f20f4",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -282,6 +300,24 @@
       "writtenOn": "2017-11-11T18:59:42Z",
       "side": 1,
       "message": "selected divs are not the ones we\u0027ve seen in search, e.g. it will select divs that do not participate in filtering.\n\nwhy not toggle the class when filtering?\n\n  $(root).find(\u0027*[data]\u0027).each(function() {\n    const matches \u003d ...\n    $(this).toggleClass(\u0027hidden\u0027, !matches)\n  });\n\nthen no need for set",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73791468_5cf491dd",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T22:49:17Z",
+      "side": 1,
+      "message": "actually all we need is $.toggle http://api.jquery.com/toggle/\nand then we don\u0027t need our hidden class",
+      "parentUuid": "b2aff0bc_9e962196",
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
