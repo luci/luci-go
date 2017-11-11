@@ -17,6 +17,7 @@ package buildbucket
 import (
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -25,7 +26,9 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -116,10 +119,12 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 //     the resp object.
 func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *ui.MiloBuild) error {
 	_, hist, err := build.PreviousByGitilesCommit(c)
-	switch err {
-	case nil:
-	case model.ErrUnknownPreviousBuild:
+	switch {
+	case err == nil:
+	case err == model.ErrUnknownPreviousBuild:
 		return nil
+	case gitiles.HTTPStatus(err) == http.StatusForbidden:
+		return common.CodeUnauthorized.Tag().Apply(err)
 	default:
 		return err
 	}
@@ -160,7 +165,10 @@ func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.Bu
 	}
 
 	if build != nil {
-		if err := mixInSimplisticBlamelist(c, build, ret); err != nil {
+		switch err := mixInSimplisticBlamelist(c, build, ret); {
+		case common.ErrorTag.In(err) == common.CodeUnauthorized:
+			logging.WithError(err).Warningf(c, "dropping blamelist; access is unauthorized")
+		case err != nil:
 			return nil, err
 		}
 	}
