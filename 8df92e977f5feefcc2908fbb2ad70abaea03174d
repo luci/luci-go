@@ -2,6 +2,86 @@
   "comments": [
     {
       "key": {
+        "uuid": "48590948_6d28b4c2",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "id",
+      "range": {
+        "startLine": 84,
+        "startChar": 23,
+        "endLine": 84,
+        "endChar": 27
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0d4e70f_5ce2bbee",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "projectID",
+      "range": {
+        "startLine": 307,
+        "startChar": 46,
+        "endLine": 307,
+        "endChar": 57
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c980d57_39db1f94",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "nit: join with prev line",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a0695aa_1e684e91",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "nit: join with prev line?",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0305976c_bba40226",
         "filename": "milo/common/config.go",
         "patchSetId": 5
@@ -25,6 +105,149 @@
     },
     {
       "key": {
+        "uuid": "ef0a6c8e_7e8d6803",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 11,
+        "startChar": 2,
+        "endLine": 11,
+        "endChar": 5
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3b5fc5e_23246b29",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "this will print something like \"Called with root: [object HTMLDivElement]\" \n\ns/ +/, /",
+      "range": {
+        "startLine": 23,
+        "startChar": 36,
+        "endLine": 23,
+        "endChar": 38
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81c274ef_8fad3df4",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "if (!query)",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b79dadf_8a8bee43",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "what if it has a class, but a different one?\n\n$(root).toggleClass(\"filter\", !!query)\n\nthen removeClass above is needed",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "011a2f35_32ee1077",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "const\n\nhere and below",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 36,
+        "endChar": 7
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4da8a076_2ef3d69c",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "this is CSS injection, e.g. what if query has a quote\nplease consider doing filtering using js\n\nit will also allow us to implement regex filtering. Gerrit users asked for that, it is implemented in buildbucket plugin (not deployed yet though)",
+      "range": {
+        "startLine": 38,
+        "startChar": 32,
+        "endLine": 38,
+        "endChar": 37
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "258b5a4d_59cab8bc",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "search of divs is similar to the search of li. Why not search \"*[data]\"?",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e89146fa_c15f20f4",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -41,6 +264,321 @@
         "startChar": 0,
         "endLine": 46,
         "endChar": 1
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2aff0bc_9e962196",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "selected divs are not the ones we\u0027ve seen in search, e.g. it will select divs that do not participate in filtering.\n\nwhy not toggle the class when filtering?\n\n  $(root).find(\u0027*[data]\u0027).each(function() {\n    const matches \u003d ...\n    $(this).toggleClass(\u0027hidden\u0027, !matches)\n  });\n\nthen no need for set",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ad4a03f_7ba2f8be",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "nit: sParam \u003d\u003e {",
+      "range": {
+        "startLine": 61,
+        "startChar": 24,
+        "endLine": 61,
+        "endChar": 59
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d548faf_f1f9c28d",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 62,
+        "startChar": 4,
+        "endLine": 62,
+        "endChar": 7
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "341d8bd2_fcc718f8",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "js now has scoped variables\n\nfor (let i \u003d 0; ....",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 65,
+        "endChar": 10
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9100e763_8bd515e7",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "why indented?",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cb10a3d_4daab946",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "const [key, value] \u003d",
+      "range": {
+        "startLine": 68,
+        "startChar": 3,
+        "endLine": 68,
+        "endChar": 17
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a87b85e_04b03e4e",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "what if value has \u003d\nplease apply limit",
+      "range": {
+        "startLine": 68,
+        "startChar": 41,
+        "endLine": 68,
+        "endChar": 48
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a9560cb_2e609e22",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "tabs in this file",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65696c19_74c5cb76",
+        "filename": "milo/frontend/appengine/templates/pages/frontpage.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "\u003c/div\u003e\n\n?",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3732f7f0_4db3615f",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "unnecessary, thus if too\n\nwould\n\n  \u003ch2\u003e{{ .Name }} {{ .Host }}\u003c/h2\u003e\n\nwork?",
+      "range": {
+        "startLine": 18,
+        "startChar": 28,
+        "endLine": 18,
+        "endChar": 33
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "765f0452_b752962d",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "\u003cli\u003e shouldn\u0027t be in \u003cdiv\u003e\nhttps://developer.mozilla.org/en-US/docs/Web/HTML/Element/li\n\nwould `display: list-item` style work?",
+      "range": {
+        "startLine": 24,
+        "startChar": 9,
+        "endLine": 24,
+        "endChar": 11
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28b04846_bdbef49c",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "filter docstring says it accepts a node, but here we pass css selector\n\nconsider\n\n  const searchContext \u003d $(\u0027#search-content\u0027);\n\nand then use that",
+      "range": {
+        "startLine": 39,
+        "startChar": 16,
+        "endLine": 39,
+        "endChar": 33
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b983133_9525bebb",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 5
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eebc9912_c086d511",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "if (q)",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0328e61_52fdfff4",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T18:59:42Z",
+      "side": 1,
+      "message": "at this point, this is equivalent to \n\n  milo.filter(\"#search-content\", $(\"#search-text\").val());\n\nwhich is the same as L39 and L42.\n\nconsider extracting to a function and reuse 3 times\n\n---\n\nstepping back, is this necessary? search-text already has change handler, it should have fired by this time",
+      "range": {
+        "startLine": 47,
+        "startChar": 4,
+        "endLine": 47,
+        "endChar": 38
       },
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
