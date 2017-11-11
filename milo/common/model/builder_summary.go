@@ -116,7 +116,7 @@ func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
 // Update updates the given BuilderSummary with the provided BuildSummary.
 // In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete
 // and has a more recent creation time than the one stored in the BuilderSummary.
-func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
+func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) (err error) {
 	if b.BuilderID != build.BuilderID {
 		return fmt.Errorf(
 			"updating wrong builder %s for build %v (should be %s)",
@@ -124,16 +124,15 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) error {
 	}
 
 	// Update console strings list.
-	b.Consoles = make([]string, 0, len(build.consoles))
-	for _, con := range build.consoles {
-		b.Consoles = append(b.Consoles, fmt.Sprintf("%s/%s", con.GetProjectID(), con.ID))
+	if b.Consoles, err = build.GetConsoleNames(); err != nil {
+		return err
 	}
 
 	// Update builder's InProgress with given build.
 	// The only kind of error we /should/ get is if a terminal build message arrives before any
 	// pending build messages. In that case, we still want to update the builder's last finished build
 	// info if applicable, and re-raise the error after. Otherwise, return the error immediately.
-	err := b.updateInProgress(build)
+	err = b.updateInProgress(build)
 	if err != nil && !BuildMessageOutOfOrderTag.In(err) {
 		return err
 	}

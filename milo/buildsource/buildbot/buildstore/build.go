@@ -149,7 +149,7 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 			}
 
 			return &buildbucket.GitilesCommit{
-				Project:  strings.TrimSuffix(u.Path, ".git"),
+				Project:  strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), ".git"),
 				Host:     u.Host,
 				Revision: rev,
 			}, nil
@@ -184,16 +184,13 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 	for _, f := range funcs {
 		if bset, err := f.CB(); err == nil {
 			bs.BuildSet = append(bs.BuildSet, bset.String())
-			if err := bs.AddManifestKeysFromBuildSet(c, bset); err != nil {
-				return err
-			}
 			logging.Infof(c, "applied %s: %q", f.Name, bset)
 		} else if err != errMissingProperties {
 			logging.WithError(err).Warningf(c, "failed to apply %s", f.Name)
 		}
 	}
 
-	return nil
+	return bs.AddManifestKeysFromBuildSets(c)
 }
 
 // summarizeBuild creates a build summary from the buildbot build.
