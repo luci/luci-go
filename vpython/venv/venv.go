@@ -823,7 +823,7 @@ func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) f
 	// Do not dump any additional error output.
 	return func(c context.Context, l logging.Level) {
 		if buf.Len() > 0 {
-			logging.Logf(c, l, "Process output:\n%s", buf.Bytes())
+			logging.Logf(c, logging.Error, "Process output:\n%s", buf.Bytes())
 		}
 	}
 }
