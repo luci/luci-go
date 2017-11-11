@@ -88,6 +88,24 @@
       "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97d0ebf1_bdc885b3",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-11T00:28:25Z",
+      "side": 1,
+      "message": "That\u0027s a good point (I didn\u0027t actually know the command was triggered out-of-shell, but that makes sense), and you\u0027re probably right since the golang flag parser is intended to be portable, so a Windows issue wouldn\u0027t make any sense.",
+      "parentUuid": "1cd6250d_95b7c134",
+      "revId": "4470e8eb2bed38dc1dc5f64232d5e732075953f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
