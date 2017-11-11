@@ -1,0 +1,187 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ff5c484_4a0ee5c2",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 37,
+        "startChar": 28,
+        "endLine": 37,
+        "endChar": 45
+      },
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e779066_d027ae6c",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 42,
+        "startChar": 4,
+        "endLine": 42,
+        "endChar": 7
+      },
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d071c701_f647c709",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "let",
+      "range": {
+        "startLine": 46,
+        "startChar": 4,
+        "endLine": 46,
+        "endChar": 7
+      },
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "948164f3_3db340f3",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "there is a lot of code duplication with formatDate and very small difference. Please extract common code",
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5727b270_a7925b22",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "for (const span of document.getElementsByClassName(\u0027local-time-since\u0027)) {",
+      "range": {
+        "startLine": 81,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 30
+      },
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39e0300e_90b852df",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "const here and below\n\nbesides, oldTimestamp is not used",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 11
+      },
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "092a7c2a_850ce100",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "if (newTimestamp)",
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebd0be4a_dba48ae8",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "copy paste of makeTimesLocal? Please reduce duplication",
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7483598f_9078a561",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:19:24Z",
+      "side": 1,
+      "message": "since there is so much duplication in that code, can we combine these two functions?",
+      "revId": "ce8c58d328a7d1dbcdfbd0525a135d4faf551135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
