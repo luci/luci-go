@@ -114,12 +114,17 @@
             {{ .Name.HTML }}
           </div>
           {{ $console_name := .Name.Link.Label }}
+          {{ $num_builders := (len .Builders) }}
           {{ range .Builders }}
             <a class="console-builder-status"
                href="/{{ .LastFinishedBuildID }}"
                title="{{ .LastFinishedBuildID }}"
                aria-label="builder {{ .BuilderID }} on console {{ $console_name }} has last status {{ .LastFinishedStatus }}">
-              <div class="console-header-builder status-{{ .LastFinishedStatus }}"></div>
+              {{ if lt $num_builders 50 }}
+                <div class="console-header-builder status-{{ .LastFinishedStatus }}"></div>
+              {{ else }}
+                <div class="console-list-builder status-{{ .LastFinishedStatus }}"></div>
+              {{ end }}
             </a>
           {{ end }}
         </div>

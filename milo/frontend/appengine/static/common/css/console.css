@@ -397,6 +397,7 @@
   flex-grow: 1;
   min-height: 2em;
   max-height: 2em;
+  min-width: 0.5em;
   border-width: 1px;
   border-style: solid;
   border-radius: 0.25em;
