@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8e5f623_3e6cc739",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-11T00:29:09Z",
+      "side": 1,
+      "message": "or:\n  env :\u003d subcommands.Env{}\n  env[lib.LockFileEnvVar].Value \u003d lockFileDir\n  env[lib.LockFileEnvVar].Exists \u003d true",
+      "revId": "b17d23db336d30bee31b0abfb239756796d2c0aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fbb662c_dbad2605",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-11T00:29:09Z",
+      "side": 1,
+      "message": "pls2document all exported symbols, kthx",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 17
+      },
+      "revId": "b17d23db336d30bee31b0abfb239756796d2c0aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0fb7905_62bcd2b1",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-11T00:29:09Z",
+      "side": 1,
+      "message": "can drop this comment",
+      "range": {
+        "startLine": 34,
+        "startChar": 28,
+        "endLine": 34,
+        "endChar": 41
+      },
+      "revId": "b17d23db336d30bee31b0abfb239756796d2c0aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
