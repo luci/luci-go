@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a03e0c4_21aec70e",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-11T01:22:02Z",
+      "side": 1,
+      "message": "this was turning into buildsets like:\n\n  \n commit/gitiles/chromium.googlesource.com//chromium/src/+/b1cd8d1556530215138eb8fad0149c4ffe3b2e20\n\nThe extra \u0027/\u0027 was meaning that the BuildSet would no longer parse as a GitilesCommit. Derp.",
+      "range": {
+        "startLine": 152,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 74
+      },
+      "revId": "e423a7b7fcfc53fd2c2fd63086875cf494bd9752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
