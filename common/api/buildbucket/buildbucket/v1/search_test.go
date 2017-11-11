@@ -61,8 +61,10 @@ func TestSearch(t *testing.T) {
 				},
 			},
 		}
+		var requests []http.Request
 		var prevCursor string
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requests = append(requests, *r)
 			c.So(r.URL.Query().Get("start_cursor"), ShouldEqual, prevCursor)
 			res := &responses[0]
 			if res.transientErrors > 0 {
@@ -101,6 +103,14 @@ func TestSearch(t *testing.T) {
 			err := client.Search().Context(ctx).Run(builds, 0, nil)
 			So(err, ShouldEqual, context.Canceled)
 		})
+		Convey("Run with a partial response", func() {
+			builds := make(chan *ApiCommonBuildMessage, 5)
+			err := client.Search().Fields("builds(id)").Run(builds, 0, nil)
+			So(err, ShouldBeNil)
+			So(len(requests), ShouldBeGreaterThan, 0)
+			So(requests[0].FormValue("fields"), ShouldEqual, "builds(id),next_cursor")
+		})
+
 		Convey("Fetch until finished", func() {
 			builds, err := client.Search().Fetch(0, nil)
 			So(err, ShouldBeNil)
