@@ -333,9 +333,7 @@ func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
 	result := ui.Oncall{}
 	err := getJSONData(c, url, 600, &result)
 	// Set the name, this is not loaded from the sheriff JSON.
-	if err == nil {
-		result.Name = name
-	}
+	result.Name = name
 	return result, err
 }
 
