@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "731a11f4_4ee70dc2",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-11T19:02:20Z",
+      "side": 1,
+      "message": "it is still not obvious that this function returns a useful oncall in case of an error. Most of functions in Go code in general return something defined when the returned err !\u003d nil. Please document that returned oncall always has the name",
+      "revId": "f957bb8bd6db2374f4b51dd7dfc24d12dc9ba109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
