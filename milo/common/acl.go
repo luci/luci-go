@@ -28,6 +28,12 @@ import (
 // IsAllowed checks to see if the user in the context is allowed to access
 // the given project.
 func IsAllowed(c context.Context, project string) (bool, error) {
+	switch admin, err := IsAdmin(c); {
+	case err != nil:
+		return false, err
+	case admin:
+		return true, nil
+	}
 	// Get the project, because that's where the ACLs lie.
 	err := access.Check(
 		c, backend.AsUser,
