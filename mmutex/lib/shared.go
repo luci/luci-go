@@ -24,16 +24,16 @@ import (
 // RunShared runs the command with the specified environment while holding a
 // shared mmutex lock.
 func RunShared(env subcommands.Env, command func() error) error {
-	lockFilePath, err := computeLockFilePath(env)
+	mutexPaths, err := computeMutexPaths(env)
 	if err != nil {
 		return err
 	}
-	if len(lockFilePath) == 0 {
+	if len(mutexPaths.lockFile) == 0 {
 		return command()
 	}
 
 	blocker := CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
-	return fslock.WithSharedBlocking(lockFilePath, blocker, func() error {
+	return fslock.WithSharedBlocking(mutexPaths.lockFile, blocker, func() error {
 		return command()
 	})
 }
