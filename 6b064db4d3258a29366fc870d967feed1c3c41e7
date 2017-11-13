@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c1aec7a9_eec27428",
+        "filename": "common/config/validation/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-13T19:41:18Z",
+      "side": 1,
+      "message": "this is a new package, so must have a godoc for itself in one of the files. If package will have just 1 .go file(excluding tests), then it\u0027s fine to do so inline; otherwise consider creating standalone doc.go file (see examples in the same repo).",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 18
+      },
+      "revId": "6b064db4d3258a29366fc870d967feed1c3c41e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfa14fbb_c7de734c",
+        "filename": "common/config/validation/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-13T19:41:18Z",
+      "side": 1,
+      "message": "prefer a pinned (ie with sha1 instead of \"master\") gitiles URL like \nhttps://chromium.googlesource.com/infra/luci/luci-py/+/3efc60daef6bf6669f9211f63e799db47a0478c0/appengine/components/components/config/endpoint.py",
+      "range": {
+        "startLine": 26,
+        "startChar": 13,
+        "endLine": 26,
+        "endChar": 107
+      },
+      "revId": "6b064db4d3258a29366fc870d967feed1c3c41e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42c1d95e_19617b28",
+        "filename": "common/config/validation/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-13T19:41:18Z",
+      "side": 1,
+      "message": "Taken",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 7
+      },
+      "revId": "6b064db4d3258a29366fc870d967feed1c3c41e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ecc988a_58167b66",
+        "filename": "common/config/validation/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-13T19:41:18Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 46,
+        "startChar": 12,
+        "endLine": 46,
+        "endChar": 14
+      },
+      "revId": "6b064db4d3258a29366fc870d967feed1c3c41e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bf4531e_bc4b573f",
+        "filename": "common/config/validation/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-13T19:41:18Z",
+      "side": 1,
+      "message": "Generally, avoid adding interface unless you need to. This CL has no usage of Metadata, so it is hard for me to tell what usage is.",
+      "revId": "6b064db4d3258a29366fc870d967feed1c3c41e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8febafa_be7b38f5",
+        "filename": "common/config/validation/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-13T19:41:18Z",
+      "side": 1,
+      "message": "godoc applies here as well, so\n\n// AddConfigPattern adds the regex pattern pair\n(copied from below).",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 8
+      },
+      "revId": "6b064db4d3258a29366fc870d967feed1c3c41e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "271486bb_d5ad58b1",
+        "filename": "common/config/validation/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-13T19:41:18Z",
+      "side": 1,
+      "message": "If you have interface and implementation, document in interface while implementation can just refer to interface doc like this:\n\n// AddConfigPattern implements Metadata interface.",
+      "range": {
+        "startLine": 55,
+        "startChar": 3,
+        "endLine": 55,
+        "endChar": 7
+      },
+      "revId": "6b064db4d3258a29366fc870d967feed1c3c41e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
