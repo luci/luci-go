@@ -20,23 +20,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"time"
 
-	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.chromium.org/luci/common/errors"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/mmutex/lib"
 )
 
 func TestExclusive(t *testing.T) {
-	var fnThatReturns = func(err error) func() error {
-		return func() error {
-			return err
-		}
-	}
-
 	Convey("RunExclusive", t, func() {
 		var lockFileDir string
 		var err error
@@ -44,20 +35,12 @@ func TestExclusive(t *testing.T) {
 			panic(err)
 		}
 		env := subcommands.Env{
-			lockFileEnvVariable: subcommands.EnvVar{
+			lib.LockFileEnvVariable: subcommands.EnvVar{
 				Value:  lockFileDir,
 				Exists: true,
 			},
 		}
-		lockFilePath, err := computeLockFilePath(env)
-		if err != nil {
-			panic(err)
-		}
-		defer func() {
-			os.Remove(lockFileDir)
-		}()
-		fslockTimeout = 0
-		fslockPollingInterval = 0
+		defer os.Remove(lockFileDir)
 
 		Convey("executes the command", func() {
 			var tempDir string
@@ -81,60 +64,5 @@ func TestExclusive(t *testing.T) {
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)
 		})
-
-		Convey("returns error from the command", func() {
-			So(runExclusive(env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
-		})
-
-		Convey("times out if exclusive lock isn't released", func() {
-			var handle fslock.Handle
-			var err error
-
-			if handle, err = fslock.Lock(lockFilePath); err != nil {
-				panic(err)
-			}
-			defer handle.Unlock()
-
-			fslockTimeout = 0
-			So(runExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
-		})
-
-		Convey("times out if shared lock isn't released", func() {
-			var handle fslock.Handle
-			var err error
-
-			if handle, err = fslock.LockShared(lockFilePath); err != nil {
-				panic(err)
-			}
-			defer handle.Unlock()
-
-			So(runExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
-		})
-
-		Convey("respects timeout", func() {
-			var handle fslock.Handle
-			var err error
-
-			if handle, err = fslock.Lock(lockFilePath); err != nil {
-				panic(err)
-			}
-			defer handle.Unlock()
-
-			oldFslockTimeout := fslockTimeout
-			fslockTimeout = 5 * time.Millisecond
-			defer func() {
-				fslockTimeout = oldFslockTimeout
-			}()
-
-			start := time.Now()
-			runExclusive(env, fnThatReturns(nil))
-			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
-		})
-
-		// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
-	})
-
-	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
-		So(runExclusive(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }
