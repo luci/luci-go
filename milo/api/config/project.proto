@@ -16,6 +16,11 @@ message Project {
 
   // Consoles is a list of consoles to define under /console/
   repeated Console consoles = 2;
+
+  // LogoUrl is the URL to the logo for this project.
+  // This field is optional. The logo URL must have a host of
+  // storage.googleapis.com.
+  string logo_url = 3;
 }
 
 // Link is a link to an internet resource, which will be rendered out as
