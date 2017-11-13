@@ -47,7 +47,7 @@ func TestExclusive(t *testing.T) {
 				Exists: true,
 			},
 		}
-		lockFilePath, err := computeLockFilePath(env)
+		mutexPaths, err := computeMutexPaths(env)
 		if err != nil {
 			panic(err)
 		}
@@ -65,7 +65,7 @@ func TestExclusive(t *testing.T) {
 			var handle fslock.Handle
 			var err error
 
-			if handle, err = fslock.Lock(lockFilePath); err != nil {
+			if handle, err = fslock.Lock(mutexPaths.lockFile); err != nil {
 				panic(err)
 			}
 			defer handle.Unlock()
@@ -78,7 +78,7 @@ func TestExclusive(t *testing.T) {
 			var handle fslock.Handle
 			var err error
 
-			if handle, err = fslock.LockShared(lockFilePath); err != nil {
+			if handle, err = fslock.LockShared(mutexPaths.lockFile); err != nil {
 				panic(err)
 			}
 			defer handle.Unlock()
@@ -90,7 +90,7 @@ func TestExclusive(t *testing.T) {
 			var handle fslock.Handle
 			var err error
 
-			if handle, err = fslock.Lock(lockFilePath); err != nil {
+			if handle, err = fslock.Lock(mutexPaths.lockFile); err != nil {
 				panic(err)
 			}
 			defer handle.Unlock()
@@ -109,7 +109,7 @@ func TestExclusive(t *testing.T) {
 		// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
 	})
 
-	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
+	Convey("RunExclusive acts as a passthrough if lockFileDir is empty", t, func() {
 		So(RunExclusive(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }
