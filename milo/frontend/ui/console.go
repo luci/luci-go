@@ -271,7 +271,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	// If render the HTML as flat rather than nested, we don't need to recurse at all and should just
 	// return after rendering the BuilderSummary.
 	if maxDepth < 0 {
-		if br.Builder != nil {
+		if br.Builder != nil && br.Builder.LastFinishedBuildID != "" {
 			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="/%s" title="%s">`,
 				template.HTMLEscapeString(br.Builder.LastFinishedBuildID),
 				template.HTMLEscapeString(br.Builder.LastFinishedBuildID),

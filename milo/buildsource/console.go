@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/milo/api/config"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -105,8 +106,10 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]ui.ConsoleSu
 			i := i
 			id := id
 			ch <- func() error {
-				var err error
-				summaries[i], err = GetConsoleSummary(c, id)
+				summary, err := GetConsoleSummary(c, id)
+				if err == nil {
+					summaries[i] = *summary
+				}
 				return err
 			}
 		}
@@ -118,19 +121,45 @@ func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]ui.ConsoleSu
 }
 
 // GetConsoleSummary returns a single console summary from the datastore.
-func GetConsoleSummary(c context.Context, consoleID string) (ui.ConsoleSummary, error) {
-	summary := ui.ConsoleSummary{}
+func GetConsoleSummary(c context.Context, consoleID string) (*ui.ConsoleSummary, error) {
+	summary := &ui.ConsoleSummary{}
 	// It's safe to SplitN because we assume the ID has already been validated.
 	consoleComponents := strings.SplitN(consoleID, "/", 2)
 	project := consoleComponents[0]
-	name := consoleComponents[1]
+	ID := consoleComponents[1]
 
 	// Set Name label.
-	ariaLabel := fmt.Sprintf("Console %s in project %s", name, project)
-	summary.Name = ui.NewLink(name, fmt.Sprintf("/p/%s/consoles/%s", project, name), ariaLabel)
+	ariaLabel := fmt.Sprintf("Console %s in project %s", ID, project)
+	summary.Name = ui.NewLink(ID, fmt.Sprintf("/p/%s/consoles/%s", project, ID), ariaLabel)
 
-	// Populate with builder summaries.
-	q := datastore.NewQuery("BuilderSummary").Eq("Consoles", consoleID)
-	err := datastore.GetAll(c, q, &summary.Builders)
-	return summary, err
+	// Fetch the config first.
+	def, err := common.GetConsole(c, project, ID)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting %s", consoleID).Err()
+	}
+
+	// Fetch the data from datastore.
+	builders := make([]*model.BuilderSummary, len(def.Builders))
+	for i, builderID := range def.Builders {
+		builders[i] = &model.BuilderSummary{BuilderID: builderID}
+	}
+	err = datastore.Get(c, builders)
+	if err != nil {
+		// Return an error only if we encouter an error other than datastore.ErrNoSuchEntity.
+		me := err.(errors.MultiError)
+		newME := errors.MultiError{}
+		for i, ierr := range me {
+			if ierr == datastore.ErrNoSuchEntity {
+				builders[i] = &model.BuilderSummary{BuilderID: def.Builders[i]}
+			} else {
+				newME = append(newME, ierr)
+			}
+		}
+		if newME.First() != nil {
+			return nil, newME
+		}
+	}
+
+	summary.Builders = builders
+	return summary, nil
 }
