@@ -30,26 +30,37 @@ const LockFileEnvVariable = "MMUTEX_LOCK_DIR"
 // LockFileName specifies the name of the lock file within $MMUTEX_LOCK_DIR.
 const LockFileName = "mmutex.lock"
 
+// DrainFileName specifies the name of the drain file within $MMUTEX_LOCK_DIR.
+const DrainFileName = "mmutex.drain"
+
 var fslockTimeout = 2 * time.Hour
 var fslockPollingInterval = 5 * time.Second
 
+type mutexPaths struct {
+	lockFile  string
+	drainFile string
+}
+
 // Returns the lock file path based on the environment variable, or an empty string if no
 // lock file should be used.
-func computeLockFilePath(env subcommands.Env) (string, error) {
+func computeMutexPaths(env subcommands.Env) (mutexPaths, error) {
 	envVar := env[LockFileEnvVariable]
 	if !envVar.Exists {
-		return "", nil
+		return mutexPaths{}, nil
 	}
 
 	lockFileDir := envVar.Value
 	if !filepath.IsAbs(lockFileDir) {
-		return "", errors.Reason("Lock file directory %s must be an absolute path", lockFileDir).Err()
+		return mutexPaths{}, errors.Reason("Lock file directory %s must be an absolute path", lockFileDir).Err()
 	}
 
 	if _, err := os.Stat(lockFileDir); os.IsNotExist(err) {
 		fmt.Printf("Lock file directory %s does not exist, mmutex acting as a passthrough.", lockFileDir)
-		return "", nil
+		return mutexPaths{}, nil
 	}
 
-	return filepath.Join(lockFileDir, LockFileName), nil
+	return mutexPaths{
+		lockFile:  filepath.Join(lockFileDir, LockFileName),
+		drainFile: filepath.Join(lockFileDir, DrainFileName),
+	}, nil
 }

@@ -24,17 +24,17 @@ import (
 // RunExclusive runs the command with the specified environment while holding an
 // exclusive mmutex lock.
 func RunExclusive(env subcommands.Env, command func() error) error {
-	lockFilePath, err := computeLockFilePath(env)
+	mutexPaths, err := computeMutexPaths(env)
 	if err != nil {
 		return err
 	}
 
-	if len(lockFilePath) == 0 {
+	if len(mutexPaths.lockFile) == 0 {
 		return command()
 	}
 
 	blocker := CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
-	return fslock.WithBlocking(lockFilePath, blocker, func() error {
+	return fslock.WithBlocking(mutexPaths.lockFile, blocker, func() error {
 		return command()
 	})
 }
