@@ -57,7 +57,12 @@
     return hover;
   };
 
-  milo.makeTimesLocal = function() {
+  milo.makeTimesLocal = function(locale) {
+    // Moment.js does not set the local automatically, it must be done by the
+    // caller.
+    locale = locale || window.navigator.userLanguage || window.navigator.language;
+    moment.locale(locale);
+
     var timeSpans = document.getElementsByClassName('local-time');
     for (var i = 0; i < timeSpans.length; i++) {
       var span = timeSpans[i];
