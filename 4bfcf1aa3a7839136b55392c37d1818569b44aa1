@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "afdd8599_d3222524",
+        "filename": "mmutex/lib/lock_file_helpers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2017-11-13T16:54:31Z",
+      "side": 1,
+      "message": "os.Remove(tempDir) after the test to avoid leaking temp dirs",
+      "revId": "4bfcf1aa3a7839136b55392c37d1818569b44aa1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7359e17b_07433079",
+        "filename": "mmutex/lib/lock_file_helpers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2017-11-13T16:54:31Z",
+      "side": 1,
+      "message": "Would this work on Windows if temp dir is on another drive than cwd?",
+      "range": {
+        "startLine": 87,
+        "startChar": 20,
+        "endLine": 87,
+        "endChar": 45
+      },
+      "revId": "4bfcf1aa3a7839136b55392c37d1818569b44aa1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "626fae56_9a69ff38",
+        "filename": "mmutex/lib/lock_file_helpers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2017-11-13T16:54:31Z",
+      "side": 1,
+      "message": "ditto: os.Remove(tempDir)",
+      "revId": "4bfcf1aa3a7839136b55392c37d1818569b44aa1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
