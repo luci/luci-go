@@ -1,0 +1,198 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b7717b5a_5b65b56d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "782874",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77ac458b_1c148840",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "this is inconsistent with GetConsoleSummaries. Please make both return pointers or both non-pointers. Then you don\u0027t need changes to L109",
+      "range": {
+        "startLine": 124,
+        "startChar": 61,
+        "endLine": 124,
+        "endChar": 62
+      },
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb50ce19_f2554cb3",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "if this function ultimately need project and id separate, it should have received them instead of combined string (not related to this CL)",
+      "range": {
+        "startLine": 128,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 27
+      },
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "13a6e7b7_c0105c14",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "nit: this is a var, why is it all caps?",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 3
+      },
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "305d79b6_0f06130e",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "summary.Builders \u003d ...\n\none variable less",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "061d6080_32bc6777",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "nit: join with prev line",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f26df178_85a99bf6",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 149,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16cd7925_f81a2eda",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "var newME errors.MultiError\n\nso we don\u0027t allocate memory if won\u0027t be needed\n\nalternatively use https://godoc.org/go.chromium.org/luci/common/errors#LazyMultiError",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c990fc03_227d34a4",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "here we add a nils and allocate space for that for nothing if there was no error\nplease use https://godoc.org/go.chromium.org/luci/common/errors#LazyMultiError.Assign",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0007477d_e1b47629",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-13T23:16:30Z",
+      "side": 1,
+      "message": "why html/template wasn\u0027t use here 🤔 (not related to this CL)",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
