@@ -15,8 +15,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -26,6 +29,7 @@ import (
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
@@ -41,6 +45,10 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.Flags.Var(&c.files, "files", "Individual file(s) to archive")
 			c.Flags.Var(&c.blacklist, "blacklist",
 				"List of regexp to use as blacklist filter when uploading directories")
+			c.Flags.StringVar(&c.dumpHash, "dump-hash", "",
+				"Write the composite isolated hash to a file.")
+			c.Flags.StringVar(&c.dumpIsolated, "dump-isolated", "",
+				"Write the composite isolated to a file.")
 			return &c
 		},
 	}
@@ -48,9 +56,11 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type archiveRun struct {
 	commonFlags
-	dirs      common.Strings
-	files     common.Strings
-	blacklist common.Strings
+	dirs         common.Strings
+	files        common.Strings
+	blacklist    common.Strings
+	dumpHash     string
+	dumpIsolated string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -63,44 +73,112 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
-func (c *archiveRun) main(a subcommands.Application, args []string) error {
+func (c *archiveRun) waitOnItems(items []*archiver.Item, names []string, cb func(int, isolated.HexDigest)) error {
+	for i, item := range items {
+		item.WaitForHashed()
+		if err := item.Error(); err != nil {
+			if !c.defaultFlags.Quiet {
+				fmt.Printf("%s failed: %s\n", names[i], err)
+			}
+			return err
+		}
+		digest := item.Digest()
+		cb(i, digest)
+		if !c.defaultFlags.Quiet {
+			fmt.Printf("%s  %s\n", digest, names[i])
+		}
+	}
+	return nil
+}
+
+func (c *archiveRun) main(a subcommands.Application, args []string) (err error) {
 	start := time.Now()
 	out := os.Stdout
-	prefix := "\n"
-	if c.defaultFlags.Quiet {
-		prefix = ""
-	}
 
 	authClient, err := c.createAuthClient()
 	if err != nil {
-		return err
+		return
 	}
+	isolatedClient := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
-	arch := archiver.New(ctx, isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
+	arch := archiver.New(ctx, isolatedClient, out)
+	defer func() {
+		// This waits for all uploads.
+		cerr := arch.Close()
+		if err == nil {
+			err = cerr
+			return
+		}
+	}()
+
 	common.CancelOnCtrlC(arch)
-	items := make([]*archiver.Item, 0, len(c.files)+len(c.dirs))
-	names := make([]string, 0, cap(items))
+	composite := isolated.New()
+
+	fItems := make([]*archiver.Item, 0, len(c.files))
+	fNames := make([]string, 0, cap(fItems))
 	for _, file := range c.files {
-		items = append(items, arch.PushFile(file, file, 0))
-		names = append(names, file)
+		info, err := os.Lstat(file)
+		if err != nil {
+			return err
+		}
+		mode := info.Mode()
+		composite.Files[file] = isolated.BasicFile("", int(mode.Perm()), info.Size())
+
+		fItems = append(fItems, arch.PushFile(file, file, 0))
+		fNames = append(fNames, file)
 	}
 
+	dItems := make([]*archiver.Item, 0, len(c.dirs))
+	dNames := make([]string, 0, cap(dItems))
 	for _, d := range c.dirs {
-		items = append(items, archiver.PushDirectory(arch, d, "", nil))
-		names = append(names, d)
+		dItems = append(dItems, archiver.PushDirectory(arch, d, "", nil))
+		dNames = append(dNames, d)
 	}
 
-	for i, item := range items {
-		item.WaitForHashed()
-		if err := item.Error(); err == nil {
-			fmt.Printf("%s%s  %s\n", prefix, item.Digest(), names[i])
-		} else {
-			fmt.Printf("%s%s failed: %s\n", prefix, names[i], err)
+	err = c.waitOnItems(fItems, fNames, func(i int, digest isolated.HexDigest) {
+		f := composite.Files[fNames[i]]
+		f.Digest = digest
+		composite.Files[fNames[i]] = f
+	})
+	if err != nil {
+		return
+	}
+
+	err = c.waitOnItems(dItems, dNames, func(_ int, digest isolated.HexDigest) {
+		composite.Includes = append(composite.Includes, digest)
+	})
+	if err != nil {
+		return
+	}
+
+	rawComposite := &bytes.Buffer{}
+	if err = json.NewEncoder(rawComposite).Encode(composite); err != nil {
+		return
+	}
+
+	var compositeName string
+	if len(c.dumpIsolated) != 0 {
+		compositeName = c.dumpIsolated
+	} else {
+		compositeName = ".isolated"
+	}
+	compositeItem := arch.Push(compositeName, isolatedclient.NewBytesSource(rawComposite.Bytes()), 0)
+	compositeItem.WaitForHashed()
+	if !c.defaultFlags.Quiet {
+		fmt.Printf("%s  %s\n", compositeItem.Digest(), compositeName)
+	}
+
+	if len(c.dumpHash) != 0 {
+		if err = ioutil.WriteFile(c.dumpHash, []byte(compositeItem.Digest()), 0644); err != nil {
+			return
 		}
 	}
-	// This waits for all uploads.
-	err = arch.Close()
+	if len(c.dumpIsolated) != 0 {
+		if err = ioutil.WriteFile(c.dumpIsolated, rawComposite.Bytes(), 0644); err != nil {
+			return
+		}
+	}
 	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
 		stats := arch.Stats()
@@ -108,7 +186,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
 	}
-	return err
+	return
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
