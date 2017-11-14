@@ -16,6 +16,9 @@ message Project {
 
   // Consoles is a list of consoles to define under /console/
   repeated Console consoles = 2;
+
+  // Headers is a list of defined headers that may be referenced by a console.
+  repeated Header headers = 3;
 }
 
 // Link is a link to an internet resource, which will be rendered out as
@@ -101,6 +104,8 @@ message Header {
   // as the bar at the very top of the page.
   string tree_status_host = 4;
 
+  // Id is a reference to the header.
+  string id = 5;
 }
 
 // Console is a waterfall definition consisting of one or more builders.
@@ -139,6 +144,10 @@ message Console {
   // Header is a collection of links, rotation information, and console summaries
   // displayed under the tree status but above the main console content.
   Header header = 9;
+
+  // HeaderId is a reference to a header.  Only one of Header or HeaderId should
+  // be specified.
+  string header_id = 10;
 }
 
 // Builder is a reference to a Milo builder.

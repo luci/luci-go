@@ -64,12 +64,26 @@ func TestConfig(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "default")
 				So(cs.Def.RepoUrl, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
+				So(cs.Def.Header, ShouldBeNil)
+			})
+
+			Convey("Check Console config updated with header", func() {
+				cs, err := GetConsole(c, "foo", "default_header")
+				So(err, ShouldBeNil)
+				So(cs.ID, ShouldEqual, "default_header")
+				So(cs.Def.RepoUrl, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
+				So(cs.Def.Header.Id, ShouldEqual, "main_header")
+				So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
 			})
 		})
 	})
 }
 
 var fooCfg = `
+headers: {
+	id: "main_header"
+	tree_status_host: "blarg.example.com"
+}
 consoles: {
 	id: "default"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
@@ -84,6 +98,22 @@ consoles: {
 		category: "main|other"
 		short_name: "o"
 	}
+}
+consoles: {
+	id: "default_header"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	ref: "master"
+	builders: {
+		name: "buildbucket/luci.foo.something/bar"
+		category: "main|something"
+		short_name: "s"
+	}
+	builders: {
+		name: "buildbucket/luci.foo.other/baz"
+		category: "main|other"
+		short_name: "o"
+	}
+	header_id: "main_header"
 }
 `
 

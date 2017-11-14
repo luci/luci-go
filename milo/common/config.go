@@ -227,12 +227,21 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 		return nil, errors.Annotate(err, "unmarshalling proto").Err()
 	}
 
+	// Extract the headers into a map for convenience.
+	headers := make(map[string]*config.Header, len(proj.Headers))
+	for _, header := range proj.Headers {
+		headers[header.Id] = header
+	}
 	// Keep a list of known consoles so we can prune deleted ones later.
 	knownConsoles := stringset.New(len(proj.Consoles))
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
 	parentKey := datastore.MakeKey(c, "Project", projectName)
 	for _, pc := range proj.Consoles {
+		if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
+			// Inject a header if HeaderId is specified, and it doesn't already have one.
+			pc.Header = header
+		}
 		knownConsoles.Add(pc.Id)
 		con, err := GetConsole(c, projectName, pc.Id)
 		switch err {
