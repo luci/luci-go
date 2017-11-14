@@ -64,12 +64,20 @@ func TestConfig(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "default")
 				So(cs.Def.RepoUrl, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
+				Convey("Check Console header updated", func() {
+					So(cs.Def.Header.Id, ShouldEqual, "main_header")
+					So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
+				})
 			})
 		})
 	})
 }
 
 var fooCfg = `
+headers: {
+	id: "main_header"
+	tree_status_host: "blarg.example.com"
+}
 consoles: {
 	id: "default"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
@@ -84,6 +92,7 @@ consoles: {
 		category: "main|other"
 		short_name: "o"
 	}
+	header_id: "main_header"
 }
 `
 
