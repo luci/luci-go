@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "106a06e6_bd03ede3",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48590948_6d28b4c2",
+      "range": {
+        "startLine": 84,
+        "startChar": 23,
+        "endLine": 84,
+        "endChar": 27
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0d4e70f_5ce2bbee",
         "filename": "milo/common/config.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "c064e1ce_4afb6b30",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0d4e70f_5ce2bbee",
+      "range": {
+        "startLine": 307,
+        "startChar": 46,
+        "endLine": 307,
+        "endChar": 57
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c980d57_39db1f94",
         "filename": "milo/common/config.go",
         "patchSetId": 5
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "a0c95e73_a7701e95",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5c980d57_39db1f94",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a0695aa_1e684e91",
         "filename": "milo/common/config.go",
         "patchSetId": 5
@@ -79,6 +145,24 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b3311dd_58b43368",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a0695aa_1e684e91",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "26e57c02_18d77d68",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Correct, since it is an exception.  This shouldn\u0027t happen unless something is broken.",
+      "parentUuid": "0305976c_bba40226",
+      "range": {
+        "startLine": 458,
+        "startChar": 2,
+        "endLine": 458,
+        "endChar": 17
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef0a6c8e_7e8d6803",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -125,6 +233,30 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6582348f_951bf7d4",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef0a6c8e_7e8d6803",
+      "range": {
+        "startLine": 11,
+        "startChar": 2,
+        "endLine": 11,
+        "endChar": 5
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "1d0acd6b_91e91238",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "This isn\u0027t needed, removed.",
+      "parentUuid": "a3b5fc5e_23246b29",
+      "range": {
+        "startLine": 23,
+        "startChar": 36,
+        "endLine": 23,
+        "endChar": 38
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81c274ef_8fad3df4",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -168,6 +324,24 @@
     },
     {
       "key": {
+        "uuid": "c38c481c_99a09a71",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81c274ef_8fad3df4",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b79dadf_8a8bee43",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -182,6 +356,24 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "564019ed_bbb1fdab",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b79dadf_8a8bee43",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -208,6 +400,30 @@
     },
     {
       "key": {
+        "uuid": "7e1634ee_a3c3accb",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "011a2f35_32ee1077",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 36,
+        "endChar": 7
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4da8a076_2ef3d69c",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -228,6 +444,30 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ea8819b_83f19933",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Sort of, this uses jQuery\u0027s own selector system which was based off of CSS selectors.  This is to avoid implementing .find() to keep things simple.\n\nAdded $.escapeSelector() to escape selectors.\n\nI changed this not to use regex filtering, but to just divide the search query into individual words and matching on if all words are substrings. (eg \"cast linux\" will match \"linux chromium cast\" because it contains both of the words).  I think this is closer to what a user would expect.  We can revisit regex matching if someone asks for it in the future.",
+      "parentUuid": "4da8a076_2ef3d69c",
+      "range": {
+        "startLine": 38,
+        "startChar": 32,
+        "endLine": 38,
+        "endChar": 37
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -266,6 +506,24 @@
     },
     {
       "key": {
+        "uuid": "43931d33_ce66716e",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "I like filterable.",
+      "parentUuid": "7b6ad6fa_a30d79d3",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e89146fa_c15f20f4",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -286,6 +544,30 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a892b0f_fd5fddc0",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e89146fa_c15f20f4",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -324,6 +606,24 @@
     },
     {
       "key": {
+        "uuid": "cca0583b_94d4b529",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done.  The \"No query\" case also changed.  This makes the no result -\u003e all result case a bit slower, but more consistent.",
+      "parentUuid": "73791468_5cf491dd",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ad4a03f_7ba2f8be",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -344,6 +644,30 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70dfe828_8fee2450",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Talked offline, making these scope-level functions and then assigning exported functions to the module at the very end instead.",
+      "parentUuid": "6ad4a03f_7ba2f8be",
+      "range": {
+        "startLine": 61,
+        "startChar": 24,
+        "endLine": 61,
+        "endChar": 59
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -370,6 +694,30 @@
     },
     {
       "key": {
+        "uuid": "2cbb56ae_d3add9cc",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d548faf_f1f9c28d",
+      "range": {
+        "startLine": 62,
+        "startChar": 4,
+        "endLine": 62,
+        "endChar": 7
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "341d8bd2_fcc718f8",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -390,6 +738,30 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76cbf291_89bf179a",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "341d8bd2_fcc718f8",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 65,
+        "endChar": 10
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -424,6 +796,24 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea93a3ba_c51ca964",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e34a991d_c5858ee2",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -473,6 +863,54 @@
     },
     {
       "key": {
+        "uuid": "d6c2393f_221ccebe",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a87b85e_04b03e4e",
+      "range": {
+        "startLine": 68,
+        "startChar": 41,
+        "endLine": 68,
+        "endChar": 48
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "18ead3f9_e170c3d3",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4cb10a3d_4daab946",
+      "range": {
+        "startLine": 68,
+        "startChar": 3,
+        "endLine": 68,
+        "endChar": 17
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a9560cb_2e609e22",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 5
@@ -490,6 +928,24 @@
     },
     {
       "key": {
+        "uuid": "7f161dad_8c3f3ac9",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a9560cb_2e609e22",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "65696c19_74c5cb76",
         "filename": "milo/frontend/appengine/templates/pages/frontpage.html",
         "patchSetId": 5
@@ -504,6 +960,24 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1287ddf_2b3a594c",
+        "filename": "milo/frontend/appengine/templates/pages/frontpage.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "oops.",
+      "parentUuid": "65696c19_74c5cb76",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -530,6 +1004,30 @@
     },
     {
       "key": {
+        "uuid": "5b56dcb0_aba8cb4f",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "It wouldn\u0027t, because\n1. .Host is type link.  .HTML replaced linkify.\n2. It removes the parens",
+      "parentUuid": "3732f7f0_4db3615f",
+      "range": {
+        "startLine": 18,
+        "startChar": 28,
+        "endLine": 18,
+        "endChar": 33
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "765f0452_b752962d",
         "filename": "milo/frontend/appengine/templates/pages/search.html",
         "patchSetId": 5
@@ -550,6 +1048,30 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06fb799a_98b334bf",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Nesting it inside a \u003cul\u003e",
+      "parentUuid": "765f0452_b752962d",
+      "range": {
+        "startLine": 24,
+        "startChar": 9,
+        "endLine": 24,
+        "endChar": 11
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -576,6 +1098,30 @@
     },
     {
       "key": {
+        "uuid": "8fae2642_08e28842",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28b04846_bdbef49c",
+      "range": {
+        "startLine": 39,
+        "startChar": 16,
+        "endLine": 39,
+        "endChar": 33
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b983133_9525bebb",
         "filename": "milo/frontend/appengine/templates/pages/search.html",
         "patchSetId": 5
@@ -599,6 +1145,30 @@
     },
     {
       "key": {
+        "uuid": "602c59b7_0ef7e977",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b983133_9525bebb",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 5
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eebc9912_c086d511",
         "filename": "milo/frontend/appengine/templates/pages/search.html",
         "patchSetId": 5
@@ -613,6 +1183,24 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83c8bddb_3402c6c0",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eebc9912_c086d511",
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -639,6 +1227,30 @@
     },
     {
       "key": {
+        "uuid": "f8dc504b_660896ed",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "It wasn\u0027t triggering, now i know why.  Need to call .trigger(\"stuff\") on it.",
+      "parentUuid": "e0328e61_52fdfff4",
+      "range": {
+        "startLine": 47,
+        "startChar": 4,
+        "endLine": 47,
+        "endChar": 38
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8736fad1_64d2bbb3",
         "filename": "milo/frontend/view_frontpage.go",
         "patchSetId": 5
@@ -659,6 +1271,30 @@
       "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53b8ef03_5dd6dac8",
+        "filename": "milo/frontend/view_frontpage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:22:39Z",
+      "side": 1,
+      "message": "Yep.  Tho it shouldn\u0027t panic, so fixing that.",
+      "parentUuid": "8736fad1_64d2bbb3",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 31,
+        "endChar": 12
+      },
+      "revId": "8df92e977f5feefcc2908fbb2ad70abaea03174d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
