@@ -75,8 +75,8 @@ var (
 // ReadOnlyFlex is an Environment designed for cooperative Flex support
 // environments.
 var ReadOnlyFlex = gaemiddleware.Environment{
-	DSDisableCache: true,
-	DSReadOnly:     true,
+	MemcacheAvailable: false,
+	DSReadOnly:        true,
 	Prepare: func() {
 		// Context to use for initialization.
 		c := context.Background()
