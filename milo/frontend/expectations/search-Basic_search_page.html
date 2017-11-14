@@ -4,7 +4,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
-<title>Builder Sample Builder</title>
+<title>Milo</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI Search" />
@@ -14,8 +14,8 @@
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
-<link id="favicon" rel="shortcut icon"
-      type="image/png" href="/static/common/favicon/milo-32.png">
+<script src="/static/common/js/search.js"></script>
+<link rel="stylesheet" href="/static/common/css/search.css" type="text/css">
 
 
 <body class="interface">
@@ -30,45 +30,46 @@
   </header>
   <hr>
   
-<h1>Builder <a href="/foobar">Sample Builder</a></h1>
-
-<div class="prelude">
-  <div class="column">
-  
-  </div>
-
-  <div class="column">
-  
-    <h2>No current builds</h2>
-  
-  </div>
-
-  <div class="column">
-  
-    <h2>No Pending Build Requests</h2>
-  
-  </div>
+<div class="search">
+  <form action="/search" method="GET">
+    <input id="search-text" type="text" name="q" placeholder="Search for builders..." autofocus>
+  </form>
 </div>
 
-<div class="clear"></div>
+<div id="search-content">
 
-<div class="main">
+  <h2> Module 1
+    
+  </h2>
   
-    <h2>No Recent Builds</h2>
+    <div class="builder-group">
+      <h3 class="builder-group-name" data="Example%20master%20A"> Example master A </h3>
+      
+        <li class="builder-name" data="Example%20builder"><a href="/master1/buildera" aria-label="Example label">Example builder</a></li>
+      
+        <li class="builder-name" data="Example%20builder%202"><a href="/master1/builderb" aria-label="Example label 2">Example builder 2</a></li>
+      
+    </div>
   
+
 </div>
 
-<div class="epiloge">
-  
-  (Show:
-  <a href="/foobar">default</a>
-  <a href="/foobar?limit=25">25</a>
-  <a href="/foobar?limit=50">50</a>
-  <a href="/foobar?limit=100">100</a>
-  <a href="/foobar?limit=200">200</a>
-  )
-  
-</div>
+<script>
+(function () {
+  'use strict';
+  $("#search-text").change(function() {
+    milo.filter("#search-content", $(this).val());
+  });
+  $("#search-text").keyup(function() {
+    milo.filter("#search-content", $(this).val());
+  });
+  var q = milo.getUrlParameter("q");
+  if (q != "") {
+    $("#search-text").val(q);
+    milo.filter("#search-content", q);
+  }
+})();
+</script>
 
 
   <footer>
