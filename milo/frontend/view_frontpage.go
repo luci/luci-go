@@ -18,64 +18,38 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/milo/buildsource/buildbot"
-	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/frontend/ui"
 )
 
+type Frontpage struct {
+	Projects []common.Project
+}
+
 func frontpageHandler(c *router.Context) {
-	fp := ui.FrontPage{}
-	var mBuildbot, mBuildbucket *ui.CIService
-
-	err := parallel.FanOutIn(func(ch chan<- func() error) {
-		ch <- func() (err error) {
-			mBuildbot, err = buildbot.GetAllBuilders(c.Context)
-			return err
-		}
-		ch <- func() (err error) {
-			mBuildbucket, err = buildbucket.GetAllBuilders(c.Context)
-			return err
-		}
-	})
-
-	fp.CIServices = append(fp.CIServices, *mBuildbucket)
-	fp.CIServices = append(fp.CIServices, *mBuildbot)
-	errMsg := ""
+	projs, err := common.GetAllProjects(c.Context)
 	if err != nil {
-		errMsg = err.Error()
+		ErrorHandler(c, err)
+		return
 	}
 	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
-		"frontpage": fp,
-		"error":     errMsg,
+		"frontpage": Frontpage{Projects: projs},
 	})
 }
 
 func frontpageTestData() []common.TestBundle {
-	data := &templates.Args{
-		"frontpage": ui.FrontPage{
-			CIServices: []ui.CIService{
-				{
-					Name: "Module 1",
-					BuilderGroups: []ui.BuilderGroup{
+	return []common.TestBundle{
+		{
+			Description: "Basic frontpage",
+			Data: templates.Args{
+				"frontpage": Frontpage{
+					Projects: []common.Project{
 						{
-							Name: "Example master A",
-							Builders: []ui.Link{
-								*ui.NewLink("Example builder", "/master1/buildera", "Example label"),
-								*ui.NewLink("Example builder 2", "/master1/builderb", "Example label 2"),
-							},
+							ID:      "fakeproject",
+							LogoURL: "https://example.com/logo.png",
 						},
 					},
 				},
 			},
-		},
-		"error": "couldn't find ice cream",
-	}
-	return []common.TestBundle{
-		{
-			Description: "Basic frontpage",
-			Data:        *data,
 		},
 	}
 }

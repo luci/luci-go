@@ -62,6 +62,23 @@ type Console struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+// Project is a datastore entity representing a single project.  Its children
+// are consoles.
+type Project struct {
+	ID      string `gae:"$id"`
+	LogoURL string
+}
+
+// Project returns the id of the project the console is a part of, extracted
+// from the parent key.  If the underlying entity does not have a proper parent
+// key, this returns "".
+func (c *Console) Project() string {
+	if c.Parent == nil {
+		return ""
+	}
+	return c.Parent.StringID()
+}
+
 // ErrConsoleNotFound is returned from GetConsole if the requested console
 // isn't known to exist.
 var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
@@ -221,7 +238,7 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 
 // updateProjectConsoles updates all of the consoles for a given project,
 // and then returns a set of known console names.
-func updateProjectConsoles(c context.Context, projectName string, cfg *configInterface.Config) (stringset.Set, error) {
+func updateProjectConsoles(c context.Context, projectID string, cfg *configInterface.Config) (stringset.Set, error) {
 	proj := config.Project{}
 	if err := proto.UnmarshalText(cfg.Content, &proj); err != nil {
 		return nil, errors.Annotate(err, "unmarshalling proto").Err()
@@ -231,10 +248,15 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 	knownConsoles := stringset.New(len(proj.Consoles))
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
-	parentKey := datastore.MakeKey(c, "Project", projectName)
+	project := Project{ID: projectID, LogoURL: proj.LogoUrl}
+	if err := datastore.Put(c, &project); err != nil {
+		return nil, err
+	}
+	parentKey := datastore.KeyForObj(c, &project)
+	// Save the project into the datastore.
 	for _, pc := range proj.Consoles {
 		knownConsoles.Add(pc.Id)
-		con, err := GetConsole(c, projectName, pc.Id)
+		con, err := GetConsole(c, projectID, pc.Id)
 		switch err {
 		case ErrConsoleNotFound:
 			// continue
@@ -257,7 +279,7 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 		if err = datastore.Put(c, con); err != nil {
 			return nil, errors.Annotate(err, "saving %s", pc.Id).Err()
 		}
-		logging.Infof(c, "saved a new %s / %s (revision %s)", projectName, con.ID, cfg.Revision)
+		logging.Infof(c, "saved a new %s / %s (revision %s)", projectID, con.ID, cfg.Revision)
 	}
 	return knownConsoles, nil
 }
@@ -366,6 +388,26 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 	})
 	con, _ := itm.([]*Console)
 	return con, err
+}
+
+// GetAllProjects returns all projects the current user has access to.
+func GetAllProjects(c context.Context) ([]Project, error) {
+	q := datastore.NewQuery("Project")
+	projs := []Project{}
+
+	if err := datastore.GetAll(c, q, &projs); err != nil {
+		return nil, err
+	}
+	result := []Project{}
+	for _, proj := range projs {
+		switch allowed, err := IsAllowed(c, proj.ID); {
+		case err != nil:
+			return nil, err
+		case allowed:
+			result = append(result, proj)
+		}
+	}
+	return result, nil
 }
 
 // GetProjectConsoles returns all consoles for the given project.
