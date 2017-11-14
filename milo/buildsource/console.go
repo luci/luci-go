@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/milo/api/config"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -138,14 +139,36 @@ func GetConsoleSummary(c context.Context, consoleID string) (ui.ConsoleSummary, 
 	// It's safe to SplitN because we assume the ID has already been validated.
 	consoleComponents := strings.SplitN(consoleID, "/", 2)
 	project := consoleComponents[0]
-	name := consoleComponents[1]
+	id := consoleComponents[1]
 
 	// Set Name label.
-	ariaLabel := fmt.Sprintf("Console %s in project %s", name, project)
-	summary.Name = ui.NewLink(name, fmt.Sprintf("/p/%s/consoles/%s", project, name), ariaLabel)
+	ariaLabel := fmt.Sprintf("Console %s in project %s", id, project)
+	summary.Name = ui.NewLink(id, fmt.Sprintf("/p/%s/consoles/%s", project, id), ariaLabel)
 
-	// Populate with builder summaries.
-	q := datastore.NewQuery("BuilderSummary").Eq("Consoles", consoleID)
-	err := datastore.GetAll(c, q, &summary.Builders)
+	// Fetch the config first.
+	def, err := common.GetConsole(c, project, id)
+	if err != nil {
+		return summary, errors.Annotate(err, "getting %s", consoleID).Err()
+	}
+
+	// Fetch the data from datastore.
+	summary.Builders = make([]*model.BuilderSummary, len(def.Builders))
+	for i, builderID := range def.Builders {
+		summary.Builders[i] = &model.BuilderSummary{BuilderID: builderID}
+	}
+	if err = datastore.Get(c, summary.Builders); err != nil {
+		// Return an error only if we encouter an error other than datastore.ErrNoSuchEntity.
+		me := err.(errors.MultiError)
+		lme := errors.NewLazyMultiError(len(me))
+		for i, ierr := range me {
+			if ierr == datastore.ErrNoSuchEntity {
+				summary.Builders[i] = &model.BuilderSummary{BuilderID: def.Builders[i]}
+			} else {
+				lme.Assign(i, ierr)
+			}
+		}
+		err = lme.Get()
+	}
+
 	return summary, err
 }
