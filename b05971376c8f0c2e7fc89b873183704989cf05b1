@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "eba5939a_737cd7fc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7717b5a_5b65b56d",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77ac458b_1c148840",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3945f0a2_50024e1d",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77ac458b_1c148840",
+      "range": {
+        "startLine": 124,
+        "startChar": 61,
+        "endLine": 124,
+        "endChar": 62
+      },
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "4677e889_67a77094",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13a6e7b7_c0105c14",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 3
+      },
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "305d79b6_0f06130e",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 2
@@ -105,6 +171,24 @@
     },
     {
       "key": {
+        "uuid": "2981bcb3_c8394c66",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "It\u0027s makes everything else a bit longer, which I don\u0027t like that much, but it\u0027s okay.",
+      "parentUuid": "305d79b6_0f06130e",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "061d6080_32bc6777",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 2
@@ -119,6 +203,24 @@
       "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49d5b180_a4d4bde6",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "061d6080_32bc6777",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -145,6 +247,30 @@
     },
     {
       "key": {
+        "uuid": "ac9656d6_9dd20e0f",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "Can\u0027t anymore w/ lme",
+      "parentUuid": "f26df178_85a99bf6",
+      "range": {
+        "startLine": 149,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16cd7925_f81a2eda",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 2
@@ -159,6 +285,24 @@
       "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7a04bbd_840035ab",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16cd7925_f81a2eda",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -179,6 +323,24 @@
     },
     {
       "key": {
+        "uuid": "886caa05_d9465b12",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c990fc03_227d34a4",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0007477d_e1b47629",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 2
@@ -190,6 +352,24 @@
       "writtenOn": "2017-11-13T23:16:30Z",
       "side": 1,
       "message": "why html/template wasn\u0027t use here 🤔 (not related to this CL)",
+      "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "af06f26f_4e89f0a7",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-14T20:13:07Z",
+      "side": 1,
+      "message": "I can venture a guess.  There are a lot of if/else statements here.  Doing it this way keeps them in go code rather than go template {{ if .asdf }} code.  The downside is the verbosity.  the upside is the potential stack traces are easier to reason with.  Because when go templates panic, they do return line numbers, which make sense when the template is in its own file, but makes a bit less sense when the template is inlined in a go file.",
+      "parentUuid": "0007477d_e1b47629",
       "revId": "b05971376c8f0c2e7fc89b873183704989cf05b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
