@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8911210e_0a155303",
+        "filename": "appengine/gaemiddleware/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-14T00:31:18Z",
+      "side": 1,
+      "message": "Made it return ErrCacheMiss if there\u0027s no such item.",
+      "parentUuid": "328705f8_ced3b2d2",
+      "range": {
+        "startLine": 46,
+        "startChar": 9,
+        "endLine": 46,
+        "endChar": 21
+      },
+      "revId": "341b8cef19c8f736c373143683b526bf68d7776c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d88d91b8_53f32184",
         "filename": "server/caching/global.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "8e3f494c_a8691798",
+        "filename": "server/caching/global.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-14T00:31:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d88d91b8_53f32184",
+      "range": {
+        "startLine": 31,
+        "startChar": 27,
+        "endLine": 31,
+        "endChar": 28
+      },
+      "revId": "341b8cef19c8f736c373143683b526bf68d7776c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84b4a226_8eb6f60d",
         "filename": "server/caching/global.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "341b8cef19c8f736c373143683b526bf68d7776c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34d9fae2_dc22bbbb",
+        "filename": "server/caching/global.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-14T00:31:18Z",
+      "side": 1,
+      "message": "Made Get return ErrCacheMiss if the item is missing.",
+      "parentUuid": "84b4a226_8eb6f60d",
+      "revId": "341b8cef19c8f736c373143683b526bf68d7776c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
