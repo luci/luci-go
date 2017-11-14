@@ -47,9 +47,10 @@ type Environment struct {
 	// catching middleware.
 	PassthroughPanics bool
 
-	// DSDisableCache, if true, prevents the datastore caching filter from being
-	// added.
-	DSDisableCache bool
+	// MemcacheAvailable is true if the environment has working memcache.
+	//
+	// If false, also implies disabled datastore caching layer.
+	MemcacheAvailable bool
 
 	// DSReadOnly, if true, causes a read-only datastore layer to be imposed,
 	// preventing datastore writes.
@@ -147,7 +148,7 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 	// later once we can load settings.
 	c = logging.SetLevel(c, logging.Debug)
 
-	// Install global process and request LRU caches.
+	// Install process and request LRU caches.
 	c = caching.WithProcessCacheData(c, e.processCacheData)
 	c = caching.WithRequestCache(c)
 
@@ -158,13 +159,18 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 		panic("no luci/gae datastore is installed")
 	}
 
+	// The global cache depends on luci/gae's memcache installed.
+	if e.MemcacheAvailable {
+		c = caching.WithGlobalCache(c, blobCacheProvider)
+	}
+
 	// These are needed to use fetchCachedSettings.
 	c = settings.Use(c, e.globalSettings)
 
 	// Fetch and apply configuration stored in the datastore.
 	cachedSettings := fetchCachedSettings(c)
 	c = logging.SetLevel(c, cachedSettings.LoggingLevel)
-	if !(e.DSDisableCache || bool(cachedSettings.DisableDSCache)) {
+	if e.MemcacheAvailable && !bool(cachedSettings.DisableDSCache) {
 		c = dscache.AlwaysFilterRDS(c)
 	}
 	if e.DSReadOnly {

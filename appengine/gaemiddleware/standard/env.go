@@ -70,6 +70,7 @@ var (
 // classicEnv is an AppEngine Classic GAE environment configuration. This is the
 // default AppEngine environment for simple (all-classic) layouts.
 var classicEnv = gaemiddleware.Environment{
+	MemcacheAvailable:    true,
 	PassthroughPanics:    appengine.IsDevAppServer(),
 	WithInitialRequest:   prod.Use,
 	WithConfig:           gaeconfig.Use,
