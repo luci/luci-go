@@ -17,6 +17,11 @@ runtime: go
 api_version: 1
 env: flex
 
+resources:
+  cpu: 2
+  memory_gb: 4
+  disk_size_gb: 10
+
 inbound_services:
   - warmup
 
@@ -42,3 +47,8 @@ health_check:
   enable_health_check: True
   check_interval_sec: 5
   timeout_sec: 4
+  # Stop accepting requests after 20 sec of unhealthiness.
+  unhealthy_threshold: 4
+  healthy_threshold: 1
+  # Restart after 2 min of unhealthiness.
+  restart_threshold: 24
