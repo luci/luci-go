@@ -86,6 +86,24 @@
     },
     {
       "key": {
+        "uuid": "0cd018e8_3341f56a",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:35:41Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "53c01dd5_7957741e",
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "308d6941_243e9eeb",
         "filename": "milo/api/config/util.go",
         "patchSetId": 2
@@ -218,6 +236,24 @@
     },
     {
       "key": {
+        "uuid": "0e876c15_0b06ce35",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:35:41Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "cba01a19_c3400e2c",
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "00fc4ca2_df1d87d8",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 2
@@ -263,6 +299,30 @@
       "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1e79836_8d0db728",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:35:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a47756ff_baf734ff",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 23
+      },
+      "revId": "e0ed665100e39347d5462eb604ba0c599c6eb459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
