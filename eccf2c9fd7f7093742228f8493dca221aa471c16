@@ -1,0 +1,204 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c8b17bb4_f28aaab4",
+        "filename": "milo/common/config.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "currently the order of members in this file is\n- console def\n- project def\n- console methods\n\nconsider making it\n- project def\n- console def and its methods",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5da389f_71a8dc3c",
+        "filename": "milo/frontend/appengine/static/common/css/search.css",
+        "patchSetId": 12
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "we don\u0027t need this file anymore",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "628f601c_1713f808",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "apparently the recommended usage of data attributes is \"data-\u003cname\u003e\", e.g. data-filterable\nWDYT about the following simplification: remove filterable class and replace data attr with data-filterable attr.",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb2c375b_2117e4db",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "I see not strong reasons to require that form users. It is possible to make filtering case insensitive on our side\n\nconst candidates \u003d $(root).find(\"[data-filterable]\");\nconst visible \u003d new Set();\nfor (const n of candidates) {\n  const matches \u003d ...case insensitive match...\n  // update visible\n}\nfor (const n of candidates) {\n  call toggle\n}\n\nthen we search for nodes once, as opposed to twice like we do now",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 4
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "836d6e1b_f1321c1c",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "root.find(\".filterable\").show()",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 9
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53c6ef73_4e675303",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "move closer to usage",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62d79a10_020a14a1",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "let",
+      "range": {
+        "startLine": 40,
+        "startChar": 4,
+        "endLine": 40,
+        "endChar": 7
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3532339d_16ebe6d2",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "this goes beyond root\nUse http://api.jquery.com/parentsUntil/",
+      "range": {
+        "startLine": 50,
+        "startChar": 14,
+        "endLine": 50,
+        "endChar": 36
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e63d5d53_01ef1f86",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 60,
+        "startChar": 21,
+        "endLine": 60,
+        "endChar": 23
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e0b4e09_fdecade6",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:16:14Z",
+      "side": 1,
+      "message": "return \"\"",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
