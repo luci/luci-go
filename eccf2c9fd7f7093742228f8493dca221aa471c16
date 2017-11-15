@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f43bc88a_bb673763",
+        "filename": "milo/common/config.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c8b17bb4_f28aaab4",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5da389f_71a8dc3c",
         "filename": "milo/frontend/appengine/static/common/css/search.css",
         "patchSetId": 12
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "1f33c1c5_9437ee38",
+        "filename": "milo/frontend/appengine/static/common/css/search.css",
+        "patchSetId": 12
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5da389f_71a8dc3c",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "628f601c_1713f808",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 12
@@ -50,6 +86,24 @@
       "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86497f94_acb8476f",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "628f601c_1713f808",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "9ed65970_0d65357f",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "The comment might be misleading, it\u0027s not asking the user to input things in lowercase, it\u0027s the template that generates data-* tags that is supposed to write the data tags in lowercase.\n\nThe above snippet won\u0027t work because in addition to turn things from not-visible to visible, we also have to change things from visible to not-visible.",
+      "parentUuid": "fb2c375b_2117e4db",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 4
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "836d6e1b_f1321c1c",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 12
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "429d2ab1_2076f55e",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "836d6e1b_f1321c1c",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 9
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53c6ef73_4e675303",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 12
@@ -113,6 +215,24 @@
       "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09d3da57_9dc6f58c",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53c6ef73_4e675303",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -139,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "8e3df5b1_5b0cd6bb",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62d79a10_020a14a1",
+      "range": {
+        "startLine": 40,
+        "startChar": 4,
+        "endLine": 40,
+        "endChar": 7
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3532339d_16ebe6d2",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 12
@@ -159,6 +303,30 @@
       "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d044965_430b5dc7",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3532339d_16ebe6d2",
+      "range": {
+        "startLine": 50,
+        "startChar": 14,
+        "endLine": 50,
+        "endChar": 36
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -185,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "9308505d_8970de02",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e63d5d53_01ef1f86",
+      "range": {
+        "startLine": 60,
+        "startChar": 21,
+        "endLine": 60,
+        "endChar": 23
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e0b4e09_fdecade6",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 12
@@ -199,6 +391,24 @@
       "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1475de4b_0815c0f5",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-15T23:41:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9e0b4e09_fdecade6",
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
