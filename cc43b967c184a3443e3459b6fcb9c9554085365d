@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "73f12c37_aa44b333",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T23:41:30Z",
+      "side": 1,
+      "message": "talked offline, let\u0027s do this refactoring later",
+      "parentUuid": "6b04951d_e9a4916c",
+      "range": {
+        "startLine": 31,
+        "startChar": 3,
+        "endLine": 31,
+        "endChar": 21
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4906339f_f9e59070",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
