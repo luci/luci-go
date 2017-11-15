@@ -219,7 +219,6 @@ func TestPubSub(t *testing.T) {
 		builderSummary := &model.BuilderSummary{
 			BuilderID: "buildbot/Fake buildbotMasterEntry/Fake buildername",
 		}
-		builderSummary.SetInProgress(map[string]model.Status{"buildbot/" + bDone.ID(): model.Running})
 		datastore.Put(c, builderSummary)
 		datastore.GetTestable(c).CatchupIndexes()
 
@@ -270,13 +269,6 @@ func TestPubSub(t *testing.T) {
 				So(builderSummary.LastFinishedCreated, ShouldResemble, unixTime(8123).Time)
 				So(builderSummary.LastFinishedStatus, ShouldResemble, model.Failure)
 				So(builderSummary.LastFinishedBuildID, ShouldEqual, "buildbot/Fake buildbotMasterEntry/Fake buildername/2234")
-				So(
-					builderSummary.GetInProgress(),
-					ShouldResemble,
-					map[string]model.Status{
-						"buildbot/Fake buildbotMasterEntry/Fake buildername/1234": model.Running,
-						"buildbot/Fake buildbotMasterEntry/Fake buildername/2222": model.Running,
-					})
 			})
 
 			Convey("And stores correctly", func() {
@@ -465,13 +457,6 @@ func TestPubSub(t *testing.T) {
 				So(builderSummary.LastFinishedCreated, ShouldResemble, unixTime(8123).Time)
 				So(builderSummary.LastFinishedStatus, ShouldResemble, model.Failure)
 				So(builderSummary.LastFinishedBuildID, ShouldEqual, "buildbot/Fake buildbotMasterEntry/Fake buildername/2234")
-				So(
-					builderSummary.GetInProgress(),
-					ShouldResemble,
-					map[string]model.Status{
-						"buildbot/Fake buildbotMasterEntry/Fake buildername/1234": model.Running,
-						"buildbot/Fake buildbotMasterEntry/Fake buildername/2222": model.Running,
-					})
 			})
 
 			Convey("And stores correctly", func() {
