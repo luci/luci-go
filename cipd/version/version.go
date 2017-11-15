@@ -25,8 +25,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/kardianos/osext"
 )
 
 var (
@@ -143,7 +141,7 @@ func readVersionFile(path string) (Info, error) {
 func init() {
 	// The executable may move during lifetime of the process (e.g. when being
 	// updated). Remember the original location.
-	initialExePath, initialExePathErr = osext.Executable()
+	initialExePath, initialExePathErr = os.Executable()
 	if initialExePathErr == nil && !filepath.IsAbs(initialExePath) {
 		initialExePathErr = fmt.Errorf("not an abs path: %s", initialExePath)
 	}

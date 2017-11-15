@@ -29,7 +29,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kardianos/osext"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
@@ -2241,7 +2240,7 @@ func (s *selfupdateRun) Run(a subcommands.Application, args []string, env subcom
 		return 1
 	}
 	ctx := cli.GetContext(a, s, env)
-	exePath, err := osext.Executable()
+	exePath, err := os.Executable()
 	if err != nil {
 		s.printError(err)
 		return 1
