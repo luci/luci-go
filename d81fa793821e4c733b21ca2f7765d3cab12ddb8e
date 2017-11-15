@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f98f39bf_ea9231fd",
+        "filename": "cipd/version/version.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T18:45:17Z",
+      "side": 1,
+      "message": "accepting an err is a bit odd,\nwhy not call os.Executable inside the func?",
+      "revId": "d81fa793821e4c733b21ca2f7765d3cab12ddb8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
