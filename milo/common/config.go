@@ -36,6 +36,13 @@ import (
 	"go.chromium.org/luci/milo/api/config"
 )
 
+// Project is a datastore entity representing a single project.  Its children
+// are consoles.
+type Project struct {
+	ID      string `gae:"$id"`
+	LogoURL string
+}
+
 // Console is a datastore entity representing a single console.
 type Console struct {
 	// Parent is a key to the parent Project entity where this console was
@@ -60,6 +67,16 @@ type Console struct {
 	// _ is a "black hole" which absorbs any extra props found during a
 	// datastore Get. These props are not written back on a datastore Put.
 	_ datastore.PropertyMap `gae:"-,extra"`
+}
+
+// Project returns the id of the project the console is a part of, extracted
+// from the parent key.  If the underlying entity does not have a proper parent
+// key, this returns "".
+func (c *Console) Project() string {
+	if c.Parent == nil {
+		return ""
+	}
+	return c.Parent.StringID()
 }
 
 // ErrConsoleNotFound is returned from GetConsole if the requested console
@@ -234,9 +251,14 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	}
 	// Keep a list of known consoles so we can prune deleted ones later.
 	knownConsoles := stringset.New(len(proj.Consoles))
+	// Save the project into the datastore.
+	project := Project{ID: projectID, LogoURL: proj.LogoUrl}
+	if err := datastore.Put(c, &project); err != nil {
+		return nil, err
+	}
+	parentKey := datastore.KeyForObj(c, &project)
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
-	parentKey := datastore.MakeKey(c, "Project", projectID)
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
 		toPut := make([]*Console, 0, len(proj.Consoles))
 		for _, pc := range proj.Consoles {
@@ -383,6 +405,26 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 	})
 	con, _ := itm.([]*Console)
 	return con, err
+}
+
+// GetAllProjects returns all projects the current user has access to.
+func GetAllProjects(c context.Context) ([]Project, error) {
+	q := datastore.NewQuery("Project")
+	projs := []Project{}
+
+	if err := datastore.GetAll(c, q, &projs); err != nil {
+		return nil, err
+	}
+	result := []Project{}
+	for _, proj := range projs {
+		switch allowed, err := IsAllowed(c, proj.ID); {
+		case err != nil:
+			return nil, err
+		case allowed:
+			result = append(result, proj)
+		}
+	}
+	return result, nil
 }
 
 // GetProjectConsoles returns all consoles for the given project.

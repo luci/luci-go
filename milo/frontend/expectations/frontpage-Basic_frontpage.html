@@ -7,6 +7,7 @@
 <title>Milo</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI Search" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
@@ -16,34 +17,31 @@
 
 <body class="interface">
   <header>
-    <a href="/" alt="Home">Luci</a>
+    <div>
+      <a href="/" aria-label="Home page">Home</a> |
+      <a href="/search" aria-label="Search page">Search</a>
+    </div>
     <div>
       
-        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">login</a>
+        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">Login</a>
       
     </div>
   </header>
   <hr>
   
-<h1>Milo <span class="hidden">front page</span></h1>
-
-
-Encountered error while loading front page: couldn&#39;t find ice cream
-
-
-
-  <h2> Module 1
-    
-  </h2>
+<h1>All Projects</h1>
+<div class="project-list">
   
-    <h3> Example master A </h3>
-    
-      <li><a href="/master1/buildera" aria-label="Example label">Example builder</a></li>
-    
-      <li><a href="/master1/builderb" aria-label="Example label 2">Example builder 2</a></li>
-    
+  <a href="/p/fakeproject/consoles" aria-label="Project fakeproject">
+    <div class="project">
+      
+        <img src="https://example.com/logo.png" />
+      
+      <div class="project-label">fakeproject</div>
+    </div>
+  </a>
   
-
+</div>
 
 
   <footer>

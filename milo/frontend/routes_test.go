@@ -33,8 +33,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/swarming"
-	"go.chromium.org/luci/milo/buildsource/swarming/testdata"
+	swarmingTestdata "go.chromium.org/luci/milo/buildsource/swarming/testdata"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/testdata"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -56,12 +57,15 @@ var (
 		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
 		{consoleTestData, "console", "console.html"},
 		{func() []common.TestBundle {
-			return testdata.BuildTestData("../buildsource/swarming", func(c context.Context, svc testdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
-				return swarming.SwarmingBuildImpl(c, svc, taskID)
-			})
+			return swarmingTestdata.BuildTestData(
+				"../buildsource/swarming",
+				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
+					return swarming.SwarmingBuildImpl(c, svc, taskID)
+				})
 		}, "swarming.build", "build.html"},
-		{testdata.LogTestData, "swarming.log", "log.html"},
-		{frontpageTestData, "frontpage", "frontpage.html"},
+		{swarmingTestdata.LogTestData, "swarming.log", "log.html"},
+		{testdata.Frontpage, "frontpage", "frontpage.html"},
+		{testdata.Search, "search", "search.html"},
 	}
 )
 

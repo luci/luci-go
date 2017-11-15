@@ -14,6 +14,7 @@
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI Search" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
@@ -26,10 +27,13 @@
 
 <body class="interface">
   <header>
-    <a href="/" alt="Home">Luci</a>
+    <div>
+      <a href="/" aria-label="Home page">Home</a> |
+      <a href="/search" aria-label="Search page">Search</a>
+    </div>
     <div>
       
-        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">login</a>
+        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">Login</a>
       
     </div>
   </header>
