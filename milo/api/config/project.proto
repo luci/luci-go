@@ -148,14 +148,22 @@ message Console {
   // HeaderId is a reference to a header.  Only one of Header or HeaderId should
   // be specified.
   string header_id = 10;
+
+  // If true, this console will not filter out builds marked as Experimental.
+  // This field is optional. By default Consoles only show production builds.
+  bool include_experimental_builds = 11;
 }
 
 // Builder is a reference to a Milo builder.
 message Builder {
-  // Name is the identifier to find the builder, which includes the module.
-  // Buildbot builds would be like "buildbot/chromium.linux/Linux Tests"
-  // Buildbucket builds would be like "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
-  string name = 1;
+  // Name is the BuilderID of the builders you wish to display for this column
+  // in the console. e.g.
+  //   * "buildbot/chromium.linux/Linux Tests"
+  //   * "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
+  //
+  // If multiple names are specified, the console will show the union of the
+  // builders.
+  repeated string name = 1;
 
   // Category describes the hierarchy of the builder on the header of the
   // console as a "|" delimited list.  Neighboring builders with common ancestors

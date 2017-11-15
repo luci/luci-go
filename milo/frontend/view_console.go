@@ -59,32 +59,6 @@ func getConsoleDef(c context.Context, project, name string) (*config.Console, er
 	return &cs.Def, nil
 }
 
-// shortname calculates a short name (3 char max long name) out of a full name
-// by splitting on delimiters and taking the first letter of each "word".
-// name is expected to be a builderID, which is module/<bucket or master>/buildername
-func shortname(name string) string {
-	builderNameComp := strings.SplitN(name, "/", 3)
-	if len(builderNameComp) == 3 {
-		name = builderNameComp[2]
-	}
-	tokens := strings.FieldsFunc(name, func(r rune) bool {
-		switch r {
-		case '_', '-', ' ':
-			return true
-		}
-		return false
-	})
-	numLetters := len(tokens)
-	if numLetters > 3 {
-		numLetters = 3
-	}
-	short := ""
-	for i := 0; i < numLetters; i++ {
-		short += string(tokens[i][0])
-	}
-	return strings.ToLower(short)
-}
-
 // validateFaviconURL checks to see if the URL is well-formed and the host is in
 // the whitelist.
 func validateFaviconURL(faviconURL string) error {
@@ -129,11 +103,7 @@ func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Categ
 	categoryTree := ui.NewCategory("")
 	depth := 0
 	for _, b := range def.Builders {
-		short := b.ShortName
-		if short == "" {
-			short = shortname(b.Name)
-		}
-		builderRef := factory(b.Name, short)
+		builderRef := factory(b.Name[0], b.CalculateShortname())
 		categories := b.ParseCategory()
 		if len(categories) > depth {
 			depth = len(categories)
