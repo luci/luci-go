@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9bb38840_5655f767",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T20:17:30Z",
+      "side": 1,
+      "message": "Fine. Moved to server/caching/layeredcache.",
+      "parentUuid": "8616be93_e45412c0",
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa3de4ee_238a3288",
         "filename": "server/auth/internal/layeredcache/layeredcache.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd84efeb_84d7a887",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T20:17:30Z",
+      "side": 1,
+      "message": "Fine. I was trying to avoid string math by allowing users to pass structs or whatever as keys (since lru.Cache supports it). But you are right, it is simpler to use strings directly.",
+      "parentUuid": "fa3de4ee_238a3288",
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "4bb409bf_a5d48965",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T20:17:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8fcdb66_dba3f9e0",
+      "range": {
+        "startLine": 56,
+        "startChar": 11,
+        "endLine": 56,
+        "endChar": 19
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "536c8287_5c50cb03",
         "filename": "server/auth/internal/layeredcache/layeredcache.go",
         "patchSetId": 1
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "63cd4051_28cdc7aa",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T20:17:30Z",
+      "side": 1,
+      "message": "Done, though in practice \u0027blob\u0027 is at least 9 bytes long.",
+      "parentUuid": "536c8287_5c50cb03",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e58d8cdd_4227b13c",
         "filename": "server/auth/internal/layeredcache/layeredcache.go",
         "patchSetId": 1
@@ -102,6 +186,30 @@
       "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7858c556_650a53eb",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T20:17:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e58d8cdd_4227b13c",
+      "range": {
+        "startLine": 126,
+        "startChar": 20,
+        "endLine": 126,
+        "endChar": 34
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -139,6 +247,30 @@
       "writtenOn": "2017-11-15T03:43:53Z",
       "side": 1,
       "message": "it is a bit odd that a deserialization function result depends on current time. I assume you do it only because you don\u0027t want to spend CPU time on unmarshaling an expired item?\notherwise this function could return time and moving moving expiration check to the callsite will slight decrease amount of code",
+      "range": {
+        "startLine": 150,
+        "startChar": 48,
+        "endLine": 150,
+        "endChar": 51
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d605c5a7_fa3cbef5",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T20:17:30Z",
+      "side": 1,
+      "message": "No, I did it to be able to handle 0 expiration time more naturally, since we should be careful not to treat zero from deadine.Sub(now) as \"doesn\u0027t expire ever\".\n\nEh, whatever. Moved to GetOrCreate. It is a bit more complicated there now...",
+      "parentUuid": "e48797a4_3e02fa0b",
       "range": {
         "startLine": 150,
         "startChar": 48,
