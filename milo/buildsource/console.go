@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -36,6 +35,12 @@ import (
 //
 // It has the git commit for the row, as well as a mapping of BuilderID to any
 // BuildSummaries which reported using this commit.
+//
+// For Builder definitions which had more than one BuilderID assoaciated with
+// them, they're indexed by the first BuilderID in the console's definition. So
+// if the Console has a Builder with name: "A", and name: "B", only "A" will
+// show up the Builds map (but if you look at the []BuildSummary, you'll see
+// builds from both "A" and "B").
 type ConsoleRow struct {
 	Commit string
 	Builds map[BuilderID][]*model.BuildSummary
@@ -53,7 +58,15 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 		}
 	}
 
-	builderSet := stringset.NewFromSlice(console.AllBuilderIDs()...)
+	// Maps BuilderID -> Column BuilderID (see ConsoleRow).
+	columnMap := map[string]BuilderID{}
+	for _, b := range console.Builders {
+		columnID := b.Name[0]
+		columnMap[columnID] = BuilderID(columnID)
+		for _, n := range b.Name[1:] {
+			columnMap[n] = BuilderID(columnID)
+		}
+	}
 
 	ret := make([]*ConsoleRow, len(commits))
 	url := console.RepoUrl
@@ -73,12 +86,14 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 			ch <- func() error {
 				fullQ := q.Eq("ManifestKeys", partialKey.AddRevision(rawCommits[i]))
 				return datastore.Run(c, fullQ, func(bs *model.BuildSummary) {
-					if builderSet.Has(bs.BuilderID) {
-						bid := BuilderID(bs.BuilderID)
+					if bs.Experimental && !console.IncludeExperimentalBuilds {
+						return
+					}
+					if i, ok := columnMap[bs.BuilderID]; ok {
 						if r.Builds == nil {
 							r.Builds = map[BuilderID][]*model.BuildSummary{}
 						}
-						r.Builds[bid] = append(r.Builds[bid], bs)
+						r.Builds[i] = append(r.Builds[i], bs)
 					}
 				})
 			}
