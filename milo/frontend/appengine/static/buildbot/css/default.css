@@ -737,6 +737,84 @@ pre.comments>a:active {
   color: purple;
 }
 
+.project-favicon-text {
+  width: 150px;
+  height: 125px;
+  text-align: center;
+  font-size: 50pt;
+  padding-top: 25px;
+}
+
+.project a:link {
+  text-decoration: none;
+}
+
+.project a:visited {
+  text-decoration: none;
+}
+
+.project a:hover {
+  text-decoration: none;
+}
+
+.project a:active {
+  text-decoration: none;
+}
+
+.project img {
+  width: 150px;
+  height: 150px;
+}
+
+.project:hover {
+  background: #cce;
+}
+
+.project {
+  font-size: 10pt;
+  width: 150px;
+  height: 200px;
+  background-color: gray;
+  margin: 10px;
+  float: left;
+  padding: .5em;
+  background: #ddd;
+  box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, .2);
+  border-radius: 30px 30px 30px 30px;
+}
+
+.project-label {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.search {
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.search form {
+  margin-left: auto;
+  margin-right: auto;
+  width: 600px;
+}
+
+#search-text {
+  width: 100%;
+  font-size: 14pt;
+}
+
+.project-console-item img {
+  width: 20px;
+  height: 20px;
+}
+
+.project {
+  font-size: 10pt;
+}
+
 form.command_forcebuild {
   border-top: 1px solid black;
   padding: .5em;
