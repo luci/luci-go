@@ -25,13 +25,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/kardianos/osext"
 )
 
 var (
-	lock                  sync.Mutex
 	initialExePath        string
 	initialExePathErr     error
 	startupVersionFile    Info
@@ -76,8 +74,6 @@ func GetCurrentVersion() (Info, error) {
 // GetStartupVersion returns value of version file as it was when the process
 // has just started.
 func GetStartupVersion() (Info, error) {
-	lock.Lock()
-	defer lock.Unlock()
 	return startupVersionFile, startupVersionFileErr
 }
 
@@ -145,8 +141,6 @@ func readVersionFile(path string) (Info, error) {
 // startup. Version file may change later during process lifetime (e.g. during
 // update).
 func init() {
-	lock.Lock()
-	defer lock.Unlock()
 	// The executable may move during lifetime of the process (e.g. when being
 	// updated). Remember the original location.
 	initialExePath, initialExePathErr = osext.Executable()
