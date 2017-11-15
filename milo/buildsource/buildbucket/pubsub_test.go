@@ -82,7 +82,6 @@ func TestPubSub(t *testing.T) {
 		builderSummary := &model.BuilderSummary{
 			BuilderID: "buildbucket/luci.fake.bucket/fake_builder",
 		}
-		builderSummary.SetInProgress(map[string]model.Status{"buildbucket/2234": model.Running})
 		datastore.Put(c, builderSummary)
 
 		// We'll copy this ApiCommonBuildMessage base for convenience.
@@ -136,14 +135,6 @@ func TestPubSub(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(blder.LastFinishedStatus, ShouldResemble, model.NotRun)
 				So(blder.LastFinishedBuildID, ShouldEqual, "")
-				So(
-					blder.GetInProgress(),
-					ShouldResemble,
-					map[string]model.Status{
-						"buildbucket/1234": model.Running,
-						"buildbucket/2234": model.Running,
-					},
-				)
 			})
 		})
 
@@ -186,7 +177,6 @@ func TestPubSub(t *testing.T) {
 				So(blder.LastFinishedCreated, ShouldResemble, RefTime.Add(2*time.Hour))
 				So(blder.LastFinishedStatus, ShouldResemble, model.Success)
 				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
-				So(blder.GetInProgress(), ShouldResemble, map[string]model.Status{})
 			})
 
 			Convey("results in earlier update not being ingested", func() {
