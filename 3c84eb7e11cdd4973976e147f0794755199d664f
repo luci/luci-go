@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ee2010cb_364a7a73",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T22:16:54Z",
+      "side": 1,
+      "message": "Chatted offline --- I wasn\u0027t aware of how the XG semantics are equivalent in the early-bail case. It seems that since most of the time we\u0027ll bail out early anyway, contention shouldn\u0027t end up being an issue, and keeping the two transactions in one is OK. I don\u0027t feel strongly though.",
+      "parentUuid": "1cae6824_20a78ee4",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 2
+      },
+      "revId": "3c84eb7e11cdd4973976e147f0794755199d664f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1572502f_3f775a7f",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -60,6 +84,30 @@
       "writtenOn": "2017-11-15T22:02:14Z",
       "side": 1,
       "message": "shouldn\u0027t this be Ended?",
+      "range": {
+        "startLine": 38,
+        "startChar": 13,
+        "endLine": 38,
+        "endChar": 20
+      },
+      "revId": "3c84eb7e11cdd4973976e147f0794755199d664f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5cf272c3_7e942773",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T22:16:54Z",
+      "side": 1,
+      "message": "No, this is Created because we want to know if the new finished build that comes in was created after the previous finished build. Otherwise we\u0027re implicitly caring about how long the build itself took, which I don\u0027t believe is the case.",
+      "parentUuid": "1572502f_3f775a7f",
       "range": {
         "startLine": 38,
         "startChar": 13,
