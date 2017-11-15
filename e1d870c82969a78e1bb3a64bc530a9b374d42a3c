@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d7c2d4f9_51aede9e",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T03:20:04Z",
+      "side": 1,
+      "message": "this wrapper is needed since I need to store expiration time, since memcache.Get doesn\u0027t return it",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 134,
+        "endChar": 19
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
