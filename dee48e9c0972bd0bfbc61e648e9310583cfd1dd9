@@ -16,6 +16,24 @@
       "revId": "dee48e9c0972bd0bfbc61e648e9310583cfd1dd9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffb3a0fe_632d108a",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T18:51:14Z",
+      "side": 1,
+      "message": "Agreed, doing this at config ingestion time would be preferable; this is just to start populating the summaries with the project IDs so that when the other CL goes through we don\u0027t have a bunch of broken links until new configs get ingested. I can move this over then. How does that sound?",
+      "parentUuid": "88c07544_4ee7394e",
+      "revId": "dee48e9c0972bd0bfbc61e648e9310583cfd1dd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
