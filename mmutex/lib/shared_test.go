@@ -22,9 +22,10 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/errors"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -47,7 +48,7 @@ func TestShared(t *testing.T) {
 				Exists: true,
 			},
 		}
-		lockFilePath, err := computeLockFilePath(env)
+		lockFilePath, _, err := computeMutexPaths(env)
 		if err != nil {
 			panic(err)
 		}
@@ -95,7 +96,7 @@ func TestShared(t *testing.T) {
 		// same as a held lock.
 	})
 
-	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
+	Convey("RunExclusive acts as a passthrough if lockFileDir is empty", t, func() {
 		So(RunShared(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }

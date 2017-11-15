@@ -22,9 +22,10 @@ import (
 	"testing"
 
 	"github.com/maruel/subcommands"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/mmutex/lib"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestShared(t *testing.T) {

@@ -24,7 +24,7 @@ import (
 // RunExclusive runs the command with the specified environment while holding an
 // exclusive mmutex lock.
 func RunExclusive(env subcommands.Env, command func() error) error {
-	lockFilePath, err := computeLockFilePath(env)
+	lockFilePath, _, err := computeMutexPaths(env)
 	if err != nil {
 		return err
 	}
