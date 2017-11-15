@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "c8bfd782_dfe3b0d9",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T23:20:34Z",
+      "side": 1,
+      "message": "if console.html were able to check it, what would it return? Can we return #invalid-build-id and return it as is in console.html? That would be a better link than a bogus one because it will not take the user to a non-existing page but more clearly communicate that a build ID is invalid.",
+      "parentUuid": "120e8e33_49913cd6",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 58
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3c91e27c_c3f3eb8e",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
@@ -364,6 +388,30 @@
       "side": 1,
       "message": "Agreed that it\u0027s a reasonable thing to check for anyway?",
       "parentUuid": "959eb4d7_dc51ceb3",
+      "range": {
+        "startLine": 62,
+        "startChar": 7,
+        "endLine": 62,
+        "endChar": 17
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6ca97cd_15edbb4a",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T23:20:34Z",
+      "side": 1,
+      "message": "ParseBuildAddress already does the check\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/buildbucket/build.go?q\u003dParseBuildAddress\u0026sq\u003dpackage:chromium\u0026l\u003d383",
+      "parentUuid": "fab4b21f_70e8bc2d",
       "range": {
         "startLine": 62,
         "startChar": 7,
