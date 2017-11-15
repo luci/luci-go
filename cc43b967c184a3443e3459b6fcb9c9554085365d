@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "c537c151_a1d00d11",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T23:23:09Z",
+      "side": 1,
+      "message": "Sure, I\u0027m fine with that. Just wanted to confirm first that there isn\u0027t anything reasonable to do from within console.html.",
+      "parentUuid": "c8bfd782_dfe3b0d9",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 58
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3c91e27c_c3f3eb8e",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
@@ -421,6 +445,30 @@
       "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3427f5cd_6a6d7857",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T23:23:09Z",
+      "side": 1,
+      "message": "Yes, it does; that comment was drafted before I switched to use ParseBuildAddress.",
+      "parentUuid": "e6ca97cd_15edbb4a",
+      "range": {
+        "startLine": 62,
+        "startChar": 7,
+        "endLine": 62,
+        "endChar": 17
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
