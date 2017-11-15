@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "ad75315b_a1ad812c",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:25:26Z",
+      "side": 1,
+      "message": "i\u0027ve restored xg",
+      "parentUuid": "ee2010cb_364a7a73",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 2
+      },
+      "revId": "3c84eb7e11cdd4973976e147f0794755199d664f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1572502f_3f775a7f",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -117,6 +141,30 @@
       "revId": "3c84eb7e11cdd4973976e147f0794755199d664f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60c773b3_f9d8c2bf",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T22:25:26Z",
+      "side": 1,
+      "message": "+1 to Jao-ke\u0027s comment",
+      "parentUuid": "5cf272c3_7e942773",
+      "range": {
+        "startLine": 38,
+        "startChar": 13,
+        "endLine": 38,
+        "endChar": 20
+      },
+      "revId": "3c84eb7e11cdd4973976e147f0794755199d664f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
