@@ -35,7 +35,6 @@ import (
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -183,7 +182,7 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 		logging.Warningf(c, "user agent %q might be using deprecated API!", getRequest(c).UserAgent())
 	}
 
-	return buildstore.WithDefaultEmulationOptions(c), nil
+	return c, nil
 }
 
 // movedPermanently returns a handler that responds with HTTP 301
