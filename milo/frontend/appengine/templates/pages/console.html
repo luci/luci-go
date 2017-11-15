@@ -117,7 +117,7 @@
           {{ $num_builders := (len .Builders) }}
           {{ range .Builders }}
             <a class="console-builder-status"
-               href="/{{ .LastFinishedBuildID }}"
+               href="{{ .LastFinishedBuildIDLink }}"
                title="{{ .LastFinishedBuildID }}"
                aria-label="builder {{ .BuilderID }} on console {{ $console_name }} has last status {{ .LastFinishedStatus }}">
               {{ if lt $num_builders 50 }}
