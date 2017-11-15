@@ -21,7 +21,6 @@ package version
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -140,10 +139,13 @@ func readVersionFile(path string) (Info, error) {
 // update).
 func init() {
 	// The executable may move during lifetime of the process (e.g. when being
-	// updated). Remember the original location.
+	// updated). Remember the fully-resolved original location.
 	initialExePath, initialExePathErr = os.Executable()
-	if initialExePathErr == nil && !filepath.IsAbs(initialExePath) {
-		initialExePathErr = fmt.Errorf("not an abs path: %s", initialExePath)
+	if initialExePathErr == nil {
+		initialExePath, initialExePathErr = filepath.EvalSymlinks(initialExePath)
+		if initialExePathErr == nil {
+			initialExePath, initialExePathErr = filepath.Abs(initialExePath)
+		}
 	}
 	// Version file can also be changed. Remember the version of the started
 	// executable.
