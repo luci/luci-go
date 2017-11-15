@@ -221,7 +221,7 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 
 // updateProjectConsoles updates all of the consoles for a given project,
 // and then returns a set of known console names.
-func updateProjectConsoles(c context.Context, projectName string, cfg *configInterface.Config) (stringset.Set, error) {
+func updateProjectConsoles(c context.Context, projectID string, cfg *configInterface.Config) (stringset.Set, error) {
 	proj := config.Project{}
 	if err := proto.UnmarshalText(cfg.Content, &proj); err != nil {
 		return nil, errors.Annotate(err, "unmarshalling proto").Err()
@@ -236,38 +236,46 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 	knownConsoles := stringset.New(len(proj.Consoles))
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
-	parentKey := datastore.MakeKey(c, "Project", projectName)
-	for _, pc := range proj.Consoles {
-		if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
-			// Inject a header if HeaderId is specified, and it doesn't already have one.
-			pc.Header = header
-		}
-		knownConsoles.Add(pc.Id)
-		con, err := GetConsole(c, projectName, pc.Id)
-		switch err {
-		case ErrConsoleNotFound:
-			// continue
-		case nil:
-			// Check if revisions match, if so just skip it.
-			if con.ConfigRevision == cfg.Revision {
-				continue
+	parentKey := datastore.MakeKey(c, "Project", projectID)
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		toPut := make([]*Console, 0, len(proj.Consoles))
+		for _, pc := range proj.Consoles {
+			if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
+				// Inject a header if HeaderId is specified, and it doesn't already have one.
+				pc.Header = header
 			}
-		default:
-			return nil, errors.Annotate(err, "checking %s", pc.Id).Err()
+			knownConsoles.Add(pc.Id)
+			con, err := GetConsole(c, projectID, pc.Id)
+			switch err {
+			case ErrConsoleNotFound:
+				// continue
+			case nil:
+				// Check if revisions match, if so just skip it.
+				if con.ConfigRevision == cfg.Revision {
+					continue
+				}
+			default:
+				return errors.Annotate(err, "checking %s", pc.Id).Err()
+			}
+			toPut = append(toPut, &Console{
+				Parent:         parentKey,
+				ID:             pc.Id,
+				ConfigURL:      LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision),
+				ConfigRevision: cfg.Revision,
+				Builders:       pc.AllBuilderIDs(),
+				Def:            *pc,
+			})
 		}
-		con = &Console{
-			Parent:         parentKey,
-			ID:             pc.Id,
-			ConfigURL:      LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision),
-			ConfigRevision: cfg.Revision,
-			Builders:       pc.AllBuilderIDs(),
-			Def:            *pc,
-		}
-		if err = datastore.Put(c, con); err != nil {
-			return nil, errors.Annotate(err, "saving %s", pc.Id).Err()
-		}
-		logging.Infof(c, "saved a new %s / %s (revision %s)", projectName, con.ID, cfg.Revision)
+		return datastore.Put(c, toPut)
+	}, nil)
+
+	if err != nil {
+		logging.WithError(err).Errorf(c, "failed to save consoles of project %q at revision %q", projectID, cfg.Revision)
+		return nil, err
 	}
+
+	logging.Infof(c, "saved consoles of project %q at revision %q", projectID, cfg.Revision)
+
 	return knownConsoles, nil
 }
 
