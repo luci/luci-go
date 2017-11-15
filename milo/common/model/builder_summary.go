@@ -15,30 +15,13 @@
 package model
 
 import (
-	"fmt"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
-
-// BuildMessageOutOfOrderTag indicates that a terminal build message arrived before any pending
-// build messages.
-var BuildMessageOutOfOrderTag = errors.BoolTag{
-	Key: errors.NewTagKey("Got out of order build messages."),
-}
-
-// pendingBuild holds information about builds that are still in progress for a builder.
-type pendingBuild struct {
-	// BuildID is the ID of a Build.
-	BuildID string
-
-	// Status is the status of the build whose key's string representation is above.
-	Status Status
-}
 
 // BuilderSummary holds builder state for the purpose of representing e.g. header consoles.
 type BuilderSummary struct {
@@ -65,128 +48,44 @@ type BuilderSummary struct {
 	// Elements of this list should be of the form
 	// <common.Console.GetProjectID()>/<common.Console.ID>.
 	Consoles []string // indexed on this
-
-	// InProgress tracks builds that are currently still in progress.
-	InProgress []pendingBuild // derive pending/running counts
 }
 
-// GetInProgress returns the pending builds (internally represented as an array) as a map.
-func (b *BuilderSummary) GetInProgress() map[string]Status {
-	bp := make(map[string]Status, len(b.InProgress))
-	for _, bld := range b.InProgress {
-		bp[bld.BuildID] = bld.Status
-	}
-	return bp
-}
-
-// SetInProgress stores the given map of pending builds back into the internal array representation.
-func (b *BuilderSummary) SetInProgress(bp map[string]Status) {
-	b.InProgress = make([]pendingBuild, 0, len(bp))
-	for id, bs := range bp {
-		b.InProgress = append(b.InProgress, pendingBuild{id, bs})
-	}
-}
-
-// UpdateBuilderForBuild updates the appropriate BuilderSummary for the provided BuildSummary.
+// UpdateBuilderForBuild updates the appropriate BuilderSummary for the
+// provided BuildSummary, if needed.
 // In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete
 // and has a more recent creation time than the one stored in the BuilderSummary.
 // If there is no existing BuilderSummary for the BuildSummary provided, one is created.
+// Idempotent.
+// c must have a current datastore transaction.
 func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
-	// Get or create the relevant BuilderSummary.
-	builder := BuilderSummary{BuilderID: build.BuilderID}
-	switch err := datastore.Get(c, &builder); err {
-	case nil:
-	case datastore.ErrNoSuchEntity:
-		logging.Warningf(c, "creating new BuilderSummary for BuilderID: %s", build.BuilderID)
-		datastore.Put(c, &builder)
-	default:
-		return err
-	}
-
-	// Update BuilderSummary with new BuildSummary. If there's an BuildMessageOutOfOrderTag, we
-	// still want to try to update, so in fact, just log and ignore.
-	switch err := builder.Update(c, build); {
-	case err == nil:
-	case BuildMessageOutOfOrderTag.In(err):
-		logging.WithError(err).Warningf(c, "got out of order build messages, ignoring")
-	default:
-		return err
-	}
-
-	return datastore.Put(c, &builder)
-}
-
-// Update updates the given BuilderSummary with the provided BuildSummary.
-// In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete
-// and has a more recent creation time than the one stored in the BuilderSummary.
-func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) (err error) {
-	if b.BuilderID != build.BuilderID {
-		return fmt.Errorf(
-			"updating wrong builder %s for build %v (should be %s)",
-			b.BuilderID, build.BuildID, build.BuilderID)
-	}
-
-	// Update console strings list.
-	if b.Consoles, err = build.GetConsoleNames(); err != nil {
-		return err
-	}
-
-	// If ProjectID has not yet been populated, populate it.
-	if b.ProjectID == "" {
-		b.ProjectID = build.ProjectID
-	}
-
-	// Update builder's InProgress with given build.
-	// The only kind of error we /should/ get is if a terminal build message arrives before any
-	// pending build messages. In that case, we still want to update the builder's last finished build
-	// info if applicable, and re-raise the error after. Otherwise, return the error immediately.
-	err = b.updateInProgress(build)
-	if err != nil && !BuildMessageOutOfOrderTag.In(err) {
-		return err
+	if datastore.CurrentTransaction(c) == nil {
+		panic("UpdateBuilderForBuild was called outside of a transaction")
 	}
 
 	if !build.Summary.Status.Terminal() {
+		// this build did not complete yet.
+		// There is no new info for the builder.
+		// Do not even bother starting a transaction.
 		return nil
 	}
 
-	// Check if we can bail from updating builder's last complete build state.
-	// TODO(jchinlee): Backfilled builds have the wrong creation time; use revision comparison.
-	if b.LastFinishedBuildID != "" && build.Created.Before(b.LastFinishedCreated) {
+	// Get or create the relevant BuilderSummary.
+	builder := &BuilderSummary{BuilderID: build.BuilderID}
+	switch err := datastore.Get(c, builder); {
+	case err == datastore.ErrNoSuchEntity:
+		logging.Warningf(c, "creating new BuilderSummary for BuilderID: %s", build.BuilderID)
+	case err != nil:
 		return err
+	case build.Created.Before(builder.LastFinishedCreated):
+		logging.Warningf(c, "message for build %s is out of order", build.BuildID)
+		return nil
 	}
 
-	b.LastFinishedCreated = build.Created
-	b.LastFinishedStatus = build.Summary.Status
-	b.LastFinishedBuildID = build.BuildID
-
-	// Re-raise update error if applicable.
-	return err
-}
-
-// updateInProgress updates the InProgress builds, and returns whether the overall update
-// needs additional processing.
-// In particular, a build that has not terminated doesn't update builder last finished build state.
-func (b *BuilderSummary) updateInProgress(build *BuildSummary) error {
-	bid := build.BuildID
-	st := build.Summary.Status
-
-	bp := b.GetInProgress()
-	if st.Terminal() {
-		// If we have a terminal state, the build is no longer InProgress so remove it.
-		if _, ok := bp[bid]; !ok {
-			// If the build was never InProgress, that's an error. This should never happen, as earlier
-			// parts of the pipeline take care of it, so throw an error.
-			return errors.Reason(
-				"finished build %v that was not in-progress for builder %s", bid, b.BuilderID).Tag(
-				BuildMessageOutOfOrderTag).Err()
-		}
-
-		delete(bp, bid)
-	} else {
-		// Otherwise just update in the map, whether it's a newly pending or existing pending build.
-		bp[bid] = st
-	}
-
-	b.SetInProgress(bp)
-	return nil
+	// Overwrite previous value of ProjectID in case a builder has moved to
+	// another project.
+	builder.ProjectID = build.ProjectID
+	builder.LastFinishedCreated = build.Created
+	builder.LastFinishedStatus = build.Summary.Status
+	builder.LastFinishedBuildID = build.BuildID
+	return datastore.Put(c, builder)
 }

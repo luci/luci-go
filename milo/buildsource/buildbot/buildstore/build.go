@@ -276,11 +276,12 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 			// up to date.
 		}
 
-		return datastore.Put(c, (*buildEntity)(b), bs)
-	}, &datastore.TransactionOptions{})
-	if err == nil {
-		err = model.UpdateBuilderForBuild(c, bs)
-	}
+		if err := datastore.Put(c, (*buildEntity)(b), bs); err != nil {
+			return err
+		}
+
+		return model.UpdateBuilderForBuild(c, bs)
+	}, &datastore.TransactionOptions{XG: true})
 	return
 }
 
