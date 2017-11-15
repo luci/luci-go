@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "120e8e33_49913cd6",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T23:14:11Z",
+      "side": 1,
+      "message": "How can I validate this URL from console.html template? That is, if I use something like #invalid-build, is there any thing I can or should do from console.html? Presently it just takes the result of generating the URL and stuffs it in href.",
+      "parentUuid": "0ca470b0_68f05eff",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 58
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3c91e27c_c3f3eb8e",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
@@ -263,6 +287,24 @@
     },
     {
       "key": {
+        "uuid": "36e3ad45_55180925",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T23:14:11Z",
+      "side": 1,
+      "message": "Actually, I had (hence the comment above), but it didn\u0027t work before --- will fix and reupload.",
+      "parentUuid": "f2e30166_754e649b",
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1118abc3_686b8177",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
@@ -298,6 +340,30 @@
       "side": 1,
       "message": "we don\u0027t https://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/swarming/swarmingcfg.py?q\u003dvalidate_builder\u0026sq\u003dpackage:chromium\u0026l\u003d209\nit is a bug",
       "parentUuid": "1118abc3_686b8177",
+      "range": {
+        "startLine": 62,
+        "startChar": 7,
+        "endLine": 62,
+        "endChar": 17
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fab4b21f_70e8bc2d",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T23:14:11Z",
+      "side": 1,
+      "message": "Agreed that it\u0027s a reasonable thing to check for anyway?",
+      "parentUuid": "959eb4d7_dc51ceb3",
       "range": {
         "startLine": 62,
         "startChar": 7,
