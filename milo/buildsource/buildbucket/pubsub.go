@@ -170,7 +170,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return err
 	}
 
-	err = datastore.RunInTransaction(c, func(c context.Context) error {
+	return transient.Tag.Apply(datastore.RunInTransaction(c, func(c context.Context) error {
 		curBS := &model.BuildSummary{BuildKey: bs.BuildKey}
 		switch err := datastore.Get(c, curBS); err {
 		case datastore.ErrNoSuchEntity:
@@ -192,9 +192,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		}
 
 		return model.UpdateBuilderForBuild(c, bs)
-	}, &datastore.TransactionOptions{XG: true})
-
-	return transient.Tag.Apply(err)
+	}, &datastore.TransactionOptions{XG: true}))
 }
 
 // MakeBuildKey returns a new datastore Key for a buildbucket.Build.

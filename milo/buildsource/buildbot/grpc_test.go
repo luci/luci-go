@@ -153,7 +153,6 @@ func importBuild(c context.Context, b *buildbot.Build) {
 	// Make sure a BuilderSummary exists for this Build.
 	builderID := fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername)
 	builder := model.BuilderSummary{BuilderID: builderID}
-	builder.SetInProgress(map[string]model.Status{"buildbot/" + b.ID(): model.Running})
 	datastore.Put(c, &builder)
 	datastore.GetTestable(c).CatchupIndexes()
 
