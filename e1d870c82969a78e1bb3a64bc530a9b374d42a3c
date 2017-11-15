@@ -2,6 +2,109 @@
   "comments": [
     {
       "key": {
+        "uuid": "8616be93_e45412c0",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T03:43:53Z",
+      "side": 1,
+      "message": "this code is written in a generic way, even put in a separate package, but it is ultimately inside auth/internal. This does not make sense to me. I think we should either write very simple, concrete private code, or generic and shared. Since it is already written in a generic way, consider publicizing it. I was writing very similar code today, I\u0027d use this package",
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa3de4ee_238a3288",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T03:43:53Z",
+      "side": 1,
+      "message": "this looks redundant with GlobalNamespace. Can we change GetOrCreate to accept string key and then use it as is for global cache?",
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8fcdb66_dba3f9e0",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T03:43:53Z",
+      "side": 1,
+      "message": "per-key",
+      "range": {
+        "startLine": 56,
+        "startChar": 11,
+        "endLine": 56,
+        "endChar": 19
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "536c8287_5c50cb03",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T03:43:53Z",
+      "side": 1,
+      "message": "i think this should be `err \u003d\u003d nil`",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e58d8cdd_4227b13c",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T03:43:53Z",
+      "side": 1,
+      "message": "we are calling Now twice in GetOrCreate execution, here and in deserialization. Since we don\u0027t do logging, consider passing now as a parameter. Passing now is also simpler than passing context.",
+      "range": {
+        "startLine": 126,
+        "startChar": 20,
+        "endLine": 126,
+        "endChar": 34
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d7c2d4f9_51aede9e",
         "filename": "server/auth/internal/layeredcache/layeredcache.go",
         "patchSetId": 1
@@ -22,6 +125,29 @@
       "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e48797a4_3e02fa0b",
+        "filename": "server/auth/internal/layeredcache/layeredcache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T03:43:53Z",
+      "side": 1,
+      "message": "it is a bit odd that a deserialization function result depends on current time. I assume you do it only because you don\u0027t want to spend CPU time on unmarshaling an expired item?\notherwise this function could return time and moving moving expiration check to the callsite will slight decrease amount of code",
+      "range": {
+        "startLine": 150,
+        "startChar": 48,
+        "endLine": 150,
+        "endChar": 51
+      },
+      "revId": "e1d870c82969a78e1bb3a64bc530a9b374d42a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
