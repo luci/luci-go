@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f7a27dcc_11dd70e9",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-15T04:50:57Z",
+      "side": 1,
+      "message": "(note: I don\u0027t have any good ideas on how to do this)",
+      "parentUuid": "b595d418_dce483c5",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 58
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3c91e27c_c3f3eb8e",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
