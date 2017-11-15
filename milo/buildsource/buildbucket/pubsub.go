@@ -187,14 +187,19 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 			return nil
 		}
 
-		if err := datastore.Put(c, bs); err != nil {
-			return err
-		}
+		return datastore.Put(c, bs)
+	}, nil)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
 
-		return model.UpdateBuilderForBuild(c, bs)
-	}, &datastore.TransactionOptions{XG: true})
+	if err := model.UpdateBuilderForBuild(c, bs); err != nil {
+		return errors.Annotate(err, "failed to update bulider summary for build %d", build.ID).
+			Tag(transient.Tag).
+			Err()
+	}
 
-	return transient.Tag.Apply(err)
+	return nil
 }
 
 // MakeBuildKey returns a new datastore Key for a buildbucket.Build.
