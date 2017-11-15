@@ -29,8 +29,6 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 
-	"github.com/kardianos/osext"
-
 	machine "go.chromium.org/luci/common/api/machine_provider/machine/v1"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -209,7 +207,7 @@ func (agent *Agent) initialize(ctx context.Context) (context.Context, error) {
 
 // install installs the agent, starts it, and configures auto-start on reboot.
 func (agent *Agent) install(ctx context.Context) error {
-	exe, err := osext.Executable()
+	exe, err := os.Executable()
 	if err != nil {
 		return err
 	}
