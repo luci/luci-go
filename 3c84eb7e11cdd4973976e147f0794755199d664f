@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d82142e_f47c7ee4",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-15T21:58:41Z",
+      "side": 1,
+      "message": "I disagree with this; What\u0027s the rationale for splitting these into two transactions?",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 2
+      },
+      "revId": "3c84eb7e11cdd4973976e147f0794755199d664f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
