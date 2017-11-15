@@ -4,7 +4,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
-<title>Builder Sample Builder</title>
+<title>Milo</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI Search" />
@@ -14,8 +14,8 @@
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
-<link id="favicon" rel="shortcut icon"
-      type="image/png" href="/static/common/favicon/milo-32.png">
+<script src="/static/common/js/search.js"></script>
+<link rel="stylesheet" href="/static/common/css/search.css" type="text/css">
 
 
 <body class="interface">
@@ -32,122 +32,44 @@
   </header>
   <hr>
   
-<h1>Builder <a href="/foobar">Sample Builder</a></h1>
+<div class="search">
+  <form action="/search" method="GET">
+    <input id="search-text" type="text" name="q" placeholder="Search for builders..." autofocus>
+  </form>
+</div>
 
-<div class="prelude">
-  <div class="column">
-  
-    
-      <h2>Machine Pool:</h2>
-      <table>
-        <tr>
-          <td>Idle</td><td>5</td>
-          <td class="graph">
-            
-              <div class="bar idle" style="width: 33.3%"></div>
-            
-          </td>
-        </tr><tr>
-          <td>Busy</td><td>8</td>
-          <td class="graph">
-            
-              <div class="bar busy" style="width: 53.3%"></div>
-            
-          </td>
-        </tr><tr>
-          <td>Disconnected</td><td>13</td>
-          <td class="graph">
-            
-              <div class="bar disconnected"
-                   style="width: 86.7%"></div>
-            
-          </td>
-        </tr>
-      </table>
-      <details>
-        <summary>15 bots</summary>
-        <table class="info">
-          <tr><th>Name</th><th>Status</th></tr>
-          
-        </table>
-      </details>
-    
-  
-  </div>
+<div id="search-content">
 
-  <div class="column">
-  
-    <h2>Current Builds (1):</h2>
-    <ul>
+  <h2> Module 1
     
-      <li><a href="https://some.url/path">Some current build</a>
+  </h2>
+  
+    <div class="builder-group filterable" data="example%20master%20a">
+      <h3 class="builder-group-name"> Example master A </h3>
+      <ul>
         
-        [Running for: 0]
+          <li class="builder-name filterable" data="example%20builder"><a href="/master1/buildera" aria-label="Example label">Example builder</a></li>
         
-      </li>
-    
-    </ul>
+          <li class="builder-name filterable" data="example%20builder%202"><a href="/master1/builderb" aria-label="Example label 2">Example builder 2</a></li>
+        
+      </ul>
+    </div>
   
-  </div>
 
-  <div class="column">
-  <h2>Pending Build Requests (1):</h2>
-    <ul><li>
-        <small>(, waiting 0)</small></li></ul>
-  
-  </div>
 </div>
 
-<div class="clear"></div>
-
-<div class="main">
-  
-    <h2>Recent Builds:</h2>
-
-    <table class="info">
-      <tr>
-        <th>Time</th>
-        <th>Revision</th>
-        <th>Result</th>
-        <th>Build #</th>
-        <th>Changes</th>
-        <th>Info</th>
-      </tr>
-
-      
-        <tr>
-          <td></td>
-          <td class="revision">deadbeef</td>
-          
-            <td> NotRun </td>
-          
-          <td><a href="https://some.url/path">Some current build</a></td>
-          <td class="left">
-            
-            
-              
-            
-          </td>
-          <td class="left">
-            
-          </td>
-        </tr>
-      
-    </table>
-  
-</div>
-
-<div class="epiloge">
-  
-  (Show:
-  <a href="/foobar">default</a>
-  <a href="/foobar?limit=25">25</a>
-  <a href="/foobar?limit=50">50</a>
-  <a href="/foobar?limit=100">100</a>
-  <a href="/foobar?limit=200">200</a>
-  )
-  
-</div>
+<script>
+(function () {
+  'use strict';
+  $("#search-text").keyup(function() {
+    milo.filter($("#search-content"), $(this).val());
+  });
+  const q = milo.getUrlParameter("q").replace("+", " ");
+  if (q) {
+    $("#search-text").val(q).trigger("keyup");
+  }
+})();
+</script>
 
 
   <footer>

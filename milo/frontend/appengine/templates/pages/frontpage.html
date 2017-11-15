@@ -3,26 +3,20 @@
 {{define "head"}}{{end}}
 
 {{define "body"}}
-<h1>Milo <span class="hidden">front page</span></h1>
-
-{{ if .error }}
-Encountered error while loading front page: {{ .error }}
-{{ end }}
-
-{{ range .frontpage.CIServices }}
-  <h2> {{ .Name }}
-    {{ if .Host }} ({{ .Host.HTML }}) {{ end }}
-  </h2>
-  {{ range .BuilderGroups }}
-    <h3> {{ .Name }} </h3>
-    {{ range .Builders }}
-      <li>{{ .HTML }}</li>
-    {{ else }}
-      No builders found...
-    {{ end }}
-  {{ else}}
-    Nothing to see here...
+<h1>All Projects</h1>
+<div class="project-list">
+  {{ range .frontpage.Projects }}
+  <a href="/p/{{.ID}}/consoles" aria-label="Project {{.ID}}">
+    <div class="project">
+      {{ if .LogoURL }}
+        <img src="{{.LogoURL}}" />
+      {{ else }}
+        <div class="project-favicon-text">{{ printf "%.2s" .ID }}</div>
+      {{ end }}
+      <div class="project-label">{{.ID}}</div>
+    </div>
+  </a>
   {{ end }}
-{{ end }}
+</div>
 
 {{end}} <!-- Body -->
