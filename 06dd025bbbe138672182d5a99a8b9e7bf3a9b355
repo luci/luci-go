@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4168d866_1f9692ce",
+        "filename": "common/config/validation/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:24:15Z",
+      "side": 1,
+      "message": "do we actually make requests to luci-config for validation?",
+      "range": {
+        "startLine": 16,
+        "startChar": 16,
+        "endLine": 16,
+        "endChar": 19
+      },
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3507ed04_8e16009e",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:24:15Z",
+      "side": 1,
+      "message": "just Validator",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 22
+      },
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10335007_a88632ed",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:24:15Z",
+      "side": 1,
+      "message": "it\u0027s ok to have short names for locals, but this is a part of public API. \"configSet\"",
+      "range": {
+        "startLine": 32,
+        "startChar": 28,
+        "endLine": 32,
+        "endChar": 30
+      },
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32598487_fc4d530a",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:24:15Z",
+      "side": 1,
+      "message": "what\u0027s the purpose of this interface? Do you expect your users to implement this? if no, it shouldn\u0027t be an interface",
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dd1ca21_094c7c13",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:24:15Z",
+      "side": 1,
+      "message": "this handler is not the only one we need.\nwe also need metadata handler\n\ni don\u0027t think we need a new interface for handlers. We essentially just need to either return a couple of https://godoc.org/go.chromium.org/luci/server/router#Handler\nor install it in a given router",
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c48d61e3_ab4557e3",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T00:24:15Z",
+      "side": 1,
+      "message": "we also need patterns of config sets and paths",
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
