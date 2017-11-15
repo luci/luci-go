@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "6b04951d_e9a4916c",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "this function implements build id parsing. Milo has standardized build id format and we will likely to need this parsing for purposes other than URL generation. Please consider generalizing this to\n\ntype BuildID interface {\n  String() string\n  URL(project string) string\n}\n\nfunc ParseBuildID(b string) BuildID\n\nExample of a similar thing: https://chromium.googlesource.com/infra/luci/luci-go/+/c2acd12a614164d03f8c1a242cda1ccdbee178d7/buildbucket/buildset.go",
+      "range": {
+        "startLine": 31,
+        "startChar": 3,
+        "endLine": 31,
+        "endChar": 21
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4906339f_f9e59070",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "did you mean BuilderSummaries?",
+      "range": {
+        "startLine": 34,
+        "startChar": 28,
+        "endLine": 34,
+        "endChar": 42
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b595d418_dce483c5",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
@@ -49,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "0ca470b0_68f05eff",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "this assumes that the caller is OK with a bogus URL. Better not to assume that.\n\nAlso if an app returns an invalid link to itself, a user may think that the app is not consistent with itself (not good)\n\nPlease return something so that a caller of this function can tell whether the URL generation succeed or not. It could be \"\" or \n\n  const InvalidBuildIDURL \u003d \"#invalid-build\"\n\nI believe a fragment link is a typical approach for such cases. E.g HTML sanitizers do that (e.g. Gitiles does that and a security engineer suggested that when I was implementing an HTML sanitizer).",
+      "parentUuid": "f7a27dcc_11dd70e9",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 58
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3c91e27c_c3f3eb8e",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
@@ -60,6 +130,30 @@
       "writtenOn": "2017-11-15T04:50:28Z",
       "side": 1,
       "message": "this seems false",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 37,
+        "endChar": 58
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09aca3b7_a40e3057",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "3c91e27c_c3f3eb8e",
       "range": {
         "startLine": 37,
         "startChar": 3,
@@ -95,6 +189,29 @@
     },
     {
       "key": {
+        "uuid": "a0b0dd33_2b0edc2c",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 7
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b769b24_4adf43e8",
         "filename": "milo/common/model/link.go",
         "patchSetId": 3
@@ -106,6 +223,40 @@
       "writtenOn": "2017-11-15T04:50:28Z",
       "side": 1,
       "message": "nit: switch source :\u003d parts[0]; source {",
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39fc3d9f_ea4d3f32",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "reuse buildbucket.ParseBuildAddress",
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2e30166_754e649b",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "reuse https://godoc.org/go.chromium.org/luci/buildbucket#ParseBuildAddress",
       "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -135,6 +286,30 @@
     },
     {
       "key": {
+        "uuid": "959eb4d7_dc51ceb3",
+        "filename": "milo/common/model/link.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "we don\u0027t https://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/swarming/swarmingcfg.py?q\u003dvalidate_builder\u0026sq\u003dpackage:chromium\u0026l\u003d209\nit is a bug",
+      "parentUuid": "1118abc3_686b8177",
+      "range": {
+        "startLine": 62,
+        "startChar": 7,
+        "endLine": 62,
+        "endChar": 17
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c79e0665_0ac935f6",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 3
@@ -146,6 +321,30 @@
       "writtenOn": "2017-11-15T04:50:28Z",
       "side": 1,
       "message": "then this just becomes `build.SelfLink()`",
+      "range": {
+        "startLine": 381,
+        "startChar": 10,
+        "endLine": 381,
+        "endChar": 66
+      },
+      "revId": "cc43b967c184a3443e3459b6fcb9c9554085365d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "326ffceb_60eef4a9",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:51:32Z",
+      "side": 1,
+      "message": "+1 to BulidSummary.SelfLink that calls a build id parser function",
+      "parentUuid": "c79e0665_0ac935f6",
       "range": {
         "startLine": 381,
         "startChar": 10,
