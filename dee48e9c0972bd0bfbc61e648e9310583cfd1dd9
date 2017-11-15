@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88c07544_4ee7394e",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T17:17:06Z",
+      "side": 1,
+      "message": "this continues to import not-build-specific information from build, like Consoles. crbug.com/782874 is about not doing that. \nThis allows the entity to exist without project id, which is not right.\n\nwe should populate this at config ingestion time. The project is available there",
+      "revId": "dee48e9c0972bd0bfbc61e648e9310583cfd1dd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
