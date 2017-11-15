@@ -12,23 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package ui
 
-import (
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/templates"
+import "go.chromium.org/luci/milo/common"
 
-	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/frontend/ui"
-)
-
-func frontpageHandler(c *router.Context) {
-	projs, err := common.GetAllProjects(c.Context)
-	if err != nil {
-		ErrorHandler(c, err)
-		return
-	}
-	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
-		"frontpage": ui.Frontpage{Projects: projs},
-	})
+type Frontpage struct {
+	Projects []common.Project
 }

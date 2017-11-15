@@ -4,14 +4,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
-<title>
-  
-      Success
-    
-    -
-    
-    Test swarming build
-</title>
+<title>Milo</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI Search" />
@@ -21,8 +14,7 @@
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
-<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/green-32.png">
-
+<script src="/static/common/js/search.js"></script>
 
 
 <body class="interface">
@@ -39,96 +31,45 @@
   </header>
   <hr>
   
-  <div class="content">
-    <h1>
-      
-      Build Test swarming build
-      
-    </h1>
-
-    <div class="column">
-
-      <h2>Results:</h2>
-      
-        
-          <p class="success result">Build Successful
-        
-        <span class="subtitle">
-          
-        </span>
-        </p>
-       
-
-
-        
-
-       
-
-      
-
-       
-
-    </div>
-
-    <div class="column">
-
-      <h2>Build Properties:</h2>
-
-      <table class="info BuildProperties" width="100%">
-      <tr><th>Name</th><th>Value</th><th>Source</th></tr>
-
-        
-      </table>
-
-      
-
-      <h2>Timing:</h2>
-      <table class="info" width="100%">
-        <tr class="alt"><td class="left">Start</td>
-        <td>
-          <span class="local-time" data-timestamp="1451747045999">Saturday, 02-Jan-16 15:04:05 UTC</span>
-        </td></tr>
-        <tr><td class="left">End</td>
-        <td>
-          <span class="local-time" data-timestamp="1451747046999">Saturday, 02-Jan-16 15:04:06 UTC</span>
-        </td></tr>
-        <tr class="alt"><td class="left">Elapsed</td>
-        <td id="duration">
-          
-            1 secs
-          
-        </td></tr>
-      </table>
-
-    </div>
-
-    
-  </div>
+<div class="search">
+  <form action="/search" method="GET">
+    <input id="search-text" type="text" name="q" placeholder="Search for builders..." autofocus>
+  </form>
 </div>
-<script language="javascript">
-$(document).ready(function() {
 
-  var check = function(className) {
-    $("#steps").removeClass("all standard interesting").addClass(className)
+<div id="search-content">
+
+  <h2> Module 1
+    
+  </h2>
+  
+    <div class="builder-group" data-filterable="example master a">
+      <h3 class="builder-group-name"> Example master A </h3>
+      <ul>
+        
+          <li class="builder-name" data-filterable="example builder"><a href="/master1/buildera" aria-label="Example label">Example builder</a></li>
+        
+          <li class="builder-name" data-filterable="example builder 2"><a href="/master1/builderb" aria-label="Example label 2">Example builder 2</a></li>
+        
+      </ul>
+    </div>
+  
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+  $("#search-text").keyup(function() {
+    milo.filter($("#search-content"), $(this).val());
+  });
+  const q = milo.getUrlParameter("q").replace("+", " ");
+  if (q) {
+    $("#search-text").val(q).trigger("keyup");
   }
-
-  $("#showInteresting").click(function(e) {
-    check("interesting");
-  });
-  $("#showStandard").click(function(e) {
-    check("standard");
-  });
-  $("#showAll").click(function(e) {
-    check("all");
-  });
-
-  $("input[name='hider']").each(function(){
-    if ($(this).prop("checked")) {
-      $(this).click();
-    }
-  });
-});
+})();
 </script>
+
 
   <footer>
     <hr>

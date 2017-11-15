@@ -1,0 +1,47 @@
+{{define "title"}}Milo{{end}}
+
+{{define "head"}}
+<script src="/static/common/js/search.js"></script>
+{{end}}
+
+{{define "body"}}
+<div class="search">
+  <form action="/search" method="GET">
+    <input id="search-text" type="text" name="q" placeholder="Search for builders..." autofocus>
+  </form>
+</div>
+
+<div id="search-content">
+{{ range .search.CIServices }}
+  <h2> {{ .Name }}
+    {{ if .Host }} ({{ .Host.HTML }}) {{ end }}
+  </h2>
+  {{ range .BuilderGroups }}
+    <div class="builder-group" data-filterable="{{ .Name | toLower }}">
+      <h3 class="builder-group-name"> {{ .Name }} </h3>
+      <ul>
+        {{ range .Builders }}
+          <li class="builder-name" data-filterable="{{ .Label | toLower }}">{{ .HTML }}</li>
+        {{ end }}
+      </ul>
+    </div>
+  {{ else }}
+    Nothing to see here...
+  {{ end }}
+{{ end }}
+</div>
+
+<script>
+(function () {
+  'use strict';
+  $("#search-text").keyup(function() {
+    milo.filter($("#search-content"), $(this).val());
+  });
+  const q = milo.getUrlParameter("q").replace("+", " ");
+  if (q) {
+    $("#search-text").val(q).trigger("keyup");
+  }
+})();
+</script>
+
+{{end}} <!-- Body -->

@@ -43,17 +43,18 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
+	"faviconMIMEType": faviconMIMEType,
+	"formatTime":      formatTime,
 	"humanDuration":   humanDuration,
-	"parseRFC3339":    parseRFC3339,
-	"obfuscateEmail":  obfuscateEmail,
 	"localTime":       localTime,
+	"obfuscateEmail":  obfuscateEmail,
+	"pagedURL":        pagedURL,
+	"parseRFC3339":    parseRFC3339,
+	"percent":         percent,
 	"shortHash":       shortHash,
 	"startswith":      strings.HasPrefix,
 	"sub":             sub,
-	"pagedURL":        pagedURL,
-	"formatTime":      formatTime,
-	"percent":         percent,
-	"faviconMIMEType": faviconMIMEType,
+	"toLower":         strings.ToLower,
 }
 
 // localTime returns a <span> element with t in human format

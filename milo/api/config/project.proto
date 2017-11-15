@@ -19,6 +19,11 @@ message Project {
 
   // Headers is a list of defined headers that may be referenced by a console.
   repeated Header headers = 3;
+
+  // LogoUrl is the URL to the logo for this project.
+  // This field is optional. The logo URL must have a host of
+  // storage.googleapis.com.
+  string logo_url = 4;
 }
 
 // Link is a link to an internet resource, which will be rendered out as

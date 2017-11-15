@@ -14,10 +14,10 @@
 
 package ui
 
-// Collection of structs to describe how to lay out the front page of Milo.
+// Collection of structs to describe how to lay out the overview pages of Milo.
 // There is an implicit hierarchy of Master -> Builder.
 
-type FrontPage struct {
+type Search struct {
 	// CIServices is a backing service for a Continuous Integration system,
 	// such as "buildbot", "swarmbucket", or "dm".
 	CIServices []CIService

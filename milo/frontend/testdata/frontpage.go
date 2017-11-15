@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package testdata
 
 import (
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/templates"
-
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/server/templates"
 )
 
-func frontpageHandler(c *router.Context) {
-	projs, err := common.GetAllProjects(c.Context)
-	if err != nil {
-		ErrorHandler(c, err)
-		return
+func Frontpage() []common.TestBundle {
+	return []common.TestBundle{
+		{
+			Description: "Basic frontpage",
+			Data: templates.Args{
+				"frontpage": ui.Frontpage{
+					Projects: []common.Project{
+						{
+							ID:      "fakeproject",
+							LogoURL: "https://example.com/logo.png",
+						},
+					},
+				},
+			},
+		},
 	}
-	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
-		"frontpage": ui.Frontpage{Projects: projs},
-	})
 }

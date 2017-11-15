@@ -9,17 +9,15 @@
 (function(window) {
   'use strict';
 
-  var milo = window.milo || {};
-
-  milo.tz = moment.tz.guess();
+  const tz = moment.tz.guess();
 
   /**
    * Given a Date, return a time string in the user's local timezone.
    * Also return the time string in relative time from now, MTV time, and UTC
    * time.
    */
-  milo.formatDate = function(t) {
-    var mt = moment.tz(t, milo.tz);
+  function formatDate(t) {
+    var mt = moment.tz(t, tz);
     if (!mt.isValid()) {
       return null;
     }
@@ -31,15 +29,15 @@
       main: mt.format("YYYY-MM-DD LT (z)"),
       hover: hover
     }
-  };
+  }
 
   /**
    * Given two Dates (or a Date and null, prepresenting "now"), return
    * a duration string, with a hover string of the start/end time in the user's
    * timezone and locale.
    */
-  milo.formatDuration = function(start, end) {
-    var st = moment.tz(start, milo.tz);
+  function formatDuration(start, end) {
+    var st = moment.tz(start, tz);
     if (!st.isValid()) {
       return null;
     }
@@ -48,16 +46,16 @@
     if (end == null) {
       hover += "N/A";
     } else {
-      var et =  moment.tz(end, milo.tz)
+      var et =  moment.tz(end, tz)
       if (!et.isValid()) {
         return null
       }
       hover += et.format("YYYY-MM-DD LT (z)");
     }
     return hover;
-  };
+  }
 
-  milo.makeTimesLocal = function(locale) {
+  function makeTimesLocal(locale) {
     // Moment.js does not set the local automatically, it must be done by the
     // caller.
     locale = locale || window.navigator.userLanguage || window.navigator.language;
@@ -70,7 +68,7 @@
         var oldTimestamp = span.innerText;
         var timestamp = span.getAttribute('data-timestamp');
         var date = new Date(parseInt(timestamp, 10));
-        var newTimestamp = milo.formatDate(date);
+        var newTimestamp = formatDate(date);
         if (newTimestamp != null) {
           span.innerText = newTimestamp.main;
           span.setAttribute("title", newTimestamp.hover);
@@ -79,16 +77,16 @@
         console.error('could not convert time of span', span, 'to local:', e)
       }
     }
-  };
+  }
 
-  milo.annotateDurations = function() {
+  function annotateDurations() {
     var durations = document.getElementsByClassName('duration');
     for (var i = 0; i < durations.length; i++) {
       var dur = durations[i];
       try {
         var start = dur.getAttribute('data-starttime');
         var end = dur.getAttribute('data-endtime');
-        var hover = milo.formatDuration(start, end);
+        var hover = formatDuration(start, end);
         if (hover != null) {
           dur.setAttribute("title", hover);
         }
@@ -98,6 +96,9 @@
     }
   }
 
-  window.milo = milo;
+  // Export all methods and attributes as module level functions.
+  Object.assign(window.milo = window.milo || {}, {
+    makeTimesLocal, annotateDurations
+  });
 
 }(window));
