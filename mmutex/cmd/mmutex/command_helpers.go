@@ -15,12 +15,13 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 )
 
-// Runs the command and returns any error that occurred.
-func runCommand(command []string) error {
+// Runs the command in the given context and returns any error that occurred.
+func runCommand(ctx context.Context, command []string) error {
 	cmd := exec.Command(command[0], command[1:]...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

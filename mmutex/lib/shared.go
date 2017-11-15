@@ -15,25 +15,28 @@
 package lib
 
 import (
-	"time"
+	"context"
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 )
 
-// RunShared runs the command with the specified environment while holding a
-// shared mmutex lock.
-func RunShared(env subcommands.Env, command func() error) error {
+// RunShared runs the command with the specified context and environment while
+// holding a shared mmutex lock.
+func RunShared(ctx context.Context, env subcommands.Env, command func(context.Context) error) error {
+	ctx, cancel := context.WithTimeout(ctx, fslockTimeout)
+	defer cancel()
+
 	lockFilePath, _, err := computeMutexPaths(env)
 	if err != nil {
 		return err
 	}
 	if len(lockFilePath) == 0 {
-		return command()
+		return command(ctx)
 	}
 
-	blocker := CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
+	blocker := createPollingBlocker(ctx, fslockPollingInterval)
 	return fslock.WithSharedBlocking(lockFilePath, blocker, func() error {
-		return command()
+		return command(ctx)
 	})
 }

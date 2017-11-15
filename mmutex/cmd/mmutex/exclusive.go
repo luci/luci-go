@@ -15,12 +15,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
 
@@ -38,8 +39,8 @@ type cmdExclusiveRun struct {
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if err := RunExclusive(env, args); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return lib.GetExitCode(exitErr)
+		if exitCode, exitCodePresent := exitcode.Get(err); exitCodePresent {
+			return exitCode
 		}
 
 		// We encountered an error that's unrelated to the command itself.
@@ -50,10 +51,10 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 	return 0
 }
 
-// RunExclusive runs the command with the specified environment while holding an
-// exclusive mmutex lock.
+// RunExclusive runs the command with with the specified context and environment while
+// holding an exclusive mmutex lock.
 func RunExclusive(env subcommands.Env, command []string) error {
-	return lib.RunExclusive(env, func() error {
-		return runCommand(command)
+	return lib.RunExclusive(context.Background(), env, func(ctx context.Context) error {
+		return runCommand(ctx, command)
 	})
 }

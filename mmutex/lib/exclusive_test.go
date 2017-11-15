@@ -15,6 +15,7 @@
 package lib
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -23,6 +24,7 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,8 +32,8 @@ import (
 )
 
 func TestExclusive(t *testing.T) {
-	var fnThatReturns = func(err error) func() error {
-		return func() error {
+	var fnThatReturns = func(err error) func(context.Context) error {
+		return func(context.Context) error {
 			return err
 		}
 	}
@@ -59,7 +61,7 @@ func TestExclusive(t *testing.T) {
 		fslockPollingInterval = 0
 
 		Convey("returns error from the command", func() {
-			So(RunExclusive(env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
+			So(RunExclusive(context.Background(), env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
 		})
 
 		Convey("times out if exclusive lock isn't released", func() {
@@ -72,7 +74,7 @@ func TestExclusive(t *testing.T) {
 			defer handle.Unlock()
 
 			fslockTimeout = 0
-			So(RunExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive(context.Background(), env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("times out if shared lock isn't released", func() {
@@ -84,7 +86,24 @@ func TestExclusive(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive(context.Background(), env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+		})
+
+		Convey("uses context parameter as basis for new context", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+
+			// Start RunExclusive() spinning, waiting for its context to be canceled.
+			runExclusiveChannel := make(chan error)
+			go func() {
+				runExclusiveChannel <- RunExclusive(ctx, env, func(ctx context.Context) error {
+					return clock.Sleep(ctx, time.Millisecond).Err
+				})
+			}()
+
+			cancel()
+			err := <-runExclusiveChannel
+
+			So(err, ShouldErrLike, "context canceled")
 		})
 
 		Convey("respects timeout", func() {
@@ -103,7 +122,7 @@ func TestExclusive(t *testing.T) {
 			}()
 
 			start := time.Now()
-			RunExclusive(env, fnThatReturns(nil))
+			RunExclusive(context.Background(), env, fnThatReturns(nil))
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
@@ -111,6 +130,6 @@ func TestExclusive(t *testing.T) {
 	})
 
 	Convey("RunExclusive acts as a passthrough if lockFileDir is empty", t, func() {
-		So(RunExclusive(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		So(RunExclusive(context.Background(), subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }
