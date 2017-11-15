@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92c19962_ec7565a3",
+        "filename": "cipd/version/version.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T18:09:28Z",
+      "side": 1,
+      "message": "the point of my suggestion was to have shorter names :D\nit is not important though",
+      "revId": "6a99987a227fe368ad94e21d6bb74b720cb471db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
