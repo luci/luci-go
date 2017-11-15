@@ -17,10 +17,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
 
@@ -38,8 +38,8 @@ type cmdSharedRun struct {
 
 func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if err := RunShared(env, args); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return lib.GetExitCode(exitErr)
+		if exitCode, exitCodePresent := exitcode.Get(err); exitCodePresent {
+			return exitCode
 		}
 
 		// The error pertains to this binary rather than the executed command.
