@@ -21,18 +21,28 @@ package version
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 var (
-	initialExePath        string
-	initialExePathErr     error
-	startupVersionFile    Info
-	startupVersionFileErr error
+	initialExePath, initialExePathErr = evalSymlinksAndAbs(os.Executable())
+	startupVersionFile                Info
+	startupVersionFileErr             error
 )
+
+// The executable may move during lifetime of the process (e.g. when being
+// updated). Remember the fully-resolved original location.
+func evalSymlinksAndAbs(path string, err error) (string, error) {
+	if err == nil {
+		path, err = filepath.EvalSymlinks(path)
+		if err == nil {
+			path, err = filepath.Abs(path)
+		}
+	}
+	return path, err
+}
 
 // Info describes JSON file with package version information that's
 // deployed to a path specified in 'version_file' attribute of the manifest.
@@ -139,12 +149,6 @@ func readVersionFile(path string) (Info, error) {
 // startup. Version file may change later during process lifetime (e.g. during
 // update).
 func init() {
-	// The executable may move during lifetime of the process (e.g. when being
-	// updated). Remember the original location.
-	initialExePath, initialExePathErr = os.Executable()
-	if initialExePathErr == nil && !filepath.IsAbs(initialExePath) {
-		initialExePathErr = fmt.Errorf("not an abs path: %s", initialExePath)
-	}
 	// Version file can also be changed. Remember the version of the started
 	// executable.
 	if initialExePathErr == nil {
