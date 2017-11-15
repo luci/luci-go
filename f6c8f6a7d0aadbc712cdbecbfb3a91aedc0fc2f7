@@ -337,6 +337,24 @@
     },
     {
       "key": {
+        "uuid": "5469a769_4a5932d0",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "We generally use approach #3 in similar situations. DB is \"global\" service in this app, so it makes sense to install it globally in a root middleware.",
+      "parentUuid": "f2f07f70_ccc0d73d",
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c6aa474_1891fda4",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -372,6 +390,30 @@
       "side": 1,
       "message": "I assumed that since we\u0027re returning a pointer here, we want to avoid changing the underlying value at the memory address the pointer refers to for as long as anyone has access to the pointer, in case they dereference it and suddenly it refers to some other database connection.\n\nIn other words if we return db and db is a *sql.DB, I don\u0027t want some other concurrent request to do *db \u003d sql.Open(...). I see now that I am not setting *db, I\u0027m setting db, so the pointer itself is changing when there\u0027s a new connection string.\n\nAnyways, this is done.",
       "parentUuid": "4c6aa474_1891fda4",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 15
+      },
+      "revId": "f6c8f6a7d0aadbc712cdbecbfb3a91aedc0fc2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4fbe7dc3_55a4b801",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "In go there\u0027s expectation that programmers follow \"pass by value\" and \"pass by pointer\" conventions. Beefy stateful objects (like *sql.DB) are usually passed by pointer everywhere, and it is expected that people do not generally do *db \u003d sql.DB{}.\n\nGenerally if there are some hidden fields in the object (see \"// contains filtered or unexported fields\" in https://golang.org/pkg/database/sql/#DB), then the object is most likely expected to be passed by pointer everywhere.\n\nPass by value is usually used only for small structs that just carry some data.",
+      "parentUuid": "e5be5ebd_5b8f9a71",
       "range": {
         "startLine": 61,
         "startChar": 2,

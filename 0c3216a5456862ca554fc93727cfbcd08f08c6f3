@@ -1,0 +1,521 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a85dcd8_ee26b0d8",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "please add more context to the error messages by using c.Enter/c.Exit (and ideally also c.SetFile to indicate in what file the error happens).",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 24
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b83a9078_18f87522",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "c.Enter(\"datacenter %q\", datacenterConfig.Name)",
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4282e8d1_ad7bcb98",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "c.Enter(\"rack %q\", rackConfig.Name)",
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d504795b_e8b355ec",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "c.Enter(\"switch %q\", switchConfig.Name)",
+      "range": {
+        "startLine": 122,
+        "startChar": 4,
+        "endLine": 122,
+        "endChar": 5
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c10207b7_e2cccead",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "c.Exit()",
+      "range": {
+        "startLine": 127,
+        "startChar": 4,
+        "endLine": 127,
+        "endChar": 5
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80a51bea_a689ae4a",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "c.Exit()",
+      "range": {
+        "startLine": 128,
+        "startChar": 3,
+        "endLine": 128,
+        "endChar": 4
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78ac032c_2d96b465",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "c.Exit()",
+      "range": {
+        "startLine": 129,
+        "startChar": 2,
+        "endLine": 129,
+        "endChar": 3
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b753501_9f126464",
+        "filename": "machine-db/appengine/config/config_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "you can move this into a helper function to reduce LOC\n\nrunValidation :\u003d func(dc []*config.DatacenterConfig) error {\n  c :\u003d \u0026validation.Context{}\n  validateDatacenters(c, dc)\n  return c.Finalize()\n}\n\n....\n\nSo(runValidation([]*config.DatacenterConfig{\n  ...\n}, ShouldErrLike, \"....\")\n\nNote also that an error returned by validation is actually a list of errors (https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/config/validation/validation.go#29) and you can extract them and assert them in tests individually, if simpler.",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fadb3490_11675a0c",
+        "filename": "machine-db/appengine/config/config_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "no need for that, ShouldErrLike is sufficient to catch nil condition",
+      "range": {
+        "startLine": 45,
+        "startChar": 8,
+        "endLine": 45,
+        "endChar": 22
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2020913a_8593c640",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "consider naming it Get() or DB(), because in most cases it will be called using \u003cpackage name\u003e.\n\ndatabase.Get(c) or database.DB(c) looks nicer than database.GetDatabase(c)\n\n(see https://blog.golang.org/package-names in particular \"Avoid stutter\")",
+      "range": {
+        "startLine": 96,
+        "startChar": 5,
+        "endLine": 96,
+        "endChar": 16
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d62a05cc_fdd46137",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "\u0026dbKey\n\nOtherwise some other package may do context.WithValue(..., \"db\", ...) and screw up everything.\n\n\u0026dbKey is stable unique address (being an address of a global variable). No other package will be able to reuse it (since dbKey is private variable).",
+      "range": {
+        "startLine": 97,
+        "startChar": 16,
+        "endLine": 97,
+        "endChar": 21
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4121bbfc_50848310",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "this just makes a new \u0027error\u0027 object and throws it away.\n\nDid you mean\n\nlogging.Errorf(c.Context, \"...\")?",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 73
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e7659ee_827ae117",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "\u0026dbKey",
+      "range": {
+        "startLine": 110,
+        "startChar": 42,
+        "endLine": 110,
+        "endChar": 47
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cbac9ee_2a1e8425",
+        "filename": "machine-db/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "this won\u0027t be needed if using init()",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 19
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b948682c_04720473",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "is there a test for this?\n\nI suggest you to use \"github.com/DATA-DOG/go-sqlmock\" for mocking SQL stuff (by injecting a mocked sql.DB into a context). Some examples are here https://chromium.googlesource.com/infra/infra/+/master/go/src/infra/tools/cloudsqlhelper/main_test.go#35 (though I have little experience with it myself).",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 2
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "194ca8f3_57b34998",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "this should go to \u0027database\u0027 package (since it\u0027s where we creates the sql.DB instance)",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 21,
+        "endChar": 35
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1a408be_8a412880",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "optional: what I did in other services is setup a separate RPC server accessible only to admins and make cron call handlers there directly. That way the code is more uniform (everything is RPC handler) and admins can manually run stuff via RPC Explorer.\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/tokenserver/api/admin/v1/admin.proto\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/tokenserver/appengine/frontend/main.go#45\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/tokenserver/appengine/frontend/main.go#78\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/tokenserver/appengine/backend/main.go#45\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/tokenserver/appengine/backend/main.go#65",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 22
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01924b18_87571134",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "I hope you\u0027ll change this in the next CL?\n\nWith the current approach we\u0027ll be slowly burning through ID space in datacenters table (since `id` are autogenerated and not reused).",
+      "range": {
+        "startLine": 36,
+        "startChar": 16,
+        "endLine": 36,
+        "endChar": 99
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45d08e43_90e0cc14",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "grpc.Errorf(codes.Internal, \"Failed to check group membership\")\n\nRPC handlers MUST return grpc.Errorf(...) errors.",
+      "range": {
+        "startLine": 89,
+        "startChar": 14,
+        "endLine": 89,
+        "endChar": 60
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "094e0bf6_090c6ad1",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "return nil, grpc.Errorf(codes.PermissionDenied, \"Unauthorized\")",
+      "range": {
+        "startLine": 92,
+        "startChar": 9,
+        "endLine": 92,
+        "endChar": 44
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9909518d_1e5eb08c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "use stringset",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 6
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94e699a2_d8b7f62e",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "it might be better to slice this layered cake differently:\n\nfunc (d *DatacentersServer) GetDatacenters(c context.Context, req *crimson.DatacentersRequest) (*crimson.DatacentersResponse, error) {\n  // \u003cACL check\u003e\n  // Convert RPC request to a set of IDs.\n  dcs, err :\u003d getDatacenters(c, names)\n  if err !\u003d nil {\n    logging.Errorf(...)\n    return nil, grpc.Errorf(codes.Internal, ...)\n  }\n  return \u0026crimson.DatacentersResponse{\n    Datacenters: dcs,\n  }\n}\n\nThat way there\u0027ll be less repetition for error logging and converting to grpc.Errorf, and getDatacenters would be reusable from other functions (like maybe EnsureDatacenters).",
+      "range": {
+        "startLine": 131,
+        "startChar": 5,
+        "endLine": 131,
+        "endChar": 19
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f6496a4_b26c863d",
+        "filename": "machine-db/appengine/settings/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-15T01:03:38Z",
+      "side": 1,
+      "message": "func init() {\n  ...\n}\n\nRegisterUIPage is supposed to be called during init time.",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 149,
+        "endChar": 16
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
