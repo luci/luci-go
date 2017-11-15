@@ -21,6 +21,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
 
@@ -39,7 +40,8 @@ type cmdExclusiveRun struct {
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if err := RunExclusive(env, args); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return lib.GetExitCode(exitErr)
+			code, _ := exitcode.Get(exitErr)
+			return code
 		}
 
 		// We encountered an error that's unrelated to the command itself.
