@@ -34,6 +34,24 @@
       "revId": "dee48e9c0972bd0bfbc61e648e9310583cfd1dd9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ca04128_1ef4e709",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T19:00:41Z",
+      "side": 1,
+      "message": "we don\u0027t have to wait for other CLs to move this.\nIn general, if we need to update datastore sooner (not when someone actually changes the config), we should add version integer field to the entity struct and compare it to a const in a cron job. If we add a new field that is populated from a config, we simply increment the const in code and next time cron runs, it will update all entities, and we don\u0027t have to make dummy changes to all configs. This approach is used in\nhttps://cs.chromium.org/chromium/infra/luci/appengine/config_service/storage.py?l\u003d49\nand the comparison in the cron job\nhttps://cs.chromium.org/chromium/infra/luci/appengine/config_service/gitiles_import.py?l\u003d267",
+      "parentUuid": "ffb3a0fe_632d108a",
+      "revId": "dee48e9c0972bd0bfbc61e648e9310583cfd1dd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
