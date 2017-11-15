@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -53,7 +54,7 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 // RunShared runs the command with the specified environment while holding a
 // shared mmutex lock.
 func RunShared(env subcommands.Env, command []string) error {
-	return lib.RunShared(env, func() error {
-		return runCommand(command)
+	return lib.RunShared(context.Background(), env, func(ctx context.Context) error {
+		return runCommand(ctx, command)
 	})
 }

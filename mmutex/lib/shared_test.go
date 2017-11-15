@@ -15,6 +15,7 @@
 package lib
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -23,6 +24,7 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,8 +32,8 @@ import (
 )
 
 func TestShared(t *testing.T) {
-	var fnThatReturns = func(err error) func() error {
-		return func() error {
+	var fnThatReturns = func(err error) func(context.Context) error {
+		return func(context.Context) error {
 			return err
 		}
 	}
@@ -57,7 +59,7 @@ func TestShared(t *testing.T) {
 		}()
 
 		Convey("returns error from the command", func() {
-			So(RunShared(env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
+			So(RunShared(context.Background(), env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
 		})
 
 		Convey("times out if an exclusive lock isn't released", func() {
@@ -76,8 +78,25 @@ func TestShared(t *testing.T) {
 			}()
 
 			start := time.Now()
-			So(RunShared(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			So(RunShared(context.Background(), env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
+		})
+
+		Convey("uses context parameter as basis for new context", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+
+			// Start RunShared() spinning, waiting for its context to be canceled.
+			runSharedChannel := make(chan error)
+			go func() {
+				runSharedChannel <- RunShared(ctx, env, func(ctx context.Context) error {
+					return clock.Sleep(ctx, time.Millisecond).Err
+				})
+			}()
+
+			cancel()
+			err := <-runSharedChannel
+
+			So(err, ShouldErrLike, "context canceled")
 		})
 
 		Convey("executes the command if shared lock already held", func() {
@@ -89,7 +108,7 @@ func TestShared(t *testing.T) {
 			}
 			defer handle.Unlock()
 
-			So(RunShared(env, fnThatReturns(nil)), ShouldBeNil)
+			So(RunShared(context.Background(), env, fnThatReturns(nil)), ShouldBeNil)
 		})
 
 		// TODO(charliea): Add a test to ensure that RunShared() treats the presence of a drain file the
@@ -97,6 +116,6 @@ func TestShared(t *testing.T) {
 	})
 
 	Convey("RunExclusive acts as a passthrough if lockFileDir is empty", t, func() {
-		So(RunShared(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		So(RunShared(context.Background(), subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }
