@@ -110,11 +110,6 @@ type BuildSummary struct {
 	// See https://chromium.googlesource.com/infra/infra/+/master/appengine/cr-buildbucket/doc/index.md#buildset-tag
 	BuildSet []string
 
-	// SelfLink provides a relative URL for this build.
-	// Buildbot: /buildbot/<mastername>/<buildername>/<buildnumber>
-	// Swarmbucket: Derived from Buildbucket (usually link to self)
-	SelfLink string
-
 	// Created is the time when the Build was first created. Due to pending
 	// queues, this may be substantially before Summary.Start.
 	Created time.Time
