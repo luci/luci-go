@@ -154,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "b68e58f1_e88002e0",
+        "filename": "milo/frontend/appengine/static/common/js/search.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T23:56:51Z",
+      "side": 1,
+      "message": "it would work, candidates would contain both things that should be visible and those that should be\nthe second loop iterates over them all and calls $(this).toggle(visible_items.has(this));\n\nby user I meant the caller of this function, i.e. the template that generates data-filterable. We currently require that to generate lower case strings, although there is no strong reason to require that.",
+      "parentUuid": "9ed65970_0d65357f",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 4
+      },
+      "revId": "eccf2c9fd7f7093742228f8493dca221aa471c16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "836d6e1b_f1321c1c",
         "filename": "milo/frontend/appengine/static/common/js/search.js",
         "patchSetId": 12
