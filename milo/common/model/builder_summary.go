@@ -48,6 +48,9 @@ type BuilderSummary struct {
 	// Matches field in BuildSummary.
 	BuilderID string `gae:"$id"`
 
+	// The LUCI project ID associated with this build. This is used for generating links.
+	ProjectID string
+
 	// LastFinishedCreated is the time the last finished build was created.
 	LastFinishedCreated time.Time
 
@@ -126,6 +129,11 @@ func (b *BuilderSummary) Update(c context.Context, build *BuildSummary) (err err
 	// Update console strings list.
 	if b.Consoles, err = build.GetConsoleNames(); err != nil {
 		return err
+	}
+
+	// If ProjectID has not yet been populated, populate it.
+	if b.ProjectID == "" {
+		b.ProjectID = build.ProjectID
 	}
 
 	// Update builder's InProgress with given build.
