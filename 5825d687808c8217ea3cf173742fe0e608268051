@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56b842c5_f70e1972",
+        "filename": "cipd/version/version.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-15T04:03:04Z",
+      "side": 1,
+      "message": "optional: consider defining two vars with shorter names and then assigning their values to initialExePath and initialExePathErr after computation",
+      "revId": "5825d687808c8217ea3cf173742fe0e608268051",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
