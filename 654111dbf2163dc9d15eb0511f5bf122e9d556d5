@@ -22,6 +22,30 @@
       "revId": "654111dbf2163dc9d15eb0511f5bf122e9d556d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0983baa9_807eff50",
+        "filename": "mmutex/cmd/mmutex/shared.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-15T19:42:27Z",
+      "side": 1,
+      "message": "Thanks for catching that!",
+      "parentUuid": "0e98cdd6_e055c4b0",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 47
+      },
+      "revId": "654111dbf2163dc9d15eb0511f5bf122e9d556d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
