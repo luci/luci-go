@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d98e624_97e94f69",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-15T02:43:03Z",
+      "side": 1,
+      "message": "Double ExpectPrepare, even though db.Prepare(\"INSERT\") is only called once. Removing the duplicate gives an error for me:\n\n\u0027failed to add datacenter: call to Prepare statement with query \u0027INSERT INTO `datacenters` (`name`, `description`) VALUES (?, ?)\u0027, was not expected, next expectation is: ExpectedExec \u003d\u003e expecting Exec or ExecContext which:\n    - matches sql: \u0027INSERT\u0027\n    - is with arguments:\n      0 - datacenter 1\n      1 - description\n    - should return Result having:\n        LastInsertId: 1\n        RowsAffected: 1\u0027",
+      "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
