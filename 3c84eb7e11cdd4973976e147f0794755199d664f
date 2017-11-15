@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1cae6824_20a78ee4",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T22:03:16Z",
+      "side": 1,
+      "message": "Perhaps I\u0027m missing something; why do they need to be in the same transaction as long as they\u0027re individually atomic? (With the consequence that if two things don\u0027t /need/ to be in the same transaction, might as well keep transactional blocks smaller rather than larger.)",
+      "parentUuid": "6d82142e_f47c7ee4",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 2
+      },
+      "revId": "3c84eb7e11cdd4973976e147f0794755199d664f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1572502f_3f775a7f",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
