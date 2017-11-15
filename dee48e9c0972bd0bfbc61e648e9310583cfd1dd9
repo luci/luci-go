@@ -52,6 +52,24 @@
       "revId": "dee48e9c0972bd0bfbc61e648e9310583cfd1dd9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9ba8498_5141e7eb",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-15T19:26:31Z",
+      "side": 1,
+      "message": "OK, I wasn\u0027t aware of that approach. It\u0027s certainly a bit more work for getting the buildbucket links at least working, but I can start putting something together for that.",
+      "parentUuid": "8ca04128_1ef4e709",
+      "revId": "dee48e9c0972bd0bfbc61e648e9310583cfd1dd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
