@@ -22,9 +22,10 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/errors"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -47,7 +48,7 @@ func TestExclusive(t *testing.T) {
 				Exists: true,
 			},
 		}
-		lockFilePath, err := computeLockFilePath(env)
+		lockFilePath, _, err := computeMutexPaths(env)
 		if err != nil {
 			panic(err)
 		}
@@ -109,7 +110,7 @@ func TestExclusive(t *testing.T) {
 		// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
 	})
 
-	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
+	Convey("RunExclusive acts as a passthrough if lockFileDir is empty", t, func() {
 		So(RunExclusive(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
 	})
 }
