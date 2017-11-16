@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "e2cda193_a31e3fbf",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-16T01:27:20Z",
+      "side": 1,
+      "message": "Already done in current patchset.",
+      "parentUuid": "58fea0a3_cad41dd2",
+      "range": {
+        "startLine": 62,
+        "startChar": 22,
+        "endLine": 62,
+        "endChar": 63
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4b00969_7ef26ea8",
         "filename": "machine-db/appengine/config/config.go",
         "patchSetId": 6
@@ -155,6 +179,30 @@
       "writtenOn": "2017-11-16T00:44:51Z",
       "side": 1,
       "message": "so here comes the stupid part of go:\n\nkeys :\u003d make([]string, 0, len(datacenters))\nfor id :\u003d range datacenters {\n  keys \u003d append(keys, id)\n}\nsort.Strings(keys)\nfor id :\u003d range keys {\n  datacenter :\u003d datacenters[id]\n  ...\n}\n\n(and this is not generally extractable into a reusable function because go has not generics).\n\nOtherwise the order is not deterministic and tests expectations won\u0027t always match.",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 41
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86f92044_1dd37e90",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-16T01:27:20Z",
+      "side": 1,
+      "message": "Ok, I might as well do that in config.go then. I changed this function to just accept the map because I was building it anyway (even though this function doesn\u0027t need the keys in this map at all) and I didn\u0027t want to build things twice, but if it\u0027s necessary to build a second O(n) structure regardless I might as well do it there. I didn\u0027t make it alphabetic (it doesn\u0027t really matter, it just needs to be stable, in fact it might be better this way because the order will match the config).\n\nDone in latest patchset in config.go. Changed EnsureDatacenters to accept an array, iteration over which will be deterministic.",
+      "parentUuid": "79a28aa4_bc6b9d4c",
       "range": {
         "startLine": 68,
         "startChar": 1,
