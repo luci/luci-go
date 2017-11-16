@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -80,18 +81,14 @@ func TestCache(t *testing.T) {
 		})
 
 		Convey("With global cache", func() {
-			global := &blobCache{lru: lru.New(0)}
-
-			ctx = caching.WithGlobalCache(ctx, func(ns string) caching.BlobCache {
-				if ns != c.GlobalNamespace {
-					panic("wrong namespace")
-				}
-				return global
+			global := &cachingtest.BlobCache{LRU: lru.New(0)}
+			ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+				c.GlobalNamespace: global,
 			})
 
 			Convey("Getting from the global cache", func() {
 				// The global cache is empty.
-				So(global.lru.Len(), ShouldEqual, 0)
+				So(global.LRU.Len(), ShouldEqual, 0)
 
 				// Create an item.
 				item, err := c.GetOrCreate(ctx, "item", getter)
@@ -100,7 +97,7 @@ func TestCache(t *testing.T) {
 				So(calls, ShouldEqual, 1)
 
 				// It is in the global cache now.
-				So(global.lru.Len(), ShouldEqual, 1)
+				So(global.LRU.Len(), ShouldEqual, 1)
 
 				// Clear the local cache.
 				ctx = caching.WithEmptyProcessCache(ctx)
@@ -113,7 +110,7 @@ func TestCache(t *testing.T) {
 			})
 
 			Convey("Broken global cache is ignored", func() {
-				global.err = errors.New("broken!")
+				global.Err = errors.New("broken!")
 
 				// Create an item.
 				item, err := c.GetOrCreate(ctx, "item", getter)
@@ -206,31 +203,4 @@ func TestSerialization(t *testing.T) {
 			So(err, ShouldEqual, fail)
 		})
 	})
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// blobCache implements caching.BlobCache on top of lru.Cache (for testing).
-type blobCache struct {
-	lru *lru.Cache
-	err error
-}
-
-func (b *blobCache) Get(c context.Context, key string) ([]byte, error) {
-	if b.err != nil {
-		return nil, b.err
-	}
-	item, ok := b.lru.Get(c, key)
-	if !ok {
-		return nil, caching.ErrCacheMiss
-	}
-	return item.([]byte), nil
-}
-
-func (b *blobCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
-	if b.err != nil {
-		return b.err
-	}
-	b.lru.Put(c, key, value, exp)
-	return nil
 }
