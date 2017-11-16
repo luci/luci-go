@@ -99,6 +99,24 @@
       "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6415cda_ada788ba",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:44:51Z",
+      "side": 1,
+      "message": ":-/ ok",
+      "parentUuid": "3db990af_e0e618f6",
+      "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

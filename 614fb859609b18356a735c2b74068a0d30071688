@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "58fea0a3_cad41dd2",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:44:51Z",
+      "side": 1,
+      "message": "Use make(...) then.",
+      "parentUuid": "7cc3a8ef_58965868",
+      "range": {
+        "startLine": 62,
+        "startChar": 22,
+        "endLine": 62,
+        "endChar": 63
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4b00969_7ef26ea8",
         "filename": "machine-db/appengine/config/config.go",
         "patchSetId": 6
@@ -93,6 +117,53 @@
       "revId": "614fb859609b18356a735c2b74068a0d30071688",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "317ad01d_8f94c951",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:44:51Z",
+      "side": 1,
+      "message": "There\u0027s instance of this problem in EnsureDatacenters and it made the tests flaky.",
+      "parentUuid": "554b7f6a_8d873d2b",
+      "range": {
+        "startLine": 96,
+        "startChar": 4,
+        "endLine": 96,
+        "endChar": 61
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "79a28aa4_bc6b9d4c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:44:51Z",
+      "side": 1,
+      "message": "so here comes the stupid part of go:\n\nkeys :\u003d make([]string, 0, len(datacenters))\nfor id :\u003d range datacenters {\n  keys \u003d append(keys, id)\n}\nsort.Strings(keys)\nfor id :\u003d range keys {\n  datacenter :\u003d datacenters[id]\n  ...\n}\n\n(and this is not generally extractable into a reusable function because go has not generics).\n\nOtherwise the order is not deterministic and tests expectations won\u0027t always match.",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 41
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
