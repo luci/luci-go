@@ -22,7 +22,9 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,18 +32,16 @@ import (
 )
 
 func TestExclusive(t *testing.T) {
-	var fnThatReturns = func(err error) func() error {
-		return func() error {
+	var fnThatReturns = func(err error) func(context.Context) error {
+		return func(context.Context) error {
 			return err
 		}
 	}
 
 	Convey("RunExclusive", t, func() {
-		var lockFileDir string
-		var err error
-		if lockFileDir, err = ioutil.TempDir("", ""); err != nil {
-			panic(err)
-		}
+		lockFileDir, err := ioutil.TempDir("", "")
+		So(err, ShouldBeNil)
+		defer os.Remove(lockFileDir)
 		env := subcommands.Env{
 			LockFileEnvVariable: subcommands.EnvVar{
 				Value:  lockFileDir,
@@ -49,51 +49,44 @@ func TestExclusive(t *testing.T) {
 			},
 		}
 		lockFilePath, _, err := computeMutexPaths(env)
-		if err != nil {
-			panic(err)
-		}
-		defer func() {
-			os.Remove(lockFileDir)
-		}()
+		So(err, ShouldBeNil)
 		fslockTimeout = 0
 		fslockPollingInterval = 0
+		ctx := context.Background()
 
 		Convey("returns error from the command", func() {
-			So(RunExclusive(env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
+			So(RunExclusive(ctx, env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
 		})
 
 		Convey("times out if exclusive lock isn't released", func() {
-			var handle fslock.Handle
-			var err error
-
-			if handle, err = fslock.Lock(lockFilePath); err != nil {
-				panic(err)
-			}
+			handle, err := fslock.Lock(lockFilePath)
+			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
 			fslockTimeout = 0
-			So(RunExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
 		Convey("times out if shared lock isn't released", func() {
-			var handle fslock.Handle
-			var err error
-
-			if handle, err = fslock.LockShared(lockFilePath); err != nil {
-				panic(err)
-			}
+			handle, err := fslock.LockShared(lockFilePath)
+			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			So(RunExclusive(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+		})
+
+		Convey("uses context parameter as basis for new context", func() {
+			ctx, cancel := context.WithCancel(ctx)
+			cancel()
+			err := RunExclusive(ctx, env, func(ctx context.Context) error {
+				return clock.Sleep(ctx, time.Millisecond).Err
+			})
+			So(err, ShouldErrLike, "context deadline exceeded")
 		})
 
 		Convey("respects timeout", func() {
-			var handle fslock.Handle
-			var err error
-
-			if handle, err = fslock.Lock(lockFilePath); err != nil {
-				panic(err)
-			}
+			handle, err := fslock.Lock(lockFilePath)
+			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
 			oldFslockTimeout := fslockTimeout
@@ -103,14 +96,14 @@ func TestExclusive(t *testing.T) {
 			}()
 
 			start := time.Now()
-			RunExclusive(env, fnThatReturns(nil))
+			RunExclusive(ctx, env, fnThatReturns(nil))
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
 		// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
-	})
 
-	Convey("RunExclusive acts as a passthrough if lockFileDir is empty", t, func() {
-		So(RunExclusive(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		Convey("acts as a passthrough if lockFileDir is empty", func() {
+			So(RunExclusive(ctx, subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		})
 	})
 }

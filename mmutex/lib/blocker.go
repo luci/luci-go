@@ -18,24 +18,18 @@ import (
 	"time"
 
 	"github.com/danjacques/gofslock/fslock"
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/clock"
 )
 
-func minDuration(d1 time.Duration, d2 time.Duration) time.Duration {
-	if d1.Nanoseconds() <= d2.Nanoseconds() {
-		return d1
-	} else {
-		return d2
-	}
-}
-
-func CreateBlockerUntil(t time.Time, pollingInterval time.Duration) fslock.Blocker {
+// createPollingBlocker creates a blocker that polls to see if the lock is available
+// at the specified interval and cancels if the specified context is canceled.
+func createPollingBlocker(ctx context.Context, pollingInterval time.Duration) fslock.Blocker {
 	return func() error {
-		timeRemaining := t.Sub(time.Now())
-		if timeRemaining <= 0 {
+		if clock.Sleep(ctx, pollingInterval).Err != nil {
 			return fslock.ErrLockHeld
 		}
-
-		time.Sleep(minDuration(pollingInterval, timeRemaining))
 
 		// Returning nil signals that the lock should be retried.
 		return nil

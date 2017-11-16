@@ -19,7 +19,9 @@ import (
 	"os"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
@@ -37,7 +39,8 @@ type cmdExclusiveRun struct {
 }
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunExclusive(env, args); err != nil {
+	ctx := cli.GetContext(a, c, env)
+	if err := RunExclusive(ctx, env, args); err != nil {
 		if exitCode, exitCodePresent := exitcode.Get(err); exitCodePresent {
 			return exitCode
 		}
@@ -50,10 +53,10 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 	return 0
 }
 
-// RunExclusive runs the command with the specified environment while holding an
-// exclusive mmutex lock.
-func RunExclusive(env subcommands.Env, command []string) error {
-	return lib.RunExclusive(env, func() error {
-		return runCommand(command)
+// RunExclusive runs the command with the specified context and environment while
+// holding an exclusive mmutex lock.
+func RunExclusive(ctx context.Context, env subcommands.Env, command []string) error {
+	return lib.RunExclusive(context.Background(), env, func(ctx context.Context) error {
+		return runCommand(ctx, command)
 	})
 }

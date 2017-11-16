@@ -19,7 +19,9 @@ import (
 	"os"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
@@ -37,7 +39,8 @@ type cmdSharedRun struct {
 }
 
 func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunShared(env, args); err != nil {
+	ctx := cli.GetContext(a, c, env)
+	if err := RunShared(ctx, env, args); err != nil {
 		if exitCode, exitCodePresent := exitcode.Get(err); exitCodePresent {
 			return exitCode
 		}
@@ -52,8 +55,8 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 
 // RunShared runs the command with the specified environment while holding a
 // shared mmutex lock.
-func RunShared(env subcommands.Env, command []string) error {
-	return lib.RunShared(env, func() error {
-		return runCommand(command)
+func RunShared(ctx context.Context, env subcommands.Env, command []string) error {
+	return lib.RunShared(context.Background(), env, func(ctx context.Context) error {
+		return runCommand(ctx, command)
 	})
 }
