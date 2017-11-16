@@ -15,26 +15,30 @@
 package lib
 
 import (
-	"time"
-
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/clock"
 )
 
-// RunExclusive runs the command with the specified environment while holding an
-// exclusive mmutex lock.
-func RunExclusive(env subcommands.Env, command func() error) error {
+// RunExclusive runs the command with the specified context and environment while
+// holding an exclusive mmutex lock.
+func RunExclusive(ctx context.Context, env subcommands.Env, command func(context.Context) error) error {
+	ctx, cancel := clock.WithTimeout(ctx, fslockTimeout)
+	defer cancel()
+
 	lockFilePath, _, err := computeMutexPaths(env)
 	if err != nil {
 		return err
 	}
 
 	if len(lockFilePath) == 0 {
-		return command()
+		return command(ctx)
 	}
 
-	blocker := CreateBlockerUntil(time.Now().Add(fslockTimeout), fslockPollingInterval)
+	blocker := createPollingBlocker(ctx, fslockPollingInterval)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
-		return command()
+		return command(ctx)
 	})
 }

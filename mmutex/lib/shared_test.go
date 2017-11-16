@@ -22,7 +22,9 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,18 +32,16 @@ import (
 )
 
 func TestShared(t *testing.T) {
-	var fnThatReturns = func(err error) func() error {
-		return func() error {
+	var fnThatReturns = func(err error) func(context.Context) error {
+		return func(context.Context) error {
 			return err
 		}
 	}
 
 	Convey("RunShared", t, func() {
-		var lockFileDir string
-		var err error
-		if lockFileDir, err = ioutil.TempDir("", ""); err != nil {
-			panic(err)
-		}
+		lockFileDir, err := ioutil.TempDir("", "")
+		So(err, ShouldBeNil)
+		defer os.Remove(lockFileDir)
 		env := subcommands.Env{
 			LockFileEnvVariable: subcommands.EnvVar{
 				Value:  lockFileDir,
@@ -49,24 +49,16 @@ func TestShared(t *testing.T) {
 			},
 		}
 		lockFilePath, _, err := computeMutexPaths(env)
-		if err != nil {
-			panic(err)
-		}
-		defer func() {
-			os.Remove(lockFileDir)
-		}()
+		So(err, ShouldBeNil)
+		ctx := context.Background()
 
 		Convey("returns error from the command", func() {
-			So(RunShared(env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
+			So(RunShared(ctx, env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
 		})
 
 		Convey("times out if an exclusive lock isn't released", func() {
-			var handle fslock.Handle
-			var err error
-
-			if handle, err = fslock.Lock(lockFilePath); err != nil {
-				panic(err)
-			}
+			handle, err := fslock.Lock(lockFilePath)
+			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
 			oldFslockTimeout := fslockTimeout
@@ -76,27 +68,32 @@ func TestShared(t *testing.T) {
 			}()
 
 			start := time.Now()
-			So(RunShared(env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
-		Convey("executes the command if shared lock already held", func() {
-			var handle fslock.Handle
-			var err error
+		Convey("uses context parameter as basis for new context", func() {
+			ctx, cancel := context.WithCancel(ctx)
+			cancel()
+			err := RunShared(ctx, env, func(ctx context.Context) error {
+				return clock.Sleep(ctx, time.Millisecond).Err
+			})
+			So(err, ShouldErrLike, "context deadline exceeded")
+		})
 
-			if handle, err = fslock.LockShared(lockFilePath); err != nil {
-				panic(err)
-			}
+		Convey("executes the command if shared lock already held", func() {
+			handle, err := fslock.LockShared(lockFilePath)
+			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			So(RunShared(env, fnThatReturns(nil)), ShouldBeNil)
+			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldBeNil)
 		})
 
 		// TODO(charliea): Add a test to ensure that RunShared() treats the presence of a drain file the
 		// same as a held lock.
-	})
 
-	Convey("RunExclusive acts as a passthrough if lockFileDir is empty", t, func() {
-		So(RunShared(subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		Convey("acts as a passthrough if lockFileDir is empty", func() {
+			So(RunShared(ctx, subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		})
 	})
 }
