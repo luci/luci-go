@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb68d2ef_b09ebb99",
+        "filename": "milo/frontend/view_search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-16T03:52:41Z",
+      "side": 1,
+      "message": "Also in includes/base.html, in the \u003clink\u003e tag for the xml, there is a title\u003d\"LUCI Search\" attribute.  That needs to be changed to to match this name.",
+      "range": {
+        "startLine": 36,
+        "startChar": 13,
+        "endLine": 36,
+        "endChar": 17
+      },
+      "revId": "0babb3aaa80a08fc142ccfd04f9a6b852282637c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
