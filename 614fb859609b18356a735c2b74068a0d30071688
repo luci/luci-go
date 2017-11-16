@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7cc3a8ef_58965868",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-16T00:34:23Z",
+      "side": 1,
+      "message": "Oh, I actually know how many elements it will/should have. Should I use make with the amount or a literal?",
+      "parentUuid": "15b0ea0b_ecb3f6fa",
+      "range": {
+        "startLine": 62,
+        "startChar": 22,
+        "endLine": 62,
+        "endChar": 63
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4b00969_7ef26ea8",
         "filename": "machine-db/appengine/config/config.go",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2017-11-16T00:11:47Z",
       "side": 1,
       "message": "not that order of map enumeration in go is non-deterministic (randomized on each process run), so if your tests asserts some specific order of files, this would have been a problem.",
+      "range": {
+        "startLine": 96,
+        "startChar": 4,
+        "endLine": 96,
+        "endChar": 61
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "554b7f6a_8d873d2b",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-16T00:34:23Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d4b00969_7ef26ea8",
       "range": {
         "startLine": 96,
         "startChar": 4,
@@ -68,6 +116,30 @@
       "revId": "614fb859609b18356a735c2b74068a0d30071688",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1bc7137_6791e258",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-16T00:34:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85be6cb2_87f089be",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 2
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

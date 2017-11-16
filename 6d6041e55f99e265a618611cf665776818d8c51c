@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9841dab6_322bad4f",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-16T00:34:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dff4bd44_c08742bb",
+      "range": {
+        "startLine": 40,
+        "startChar": 17,
+        "endLine": 40,
+        "endChar": 22
+      },
+      "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d98e624_97e94f69",
         "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
         "patchSetId": 5
@@ -54,6 +78,24 @@
       "side": 1,
       "message": "I can\u0027t explain it, the code looks correct. My guess it is somehow related to connection reuse (or inability of reuse in this case). sql.DB keeps a pool of connections underneath. Prepared statements work per-connection. Try changing the logic of EnsureDatacenters and see how it changes the expectations. For example, I think \"defer rows.Close()\" actually keeps one connection occupied until the end of the function, even though we don\u0027t really need it after reading all the stuff. Try closing it earlier and see what happens. Or try using db.Conn(...) and working through single connection throughout the function (it is sequential anyway) and see how it changes expectations.",
       "parentUuid": "9d98e624_97e94f69",
+      "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3db990af_e0e618f6",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-16T00:34:23Z",
+      "side": 1,
+      "message": "I removed all defers and explicitly closed each statement/row on error and as soon as it was finished being used but no change, so I kept defers for now.",
+      "parentUuid": "ce515cc1_5fa6b653",
       "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
