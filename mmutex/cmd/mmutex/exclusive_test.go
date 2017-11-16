@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/mmutex/lib"
 
@@ -32,9 +33,8 @@ func TestExclusive(t *testing.T) {
 	Convey("RunExclusive", t, func() {
 		var lockFileDir string
 		var err error
-		if lockFileDir, err = ioutil.TempDir("", ""); err != nil {
-			panic(err)
-		}
+		lockFileDir, err = ioutil.TempDir("", "")
+		So(err, ShouldBeNil)
 		env := subcommands.Env{
 			lib.LockFileEnvVariable: subcommands.EnvVar{
 				Value:  lockFileDir,
@@ -47,9 +47,8 @@ func TestExclusive(t *testing.T) {
 			var tempDir string
 			var err error
 
-			if tempDir, err = ioutil.TempDir("", ""); err != nil {
-				panic(err)
-			}
+			tempDir, err = ioutil.TempDir("", "")
+			So(err, ShouldBeNil)
 			defer os.Remove(tempDir)
 
 			testFilePath := filepath.Join(tempDir, "test")
@@ -60,7 +59,7 @@ func TestExclusive(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunExclusive(env, command), ShouldBeNil)
+			So(RunExclusive(context.Background(), env, command), ShouldBeNil)
 
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)

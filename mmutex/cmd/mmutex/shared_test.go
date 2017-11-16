@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/mmutex/lib"
 
@@ -32,9 +33,8 @@ func TestShared(t *testing.T) {
 	Convey("RunShared", t, func() {
 		var lockFileDir string
 		var err error
-		if lockFileDir, err = ioutil.TempDir("", ""); err != nil {
-			panic(err)
-		}
+		lockFileDir, err = ioutil.TempDir("", "")
+		So(err, ShouldBeNil)
 		env := subcommands.Env{
 			lib.LockFileEnvVariable: subcommands.EnvVar{
 				Value:  lockFileDir,
@@ -47,9 +47,8 @@ func TestShared(t *testing.T) {
 			var tempDir string
 			var err error
 
-			if tempDir, err = ioutil.TempDir("", ""); err != nil {
-				panic(err)
-			}
+			tempDir, err = ioutil.TempDir("", "")
+			So(err, ShouldBeNil)
 			defer os.Remove(tempDir)
 
 			testFilePath := filepath.Join(tempDir, "test")
@@ -60,7 +59,7 @@ func TestShared(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunShared(env, command), ShouldBeNil)
+			So(RunShared(context.Background(), env, command), ShouldBeNil)
 
 			_, err = os.Stat(testFilePath)
 			So(err, ShouldBeNil)
