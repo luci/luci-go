@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf85b9b6_99c564b8",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "lockFileDir, err :\u003d",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 20
+      },
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "366c569f_aca8c533",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "nit: move up so it is closer to the initialization of lockFileDir\nyou do that with tempDir below",
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "944d6078_6116f62c",
+        "filename": "mmutex/cmd/mmutex/exclusive_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 47,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ff95dfc_434dc5c8",
+        "filename": "mmutex/cmd/mmutex/shared_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 20
+      },
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdbc81a0_73fdd8de",
+        "filename": "mmutex/cmd/mmutex/shared_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "same",
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d483babe_59dd4007",
+        "filename": "mmutex/cmd/mmutex/shared_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 47,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 17
+      },
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a763080a_e6fbce2c",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "in shared.go you don\u0027t have a blank line in the identical code",
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5009071a_839669bf",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 42,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 21
+      },
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43af9041_542476e7",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T20:09:29Z",
+      "side": 1,
+      "message": "same\nbelow and in other files too",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 69,
+        "endChar": 16
+      },
+      "revId": "8293a5534e81a312fae38ec1e7a76c6f3e6d1b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
