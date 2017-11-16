@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5019c5d7_3666f3e6",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T09:08:57Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 95,
+        "startChar": 39,
+        "endLine": 95,
+        "endChar": 42
+      },
+      "revId": "e198bcb889b733eb40792645251cebd1f18c1879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38832172_559b9397",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T09:08:57Z",
+      "side": 1,
+      "message": "is this feasible with globalish memcache though? it will work for process cache though",
+      "range": {
+        "startLine": 103,
+        "startChar": 69,
+        "endLine": 103,
+        "endChar": 78
+      },
+      "revId": "e198bcb889b733eb40792645251cebd1f18c1879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
