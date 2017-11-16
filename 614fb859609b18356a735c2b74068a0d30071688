@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "15b0ea0b_ecb3f6fa",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "nit: it is usually simpler to use map literal instead of \u0027make\u0027.\n\ndatacenterConfigs :\u003d map[string]*config.DatacenterConfig{}\n\n\u0027make\u0027 is useful if you know how many elements the map will eventually contain. The capacity can be passed to make as make(map[A]B, \u003ccapacity\u003e). This will reduce total number of allocations.",
+      "range": {
+        "startLine": 62,
+        "startChar": 22,
+        "endLine": 62,
+        "endChar": 63
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4b00969_7ef26ea8",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "not that order of map enumeration in go is non-deterministic (randomized on each process run), so if your tests asserts some specific order of files, this would have been a problem.",
+      "range": {
+        "startLine": 96,
+        "startChar": 4,
+        "endLine": 96,
+        "endChar": 61
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85be6cb2_87f089be",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "nit: this kind of stuff is usually written in a more compact form\n\nswitch authorized, err :\u003d d.IsAuthorized(c); {\n  case err !\u003d nil:\n    return nil, grpc.Errorf(...)\n  case !authorized:\n    return nil, grpc.Errorf(...)\n}",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 2
+      },
+      "revId": "614fb859609b18356a735c2b74068a0d30071688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

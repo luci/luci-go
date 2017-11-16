@@ -354,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "30a834d3_8ba2e89b",
+        "filename": "machine-db/appengine/config/config_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "Fine.",
+      "parentUuid": "f8151184_64da39d8",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fadb3490_11675a0c",
         "filename": "machine-db/appengine/config/config_test.go",
         "patchSetId": 2
@@ -683,6 +707,30 @@
     },
     {
       "key": {
+        "uuid": "1b40cb65_badb20d1",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "caaca1f9_510223b0",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 2
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "194ca8f3_57b34998",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -777,6 +825,30 @@
     },
     {
       "key": {
+        "uuid": "ebb50e11_04573a61",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "Fine. But it really makes it easier to debug stuff when you is able to run it manually and see results it produces (since RPC can return results), and makes code more uniform, since everything is RPC handler.",
+      "parentUuid": "596a5e96_cd6a8efb",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 22
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01924b18_87571134",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -821,6 +893,30 @@
       "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e55b214_7dc19ce3",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "69c79c6a_c3782212",
+      "range": {
+        "startLine": 36,
+        "startChar": 16,
+        "endLine": 36,
+        "endChar": 99
+      },
+      "revId": "0c3216a5456862ca554fc93727cfbcd08f08c6f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

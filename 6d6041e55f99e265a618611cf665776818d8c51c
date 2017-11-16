@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "dff4bd44_c08742bb",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "nit: use QueryContext, PrepareContext, ExecContext, etc. It would provide support for canceling stuck requests on deadline.\n\n(Forgot that they existed)",
+      "range": {
+        "startLine": 40,
+        "startChar": 17,
+        "endLine": 40,
+        "endChar": 22
+      },
+      "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d98e624_97e94f69",
         "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
         "patchSetId": 5
@@ -13,6 +36,24 @@
       "writtenOn": "2017-11-15T02:43:03Z",
       "side": 1,
       "message": "Double ExpectPrepare, even though db.Prepare(\"INSERT\") is only called once. Removing the duplicate gives an error for me:\n\n\u0027failed to add datacenter: call to Prepare statement with query \u0027INSERT INTO `datacenters` (`name`, `description`) VALUES (?, ?)\u0027, was not expected, next expectation is: ExpectedExec \u003d\u003e expecting Exec or ExecContext which:\n    - matches sql: \u0027INSERT\u0027\n    - is with arguments:\n      0 - datacenter 1\n      1 - description\n    - should return Result having:\n        LastInsertId: 1\n        RowsAffected: 1\u0027",
+      "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce515cc1_5fa6b653",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T00:11:47Z",
+      "side": 1,
+      "message": "I can\u0027t explain it, the code looks correct. My guess it is somehow related to connection reuse (or inability of reuse in this case). sql.DB keeps a pool of connections underneath. Prepared statements work per-connection. Try changing the logic of EnsureDatacenters and see how it changes the expectations. For example, I think \"defer rows.Close()\" actually keeps one connection occupied until the end of the function, even though we don\u0027t really need it after reading all the stuff. Try closing it earlier and see what happens. Or try using db.Conn(...) and working through single connection throughout the function (it is sequential anyway) and see how it changes expectations.",
+      "parentUuid": "9d98e624_97e94f69",
       "revId": "6d6041e55f99e265a618611cf665776818d8c51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
