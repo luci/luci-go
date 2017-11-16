@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9f68eb5_6f87a429",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T22:10:12Z",
+      "side": 1,
+      "message": "If you have suggestions on a less awkward way to do this, I\u0027m interested :-)",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 5
+      },
+      "revId": "28134d28ab113faba351b6ae015312a5f384a348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "455e3e26_f7cd4821",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T22:10:12Z",
+      "side": 1,
+      "message": "Note that the fact that we were seeing a context deadline exceeded error here rather than a context canceled one should have been an indication that this test was doing something unexpected.",
+      "range": {
+        "startLine": 91,
+        "startChar": 35,
+        "endLine": 91,
+        "endChar": 43
+      },
+      "revId": "28134d28ab113faba351b6ae015312a5f384a348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
