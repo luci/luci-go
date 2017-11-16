@@ -23,19 +23,42 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 )
 
-// accessTokenUserCacheKeyVersion is the current cache format version of an
-// access token User lookup. This must be incremented any time an incompatible
-// change is made to User or how User is cached.
-const accessTokenUserCacheKeyVersion = "1"
+// ErrBadOAuthToken is returned by GoogleOAuth2Method if the access token it
+// checks is bad.
+var ErrBadOAuthToken = errors.New("oauth: bad access token")
+
+// SHA256(access token) => JSON-marshalled User or "" if the token is invalid.
+var oauthChecksCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(4096),
+	GlobalNamespace: "oauth_token_checks_v1",
+	Marshal: func(item interface{}) ([]byte, error) {
+		if item == nil {
+			return nil, nil // not a valid token
+		}
+		return json.Marshal(item.(*User))
+	},
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		if len(blob) == 0 {
+			return nil, nil // not a valid token
+		}
+		u := &User{}
+		if err := json.Unmarshal(blob, u); err != nil {
+			return nil, err
+		}
+		return u, nil
+	},
+}
 
 // GoogleOAuth2Method implements Method on top of Google's OAuth2 endpoint.
 //
@@ -52,7 +75,7 @@ type GoogleOAuth2Method struct {
 // Authenticate implements Method.
 func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (user *User, err error) {
 	cfg := getConfig(c)
-	if cfg == nil || cfg.AnonymousTransport == nil || cfg.Cache == nil {
+	if cfg == nil || cfg.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
 
@@ -68,43 +91,51 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 	}
 	accessToken := chunks[1]
 
-	// Check cache (without lock).
-	cacheKey := makeAccessTokenUserCacheKey(accessToken)
-	if cv, err := cfg.Cache.Get(c, cacheKey); err == nil && cv != nil {
-		user = &User{}
-		err := json.Unmarshal(cv, user)
-		if err == nil {
-			return user, nil
-		}
-		logging.WithError(err).Warningf(c, "oauth: Failed to unmarshal cached User.")
-	} else if err != nil {
-		logging.WithError(err).Warningf(c, "oauth: Failed to fetch User from cache.")
-	}
+	// Store only the token hash in the cache, so that if a memory or cache dump
+	// ever occurs, the tokens themselves aren't included in it.
+	h := sha256.Sum256([]byte(accessToken))
+	cacheKey := hex.EncodeToString(h[:])
 
-	// Not cached, or invalid cache. Regenerate and add to cache under lock.
-	var exp time.Duration
-	cfg.Locks.WithMutex("oauth:"+string(cacheKey), func() {
-		if user, exp, err = m.authenticateAgainstGoogle(c, cfg, accessToken); err != nil {
-			return
-		}
-
-		// Add the resolved User to cache.
-		if blob, err := json.Marshal(user); err == nil {
-			if err := cfg.Cache.Set(c, cacheKey, blob, exp); err != nil {
-				logging.WithError(err).Warningf(c, "oauth: Failed to add User to cache.")
-			}
-		} else {
-			logging.WithError(err).Warningf(c, "oauth: Failed to marshal User for cache.")
+	// Verify the token or grab a result of previous verification. We cache both
+	// good and bad tokens. Note that bad token can't turn into good with passage
+	// of time, so its OK to cache it.
+	//
+	// TODO(vadimsh): Strictly speaking we need to store bad tokens in a separate
+	// cache, so a flood of bad tokens don't evict good tokens from the process
+	// cache.
+	cached, err := oauthChecksCache.GetOrCreate(c, cacheKey, func() (interface{}, time.Duration, error) {
+		switch user, exp, err := m.authenticateAgainstGoogle(c, cfg, accessToken); {
+		case transient.Tag.In(err):
+			logging.WithError(err).Errorf(c, "oauth: Transient error when checking the token")
+			return nil, 0, err
+		case err != nil:
+			// Cache the fact that the token is bad for 30 min. No need to recheck it
+			// again just to find out it is (still) bad.
+			logging.WithError(err).Errorf(c, "oauth: Caching bad access token SHA256=%q", cacheKey)
+			return nil, 30 * time.Minute, nil
+		default:
+			return user, exp, nil
 		}
 	})
-	if err != nil {
-		return nil, err
+
+	switch {
+	case err != nil:
+		return nil, err // can only be a transient error
+	case cached == nil:
+		logging.Errorf(c, "oauth: Bad access token SHA256=%q", cacheKey)
+		return nil, ErrBadOAuthToken
 	}
 
+	user = cached.(*User)
 	return
 }
 
 // authenticateAgainstGoogle uses OAuth2 tokeninfo endpoint via URL fetch.
+//
+// May return transient errors.
+//
+// TODO(vadimsh): Reduce timeout and add retries on transient errors (they do
+// happen).
 func (m *GoogleOAuth2Method) authenticateAgainstGoogle(c context.Context, cfg *Config, accessToken string) (
 	*User, time.Duration, error) {
 
@@ -162,13 +193,4 @@ func (m *GoogleOAuth2Method) authenticateAgainstGoogle(c context.Context, cfg *C
 	}
 
 	return u, exp, nil
-}
-
-// makeAccessTokenUserCacheKey creates a cache key for the specified access
-// token's associated User. To generate this key, we hash the actual access
-// token so that if a memory or cache dump ever occurs, the tokens themselves
-// aren't included in it.
-func makeAccessTokenUserCacheKey(token string) string {
-	h := sha256.Sum256([]byte(token))
-	return fmt.Sprintf("authorization/%d/%s", accessTokenUserCacheKeyVersion, hex.EncodeToString(h[:]))
 }
