@@ -272,8 +272,8 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	// return after rendering the BuilderSummary.
 	if maxDepth < 0 {
 		if br.Builder != nil && br.Builder.LastFinishedBuildID != "" {
-			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="/%s" title="%s">`,
-				template.HTMLEscapeString(br.Builder.LastFinishedBuildID),
+			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="%s" title="%s">`,
+				template.HTMLEscapeString(br.Builder.LastFinishedBuildIDLink()),
 				template.HTMLEscapeString(br.Builder.LastFinishedBuildID),
 			))
 			must(fmt.Fprintf(buffer, `<div class="console-list-builder status-%s"></div>`,
@@ -378,7 +378,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		case top:
 			class = "cell-top"
 			status = build.Summary.Status.String()
-			link = build.SelfLink
+			link = build.SelfLink()
 			switch {
 			case nextNextBuild:
 				nextState = bottom
@@ -404,7 +404,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		case cell:
 			class = "cell"
 			status = build.Summary.Status.String()
-			link = build.SelfLink
+			link = build.SelfLink()
 			switch {
 			case nextNextBuild:
 				nextState = cell

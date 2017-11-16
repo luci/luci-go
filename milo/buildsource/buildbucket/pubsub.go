@@ -93,7 +93,6 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		ContextURI: []string{
 			fmt.Sprintf("buildbucket://%s/build/%d", hostname, build.ID),
 		},
-		SelfLink: fmt.Sprintf("/p/%s/builds/b%d", project, build.ID),
 
 		Created: build.CreationTime,
 		Summary: model.Summary{

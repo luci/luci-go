@@ -53,6 +53,11 @@ type BuilderSummary struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+// LastFinishedBuildIDLink returns a link to the last finished build.
+func (b *BuilderSummary) LastFinishedBuildIDLink() string {
+	return getLinkFromBuildID(b.LastFinishedBuildID, b.ProjectID)
+}
+
 // UpdateBuilderForBuild updates the appropriate BuilderSummary for the
 // provided BuildSummary, if needed.
 // In particular, a BuilderSummary is updated with a BuildSummary if the latter is marked complete

@@ -96,3 +96,67 @@ func TestUpdateBuilder(t *testing.T) {
 		})
 	})
 }
+
+func TestGetLinkFromBuildID(t *testing.T) {
+	t.Parallel()
+
+	Convey(`TestLastFinishedBuildIDLink`, t, func() {
+		Convey("Buildbot build gets expected link", func() {
+			Convey("with valid BuildID", func() {
+				buildID, project := "buildbot/master/builder/number", "proj"
+				So(getLinkFromBuildID(buildID, project), ShouldEqual, "/buildbot/master/builder/number")
+			})
+
+			Convey("with invalid BuildID", func() {
+				Convey("with too few tokens", func() {
+					buildID, project := "buildbot/wat", "proj"
+					So(getLinkFromBuildID(buildID, project), ShouldEqual, "#invalid-build-id")
+				})
+
+				Convey("with too many tokens", func() {
+					buildID, project := "buildbot/wat/wat/wat/wat", "proj"
+					So(getLinkFromBuildID(buildID, project), ShouldEqual, "#invalid-build-id")
+				})
+			})
+		})
+
+		Convey("Buildbucket build gets expected link", func() {
+			Convey("with bucket info", func() {
+				buildID, project := "buildbucket/luci.proj.bucket/builder/123", ""
+				So(
+					getLinkFromBuildID(buildID, project),
+					ShouldEqual,
+					"/p/proj/builders/luci.proj.bucket/builder/123")
+			})
+
+			Convey("with only ID info", func() {
+				buildID, project := "buildbucket/123", "proj"
+				So(getLinkFromBuildID(buildID, project), ShouldEqual, "/p/proj/builds/b123")
+			})
+
+			Convey("with invalid BuildID", func() {
+				Convey("due to missing bucket info", func() {
+					buildID, project := "buildbucket/", "proj"
+					So(getLinkFromBuildID(buildID, project), ShouldEqual, "#invalid-build-id")
+				})
+
+				Convey("due to missing project info", func() {
+					buildID, project := "buildbucket/123", ""
+					So(getLinkFromBuildID(buildID, project), ShouldEqual, "#invalid-build-id")
+				})
+			})
+		})
+
+		Convey("Invalid BuildID gets expected link", func() {
+			Convey("with unknown source gets expected link", func() {
+				buildID, project := "unknown/1", "proj"
+				So(getLinkFromBuildID(buildID, project), ShouldEqual, "#invalid-build-id")
+			})
+
+			Convey("with too few tokens", func() {
+				buildID, project := "source", "proj"
+				So(getLinkFromBuildID(buildID, project), ShouldEqual, "#invalid-build-id")
+			})
+		})
+	})
+}
