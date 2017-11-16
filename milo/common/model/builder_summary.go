@@ -48,6 +48,9 @@ type BuilderSummary struct {
 	// Elements of this list should be of the form
 	// <common.Console.GetProjectID()>/<common.Console.ID>.
 	Consoles []string // indexed on this
+
+	// Ignore unrecognized fields and strip in future writes.
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // UpdateBuilderForBuild updates the appropriate BuilderSummary for the

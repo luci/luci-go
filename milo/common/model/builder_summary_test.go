@@ -19,12 +19,12 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"
-
-	"context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
