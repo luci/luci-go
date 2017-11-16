@@ -103,7 +103,7 @@ func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Categ
 	categoryTree := ui.NewCategory("")
 	depth := 0
 	for _, b := range def.Builders {
-		builderRef := factory(b.Name[0], b.CalculateShortname())
+		builderRef := factory(b.Name[0], b.ShortName)
 		categories := b.ParseCategory()
 		if len(categories) > depth {
 			depth = len(categories)
