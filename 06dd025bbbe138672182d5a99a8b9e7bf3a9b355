@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fd2db10e_f07373de",
+        "filename": "common/config/validation/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-16T22:01:19Z",
+      "side": 1,
+      "message": "Sorry, we do not.",
+      "parentUuid": "4168d866_1f9692ce",
+      "range": {
+        "startLine": 16,
+        "startChar": 16,
+        "endLine": 16,
+        "endChar": 19
+      },
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3507ed04_8e16009e",
         "filename": "common/config/validation/validator.go",
         "patchSetId": 3
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "dd45da2f_9344f77c",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-16T22:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3507ed04_8e16009e",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 22
+      },
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "54cf0ca8_f28ab954",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-16T22:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10335007_a88632ed",
+      "range": {
+        "startLine": 32,
+        "startChar": 28,
+        "endLine": 32,
+        "endChar": 30
+      },
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "32598487_fc4d530a",
         "filename": "common/config/validation/validator.go",
         "patchSetId": 3
@@ -85,6 +157,24 @@
       "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc2b64e1_89d10185",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-16T22:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32598487_fc4d530a",
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +195,24 @@
     },
     {
       "key": {
+        "uuid": "cfa472cf_f0a60642",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-16T22:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4dd1ca21_094c7c13",
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c48d61e3_ab4557e3",
         "filename": "common/config/validation/validator.go",
         "patchSetId": 3
@@ -116,6 +224,24 @@
       "writtenOn": "2017-11-15T00:24:15Z",
       "side": 1,
       "message": "we also need patterns of config sets and paths",
+      "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2172c332_d65454be",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-16T22:01:19Z",
+      "side": 1,
+      "message": "This might be really dumb, but I am not sure what the best approach here would be. I was thinking about keeping metadata and validator as separate entities since patterns of config sets and paths are really only used when the metadata is returned.\nBut then again, the validator itself should have a well defined subset of config sets and paths that it is responsible for, which makes these patterns pertinent for the validator as well.\n\nAccordingly, this kind of left me with 2 main approaches to consider.\n\n1) The bare bones approach that I was trying to go for originally was to have the validator be a function that takes in 4 arguments (configSet, path, content, validation.Context) and this function itself, when implemented by the service that uses this library, can do its own pattern matching to validate the files that it wants to validate. Metadata would be, then, a separate entity also constructed by the service with its own set of patterns (hopefully matches that of the validator function). The downside here would be that there isn\u0027t a strict correspondence enforced between the patterns in metadata and the supposed patterns in the validator. Upside it is that this library stays super simple.\n\n2) A second approach would be the one that is present in the python counterpart. Define a simplified version of \"RuleSet\" just like in https://cs.chromium.org/chromium/infra/luci/appengine/components/components/config/validation.py?l\u003d255, that contains the patterns of configSets and paths that it can validate (along with the validator function), and have the metadata draw its patterns from this \"RuleSet\". The barebones validator would still be applicable here, so the downside from 1) still remains. But the patterns and the validators are at least represented in the same entity.\n\n3) Define the fully fleshed \"RuleSet\" with individual \"Rule\" that would each have the patterns that it is responsible for and the validator function that does the validation (exactly like it is in the python counterpart). The upside here is that services won\u0027t have to implement pattern matching explicitly inside the validator function and the one-to-one correspondence between patterns in Metadata and validation would be enforced.\n\nWhat would be the best approach here (not limited to these three)?",
+      "parentUuid": "c48d61e3_ab4557e3",
       "revId": "06dd025bbbe138672182d5a99a8b9e7bf3a9b355",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
