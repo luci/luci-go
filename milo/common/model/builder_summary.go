@@ -70,6 +70,11 @@ type BuilderSummary struct {
 	InProgress []pendingBuild // derive pending/running counts
 }
 
+// LastFinishedBuildIDLink returns a link to the last finished build.
+func (b *BuilderSummary) LastFinishedBuildIDLink() string {
+	return getLinkFromBuildID(b.LastFinishedBuildID, b.ProjectID)
+}
+
 // GetInProgress returns the pending builds (internally represented as an array) as a map.
 func (b *BuilderSummary) GetInProgress() map[string]Status {
 	bp := make(map[string]Status, len(b.InProgress))
