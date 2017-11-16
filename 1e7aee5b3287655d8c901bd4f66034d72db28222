@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12ce41c6_9e35e923",
+        "filename": "server/caching/layered/layered.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-16T01:29:50Z",
+      "side": 1,
+      "message": "do you think it is worth to panic if GlobalNamespace\u003d\u003d\"\"? it seems it is never a good idea to have it empty as it requires string math from users",
+      "revId": "1e7aee5b3287655d8c901bd4f66034d72db28222",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
