@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -51,6 +52,9 @@ import (
 type ManifestKey []byte
 
 const currentManifestKeyVersion = 0
+
+// InvalidBuildIDURL is returned if a BuildID cannot be parsed and a URL generated.
+const InvalidBuildIDURL = "#invalid-build-id"
 
 // BuildSummary is a datastore model which is used for storing staandardized
 // summarized build data, and is used for backend-agnostic views (i.e. builders,
@@ -109,11 +113,6 @@ type BuildSummary struct {
 	//
 	// See https://chromium.googlesource.com/infra/infra/+/master/appengine/cr-buildbucket/doc/index.md#buildset-tag
 	BuildSet []string
-
-	// SelfLink provides a relative URL for this build.
-	// Buildbot: /buildbot/<mastername>/<buildername>/<buildnumber>
-	// Swarmbucket: Derived from Buildbucket (usually link to self)
-	SelfLink string
 
 	// Created is the time when the Build was first created. Due to pending
 	// queues, this may be substantially before Summary.Start.
@@ -321,4 +320,54 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 
 	err = ErrUnknownPreviousBuild
 	return
+}
+
+// SelfLink returns a link to the build represented by the BuildSummary via BuildID.
+//
+// BuildID is used for indexing BuildSummary and BuilderSummary entities, so this lets us get links
+// given BuildSummaries and BuilderSummaries in the console, console header, and console lists.
+//
+// Returns bogus URL in case of error (just "/" + BuildID).
+// Depends on buildbucket.ParseBuildAddress to get project
+// Depends on frontend/routes.go for link structures.
+//
+// Buildbot: "buildbot/<mastername>/<buildername>/<buildnumber>"
+// Buildbucket: "buildbucket/<buildaddr>"
+// For buildbucket, <buildaddr> looks like <bucketname>/<buildername>/<buildnumber> if available
+// and <buildid> otherwise.
+func (bs *BuildSummary) SelfLink() string {
+	return getLinkFromBuildID(bs.BuildID, bs.ProjectID)
+}
+
+func getLinkFromBuildID(b string, project string) string {
+	parts := strings.Split(b, "/")
+	if len(parts) < 2 {
+		return InvalidBuildIDURL
+	}
+
+	switch source := parts[0]; source {
+	case "buildbot":
+		switch len(parts) {
+		case 4:
+			return "/" + b
+		default:
+			return InvalidBuildIDURL
+		}
+
+	case "buildbucket":
+		address := strings.TrimPrefix(b, source+"/")
+		id, proj, bucket, builder, number, err := buildbucket.ParseBuildAddress(address)
+		if err != nil {
+			return InvalidBuildIDURL
+		}
+		if id == 0 {
+			return fmt.Sprintf("/p/%s/builders/%s/%s/%d", proj, bucket, builder, number)
+		} else if project != "" {
+			return fmt.Sprintf("/p/%s/builds/b%d", project, id)
+		}
+		return InvalidBuildIDURL
+
+	default:
+		return InvalidBuildIDURL
+	}
 }
