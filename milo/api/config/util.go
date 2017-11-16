@@ -22,39 +22,6 @@ func (b *Builder) ParseCategory() []string {
 	return strings.Split(b.Category, "|")
 }
 
-// CalculateShortname calculates a short name (usually 3 chars) name for this
-// Builder.
-//
-// It may be set explicitly in the ShortName field, or it may be calculated from
-// the first Name of this builder.
-func (b *Builder) CalculateShortname() string {
-	if b.ShortName != "" {
-		return b.ShortName
-	}
-
-	name := b.Name[0]
-	builderNameComp := strings.SplitN(name, "/", 3)
-	if len(builderNameComp) == 3 {
-		name = builderNameComp[2]
-	}
-	tokens := strings.FieldsFunc(name, func(r rune) bool {
-		switch r {
-		case '_', '-', ' ':
-			return true
-		}
-		return false
-	})
-	numLetters := len(tokens)
-	if numLetters > 3 {
-		numLetters = 3
-	}
-	short := ""
-	for i := 0; i < numLetters; i++ {
-		short += string(tokens[i][0])
-	}
-	return strings.ToLower(short)
-}
-
 // AllBuilderIDs returns all BuilderIDs mentioned by this Console.
 func (c *Console) AllBuilderIDs() []string {
 	builders := make([]string, 0, len(c.Builders))
