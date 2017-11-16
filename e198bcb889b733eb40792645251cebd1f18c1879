@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6108a126_9607eeb0",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T19:51:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5019c5d7_3666f3e6",
+      "range": {
+        "startLine": 95,
+        "startChar": 39,
+        "endLine": 95,
+        "endChar": 42
+      },
+      "revId": "e198bcb889b733eb40792645251cebd1f18c1879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38832172_559b9397",
         "filename": "server/auth/oauth.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "e198bcb889b733eb40792645251cebd1f18c1879",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75261205_0089108a",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-16T19:51:45Z",
+      "side": 1,
+      "message": "It applies mostly to process cache (and on Flex, where this code is primarily used, memcache is not available and there\u0027s no global cache). Clarified TODO.",
+      "parentUuid": "38832172_559b9397",
+      "range": {
+        "startLine": 103,
+        "startChar": 69,
+        "endLine": 103,
+        "endChar": 78
+      },
+      "revId": "e198bcb889b733eb40792645251cebd1f18c1879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
