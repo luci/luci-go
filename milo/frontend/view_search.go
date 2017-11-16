@@ -27,13 +27,13 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
-// openSearchXml is the template used to serve the OpenSearch Description Document.
+// openSearchXML is the template used to serve the OpenSearch Description Document.
 // This needs to be a template because the URL template must be a fully qualified
 // URL with the hostname.
 // See http://www.opensearch.org/Specifications/OpenSearch/1.1#OpenSearch_description_document
-var openSearchXml = `<?xml version="1.0" encoding="UTF-8"?>
+var openSearchXML = `<?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
-  <ShortName>LUCI Search</ShortName>
+  <ShortName>LUCI</ShortName>
   <Description>
     Layered Universal Continuous Integration - A cloud based CI solution.
   </Description>
@@ -67,11 +67,11 @@ func searchHandler(c *router.Context) {
 	})
 }
 
-// searchXmlHandler returns the opensearch document for this domain.
-func searchXmlHandler(c *router.Context) {
+// searchXMLHandler returns the opensearch document for this domain.
+func searchXMLHandler(c *router.Context) {
 	r := getRequest(c.Context)
 	host := r.URL.Host
 	c.Writer.Header().Set("Content-Type", "application/opensearchdescription+xml")
 	c.Writer.WriteHeader(http.StatusOK)
-	fmt.Fprintf(c.Writer, openSearchXml, host)
+	fmt.Fprintf(c.Writer, openSearchXML, host)
 }
