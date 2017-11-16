@@ -20,10 +20,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go.chromium.org/luci/common/data/caching/lru"
-	"go.chromium.org/luci/common/gcloud/googleoauth"
-
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -44,8 +44,15 @@ func TestGoogleOAuth2Method(t *testing.T) {
 	t.Parallel()
 
 	Convey("with mock backend", t, func(c C) {
-		ctx := context.Background()
+		ctx := caching.WithEmptyProcessCache(memlogger.Use(context.Background()))
 
+		goodUser := &User{
+			Identity: "user:abc@example.com",
+			Email:    "abc@example.com",
+			ClientID: "client_id",
+		}
+
+		checks := 0
 		info := tokenInfo{
 			Audience:      "client_id",
 			Email:         "abc@example.com",
@@ -55,12 +62,12 @@ func TestGoogleOAuth2Method(t *testing.T) {
 		}
 		status := http.StatusOK
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			checks++
 			w.WriteHeader(status)
 			c.So(json.NewEncoder(w).Encode(&info), ShouldBeNil)
 		}))
 
 		ctx = ModifyConfig(ctx, func(cfg Config) Config {
-			cfg.Cache = &MemoryCache{LRU: lru.New(0)}
 			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
 				return http.DefaultTransport
 			}
@@ -81,11 +88,31 @@ func TestGoogleOAuth2Method(t *testing.T) {
 		Convey("Works", func() {
 			u, err := call("Bearer access_token")
 			So(err, ShouldBeNil)
-			So(u, ShouldResemble, &User{
-				Identity: "user:abc@example.com",
-				Email:    "abc@example.com",
-				ClientID: "client_id",
-			})
+			So(u, ShouldResemble, goodUser)
+		})
+
+		Convey("Valid tokens are cached", func() {
+			u, err := call("Bearer access_token")
+			So(err, ShouldBeNil)
+			So(u, ShouldResemble, goodUser)
+
+			u, err = call("Bearer access_token")
+			So(err, ShouldBeNil)
+			So(u, ShouldResemble, goodUser)
+
+			So(checks, ShouldEqual, 1) // only 1 call to the token endpoint
+		})
+
+		Convey("Bad tokens are cached", func() {
+			status = http.StatusBadRequest
+
+			_, err := call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+
+			_, err = call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+
+			So(checks, ShouldEqual, 1) // only 1 call to the token endpoint
 		})
 
 		Convey("Bad header", func() {
@@ -103,43 +130,43 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			status = http.StatusBadRequest
 			info.Error = "OMG, error"
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, googleoauth.ErrBadToken)
+			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 
 		Convey("No email", func() {
 			info.Email = ""
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "not associated with an email")
+			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 
 		Convey("Email not verified", func() {
 			info.EmailVerified = "false"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "not verified")
+			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 
 		Convey("Bad expires_in", func() {
 			info.ExpiresIn = "not a number"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "json: invalid")
+			So(err, ShouldErrLike, "transient error") // see the comment in GetTokenInfo
 		})
 
 		Convey("Zero expires_in", func() {
 			info.ExpiresIn = "0"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "not a positive integer")
+			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 
 		Convey("Missing scope", func() {
 			info.Scope = "some other scopes"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "doesn't have scope")
+			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 
 		Convey("Bad email", func() {
 			info.Email = "@@@@"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "bad value")
+			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 	})
 }
