@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "eb533211_6e074f4d",
+        "filename": "mmutex/cmd/mmutex/command_helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f2d983b_04981ba3",
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6afe152c_923e65a1",
         "filename": "mmutex/cmd/mmutex/exclusive.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "6cd185e6_14085b99",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6afe152c_923e65a1",
+      "range": {
+        "startLine": 54,
+        "startChar": 37,
+        "endLine": 54,
+        "endChar": 43
+      },
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c82b00d6_19db4ed3",
         "filename": "mmutex/cmd/mmutex/exclusive.go",
         "patchSetId": 2
@@ -53,6 +95,30 @@
       "writtenOn": "2017-11-16T07:59:11Z",
       "side": 1,
       "message": "please use https://godoc.org/go.chromium.org/luci/common/cli#GetContext\nperhaps call it in Run and pass ctx to RunExclusive as a parameter\n\napplies to other subcommands too",
+      "range": {
+        "startLine": 57,
+        "startChar": 25,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3fbb50e_b5d794ad",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Done. Had no idea this existed. Thanks for the tip!",
+      "parentUuid": "c82b00d6_19db4ed3",
       "range": {
         "startLine": 57,
         "startChar": 25,
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "7b41d256_e47a4506",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b183a30_b226b473",
+      "range": {
+        "startLine": 27,
+        "startChar": 16,
+        "endLine": 27,
+        "endChar": 35
+      },
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1713950f_153c151f",
         "filename": "mmutex/lib/shared.go",
         "patchSetId": 2
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "38106d33_222e7af1",
+        "filename": "mmutex/lib/shared.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1713950f_153c151f",
+      "range": {
+        "startLine": 27,
+        "startChar": 16,
+        "endLine": 27,
+        "endChar": 23
+      },
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "42181963_78d9f203",
         "filename": "mmutex/lib/shared_test.go",
         "patchSetId": 2
@@ -122,6 +236,24 @@
       "writtenOn": "2017-11-16T07:59:11Z",
       "side": 1,
       "message": "most of luci-go tests have\n\n  So(err, ShouldBeNil)\n\nthis takes less lines of code and then L42-43 become unnecessary because you can do `lockFileDir, err :\u003d ...`",
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15e872f7_b216f55c",
+        "filename": "mmutex/lib/shared_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Ah, Robbie suggested doing this in a previous CL and I must have missed this particular instance of the panic. Sorry about that.",
+      "parentUuid": "42181963_78d9f203",
       "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "12883703_f163a1d7",
+        "filename": "mmutex/lib/shared_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a1ba754_72dafb2a",
+      "range": {
+        "startLine": 62,
+        "startChar": 16,
+        "endLine": 62,
+        "endChar": 36
+      },
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0395a06b_9b02c82a",
         "filename": "mmutex/lib/shared_test.go",
         "patchSetId": 2
@@ -162,6 +318,24 @@
       "writtenOn": "2017-11-16T07:59:11Z",
       "side": 1,
       "message": "you can cancel the context before calling RunShared and then you can call RunShared in the same goroutine",
+      "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d98c852a_85da71f2",
+        "filename": "mmutex/lib/shared_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-16T19:54:49Z",
+      "side": 1,
+      "message": "Great! Done. I didn\u0027t particularly like using the separate goroutine for this.",
+      "parentUuid": "0395a06b_9b02c82a",
       "revId": "6ad588b0e76c9797088a6b86efaf469953153a32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
