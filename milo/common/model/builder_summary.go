@@ -68,6 +68,9 @@ type BuilderSummary struct {
 
 	// InProgress tracks builds that are currently still in progress.
 	InProgress []pendingBuild // derive pending/running counts
+
+	// Ignore unrecognized fields and strip in future writes.
+	_extra datastore.PropertyMap `gae:"-,extra"`
 }
 
 // GetInProgress returns the pending builds (internally represented as an array) as a map.
