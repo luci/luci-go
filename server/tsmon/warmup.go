@@ -22,7 +22,7 @@ import (
 )
 
 func init() {
-	warmup.Register("appengine/tsmon", func(c context.Context) (err error) {
+	warmup.Register("server/tsmon", func(c context.Context) (err error) {
 		if settings := fetchCachedSettings(c); settings.Enabled && settings.ProdXAccount != "" {
 			err = canActAsProdX(c, settings.ProdXAccount)
 		} else {

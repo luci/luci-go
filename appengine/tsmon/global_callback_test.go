@@ -14,18 +14,20 @@
 
 package tsmon
 
+/*
+
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -46,7 +48,7 @@ func TestGlobalCallbacks(t *testing.T) {
 	t.Parallel()
 
 	Convey("Global callbacks", t, func() {
-		c, _ := buildGAETestContext()
+		c, _ := buildTestContext()
 		state, mon, _ := buildTestState()
 
 		m := metric.NewCallbackStringIn(c, "foo", "", nil)
@@ -92,3 +94,4 @@ func TestGlobalCallbacks(t *testing.T) {
 		})
 	})
 }
+*/
