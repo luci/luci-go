@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b4b2578b_48582518",
+        "filename": "appengine/tsmon/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T04:43:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d9539b9_7c0a8b47",
+      "revId": "ea017a758a3fe5b759cae3bb8dad752488fe58f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0f89ded_219427c4",
         "filename": "server/auth/config.go",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "ad248539_adc7582e",
+        "filename": "server/auth/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T04:43:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0f89ded_219427c4",
+      "range": {
+        "startLine": 161,
+        "startChar": 25,
+        "endLine": 161,
+        "endChar": 33
+      },
+      "revId": "ea017a758a3fe5b759cae3bb8dad752488fe58f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c33f4a7_3958ce3d",
         "filename": "server/auth/config.go",
         "patchSetId": 1
@@ -62,6 +104,30 @@
       "revId": "ea017a758a3fe5b759cae3bb8dad752488fe58f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "683a7a51_97ad3fb3",
+        "filename": "server/auth/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T04:43:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c33f4a7_3958ce3d",
+      "range": {
+        "startLine": 164,
+        "startChar": 15,
+        "endLine": 164,
+        "endChar": 17
+      },
+      "revId": "ea017a758a3fe5b759cae3bb8dad752488fe58f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
