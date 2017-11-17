@@ -19,10 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -39,7 +36,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 
 // certsHandler servers public certificates of the signer in the context.
 func certsHandler(c *router.Context) {
-	s := getSigner(c.Context)
+	s := GetSigner(c.Context)
 	if s == nil {
 		httpReplyError(c, http.StatusNotFound, "No Signer instance available")
 		return
@@ -54,7 +51,7 @@ func certsHandler(c *router.Context) {
 
 // infoHandler returns information about the current service identity.
 func infoHandler(c *router.Context) {
-	s := getSigner(c.Context)
+	s := GetSigner(c.Context)
 	if s == nil {
 		httpReplyError(c, http.StatusNotFound, "No Signer instance available")
 		return
@@ -68,13 +65,6 @@ func infoHandler(c *router.Context) {
 }
 
 ////
-
-func getSigner(c context.Context) signing.Signer {
-	if cfg := getConfig(c); cfg != nil {
-		return cfg.Signer
-	}
-	return nil
-}
 
 func httpReply(c *router.Context, code int, out interface{}) {
 	c.Writer.Header().Set("Content-Type", "application/json")
