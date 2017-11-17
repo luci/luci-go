@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@ const settingsKey = "tsmon"
 
 // tsmonSettings contain global tsmon settings for the GAE app.
 //
-// They are stored in app settings store (based on the datastore, see
-// appengine/gaesettings module) under settingsKey key.
+// They are stored in app settings store under settingsKey key.
 type tsmonSettings struct {
 	// Enabled is false to completely shutoff the monitoring.
 	//
