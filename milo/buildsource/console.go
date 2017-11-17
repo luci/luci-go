@@ -79,7 +79,7 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 	}
 	partialKey := model.NewPartialManifestKey(project, console.Id, console.ManifestName, url)
 	q := datastore.NewQuery("BuildSummary")
-	err := parallel.WorkPool(4, func(ch chan<- func() error) {
+	err := parallel.WorkPool(16, func(ch chan<- func() error) {
 		for i := range rawCommits {
 			i := i
 			r := &ConsoleRow{Commit: commits[i]}
@@ -114,15 +114,14 @@ type ConsolePreview map[BuilderID]*model.BuildSummary
 //
 // This list of console summaries directly corresponds to the input list of
 // console IDs.
-func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]ui.ConsoleSummary, error) {
-	summaries := make([]ui.ConsoleSummary, len(consoleIDs))
-	err := parallel.WorkPool(4, func(ch chan<- func() error) {
-		for i, id := range consoleIDs {
-			i := i
+func GetConsoleSummaries(c context.Context, consoleIDs []string) (map[string]ui.ConsoleSummary, error) {
+	summaries := make(map[string]ui.ConsoleSummary, len(consoleIDs))
+	err := parallel.WorkPool(16, func(ch chan<- func() error) {
+		for _, id := range consoleIDs {
 			id := id
 			ch <- func() error {
 				var err error
-				summaries[i], err = GetConsoleSummary(c, id)
+				summaries[id], err = GetConsoleSummary(c, id)
 				return err
 			}
 		}
