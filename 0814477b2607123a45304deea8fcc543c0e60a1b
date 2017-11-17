@@ -46,6 +46,30 @@
       "revId": "0814477b2607123a45304deea8fcc543c0e60a1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b050442_d45661f5",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T20:05:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "66637bf9_841cca2f",
+      "range": {
+        "startLine": 77,
+        "startChar": 74,
+        "endLine": 77,
+        "endChar": 77
+      },
+      "revId": "0814477b2607123a45304deea8fcc543c0e60a1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
