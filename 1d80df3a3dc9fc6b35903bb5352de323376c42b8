@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "3ec99dd3_192afbbd",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:29:16Z",
+      "side": 1,
+      "message": "curious why do we need this? \nprotoPayload already has trace id\nvisually in log viewer the latency column value is blue if it has a trace",
+      "revId": "1d80df3a3dc9fc6b35903bb5352de323376c42b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "55571877_f4d9e6b9",
         "filename": "examples/appengine/helloworld_flex/app.yaml",
         "patchSetId": 1
@@ -36,6 +53,30 @@
       "writtenOn": "2017-11-17T22:14:30Z",
       "side": 1,
       "message": "er.. this may need to be changed to \"\", need to config",
+      "range": {
+        "startLine": 42,
+        "startChar": 32,
+        "endLine": 42,
+        "endChar": 41
+      },
+      "revId": "1d80df3a3dc9fc6b35903bb5352de323376c42b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f894542_58881eb9",
+        "filename": "examples/appengine/helloworld_flex/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:29:16Z",
+      "side": 1,
+      "message": "it does not work with raw :8080?",
+      "parentUuid": "9a98558e_a9ed3f8d",
       "range": {
         "startLine": 42,
         "startChar": 32,
