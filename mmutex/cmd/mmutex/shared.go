@@ -56,7 +56,7 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 // RunShared runs the command with the specified environment while holding a
 // shared mmutex lock.
 func RunShared(ctx context.Context, env subcommands.Env, command []string) error {
-	return lib.RunShared(context.Background(), env, func(ctx context.Context) error {
+	return lib.RunShared(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)
 	})
 }

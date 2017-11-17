@@ -56,7 +56,7 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 // RunExclusive runs the command with the specified context and environment while
 // holding an exclusive mmutex lock.
 func RunExclusive(ctx context.Context, env subcommands.Env, command []string) error {
-	return lib.RunExclusive(context.Background(), env, func(ctx context.Context) error {
+	return lib.RunExclusive(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)
 	})
 }
