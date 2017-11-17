@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ddc17d16_f3cf761b",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-17T20:50:51Z",
+      "side": 1,
+      "message": "This is potentially racey, e.g. if between the pending and running query a build switches states. Any thoughts on how to address that that don\u0027t involve storing that info in BuilderSummary and updating per build message?",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "533ec770_cb148480",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-17T20:50:51Z",
+      "side": 1,
+      "message": "Presently this allows for partially filled out histories, so that if one builder fails to fetch part of its recent history the page can still display the ones it could fetch (though that functionality is not presently enabled). That would look roughly like \"[unknown] pending/running\" or \"? pending/running\", and empty boxes for the last run.\n\nI\u0027m also open to keeping it at bailing the entire page, if we think an error fetching would be bad enough, but that seems a bit nuclear.",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
