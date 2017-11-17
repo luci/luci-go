@@ -22,6 +22,30 @@
       "revId": "0814477b2607123a45304deea8fcc543c0e60a1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66637bf9_841cca2f",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-17T20:00:26Z",
+      "side": 1,
+      "message": "If we want to make three attempts at acquiring the lock, and the timeout is 3 seconds:\n\n- The first attempt happens at t\u003d0\n- The second attempt happens at t\u003d1\n- The third attempt happens at t\u003d2\n\nand we never make an attempt at t\u003d3, which obviously isn\u0027t optimal. Instead, we:\n\n- Make the first attempt happen at t\u003d0\n- Make the second attempt happen at t\u003d1.5 (where 1.5 \u003d total timeout / (attempts - 1))\n- Make the third attempt happen at t\u003d3\n\nThe lockAcquisitionAttempts - 1 takes into account the fact that the first attempt is made at t\u003d0, and therefore shouldn\u0027t be included when calculating the polling interval\n\nIn practice, the number of attempts is approximate as mentioned in the comment above, because the last attempt is a race as to whether the wakeup happens first or the context is canceled due to the timeout first. However, I\u0027m pretty sure that the math is sound.",
+      "parentUuid": "b0bf1479_ae8d0d5a",
+      "range": {
+        "startLine": 77,
+        "startChar": 74,
+        "endLine": 77,
+        "endChar": 77
+      },
+      "revId": "0814477b2607123a45304deea8fcc543c0e60a1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
