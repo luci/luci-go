@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "889023e2_52f8ed28",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-17T16:02:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b876280_fbdcc16e",
+      "range": {
+        "startLine": 9,
+        "startChar": 27,
+        "endLine": 9,
+        "endChar": 30
+      },
+      "revId": "28134d28ab113faba351b6ae015312a5f384a348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9f68eb5_6f87a429",
         "filename": "mmutex/lib/exclusive_test.go",
         "patchSetId": 1
@@ -69,6 +93,30 @@
       "revId": "28134d28ab113faba351b6ae015312a5f384a348",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c03b1257_076ee738",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-17T16:02:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce2960e7_8de144ce",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 5
+      },
+      "revId": "28134d28ab113faba351b6ae015312a5f384a348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
