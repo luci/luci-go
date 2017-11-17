@@ -28,6 +28,7 @@ import (
 type Router struct {
 	hrouter    *httprouter.Router
 	middleware MiddlewareChain
+	rootCtx    context.Context
 	BasePath   string
 }
 
@@ -44,9 +45,16 @@ var _ http.Handler = (*Router)(nil)
 
 // New creates a Router.
 func New() *Router {
+	return NewWithRootContext(context.Background())
+}
+
+// NewWithRootContext creates a router whose request contexts all inherit from
+// the given context.
+func NewWithRootContext(root context.Context) *Router {
 	return &Router{
 		hrouter:    httprouter.New(),
 		middleware: NewMiddlewareChain(),
+		rootCtx:    root,
 		BasePath:   "/",
 	}
 }
@@ -140,7 +148,7 @@ func (r *Router) NotFound(mc MiddlewareChain, h Handler) {
 func (r *Router) adapt(mc MiddlewareChain, h Handler) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
 		runChains(&Context{
-			Context: context.Background(),
+			Context: r.rootCtx,
 			Writer:  rw,
 			Request: req,
 			Params:  p,
