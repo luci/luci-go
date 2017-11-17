@@ -50,8 +50,6 @@ func TestExclusive(t *testing.T) {
 		}
 		lockFilePath, _, err := computeMutexPaths(env)
 		So(err, ShouldBeNil)
-		fslockTimeout = 0
-		fslockPollingInterval = 0
 		ctx := context.Background()
 
 		Convey("returns error from the command", func() {
@@ -63,7 +61,7 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			fslockTimeout = 0
+			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
 			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
@@ -72,6 +70,7 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
+			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
 			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
@@ -81,7 +80,7 @@ func TestExclusive(t *testing.T) {
 			err := RunExclusive(ctx, env, func(ctx context.Context) error {
 				return clock.Sleep(ctx, time.Millisecond).Err
 			})
-			So(err, ShouldErrLike, "context deadline exceeded")
+			So(err, ShouldErrLike, "context canceled")
 		})
 
 		Convey("respects timeout", func() {
@@ -89,12 +88,7 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			oldFslockTimeout := fslockTimeout
-			fslockTimeout = 5 * time.Millisecond
-			defer func() {
-				fslockTimeout = oldFslockTimeout
-			}()
-
+			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
 			start := time.Now()
 			RunExclusive(ctx, env, fnThatReturns(nil))
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))

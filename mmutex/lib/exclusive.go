@@ -18,16 +18,11 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
-
-	"go.chromium.org/luci/common/clock"
 )
 
 // RunExclusive runs the command with the specified context and environment while
 // holding an exclusive mmutex lock.
 func RunExclusive(ctx context.Context, env subcommands.Env, command func(context.Context) error) error {
-	ctx, cancel := clock.WithTimeout(ctx, fslockTimeout)
-	defer cancel()
-
 	lockFilePath, _, err := computeMutexPaths(env)
 	if err != nil {
 		return err
@@ -37,7 +32,7 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 		return command(ctx)
 	}
 
-	blocker := createPollingBlocker(ctx, fslockPollingInterval)
+	blocker := createLockBlocker(ctx)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
 		return command(ctx)
 	})
