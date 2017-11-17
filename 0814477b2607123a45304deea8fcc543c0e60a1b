@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b0bf1479_ae8d0d5a",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T19:07:10Z",
+      "side": 1,
+      "message": "not sure I understand this. If the timeout is 100s and we want to make 100 attempts, how long do we want to wait? If we wait for 1s, then we will make 99 attempts, so we should probably make interval smaller. But this code increases interval. I think you meant +1",
+      "range": {
+        "startLine": 77,
+        "startChar": 74,
+        "endLine": 77,
+        "endChar": 77
+      },
+      "revId": "0814477b2607123a45304deea8fcc543c0e60a1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

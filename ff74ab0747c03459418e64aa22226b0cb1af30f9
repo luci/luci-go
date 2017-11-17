@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "f26b30bc_b58e30a9",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T19:07:10Z",
+      "side": 1,
+      "message": "makes sense",
+      "parentUuid": "af0fd144_76cb0ad2",
+      "revId": "ff74ab0747c03459418e64aa22226b0cb1af30f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9905de4_7f79d7a2",
         "filename": "mmutex/lib/lock_file_helpers.go",
         "patchSetId": 4
@@ -128,6 +146,30 @@
       "revId": "ff74ab0747c03459418e64aa22226b0cb1af30f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2cc7c4a_ef6b3a8b",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T19:07:10Z",
+      "side": 1,
+      "message": "yeah, this is even better",
+      "parentUuid": "51e7c0a7_f18ebf2c",
+      "range": {
+        "startLine": 45,
+        "startChar": 6,
+        "endLine": 45,
+        "endChar": 25
+      },
+      "revId": "ff74ab0747c03459418e64aa22226b0cb1af30f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
