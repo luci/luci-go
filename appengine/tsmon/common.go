@@ -15,83 +15,51 @@
 package tsmon
 
 import (
-	"fmt"
 	"time"
 
 	"golang.org/x/net/context"
 
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 )
 
 const (
-	// targetDataCenter is the value set on the "data_center" field in the
-	// ts_mon.proto.Task message.
-	targetDataCenter = "appengine"
-
-	// instanceNamespace is the namespace to use for datastore instances.
-	instanceNamespace = "ts_mon_instance_namespace"
-
-	// prodXEndpoint is endpoint to send metrics to.
-	prodXEndpoint = "https://prodxmon-pa.googleapis.com/v1:insert"
-
-	instanceExpirationTimeout     = 30 * time.Minute
-	instanceExpectedToHaveTaskNum = 5 * time.Minute
-	flushTimeout                  = 5 * time.Second
+	instanceNamespace         = "ts_mon_instance_namespace"
+	instanceExpirationTimeout = 30 * time.Minute
 )
 
 type instance struct {
 	_kind       string    `gae:"$kind,Instance"`
 	ID          string    `gae:"$id"`
-	TaskNum     int       `gae:"task_num"`     // Field names should match Python
-	LastUpdated time.Time `gae:"last_updated"` // implementation.
+	TaskNum     int       `gae:"task_num"`
+	LastUpdated time.Time `gae:"last_updated"`
 }
 
-// instanceEntityID returns a string unique to this appengine module, version
-// and instance, to be used as the datastore ID for an "instance" entity.
-func instanceEntityID(c context.Context) string {
-	return fmt.Sprintf("%s.%s.%s", info.InstanceID(c), info.VersionID(c), info.ModuleName(c))
-}
-
-// getOrCreateInstanceEntity returns the instance entity for this appengine
-// instance, adding a default one to the datastore if it doesn't exist.
+// DatastoreTaskNumAllocator implements TaskNumAllocator on top of datastore.
 //
-// We need to register an entity ASAP to allow housekeepingHandler to
-// discover the new instance.
-func getOrCreateInstanceEntity(c context.Context) (*instance, error) {
-	entity := instance{
-		ID:          instanceEntityID(c),
-		TaskNum:     -1,
-		LastUpdated: clock.Get(c).Now().UTC(),
-	}
-	err := ds.Get(c, &entity)
-	if err == ds.ErrNoSuchEntity {
-		err = ds.RunInTransaction(c, func(c context.Context) error {
-			switch err := ds.Get(c, &entity); err {
-			case nil:
-				return nil
-			case ds.ErrNoSuchEntity:
-				// Insert it into datastore if it didn't exist.
-				return ds.Put(c, &entity)
-			default:
-				return err
-			}
-		}, nil)
-	}
-	return &entity, err
+// Its NotifyTaskIsAlive registers a claim for a task number, which is later
+// fulfilled by the housekeeping cron.
+type DatastoreTaskNumAllocator struct {
 }
 
-// refreshLastUpdatedTime updates LastUpdated field in the instance entity.
-//
-// It does it in a transaction to avoid overwriting TaskNum.
-func refreshLastUpdatedTime(c context.Context, t time.Time) error {
-	entity := instance{ID: instanceEntityID(c)}
-	return ds.RunInTransaction(c, func(c context.Context) error {
-		if err := ds.Get(c, &entity); err != nil {
+// NotifyTaskIsAlive is part of TaskNumAllocator interface.
+func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, taskID string) (taskNum int, err error) {
+	c = info.MustNamespace(c, instanceNamespace)
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		entity := instance{ID: taskID}
+		switch err := datastore.Get(c, &entity); {
+		case err == datastore.ErrNoSuchEntity:
+			entity.TaskNum = -1
+		case err != nil:
 			return err
 		}
-		entity.LastUpdated = t.UTC()
-		return ds.Put(c, &entity)
+		entity.LastUpdated = clock.Now(c).UTC()
+		taskNum = entity.TaskNum
+		return datastore.Put(c, &entity)
 	}, nil)
+	if err == nil && taskNum == -1 {
+		err = ErrNoTaskNumber
+	}
+	return
 }

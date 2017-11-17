@@ -22,151 +22,115 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/store/storetest"
-	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func init() {
-	// appengine.WithContext doesn't work in unit testing environment.
-	withGAEContext = func(c context.Context, _ *http.Request) context.Context {
-		return c
-	}
-}
-
 func TestMiddleware(t *testing.T) {
 	t.Parallel()
+
 	metric := &storetest.FakeMetric{
 		types.MetricInfo{"m", "", []field.Field{}, types.CumulativeIntType},
-		types.MetricMetadata{}}
+		types.MetricMetadata{},
+	}
 
-	f := func(c *router.Context) {
+	runMiddlware := func(c context.Context, state *State, cb func(*router.Context)) {
+		rec := httptest.NewRecorder()
+		router.RunMiddleware(
+			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+			router.NewMiddlewareChain(state.Middleware),
+			cb,
+		)
+		So(rec.Code, ShouldEqual, http.StatusOK)
+	}
+
+	incrMetric := func(c *router.Context) {
 		So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
-		tsmon.Register(c.Context, metric)
 		So(tsmon.Store(c.Context).Incr(c.Context, metric, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 	}
 
-	Convey("Creates instance entity", t, func() {
-		c, _ := buildGAETestContext()
-		state, monitor := buildTestState()
-
-		exists, err := ds.Exists(c, ds.NewKey(c, "Instance", instanceEntityID(c), 0, nil))
-		So(err, ShouldBeNil)
-		So(exists.All(), ShouldBeFalse)
-
-		rec := httptest.NewRecorder()
-		router.RunMiddleware(
-			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.NewMiddlewareChain(state.Middleware),
-			f,
-		)
-		So(rec.Code, ShouldEqual, http.StatusOK)
-
-		exists, err = ds.Exists(c, ds.NewKey(c, "Instance", instanceEntityID(c), 0, nil))
-		So(err, ShouldBeNil)
-		So(exists.All(), ShouldBeTrue)
-
-		// Shouldn't flush since the instance entity doesn't have a task number yet.
-		So(len(monitor.Cells), ShouldEqual, 0)
-	})
-
-	Convey("Flushes after 2 minutes", t, func() {
-		c, clock := buildGAETestContext()
-		state, monitor := buildTestState()
-
-		i := instance{
-			ID:          instanceEntityID(c),
-			TaskNum:     0,
-			LastUpdated: clock.Now().Add(-2 * time.Minute).UTC(),
+	readMetric := func(c context.Context) interface{} {
+		value, err := tsmon.Store(c).Get(c, metric, time.Time{}, []interface{}{})
+		if err != nil {
+			panic(err)
 		}
-		So(ds.Put(c, &i), ShouldBeNil)
+		return value
+	}
 
-		state.lastFlushed = clock.Now().Add(-2 * time.Minute)
-
-		rec := httptest.NewRecorder()
-		router.RunMiddleware(
-			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.NewMiddlewareChain(state.Middleware),
-			f,
-		)
-		So(rec.Code, ShouldEqual, http.StatusOK)
-
-		So(len(monitor.Cells), ShouldEqual, 1)
-		So(monitor.Cells[0][0].Name, ShouldEqual, "m")
-		So(monitor.Cells[0][0].Value, ShouldEqual, int64(1))
-
-		// Flushing should update the LastUpdated time.
-		inst, err := getOrCreateInstanceEntity(c)
-		So(err, ShouldBeNil)
-		So(inst.LastUpdated, ShouldResemble, clock.Now().Round(time.Second))
-
-		// The value should still be set.
-		value, err := tsmon.Store(c).Get(c, metric, time.Time{}, []interface{}{})
-		So(err, ShouldBeNil)
-		So(value, ShouldEqual, int64(1))
-	})
-
-	Convey("Resets cumulative metrics", t, func() {
+	Convey("With fakes", t, func() {
 		c, clock := buildGAETestContext()
-		state, monitor := buildTestState()
+		state, monitor, allocator := buildTestState()
+		tsmon.Register(c, metric)
 
-		state.lastFlushed = clock.Now().Add(-2 * time.Minute)
+		Convey("Pings TaskNumAllocator and waits for number", func() {
+			So(len(allocator.taskIDs), ShouldEqual, 0)
+			allocator.taskNum = -1 // no number yet
 
-		rec := httptest.NewRecorder()
-		router.RunMiddleware(
-			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.NewMiddlewareChain(state.Middleware),
-			func(c *router.Context) {
-				f(c)
-				// Override the TaskNum here - it's created just before this handler runs
-				// and used just after.
-				tar := tsmon.Store(c.Context).DefaultTarget().(*target.Task)
-				tar.TaskNum = int32(0)
-				tsmon.Store(c.Context).SetDefaultTarget(tar)
-			},
-		)
-		So(rec.Code, ShouldEqual, http.StatusOK)
+			// Do the flush.
+			state.nextFlush = clock.Now()
+			runMiddlware(c, state, incrMetric)
 
-		So(len(tsmon.GetState(c).RegisteredMetrics), ShouldEqual, 1)
-		So(len(monitor.Cells), ShouldEqual, 0)
+			// Called the allocator.
+			So(len(allocator.taskIDs), ShouldEqual, 1)
+			// Shouldn't flush since the instance entity doesn't have a task number yet.
+			So(len(monitor.Cells), ShouldEqual, 0)
 
-		// Value should be reset.
-		value, err := tsmon.Store(c).Get(c, metric, time.Time{}, []interface{}{})
-		So(err, ShouldBeNil)
-		So(value, ShouldBeNil)
-	})
+			// Wait until next expected flush.
+			clock.Add(time.Minute)
+			allocator.taskNum = 0 // got the number!
 
-	Convey("Dynamic enable and disable works", t, func() {
-		c, _ := buildGAETestContext()
-		state, _ := buildTestState()
+			// Do the flush again.
+			state.nextFlush = clock.Now()
+			runMiddlware(c, state, incrMetric)
 
-		// Enabled. Store is not nil.
-		rec := httptest.NewRecorder()
-		router.RunMiddleware(
-			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.NewMiddlewareChain(state.Middleware),
-			func(c *router.Context) {
+			// Flushed stuff this time.
+			So(len(monitor.Cells), ShouldEqual, 1)
+
+			// The value should still be set.
+			So(readMetric(c), ShouldEqual, int64(2))
+		})
+
+		Convey("Resets cumulative metrics", func() {
+			// Do the flush.
+			state.nextFlush = clock.Now()
+			runMiddlware(c, state, incrMetric)
+
+			// Flushed stuff.
+			So(len(monitor.Cells), ShouldEqual, 1)
+			monitor.Cells = nil
+
+			// The value is set.
+			So(readMetric(c), ShouldEqual, int64(1))
+
+			// Lost the task number.
+			allocator.taskNum = -1
+
+			// Do the flush again.
+			state.nextFlush = clock.Now()
+			runMiddlware(c, state, incrMetric)
+
+			// No stuff is sent, and cumulative metrics are reset.
+			So(len(monitor.Cells), ShouldEqual, 0)
+			So(readMetric(c), ShouldEqual, nil)
+		})
+
+		Convey("Dynamic enable and disable works", func() {
+			// Enabled. Store is not nil.
+			runMiddlware(c, state, func(c *router.Context) {
 				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
-			},
-		)
-		So(rec.Code, ShouldEqual, http.StatusOK)
+			})
 
-		// Disabled. Store is nil.
-		state.testingSettings.Enabled = false
-		router.RunMiddleware(
-			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.NewMiddlewareChain(state.Middleware),
-			func(c *router.Context) {
+			// Disabled. Store is nil.
+			state.testingSettings.Enabled = false
+			runMiddlware(c, state, func(c *router.Context) {
 				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeTrue)
-			},
-		)
-		So(rec.Code, ShouldEqual, http.StatusOK)
+			})
+		})
 	})
 }

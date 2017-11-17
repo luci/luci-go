@@ -15,17 +15,15 @@
 package tsmon
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
@@ -38,7 +36,7 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-// State holds the configuration of the tsmon library for GAE.
+// State holds the state and configuration of the tsmon library.
 //
 // Define it as a global variable and inject it in the request contexts using
 // State.Middleware().
@@ -52,19 +50,65 @@ import (
 // Will panic if it detects that caller has changed tsmon state in the context
 // between the requests.
 type State struct {
+	// Target is lazily called to initialize default metrics target.
+	//
+	// The target identifies the collection of homogeneous processes that together
+	// implement the service. Each individual process in the collection is
+	// additionally identified by a task number, later dynamically assigned via
+	// TaskNumAllocator based on unique TaskID.
+	Target func(c context.Context) target.Task
+
+	// TaskID returns a unique (within the scope of the service) identifier of
+	// this particular process.
+	//
+	// It will be used to assign a free task number via TaskNumAllocator.
+	TaskID func(c context.Context) string
+
+	// TaskNumAllocator knows how to dynamically map task ID to a task number.
+	TaskNumAllocator TaskNumAllocator
+
+	// IsDevMode should be set to true when running locally.
+	IsDevMode bool
+
 	lock sync.RWMutex
 
 	state        *tsmon.State
 	lastSettings tsmonSettings
 
-	flushingNow bool
-	lastFlushed time.Time
+	taskID      string    // cached result of TaskID() call
+	flushingNow bool      // true if some goroutine is flushing right now
+	nextFlush   time.Time // next time we should do the flush
+	lastFlush   time.Time // last successful flush
 
-	// testingMonitor is mocked monitor used in unit tests.
-	testingMonitor monitor.Monitor
-	// testingSettings if not nil are used in unit tests.
-	testingSettings *tsmonSettings
+	testingMonitor  monitor.Monitor // mocked in unit tests
+	testingSettings *tsmonSettings  // mocked in unit tests
 }
+
+// ErrNoTaskNumber is returned by NotifyTaskIsAlive if the task wasn't given
+// a number yet.
+var ErrNoTaskNumber = errors.New("no task number assigned yet")
+
+// TaskNumAllocator is responsible for maintaining global mapping between task
+// IDs and task numbers.
+//
+// The mapping is dynamic. Once a task dies (i.e. stops periodically call
+// NotifyTaskIsAlive), its task number may be reused by some other (new) task.
+type TaskNumAllocator interface {
+	// NotifyTaskIsAlive is called periodically to make the allocator know the
+	// given task is still up. The allocator responds with the currently assigned
+	// task number or ErrNoTaskNumber if not yet assigned. Any other error should
+	// be considered transient.
+	NotifyTaskIsAlive(c context.Context, taskID string) (int, error)
+}
+
+const (
+	// noFlushErrorThreshold defines when we start to complain in error log that
+	// the last successful flush (if ever) was too long ago.
+	noFlushErrorThreshold = 5 * time.Minute
+
+	// flushTimeout defines a deadline for the flush operation.
+	flushTimeout = 5 * time.Second
+)
 
 // responseWriter wraps a given http.ResponseWriter, records its
 // status code and response size.
@@ -174,17 +218,16 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *tsmonSettings) 
 //
 // Called with 's.lock' locked.
 func (s *State) enableTsMon(c context.Context) {
-	s.state.SetStore(store.NewInMemory(&target.Task{
-		DataCenter:  targetDataCenter,
-		ServiceName: info.AppID(c),
-		JobName:     info.ModuleName(c),
-		HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
-		TaskNum:     -1,
-	}))
+	t := s.Target(c)
+	t.TaskNum = -1 // will be assigned later via TaskNumAllocator
 
-	// Request the flush to be executed ASAP, so it registers (or updates)
-	// 'Instance' entity in the datastore.
-	s.lastFlushed = time.Time{}
+	s.state.SetStore(store.NewInMemory(&t))
+
+	// Request the flush to be executed ASAP, so it registers a claim for a task
+	// number via NotifyTaskIsAlive. Also reset 'lastFlush', so that we don't get
+	// invalid logging that the last flush was long time ago.
+	s.nextFlush = clock.Now(c)
+	s.lastFlush = s.nextFlush
 }
 
 // disableTsMon puts nil metrics store in the context's tsmon state.
@@ -194,28 +237,30 @@ func (s *State) disableTsMon(c context.Context) {
 	s.state.SetStore(store.NewNilStore())
 }
 
-// withGAEContext is replaced in unit tests.
-var withGAEContext = appengine.WithContext
-
 // flushIfNeeded periodically flushes the accumulated metrics.
 //
 // It skips the flush if some other goroutine is already flushing. Logs errors.
 func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon.State, settings *tsmonSettings) {
 	now := clock.Now(c)
-	flushTime := now.Add(-time.Duration(settings.FlushIntervalSec) * time.Second)
 
 	// Most of the time the flush is not needed and we can get away with
 	// lightweight RLock.
 	s.lock.RLock()
-	skip := s.flushingNow || s.lastFlushed.After(flushTime)
+	skip := s.flushingNow || now.Before(s.nextFlush)
 	s.lock.RUnlock()
 	if skip {
 		return
 	}
 
-	// Need to flush. Update flushingNow. Redo the check under write lock.
+	// Need to flush. Update flushingNow. Redo the check under write lock, as well
+	// as do a bunch of other calls while we hold the lock. Will be useful later.
 	s.lock.Lock()
-	skip = s.flushingNow || s.lastFlushed.After(flushTime)
+	if s.taskID == "" {
+		s.taskID = s.TaskID(c)
+	}
+	taskID := s.taskID
+	lastFlush := s.lastFlush
+	skip = s.flushingNow || now.Before(s.nextFlush)
 	if !skip {
 		s.flushingNow = true
 	}
@@ -224,98 +269,77 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 		return
 	}
 
+	// The flush must be fast. Limit it by some timeout.
+	c = logging.SetField(c, "taskID", taskID)
+	c, cancel := clock.WithTimeout(c, flushTimeout)
+	defer cancel()
+
 	// Report per-process statistic, like memory stats.
 	collectProcessMetrics(c, settings)
 
-	// Unset 'flushingNow' no matter what (even on panics). Update 'lastFlushed'
-	// only on successful flush. Unsuccessful flush thus will be retried ASAP.
-	success := false
+	// Unset 'flushingNow' no matter what (even on panics). Update 'nextFlush'
+	// only on successful flush or when we are still waiting for the task number.
+	// Unsuccessful flush thus will be retried ASAP.
+	var err error
 	defer func() {
 		s.lock.Lock()
+		defer s.lock.Unlock()
 		s.flushingNow = false
-		if success {
-			s.lastFlushed = now
+		if err == nil || err == ErrNoTaskNumber {
+			s.nextFlush = now.Add(time.Duration(settings.FlushIntervalSec) * time.Second)
+			if err == nil {
+				s.lastFlush = now
+			}
 		}
-		s.lock.Unlock()
 	}()
 
-	// The flush must be fast. Limit it with by some timeout. It also needs real
-	// GAE context for gRPC calls in PubSub guts, so slap it on top of luci-go
-	// context.
-	c, cancel := clock.WithTimeout(c, flushTimeout)
-	defer cancel()
-	c = withGAEContext(c, req) // TODO(vadimsh): not needed with ProdX
-	if err := s.updateInstanceEntityAndFlush(c, state, settings); err != nil {
-		logging.Errorf(c, "Failed to flush tsmon metrics: %s", err)
-	} else {
-		success = true
+	err = s.ensureTaskNumAndFlush(c, taskID, state, settings)
+	if err != nil {
+		if err == ErrNoTaskNumber {
+			logging.Warningf(c, "Skipping the tsmon flush: no task number assigned yet")
+		} else {
+			logging.WithError(err).Errorf(c, "Failed to flush tsmon metrics")
+		}
+		if sinceLastFlush := now.Sub(lastFlush); sinceLastFlush > noFlushErrorThreshold {
+			logging.Errorf(c, "No successful tsmon flush for %s. Is /internal/cron/ts_mon/housekeeping running?", sinceLastFlush)
+		}
 	}
 }
 
-// updateInstanceEntityAndFlush waits for instance to get assigned a task number and
-// flushes the metrics.
-func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.State, settings *tsmonSettings) error {
-	c = info.MustNamespace(c, instanceNamespace)
-
+// ensureTaskNumAndFlush gets a task number assigned to the process and flushes
+// the metrics.
+//
+// Returns ErrNoTaskNumber if the task wasn't assigned a task number yet.
+func (s *State) ensureTaskNumAndFlush(c context.Context, taskID string, state *tsmon.State, settings *tsmonSettings) error {
+	var task target.Task
 	defTarget := state.S.DefaultTarget()
-	task, ok := defTarget.(*target.Task)
-	if !ok {
+	if t, ok := defTarget.(*target.Task); ok {
+		task = *t
+	} else {
 		return fmt.Errorf("default tsmon target is not a Task (%T): %v", defTarget, defTarget)
 	}
 
-	now := clock.Now(c)
-
-	// Grab TaskNum assigned to the currently running instance. It is updated by
-	// a dedicated cron job, see housekeepingHandler in handler.go.
-	entity, err := getOrCreateInstanceEntity(c)
-	if err != nil {
-		return fmt.Errorf("failed to get instance entity - %s", err)
+	// Notify the task number allocator that we are still alive and grab the
+	// TaskNum assigned to us.
+	assignedTaskNum, err := s.TaskNumAllocator.NotifyTaskIsAlive(c, taskID)
+	if err != nil && err != ErrNoTaskNumber {
+		return fmt.Errorf("failed to get task number assigned for %q - %s", taskID, err)
 	}
 
-	// Don't do the flush if we still haven't get a task number.
-	if entity.TaskNum < 0 {
+	// Don't do the flush if we still haven't got a task number.
+	if err == ErrNoTaskNumber {
 		if task.TaskNum >= 0 {
-			// We used to have a task number but we don't any more (we were inactive
-			// for too long), so clear our state.
-			logging.Warningf(c, "Instance %s got purged from Datastore, but is still alive. "+
-				"Clearing cumulative metrics", info.InstanceID(c))
+			logging.Warningf(c, "The task was inactive for too long and lost its task number, clearing cumulative metrics")
 			state.ResetCumulativeMetrics(c)
 		}
 		task.TaskNum = -1
-		state.S.SetDefaultTarget(task)
-
-		// Complain if we haven't been given a task number yet. This is fine for
-		// recently started instances. Task numbers are populated by the
-		// housekeeping cron that MUST be configured for tsmon to work.
-		logging.Warningf(c, "Skipping the flush: instance %s has no task_num.", info.InstanceID(c))
-		if now.Sub(entity.LastUpdated) > instanceExpectedToHaveTaskNum {
-			logging.Errorf(c, "Is /internal/cron/ts_mon/housekeeping running? "+
-				"The instance %s is %s old and has no task_num yet. This is abnormal.",
-				info.InstanceID(c), now.Sub(entity.LastUpdated))
-		}
-
-		// Non-assigned TaskNum is expected situation, pretend the flush succeeded,
-		// so that next try happens after regular flush period, not right away.
-		return nil
+		state.S.SetDefaultTarget(&task)
+		return ErrNoTaskNumber
 	}
 
-	task.TaskNum = int32(entity.TaskNum)
-	state.S.SetDefaultTarget(task)
-
-	// Refresh 'entity.LastUpdated'. Ignore errors here since the flush is
-	// happening already even this operation fails.
-	putDone := make(chan struct{})
-	go func() {
-		defer close(putDone)
-		if err := refreshLastUpdatedTime(c, now); err != nil {
-			logging.Errorf(c, "Failed to update instance entity: %s", err)
-		}
-	}()
-
-	ret := s.doFlush(c, state, settings)
-
-	<-putDone
-	return ret
+	task.TaskNum = int32(assignedTaskNum)
+	state.S.SetDefaultTarget(&task)
+	return s.doFlush(c, state, settings)
 }
 
 // doFlush actually sends the metrics to the monitor.
@@ -325,7 +349,7 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 
 	if s.testingMonitor != nil {
 		mon = s.testingMonitor
-	} else if info.IsDevAppServer(c) || settings.ProdXAccount == "" {
+	} else if s.IsDevMode || settings.ProdXAccount == "" {
 		mon = monitor.NewDebugMonitor("")
 	} else {
 		logging.Infof(c, "Sending metrics to ProdX using %s", settings.ProdXAccount)

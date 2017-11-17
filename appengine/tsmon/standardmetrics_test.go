@@ -26,6 +26,8 @@ import (
 )
 
 func TestGlobalMetrics(t *testing.T) {
+	t.Parallel()
+
 	Convey("Default version", t, func() {
 		c, _ := buildGAETestContext()
 		tsmon.GetState(c).S = store.NewInMemory(&target.Task{ServiceName: "default target"})
