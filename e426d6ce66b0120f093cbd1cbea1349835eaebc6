@@ -356,6 +356,24 @@
       "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38570fc5_2969eb76",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-17T22:35:57Z",
+      "side": 1,
+      "message": "Yes, that\u0027s what was alluded to in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/777706/2#259 --- I haven\u0027t included yet functionality for handling the various errors, because we hadn\u0027t agreed yet on what the error handling should be.\n\nIf you like the idea, I can add \"[unknown] pending/running\" or \"? pending/running\", and empty boxes for the last run; can you elaborate on what you mean should change in builderHistory? I would have just left builderHistory as is, but depending on the tags in the error, change the message displayed.",
+      "parentUuid": "c5792adc_ee646691",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
