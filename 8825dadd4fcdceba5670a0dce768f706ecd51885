@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6322c7dc_c1da2e73",
+        "filename": "appengine/tsmon/housekeeping_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:51:03Z",
+      "side": 1,
+      "message": "meh, how about srvtsmon? easier to read code outside of this import statement.",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 7
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c87c8670_856928a1",
+        "filename": "server/tsmon/settings.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:51:03Z",
+      "side": 1,
+      "message": "the application.\n\napp is still almost a synonym for GAE.",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 63
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62a4cbf4_926428e4",
+        "filename": "server/tsmon/settings.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:51:03Z",
+      "side": 1,
+      "message": "applications",
+      "range": {
+        "startLine": 42,
+        "startChar": 22,
+        "endLine": 42,
+        "endChar": 25
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12b5bd33_5be44b79",
+        "filename": "server/tsmon/tasknum.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:51:03Z",
+      "side": 1,
+      "message": "may",
+      "range": {
+        "startLine": 31,
+        "startChar": 39,
+        "endLine": 31,
+        "endChar": 43
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
