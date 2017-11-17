@@ -40,7 +40,9 @@ import (
 func main() {
 	mathrand.SeedRandomly()
 
-	r := router.New()
+	// Setup process global Context.
+	c := context.Background()
+	c = gologger.StdConfig.Use(c) // Log to STDERR.
 
 	// Setup Cloud Endpoints.
 	svr := &prpc.Server{
@@ -49,9 +51,7 @@ func main() {
 	logsPb.RegisterLogsServer(svr, logs.New())
 	discovery.Enable(svr)
 
-	// Setup process global Context.
-	c := context.Background()
-	c = gologger.StdConfig.Use(c) // Log to STDERR.
+	// Setup the global services.
 	gsvc, err := flex.NewGlobalServices(flexMW.WithGlobal(c))
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to setup Flex services.")
@@ -72,6 +72,7 @@ func main() {
 	// and that here is probably the right place to kick off such a goroutine.
 
 	// Standard HTTP endpoints using flex LogDog services singleton.
+	r := router.NewWithRootContext(c)
 	mw := flexMW.ReadOnlyFlex
 	mw.InstallHandlers(r)
 

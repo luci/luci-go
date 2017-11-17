@@ -77,9 +77,7 @@ var (
 var ReadOnlyFlex = gaemiddleware.Environment{
 	MemcacheAvailable: false,
 	DSReadOnly:        true,
-	Prepare: func() {
-		// Context to use for initialization.
-		c := context.Background()
+	Prepare: func(c context.Context) {
 		globalFlex = &cloud.Flex{
 			Cache: lru.New(65535),
 		}
@@ -96,7 +94,9 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		flexReq := globalFlex.Request(req)
 		c = globalFlexConfig.Use(c, flexReq)
 
-		logging.Infof(c, "Handling request for trace context: %s", flexReq.TraceID)
+		if flexReq.TraceID != "" {
+			logging.Infof(c, "Handling request for trace context: %s", flexReq.TraceID)
+		}
 		return c
 	},
 	WithConfig: gaeconfig.UseFlex,

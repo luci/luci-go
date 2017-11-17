@@ -62,7 +62,10 @@ type Environment struct {
 	DSReadOnly bool
 
 	// Prepare will be called once after init() time, but before serving requests.
-	Prepare func()
+	//
+	// The given context is very bare, use it only for logging and deadlines and
+	// stuff like that. It has no other services installed.
+	Prepare func(context.Context)
 
 	// WithInitialRequest is called at the very beginning of the handler. It
 	// contains a reference to the handler's HTTP request.
@@ -99,12 +102,12 @@ type Environment struct {
 }
 
 // ensurePrepared is called before handling requests to initialize global state.
-func (e *Environment) ensurePrepared() {
+func (e *Environment) ensurePrepared(c context.Context) {
 	e.prepareOnce.Do(func() {
 		e.processCacheData = caching.NewProcessCacheData()
 		e.globalSettings = settings.New(gaesettings.Storage{})
 		if e.Prepare != nil {
-			e.Prepare()
+			e.Prepare(c)
 		}
 	})
 }
@@ -141,12 +144,12 @@ func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base route
 // 'Production' here means the services will use real GAE APIs (not mocks or
 // stubs), so With should never be used from unit tests.
 func (e *Environment) With(c context.Context, req *http.Request) context.Context {
-	// Ensure one-time initialization happened.
-	e.ensurePrepared()
-
 	// Set an initial logging level. We'll configure this to be more specific
 	// later once we can load settings.
 	c = logging.SetLevel(c, logging.Debug)
+
+	// Ensure one-time initialization happened.
+	e.ensurePrepared(c)
 
 	// Install process and request LRU caches.
 	c = caching.WithProcessCacheData(c, e.processCacheData)
