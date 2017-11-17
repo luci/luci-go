@@ -28,7 +28,7 @@ import (
 )
 
 func TestValidateDatacenters(t *testing.T) {
-	columns := []string{"id", "name"}
+	columns := []string{"id", "name", "descriptions"}
 
 	Convey("EnsureDatacenters: empty", t, func() {
 		db, m, e := sqlmock.New()
@@ -39,9 +39,10 @@ func TestValidateDatacenters(t *testing.T) {
 
 		datacenters := []*config.DatacenterConfig{}
 
-		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns))
+		m.ExpectPrepare("UPDATE")
 		m.ExpectPrepare("DELETE")
 		m.ExpectPrepare("INSERT")
+		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns))
 
 		e = EnsureDatacenters(database.With(context.Background(), db), datacenters)
 		So(e, ShouldBeNil)
@@ -64,12 +65,36 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 
-		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns))
+		m.ExpectPrepare("UPDATE")
 		m.ExpectPrepare("DELETE")
 		m.ExpectPrepare("INSERT")
-		m.ExpectPrepare("INSERT")
+		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns))
 		m.ExpectExec("INSERT").WithArgs(datacenters[0].Name, datacenters[0].Description).WillReturnResult(sqlmock.NewResult(1, 1))
 		m.ExpectExec("INSERT").WithArgs(datacenters[1].Name, datacenters[1].Description).WillReturnResult(sqlmock.NewResult(2, 1))
+
+		e = EnsureDatacenters(database.With(context.Background(), db), datacenters)
+		So(e, ShouldBeNil)
+	})
+
+	Convey("EnsureDatacenters: update", t, func() {
+		db, m, e := sqlmock.New()
+		defer db.Close()
+		So(db, ShouldNotBeNil)
+		So(m, ShouldNotBeNil)
+		So(e, ShouldBeNil)
+
+		datacenters := []*config.DatacenterConfig{
+			{
+				Name: "datacenter",
+			},
+		}
+
+		m.ExpectPrepare("UPDATE")
+		m.ExpectPrepare("DELETE")
+		m.ExpectPrepare("INSERT")
+		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns).AddRow(1, datacenters[0].Name, "description"))
+		m.ExpectPrepare("UPDATE")
+		m.ExpectExec("UPDATE").WithArgs(datacenters[0].Description, 1).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		e = EnsureDatacenters(database.With(context.Background(), db), datacenters)
 		So(e, ShouldBeNil)
@@ -84,9 +109,10 @@ func TestValidateDatacenters(t *testing.T) {
 
 		datacenters := []*config.DatacenterConfig{}
 
-		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns).AddRow(1, "datacenter"))
+		m.ExpectPrepare("UPDATE")
 		m.ExpectPrepare("DELETE")
 		m.ExpectPrepare("INSERT")
+		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns).AddRow(1, "datacenter", "description"))
 		m.ExpectPrepare("DELETE")
 		m.ExpectExec("DELETE").WithArgs(1).WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -108,11 +134,10 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 
-		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns).AddRow(1, datacenters[0].Name))
+		m.ExpectPrepare("UPDATE")
 		m.ExpectPrepare("DELETE")
 		m.ExpectPrepare("INSERT")
-		m.ExpectPrepare("INSERT")
-		m.ExpectExec("INSERT").WithArgs(datacenters[0].Name, datacenters[0].Description).WillReturnResult(sqlmock.NewResult(1, 1))
+		m.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(columns).AddRow(1, datacenters[0].Name, datacenters[0].Description))
 
 		e = EnsureDatacenters(database.With(context.Background(), db), datacenters)
 		So(e, ShouldBeNil)
