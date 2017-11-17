@@ -1,0 +1,257 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "641d2f75_d5470d2c",
+        "filename": "appengine/tsmon/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "where is the code that actually assigns \u003e-1 integers to these entities?",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 22
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a135104_24f04f99",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "does the TaskID have to live outside of TaskNumAllocator? ie, what is using it except TaskNumAllocator?\nAh, I see. It is. So, perhaps change line 64 to be:\n\n\"It will also be used to assign a free task number via TaskNumAllocator\"\n\nwdyt?",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 38
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13ec0401_522b503b",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "can/may",
+      "range": {
+        "startLine": 95,
+        "startChar": 39,
+        "endLine": 95,
+        "endChar": 43
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2d05fd1_dc8e9705",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "Threshold\n(missing \u0027h\u0027)",
+      "range": {
+        "startLine": 107,
+        "startChar": 13,
+        "endLine": 107,
+        "endChar": 21
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9698903a_3bd8f5eb",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "// flushTimeout...",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 3
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59264fa5_591791d8",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "move to after line266, it\u0027s easier to follow then.",
+      "range": {
+        "startLine": 258,
+        "startChar": 0,
+        "endLine": 261,
+        "endChar": 2
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ce852bb_ad96d808",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "delete",
+      "range": {
+        "startLine": 272,
+        "startChar": 37,
+        "endLine": 272,
+        "endChar": 41
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6b712bf_015df354",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "allocator",
+      "range": {
+        "startLine": 322,
+        "startChar": 27,
+        "endLine": 322,
+        "endChar": 35
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e767c890_1b4badff",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "nit: us\n(since you used \"we\" above)",
+      "range": {
+        "startLine": 323,
+        "startChar": 24,
+        "endLine": 323,
+        "endChar": 53
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "611d095a_0ffedf03",
+        "filename": "appengine/tsmon/middleware_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "minor: when this fails, there is no stack, hence hard to know which call to readMetric failed. Consider if err !\u003d nil{panic(err)}",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8dc19ba_91f64bdb",
+        "filename": "appengine/tsmon/middleware_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 1,
+      "message": "sent",
+      "range": {
+        "startLine": 116,
+        "startChar": 18,
+        "endLine": 116,
+        "endChar": 22
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

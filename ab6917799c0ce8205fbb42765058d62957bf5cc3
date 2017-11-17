@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63522730_b21a9caa",
+        "filename": "appengine/tsmon/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:37:44Z",
+      "side": 0,
+      "message": "no longer requirement?",
+      "range": {
+        "startLine": 47,
+        "startChar": 43,
+        "endLine": 48,
+        "endChar": 62
+      },
+      "revId": "ab6917799c0ce8205fbb42765058d62957bf5cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
