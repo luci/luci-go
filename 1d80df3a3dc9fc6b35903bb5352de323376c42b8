@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "38d82728_37a03839",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T22:39:06Z",
+      "side": 1,
+      "message": "I don\u0027t know. I guess we can remove this logging.\n\nSome related info:\n1. On Flex each request has this ID.\n2. On Flex we do not actually collect any real traces because we didn\u0027t instrument any of our libraries to collect spans or upload them to Cloud Trace.",
+      "parentUuid": "3ec99dd3_192afbbd",
+      "revId": "1d80df3a3dc9fc6b35903bb5352de323376c42b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "55571877_f4d9e6b9",
         "filename": "examples/appengine/helloworld_flex/app.yaml",
         "patchSetId": 1
