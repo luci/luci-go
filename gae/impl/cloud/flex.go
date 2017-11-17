@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/googleoauth"
+	"go.chromium.org/luci/common/logging"
 
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
@@ -29,6 +31,8 @@ import (
 	"google.golang.org/api/option"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 // Flex defines a Google AppEngine Flex Environment platform.
@@ -48,38 +52,38 @@ type Flex struct {
 // opts is the optional set of client options to pass to cloud platform clients
 // that are instantiated.
 func (f *Flex) Configure(c context.Context, opts ...option.ClientOption) (cfg *Config, err error) {
-	// If we aren't in an AppEngine Flex environment, we will panic further in the
-	// code with an "error" type.
-	defer func() {
-		if r := recover(); r != nil {
-			err = errors.Annotate(r.(error), "not in an AppEngine Flex environment").Err()
+	// If running on GCE, assume we are on Flex and use the metadata server and
+	// environ to get environment information. When running locally (e.g. during
+	// development), we extract the email from the Default Application Credentials
+	// and provide some fake defaults for non-essential parts of the config.
+	cfg = &Config{}
+	if metadata.OnGCE() {
+		if cfg.ServiceAccountName, err = getMetadata("instance/service-accounts/default/email"); err != nil {
+			return nil, err
 		}
-	}()
-
-	mustGetEnv := func(key string) string {
-		if v := os.Getenv(key); v != "" {
-			return v
+	} else {
+		ts, err := google.DefaultTokenSource(c, iamAPI.CloudPlatformScope)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get Application Default Credentials").Err()
 		}
-		panic(errors.Reason("missing environment variable %q", key).Err())
+		if cfg.ServiceAccountName, err = getEmailFromTokenSource(c, ts); err != nil {
+			return nil, err
+		}
+		logging.Infof(c, "Running locally as %q", cfg.ServiceAccountName)
+		cfg.IsDev = true
+		cfg.ServiceName = "local"
+		cfg.VersionName = "tainted-local"
+		cfg.InstanceID = "local"
 	}
-	mustGetMetadata := func(key string) string {
-		switch v, err := metadata.Get(key); {
-		case err != nil:
-			panic(errors.Annotate(err, "could not retrieve metadata value %q", key).Err())
-		case v == "":
-			panic(errors.Reason("missing metadata value %q", key).Err())
-		default:
-			return v
-		}
-	}
 
-	// Probe environment for values.
-	cfg = &Config{
-		ProjectID:          mustGetEnv("GCLOUD_PROJECT"),
-		ServiceName:        mustGetEnv("GAE_SERVICE"),
-		VersionName:        mustGetEnv("GAE_VERSION"),
-		InstanceID:         mustGetEnv("GAE_INSTANCE"),
-		ServiceAccountName: mustGetMetadata("/instance/service-accounts/default/email"),
+	err = getEnv(map[string]*string{
+		"GCLOUD_PROJECT": &cfg.ProjectID,
+		"GAE_SERVICE":    &cfg.ServiceName,
+		"GAE_VERSION":    &cfg.VersionName,
+		"GAE_INSTANCE":   &cfg.InstanceID,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	gsp := GoogleServiceProvider{
@@ -101,14 +105,16 @@ func (f *Flex) Configure(c context.Context, opts ...option.ClientOption) (cfg *C
 	opts = append(make([]option.ClientOption, 0, len(opts)+1), opts...)
 	opts = append(opts, option.WithTokenSource(ts))
 
-	// Cloud Datastore Client
+	// Cloud Datastore Client.
 	if cfg.DS, err = datastore.NewClient(c, cfg.ProjectID, opts...); err != nil {
-		panic(errors.Annotate(err, "failed to instantiate datastore client").Err())
+		return nil, errors.Annotate(err, "failed to instantiate datastore client").Err()
 	}
 
-	// Cloud Logging Client
-	if cfg.L, err = cloudLogging.NewClient(c, cfg.ProjectID, opts...); err != nil {
-		panic(errors.Annotate(err, "could not create logger").Err())
+	// Cloud Logging Client, only when running for real.
+	if !cfg.IsDev {
+		if cfg.L, err = cloudLogging.NewClient(c, cfg.ProjectID, opts...); err != nil {
+			return nil, errors.Annotate(err, "could not create logger").Err()
+		}
 	}
 
 	return
@@ -120,6 +126,44 @@ func (*Flex) Request(req *http.Request) *Request {
 	return &Request{
 		TraceID: getCloudTraceContext(req),
 	}
+}
+
+func getEnv(kv map[string]*string) error {
+	for k, ptr := range kv {
+		switch v := os.Getenv(k); {
+		case v != "":
+			*ptr = v
+		case *ptr == "":
+			return errors.Reason("missing required environment variable %q", k).Err()
+		}
+	}
+	return nil
+}
+
+func getMetadata(key string) (string, error) {
+	switch v, err := metadata.Get(key); {
+	case err != nil:
+		return "", errors.Annotate(err, "could not retrieve metadata value %q", key).Err()
+	case v == "":
+		return "", errors.Reason("missing metadata value %q", key).Err()
+	default:
+		return v, nil
+	}
+}
+
+func getEmailFromTokenSource(c context.Context, ts oauth2.TokenSource) (string, error) {
+	tok, err := ts.Token()
+	if err != nil {
+		return "", errors.Annotate(err, "failed to grab an access token").Err()
+	}
+	info, err := googleoauth.GetTokenInfo(c, googleoauth.TokenInfoParams{
+		AccessToken: tok.AccessToken,
+		Client:      http.DefaultClient,
+	})
+	if err != nil {
+		return "", errors.Annotate(err, "failed to get the token info").Err()
+	}
+	return info.Email, nil
 }
 
 // getCloudTraceContext parses an "X-Cloud-Trace-Context" header.

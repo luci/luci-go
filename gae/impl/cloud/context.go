@@ -23,8 +23,6 @@ import (
 	"go.chromium.org/gae/service/taskqueue"
 	"go.chromium.org/gae/service/user"
 
-	"go.chromium.org/luci/common/logging/gologger"
-
 	"cloud.google.com/go/datastore"
 	cloudLogging "cloud.google.com/go/logging"
 	"github.com/bradfitz/gomemcache/memcache"
@@ -129,8 +127,8 @@ func (cfg *Config) Use(c context.Context, req *Request) context.Context {
 	c = user.Set(c, dummy.User())
 
 	// Install the logging service, if fields are sufficiently configured.
-	// If no logging service is available, fall back onto a console (STDERR)
-	// logger.
+	// If no logging service is available, fall back onto an existing logger in
+	// the context (usually a console (STDERR) logger).
 	//
 	// The combination of CommonLabels and CommonResource magically enable the
 	// Flex environment to associate its logs with the Flex request logs. See:
@@ -160,9 +158,6 @@ func (cfg *Config) Use(c context.Context, req *Request) context.Context {
 		}
 
 		c = WithLogger(c, cfg.L.Logger("request", clOpts...))
-	} else {
-		// No logging service configured. Use a console logger.
-		c = gologger.StdConfig.Use(c)
 	}
 
 	// Setup and install the "info" service.
