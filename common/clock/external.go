@@ -75,3 +75,8 @@ func After(ctx context.Context, d time.Duration) <-chan TimerResult {
 func Since(ctx context.Context, t time.Time) time.Duration {
 	return Now(ctx).Sub(t)
 }
+
+// Until is an equivalent of time.Until.
+func Until(ctx context.Context, t time.Time) time.Duration {
+	return t.Sub(Now(ctx))
+}
