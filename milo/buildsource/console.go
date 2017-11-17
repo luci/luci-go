@@ -79,7 +79,7 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 	}
 	partialKey := model.NewPartialManifestKey(project, console.Id, console.ManifestName, url)
 	q := datastore.NewQuery("BuildSummary")
-	err := parallel.WorkPool(4, func(ch chan<- func() error) {
+	err := parallel.FanOutIn(func(ch chan<- func() error) {
 		for i := range rawCommits {
 			i := i
 			r := &ConsoleRow{Commit: commits[i]}
