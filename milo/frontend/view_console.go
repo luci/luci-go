@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
@@ -45,6 +46,13 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
 )
+
+func logTimer(c context.Context, message string) func() {
+	tStart := clock.Now(c)
+	return func() {
+		logging.Debugf(c, "%s: took %.2f", message, clock.Since(c, tStart))
+	}
+}
 
 // getConsoleDef finds the console definition as defined by any project.
 // If the user is not a reader of the project, this will return a 404.
@@ -126,29 +134,24 @@ func getBuilderSummaries(c context.Context, project, name string) (map[string]*m
 	return builderSummaries, nil
 }
 
-func console(c context.Context, project, name string, limit int) (*ui.Console, error) {
-	tStart := clock.Now(c)
-	def, err := getConsoleDef(c, project, name)
-	if err != nil {
-		return nil, err
-	}
+func consoleRowCommits(c context.Context, project, name string, def *config.Console, limit int) ([]*buildsource.ConsoleRow, []ui.Commit, error) {
+	tGitiles := logTimer(c, "Rows: loading commit from gitiles")
 	commitInfo, err := git.GetHistory(c, def.RepoUrl, def.Ref, limit)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	tGitiles := clock.Now(c)
-	logging.Debugf(c, "Loading commits took %s.", tGitiles.Sub(tStart))
+	tGitiles()
 
 	commitNames := make([]string, len(commitInfo.Commits))
 	for i, commit := range commitInfo.Commits {
 		commitNames[i] = hex.EncodeToString(commit.Hash)
 	}
 
+	tBuilds := logTimer(c, "Rows: loading builds")
 	rows, err := buildsource.GetConsoleRows(c, project, def, commitNames)
-	tConsole := clock.Now(c)
-	logging.Debugf(c, "Loading the console took a total of %s.", tConsole.Sub(tGitiles))
+	tBuilds()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Build list of commits.
@@ -165,11 +168,44 @@ func console(c context.Context, project, name string, limit int) (*ui.Console, e
 		}
 	}
 
-	builderSummaries, err := getBuilderSummaries(c, project, name)
+	return rows, commits, nil
+}
+
+func console(c context.Context, project, name string, limit int) (*ui.Console, error) {
+	def, err := getConsoleDef(c, project, name)
 	if err != nil {
 		return nil, err
 	}
 
+	var header *ui.ConsoleHeader
+	var rows []*buildsource.ConsoleRow
+	var commits []ui.Commit
+	var builderSummaries map[string]*model.BuilderSummary
+	// Get 3 things in parallel:
+	// 1. The console header
+	// 2. The console body (rows + commits)
+	// 3. The console's builder summaries
+	if err := parallel.FanOutIn(func(ch chan<- func() error) {
+		ch <- func() (err error) {
+			defer logTimer(c, "header")()
+			header, err = consoleHeader(c, project, def.GetHeader())
+			return
+		}
+		ch <- func() (err error) {
+			defer logTimer(c, "rows")()
+			rows, commits, err = consoleRowCommits(c, project, name, def, limit)
+			return
+		}
+		ch <- func() (err error) {
+			defer logTimer(c, "summaries")()
+			builderSummaries, err = getBuilderSummaries(c, project, name)
+			return
+		}
+	}); err != nil {
+		return nil, err
+	}
+
+	// Reassemble the builder summaries and rows into the categoryTree.
 	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *ui.BuilderRef {
 		// Group together all builds for this builder.
 		builds := make([]*model.BuildSummary, len(commits))
@@ -190,11 +226,6 @@ func console(c context.Context, project, name string, limit int) (*ui.Console, e
 			Builder:   builder,
 		}
 	})
-
-	header, err := consoleHeader(c, project, def.GetHeader())
-	if err != nil {
-		return nil, err
-	}
 
 	return &ui.Console{
 		Name:       def.Name,
@@ -285,7 +316,7 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 	}
 
 	status := &ui.TreeStatus{}
-	if err := getJSONData(c, url.String(), 30, status); err != nil {
+	if err := getJSONData(c, url.String(), 30*time.Second, status); err != nil {
 		// Generate a fake tree status.
 		logging.WithError(err).Errorf(c, "loading tree status")
 		status = &ui.TreeStatus{
@@ -300,10 +331,64 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 // getOncallData fetches oncall data and caches it for 10 minutes.
 func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
 	result := ui.Oncall{}
-	err := getJSONData(c, url, 600, &result)
+	err := getJSONData(c, url, 10*time.Minute, &result)
 	// Set the name, this is not loaded from the sheriff JSON.
 	result.Name = name
 	return result, err
+}
+
+func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]ui.Oncall, error) {
+	// Get oncall data from URLs.
+	oncalls := make([]ui.Oncall, len(config))
+	err := parallel.FanOutIn(func(ch chan<- func() error) {
+		for i, oc := range config {
+			i := i
+			oc := oc
+			ch <- func() (err error) {
+				oncalls[i], err = getOncallData(c, oc.Name, oc.Url)
+				return
+			}
+		}
+	})
+	return oncalls, err
+}
+
+// consoleHeaderGroups fetches console summaries from the datastore as slices of
+// BuilderSummary structs, and returns them in groups of consoles.
+func consoleHeaderGroups(c context.Context, project string, config []*config.ConsoleSummaryGroup) ([]ui.ConsoleGroup, error) {
+	consoleGroups := make([]ui.ConsoleGroup, len(config))
+	consoleIds := stringset.New(0)
+	for _, group := range config {
+		for _, id := range group.ConsoleIds {
+			// TODO(hinoka): Implement proper ACL checking, which will allow cross-project
+			// console headers.  The following will be swapped out for an ACL check.
+			if err := validateConsoleID(id, project); err != nil {
+				return nil, err
+			}
+			consoleIds.Add(id)
+		}
+	}
+	summaries, err := buildsource.GetConsoleSummaries(c, consoleIds.ToSlice())
+	if err != nil {
+		return nil, err
+	}
+	for i, group := range config {
+		groupSummaries := make([]ui.ConsoleSummary, len(group.ConsoleIds))
+		for j, id := range group.ConsoleIds {
+			if consoleSummary, ok := summaries[id]; ok {
+				groupSummaries[j] = consoleSummary
+			} else {
+				// This should never happen.
+				panic(fmt.Sprintf("could not find console summary %s", id))
+			}
+		}
+		consoleGroups[i].Consoles = groupSummaries
+		if group.Title != nil {
+			ariaLabel := "console group %s" + group.Title.Text
+			consoleGroups[i].Title = ui.NewLink(group.Title.Text, group.Title.Url, ariaLabel)
+		}
+	}
+	return consoleGroups, nil
 }
 
 func consoleHeader(c context.Context, project string, header *config.Header) (*ui.ConsoleHeader, error) {
@@ -323,21 +408,31 @@ func consoleHeader(c context.Context, project string, header *config.Header) (*u
 		return nil, nil
 	}
 
-	// Get oncall data from URLs.
-	oncalls := make([]ui.Oncall, len(header.Oncalls))
-	err := parallel.FanOutIn(func(gen chan<- func() error) {
-		for i, oc := range header.Oncalls {
-			i := i
-			oc := oc
-			gen <- func() error {
-				oncall, err := getOncallData(c, oc.Name, oc.Url)
-				oncalls[i] = oncall
-				return err
+	var oncalls []ui.Oncall
+	var consoleGroups []ui.ConsoleGroup
+	var treeStatus *ui.TreeStatus
+	// Get the oncall, tree status, and console summaries concurrently.
+	if err := parallel.FanOutIn(func(ch chan<- func() error) {
+		ch <- func() (err error) {
+			oncalls, err = consoleHeaderOncall(c, header.Oncalls)
+			if err != nil {
+				logging.WithError(err).Errorf(c, "getting oncalls")
+			}
+			return nil
+		}
+		ch <- func() (err error) {
+			consoleGroups, err = consoleHeaderGroups(c, project, header.ConsoleGroups)
+			return
+		}
+		if header.TreeStatusHost != "" {
+			ch <- func() error {
+				treeStatus = getTreeStatus(c, header.TreeStatusHost)
+				treeStatus.URL = &url.URL{Scheme: "https", Host: header.TreeStatusHost}
+				return nil
 			}
 		}
-	})
-	if err != nil {
-		logging.WithError(err).Errorf(c, "getting oncalls")
+	}); err != nil {
+		return nil, err
 	}
 
 	// Restructure links as resp data structures.
@@ -354,31 +449,6 @@ func consoleHeader(c context.Context, project string, header *config.Header) (*u
 			Name:  linkGroup.Name,
 			Links: mlinks,
 		}
-	}
-
-	// Set up console summaries for the header.
-	consoleGroups := make([]ui.ConsoleGroup, len(header.ConsoleGroups))
-	for i, group := range header.ConsoleGroups {
-		for _, id := range group.ConsoleIds {
-			if err := validateConsoleID(id, project); err != nil {
-				return nil, err
-			}
-		}
-		summaries, err := buildsource.GetConsoleSummaries(c, group.ConsoleIds)
-		if err != nil {
-			return nil, err
-		}
-		if group.Title != nil {
-			ariaLabel := fmt.Sprintf("console group %s", group.Title.Text)
-			consoleGroups[i].Title = ui.NewLink(group.Title.Text, group.Title.Url, ariaLabel)
-		}
-		consoleGroups[i].Consoles = summaries
-	}
-
-	var treeStatus *ui.TreeStatus
-	if header.TreeStatusHost != "" {
-		treeStatus = getTreeStatus(c, header.TreeStatusHost)
-		treeStatus.URL = &url.URL{Scheme: "https", Host: header.TreeStatusHost}
 	}
 
 	return &ui.ConsoleHeader{
