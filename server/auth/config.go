@@ -154,3 +154,17 @@ func GetDB(c context.Context) (authdb.DB, error) {
 	}
 	return authdb.ErroringDB{Error: ErrNotConfigured}, nil
 }
+
+// GetSigner returns the signing.Signer instance representing the service.
+//
+// It is injected into the context as part of Config. It can be used to grab
+// a service account the service is running as or its current public
+// certificates.
+//
+// Returns nil if the signer is not available.
+func GetSigner(c context.Context) signing.Signer {
+	if cfg := getConfig(c); cfg != nil {
+		return cfg.Signer
+	}
+	return nil
+}

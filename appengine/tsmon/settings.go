@@ -23,7 +23,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/settings"
@@ -98,10 +97,15 @@ func (settingsUIPage) Title(c context.Context) (string, error) {
 }
 
 func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	serviceAcc, err := info.ServiceAccount(c)
-	if err != nil {
-		return nil, err
+	serviceAcc := "<unknown>"
+	if signer := auth.GetSigner(c); signer != nil {
+		info, err := signer.ServiceInfo(c)
+		if err != nil {
+			return nil, err
+		}
+		serviceAcc = info.ServiceAccountName
 	}
+
 	return []settings.UIField{
 		settings.YesOrNoField(settings.UIField{
 			ID:    "Enabled",
