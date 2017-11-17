@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -32,14 +31,7 @@ import (
 )
 
 func flushNowWithMiddleware(c context.Context, state *State) {
-	i := instance{
-		ID:          instanceEntityID(c),
-		TaskNum:     0,
-		LastUpdated: clock.Now(c).Add(-2 * time.Minute).UTC(),
-	}
-	So(ds.Put(c, &i), ShouldBeNil)
-
-	state.lastFlushed = clock.Now(c).Add(-2 * time.Minute)
+	state.nextFlush = clock.Now(c)
 
 	rec := httptest.NewRecorder()
 	router.RunMiddleware(
@@ -51,9 +43,11 @@ func flushNowWithMiddleware(c context.Context, state *State) {
 }
 
 func TestGlobalCallbacks(t *testing.T) {
+	t.Parallel()
+
 	Convey("Global callbacks", t, func() {
 		c, _ := buildGAETestContext()
-		state, mon := buildTestState()
+		state, mon, _ := buildTestState()
 
 		m := metric.NewCallbackStringIn(c, "foo", "", nil)
 
