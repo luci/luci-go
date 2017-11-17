@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "dc6d9f15_86600c23",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "what N refers to here? consider renaming the field to \"RecentBuilds\"",
+      "range": {
+        "startLine": 148,
+        "startChar": 14,
+        "endLine": 148,
+        "endChar": 16
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fddc235_a5b2cdc7",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "Ryan is working on CL that optimizes console and he saw perf improvements after bumping this number\nconsider 16",
+      "range": {
+        "startLine": 179,
+        "startChar": 25,
+        "endLine": 179,
+        "endChar": 26
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afea1f3a_63e0835d",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "nit: function comments should start with a function name in Go",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ddc17d16_f3cf761b",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -19,6 +82,93 @@
     },
     {
       "key": {
+        "uuid": "6823e72e_d1726d68",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "i think it is \"eventually consistent\", not racy. But datastore indexes are eventually consistent themselves, so that\u0027s ok",
+      "parentUuid": "ddc17d16_f3cf761b",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cd3c87ee_ed866b1b",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "looks like we perfect case for running these 3 queries concurrently",
+      "range": {
+        "startLine": 222,
+        "startChar": 0,
+        "endLine": 237,
+        "endChar": 1
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36fbd5a8_17e21bb2",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "len(last)\nand then we don\u0027t need i\n\nalso it does not make sense to run this code if build\u0027 wasn\u0027t terminal because we didn\u0027t add a build. please invert if condition L237 and return early",
+      "range": {
+        "startLine": 242,
+        "startChar": 5,
+        "endLine": 242,
+        "endChar": 6
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba931972_18153d46",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "since we don\u0027t really use contents of the fetched builds, please use https://godoc.org/go.chromium.org/gae/service/datastore#Count",
+      "range": {
+        "startLine": 254,
+        "startChar": 18,
+        "endLine": 254,
+        "endChar": 31
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "533ec770_cb148480",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -30,6 +180,179 @@
       "writtenOn": "2017-11-17T20:50:51Z",
       "side": 1,
       "message": "Presently this allows for partially filled out histories, so that if one builder fails to fetch part of its recent history the page can still display the ones it could fetch (though that functionality is not presently enabled). That would look roughly like \"[unknown] pending/running\" or \"? pending/running\", and empty boxes for the last run.\n\nI\u0027m also open to keeping it at bailing the entire page, if we think an error fetching would be bad enough, but that seems a bit nuclear.",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63f660e2_bb415609",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "i like this idea\n\nhowever then builderHistory does not really represent the result of operation, since it does not tell if NumRunning is 0 because it failed or because there are no running builds. If builderHistory was made complete, then you don\u0027t need custom error tags",
+      "parentUuid": "533ec770_cb148480",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d37c281c_718c163d",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "this is identical to .pending-builds. Can we define a more general .builder-cell?",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 20
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "767b738d_e0ab4feb",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "FWIU, this, except align-items, MUST be same as incomplete builds. Can we apply both .builder-cell and .finished-builds? Then .finished-builds will have only align-items",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 14
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25710d3a_62140117",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "note that this applies to all descendants, not necessarily children.\nDid you mean \" \u003e *\"?",
+      "range": {
+        "startLine": 64,
+        "startChar": 16,
+        "endLine": 64,
+        "endChar": 18
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d49057ba_ba042b96",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "there is some copy pasta from running-builds above. Can we reuse classes, but override things we want to override if any?",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 24
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc0a0966_2bcb4e04",
+        "filename": "milo/frontend/appengine/templates/pages/builders_relative_time.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "trailing space",
+      "range": {
+        "startLine": 17,
+        "startChar": 27,
+        "endLine": 17,
+        "endChar": 28
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed595a0c_593ac2dc",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "nit: \"Builders\" or \"Builder list\"",
+      "range": {
+        "startLine": 98,
+        "startChar": 4,
+        "endLine": 98,
+        "endChar": 18
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5792adc_ee646691",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T22:09:07Z",
+      "side": 1,
+      "message": "i expected this to handle various types of failure but still return the page, otherwise why do we have them? If we add error messages to the hist itself, then this code does not need to change",
       "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
