@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f3d13e9b_453e981c",
+        "filename": "appengine/tsmon/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b05be1c_d49811de",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 77
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "641d2f75_d5470d2c",
         "filename": "appengine/tsmon/common.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6aed70f5_2faebe57",
+        "filename": "appengine/tsmon/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "assignTaskNumbers in handler.go\n\nthis will be refactored in later CLs, I didn\u0027t want to put everything into one.",
+      "parentUuid": "641d2f75_d5470d2c",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 22
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "d0ae7c74_9f24a044",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a135104_24f04f99",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 38
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13ec0401_522b503b",
         "filename": "appengine/tsmon/middleware.go",
         "patchSetId": 7
@@ -91,6 +163,30 @@
       "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f660812a_a67acc18",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13ec0401_522b503b",
+      "range": {
+        "startLine": 95,
+        "startChar": 39,
+        "endLine": 95,
+        "endChar": 43
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "e98f6d7a_b5b349b7",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2d05fd1_dc8e9705",
+      "range": {
+        "startLine": 107,
+        "startChar": 13,
+        "endLine": 107,
+        "endChar": 21
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9698903a_3bd8f5eb",
         "filename": "appengine/tsmon/middleware.go",
         "patchSetId": 7
@@ -137,6 +257,30 @@
       "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fde1a9e_bb8fd7c7",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9698903a_3bd8f5eb",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 3
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "0c9bddf7_82ad25b6",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59264fa5_591791d8",
+      "range": {
+        "startLine": 258,
+        "startChar": 0,
+        "endLine": 261,
+        "endChar": 2
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ce852bb_ad96d808",
         "filename": "appengine/tsmon/middleware.go",
         "patchSetId": 7
@@ -183,6 +351,30 @@
       "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "977f5af4_e87994d2",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ce852bb_ad96d808",
+      "range": {
+        "startLine": 272,
+        "startChar": 37,
+        "endLine": 272,
+        "endChar": 41
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "4e55eb07_e906ab62",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6b712bf_015df354",
+      "range": {
+        "startLine": 322,
+        "startChar": 27,
+        "endLine": 322,
+        "endChar": 35
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e767c890_1b4badff",
         "filename": "appengine/tsmon/middleware.go",
         "patchSetId": 7
@@ -229,6 +445,30 @@
       "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5d79f65_3bf4faf5",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e767c890_1b4badff",
+      "range": {
+        "startLine": 323,
+        "startChar": 24,
+        "endLine": 323,
+        "endChar": 53
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -255,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "ba032721_bddbb0cc",
+        "filename": "appengine/tsmon/middleware_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "611d095a_0ffedf03",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c8dc19ba_91f64bdb",
         "filename": "appengine/tsmon/middleware_test.go",
         "patchSetId": 7
@@ -275,6 +539,30 @@
       "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdb21ddb_85f7ebd2",
+        "filename": "appengine/tsmon/middleware_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c8dc19ba_91f64bdb",
+      "range": {
+        "startLine": 116,
+        "startChar": 18,
+        "endLine": 116,
+        "endChar": 22
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

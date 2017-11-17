@@ -22,6 +22,30 @@
       "revId": "ab6917799c0ce8205fbb42765058d62957bf5cc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c204de89_81c8bda5",
+        "filename": "appengine/tsmon/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-17T23:14:03Z",
+      "side": 0,
+      "message": "It never worked. \n\n1) It was wrong and never really matched luci-py value.\n2) dscache and ndb memcache do not match together, mixing go and python code \u003d\u003e fail.",
+      "parentUuid": "63522730_b21a9caa",
+      "range": {
+        "startLine": 47,
+        "startChar": 43,
+        "endLine": 48,
+        "endChar": 62
+      },
+      "revId": "ab6917799c0ce8205fbb42765058d62957bf5cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
