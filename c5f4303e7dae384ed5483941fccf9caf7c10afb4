@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0691bf97_41c790e7",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T04:55:23Z",
+      "side": 1,
+      "message": "or even better, limiting can be implemented at the datastore package level, so that we can use unbounded FanOutIn here safely.",
+      "parentUuid": "12ab8397_8c62b97e",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7d02eec4_5ad26210",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
