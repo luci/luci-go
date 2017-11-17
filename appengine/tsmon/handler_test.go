@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -28,21 +30,15 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/server/router"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type fakeInfo struct {
-	info.RawInterface
-}
-
-func (i *fakeInfo) InstanceID() string { return "instance" }
-func (i *fakeInfo) ModuleName() string { return "module" }
-
 func TestFindGaps(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		numbers        []int
 		wantFirst5Gaps []int
@@ -79,35 +75,58 @@ func buildGAETestContext() (context.Context, testclock.TestClock) {
 	c := gaetesting.TestingContext()
 	c, clock := testclock.UseTime(c, testclock.TestTimeUTC)
 	ds.GetTestable(c).Consistent(true)
-	c = info.MustNamespace(c, instanceNamespace)
 	c = gologger.StdConfig.Use(c)
-
-	c = info.AddFilters(c, func(c context.Context, base info.RawInterface) info.RawInterface {
-		return &fakeInfo{base}
-	})
 
 	c, _, _ = tsmon.WithFakes(c)
 	return c, clock
 }
 
-func buildTestState() (*State, *monitor.Fake) {
+func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
 	mon := &monitor.Fake{}
+	allocator := &fakeNumAllocator{}
 	return &State{
-		testingMonitor: mon,
+		Target: func(c context.Context) target.Task {
+			return target.Task{
+				DataCenter:  "appengine",
+				ServiceName: "app-id",
+				JobName:     "service-name",
+				HostName:    "12345-version",
+			}
+		},
+		TaskID:           func(c context.Context) string { return "some.task.id" },
+		TaskNumAllocator: allocator,
+		IsDevMode:        false, // hit same paths as prod
+		testingMonitor:   mon,
 		testingSettings: &tsmonSettings{
 			Enabled:          true,
 			FlushIntervalSec: 60,
 		},
-	}, mon
+	}, mon, allocator
+}
+
+type fakeNumAllocator struct {
+	taskNum int
+	taskIDs []string
+}
+
+func (a *fakeNumAllocator) NotifyTaskIsAlive(c context.Context, taskID string) (int, error) {
+	a.taskIDs = append(a.taskIDs, taskID)
+	if a.taskNum == -1 {
+		return 0, ErrNoTaskNumber
+	}
+	return a.taskNum, nil
 }
 
 func TestHousekeepingHandler(t *testing.T) {
+	t.Parallel()
+
+	allocator := DatastoreTaskNumAllocator{}
+
 	Convey("Assigns task numbers to unassigned instances", t, func() {
 		c, _ := buildGAETestContext()
 
-		i, err := getOrCreateInstanceEntity(c)
-		So(err, ShouldBeNil)
-		So(i.TaskNum, ShouldEqual, -1)
+		_, err := allocator.NotifyTaskIsAlive(c, "some.task.id")
+		So(err, ShouldEqual, ErrNoTaskNumber)
 
 		rec := httptest.NewRecorder()
 		housekeepingHandler(&router.Context{
@@ -117,22 +136,16 @@ func TestHousekeepingHandler(t *testing.T) {
 		})
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		i, err = getOrCreateInstanceEntity(c)
+		i, err := allocator.NotifyTaskIsAlive(c, "some.task.id")
 		So(err, ShouldBeNil)
-		So(i.TaskNum, ShouldEqual, 0)
+		So(i, ShouldEqual, 0)
 	})
 
 	Convey("Doesn't reassign the same task number", t, func() {
-		c, clock := buildGAETestContext()
+		c, _ := buildGAETestContext()
 
-		otherInstance := instance{
-			ID:          "foobar",
-			TaskNum:     0,
-			LastUpdated: clock.Now(),
-		}
-		So(ds.Put(c, &otherInstance), ShouldBeNil)
-
-		getOrCreateInstanceEntity(c)
+		allocator.NotifyTaskIsAlive(c, "some.task.0")
+		allocator.NotifyTaskIsAlive(c, "some.task.1")
 
 		rec := httptest.NewRecorder()
 		housekeepingHandler(&router.Context{
@@ -142,13 +155,18 @@ func TestHousekeepingHandler(t *testing.T) {
 		})
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		i, err := getOrCreateInstanceEntity(c)
+		i, err := allocator.NotifyTaskIsAlive(c, "some.task.0")
 		So(err, ShouldBeNil)
-		So(i.TaskNum, ShouldEqual, 1)
+		So(i, ShouldEqual, 0)
+
+		i, err = allocator.NotifyTaskIsAlive(c, "some.task.1")
+		So(err, ShouldBeNil)
+		So(i, ShouldEqual, 1)
 	})
 
 	Convey("Expires old instances", t, func() {
 		c, clock := buildGAETestContext()
+		c = info.MustNamespace(c, instanceNamespace)
 
 		for _, count := range []int{1, int(taskQueryBatchSize) + 1} {
 			Convey(fmt.Sprintf("Count: %d", count), func() {
