@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "372d06e7_766cdf8f",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T19:40:25Z",
+      "side": 1,
+      "message": "nice!",
+      "range": {
+        "startLine": 122,
+        "startChar": 15,
+        "endLine": 122,
+        "endChar": 29
+      },
+      "revId": "8a8e791334a2b27a992a42c6010ece45ff441cb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a32b3335_f6eca94c",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T19:40:25Z",
+      "side": 1,
+      "message": "%s\nhttps://play.golang.org/p/jx262btwDP",
+      "range": {
+        "startLine": 53,
+        "startChar": 30,
+        "endLine": 53,
+        "endChar": 34
+      },
+      "revId": "8a8e791334a2b27a992a42c6010ece45ff441cb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "669eece0_ce4cdb11",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T19:40:25Z",
+      "side": 1,
+      "message": "looks like we load same console summaries twice here:\n\nconsole() -\u003e consoleHeader() -\u003e consoleHeaderGroups() -\u003e GetConsoleSummaries() -\u003e GetConsoleSummary()\n\nconsole() -\u003e getBuilderSummaries() -\u003e GetConsoleSummary()\n\nthis is inefficient\n\nConsoleSummaryGroup comment says that we currently support cross-project consoles, so let\u0027s fetch all consoles of the project, make a map {consoleID -\u003e console} and pass the map to the individual functions. That will reduce amount of code and make this code faster.",
+      "revId": "8a8e791334a2b27a992a42c6010ece45ff441cb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
