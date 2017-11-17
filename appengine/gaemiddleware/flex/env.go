@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
@@ -41,6 +40,9 @@ import (
 )
 
 var (
+	// ListeningAddr is a address to bind the listening socket to.
+	ListeningAddr string
+
 	// globalFlex is the global luci/gae cloud Flex services definition.
 	globalFlex *cloud.Flex
 
@@ -72,14 +74,20 @@ var (
 	}
 )
 
+func init() {
+	if metadata.OnGCE() {
+		ListeningAddr = ":8080" // assume real Flex
+	} else {
+		ListeningAddr = "127.0.0.1:8080" // dev environment
+	}
+}
+
 // ReadOnlyFlex is an Environment designed for cooperative Flex support
 // environments.
 var ReadOnlyFlex = gaemiddleware.Environment{
 	MemcacheAvailable: false,
 	DSReadOnly:        true,
-	Prepare: func() {
-		// Context to use for initialization.
-		c := context.Background()
+	Prepare: func(c context.Context) {
 		globalFlex = &cloud.Flex{
 			Cache: lru.New(65535),
 		}
@@ -91,13 +99,8 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 	WithInitialRequest: func(c context.Context, req *http.Request) context.Context {
 		// Install the HTTP inbound request into the Context.
 		c = withHTTPRequest(c, req)
-
 		// Install our Cloud services.
-		flexReq := globalFlex.Request(req)
-		c = globalFlexConfig.Use(c, flexReq)
-
-		logging.Infof(c, "Handling request for trace context: %s", flexReq.TraceID)
-		return c
+		return globalFlexConfig.Use(c, globalFlex.Request(req))
 	},
 	WithConfig: gaeconfig.UseFlex,
 	WithAuth: func(c context.Context) context.Context {
