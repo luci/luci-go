@@ -21,8 +21,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/common/tsmon/runtimestats"
-	"go.chromium.org/luci/common/tsmon/versions"
 )
 
 var (
@@ -44,16 +42,6 @@ func collectGlobalMetrics(c context.Context) {
 		defaultVersion.Set(c, "(unknown)")
 	} else {
 		defaultVersion.Set(c, version)
-	}
-}
-
-// collectProcessMetrics populates per-process metrics.
-//
-// It is called by each individual process right before flushing the metrics.
-func collectProcessMetrics(c context.Context, s *tsmonSettings) {
-	versions.Report(c)
-	if s.ReportRuntimeStats {
-		runtimestats.Report(c)
 	}
 }
 

@@ -21,7 +21,9 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
+
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/tsmon"
 )
 
 const (
@@ -56,7 +58,7 @@ func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, taskID str
 		return datastore.Put(c, &entity)
 	}, nil)
 	if err == nil && taskNum == -1 {
-		err = ErrNoTaskNumber
+		err = tsmon.ErrNoTaskNumber
 	}
 	return
 }
