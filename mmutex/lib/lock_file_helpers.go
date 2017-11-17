@@ -20,7 +20,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -33,8 +37,18 @@ const LockFileName = "mmutex.lock"
 // DrainFileName specifies the name of the drain file within $MMUTEX_LOCK_DIR.
 const DrainFileName = "mmutex.drain"
 
-var fslockTimeout = 2 * time.Hour
-var fslockPollingInterval = 5 * time.Second
+// DefaultCommandTimeout is the total amount of time, including lock acquisition
+// and command runtime, allotted to running a command through mmutex.
+const DefaultCommandTimeout = 2 * time.Hour
+
+// lockAcquisitionAttempts is the number of times that the blocker should attempt to
+// acquire the lock. This is approximate, especially when making a high number of
+// attempts over a short period of time.
+const lockAcquisitionAttempts = 100
+
+// defaultLockPollingInterval is the polling interval used if no command
+// timeout is specified.
+const defaultLockPollingInterval = time.Millisecond
 
 // computeMutexPaths returns the lock and drain file paths based on the environment,
 // or empty strings if no lock files should be used.
@@ -55,4 +69,20 @@ func computeMutexPaths(env subcommands.Env) (lockFilePath string, drainFilePath 
 	}
 
 	return filepath.Join(lockFileDir, LockFileName), filepath.Join(lockFileDir, DrainFileName), nil
+}
+
+func createLockBlocker(ctx context.Context) fslock.Blocker {
+	pollingInterval := defaultLockPollingInterval
+	if deadline, ok := ctx.Deadline(); ok {
+		pollingInterval = clock.Until(ctx, deadline) / (lockAcquisitionAttempts - 1)
+	}
+
+	return func() error {
+		if clock.Sleep(ctx, pollingInterval).Err != nil {
+			return fslock.ErrLockHeld
+		}
+
+		// Returning nil signals that the lock should be retried.
+		return nil
+	}
 }

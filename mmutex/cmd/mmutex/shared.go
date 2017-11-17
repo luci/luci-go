@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
@@ -56,7 +57,10 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 // RunShared runs the command with the specified environment while holding a
 // shared mmutex lock.
 func RunShared(ctx context.Context, env subcommands.Env, command []string) error {
-	return lib.RunShared(context.Background(), env, func(ctx context.Context) error {
+	ctx, cancel := clock.WithTimeout(ctx, lib.DefaultCommandTimeout)
+	defer cancel()
+
+	return lib.RunShared(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)
 	})
 }

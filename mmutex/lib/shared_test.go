@@ -61,12 +61,7 @@ func TestShared(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			oldFslockTimeout := fslockTimeout
-			fslockTimeout = 5 * time.Millisecond
-			defer func() {
-				fslockTimeout = oldFslockTimeout
-			}()
-
+			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
 			start := time.Now()
 			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
@@ -78,7 +73,7 @@ func TestShared(t *testing.T) {
 			err := RunShared(ctx, env, func(ctx context.Context) error {
 				return clock.Sleep(ctx, time.Millisecond).Err
 			})
-			So(err, ShouldErrLike, "context deadline exceeded")
+			So(err, ShouldErrLike, "context canceled")
 		})
 
 		Convey("executes the command if shared lock already held", func() {
