@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5b05be1c_d49811de",
+        "filename": "appengine/tsmon/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T07:39:08Z",
+      "side": 1,
+      "message": "can you add here that DatastoreTaskNumAllocator doesn\u0027t actually assign numbers, which is done by a cron job (iiuc)",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 77
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "641d2f75_d5470d2c",
         "filename": "appengine/tsmon/common.go",
         "patchSetId": 7
