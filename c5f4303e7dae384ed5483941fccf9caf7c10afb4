@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "0c564c80_77f94191",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "I\u0027ll leave it as a workpool but bump it from 4-\u003e16",
+      "parentUuid": "0691bf97_41c790e7",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d02eec4_5ad26210",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -54,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "e43a3105_6e3b7fc9",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "I like it!",
+      "parentUuid": "7d02eec4_5ad26210",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c182ee71_66ecb296",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -68,6 +104,24 @@
       "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebeab514_1ffed534",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c182ee71_66ecb296",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +148,30 @@
     },
     {
       "key": {
+        "uuid": "72ff2829_1ea794a4",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "faf5a4ef_e24ed22c",
+      "range": {
+        "startLine": 186,
+        "startChar": 45,
+        "endLine": 186,
+        "endChar": 71
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35a5ef66_e19c86c9",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -108,6 +186,24 @@
       "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fd3b06b_b615d856",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "TBH I don\u0027t like that style as much because it looks confusing (more nested parens in brackets), but I\u0027ll do it to be consistent.",
+      "parentUuid": "35a5ef66_e19c86c9",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +253,54 @@
     },
     {
       "key": {
+        "uuid": "9a2129ca_cec3e100",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a87554de_eddba2d3",
+      "range": {
+        "startLine": 319,
+        "startChar": 1,
+        "endLine": 319,
+        "endChar": 7
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ca2d2384_2f9ad5c5",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3457f00_39e8e1ea",
+      "range": {
+        "startLine": 319,
+        "startChar": 11,
+        "endLine": 319,
+        "endChar": 25
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecbef095_41e408f5",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -177,6 +321,30 @@
       "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99a37a98_3ed87f9e",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecbef095_41e408f5",
+      "range": {
+        "startLine": 335,
+        "startChar": 1,
+        "endLine": 335,
+        "endChar": 7
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +371,30 @@
     },
     {
       "key": {
+        "uuid": "8bd04dce_59ba4712",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f5d0132_968f57a1",
+      "range": {
+        "startLine": 345,
+        "startChar": 31,
+        "endLine": 345,
+        "endChar": 34
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a1a9f8e_86a57c7e",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -217,6 +409,24 @@
       "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0a3da82_8ae1f418",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8a1a9f8e_86a57c7e",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +447,24 @@
     },
     {
       "key": {
+        "uuid": "92b94a84_60a913df",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "fwiw i didn\u0027t change this code in this CL.  The cross-project limitation is temporary and not permanent, should should be replaced with an ACL check, which is user specific and can only be done at runtime.",
+      "parentUuid": "63086f3f_14b42eb4",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b10e2bc_3c068a45",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -251,6 +479,24 @@
       "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "def46c8f_5a7c9d61",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "It kind of feels like a lot more code... But I did miss this one!!  This should\u0027ve been running more concurrently.",
+      "parentUuid": "5b10e2bc_3c068a45",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -271,6 +517,24 @@
     },
     {
       "key": {
+        "uuid": "b40bcdcb_16dd8905",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0023f6fd_58ebe27d",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f79f26c2_0b542a90",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -285,6 +549,24 @@
       "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dafc66a_5a6d4a12",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f79f26c2_0b542a90",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -308,6 +590,30 @@
       "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5b8514c_1a5738ef",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-17T07:43:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41376e4e_54a3c319",
+      "range": {
+        "startLine": 423,
+        "startChar": 29,
+        "endLine": 423,
+        "endChar": 33
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
