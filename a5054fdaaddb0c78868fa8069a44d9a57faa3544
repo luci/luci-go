@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21aceb9c_5069c427",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-17T00:40:25Z",
+      "side": 1,
+      "message": "Schema for this table is here:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/machine-db/appengine/database/setup/migrations/001_initialize_datacenters.up.sql",
+      "revId": "a5054fdaaddb0c78868fa8069a44d9a57faa3544",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
