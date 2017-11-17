@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "3965673a_d2031198",
+        "filename": "appengine/tsmon/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T23:32:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6aed70f5_2faebe57",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 22
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a135104_24f04f99",
         "filename": "appengine/tsmon/middleware.go",
         "patchSetId": 7
@@ -140,6 +164,30 @@
       "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c202479_e498d691",
+        "filename": "appengine/tsmon/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-17T23:32:06Z",
+      "side": 1,
+      "message": "i meant to emphasize **also**, as otherwise it may seem like TaskId only purpose is to be used for task num allocation.",
+      "parentUuid": "d0ae7c74_9f24a044",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 38
+      },
+      "revId": "7a2d469b5dd0db1ea322d074918275fb53abc714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
