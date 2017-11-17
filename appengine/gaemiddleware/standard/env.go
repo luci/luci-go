@@ -16,9 +16,12 @@
 package standard
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"go.chromium.org/luci/common/sync/mutexpool"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -32,6 +35,7 @@ import (
 	"go.chromium.org/luci/appengine/tsmon"
 
 	"go.chromium.org/gae/impl/prod"
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/urlfetch"
 
 	"google.golang.org/appengine"
@@ -63,8 +67,23 @@ var (
 		IsDevMode:           appengine.IsDevAppServer(),
 	}
 
-	// globalTsMonState holds state related to time series monitoring.
-	globalTsMonState = &tsmon.State{}
+	// globalTsMonState holds configuration and state related to time series
+	// monitoring.
+	globalTsMonState = &tsmon.State{
+		IsDevMode: appengine.IsDevAppServer(),
+		Target: func(c context.Context) target.Task {
+			return target.Task{
+				DataCenter:  "appengine",
+				ServiceName: info.AppID(c),
+				JobName:     info.ModuleName(c),
+				HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
+			}
+		},
+		TaskID: func(c context.Context) string {
+			return fmt.Sprintf("%s.%s.%s", info.InstanceID(c), info.VersionID(c), info.ModuleName(c))
+		},
+		TaskNumAllocator: tsmon.DatastoreTaskNumAllocator{},
+	}
 )
 
 // classicEnv is an AppEngine Classic GAE environment configuration. This is the

@@ -23,11 +23,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/settings"
 )
+
+// prodXEndpoint is endpoint to send metrics to.
+//
+// Hardcoded for now...
+const prodXEndpoint = "https://prodxmon-pa.googleapis.com/v1:insert"
 
 // settingsKey is key for tsmon settings (described by tsmonSettings struct)
 // in the settings store. See go.chromium.org/luci/server/settings.
@@ -98,10 +102,17 @@ func (settingsUIPage) Title(c context.Context) (string, error) {
 }
 
 func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	serviceAcc, err := info.ServiceAccount(c)
-	if err != nil {
-		return nil, err
+	serviceAcc := "<unknown>"
+
+	signer := auth.GetSigner(c)
+	if signer != nil {
+		info, err := signer.ServiceInfo(c)
+		if err != nil {
+			return nil, err
+		}
+		serviceAcc = info.ServiceAccountName
 	}
+
 	return []settings.UIField{
 		settings.YesOrNoField(settings.UIField{
 			ID:    "Enabled",
