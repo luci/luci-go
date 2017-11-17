@@ -1,0 +1,295 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12ab8397_8c62b97e",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "this might be dangerous because we now send an unbounded number of requests to external resources (datastore), we can exhaust a system resource (e.g. file descriptors for outgoing connections). Please increase/tune the number instead. It is ok to have it large, but not infinity like it is in this patchset",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d02eec4_5ad26210",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "nit: we have 3 time variables for measuring time. Consider reusing one tStart with clock.Since\n\ntStart \u003d clock.Now(c)\n// do foo\nlog(foo took, clock.Since(tStart))\n\ntStart \u003d clock.Now(c)\n// do bar\nlog(bar took, clock.Since(tStart))\n\nstepping back, it looks like this code is copied 5 times below. Consider\n\nfunc timed(title string) func() {\n  tStart :\u003d now\n  return func() {\n    log duration\n  }\n}\n\nt :\u003d timed(\"loading from datastore\")\n// load from datastore\nt()",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c182ee71_66ecb296",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "and here timed would be used\n\n  defer timed(\"header\")()\n\nit calls timed(\"header\") right away and calls the returned function later",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faf5a4ef_e24ed22c",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "equivalent to clock.Since(tStart)",
+      "range": {
+        "startLine": 186,
+        "startChar": 45,
+        "endLine": 186,
+        "endChar": 71
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35a5ef66_e19c86c9",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "all usages of FanOutIn seems to use an inlined function\nhttps://cs.chromium.org/search/?q\u003d%5C.FanOutIn+-FanOutIn%5C(func\u0026sq\u003dpackage:chromium\u0026type\u003dcs\nlet\u0027s be consistent. It also reduces number of names by one\nI think putting L177-L180 into the func is ok",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3457f00_39e8e1ea",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "unnecessary\n\nyou don\u0027t do that in L335",
+      "range": {
+        "startLine": 319,
+        "startChar": 11,
+        "endLine": 319,
+        "endChar": 25
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a87554de_eddba2d3",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 319,
+        "startChar": 1,
+        "endLine": 319,
+        "endChar": 7
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecbef095_41e408f5",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 335,
+        "startChar": 1,
+        "endLine": 335,
+        "endChar": 7
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f5d0132_968f57a1",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "gen is the argument to FanOutIn, i.e. the function that you wrote. The parameter represents work. In another place you use name \"ch\"",
+      "range": {
+        "startLine": 345,
+        "startChar": 31,
+        "endLine": 345,
+        "endChar": 34
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a1a9f8e_86a57c7e",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "this one is okish because in practice we don\u0027t have a lot of oncalls",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63086f3f_14b42eb4",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "this does not quite make sense to me\n\nthis prohibits referencing a console in a different project. If we intend to prohibit this indeed, why didn\u0027t we do it at config ingestion time? in both cases, this check shouldn\u0027t be here",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b10e2bc_3c068a45",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "this can be further optimized (easily) by collecting a set of unique console ids in the L361 loop, then call GetConsoleSummaries just once, and then distributing results to different console groups",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0023f6fd_58ebe27d",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "nit: currently the code is structured\n\n  compute summaries\n  compute and set title\n  set summaries\n\nwould could set summaries earlier, then could be structured\n\n  compute summaries\n  set summaries\n  set title\n\nplease move this after L370",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f79f26c2_0b542a90",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "let\u0027s do this check before sending to ch",
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41376e4e_54a3c319",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T03:56:36Z",
+      "side": 1,
+      "message": "same here, please inline",
+      "range": {
+        "startLine": 423,
+        "startChar": 29,
+        "endLine": 423,
+        "endChar": 33
+      },
+      "revId": "c5f4303e7dae384ed5483941fccf9caf7c10afb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
