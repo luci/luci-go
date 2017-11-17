@@ -1,0 +1,203 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec2ee111_c0859b63",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "are all these ` are unnecessary? they require you manually insert them everywhere and makes code slightly less readable",
+      "range": {
+        "startLine": 43,
+        "startChar": 44,
+        "endLine": 43,
+        "endChar": 45
+      },
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccabeef8_0fac2e5c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "nit: consider something shorter, e.g. stmt",
+      "range": {
+        "startLine": 43,
+        "startChar": 7,
+        "endLine": 43,
+        "endChar": 16
+      },
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7463307_824e4f42",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "return errors.Annotate(err, \"failed to fetch datacenter\").Err()",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7edd7a73_a83108dc",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "i\u0027ve noticed that sql table definition does not have a constraint that name is unique. It is better to have it, so we have an extra guarantee from the database",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6092bfb_7bc5ab4f",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "i think this is racy because there is no db transaction",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "641a09a0_c5c6c0c5",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "725cf807_fff7e936",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7574800_9cda871c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "consider using https://dev.mysql.com/doc/refman/5.7/en/string-functions.html#function_find-in-set\nif batched, we will no longer need to prepare delete stmt",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbe900fe_e22b059a",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f0bc37c_5fd81d10",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "it seems that you will either have to dup this code for every config entity, or generalize using reflection. I recommend the latter.\nhttps://godoc.org/github.com/golang/protobuf/proto#GetProperties can be used to retrieve properties and compose queries. This can be done in a separate CL when we verify that this works",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcf36d9d_99ccfbea",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-17T16:38:04Z",
+      "side": 1,
+      "message": "if we have a service per config entity, it means we have one method per service. This requires writing more code.\nAny reason not have just one service for all resources? or at least one service for resources defined in config and one service for resources living in database? not a part of this CL",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
