@@ -31,46 +31,86 @@ import (
 )
 
 // EnsureDatacenters ensures the database contains exactly the given datacenters.
-func EnsureDatacenters(c context.Context, datacenters []*config.DatacenterConfig) error {
+func EnsureDatacenters(c context.Context, datacenterConfigs []*config.DatacenterConfig) error {
 	db := database.Get(c)
 
-	// TODO(smut): Update existing datacenters, remove datacenters no longer referenced in the config.
-	// For now we just delete and re-add datacenters. Since only one cron job calls this, and only
-	// every 10 minutes, we don't use a transaction because we don't expect any collisions yet.
-	rows, err := db.QueryContext(c, "SELECT `id`, `name` from `datacenters`")
+	// Convert the list of DatacenterConfigs into a map of datacenter name to DatacenterConfig.
+	datacenters := make(map[string]*config.DatacenterConfig, len(datacenterConfigs))
+	for _, datacenter := range datacenterConfigs {
+		datacenters[datacenter.Name] = datacenter
+	}
+
+	updateStatement, err := db.Prepare("UPDATE `datacenters` SET `description` = ? WHERE `id` = ?")
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %s", err.Error())
+	}
+	defer updateStatement.Close()
+
+	deleteStatement, err := db.Prepare("DELETE FROM `datacenters` WHERE `id` = ?")
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %s", err.Error())
+	}
+	defer deleteStatement.Close()
+
+	insertStatement, err := db.Prepare("INSERT INTO `datacenters` (`name`, `description`) VALUES (?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %s", err.Error())
+	}
+	defer insertStatement.Close()
+
+	rows, err := db.Query("SELECT `id`, `name`, `description` FROM `datacenters`")
 	if err != nil {
 		return fmt.Errorf("failed to fetch datacenters: %s", err.Error())
 	}
 	defer rows.Close()
-	// TODO(smut): Delete multiple at once.
-	statement, err := db.PrepareContext(c, "DELETE FROM `datacenters` WHERE `id` = ?")
-	if err != nil {
-		return fmt.Errorf("failed to prepare statement: %s", err.Error())
-	}
-	defer statement.Close()
+
+	// Update existing datacenters, delete datacenters no longer referenced in the config.
+	// TODO(smut): Collect the names of datacenters to update/delete and batch the operations.
 	for rows.Next() {
 		var id int
-		var name string
-		err = rows.Scan(&id, &name)
+		var name, description string
+		err := rows.Scan(&id, &name, &description)
 		if err != nil {
 			return fmt.Errorf("failed to fetch datacenter: %s", err.Error())
 		}
-		_, err = statement.ExecContext(c, id)
-		logging.Infof(c, "Deleted datacenter: %s", name)
+		if datacenter, ok := datacenters[name]; ok {
+			// Datacenter found in the config, update if necessary.
+			if description != datacenter.Description {
+				if _, err := updateStatement.Exec(datacenter.Description, id); err != nil {
+					// This function is called from cron, so it's okay to return early
+					// in the event of an error. Eventually the database will be consistent
+					// with the config.
+					return fmt.Errorf("failed to update datacenter: %s", err.Error())
+				}
+				logging.Infof(c, "Updated datacenter: %s", name)
+			}
+			// The config enforces global uniqueness of names, and since the config is the only
+			// way to insert datacenters, we don't expect to see the same named datacenter again.
+			// Remove it from the map, which will leave only those datacenters which don't exist
+			// in the database when the loop terminates.
+			delete(datacenters, name)
+		} else {
+			// Datacenter not found in the config, delete it from the database.
+			if _, err := deleteStatement.Exec(id); err != nil {
+				return fmt.Errorf("failed to delete datacenter: %s", err.Error())
+			}
+			logging.Infof(c, "Deleted datacenter: %s", name)
+		}
 	}
 
-	// TODO(smut): Insert multiple at once.
-	statement, err = db.PrepareContext(c, "INSERT INTO `datacenters` (`name`, `description`) VALUES (?, ?)")
-	if err != nil {
-		return fmt.Errorf("failed to prepare statement: %s", err.Error())
-	}
-	defer statement.Close()
-	for _, datacenter := range datacenters {
-		_, err := statement.ExecContext(c, datacenter.Name, datacenter.Description)
-		if err != nil {
-			return fmt.Errorf("failed to add datacenter: %s", err.Error())
+	// Add new datacenters.
+	// Iterating over datacenters would be faster because it now only contains those datacenters not
+	// present in the database, but non-deterministic because it's a map. Instead iterate over
+	// datacenterConfigs deterministically and check if each datacenter is in the datacenters map.
+	// If so, it needs to be added to the database.
+	// TODO(smut): Batch this.
+	for _, datacenter := range datacenterConfigs {
+		if _, ok := datacenters[datacenter.Name]; ok {
+			if _, err := insertStatement.Exec(datacenter.Name, datacenter.Description); err != nil {
+				return fmt.Errorf("failed to add datacenter: %s", err.Error())
+			}
+			logging.Infof(c, "Added datacenter: %s", datacenter.Name)
 		}
-		logging.Infof(c, "Added datacenter: %s", datacenter.Name)
 	}
 	return nil
 }
