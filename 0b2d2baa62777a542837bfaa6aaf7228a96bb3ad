@@ -1,0 +1,508 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f1931ad1_cced1be6",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 79,
+        "startChar": 27,
+        "endLine": 79,
+        "endChar": 34
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c253797_598c9c2e",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "nit: Golang does not like \"get\" prefix in getters https://golang.org/doc/effective_go.html#Getters\nconsider just \"BuildIDLink\"",
+      "range": {
+        "startLine": 79,
+        "startChar": 5,
+        "endLine": 79,
+        "endChar": 25
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14b6d7d4_2366521e",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "stringset.New(0)\n\nmove to closer to usage",
+      "range": {
+        "startLine": 192,
+        "startChar": 9,
+        "endLine": 192,
+        "endChar": 31
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49d52bd8_79757f4b",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "this creates a slice of length 0 https://play.golang.org/p/HWozjObxR7 and this allocation will ultimately be for nothing because there is no space to store anything\n\nvar cons []*common.Console",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54b6ddd4_df132b61",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "this handles an error twice: logging and return. This may causing logging an error twice. An error should be handled once. please return an annotated error, i.e. errors.Annotate(err, \"error getting....\")",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2390fbac_fee2d7e6",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 197,
+        "startChar": 9,
+        "endLine": 197,
+        "endChar": 19
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45ede20e_87af1498",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "builders :\u003d bSet.ToSlice()",
+      "range": {
+        "startLine": 206,
+        "startChar": 1,
+        "endLine": 210,
+        "endChar": 2
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29450787_95a61db2",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "strings.Sort(builders)",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 2
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02bbdfac_8bf7753b",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 222,
+        "startChar": 36,
+        "endLine": 222,
+        "endChar": 43
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c596b408_a9e67251",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "b is a too cryptic in this context, e.g. it is not obvious that model.getHistory returns a history of a builder. Please rename b to builderID",
+      "range": {
+        "startLine": 222,
+        "startChar": 35,
+        "endLine": 222,
+        "endChar": 36
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b28a20a_94525ea1",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "nit: please move p, r, l closer to their usage.\nmoreover p and r can be inlined",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef2b75da_812bf1fd",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "unnecessary. int(pending) won\u0027t fail in case of an error and this could be shorter",
+      "range": {
+        "startLine": 243,
+        "startChar": 3,
+        "endLine": 243,
+        "endChar": 18
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27e9d225_397bff95",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 252,
+        "startChar": 3,
+        "endLine": 252,
+        "endChar": 18
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2af59551_bc4a752d",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "i think we can append right to hist.RecentBuilds, and then you don\u0027t need L272-274",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b83f58d0_915252d7",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "this copies a BuildSummary which is pretty beefy. Consider using a slice of pointers instead",
+      "range": {
+        "startLine": 266,
+        "startChar": 24,
+        "endLine": 266,
+        "endChar": 25
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be35403a_09a973b5",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "remove?",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93cd20f2_e8c9440b",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "returned error is ignored\n\nplease do\n\n  err :\u003d datastore.Put(........\n  So(err, ShouldBeNil)",
+      "range": {
+        "startLine": 209,
+        "startChar": 2,
+        "endLine": 209,
+        "endChar": 15
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13f85836_64daba32",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "since this code is not perf critical, I think it should be optimized for simplicity. IMO a simple `for i :\u003d 0; i \u003c 8; i++ {` loop would be simpler and in L238 we could use append",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e221c888_6bbcc03a",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "err :\u003d datastore.Put(c, builds)\nSo(err, ShouldBeNil)",
+      "range": {
+        "startLine": 247,
+        "startChar": 2,
+        "endLine": 249,
+        "endChar": 3
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50250953_408ac211",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "this convey has only one child. can they be merged?",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5130f3c1_1fd8fce5",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "curious why not \n\n  So(hists, ShouldResemable, ...)",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 6
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "246083c8_592ea1ae",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "So(hists, ShouldHaveLength, 2)",
+      "range": {
+        "startLine": 276,
+        "startChar": 5,
+        "endLine": 276,
+        "endChar": 35
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f423d84_cb902297",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "So(hists, ShouldHaveLength, 0)",
+      "range": {
+        "startLine": 299,
+        "startChar": 3,
+        "endLine": 299,
+        "endChar": 48
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f7b6f95_19332354",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-18T09:26:29Z",
+      "side": 1,
+      "message": "running-builds and pending-builds still repeat each other and the only difference is margins.\nthe intention for margins seems to be to separate running and pending builds from builder name and recent builds. If so, it could be more explicitly expressed by putting build counts into a new div settings its left and right margin to 1em",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
