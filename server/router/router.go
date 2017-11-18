@@ -29,7 +29,8 @@ type Router struct {
 	hrouter    *httprouter.Router
 	middleware MiddlewareChain
 	rootCtx    context.Context
-	BasePath   string
+
+	BasePath string
 }
 
 // Context contains the context, response writer, request, and params shared
@@ -72,8 +73,9 @@ func (r *Router) Use(mc MiddlewareChain) {
 func (r *Router) Subrouter(relativePath string) *Router {
 	newRouter := &Router{
 		hrouter:    r.hrouter,
-		BasePath:   makeBasePath(r.BasePath, relativePath),
 		middleware: r.middleware,
+		rootCtx:    r.rootCtx,
+		BasePath:   makeBasePath(r.BasePath, relativePath),
 	}
 	return newRouter
 }
