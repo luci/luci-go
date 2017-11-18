@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "974b1d88_f6041bec",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc6d9f15_86600c23",
+      "range": {
+        "startLine": 148,
+        "startChar": 14,
+        "endLine": 148,
+        "endChar": 16
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5fddc235_a5b2cdc7",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e86e820f_61601337",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5fddc235_a5b2cdc7",
+      "range": {
+        "startLine": 179,
+        "startChar": 25,
+        "endLine": 179,
+        "endChar": 26
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "afea1f3a_63e0835d",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -62,6 +110,24 @@
       "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "172d6d76_69f78777",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afea1f3a_63e0835d",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -123,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "83ad8184_71da45e5",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd3c87ee_ed866b1b",
+      "range": {
+        "startLine": 222,
+        "startChar": 0,
+        "endLine": 237,
+        "endChar": 1
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36fbd5a8_17e21bb2",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -146,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "6397009f_cdc2a2b0",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36fbd5a8_17e21bb2",
+      "range": {
+        "startLine": 242,
+        "startChar": 5,
+        "endLine": 242,
+        "endChar": 6
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba931972_18153d46",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -166,6 +280,30 @@
       "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "456f23f7_eeac2050",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba931972_18153d46",
+      "range": {
+        "startLine": 254,
+        "startChar": 18,
+        "endLine": 254,
+        "endChar": 31
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -204,6 +342,24 @@
     },
     {
       "key": {
+        "uuid": "7ad1ac80_1737fffb",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "As mentioned below and as per discussion, we\u0027ll forgo handling partial failures for now and just bail on the whole page.",
+      "parentUuid": "63f660e2_bb415609",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d37c281c_718c163d",
         "filename": "milo/frontend/appengine/static/common/css/builders.css",
         "patchSetId": 2
@@ -227,6 +383,30 @@
     },
     {
       "key": {
+        "uuid": "d90b45c5_5b853abf",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Defined .builder-state-bubble",
+      "parentUuid": "d37c281c_718c163d",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 20
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "767b738d_e0ab4feb",
         "filename": "milo/frontend/appengine/static/common/css/builders.css",
         "patchSetId": 2
@@ -238,6 +418,30 @@
       "writtenOn": "2017-11-17T22:09:07Z",
       "side": 1,
       "message": "FWIU, this, except align-items, MUST be same as incomplete builds. Can we apply both .builder-cell and .finished-builds? Then .finished-builds will have only align-items",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 14
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e6dc9eb_c8c4e698",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Not quite; flex-grow vs. percentage width are also different. I pulled out the common bits into .builder-state-bubble. Let me know what you think.",
+      "parentUuid": "767b738d_e0ab4feb",
       "range": {
         "startLine": 58,
         "startChar": 1,
@@ -273,6 +477,30 @@
     },
     {
       "key": {
+        "uuid": "bdeb8bd2_3f2c906c",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "25710d3a_62140117",
+      "range": {
+        "startLine": 64,
+        "startChar": 16,
+        "endLine": 64,
+        "endChar": 18
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d49057ba_ba042b96",
         "filename": "milo/frontend/appengine/static/common/css/builders.css",
         "patchSetId": 2
@@ -293,6 +521,30 @@
       "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78b84464_aa9c573f",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d49057ba_ba042b96",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 24
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -319,6 +571,30 @@
     },
     {
       "key": {
+        "uuid": "acd4a6fd_beddb380",
+        "filename": "milo/frontend/appengine/templates/pages/builders_relative_time.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc0a0966_2bcb4e04",
+      "range": {
+        "startLine": 17,
+        "startChar": 27,
+        "endLine": 17,
+        "endChar": 28
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed595a0c_593ac2dc",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 2
@@ -339,6 +615,30 @@
       "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "921a8599_18f6a10c",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed595a0c_593ac2dc",
+      "range": {
+        "startLine": 98,
+        "startChar": 4,
+        "endLine": 98,
+        "endChar": 18
+      },
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -371,6 +671,24 @@
       "side": 1,
       "message": "Yes, that\u0027s what was alluded to in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/777706/2#259 --- I haven\u0027t included yet functionality for handling the various errors, because we hadn\u0027t agreed yet on what the error handling should be.\n\nIf you like the idea, I can add \"[unknown] pending/running\" or \"? pending/running\", and empty boxes for the last run; can you elaborate on what you mean should change in builderHistory? I would have just left builderHistory as is, but depending on the tags in the error, change the message displayed.",
       "parentUuid": "c5792adc_ee646691",
+      "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79d6aa63_9d871c28",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T07:59:16Z",
+      "side": 1,
+      "message": "Discussed offline; since it seems more likely that either everything (most things) or nothing will fail, we\u0027ll just bail on the whole page.",
+      "parentUuid": "38570fc5_2969eb76",
       "revId": "e426d6ce66b0120f093cbd1cbea1349835eaebc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
