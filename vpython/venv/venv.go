@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -399,15 +398,9 @@ func (e *Env) AssertCompleteAndLoad() error {
 		return err
 	}
 
-	content, err := ioutil.ReadFile(e.EnvironmentStampPath)
-	if err != nil {
-		return errors.Annotate(err, "failed to load file from: %s", e.EnvironmentStampPath).Err()
-	}
-
 	var environment vpython.Environment
-	if err := proto.UnmarshalText(string(content), &environment); err != nil {
-		return errors.Annotate(err, "failed to unmarshal vpython.Env stamp from: %s",
-			e.EnvironmentStampPath).Err()
+	if err := spec.LoadEnvironment(e.EnvironmentStampPath, &environment); err != nil {
+		return err
 	}
 	if err := spec.NormalizeEnvironment(&environment); err != nil {
 		return errors.Annotate(err, "failed to normalize stamp environment").Err()

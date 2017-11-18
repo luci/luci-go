@@ -31,24 +31,6 @@ import (
 // Render creates a human-readable string from spec.
 func Render(spec *vpython.Spec) string { return proto.MarshalTextString(spec) }
 
-// NormalizeEnvironment normalizes the supplied Environment such that two
-// messages with identical meaning will have identical representation.
-func NormalizeEnvironment(env *vpython.Environment) error {
-	if env.Spec == nil {
-		env.Spec = &vpython.Spec{}
-	}
-	if err := NormalizeSpec(env.Spec, env.Pep425Tag); err != nil {
-		return err
-	}
-
-	if env.Runtime == nil {
-		env.Runtime = &vpython.Runtime{}
-	}
-
-	sort.Sort(pep425TagSlice(env.Pep425Tag))
-	return nil
-}
-
 // NormalizeSpec normalizes the specification Message such that two messages
 // with identical meaning will have identical representation.
 //
