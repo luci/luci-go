@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cad1db4e_ff196e39",
+        "filename": "vpython/spec/env.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-18T02:24:19Z",
+      "side": 1,
+      "message": "is this needed? aren\u0027t the env text protos always machine-generated (so they\u0027ll never have multi-line strings?)",
+      "range": {
+        "startLine": 40,
+        "startChar": 11,
+        "endLine": 40,
+        "endChar": 33
+      },
+      "revId": "91ac748215e4c284fc96adc0a5b9f8c19b865777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
