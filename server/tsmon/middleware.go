@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package tsmon
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -25,13 +24,15 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/runtimestats"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/versions"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
@@ -84,23 +85,6 @@ type State struct {
 	testingSettings *tsmonSettings  // mocked in unit tests
 }
 
-// ErrNoTaskNumber is returned by NotifyTaskIsAlive if the task wasn't given
-// a number yet.
-var ErrNoTaskNumber = errors.New("no task number assigned yet")
-
-// TaskNumAllocator is responsible for maintaining global mapping between task
-// IDs and task numbers.
-//
-// The mapping is dynamic. Once a task dies (i.e. stops periodically call
-// NotifyTaskIsAlive), its task number may be reused by some other (new) task.
-type TaskNumAllocator interface {
-	// NotifyTaskIsAlive is called periodically to make the allocator know the
-	// given task is still up. The allocator responds with the currently assigned
-	// task number or ErrNoTaskNumber if not yet assigned. Any other error should
-	// be considered transient.
-	NotifyTaskIsAlive(c context.Context, taskID string) (int, error)
-}
-
 const (
 	// noFlushErrorThreshold defines when we start to complain in error log that
 	// the last successful flush (if ever) was too long ago.
@@ -110,35 +94,8 @@ const (
 	flushTimeout = 5 * time.Second
 )
 
-// responseWriter wraps a given http.ResponseWriter, records its
-// status code and response size.
-type responseWriter struct {
-	http.ResponseWriter
-	writer iotools.CountingWriter
-	status int
-}
-
-func (rw *responseWriter) Write(buf []byte) (int, error) { return rw.writer.Write(buf) }
-
-func (rw *responseWriter) Size() int64 { return rw.writer.Count }
-
-func (rw *responseWriter) Status() int { return rw.status }
-
-func (rw *responseWriter) WriteHeader(code int) {
-	rw.status = code
-	rw.ResponseWriter.WriteHeader(code)
-}
-
-func newResponseWriter(rw http.ResponseWriter) *responseWriter {
-	return &responseWriter{
-		ResponseWriter: rw,
-		writer:         iotools.CountingWriter{Writer: rw},
-		status:         http.StatusOK,
-	}
-}
-
-// Middleware is a middleware that must be inserted into the middleware
-// chain to enable tsmon metrics to be send on AppEngine.
+// Middleware is a middleware that collects request metrics and triggers metric
+// flushes.
 func (s *State) Middleware(c *router.Context, next router.Handler) {
 	state, settings := s.checkSettings(c.Context)
 	if settings.Enabled {
@@ -274,8 +231,11 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 	c, cancel := clock.WithTimeout(c, flushTimeout)
 	defer cancel()
 
-	// Report per-process statistic, like memory stats.
-	collectProcessMetrics(c, settings)
+	// Report per-process statistic.
+	versions.Report(c)
+	if settings.ReportRuntimeStats {
+		runtimestats.Report(c)
+	}
 
 	// Unset 'flushingNow' no matter what (even on panics). Update 'nextFlush'
 	// only on successful flush or when we are still waiting for the task number.
