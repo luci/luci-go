@@ -39,3 +39,14 @@ indexes:
   - name: BuilderID
   - name: Summary.End
     direction: desc
+
+- kind: BuildSummary
+  properties:
+  - name: BuilderID
+  - name: Created
+    direction: desc
+
+- kind: BuildSummary
+  properties:
+  - name: BuilderID
+  - name: Summary.Status
