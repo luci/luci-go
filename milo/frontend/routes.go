@@ -65,9 +65,12 @@ func Run(templatePath string) {
 	r.GET("/opensearch.xml", frontendMW, searchXMLHandler)
 
 	// Admin and cron endpoints.
-	r.GET("/admin/update", cronMW, UpdateConfigHandler)
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
-	r.GET("/admin/stats", cronMW, StatsHandler)
+
+	// Cron endpoints
+	r.GET("/internal/cron/fix-datastore", cronMW, cronFixDatastore)
+	r.GET("/internal/cron/stats", cronMW, StatsHandler)
+	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 
 	// Builds.
 	r.GET("/p/:project/builds/b:id", htmlMW, func(c *router.Context) {
