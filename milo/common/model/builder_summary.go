@@ -15,13 +15,24 @@
 package model
 
 import (
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
+
+	"go.chromium.org/luci/milo/common"
 )
+
+// InvalidBuilderIDURL is returned if a BuilderID cannot be parsed and a URL generated.
+const InvalidBuilderIDURL = "#invalid-builder-id"
 
 // BuilderSummary holds builder state for the purpose of representing e.g. header consoles.
 type BuilderSummary struct {
@@ -56,6 +67,29 @@ type BuilderSummary struct {
 // LastFinishedBuildIDLink returns a link to the last finished build.
 func (b *BuilderSummary) LastFinishedBuildIDLink() string {
 	return getLinkFromBuildID(b.LastFinishedBuildID, b.ProjectID)
+}
+
+// SelfLink returns a link to the associated builder.
+func (b *BuilderSummary) SelfLink() string {
+	return getLinkFromBuilderID(b.BuilderID, b.ProjectID)
+}
+
+// getLinkFromBuilderID gets a builder link from builder ID and project.
+// Depends on routes.go.
+func getLinkFromBuilderID(b string, project string) string {
+	parts := strings.Split(b, "/")
+	if len(parts) != 3 {
+		return InvalidBuilderIDURL
+	}
+
+	switch source := parts[0]; source {
+	case "buildbot":
+		return fmt.Sprintf("/buildbot/%s/%s", parts[1], parts[2])
+	case "buildbucket":
+		return fmt.Sprintf("/p/%s/builders/%s/%s", project, parts[1], parts[2])
+	default:
+		return InvalidBuilderIDURL
+	}
 }
 
 // UpdateBuilderForBuild updates the appropriate BuilderSummary for the
@@ -96,4 +130,156 @@ func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
 	builder.LastFinishedStatus = build.Summary.Status
 	builder.LastFinishedBuildID = build.BuildID
 	return datastore.Put(c, builder)
+}
+
+type builderHistory struct {
+	// ID of Builder associated with this builder.
+	BuilderID string
+
+	// Link associated with this builder.
+	BuilderLink string
+
+	// Number of pending builds in this builder.
+	NumPending int
+
+	// Number of running builds in this builder.
+	NumRunning int
+
+	// Up to last N build summaries from this builder.
+	RecentBuilds []BuildSummary
+}
+
+// FetchPendingFailedTag indicates that fetching a builder's pending builds failed.
+var FetchPendingFailedTag = errors.BoolTag{Key: errors.NewTagKey("Failed to fetch pending builds")}
+
+// FetchRunningFailedTag indicates that fetching a builder's running builds failed.
+var FetchRunningFailedTag = errors.BoolTag{Key: errors.NewTagKey("Failed to fetch running builds")}
+
+// FetchLastNFailedTag indicates that fetching a builder's most recent completed builds failed.
+var FetchLastNFailedTag = errors.BoolTag{Key: errors.NewTagKey("Failed to fetch last N builds")}
+
+// GetBuilderHistories gets the recent histories for the builders in the given project.
+func GetBuilderHistories(c context.Context, project string, limit int) ([]builderHistory, error) {
+	builders, err := getBuildersForProject(c, project)
+	if err != nil {
+		return []builderHistory{}, err
+	}
+
+	// Populate the recent histories.
+	hists := make([]builderHistory, len(builders))
+	err = parallel.WorkPool(16, func(ch chan<- func() error) {
+		for i, builder := range builders {
+			i := i
+			builder := builder
+			ch <- func() error {
+				hist, err := getHistory(c, builder, project, limit)
+				if err != nil {
+					logging.Errorf(c, "error populating history for builder %s: %v", builder, err)
+					return err
+				}
+				hists[i] = *hist
+				return nil
+			}
+		}
+	})
+
+	return hists, err
+}
+
+// getBuildersForProject gets the sorted builder IDs associated with the given project.
+func getBuildersForProject(c context.Context, project string) ([]string, error) {
+	// Get consoles for project and extract builders into set.
+	bSet := map[string]*struct{}{}
+	q := datastore.NewQuery("Console").Ancestor(datastore.MakeKey(c, "Project", project))
+	cons := []*common.Console{}
+	if err := datastore.GetAll(c, q, &cons); err != nil {
+		logging.Errorf(c, "error getting consoles for project %s: %v", project, err)
+		return []string{}, err
+	}
+
+	for _, con := range cons {
+		for _, builder := range con.Builders {
+			bSet[builder] = nil
+		}
+	}
+
+	// Get sorted builders. Get only Buildbot builders.
+	builders := make([]string, 0, len(bSet))
+	for builder := range bSet {
+		if strings.Contains(builder, "buildbot") {
+			builders = append(builders, builder)
+		}
+	}
+	sort.Slice(
+		builders,
+		func(i, j int) bool {
+			return strings.Compare(builders[i], builders[j]) < 0
+		},
+	)
+	return builders, nil
+}
+
+// getHistory gets the recent history of the given builder.
+// Depends on status.go for filtering finished builds.
+func getHistory(c context.Context, b string, project string, limit int) (*builderHistory, error) {
+	//  Set up queries for pending, running, and last {limit} builds.
+	p := datastore.NewQuery("BuildSummary").
+		Eq("BuilderID", b).
+		Eq("Summary.Status", NotRun)
+
+	r := datastore.NewQuery("BuildSummary").
+		Eq("BuilderID", b).
+		Eq("Summary.Status", Running)
+
+	l := datastore.NewQuery("BuildSummary").
+		Eq("BuilderID", b).
+		Order("-Created")
+
+	hist := builderHistory{BuilderID: b, BuilderLink: getLinkFromBuilderID(b, project)}
+
+	// Do fetches.
+	err := parallel.FanOutIn(func(fetch chan<- func() error) {
+		// Pending builds
+		fetch <- func() error {
+			pending, err := datastore.Count(c, p)
+			if err == nil {
+				hist.NumPending = int(pending)
+			}
+			return err
+		}
+
+		// Running builds
+		fetch <- func() error {
+			running, err := datastore.Count(c, r)
+			if err == nil {
+				hist.NumRunning = int(running)
+			}
+			return err
+		}
+
+		// Last {limit} builds
+		fetch <- func() error {
+			last := make([]BuildSummary, 0, limit)
+			err := datastore.Run(c, l, func(b *BuildSummary) error {
+				if !b.Summary.Status.Terminal() {
+					return nil
+				}
+
+				last = append(last, *b)
+				if len(last) >= limit {
+					return datastore.Stop
+				}
+				return nil
+			})
+			if err == nil {
+				hist.RecentBuilds = last
+			}
+			return err
+		}
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &hist, nil
 }

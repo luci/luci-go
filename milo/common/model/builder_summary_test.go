@@ -16,6 +16,7 @@ package model
 
 import (
 	"fmt"
+	//"math"
 	"testing"
 	"time"
 
@@ -25,6 +26,8 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/milo/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -157,6 +160,143 @@ func TestGetLinkFromBuildID(t *testing.T) {
 				buildID, project := "source", "proj"
 				So(getLinkFromBuildID(buildID, project), ShouldEqual, "#invalid-build-id")
 			})
+		})
+	})
+}
+
+func TestGetBuilderHistories(t *testing.T) {
+	t.Parallel()
+
+	Convey(`TestGetBuilderHistories`, t, func() {
+		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
+		c = caching.WithRequestCache(c)
+
+		datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+			Kind: "BuildSummary",
+			SortBy: []datastore.IndexColumn{
+				{Property: "BuilderID"},
+				{Property: "Created", Descending: true},
+			},
+		})
+		datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+			Kind: "BuildSummary",
+			SortBy: []datastore.IndexColumn{
+				{Property: "BuilderID"},
+				{Property: "Summary.Status"},
+			},
+		})
+		datastore.GetTestable(c).CatchupIndexes()
+		datastore.GetTestable(c).Consistent(true)
+
+		nBuilds := 9
+		statuses := []Summary{
+			{Status: Running},      /* b2 */
+			{Status: Success},      /* b2 */
+			{Status: Running},      /* b2 */
+			{Status: Exception},    /* b2 */
+			{Status: Running},      /* b2 */
+			{Status: InfraFailure}, /* b2 */
+			{Status: NotRun},       /* b2 */
+			{Status: NotRun},       /* b2 */
+			{Status: Success},      /* b3 */
+		}
+		So(len(statuses), ShouldEqual, nBuilds)
+
+		p := "proj"
+		proj := datastore.MakeKey(c, "Project", p)
+
+		// Populate console.
+		datastore.Put(c, &common.Console{
+			Parent:   proj,
+			ID:       "view",
+			Builders: []string{"buildbot/master/b1", "buildbot/master/b2"},
+		})
+
+		// When populating BuildKey, 0 is invalid, so be sure to increment.
+		i := 0
+
+		// Populate builds.
+		builds := make([]*BuildSummary, nBuilds)
+
+		// One builder has lots of builds.
+		builder := "buildbot/master/b2"
+		for i < 8 {
+			builds[i] = &BuildSummary{
+				BuildKey:  datastore.MakeKey(c, "build", i+1),
+				ProjectID: p,
+				BuilderID: builder,
+				BuildID:   fmt.Sprintf("%s/%d", builder, i),
+				Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
+				Summary:   statuses[i],
+			}
+			i++
+		}
+
+		// One builder is on a view but has no builds.
+
+		// One builder is not on any project's views.
+		builds[i] = &BuildSummary{
+			BuildKey:  datastore.MakeKey(c, "build", i+1),
+			ProjectID: p,
+			BuilderID: "buildbot/master/b3",
+			BuildID:   fmt.Sprintf("buildbot/master/b3/%d", i),
+			Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
+			Summary:   statuses[i],
+		}
+
+		for i = 0; i < nBuilds; i++ {
+			datastore.Put(c, builds[i])
+		}
+
+		Convey("Getting recent history for existing project", func() {
+			Convey("across all views", func() {
+				Convey("with limit less than number of finished builds works", func() {
+					hists, err := GetBuilderHistories(c, p, 2)
+					So(err, ShouldBeNil)
+					So(len(hists), ShouldEqual, 2)
+
+					So(hists[0], ShouldResemble, builderHistory{
+						BuilderID:    "buildbot/master/b1",
+						BuilderLink:  "/buildbot/master/b1",
+						RecentBuilds: []BuildSummary{},
+					})
+
+					So(hists[1].BuilderID, ShouldEqual, "buildbot/master/b2")
+					So(hists[1].BuilderLink, ShouldEqual, "/buildbot/master/b2")
+					So(hists[1].NumPending, ShouldEqual, 2)
+					So(hists[1].NumRunning, ShouldEqual, 3)
+					So(len(hists[1].RecentBuilds), ShouldEqual, 2)
+					So(hists[1].RecentBuilds[0].BuildID, ShouldEqual, builds[5].BuildID)
+					So(hists[1].RecentBuilds[1].BuildID, ShouldEqual, builds[3].BuildID)
+				})
+
+				Convey("with limit greater than number of finished builds works", func() {
+					hists, err := GetBuilderHistories(c, p, 5)
+					So(err, ShouldBeNil)
+					So(len(hists), ShouldEqual, 2)
+
+					So(hists[0], ShouldResemble, builderHistory{
+						BuilderID:    "buildbot/master/b1",
+						BuilderLink:  "/buildbot/master/b1",
+						RecentBuilds: []BuildSummary{},
+					})
+
+					So(hists[1].BuilderID, ShouldEqual, "buildbot/master/b2")
+					So(hists[1].BuilderLink, ShouldEqual, "/buildbot/master/b2")
+					So(hists[1].NumPending, ShouldEqual, 2)
+					So(hists[1].NumRunning, ShouldEqual, 3)
+					So(len(hists[1].RecentBuilds), ShouldEqual, 3)
+					So(hists[1].RecentBuilds[0].BuildID, ShouldEqual, builds[5].BuildID)
+					So(hists[1].RecentBuilds[1].BuildID, ShouldEqual, builds[3].BuildID)
+					So(hists[1].RecentBuilds[2].BuildID, ShouldEqual, builds[1].BuildID)
+				})
+			})
+		})
+
+		Convey("Getting recent history for nonexisting project", func() {
+			hists, err := GetBuilderHistories(c, "no_proj", 3)
+			So(err, ShouldBeNil)
+			So(hists, ShouldResemble, []builderHistory{})
 		})
 	})
 }
