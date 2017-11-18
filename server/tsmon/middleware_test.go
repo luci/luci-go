@@ -72,7 +72,7 @@ func TestMiddleware(t *testing.T) {
 		tsmon.Register(c, metric)
 
 		Convey("Pings TaskNumAllocator and waits for number", func() {
-			So(len(allocator.taskIDs), ShouldEqual, 0)
+			So(len(allocator.instanceIDs), ShouldEqual, 0)
 			allocator.taskNum = -1 // no number yet
 
 			// Do the flush.
@@ -80,7 +80,7 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// Called the allocator.
-			So(len(allocator.taskIDs), ShouldEqual, 1)
+			So(len(allocator.instanceIDs), ShouldEqual, 1)
 			// Shouldn't flush since the instance entity doesn't have a task number yet.
 			So(len(monitor.Cells), ShouldEqual, 0)
 
@@ -159,7 +159,7 @@ func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
 				HostName:    "12345-version",
 			}
 		},
-		TaskID:           func(c context.Context) string { return "some.task.id" },
+		InstanceID:       func(c context.Context) string { return "some.id" },
 		TaskNumAllocator: allocator,
 		IsDevMode:        false, // hit same paths as prod
 		testingMonitor:   mon,
@@ -171,12 +171,12 @@ func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
 }
 
 type fakeNumAllocator struct {
-	taskNum int
-	taskIDs []string
+	taskNum     int
+	instanceIDs []string
 }
 
-func (a *fakeNumAllocator) NotifyTaskIsAlive(c context.Context, taskID string) (int, error) {
-	a.taskIDs = append(a.taskIDs, taskID)
+func (a *fakeNumAllocator) NotifyTaskIsAlive(c context.Context, task *target.Task, instanceID string) (int, error) {
+	a.instanceIDs = append(a.instanceIDs, instanceID)
 	if a.taskNum == -1 {
 		return 0, ErrNoTaskNumber
 	}

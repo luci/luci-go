@@ -16,20 +16,16 @@ package tsmon
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"golang.org/x/net/context"
 
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/common/tsmon/target"
 	srvtsmon "go.chromium.org/luci/server/tsmon"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,95 +69,92 @@ func TestFindGaps(t *testing.T) {
 func buildGAETestContext() (context.Context, testclock.TestClock) {
 	c := gaetesting.TestingContext()
 	c, clock := testclock.UseTime(c, testclock.TestTimeUTC)
-	ds.GetTestable(c).Consistent(true)
-	c = gologger.StdConfig.Use(c)
-
+	datastore.GetTestable(c).Consistent(true)
 	c, _, _ = tsmon.WithFakes(c)
 	return c, clock
 }
 
-func TestHousekeepingHandler(t *testing.T) {
+func TestAssignTaskNumbers(t *testing.T) {
 	t.Parallel()
+
+	task1 := target.Task{HostName: "1"}
+	task2 := target.Task{HostName: "2"}
 
 	allocator := DatastoreTaskNumAllocator{}
 
 	Convey("Assigns task numbers to unassigned instances", t, func() {
 		c, _ := buildGAETestContext()
 
-		_, err := allocator.NotifyTaskIsAlive(c, "some.task.id")
+		// Two new processes belonging to different targets.
+		_, err := allocator.NotifyTaskIsAlive(c, &task1, "some.id")
+		So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
+		_, err = allocator.NotifyTaskIsAlive(c, &task2, "some.id")
 		So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
 
-		rec := httptest.NewRecorder()
-		housekeepingHandler(&router.Context{
-			Context: c,
-			Writer:  rec,
-			Request: &http.Request{},
-		})
-		So(rec.Code, ShouldEqual, http.StatusOK)
+		So(AssignTaskNumbers(c), ShouldBeNil)
 
-		i, err := allocator.NotifyTaskIsAlive(c, "some.task.id")
+		// Both get 0, since they belong to different targets.
+		i, err := allocator.NotifyTaskIsAlive(c, &task1, "some.id")
 		So(err, ShouldBeNil)
 		So(i, ShouldEqual, 0)
+		i, err = allocator.NotifyTaskIsAlive(c, &task2, "some.id")
+		So(err, ShouldBeNil)
+		So(i, ShouldEqual, 0)
+
+		// Once numbers are assigned, AssignTaskNumbers is noop.
+		So(AssignTaskNumbers(c), ShouldBeNil)
 	})
 
-	Convey("Doesn't reassign the same task number", t, func() {
+	Convey("Doesn't assign the same task number", t, func() {
 		c, _ := buildGAETestContext()
 
-		allocator.NotifyTaskIsAlive(c, "some.task.0")
-		allocator.NotifyTaskIsAlive(c, "some.task.1")
+		// Two processes belonging to a single target.
+		allocator.NotifyTaskIsAlive(c, &task1, "some.task.0")
+		allocator.NotifyTaskIsAlive(c, &task1, "some.task.1")
 
-		rec := httptest.NewRecorder()
-		housekeepingHandler(&router.Context{
-			Context: c,
-			Writer:  rec,
-			Request: &http.Request{},
-		})
-		So(rec.Code, ShouldEqual, http.StatusOK)
+		So(AssignTaskNumbers(c), ShouldBeNil)
 
-		i, err := allocator.NotifyTaskIsAlive(c, "some.task.0")
+		// Get different task numbers.
+		i, err := allocator.NotifyTaskIsAlive(c, &task1, "some.task.0")
 		So(err, ShouldBeNil)
 		So(i, ShouldEqual, 0)
-
-		i, err = allocator.NotifyTaskIsAlive(c, "some.task.1")
+		i, err = allocator.NotifyTaskIsAlive(c, &task1, "some.task.1")
 		So(err, ShouldBeNil)
 		So(i, ShouldEqual, 1)
 	})
 
 	Convey("Expires old instances", t, func() {
 		c, clock := buildGAETestContext()
-		c = info.MustNamespace(c, instanceNamespace)
 
-		for _, count := range []int{1, int(taskQueryBatchSize) + 1} {
+		for _, count := range []int{1, taskQueryBatchSize + 1} {
 			Convey(fmt.Sprintf("Count: %d", count), func() {
-				insts := make([]*instance, count)
-				keys := make([]*ds.Key, count)
+				// Request a bunch of task numbers.
 				for i := 0; i < count; i++ {
-					insts[i] = &instance{
-						ID:          fmt.Sprintf("foobar_%d", i),
-						TaskNum:     i,
-						LastUpdated: clock.Now(),
-					}
-					keys[i] = ds.KeyForObj(c, insts[i])
+					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%s", i))
+					So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
 				}
-				So(ds.Put(c, insts), ShouldBeNil)
 
-				exists, err := ds.Exists(c, keys)
-				So(err, ShouldBeNil)
-				So(exists.All(), ShouldBeTrue)
+				// Get all the numbers assigned.
+				So(AssignTaskNumbers(c), ShouldBeNil)
 
+				// Yep. Assigned.
+				numbers := map[int]struct{}{}
+				for i := 0; i < count; i++ {
+					num, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%s", i))
+					So(err, ShouldBeNil)
+					numbers[num] = struct{}{}
+				}
+				So(len(numbers), ShouldEqual, count)
+
+				// Move time to make number assignments expire.
 				clock.Add(instanceExpirationTimeout + time.Second)
+				So(AssignTaskNumbers(c), ShouldBeNil)
 
-				rec := httptest.NewRecorder()
-				housekeepingHandler(&router.Context{
-					Context: c,
-					Writer:  rec,
-					Request: &http.Request{},
-				})
-				So(rec.Code, ShouldEqual, http.StatusOK)
-
-				exists, err = ds.Exists(c, keys)
-				So(err, ShouldBeNil)
-				So(exists.Any(), ShouldBeFalse)
+				// Yep. Expired.
+				for i := 0; i < count; i++ {
+					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%s", i))
+					So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
+				}
 			})
 		}
 	})
