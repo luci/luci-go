@@ -29,9 +29,8 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/monitor"
-	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/server/router"
+	srvtsmon "go.chromium.org/luci/server/tsmon"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -81,42 +80,6 @@ func buildGAETestContext() (context.Context, testclock.TestClock) {
 	return c, clock
 }
 
-func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
-	mon := &monitor.Fake{}
-	allocator := &fakeNumAllocator{}
-	return &State{
-		Target: func(c context.Context) target.Task {
-			return target.Task{
-				DataCenter:  "appengine",
-				ServiceName: "app-id",
-				JobName:     "service-name",
-				HostName:    "12345-version",
-			}
-		},
-		TaskID:           func(c context.Context) string { return "some.task.id" },
-		TaskNumAllocator: allocator,
-		IsDevMode:        false, // hit same paths as prod
-		testingMonitor:   mon,
-		testingSettings: &tsmonSettings{
-			Enabled:          true,
-			FlushIntervalSec: 60,
-		},
-	}, mon, allocator
-}
-
-type fakeNumAllocator struct {
-	taskNum int
-	taskIDs []string
-}
-
-func (a *fakeNumAllocator) NotifyTaskIsAlive(c context.Context, taskID string) (int, error) {
-	a.taskIDs = append(a.taskIDs, taskID)
-	if a.taskNum == -1 {
-		return 0, ErrNoTaskNumber
-	}
-	return a.taskNum, nil
-}
-
 func TestHousekeepingHandler(t *testing.T) {
 	t.Parallel()
 
@@ -126,7 +89,7 @@ func TestHousekeepingHandler(t *testing.T) {
 		c, _ := buildGAETestContext()
 
 		_, err := allocator.NotifyTaskIsAlive(c, "some.task.id")
-		So(err, ShouldEqual, ErrNoTaskNumber)
+		So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
 
 		rec := httptest.NewRecorder()
 		housekeepingHandler(&router.Context{

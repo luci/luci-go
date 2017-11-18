@@ -27,12 +27,13 @@ import (
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings/admin"
+	"go.chromium.org/luci/server/tsmon"
 
 	"go.chromium.org/luci/appengine/gaeauth/client"
 	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
 	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/tsmon"
+	gaetsmon "go.chromium.org/luci/appengine/tsmon"
 
 	"go.chromium.org/gae/impl/prod"
 	"go.chromium.org/gae/service/info"
@@ -82,7 +83,7 @@ var (
 		TaskID: func(c context.Context) string {
 			return fmt.Sprintf("%s.%s.%s", info.InstanceID(c), info.VersionID(c), info.ModuleName(c))
 		},
-		TaskNumAllocator: tsmon.DatastoreTaskNumAllocator{},
+		TaskNumAllocator: gaetsmon.DatastoreTaskNumAllocator{},
 	}
 )
 
@@ -97,7 +98,7 @@ var classicEnv = gaemiddleware.Environment{
 	MonitoringMiddleware: globalTsMonState.Middleware,
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
 		gaeauth.InstallHandlers(r, base)
-		tsmon.InstallHandlers(r, base)
+		gaetsmon.InstallHandlers(r, base)
 		admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
 		gaeconfig.InstallCacheCronHandler(r, base.Extend(gaemiddleware.RequireCron))
 	},

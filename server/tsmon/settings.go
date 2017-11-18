@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,10 +37,9 @@ const prodXEndpoint = "https://prodxmon-pa.googleapis.com/v1:insert"
 // in the settings store. See go.chromium.org/luci/server/settings.
 const settingsKey = "tsmon"
 
-// tsmonSettings contain global tsmon settings for the GAE app.
+// tsmonSettings contain global tsmon settings for the application.
 //
-// They are stored in app settings store (based on the datastore, see
-// appengine/gaesettings module) under settingsKey key.
+// They are stored in settings store under settingsKey key.
 type tsmonSettings struct {
 	// Enabled is false to completely shutoff the monitoring.
 	//
