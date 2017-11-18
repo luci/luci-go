@@ -23,6 +23,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -52,7 +53,7 @@ func TestingBase(c context.Context) Base {
 // WithContextTimeout returns a middleware that adds a timeout to the context.
 func WithContextTimeout(timeout time.Duration) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		c.Context, _ = context.WithTimeout(c.Context, timeout)
+		c.Context, _ = clock.WithTimeout(c.Context, timeout)
 		next(c)
 	}
 }

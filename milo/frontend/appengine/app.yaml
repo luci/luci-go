@@ -10,8 +10,14 @@ handlers:
   secure: always
   static_dir: static
 
-# For admin resources or endpoints meant to be hit by a cron job.
+# For admin resources.
 - url: /admin/.*
+  script: _go_app
+  secure: always
+  login: admin
+
+# All internal handlers, such as cron.
+- url: /internal/.*
   script: _go_app
   secure: always
   login: admin
