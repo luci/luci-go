@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "5efa24fd_01cd41bd",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec2ee111_c0859b63",
+      "range": {
+        "startLine": 43,
+        "startChar": 44,
+        "endLine": 43,
+        "endChar": 45
+      },
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "66fcc21b_bd79ccb9",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ccabeef8_0fac2e5c",
+      "range": {
+        "startLine": 43,
+        "startChar": 7,
+        "endLine": 43,
+        "endChar": 16
+      },
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38321e33_9ccddac2",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2017-11-17T17:09:40Z",
       "side": 1,
       "message": "i believe integer ids will complicate the application down the road. They already cause some unnecessary complexity here. Let me explain.\n\nseparation of id and name is valuable when there is a need to rename entities, so that we don\u0027t have to update all the related rows in different tables. Do datacenters get renamed though? I am not sure about this requirement. Even if they were, our configs do not specify ids, so on a rename attempt, this function will try to delete exiting datacenter, either fail or delete all of its descendants and create a new empty datacenter\n\nlater, our RPCs have filters by datacenter names, not ids. It means we will have to either write a JOIN for each reference property (router, datacenter, machine, etc) for each entity type containing the property, or we will have to run a query to retrieve ids of datacenter and then make actual search query.\n\nboth kinds of complexities can be mitigated if names are primary keys, or rather rename \"name\" fields in all config entities to \"id\" use it as a primary key",
+      "range": {
+        "startLine": 61,
+        "startChar": 31,
+        "endLine": 61,
+        "endChar": 35
+      },
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cf330d5_5e2a927a",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "Good point, you\u0027re right that datacenters can\u0027t be renamed, but I didn\u0027t want it to be impossible. I\u0027m also trying to keep things consistent with auto-generated IDs used everywhere in case we can\u0027t rely on name uniqueness. With hosts, for example, the primary key would need to be (name, vlan_id) which makes it complicated to reference a host (IP addresses table will need to reference hosts). I am also purposely trying to avoid any extra validation in the database and keep it all in the app, which means that right now in the schema names are not required to be unique. This is also consistent with reality, for example we have agreed to keep things like rack and switch names globally unique but in theory they only need to be unique per datacenter. int is also smaller than varchar(255) once the string reaches 4 characters in length, but this is a lesser concern.",
+      "parentUuid": "38321e33_9ccddac2",
       "range": {
         "startLine": 61,
         "startChar": 31,
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "957bb6d9_1e1e09f6",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7463307_824e4f42",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7edd7a73_a83108dc",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -99,6 +189,24 @@
       "writtenOn": "2017-11-17T16:38:04Z",
       "side": 1,
       "message": "i\u0027ve noticed that sql table definition does not have a constraint that name is unique. It is better to have it, so we have an extra guarantee from the database",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e25385ad_aa9b9810",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "I prefer to allow any data in the database and only enforce constraints in this layer. It makes adding/modifying/removing constraints easier, e.g. we can enforce a new constraint going forward by validating data going in without applying it to thousands of existing entries. Labs wants more consistency going forward but doesn\u0027t want to rename everything that already exists.",
+      "parentUuid": "7edd7a73_a83108dc",
       "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -122,6 +230,24 @@
     },
     {
       "key": {
+        "uuid": "46bdb9e8_459192af",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "It is, but it shouldn\u0027t matter because this is only called from one thread every 10 minutes by cron, so only one instance of this logic will be running at a time. If it somehow does collide it shouldn\u0027t matter because it will eventually converge to the right thing as cron runs repeatedly.",
+      "parentUuid": "b6092bfb_7bc5ab4f",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "641a09a0_c5c6c0c5",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -136,6 +262,24 @@
       "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcd29a66_86b000f8",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "641a09a0_c5c6c0c5",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -156,6 +300,24 @@
     },
     {
       "key": {
+        "uuid": "88bd92d5_4f614dee",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "725cf807_fff7e936",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7574800_9cda871c",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -167,6 +329,24 @@
       "writtenOn": "2017-11-17T16:38:04Z",
       "side": 1,
       "message": "consider using https://dev.mysql.com/doc/refman/5.7/en/string-functions.html#function_find-in-set\nif batched, we will no longer need to prepare delete stmt",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02a0c5d4_53e83b41",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "I\u0027m worried about using SQL statements that are too complex, especially because we don\u0027t have a good test for this (current tests just assert that some SQL statement was executed, a proper test would use an in-memory database to actually execute the SQL and we\u0027d assert the state of the database after running the test, which would test that the SQL itself was correct not just the Go).\n\nAt any rate, I\u0027m not sure I understand how find_in_set will be useful here. The doc says it finds the position of str in strlist. That\u0027s still only one position it will find.\n\nWhy not just batch as:\nDELETE FROM datacenters WHERE id \u003d x OR id \u003d y OR id \u003d z\n\nn.b. the number of datacenters is small and this request isn\u0027t time sensitive, which is why I skipped batching for now.",
+      "parentUuid": "d7574800_9cda871c",
       "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -190,6 +370,24 @@
     },
     {
       "key": {
+        "uuid": "0e7ad76b_d8661b71",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "dbe900fe_e22b059a",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7f0bc37c_5fd81d10",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -207,6 +405,24 @@
     },
     {
       "key": {
+        "uuid": "9e96ddb0_49f9c721",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "It\u0027s a good idea and I\u0027ll try it, but I\u0027m worried about making SQL statement composition too complex. As mentioned above, we have no tests that the SQL statements we execute are actually correct. I haven\u0027t found a good in-memory MySQL database package that we could use to verify both Go and SQL are correct. Therefore I\u0027m trying to keep each prepared and executed SQL statement as obvious and readable a string as possible.",
+      "parentUuid": "7f0bc37c_5fd81d10",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dcf36d9d_99ccfbea",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -218,6 +434,24 @@
       "writtenOn": "2017-11-17T16:38:04Z",
       "side": 1,
       "message": "if we have a service per config entity, it means we have one method per service. This requires writing more code.\nAny reason not have just one service for all resources? or at least one service for resources defined in config and one service for resources living in database? not a part of this CL",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e462e83_4a00b1fd",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-18T00:56:41Z",
+      "side": 1,
+      "message": "I can make one service if you prefer. Currently everything is grouped together, so if you look at datacenters.proto you can see the service with its one method and all corresponding Message definitions. If I have only one service then RPC-related messages won\u0027t be in the same file as the related service definition anymore (unless we put everything in the same file, but that might be too much since there are datacenters, racks, switches, operating systems, VLANs, and platform types). Still, I don\u0027t mind either way. I can refactor when I add some other service.",
+      "parentUuid": "dcf36d9d_99ccfbea",
       "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
