@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1e03dc78_07a790be",
+        "filename": "appengine/tsmon/housekeeping_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-18T00:20:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6322c7dc_c1da2e73",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 7
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c87c8670_856928a1",
         "filename": "server/tsmon/settings.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15a4eb4a_dfc0d32f",
+        "filename": "server/tsmon/settings.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-18T00:20:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c87c8670_856928a1",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 63
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6c2071bf_4345021d",
+        "filename": "server/tsmon/settings.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-18T00:20:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62a4cbf4_926428e4",
+      "range": {
+        "startLine": 42,
+        "startChar": 22,
+        "endLine": 42,
+        "endChar": 25
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12b5bd33_5be44b79",
         "filename": "server/tsmon/tasknum.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb298f1f_64043318",
+        "filename": "server/tsmon/tasknum.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-18T00:20:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12b5bd33_5be44b79",
+      "range": {
+        "startLine": 31,
+        "startChar": 39,
+        "endLine": 31,
+        "endChar": 43
+      },
+      "revId": "8825dadd4fcdceba5670a0dce768f706ecd51885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
