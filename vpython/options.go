@@ -159,13 +159,14 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 	// Do we have a spec file in the environment?
 	if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
-		var sp vpython.Spec
-		if err := spec.Load(v, &sp); err != nil {
-			return errors.Annotate(err, "failed to load environment-supplied spec from: %s", v).Err()
+		var environment vpython.Environment
+		if err := spec.LoadEnvironment(v, &environment); err != nil {
+			return errors.Annotate(err,
+				"failed to load %q from: %s", EnvironmentStampPathENV, v).Err()
 		}
 
-		logging.Infof(c, "Loaded spec from environment: %s", v)
-		o.EnvConfig.Spec = &sp
+		logging.Infof(c, "Loaded environment from %q: %s", EnvironmentStampPathENV, v)
+		o.EnvConfig.Spec = environment.Spec
 		return nil
 	}
 
