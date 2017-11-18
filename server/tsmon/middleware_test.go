@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,13 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/store/storetest"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/router"
 
@@ -64,7 +67,7 @@ func TestMiddleware(t *testing.T) {
 	}
 
 	Convey("With fakes", t, func() {
-		c, clock := buildGAETestContext()
+		c, clock := buildTestContext()
 		state, monitor, allocator := buildTestState()
 		tsmon.Register(c, metric)
 
@@ -133,4 +136,49 @@ func TestMiddleware(t *testing.T) {
 			})
 		})
 	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func buildTestContext() (context.Context, testclock.TestClock) {
+	c := context.Background()
+	c, clock := testclock.UseTime(c, testclock.TestTimeUTC)
+	c, _, _ = tsmon.WithFakes(c)
+	return c, clock
+}
+
+func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
+	mon := &monitor.Fake{}
+	allocator := &fakeNumAllocator{}
+	return &State{
+		Target: func(c context.Context) target.Task {
+			return target.Task{
+				DataCenter:  "datacenter",
+				ServiceName: "app-id",
+				JobName:     "service-name",
+				HostName:    "12345-version",
+			}
+		},
+		TaskID:           func(c context.Context) string { return "some.task.id" },
+		TaskNumAllocator: allocator,
+		IsDevMode:        false, // hit same paths as prod
+		testingMonitor:   mon,
+		testingSettings: &tsmonSettings{
+			Enabled:          true,
+			FlushIntervalSec: 60,
+		},
+	}, mon, allocator
+}
+
+type fakeNumAllocator struct {
+	taskNum int
+	taskIDs []string
+}
+
+func (a *fakeNumAllocator) NotifyTaskIsAlive(c context.Context, taskID string) (int, error) {
+	a.taskIDs = append(a.taskIDs, taskID)
+	if a.taskNum == -1 {
+		return 0, ErrNoTaskNumber
+	}
+	return a.taskNum, nil
 }
