@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "70786392_66eaa5ec",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1931ad1_cced1be6",
+      "range": {
+        "startLine": 79,
+        "startChar": 27,
+        "endLine": 79,
+        "endChar": 34
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "589a4f71_e7bdf837",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done\n\nI\u0027m not changing \"getBuilderForProject\" and \"getHistory\" because they\u0027re not getters, but if you want their name changed let me know.",
+      "parentUuid": "6c253797_598c9c2e",
+      "range": {
+        "startLine": 79,
+        "startChar": 5,
+        "endLine": 79,
+        "endChar": 25
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14b6d7d4_2366521e",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "7599bf89_268a8a8f",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14b6d7d4_2366521e",
+      "range": {
+        "startLine": 192,
+        "startChar": 9,
+        "endLine": 192,
+        "endChar": 31
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49d52bd8_79757f4b",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "51e7ef06_6a9b11c0",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49d52bd8_79757f4b",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54b6ddd4_df132b61",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -102,6 +192,24 @@
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59ecae04_63e4db1d",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54b6ddd4_df132b61",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "f6185118_21a03060",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2390fbac_fee2d7e6",
+      "range": {
+        "startLine": 197,
+        "startChar": 9,
+        "endLine": 197,
+        "endChar": 19
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45ede20e_87af1498",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "33aad636_35c02850",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45ede20e_87af1498",
+      "range": {
+        "startLine": 206,
+        "startChar": 1,
+        "endLine": 210,
+        "endChar": 2
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29450787_95a61db2",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -162,6 +318,30 @@
       "writtenOn": "2017-11-18T09:26:29Z",
       "side": 1,
       "message": "strings.Sort(builders)",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 2
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "998291b2_e6a56a5a",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "From where do I import this? I don\u0027t see it in https://golang.org/pkg/strings/, nor do I see a luci-go strings implementation.",
+      "parentUuid": "29450787_95a61db2",
       "range": {
         "startLine": 211,
         "startChar": 1,
@@ -220,6 +400,54 @@
     },
     {
       "key": {
+        "uuid": "c36d41ed_adbabefc",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "02bbdfac_8bf7753b",
+      "range": {
+        "startLine": 222,
+        "startChar": 36,
+        "endLine": 222,
+        "endChar": 43
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d6a769ac_eedfac80",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c596b408_a9e67251",
+      "range": {
+        "startLine": 222,
+        "startChar": 35,
+        "endLine": 222,
+        "endChar": 36
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7b28a20a_94525ea1",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -234,6 +462,24 @@
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e72b8bf_558d30dc",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b28a20a_94525ea1",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -260,6 +506,30 @@
     },
     {
       "key": {
+        "uuid": "403ad305_d1ffe0ac",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef2b75da_812bf1fd",
+      "range": {
+        "startLine": 243,
+        "startChar": 3,
+        "endLine": 243,
+        "endChar": 18
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "27e9d225_397bff95",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -280,6 +550,30 @@
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb63d9fa_789308ee",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "27e9d225_397bff95",
+      "range": {
+        "startLine": 252,
+        "startChar": 3,
+        "endLine": 252,
+        "endChar": 18
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -323,6 +617,48 @@
     },
     {
       "key": {
+        "uuid": "52399de9_da91cde4",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2af59551_bc4a752d",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a2808f8d_cba1c355",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Oh nice! Before it seemed like the template was unhappy about the list of pointers, but apparently the problem was elsewhere.",
+      "parentUuid": "b83f58d0_915252d7",
+      "range": {
+        "startLine": 266,
+        "startChar": 24,
+        "endLine": 266,
+        "endChar": 25
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be35403a_09a973b5",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 4
@@ -337,6 +673,24 @@
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d93b31f_5fb5cb21",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be35403a_09a973b5",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -363,6 +717,30 @@
     },
     {
       "key": {
+        "uuid": "52be04fe_bb520d25",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93cd20f2_e8c9440b",
+      "range": {
+        "startLine": 209,
+        "startChar": 2,
+        "endLine": 209,
+        "endChar": 15
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13f85836_64daba32",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 4
@@ -374,6 +752,24 @@
       "writtenOn": "2017-11-18T09:26:29Z",
       "side": 1,
       "message": "since this code is not perf critical, I think it should be optimized for simplicity. IMO a simple `for i :\u003d 0; i \u003c 8; i++ {` loop would be simpler and in L238 we could use append",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a6ec97e_c42c386d",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "I\u0027d prefer to keep the index, because it would be very easy not to update the index of the appended build if we make any changes to the number of loop-generated builds. How does that sound? Let me know if you feel strongly.",
+      "parentUuid": "13f85836_64daba32",
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -403,6 +799,30 @@
     },
     {
       "key": {
+        "uuid": "bd285619_fa755693",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e221c888_6bbcc03a",
+      "range": {
+        "startLine": 247,
+        "startChar": 2,
+        "endLine": 249,
+        "endChar": 3
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50250953_408ac211",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 4
@@ -420,6 +840,24 @@
     },
     {
       "key": {
+        "uuid": "e5cad0ef_2e6247c6",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "In the next CL I\u0027ll be adding more children (filtering by view). Do you mind if I leave this in for now then?",
+      "parentUuid": "50250953_408ac211",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5130f3c1_1fd8fce5",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 4
@@ -431,6 +869,30 @@
       "writtenOn": "2017-11-18T09:26:29Z",
       "side": 1,
       "message": "curious why not \n\n  So(hists, ShouldResemable, ...)",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 6
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "327dc03f_488ba724",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "I did try that \u003d/\n\nBasically, IIUC, ShouldResemble requires the entire struct to be specified, and moreover, there is no such thing as ShouldApproximatelyResemble. This causes issues because\n1) fields such as BuildKey, when queried, come back empty (I\u0027m not sure why this is --- maybe something missing in the testing context definition?)\n2) time consistently comes back a few nanoseconds off. I have no idea why this is the case, but I\u0027ve seen it before.\n\nAs such it seemed faster just to check the BuildID (which uniquely specifies the build we want to verify anyway). If you have any suggestions for getting it to work with ShouldResemble let me know!",
+      "parentUuid": "5130f3c1_1fd8fce5",
       "range": {
         "startLine": 264,
         "startChar": 5,
@@ -466,6 +928,30 @@
     },
     {
       "key": {
+        "uuid": "c78c772b_301912d9",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "246083c8_592ea1ae",
+      "range": {
+        "startLine": 276,
+        "startChar": 5,
+        "endLine": 276,
+        "endChar": 35
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3f423d84_cb902297",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 4
@@ -489,6 +975,30 @@
     },
     {
       "key": {
+        "uuid": "b1bc0dca_b146d934",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f423d84_cb902297",
+      "range": {
+        "startLine": 299,
+        "startChar": 3,
+        "endLine": 299,
+        "endChar": 48
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4f7b6f95_19332354",
         "filename": "milo/frontend/appengine/static/common/css/builders.css",
         "patchSetId": 4
@@ -500,6 +1010,24 @@
       "writtenOn": "2017-11-18T09:26:29Z",
       "side": 1,
       "message": "running-builds and pending-builds still repeat each other and the only difference is margins.\nthe intention for margins seems to be to separate running and pending builds from builder name and recent builds. If so, it could be more explicitly expressed by putting build counts into a new div settings its left and right margin to 1em",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7489e4b2_b18aae86",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-18T21:36:45Z",
+      "side": 1,
+      "message": "[I\u0027ll address this in the next patchset or followup CL; want to get this one out for review ASAP]",
+      "parentUuid": "4f7b6f95_19332354",
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
