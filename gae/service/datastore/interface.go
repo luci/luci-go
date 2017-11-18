@@ -296,6 +296,9 @@ func populateKeyMGS(mgs MetaGetterSetter, key *Key) bool {
 	}
 
 	lst := key.LastTok()
+	mgs.SetMeta("kind", lst.Kind)
+	mgs.SetMeta("parent", key.Parent())
+
 	if lst.StringID != "" {
 		if !mgs.SetMeta("id", lst.StringID) {
 			return false
@@ -306,8 +309,6 @@ func populateKeyMGS(mgs MetaGetterSetter, key *Key) bool {
 		}
 	}
 
-	mgs.SetMeta("kind", lst.Kind)
-	mgs.SetMeta("parent", key.Parent())
 	return true
 }
 

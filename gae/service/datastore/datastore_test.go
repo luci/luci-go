@@ -213,6 +213,12 @@ type CommonStruct struct {
 	Value int64
 }
 
+type ConstIDStruct struct {
+	_id    int64 `gae:"$id,1"`
+	Parent *Key  `gae:"$parent"`
+	Value  int64
+}
+
 type PrivateStruct struct {
 	Value int64
 
@@ -466,13 +472,21 @@ func TestPopulateKey(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test PopulateKey", t, func() {
-		k := MkKeyContext("app", "namespace").NewKey("kind", "", 1337, nil)
+		kc := MkKeyContext("app", "namespace")
+		k := kc.NewKey("kind", "", 1337, nil)
 
 		Convey("Can set the key of a common struct.", func() {
 			var cs CommonStruct
 
 			So(PopulateKey(&cs, k), ShouldBeTrue)
 			So(cs.ID, ShouldEqual, 1337)
+		})
+
+		Convey("Can set the parent key of a const id struct.", func() {
+			var s ConstIDStruct
+			k2 := kc.NewKey("Bar", "bar", 0, k)
+			PopulateKey(&s, k2)
+			So(s.Parent, ShouldResemble, k)
 		})
 
 		Convey("Will not set the value of a singleton struct.", func() {
