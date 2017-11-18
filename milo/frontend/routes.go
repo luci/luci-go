@@ -23,15 +23,18 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/common/logging"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
@@ -39,9 +42,6 @@ import (
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/rpc"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/middleware"
-	"go.chromium.org/luci/server/templates"
 )
 
 // Run sets up all the routes and runs the server.
@@ -65,9 +65,12 @@ func Run(templatePath string) {
 	r.GET("/opensearch.xml", frontendMW, searchXMLHandler)
 
 	// Admin and cron endpoints.
-	r.GET("/admin/update", cronMW, UpdateConfigHandler)
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
-	r.GET("/admin/stats", cronMW, StatsHandler)
+
+	// Cron endpoints
+	r.GET("/internal/cron/fix-datastore", cronMW, cronFixDatastore)
+	r.GET("/internal/cron/stats", cronMW, StatsHandler)
+	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 
 	// Builds.
 	r.GET("/p/:project/builds/b:id", htmlMW, func(c *router.Context) {

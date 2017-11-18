@@ -2,9 +2,12 @@ cron:
  - description: Send ts_mon metrics
    url: /internal/cron/ts_mon/housekeeping
    schedule: every 1 minutes
- - description: Update luci config
-   url: /admin/update
+ - description: Fix datastore
+   url: /internal/cron/fix-datastore
+   schedule: every 1 minutes
+ - description: Update configs
+   url: /internal/cron/update-config
    schedule: every 1 minutes
  - description: Send app specific metrics
-   url: /admin/stats
+   url: /internal/cron/stats
    schedule: every 1 minutes
