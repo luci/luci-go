@@ -2,6 +2,98 @@
   "comments": [
     {
       "key": {
+        "uuid": "3e182822_48cf4b8f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "FWIU there was some confusion in the discussion and what meant to be called \"group\" was called view. See comment thread https://docs.google.com/a/google.com/document/d/1AO3i-olSwyNG5HWolxUX6uuJR2NWcf2ysjGN55mzJJE/edit?disco\u003dAAAABhPE-Gs",
+      "range": {
+        "startLine": 10,
+        "startChar": 59,
+        "endLine": 10,
+        "endChar": 63
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9153512f_857e1897",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "the discussion about this group/view proposal is still ongoing and I am worried that the code that depends on its specifics might need to change if we change the design (ideally design is implemented after it is established). Also, from the perspective of this function, this parameter is a console id. Please rename the parameter to \"console\". If we decide to implement groups/views proposal, this code will need to change anyway (because perhaps we will have \"Group\" entity, instead of Console)",
+      "range": {
+        "startLine": 203,
+        "startChar": 45,
+        "endLine": 203,
+        "endChar": 49
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53505463_354be826",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "err may be datastore.NoSuchEntity if such console does not exist. This is a legitimate request from a user and should not fail with HTTP 500. Instead we need to either return an empty list or an error tagged with common.CodeNotFound.",
+      "range": {
+        "startLine": 204,
+        "startChar": 36,
+        "endLine": 204,
+        "endChar": 46
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e51fbce8_0ac98675",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "please pass format string to Annotate",
+      "range": {
+        "startLine": 206,
+        "startChar": 13,
+        "endLine": 206,
+        "endChar": 20
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "075c06f6_3f76f2a2",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 2
@@ -46,6 +138,99 @@
       "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3f89cd05_61cc9db5",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "075c06f6_3f76f2a2",
+      "range": {
+        "startLine": 168,
+        "startChar": 5,
+        "endLine": 168,
+        "endChar": 25
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1f52788_21203053",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "group",
+      "range": {
+        "startLine": 99,
+        "startChar": 23,
+        "endLine": 99,
+        "endChar": 27
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bb714f6_23c9948b",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "g\nsee https://docs.google.com/document/d/1AO3i-olSwyNG5HWolxUX6uuJR2NWcf2ysjGN55mzJJE/edit#",
+      "range": {
+        "startLine": 99,
+        "startChar": 20,
+        "endLine": 99,
+        "endChar": 21
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e97e1b55_56e623e8",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:21:57Z",
+      "side": 1,
+      "message": "console, see another comment",
+      "range": {
+        "startLine": 29,
+        "startChar": 57,
+        "endLine": 29,
+        "endChar": 61
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
