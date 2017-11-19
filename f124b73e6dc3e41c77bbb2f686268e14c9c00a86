@@ -222,6 +222,30 @@
       "revId": "f124b73e6dc3e41c77bbb2f686268e14c9c00a86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bed76fc7_d2114587",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-19T23:36:22Z",
+      "side": 1,
+      "message": "I\u0027ll change this in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/778112 (change is halfway there anyway), don\u0027t want to step over myself too much.",
+      "parentUuid": "d83fa7ac_d73ebdcd",
+      "range": {
+        "startLine": 29,
+        "startChar": 48,
+        "endLine": 29,
+        "endChar": 59
+      },
+      "revId": "f124b73e6dc3e41c77bbb2f686268e14c9c00a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
