@@ -842,6 +842,24 @@
     },
     {
       "key": {
+        "uuid": "46690793_f2e09bc7",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-19T08:51:36Z",
+      "side": 1,
+      "message": "OK, https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/778112 does something similar (especially with the change Robbie suggested), so I\u0027ll make the change in that CL. I would like to keep 8 instead of nBuilds-1, though, because (as demonstrated in the linked CL) adding different BuildSummaries wouldn\u0027t necessitate changing nBuilds-1 to nBuilds-2 to nBuilds-3, etc... How does that sound?",
+      "parentUuid": "32381a4e_2822206a",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e221c888_6bbcc03a",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 4
@@ -918,6 +936,24 @@
       "side": 1,
       "message": "In the next CL I\u0027ll be adding more children (filtering by view). Do you mind if I leave this in for now then?",
       "parentUuid": "50250953_408ac211",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45267be9_5c60b700",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-19T08:51:36Z",
+      "side": 1,
+      "message": "*https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/778112, in particular",
+      "parentUuid": "e5cad0ef_2e6247c6",
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
