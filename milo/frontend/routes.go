@@ -97,7 +97,10 @@ func Run(templatePath string) {
 
 	// Builder list
 	r.GET("/p/:project/builders", htmlMW, func(c *router.Context) {
-		BuildersRelativeHandler(c, c.Params.ByName("project"))
+		BuildersRelativeHandler(c, c.Params.ByName("project"), "")
+	})
+	r.GET("/p/:project/g/:view/builders", htmlMW, func(c *router.Context) {
+		BuildersRelativeHandler(c, c.Params.ByName("project"), c.Params.ByName("view"))
 	})
 
 	// Swarming
