@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "075c06f6_3f76f2a2",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-19T07:51:48Z",
+      "side": 1,
+      "message": "I suspect you could simplify this to:\n\n   addBuildSummary(c context.Context, builds *[]*BuildSummary, builder string, summary Summary)\n\nAnd then do:\n\n  *build \u003d append(*builds, \u0026BuildSummary{ ...... })",
+      "range": {
+        "startLine": 168,
+        "startChar": 5,
+        "endLine": 168,
+        "endChar": 25
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
