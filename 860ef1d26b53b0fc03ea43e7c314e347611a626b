@@ -122,6 +122,24 @@
     },
     {
       "key": {
+        "uuid": "1b68f63d_8057616c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T23:01:39Z",
+      "side": 1,
+      "message": "err I wrote this before I discovered you use sqlmock which IMO a fine way to test this. We could have two test cases, one with and one without filtering. Outside of the scope though.\n\nWe will need to copy paste such function for every entity, so we might want to implement this in the more generalized code.",
+      "parentUuid": "3e068ad2_b04c813b",
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5770af42_9eb0913a",
         "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
         "patchSetId": 4
