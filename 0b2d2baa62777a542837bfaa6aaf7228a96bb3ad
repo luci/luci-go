@@ -402,6 +402,30 @@
     },
     {
       "key": {
+        "uuid": "76765313_f85091b8",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-19T09:29:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a183e4e_f6b3f3ca",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 2
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "02bbdfac_8bf7753b",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -872,6 +896,24 @@
       "side": 1,
       "message": "sounds good",
       "parentUuid": "46690793_f2e09bc7",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b21e8f4f_b7c4edf6",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-19T09:29:26Z",
+      "side": 1,
+      "message": "As I implemented the change, it occurs to me that actually that it actually /does/ undo the benefits of what I was trying to explain. I\u0027ll keep it anyway because I don\u0027t feel strongly enough about it to keep going back and forth.\n\nFor the purposes of completeness: what I meant is that in the case of inserting a different kind of BuildSummary (as is done in the linked CL), by maintaining the index i, there\u0027s no need to update the indices of any following builds.",
+      "parentUuid": "966b1b6c_e50aa4d0",
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
