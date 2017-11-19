@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "a87183b6_bef9f53b",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "I\u0027ve forked this discussion into an email thread to unblock this CL.",
+      "parentUuid": "3cf330d5_5e2a927a",
+      "range": {
+        "startLine": 61,
+        "startChar": 31,
+        "endLine": 61,
+        "endChar": 35
+      },
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7463307_824e4f42",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -213,6 +237,24 @@
     },
     {
       "key": {
+        "uuid": "2acae30a_b92ede5c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "I\u0027ve forked this discussion into an email thread to unblock this CL.",
+      "parentUuid": "e25385ad_aa9b9810",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b6092bfb_7bc5ab4f",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -245,6 +287,24 @@
       "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f23fcef_82ece2d0",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "appengine cron does not guarantee that it will send a request exactly once per interval. It guarantees that it will run it at least once. Here it happened to someone https://groups.google.com/forum/#!topic/google-appengine/eBI425QrPXA\n\nI generally prefer \"100% reliable\" if possible (possible in this case) to \"99% reliable\", but it is not a big deal.\n\nHowever later down the road, we will probably call a lot of Ensure functions that update different tables from the function that just fetched a config. Then, it is the outer function that should start a transaction, not this one, and ensure functions should just use a given tx instead of a given db. I will mark this as resolved.",
+      "parentUuid": "46bdb9e8_459192af",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -353,6 +413,24 @@
     },
     {
       "key": {
+        "uuid": "43bee5b9_4f1b4ffa",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "it might be shorter/safer to do\n\n  DELETE FROM datacenters WHERE id IN (?, ?, ?)\n\nwhere the number of ? \u003d\u003d number of things to delete. However, the potential problem with this approach is a limit on the number of parameters in the query.\n\nFIND_IN_SET that could be used as\n\n  WHERE FIND_IN_SET(id, ?) \u003c\u003e -1\n\nin which case there is only one parameter with a value strings.Join(\",\", idsToDelete)\n\nmarking as resolved because it is an optimization",
+      "parentUuid": "02a0c5d4_53e83b41",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dbe900fe_e22b059a",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -423,6 +501,24 @@
     },
     {
       "key": {
+        "uuid": "30c5dabf_e20c7e87",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "+1 to \"obvious and readable\", but I think sqlmock is perfectly sufficient to cover the hypothetical generalized code. It shouldn\u0027t be hard to write a test proto, run the generalized code and assert that it would send the queries we expect. It requires the tests to actually spell out queries though, but I think they should do that regardless of this discussion (otherwise I don\u0027t see much value in such tests)\n\nMarking as resolved because outside of the scope. Happy to talk about this offline too.",
+      "parentUuid": "9e96ddb0_49f9c721",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dcf36d9d_99ccfbea",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 2
@@ -455,6 +551,24 @@
       "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e829e48_8bd90b16",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "yeah, let\u0027s generalize it when we actually add another entity kind.\n\nI think\n\n  datacenter.proto // everything about datacenters\n  rack.proto // everything about racks\n  ...\n  service.proto // all services, import protos above\n\nwould be manageable, but starting with just one file to keep it simple is perfectly fine too. If/when it gets too big, we can split it up.",
+      "parentUuid": "7e462e83_4a00b1fd",
+      "revId": "4ac64e9835cdc5fa6b35137797a21dd99ad2254e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

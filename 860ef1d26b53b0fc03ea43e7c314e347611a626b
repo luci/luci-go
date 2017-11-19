@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd216449_976da35a",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "according to InternalReason usage number https://cs.chromium.org/search/?q\u003dInternalReason%5C(+file:%5Einfra/go/src/+package:%5Echromium$\u0026type\u003dcs\nit seems that InternalReason didn\u0027t really work out, and I am not sure it is safe to think that by default an error message is public in general. It seems to be the design problem of InternalReason so I think I will delete it.\n\nIn this particular case, the underlying error message is already inserted into the public part of the returned error (by passing it as the first arg), so InternalReason call does not make sense. Please do not call InternalReason here and below",
+      "range": {
+        "startLine": 44,
+        "startChar": 9,
+        "endLine": 44,
+        "endChar": 94
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e715e6cb_7cc36097",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "QueryContext",
+      "range": {
+        "startLine": 60,
+        "startChar": 17,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bedba199_f54052ee",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "ExecContext here and below",
+      "range": {
+        "startLine": 78,
+        "startChar": 28,
+        "endLine": 78,
+        "endChar": 32
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a852b6e_e63623eb",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "here we assume that getDatacenter logs errors (otherwise we just loose err). Better not to assume that. If you move logging from getDatacenters here, then the overall number of lines will actually decrease\n\nstepping back, it looks we will need to log internal errors not only here, but any RPC method. Consider\n\n  // internalRPCError logs the error and returns an internal GRPC error\n  // with message \"Internal server error\"\n  func internalRPCError(c context.Context, err error) err\n\n(the rationale for `message \"Internal server error\"` is that we might not want to expose the internal details to users)\n\nand use it in all RPC methods like\n\n  return nil, internalRPCError(c, err)",
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1c5749e_27c81519",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "here we handle an error twice, which is an anti-pattern because the caller may log the returned error too. Consider not logging it here but log in the caller. Chances are, only the root of the call tree (http handler) will actually need to log errors",
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e068ad2_b04c813b",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "outside of this CL, but it seems that filtering is better on the database side, not in memory. We will have to do this with large tables anyway, so we might want to be consistent across tables. This requires tests, so let\u0027s block this change on the testing discussion.",
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5770af42_9eb0913a",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "err",
+      "range": {
+        "startLine": 34,
+        "startChar": 9,
+        "endLine": 34,
+        "endChar": 10
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94f0e586_0087f659",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "this is copy-pasted in every convey below. Please do\n\nConvey(\"EnsureDatacenters\", t, func() {\n\tdb, m, e :\u003d sqlmock.New()\n\tdefer db.Close()\n\tSo(db, ShouldNotBeNil)\n\tSo(m, ShouldNotBeNil)\n\tSo(e, ShouldBeNil)\n\n\tConvey(\"empty\", func() {\n\t\t// use db, m, e\n\t})\n\tConvey(\"insert\", func() {\n\t\t// use db, m, e\n\t})\n}",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 38,
+        "endChar": 20
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20490155_ac2554a3",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T21:45:14Z",
+      "side": 1,
+      "message": "this test barely tests anything. Please include the full query you expect.\n\nnote that this shouldn\u0027t make this file too verbose if Goconvey is used as meant to: since Prepare is called unconditionally, ExpectPrepare calls can be moved to the containing Convey. Same applies to SELECT:\n\nConvey(\"EnsureDatabase\", t, func() {\n  ... \n  c :\u003d database.With(context.Background(), db)\n  select :\u003d m.ExpectQuery(\"^SELECT id, name, description FROM datacenters$\").\n  rows :\u003d sqlmock.NewRows([]string{\"id\", \"name\", \"description\"})\n  var datacenters []*config.DatacenterConfig{}\n\n  test :\u003d func() {\n    select.WillReturnRows(row)\n    err :\u003d EnsureDatacenters(c, datacenters)\n    So(err, ShouldBeNil)\n  }\n\n  Convey(\"empty\", func() {\n    test()\n  })\n  ...\n  Convey(\"update\", func() {\n    datacenters \u003d append(datacenters ...)\n    rows.AddRow(1, datacenters[0].Name, \"description\"))\n    test()\n  })\n  ...\n})",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
