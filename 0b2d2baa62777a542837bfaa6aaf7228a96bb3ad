@@ -378,6 +378,30 @@
     },
     {
       "key": {
+        "uuid": "6a183e4e_f6b3f3ca",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "oops, sorry, I meant sort.Strings(builders)",
+      "parentUuid": "998291b2_e6a56a5a",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 2
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "02bbdfac_8bf7753b",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -800,6 +824,24 @@
     },
     {
       "key": {
+        "uuid": "32381a4e_2822206a",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "i don\u0027t feel strong, but I didn\u0027t understand the explanation either. What prevents us to do\n\nbuilds :\u003d make([]*BuildSummary, 0, nBuilds)\nfor i :\u003d 0; i \u003c nBuilds-1; i++ {\n  builds \u003d append(builds, ....\n}\nbuilds \u003d append(builds, ...)\n\nthen our loop index variable does not span entire function",
+      "parentUuid": "4a6ec97e_c42c386d",
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e221c888_6bbcc03a",
         "filename": "milo/common/model/builder_summary_test.go",
         "patchSetId": 4
@@ -926,6 +968,30 @@
       "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6bf986b_1e661394",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "BuildKey comes empty because of the bug fixed by https://chromium-review.googlesource.com/c/infra/luci/gae/+/777985\n\nnot sure about time, sounds suspicious, but ok",
+      "parentUuid": "327dc03f_488ba724",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 6
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

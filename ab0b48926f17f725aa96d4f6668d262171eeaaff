@@ -1,0 +1,210 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a470c43b_0af0bbca",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "not used",
+      "range": {
+        "startLine": 153,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 0
+      },
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ead03264_a03ff404",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "this is a public function that returns a private struct. Either they both should be private, or both public",
+      "range": {
+        "startLine": 163,
+        "startChar": 5,
+        "endLine": 163,
+        "endChar": 11
+      },
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5098c0c_4f2125a3",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "same here, we handle error twice\nplease do not log but annotate the error",
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9732c706_a77470dd",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "consider returning a slice of pointers so you don\u0027t have to do copying here",
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3a86655_8c7766b8",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "sort.Strings(builders)",
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45a566d3_c793815a",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "this could be `return \u0026hist, `\nup to you",
+      "range": {
+        "startLine": 228,
+        "startChar": 1,
+        "endLine": 228,
+        "endChar": 8
+      },
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fef9588_af5055ba",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "nit: the name l made sense in a context where there multiple queries for different purposes. Now this variable lives in a context where there is only one query. Consider \"q\" which is often used for queries\n\nnow I regret my suggestion to inline other two queries, as this function became inconsistent with the other two and L242 is really long. Hate to ask, but consider\n\n  q :\u003d ....\n  running, err :\u003d datastore.Count(...",
+      "range": {
+        "startLine": 249,
+        "startChar": 3,
+        "endLine": 249,
+        "endChar": 4
+      },
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae2a044f_351a9d68",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 252,
+        "startChar": 3,
+        "endLine": 252,
+        "endChar": 10
+      },
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5f7fa7f_1e731b03",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "if you insist on keeping i, then consider\n\nfor ; i \u003c nBuild-1; i++ {",
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eddaf8c2_4af16dff",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T04:19:15Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 260,
+        "startChar": 6,
+        "endLine": 260,
+        "endChar": 38
+      },
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
