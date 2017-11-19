@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de554131_cb719ddd",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:07:35Z",
+      "side": 1,
+      "message": "this type is public, but it does not have a comment. please add one",
+      "revId": "f124b73e6dc3e41c77bbb2f686268e14c9c00a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bd22bb8_cd01c827",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:07:35Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 157,
+        "startChar": 9,
+        "endLine": 157,
+        "endChar": 28
+      },
+      "revId": "f124b73e6dc3e41c77bbb2f686268e14c9c00a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8cb1ec4_3c29ada5",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:07:35Z",
+      "side": 1,
+      "message": "Annotate already has formatting inside:\n\n  return errors.Annotate(err, \"error .... %s\", builder).Err()",
+      "range": {
+        "startLine": 170,
+        "startChar": 15,
+        "endLine": 170,
+        "endChar": 22
+      },
+      "revId": "f124b73e6dc3e41c77bbb2f686268e14c9c00a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59528631_b0dfd159",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:07:35Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 186,
+        "startChar": 12,
+        "endLine": 186,
+        "endChar": 19
+      },
+      "revId": "f124b73e6dc3e41c77bbb2f686268e14c9c00a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d0aeb05_24fe6ebc",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-19T09:07:35Z",
+      "side": 1,
+      "message": "projectID",
+      "range": {
+        "startLine": 29,
+        "startChar": 48,
+        "endLine": 29,
+        "endChar": 59
+      },
+      "revId": "f124b73e6dc3e41c77bbb2f686268e14c9c00a86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
