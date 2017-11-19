@@ -495,7 +495,7 @@ div.BuildWaterfall {
   border-color: #ACA0B3;
 }
 
-.start {
+.start, .status-NotRun {
   color: #000;
   background-color: #ccc;
   border-color: #ccc;

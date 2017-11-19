@@ -98,6 +98,11 @@ func Run(templatePath string) {
 	r.GET("/p/:project/consoles", frontendMW, movedPermanently("/p/:project"))
 	r.GET("/console/:project", frontendMW, movedPermanently("/p/:project"))
 
+	// Builder list
+	r.GET("/p/:project/builders", htmlMW, func(c *router.Context) {
+		BuildersRelativeHandler(c, c.Params.ByName("project"))
+	})
+
 	// Swarming
 	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, func(c *router.Context) {
 		LogHandler(c, &swarming.BuildID{
@@ -122,7 +127,8 @@ func Run(templatePath string) {
 	})
 
 	// Buildbucket
-	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID.
+	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
+	// and common/model/builder_summary.go:SelfLink.
 	r.GET("/p/:project/builders/:bucket/:builder", htmlMW, func(c *router.Context) {
 		// TODO(nodir): use project parameter.
 		// Besides implementation, requires deleting the redirect for
@@ -137,6 +143,7 @@ func Run(templatePath string) {
 	r.GET("/buildbucket/:bucket/:builder", frontendMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
 
 	// Buildbot
+	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
 	r.GET("/buildbot/:master/:builder/:build", htmlMW.Extend(emulationMiddleware), func(c *router.Context) {
 		BuildHandler(c, &buildbot.BuildID{
 			Master:      c.Params.ByName("master"),
