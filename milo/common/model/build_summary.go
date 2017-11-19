@@ -336,10 +336,10 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 // For buildbucket, <buildaddr> looks like <bucketname>/<buildername>/<buildnumber> if available
 // and <buildid> otherwise.
 func (bs *BuildSummary) SelfLink() string {
-	return getLinkFromBuildID(bs.BuildID, bs.ProjectID)
+	return buildIDLink(bs.BuildID, bs.ProjectID)
 }
 
-func getLinkFromBuildID(b string, project string) string {
+func buildIDLink(b string, project string) string {
 	parts := strings.Split(b, "/")
 	if len(parts) < 2 {
 		return InvalidBuildIDURL

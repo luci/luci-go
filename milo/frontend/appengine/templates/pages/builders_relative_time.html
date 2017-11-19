@@ -1,0 +1,57 @@
+{{define "title"}}Milo {{.ProjectName}} Builders{{end}}
+
+{{define "head"}}
+{{ if .Reload }}
+<meta http-equiv="refresh" content="{{ .Reload }}">
+{{ end }}
+<link rel="stylesheet" href="/static/common/css/builders.css" type="text/css">
+<link rel="stylesheet" href="/static/common/css/console.css" type="text/css">
+{{end}}
+
+{{define "body"}}
+<h1>{{ .ProjectName }} Builders</h1>
+
+{{ range .Builders }}
+  {{ $builder := .BuilderID }}
+  <div class="builder-row">
+    <a class="builder-name"
+       href="{{ .BuilderLink }}"
+       aria-label="Recent state of builder {{ $builder }}">{{ $builder }}</a>
+    <a class="builder-state-bubble pending-builds status-NotRun"
+       href="{{ .BuilderLink }}"
+       aria-label="builder {{ $builder }}">
+      {{ .NumPending }} pending
+    </a>
+    <a class="builder-state-bubble running-builds status-Running"
+       href="{{ .BuilderLink }}"
+       aria-label="builder {{ $builder }}">
+      {{ .NumRunning }} running
+    </a>
+    <div class="finished-builds">
+    {{ range $i, $build := .RecentBuilds }}
+      <a class="build-status"
+         href="{{ $build.SelfLink }}"
+         title="{{ $build.BuildID }}"
+         aria-label="builder {{ $builder }} got status {{ $build.Summary.Status }} on recent build {{ $build.BuildID }}">
+        <div class="builder-state-bubble finished-build status-{{ $build.Summary.Status }}">
+          {{ if eq $i 0 }}
+            newest
+          {{ end }}
+        </div>
+      </a>
+    {{ end }}
+    </div>
+  </div>
+{{ end }}
+
+<div class="epiloge" style="margin-top: 1em">
+  (Show:
+  <a href="?numbuilds=">default</a>
+  <a href="?numbuilds=25">25</a>
+  <a href="?numbuilds=50">50</a>
+  <a href="?numbuilds=100">100</a>
+  <a href="?numbuilds=200">200</a>
+  )
+</div>
+
+{{end}} <!-- Body -->
