@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "6c0998f7_fbe7ffee",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-19T00:51:55Z",
+      "side": 1,
+      "message": "*moving closer to usage will be in next CL",
+      "parentUuid": "7599bf89_268a8a8f",
+      "range": {
+        "startLine": 192,
+        "startChar": 9,
+        "endLine": 192,
+        "endChar": 31
+      },
+      "revId": "0b2d2baa62777a542837bfaa6aaf7228a96bb3ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49d52bd8_79757f4b",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
