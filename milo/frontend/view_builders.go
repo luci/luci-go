@@ -26,13 +26,13 @@ import (
 //
 // The builders view page by relative time is defined in
 // ./appengine/templates/pages/builders_relative_time.html.
-func BuildersRelativeHandler(c *router.Context, projectName string) {
+func BuildersRelativeHandler(c *router.Context, project, view string) {
 	limit := 30
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
 	}
 
-	hists, err := model.GetBuilderHistories(c.Context, projectName, limit)
+	hists, err := model.GetBuilderHistories(c.Context, project, view, limit)
 	if err != nil {
 		ErrorHandler(c, err)
 		return

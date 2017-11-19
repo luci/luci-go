@@ -163,6 +163,20 @@ func TestBuildIDLink(t *testing.T) {
 	})
 }
 
+// populateBuildSummary populates the given BuildSummary array at specified index, returning the
+// next index.
+func populateBuildSummary(c context.Context, builds []*BuildSummary, i int, project, builder string, summary Summary) int {
+	builds[i] = &BuildSummary{
+		BuildKey:  datastore.MakeKey(c, "build", i+1),
+		ProjectID: project,
+		BuilderID: builder,
+		BuildID:   fmt.Sprintf("%s/%d", builder, i),
+		Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
+		Summary:   summary,
+	}
+	return i+1
+}
+
 func TestGetBuilderHistories(t *testing.T) {
 	t.Parallel()
 
@@ -187,7 +201,7 @@ func TestGetBuilderHistories(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 		datastore.GetTestable(c).Consistent(true)
 
-		nBuilds := 9
+		nBuilds := 10
 		statuses := []Summary{
 			{Status: Running},      /* b2 */
 			{Status: Success},      /* b2 */
@@ -198,17 +212,24 @@ func TestGetBuilderHistories(t *testing.T) {
 			{Status: NotRun},       /* b2 */
 			{Status: NotRun},       /* b2 */
 			{Status: Success},      /* b3 */
+			{Status: Success},      /* b4 */
 		}
 		So(statuses, ShouldHaveLength, nBuilds)
 
 		p := "proj"
 		proj := datastore.MakeKey(c, "Project", p)
 
-		// Populate console.
+		// Populate consoles.
 		err := datastore.Put(c, &common.Console{
 			Parent:   proj,
 			ID:       "view",
-			Builders: []string{"buildbot/master/b1", "buildbot/master/b2"},
+			Builders: []string{"buildbot/master/b1", "buildbot/master/b2", "buildbot/master/b4"},
+		})
+		So(err, ShouldBeNil)
+		err = datastore.Put(c, &common.Console{
+			Parent:   proj,
+			ID:       "view2",
+			Builders: []string{"buildbot/master/b4"},
 		})
 		So(err, ShouldBeNil)
 
@@ -218,31 +239,19 @@ func TestGetBuilderHistories(t *testing.T) {
 		// Populate builds.
 		builds := make([]*BuildSummary, nBuilds)
 
+		// One builder is on a view but has no builds.
+
 		// One builder has lots of builds.
 		builder := "buildbot/master/b2"
 		for i < 8 {
-			builds[i] = &BuildSummary{
-				BuildKey:  datastore.MakeKey(c, "build", i+1),
-				ProjectID: p,
-				BuilderID: builder,
-				BuildID:   fmt.Sprintf("%s/%d", builder, i),
-				Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
-				Summary:   statuses[i],
-			}
-			i++
+			i = populateBuildSummary(c, builds, i, p, builder, statuses[i])
 		}
-
-		// One builder is on a view but has no builds.
 
 		// One builder is not on any project's views.
-		builds[i] = &BuildSummary{
-			BuildKey:  datastore.MakeKey(c, "build", i+1),
-			ProjectID: p,
-			BuilderID: "buildbot/master/b3",
-			BuildID:   fmt.Sprintf("buildbot/master/b3/%d", i),
-			Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
-			Summary:   statuses[i],
-		}
+		i = populateBuildSummary(c, builds, i, p, "buildbot/master/b3", statuses[i])
+
+		// One builder is on two views.
+		i = populateBuildSummary(c, builds, i, p, "buildbot/master/b4", statuses[i])
 
 		err = datastore.Put(c, builds)
 		So(err, ShouldBeNil)
@@ -250,9 +259,9 @@ func TestGetBuilderHistories(t *testing.T) {
 		Convey("Getting recent history for existing project", func() {
 			Convey("across all views", func() {
 				Convey("with limit less than number of finished builds works", func() {
-					hists, err := GetBuilderHistories(c, p, 2)
+					hists, err := GetBuilderHistories(c, p, "", 2)
 					So(err, ShouldBeNil)
-					So(hists, ShouldHaveLength, 2)
+					So(hists, ShouldHaveLength, 3)
 
 					So(hists[0], ShouldResemble, builderHistory{
 						BuilderID:    "buildbot/master/b1",
@@ -267,12 +276,19 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(hists[1].RecentBuilds, ShouldHaveLength, 2)
 					So(hists[1].RecentBuilds[0].BuildID, ShouldEqual, builds[5].BuildID)
 					So(hists[1].RecentBuilds[1].BuildID, ShouldEqual, builds[3].BuildID)
+
+					So(hists[2].BuilderID, ShouldEqual, "buildbot/master/b4")
+					So(hists[2].BuilderLink, ShouldEqual, "/buildbot/master/b4")
+					So(hists[2].NumPending, ShouldEqual, 0)
+					So(hists[2].NumRunning, ShouldEqual, 0)
+					So(hists[2].RecentBuilds, ShouldHaveLength, 1)
+					So(hists[2].RecentBuilds[0].BuildID, ShouldEqual, builds[9].BuildID)
 				})
 
 				Convey("with limit greater than number of finished builds works", func() {
-					hists, err := GetBuilderHistories(c, p, 5)
+					hists, err := GetBuilderHistories(c, p, "", 5)
 					So(err, ShouldBeNil)
-					So(hists, ShouldHaveLength, 2)
+					So(hists, ShouldHaveLength, 3)
 
 					So(hists[0], ShouldResemble, builderHistory{
 						BuilderID:    "buildbot/master/b1",
@@ -288,12 +304,37 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(hists[1].RecentBuilds[0].BuildID, ShouldEqual, builds[5].BuildID)
 					So(hists[1].RecentBuilds[1].BuildID, ShouldEqual, builds[3].BuildID)
 					So(hists[1].RecentBuilds[2].BuildID, ShouldEqual, builds[1].BuildID)
+
+					So(hists[2].BuilderID, ShouldEqual, "buildbot/master/b4")
+					So(hists[2].BuilderLink, ShouldEqual, "/buildbot/master/b4")
+					So(hists[2].NumPending, ShouldEqual, 0)
+					So(hists[2].NumRunning, ShouldEqual, 0)
+					So(hists[2].RecentBuilds, ShouldHaveLength, 1)
+					So(hists[2].RecentBuilds[0].BuildID, ShouldEqual, builds[9].BuildID)
 				})
 			})
+
+			Convey("across a specific view", func() {
+				Convey("for a valid view works", func() {
+					hists, err := GetBuilderHistories(c, p, "view2", 2)
+					So(err, ShouldBeNil)
+					So(hists, ShouldHaveLength, 1)
+
+					So(hists[0].BuilderID, ShouldEqual, "buildbot/master/b4")
+					So(hists[0].BuilderLink, ShouldEqual, "/buildbot/master/b4")
+					So(hists[0].RecentBuilds, ShouldHaveLength, 1)
+					So(hists[0].RecentBuilds[0].BuildID, ShouldResemble, builds[9].BuildID)
+				})
+
+				Convey("for an invalid view works", func() {
+					_, err := GetBuilderHistories(c, p, "bad_view", 2)
+					So(err, ShouldNotBeNil)
+				})
+      })
 		})
 
 		Convey("Getting recent history for nonexisting project", func() {
-			hists, err := GetBuilderHistories(c, "no_proj", 3)
+			hists, err := GetBuilderHistories(c, "no_proj", "", 3)
 			So(err, ShouldBeNil)
 			So(hists, ShouldHaveLength, 0)
 		})
