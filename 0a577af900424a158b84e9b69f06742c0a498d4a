@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ca57cc43_6f2b6b78",
+        "filename": "appengine/tsmon/housekeeping.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T18:55:38Z",
+      "side": 1,
+      "message": "number",
+      "range": {
+        "startLine": 33,
+        "startChar": 37,
+        "endLine": 33,
+        "endChar": 44
+      },
+      "revId": "0a577af900424a158b84e9b69f06742c0a498d4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdced099_dc785f10",
+        "filename": "appengine/tsmon/housekeeping.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T18:55:38Z",
+      "side": 1,
+      "message": "don\u0027t we want to log the error?",
+      "revId": "0a577af900424a158b84e9b69f06742c0a498d4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fe0ecbc_ed96e9a9",
+        "filename": "appengine/tsmon/tasknum.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T18:55:38Z",
+      "side": 1,
+      "message": "logging and returning an err is generally an anti-pattern because we might log an error twice.\ncan we just annotate the error and return? so that the caller logs it",
+      "revId": "0a577af900424a158b84e9b69f06742c0a498d4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6584333e_65b8744a",
+        "filename": "appengine/tsmon/tasknum.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T18:55:38Z",
+      "side": 1,
+      "message": "here we log L100 err second time",
+      "revId": "0a577af900424a158b84e9b69f06742c0a498d4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d933163f_119156a1",
+        "filename": "appengine/tsmon/tasknum.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T18:55:38Z",
+      "side": 1,
+      "message": "why not concurrently? \n\n  return parallel.FanOutIn(\n\nthen you don\u0027t need to construct MultiError yourself",
+      "revId": "0a577af900424a158b84e9b69f06742c0a498d4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca4991d1_2cf6207d",
+        "filename": "server/tsmon/middleware_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T18:55:38Z",
+      "side": 1,
+      "message": "So(allocator.instanceIDs, ShouldHaveLength, 1)",
+      "revId": "0a577af900424a158b84e9b69f06742c0a498d4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
