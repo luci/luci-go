@@ -34,6 +34,24 @@
       "revId": "9f565f034a8c48756c80810b26b1d24587a10441",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4e51928_e20d9be1",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-20T19:07:33Z",
+      "side": 1,
+      "message": "Just returned the error as discussed offline, as it\u0027s pretty unlikely anyhow",
+      "parentUuid": "ffd23501_01e7a07b",
+      "revId": "9f565f034a8c48756c80810b26b1d24587a10441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
