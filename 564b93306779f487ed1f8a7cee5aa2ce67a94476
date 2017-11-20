@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b597981_96a1b9fa",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T18:30:18Z",
+      "side": 1,
+      "message": "is ignoring returned error intentional? if yes,\n1) why?\n2) we probably want to at least log the error if it is not nil",
+      "revId": "564b93306779f487ed1f8a7cee5aa2ce67a94476",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
