@@ -152,8 +152,8 @@ type BuilderHistory struct {
 }
 
 // GetBuilderHistories gets the recent histories for the builders in the given project.
-func GetBuilderHistories(c context.Context, project string, limit int) ([]*BuilderHistory, error) {
-	builders, err := getBuildersForProject(c, project)
+func GetBuilderHistories(c context.Context, project, console string, limit int) ([]*BuilderHistory, error) {
+	builders, err := getBuildersForProject(c, project, console)
 	if err != nil {
 		return nil, err
 	}
@@ -183,13 +183,30 @@ func GetBuilderHistories(c context.Context, project string, limit int) ([]*Build
 }
 
 // getBuildersForProject gets the sorted builder IDs associated with the given project.
-func getBuildersForProject(c context.Context, project string) ([]string, error) {
-	// Get consoles for project and extract builders into set.
-	q := datastore.NewQuery("Console").Ancestor(datastore.MakeKey(c, "Project", project))
+func getBuildersForProject(c context.Context, project, console string) ([]string, error) {
 	var cons []*common.Console
-	if err := datastore.GetAll(c, q, &cons); err != nil {
-		return nil, errors.Annotate(
-			err, "error getting consoles for project %s", project).Err()
+
+	// Get consoles for project and extract builders into set.
+	projKey := datastore.MakeKey(c, "Project", project)
+	if console == "" {
+		q := datastore.NewQuery("Console").Ancestor(projKey)
+		if err := datastore.GetAll(c, q, &cons); err != nil {
+			return nil, errors.Annotate(
+				err, "error getting consoles for project %s: %v", project).Err()
+		}
+	} else {
+		con := common.Console{Parent: projKey, ID: console}
+		switch err := datastore.Get(c, &con); err {
+		case nil:
+		case datastore.ErrNoSuchEntity:
+			return nil, errors.Annotate(
+				err, "error getting console %s in project %s", console, project).
+				Tag(common.CodeNotFound).Err()
+		default:
+			return nil, errors.Annotate(
+				err, "error getting console %s in project %s", console, project).Err()
+		}
+		cons = append(cons, &con)
 	}
 
 	bSet := stringset.New(0)
