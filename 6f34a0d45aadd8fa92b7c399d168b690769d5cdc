@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "36dc7dbc_42c8bc1b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-20T05:00:45Z",
+      "side": 1,
+      "message": "Hm, interesting; crbug/786223 says it\u0027s LUCI-Blocker-UI, and I was told on Thursday that this is effectively a blocker for UI Day (as in, unless it\u0027s not ready by Tuesday we want to have it to show the devs; having all the Chromium builders on the page is really quite long).\n\nI\u0027ll land this so that we have something to iterate on come Tuesday, and then if we need to make changes after we make the changes after.",
+      "parentUuid": "49efb793_8a6991dc",
+      "range": {
+        "startLine": 10,
+        "startChar": 59,
+        "endLine": 10,
+        "endChar": 63
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9153512f_857e1897",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
