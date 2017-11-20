@@ -16,6 +16,7 @@ package frontend
 
 import (
 	"sort"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -23,11 +24,12 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 )
 
 // BuildersRelativeHandler is responsible for rendering a builders console page according to project.
@@ -95,10 +97,31 @@ func getBuilderHistories(c context.Context, project, console string, limit int) 
 			}
 		}
 	})
-
 	if err != nil {
 		return nil, err
 	}
+
+	// for all buildbot builders, we don't have pending BuildSummary entities,
+	// so load pending counts from buildstore.
+	var pendingBuilders []string
+	var pendingHists []*builderHistory
+	for _, h := range hists {
+		// TODO: move builder ID parsing to a common place.
+		if p := strings.Split(h.BuilderID, "/"); p[0] == "buildbot" && len(p) == 3 {
+			pendingHists = append(pendingHists, h)
+			pendingBuilders = append(pendingBuilders, strings.TrimPrefix(h.BuilderID, "buildbot/"))
+		}
+	}
+	if len(pendingBuilders) > 0 {
+		pendingCounts, err := buildstore.GetPendingCounts(c, pendingBuilders)
+		if err != nil {
+			return nil, err
+		}
+		for i, count := range pendingCounts {
+			pendingHists[i].NumPending = count
+		}
+	}
+
 	return hists, nil
 }
 
@@ -144,6 +167,7 @@ func getBuildersForProject(c context.Context, project, console string) ([]string
 
 // getHistory gets the recent history of the given builder.
 // Depends on status.go for filtering finished builds.
+// If the builder starts with "buildbot/", does not load pending builds.
 func getHistory(c context.Context, builderID, project string, limit int) (*builderHistory, error) {
 	hist := builderHistory{
 		BuilderID:    builderID,
@@ -153,14 +177,16 @@ func getHistory(c context.Context, builderID, project string, limit int) (*build
 
 	// Do fetches.
 	return &hist, parallel.FanOutIn(func(fetch chan<- func() error) {
-		// Pending builds
-		fetch <- func() error {
-			q := datastore.NewQuery("BuildSummary").
-				Eq("BuilderID", builderID).
-				Eq("Summary.Status", model.NotRun)
-			pending, err := datastore.Count(c, q)
-			hist.NumPending = int(pending)
-			return err
+		if !strings.HasPrefix(builderID, "buildbot/") {
+			// Pending builds
+			fetch <- func() error {
+				q := datastore.NewQuery("BuildSummary").
+					Eq("BuilderID", builderID).
+					Eq("Summary.Status", model.NotRun)
+				pending, err := datastore.Count(c, q)
+				hist.NumPending = int(pending)
+				return err
+			}
 		}
 
 		// Running builds
