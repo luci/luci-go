@@ -248,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "369c80a9_5d60136a",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-20T05:01:51Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "212c74d4_6df1e648",
+      "range": {
+        "startLine": 228,
+        "startChar": 1,
+        "endLine": 228,
+        "endChar": 8
+      },
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4fef9588_af5055ba",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 6
@@ -356,6 +380,24 @@
       "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "805f22cd_7dd5c640",
+        "filename": "milo/common/model/builder_summary_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-20T05:01:51Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e5f7fa7f_1e731b03",
+      "revId": "ab0b48926f17f725aa96d4f6668d262171eeaaff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
