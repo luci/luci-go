@@ -18,21 +18,30 @@ import (
 	"errors"
 
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/tsmon/target"
 )
 
 // ErrNoTaskNumber is returned by NotifyTaskIsAlive if the task wasn't given
 // a number yet.
 var ErrNoTaskNumber = errors.New("no task number assigned yet")
 
-// TaskNumAllocator is responsible for maintaining global mapping between task
-// IDs and task numbers.
+// TaskNumAllocator is responsible for maintaining global mapping between
+// instances of a service (tasks) and task numbers, used to identify metrics
+// streams.
 //
 // The mapping is dynamic. Once a task dies (i.e. stops periodically call
 // NotifyTaskIsAlive), its task number may be reused by some other (new) task.
 type TaskNumAllocator interface {
 	// NotifyTaskIsAlive is called periodically to make the allocator know the
-	// given task is still up. The allocator responds with the currently assigned
-	// task number or ErrNoTaskNumber if not yet assigned. Any other error should
-	// be considered transient.
-	NotifyTaskIsAlive(c context.Context, taskID string) (int, error)
+	// given task is still up.
+	//
+	// The particular task is identified by a 'task' target (which names a group
+	// of homogeneous processes) and by 'instanceID' (which is a unique name of
+	// the particular process within the group).
+	//
+	// The allocator responds with the currently assigned task number or
+	// ErrNoTaskNumber if not yet assigned. Any other error should be considered
+	// transient.
+	NotifyTaskIsAlive(c context.Context, task *target.Task, instanceID string) (int, error)
 }

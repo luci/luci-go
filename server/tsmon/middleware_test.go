@@ -72,7 +72,7 @@ func TestMiddleware(t *testing.T) {
 		tsmon.Register(c, metric)
 
 		Convey("Pings TaskNumAllocator and waits for number", func() {
-			So(len(allocator.taskIDs), ShouldEqual, 0)
+			So(allocator.instanceIDs, ShouldHaveLength, 0)
 			allocator.taskNum = -1 // no number yet
 
 			// Do the flush.
@@ -80,9 +80,9 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// Called the allocator.
-			So(len(allocator.taskIDs), ShouldEqual, 1)
+			So(allocator.instanceIDs, ShouldHaveLength, 1)
 			// Shouldn't flush since the instance entity doesn't have a task number yet.
-			So(len(monitor.Cells), ShouldEqual, 0)
+			So(monitor.Cells, ShouldHaveLength, 0)
 
 			// Wait until next expected flush.
 			clock.Add(time.Minute)
@@ -93,7 +93,7 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// Flushed stuff this time.
-			So(len(monitor.Cells), ShouldEqual, 1)
+			So(monitor.Cells, ShouldHaveLength, 1)
 
 			// The value should still be set.
 			So(readMetric(c), ShouldEqual, int64(2))
@@ -105,7 +105,7 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// Flushed stuff.
-			So(len(monitor.Cells), ShouldEqual, 1)
+			So(monitor.Cells, ShouldHaveLength, 1)
 			monitor.Cells = nil
 
 			// The value is set.
@@ -119,7 +119,7 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// No stuff is sent, and cumulative metrics are reset.
-			So(len(monitor.Cells), ShouldEqual, 0)
+			So(monitor.Cells, ShouldHaveLength, 0)
 			So(readMetric(c), ShouldEqual, nil)
 		})
 
@@ -159,7 +159,7 @@ func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
 				HostName:    "12345-version",
 			}
 		},
-		TaskID:           func(c context.Context) string { return "some.task.id" },
+		InstanceID:       func(c context.Context) string { return "some.id" },
 		TaskNumAllocator: allocator,
 		IsDevMode:        false, // hit same paths as prod
 		testingMonitor:   mon,
@@ -171,12 +171,12 @@ func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
 }
 
 type fakeNumAllocator struct {
-	taskNum int
-	taskIDs []string
+	taskNum     int
+	instanceIDs []string
 }
 
-func (a *fakeNumAllocator) NotifyTaskIsAlive(c context.Context, taskID string) (int, error) {
-	a.taskIDs = append(a.taskIDs, taskID)
+func (a *fakeNumAllocator) NotifyTaskIsAlive(c context.Context, task *target.Task, instanceID string) (int, error) {
+	a.instanceIDs = append(a.instanceIDs, instanceID)
 	if a.taskNum == -1 {
 		return 0, ErrNoTaskNumber
 	}

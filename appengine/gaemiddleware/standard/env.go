@@ -16,7 +16,6 @@
 package standard
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -80,9 +79,7 @@ var (
 				HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
 			}
 		},
-		TaskID: func(c context.Context) string {
-			return fmt.Sprintf("%s.%s.%s", info.InstanceID(c), info.VersionID(c), info.ModuleName(c))
-		},
+		InstanceID:       info.InstanceID,
 		TaskNumAllocator: gaetsmon.DatastoreTaskNumAllocator{},
 	}
 )
