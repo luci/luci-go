@@ -16,6 +16,24 @@
       "revId": "9f565f034a8c48756c80810b26b1d24587a10441",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffd23501_01e7a07b",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T19:02:57Z",
+      "side": 1,
+      "message": "talked offline: it is ok to ignore it\nbut it needs a comment why it is OK",
+      "parentUuid": "1d5b1444_dd8fccf4",
+      "revId": "9f565f034a8c48756c80810b26b1d24587a10441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
