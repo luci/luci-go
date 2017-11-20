@@ -56,14 +56,14 @@ type State struct {
 	// The target identifies the collection of homogeneous processes that together
 	// implement the service. Each individual process in the collection is
 	// additionally identified by a task number, later dynamically assigned via
-	// TaskNumAllocator based on unique TaskID.
+	// TaskNumAllocator based on unique InstanceID.
 	Target func(c context.Context) target.Task
 
-	// TaskID returns a unique (within the scope of the service) identifier of
+	// InstanceID returns a unique (within the scope of the service) identifier of
 	// this particular process.
 	//
 	// It will be used to assign a free task number via TaskNumAllocator.
-	TaskID func(c context.Context) string
+	InstanceID func(c context.Context) string
 
 	// TaskNumAllocator knows how to dynamically map task ID to a task number.
 	TaskNumAllocator TaskNumAllocator
@@ -76,7 +76,7 @@ type State struct {
 	state        *tsmon.State
 	lastSettings tsmonSettings
 
-	taskID      string    // cached result of TaskID() call
+	instanceID  string    // cached result of InstanceID() call
 	flushingNow bool      // true if some goroutine is flushing right now
 	nextFlush   time.Time // next time we should do the flush
 	lastFlush   time.Time // last successful flush
@@ -212,10 +212,10 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 	// Need to flush. Update flushingNow. Redo the check under write lock, as well
 	// as do a bunch of other calls while we hold the lock. Will be useful later.
 	s.lock.Lock()
-	if s.taskID == "" {
-		s.taskID = s.TaskID(c)
+	if s.instanceID == "" {
+		s.instanceID = s.InstanceID(c)
 	}
-	taskID := s.taskID
+	instanceID := s.instanceID
 	lastFlush := s.lastFlush
 	skip = s.flushingNow || now.Before(s.nextFlush)
 	if !skip {
@@ -227,7 +227,6 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 	}
 
 	// The flush must be fast. Limit it by some timeout.
-	c = logging.SetField(c, "taskID", taskID)
 	c, cancel := clock.WithTimeout(c, flushTimeout)
 	defer cancel()
 
@@ -253,7 +252,7 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 		}
 	}()
 
-	err = s.ensureTaskNumAndFlush(c, taskID, state, settings)
+	err = s.ensureTaskNumAndFlush(c, instanceID, state, settings)
 	if err != nil {
 		if err == ErrNoTaskNumber {
 			logging.Warningf(c, "Skipping the tsmon flush: no task number assigned yet")
@@ -270,7 +269,7 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 // the metrics.
 //
 // Returns ErrNoTaskNumber if the task wasn't assigned a task number yet.
-func (s *State) ensureTaskNumAndFlush(c context.Context, taskID string, state *tsmon.State, settings *tsmonSettings) error {
+func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, state *tsmon.State, settings *tsmonSettings) error {
 	var task target.Task
 	defTarget := state.S.DefaultTarget()
 	if t, ok := defTarget.(*target.Task); ok {
@@ -281,9 +280,9 @@ func (s *State) ensureTaskNumAndFlush(c context.Context, taskID string, state *t
 
 	// Notify the task number allocator that we are still alive and grab the
 	// TaskNum assigned to us.
-	assignedTaskNum, err := s.TaskNumAllocator.NotifyTaskIsAlive(c, taskID)
+	assignedTaskNum, err := s.TaskNumAllocator.NotifyTaskIsAlive(c, &task, instanceID)
 	if err != nil && err != ErrNoTaskNumber {
-		return fmt.Errorf("failed to get task number assigned for %q - %s", taskID, err)
+		return fmt.Errorf("failed to get task number assigned for %q - %s", instanceID, err)
 	}
 
 	// Don't do the flush if we still haven't got a task number.
