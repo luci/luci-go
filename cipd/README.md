@@ -1,7 +1,7 @@
 # CIPD (Chrome Infrastructure Package Deployment)
 
 CIPD is package deployment infrastructure. It consists of a
-[package registry][cipd-service] and a [CLI client][cipd client] to
+[package registry][cipd-service] and a [CLI client][cipd-client] to
 create/upload/download/install packages.
 
 A CIPD package has a package name (e.g. infra/tools/foo) and a list of
@@ -47,7 +47,7 @@ suffix where `os` can be `linux`, `mac` or `windows` and arch can be `386`,
 `amd64` or `armv6l`. For example, `infra/tools/cipd/linux-amd64`. See
 [the ensure package docs][client/cipd/ensure/doc.go] for os and arch values.
 
-Some [cipd client] subcomands accept a package name "directory" that ends with
+Some [cipd-client] subcomands accept a package name "directory" that ends with
 slash, e.g. "infra/tools/cipd/", and apply a change to all packages in that
 directory (non-recursively).
 
@@ -55,7 +55,7 @@ directory (non-recursively).
 
 A package directory can have an ACL that applies to packages in that
 directory and inherited by subdirectories. ACLs can be read/controlled by the
-[cipd client].
+[cipd-client].
 
 [cipd-service]: https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages
-[cipd cient]: ./client/cmd/cipd
+[cipd-client]: ./client/cmd/cipd
