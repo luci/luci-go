@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "49efb793_8a6991dc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-20T02:56:17Z",
+      "side": 1,
+      "message": "I think it is not a blocker. Before chromium tryserver was split, there was only one buildbot master for tryserver and all builders were on the same page.",
+      "parentUuid": "ea574f47_ed35bfcd",
+      "range": {
+        "startLine": 10,
+        "startChar": 59,
+        "endLine": 10,
+        "endChar": 63
+      },
+      "revId": "6f34a0d45aadd8fa92b7c399d168b690769d5cdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9153512f_857e1897",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
