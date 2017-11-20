@@ -48,7 +48,7 @@ func TestExclusive(t *testing.T) {
 				Exists: true,
 			},
 		}
-		lockFilePath, _, err := computeMutexPaths(env)
+		lockFilePath, drainFilePath, err := computeMutexPaths(env)
 		So(err, ShouldBeNil)
 		ctx := context.Background()
 
@@ -94,7 +94,43 @@ func TestExclusive(t *testing.T) {
 			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
 		})
 
-		// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
+		Convey("creates drain file while acquiring the lock", func() {
+			handle, err := fslock.LockShared(lockFilePath)
+			So(err, ShouldBeNil)
+			defer handle.Unlock()
+
+			go func() {
+				RunExclusive(ctx, env, fnThatReturns(nil))
+			}()
+
+			// Sleep for a millisecond to allow time for the drain file to be created.
+			clock.Sleep(ctx, 3*time.Millisecond)
+
+			_, err = os.Stat(drainFilePath)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("removes drain file immediately after acquiring the lock", func() {
+			commandResult := make(chan error)
+			runExclusiveErr := make(chan error)
+			go func() {
+				runExclusiveErr <- RunExclusive(ctx, env, func(ctx context.Context) error {
+					// Block run exclusive immediately after it starts executing the command.
+					// The drain file should have been cleaned up immediately before this point.
+					return <-commandResult
+				})
+			}()
+
+			// Sleep to allow time for RunExclusive to acquire the lock and block on our
+			// channel.
+			clock.Sleep(ctx, 3*time.Millisecond)
+
+			_, err = os.Stat(drainFilePath)
+			So(os.IsNotExist(err), ShouldBeTrue)
+
+			commandResult <- nil
+			So(<-runExclusiveErr, ShouldBeNil)
+		})
 
 		Convey("acts as a passthrough if lockFileDir is empty", func() {
 			So(RunExclusive(ctx, subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)

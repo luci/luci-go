@@ -15,6 +15,8 @@
 package lib
 
 import (
+	"os"
+
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -23,7 +25,7 @@ import (
 // RunExclusive runs the command with the specified context and environment while
 // holding an exclusive mmutex lock.
 func RunExclusive(ctx context.Context, env subcommands.Env, command func(context.Context) error) error {
-	lockFilePath, _, err := computeMutexPaths(env)
+	lockFilePath, drainFilePath, err := computeMutexPaths(env)
 	if err != nil {
 		return err
 	}
@@ -32,8 +34,23 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 		return command(ctx)
 	}
 
+	file, err := os.OpenFile(drainFilePath, os.O_RDONLY|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	if err = file.Close(); err != nil {
+		return err
+	}
+
 	blocker := createLockBlocker(ctx)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
+		// Remove the drain file immediately after acquiring the lock in order
+		// to decrease the likelihood that a crash occurs, leaving the drain
+		// file sitting around indefinitely.
+		if err := os.Remove(drainFilePath); err != nil {
+			return err
+		}
+
 		return command(ctx)
 	})
 }
