@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4b5ea37d_8b955cd5",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T20:36:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eaafa7eb_022cd696",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 60
+      },
+      "revId": "8a8e791334a2b27a992a42c6010ece45ff441cb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "372d06e7_766cdf8f",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 4
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "b551add8_72b17b82",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T20:36:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a32b3335_f6eca94c",
+      "range": {
+        "startLine": 53,
+        "startChar": 30,
+        "endLine": 53,
+        "endChar": 34
+      },
+      "revId": "8a8e791334a2b27a992a42c6010ece45ff441cb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "669eece0_ce4cdb11",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 4
@@ -85,6 +133,24 @@
       "revId": "8a8e791334a2b27a992a42c6010ece45ff441cb1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4e48525_f1ac06c7",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T20:36:38Z",
+      "side": 1,
+      "message": "I don\u0027t know if this is less code, but it does put everything into a single GetMulti.",
+      "parentUuid": "669eece0_ce4cdb11",
+      "revId": "8a8e791334a2b27a992a42c6010ece45ff441cb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
