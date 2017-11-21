@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb0eb28a_b387355e",
+        "filename": "appengine/tsmon/tasknum.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T02:20:59Z",
+      "side": 1,
+      "message": "double logging",
+      "revId": "8c251a1b38f5529971128a72dcf9d38a401283ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c3122b7_08bdd4ad",
+        "filename": "appengine/tsmon/tasknum.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T02:20:59Z",
+      "side": 1,
+      "message": "double logging",
+      "revId": "8c251a1b38f5529971128a72dcf9d38a401283ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
