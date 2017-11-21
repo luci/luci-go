@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "d23f1f64_7b1188bc",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-21T04:41:04Z",
+      "side": 1,
+      "message": "add another one since this is a list :)\n\"MESSAGES\" seems short.",
+      "range": {
+        "startLine": 36,
+        "startChar": 36,
+        "endLine": 36,
+        "endChar": 52
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d3dd3443_2491c733",
         "filename": "client/cmd/gerrit/change.go",
         "patchSetId": 2
@@ -13,6 +36,46 @@
       "writtenOn": "2017-11-21T04:17:09Z",
       "side": 1,
       "message": "can we have an example line?\n\n  Example:\n    gerrit change-query ??? https://gerrit.host.example.com/repo owner:💩@example.com\n\nI\u0027m not sure I understand what options looks like on the command line.",
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "713986f4_3cdd5450",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-21T04:41:04Z",
+      "side": 1,
+      "message": "does 0 imply whatever Gerrit limit is? IMO, should be documented, at the very least \"passed to Gerrit verbatim\"",
+      "range": {
+        "startLine": 43,
+        "startChar": 28,
+        "endLine": 43,
+        "endChar": 95
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e902f4b3_864e0e88",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-21T04:41:04Z",
+      "side": 1,
+      "message": "also here, document that - supports stdout.",
       "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -35,6 +98,52 @@
         "startChar": 88,
         "endLine": 156,
         "endChar": 90
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f93a4622_d0f598f5",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-21T04:41:04Z",
+      "side": 1,
+      "message": "this seems like lots of copy-pasta :( have you considered refactoring this into something like this:\n\nspit(jsonOutputOption string, renderAsText func(), json interface{})",
+      "range": {
+        "startLine": 200,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 11
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b29d5696_7e5cfbea",
+        "filename": "client/cmd/gerrit/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-21T04:41:04Z",
+      "side": 1,
+      "message": "jsonOuput seems also common",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 16
       },
       "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
