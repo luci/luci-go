@@ -30,19 +30,19 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 )
 
-// BuildersRelativeHandler is responsible for rendering a builders console page according to project.
+// BuildersRelativeHandler is responsible for rendering a builders list page according to project.
 // Presently only relative time is handled, i.e. last builds without correlation between builders),
-// and no filtering by console has been implemented.
+// and no filtering by group has been implemented.
 //
-// The builders console page by relative time is defined in
+// The builders list page by relative time is defined in
 // ./appengine/templates/pages/builders_relative_time.html.
-func BuildersRelativeHandler(c *router.Context, projectID, console string) {
+func BuildersRelativeHandler(c *router.Context, projectID, group string) {
 	limit := 30
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
 	}
 
-	hists, err := getBuilderHistories(c.Context, projectID, console, limit)
+	hists, err := getBuilderHistories(c.Context, projectID, group, limit)
 	if err != nil {
 		ErrorHandler(c, err)
 		return

@@ -90,13 +90,30 @@ func Run(templatePath string) {
 	})
 
 	// Console
-	r.GET("/p/:project/consoles/:name", htmlMW, ConsoleHandler)
-	r.GET("/console/:project/:name", frontendMW, movedPermanently("/p/:project/consoles/:name"))
 	r.GET("/p/:project", htmlMW, func(c *router.Context) {
 		ConsolesHandler(c, c.Params.ByName("project"))
 	})
-	r.GET("/p/:project/consoles", frontendMW, movedPermanently("/p/:project"))
-	r.GET("/console/:project", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/p/:project/", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/p/:project/g", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/p/:project/g/:group/console", htmlMW,
+		func(c *router.Context) {
+			// If group is a tryserver group, go to builders view, else console view.
+			if group := c.Params.ByName("group"); strings.Contains(group, "tryserver") {
+				u := *c.Request.URL
+				u.Path = fmt.Sprintf("/p/%s/g/%s/builders", c.Params.ByName("project"), group)
+				http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
+			} else {
+				ConsoleHandler(c)
+			}
+		})
+	r.GET("/p/:project/g/:group", htmlMW,
+		func(c *router.Context) {
+			u := *c.Request.URL
+			u.Path = fmt.Sprintf(
+				"/p/%s/g/%s/console", c.Params.ByName("project"), c.Params.ByName("group"))
+			http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
+		})
+	r.GET("/p/:project/g/:group/", frontendMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
 	r.GET("/p/:project/builders", htmlMW, func(c *router.Context) {

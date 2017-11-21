@@ -8,7 +8,7 @@
 {{end}}
 
 {{define "body"}}
-<h1>{{ .ProjectName }} Consoles</h1>
+<h1>{{ .ProjectName }} Groups</h1>
 
 <div class="console-column">
 {{ range .Consoles }}
@@ -17,7 +17,7 @@
       <img src="{{ .Render.FaviconURL }}" />
     {{ end }}
       <a class="console-header-name"
-         href="/console/{{ .ProjectID }}/{{ .Def.Id }}"
+         href="/p/{{ .ProjectID }}/g/{{ .Def.Id }}/console"
          aria-label="console {{ .Def.Name }}">{{ .Def.Name }}</a>
       <a href="{{ .Def.RepoUrl }}/+/{{ .Def.Ref }}">(repo)</a>
     {{ .Render.ConsoleSummary }}
