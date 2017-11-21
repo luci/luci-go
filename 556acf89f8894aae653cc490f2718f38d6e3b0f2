@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd6949b6_c4ba2b05",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T02:00:41Z",
+      "side": 1,
+      "message": "strong",
+      "range": {
+        "startLine": 26,
+        "startChar": 11,
+        "endLine": 26,
+        "endChar": 12
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "587b37f6_6bc0fb74",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T02:00:41Z",
+      "side": 1,
+      "message": "why did this move? before milo imports were separated from non-milo imports. Now it is not very consistent",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 40
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "946a710c_ea50eb46",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T02:00:41Z",
+      "side": 1,
+      "message": "this is not specific to builders page\ni think we should do this in a more common place, e.g. DefaultsArgs of the template bundle\n\nright now https://2384-07ec533-tainted-hinoka-dot-luci-milo-dev.appspot.com/buildbot/chromium/Win/61001 does not have these links, which is a bug to me",
+      "range": {
+        "startLine": 51,
+        "startChar": 24,
+        "endLine": 51,
+        "endChar": 54
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
