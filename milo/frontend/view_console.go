@@ -434,6 +434,13 @@ func ConsoleHandler(c *router.Context) {
 		return
 	}
 	group := c.Params.ByName("group")
+
+	// If group is a tryserver group, redirect to builders view.
+	if strings.Contains(group, "tryserver") {
+		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
+		return
+	}
+
 	const defaultLimit = 50
 	const maxLimit = 1000
 	limit := defaultLimit
