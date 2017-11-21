@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cfe64b99_43f15fc2",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T01:34:29Z",
+      "side": 1,
+      "message": "No longer applies?",
+      "revId": "3259693e7ba32e7fcb88ea59ec77c88204e559a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
