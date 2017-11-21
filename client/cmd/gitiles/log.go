@@ -38,6 +38,7 @@ This should be equivalent of a "git log <treeish>" call in that repository.`,
 			c := logRun{}
 			c.commonFlags.Init(authOpts)
 			c.Flags.IntVar(&c.limit, "limit", 0, "Limit the number of log entries returned.")
+			c.Flags.BoolVar(&c.withTreeDiff, "with-tree-diff", false, "Return 'TreeDiff' information in the returned commits.")
 			c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
 			return &c
 		},
@@ -46,8 +47,9 @@ This should be equivalent of a "git log <treeish>" call in that repository.`,
 
 type logRun struct {
 	commonFlags
-	limit      int
-	jsonOutput string
+	limit        int
+	withTreeDiff bool
+	jsonOutput   string
 }
 
 func (c *logRun) Parse(a subcommands.Application, args []string) error {
@@ -74,6 +76,9 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 	opts := []gitiles.LogOption{}
 	if c.limit != 0 {
 		opts = append(opts, gitiles.Limit(c.limit))
+	}
+	if c.withTreeDiff {
+		opts = append(opts, gitiles.WithTreeDiff)
 	}
 
 	g := &gitiles.Client{Client: authCl}
