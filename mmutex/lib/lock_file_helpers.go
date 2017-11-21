@@ -86,3 +86,19 @@ func createLockBlocker(ctx context.Context) fslock.Blocker {
 		return nil
 	}
 }
+
+// blockWhileFileExists blocks until the file located at path no longer exists.
+// For convenience, this method reuses the Blocker interface exposed by fslock
+// and used elsewhere in this package.
+func blockWhileFileExists(path string, blocker fslock.Blocker) error {
+	for {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			break
+		}
+		if err := blocker(); err != nil {
+			return errors.Reason("timed out waiting for drain file to disappear").Err()
+		}
+	}
+
+	return nil
+}
