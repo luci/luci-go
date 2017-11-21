@@ -9,7 +9,8 @@
 {{end}}
 
 {{define "body"}}
-<h1>{{ .ProjectName }} Builders</h1>
+<h1>{{ .ProjectName }}</h1>
+<h2>Builders</h2>
 
 {{ range .Builders }}
   {{ $builder := .BuilderID }}
