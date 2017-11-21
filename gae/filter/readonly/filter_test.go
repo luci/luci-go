@@ -37,19 +37,27 @@ func TestReadOnly(t *testing.T) {
 			ID    int `gae:"$id"`
 			Value string
 		}
+		type MutableTester struct {
+			ID    int `gae:"$id"`
+			Value string
+		}
 
-		// Add a value to the datastore before applying the filter.
-		ds.Put(c, &Tester{ID: 1, Value: "exists"})
+		// Add values to the datastore before applying the filter.
+		ds.Put(c, &Tester{ID: 1, Value: "exists 1"})
+		ds.Put(c, &MutableTester{ID: 1, Value: "exists 2"})
 		ds.GetTestable(c).CatchupIndexes()
 
 		// Apply the read-only filter.
-		c = FilterRDS(c)
+		c = FilterRDS(c, func(k *ds.Key) (ro bool) {
+			ro = k.Kind() != "MutableTester"
+			return
+		})
 		So(c, ShouldNotBeNil)
 
 		Convey("Get works.", func() {
 			v := Tester{ID: 1}
 			So(ds.Get(c, &v), ShouldBeNil)
-			So(v.Value, ShouldEqual, "exists")
+			So(v.Value, ShouldEqual, "exists 1")
 		})
 
 		Convey("Count works.", func() {
@@ -60,17 +68,34 @@ func TestReadOnly(t *testing.T) {
 		})
 
 		Convey("Put fails with read-only error", func() {
-			So(ds.Put(c, &Tester{ID: 2}), ShouldEqual, ErrReadOnly)
+			err := ds.Put(c, &Tester{ID: 1}, &MutableTester{ID: 1, Value: "new"})
+			So(err, ShouldResemble, errors.MultiError{
+				ErrReadOnly,
+				nil,
+			})
+			// The second put actually worked.
+			v := MutableTester{ID: 1}
+			So(ds.Get(c, &v), ShouldBeNil)
+			So(v.Value, ShouldEqual, "new")
 		})
 
 		Convey("Delete fails with read-only error", func() {
-			So(ds.Delete(c, &Tester{ID: 2}), ShouldEqual, ErrReadOnly)
+			err := ds.Delete(c, &Tester{ID: 1}, &MutableTester{ID: 1})
+			So(err, ShouldResemble, errors.MultiError{
+				ErrReadOnly,
+				nil,
+			})
 		})
 
 		Convey("AllocateIDs fails with read-only error", func() {
-			err := ds.AllocateIDs(c, make([]Tester, 10))
-			So(err, ShouldNotBeNil)
-			So(errors.SingleError(err), ShouldEqual, ErrReadOnly)
+			t1 := Tester{}
+			t2 := MutableTester{ID: -1}
+			err := ds.AllocateIDs(c, &t1, &t2)
+			So(err, ShouldResemble, errors.MultiError{
+				ErrReadOnly,
+				nil,
+			})
+			So(t2.ID, ShouldEqual, 0) // allocated
 		})
 
 		Convey("In a transaction", func() {
@@ -81,7 +106,7 @@ func TestReadOnly(t *testing.T) {
 					return ds.Get(c, &v)
 				}, nil)
 				So(err, ShouldBeNil)
-				So(v.Value, ShouldEqual, "exists")
+				So(v.Value, ShouldEqual, "exists 1")
 			})
 
 			Convey("Count works.", func() {
@@ -99,14 +124,14 @@ func TestReadOnly(t *testing.T) {
 
 			Convey("Put fails with read-only error", func() {
 				err := ds.RunInTransaction(c, func(c context.Context) error {
-					return ds.Put(c, &Tester{ID: 2})
+					return ds.Put(c, &Tester{ID: 1})
 				}, nil)
 				So(err, ShouldEqual, ErrReadOnly)
 			})
 
 			Convey("Delete fails with read-only error", func() {
 				err := ds.RunInTransaction(c, func(c context.Context) error {
-					return ds.Delete(c, &Tester{ID: 2})
+					return ds.Delete(c, &Tester{ID: 1})
 				}, nil)
 				So(err, ShouldEqual, ErrReadOnly)
 			})
