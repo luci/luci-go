@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // A collection of useful templating functions
@@ -251,8 +252,8 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context) (templates.Args, error) {
-			r := getRequest(c)
-			path := r.URL.Path
+			rc := getRouterContext(c)
+			path := rc.Request.URL.Path
 			loginURL, err := auth.LoginURL(c, path)
 			if err != nil {
 				return nil, err
@@ -270,33 +271,35 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 				"CurrentTime": clock.Now(c),
 				"Analytics":   analytics.Snippet(c),
 				"RequestID":   info.RequestID(c),
-				"Request":     r,
+				"Request":     rc.Request,
+				"Navi":        ProjectLinks(rc.Params.ByName("project"), rc.Params.ByName("group")),
 			}, nil
 		},
 		FuncMap: funcMap,
 	}
 }
 
-// The context key, so that we can embed the http.Request object into
-// the context.
-var requestKey = "http.request"
+// A context key used to insert a *router.Context into
+// a context.Context.
+var routerContextKey = "router context"
 
-// withRequest returns a context with the http.Request object
+// withRouterContext returns a context with the router.Context object
 // in it.
-func withRequest(c context.Context, r *http.Request) context.Context {
-	return context.WithValue(c, &requestKey, r)
+func withRouterContext(c context.Context, r *router.Context) context.Context {
+	return context.WithValue(c, &routerContextKey, r)
 }
 
-// withRequestMiddleware is a middleware that installs a request into the context.
+// withRouterContextMiddleware is a middleware that installs a router context
+// into the context.
 // This is used for various things in the default template.
-func withRequestMiddleware(c *router.Context, next router.Handler) {
-	c.Context = withRequest(c.Context, c.Request)
+func withRouterContextMiddleware(c *router.Context, next router.Handler) {
+	c.Context = withRouterContext(c.Context, c)
 	next(c)
 }
 
-func getRequest(c context.Context) *http.Request {
-	if req, ok := c.Value(&requestKey).(*http.Request); ok {
-		return req
+func getRouterContext(c context.Context) *router.Context {
+	if rc, ok := c.Value(&routerContextKey).(*router.Context); ok {
+		return rc
 	}
 	panic("No http.request found in context")
 }
@@ -322,4 +325,43 @@ func emulationMiddleware(c *router.Context, next router.Handler) {
 	}
 
 	next(c)
+}
+
+// ProjectLink returns the navigation list surrounding a project and optionally group.
+func ProjectLinks(project, group string) []ui.LinkGroup {
+	if project == "" {
+		return nil
+	}
+	projLinks := []*ui.Link{
+		ui.NewLink(
+			"Project",
+			fmt.Sprintf("/p/%s", project),
+			fmt.Sprintf("Project page for %s", project)),
+		ui.NewLink(
+			"Builders",
+			fmt.Sprintf("/p/%s/builders", project),
+			fmt.Sprintf("All builders for project %s", project))}
+	links := []ui.LinkGroup{
+		{
+			Name:  project,
+			Links: projLinks,
+		},
+	}
+	if group != "" {
+		groupLinks := []*ui.Link{
+			ui.NewLink(
+				"Console",
+				fmt.Sprintf("/p/%s/g/%s/console", project, group),
+				fmt.Sprintf("Console for group %s in project %s", group, project)),
+			ui.NewLink(
+				"Builders",
+				fmt.Sprintf("/p/%s/g/%s/builders", project, group),
+				fmt.Sprintf("Builders for group %s in project %s", group, project)),
+		}
+		links = append(links, ui.LinkGroup{
+			Name:  group,
+			Links: groupLinks,
+		})
+	}
+	return links
 }

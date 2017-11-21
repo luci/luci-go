@@ -69,7 +69,7 @@ func searchHandler(c *router.Context) {
 
 // searchXMLHandler returns the opensearch document for this domain.
 func searchXMLHandler(c *router.Context) {
-	r := getRequest(c.Context)
+	r := getRouterContext(c.Context).Request
 	host := r.URL.Host
 	c.Writer.Header().Set("Content-Type", "application/opensearchdescription+xml")
 	c.Writer.WriteHeader(http.StatusOK)
