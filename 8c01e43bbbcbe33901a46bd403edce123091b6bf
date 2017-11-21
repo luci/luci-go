@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "08cc044e_4ff820cc",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T01:13:39Z",
+      "side": 1,
+      "message": "if group :\u003d c.Params.ByName(\"group\") ; strings.Contains(group, \"tryserver\") {\n   ...\n} else {\n  ...\n}\ngroup becomes scoped to the if/else block.",
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9c4fa452_c977449d",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 3
