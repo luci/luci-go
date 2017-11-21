@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5afe1fb_57b862ed",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T04:40:28Z",
+      "side": 1,
+      "message": "This is great when the Navi can be fully described by the URL, but what if Navi is dependent on implementation details and can\u0027t be derived from the URL?",
+      "revId": "9877aecda25d03e005ab5cd97ecd0617d52a6ded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
