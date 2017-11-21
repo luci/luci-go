@@ -164,6 +164,30 @@
       "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31c5ae56_73a39b00",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T04:21:55Z",
+      "side": 1,
+      "message": "You mean have a function resolve the URL in the middleware here?\n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/frontend/middleware.go?l\u003d248\n\nI think for a more generalized version of this implementation, that is the right place to put it.",
+      "parentUuid": "ecf66231_f38fa999",
+      "range": {
+        "startLine": 51,
+        "startChar": 24,
+        "endLine": 51,
+        "endChar": 54
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
