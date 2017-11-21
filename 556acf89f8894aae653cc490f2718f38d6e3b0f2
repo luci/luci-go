@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e3329421_d9549483",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T03:40:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd6949b6_c4ba2b05",
+      "range": {
+        "startLine": 26,
+        "startChar": 11,
+        "endLine": 26,
+        "endChar": 12
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "587b37f6_6bc0fb74",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "d3a62e8f_747f21a3",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T03:40:32Z",
+      "side": 1,
+      "message": "mb that was a rebase gone bad.  Fixed.",
+      "parentUuid": "587b37f6_6bc0fb74",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 40
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "946a710c_ea50eb46",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3827eebf_0b165dd1",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T03:40:32Z",
+      "side": 1,
+      "message": "Buildbot builds don\u0027t have associated projects in Milo (A master -\u003e project mapping for buildbot was never made, Milo only knows about internal/external).\n\nAdding project navi to buildbot builds/builders is a much bigger change than this CL (or the bug) is scoped to.",
+      "parentUuid": "946a710c_ea50eb46",
+      "range": {
+        "startLine": 51,
+        "startChar": 24,
+        "endLine": 51,
+        "endChar": 54
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
