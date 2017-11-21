@@ -140,6 +140,30 @@
       "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ecf66231_f38fa999",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:58:47Z",
+      "side": 1,
+      "message": "sorry that was a bad example\nhttps://2390-39054bb-tainted-hinoka-dot-luci-milo-dev.appspot.com/p/chromium/builders/luci.chromium.try/linux_chromium_rel_ng\nis a better example\n\nmy point is, if there is a project in the URL, we should probably display the project page. This can be done in the DefaultsArgs function by retrieving \"project\" and \"group\" parameters",
+      "parentUuid": "3827eebf_0b165dd1",
+      "range": {
+        "startLine": 51,
+        "startChar": 24,
+        "endLine": 51,
+        "endChar": 54
+      },
+      "revId": "556acf89f8894aae653cc490f2718f38d6e3b0f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
