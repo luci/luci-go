@@ -141,7 +141,7 @@ type Oncall struct {
 // LinkGroup represents a set of links grouped together by some category.
 type LinkGroup struct {
 	// Name is the name of the category this group of links belongs to.
-	Name string
+	Name *Link
 
 	// Links is a list of links in this link group.
 	Links []*Link
