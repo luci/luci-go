@@ -24,13 +24,13 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/templates"
 )
 
 // BuildersRelativeHandler is responsible for rendering a builders list page according to project.
@@ -53,6 +53,7 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) {
 
 	templates.MustRender(c.Context, c.Writer, "pages/builders_relative_time.html", templates.Args{
 		"Builders": hists,
+		"Navi":     ProjectLinks(projectID, group),
 	})
 }
 

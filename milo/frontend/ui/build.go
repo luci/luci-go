@@ -295,7 +295,8 @@ var (
 	linkifyTemplate = template.Must(
 		template.New("linkify").
 			Parse(
-				`<a href="{{.URL}}"{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}>` +
+				`<a{{if .URL}} href="{{.URL}}"{{end}}` +
+					`{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}>` +
 					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
 					`{{else if .Alias}}[{{.Label}}]` +
 					`{{else}}{{.Label}}{{end}}` +
@@ -320,6 +321,14 @@ func (l *Link) HTML() template.HTML {
 		panic(err)
 	}
 	return template.HTML(buf.Bytes())
+}
+
+// String renders this Link's Label as a string.
+func (l *Link) String() string {
+	if l == nil {
+		return ""
+	}
+	return l.Label
 }
 
 // HTML renders this LinkSet as HTML.

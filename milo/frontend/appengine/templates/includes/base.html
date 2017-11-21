@@ -22,6 +22,11 @@ that can be found in the LICENSE file. -->
     <div>
       <a href="/" aria-label="Home page">Home</a> |
       <a href="/search" aria-label="Search page">Search</a>
+      {{- range .Navi }}
+        | <strong>{{ .Name.HTML }}</strong> {{ range .Links }}
+          - {{ .HTML }}
+        {{ end }}
+      {{ end }}
     </div>
     <div>
       {{ if .IsAnonymous }}
