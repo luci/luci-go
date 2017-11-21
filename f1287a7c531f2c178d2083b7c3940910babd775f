@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0b7ec86a_5de3f8fe",
+        "filename": "client/cmd/gerrit/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-21T00:09:41Z",
+      "side": 1,
+      "message": "I don\u0027t know what the output in the interactive case should be. Maybe we should just use reflection and print all the fields in the Change struct?",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 103,
+        "endChar": 43
+      },
+      "revId": "f1287a7c531f2c178d2083b7c3940910babd775f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
