@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "5323140e_17436285",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T01:37:23Z",
+      "side": 1,
+      "message": "Nevermind, the flow wasn\u0027t obvious at first.  I understand now after staring at it for a while.",
+      "parentUuid": "47d4d717_d05be5df",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 17
+      },
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef20a7b5_9153f40b",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 6
