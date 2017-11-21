@@ -1,0 +1,307 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c0c08469_264551f3",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "GetConosleDefSummaries does not make a lot of sense to me and difference between names GetConosleDefSummaries and GetConosleSummaries does not tell much about difference of meanings.\nFWIU one returns console summaries from ids, and another from defs. Consider\n\n  GetConsoleSummariesFromIDs\n  GetConsoleSummariesFromDefs",
+      "range": {
+        "startLine": 117,
+        "startChar": 15,
+        "endLine": 117,
+        "endChar": 18
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d00c873d_ad884d51",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "comment? or, if not used outside of this package, make it private",
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3731391b_4bfbb772",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "nit:\n\nsummary :\u003d ui.ConsoleSummary {\n  Builders: ...\n  Name: ...\n}",
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bed7ed3_7cd60e8e",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "shouldn\u0027t this never happen? it seems we should panic here too like we do in view_console.go:155\n\naside, what is bs[i]? i here is index of console",
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ac76a3d_89b7be93",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "Consider \"ParseConsoleID\"\nBecause this function parses console id",
+      "range": {
+        "startLine": 92,
+        "startChar": 5,
+        "endLine": 92,
+        "endChar": 8
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3875485d_156feba1",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "we probably want strings.Split here, i.e. a console id \"a/b/c\" is invalid too, we should panic",
+      "range": {
+        "startLine": 93,
+        "startChar": 37,
+        "endLine": 93,
+        "endChar": 41
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db41105a_8e50e223",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "id\n\nit is more of an id than the console itself",
+      "range": {
+        "startLine": 104,
+        "startChar": 6,
+        "endLine": 104,
+        "endChar": 9
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5d74e0b_50d893bf",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "Imagine that we add a lot of fields in Console and want to do\n\nconsole :\u003d \u0026Console {\n  a: \"a\",\n  b: \"b\",\n  c: \"c\",\n  // id fields too\n}\n\nbut we wouldn\u0027t be able to use this nice syntax and this function at the same time.\n\ni think we better accept an existing *Console. \nin other words, the responsibility of this function is to set id fields, so let\u0027s not add \"creation of entity\" responsibility.\n\nI recommend\n\n  func (id *ConsoleID) NewEntity(c context.Context, console)",
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02669f6b_7304fc54",
+        "filename": "milo/common/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 519,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "i think we have a few copies of this pattern, perhaps we should extract it. please add a todo",
+      "range": {
+        "startLine": 510,
+        "startChar": 0,
+        "endLine": 519,
+        "endChar": 26
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb50f287_ccf53610",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "unlike setHeaderSummaries, i am not sure what \"set\" means here, we don\u0027t seem to be setting anything?\nConsider renaming the function to \"buildSummaryMap\"",
+      "range": {
+        "startLine": 126,
+        "startChar": 5,
+        "endLine": 126,
+        "endChar": 8
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d41e33d5_42b19daf",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "since this function needs a common.ConsoleID, better to accept it as a parameter, so we move common.ConsoleID construction responsibility out of this function (it has a different purpose)\n\nalso \"id\" parameter is not a bit ambiguous. Is it console id? builder id?",
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "407d84e2_15dd0f4a",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "make(map[string]*model.BuilderSummary, len(consoleSummary.Builders))",
+      "range": {
+        "startLine": 132,
+        "startChar": 21,
+        "endLine": 132,
+        "endChar": 55
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ff465aa_8162dc21",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 160,
+        "startChar": 31,
+        "endLine": 160,
+        "endChar": 33
+      },
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "575d5263_69d903fe",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "there is also group.Title.Alt\nwe seem to be ignoring it",
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cf46f48_d4b8581a",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T22:12:29Z",
+      "side": 1,
+      "message": "the caller will never see this new header",
+      "revId": "15fdde2807753f735110e0a780fa135c5d9a6659",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
