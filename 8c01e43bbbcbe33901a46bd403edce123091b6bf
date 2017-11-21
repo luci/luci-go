@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f09ddb6c_b131a569",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-21T01:26:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4200007_460c221d",
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "08cc044e_4ff820cc",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3f5d46c_920d2576",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-21T01:26:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08cc044e_4ff820cc",
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "d94d6ac1_2471de3b",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-21T01:26:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c4fa452_c977449d",
+      "range": {
+        "startLine": 110,
+        "startChar": 43,
+        "endLine": 110,
+        "endChar": 59
+      },
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13506527_e6b01e7f",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 3
@@ -79,6 +139,30 @@
       "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3101880e_a2aea0d8",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-21T01:26:32Z",
+      "side": 1,
+      "message": "I\u0027ll do it within this block, but I\u0027ve had to rename back and forth between console and group several times (including rebasing over changes that did not do the rename). Let\u0027s do the rename later en masse.",
+      "parentUuid": "13506527_e6b01e7f",
+      "range": {
+        "startLine": 436,
+        "startChar": 1,
+        "endLine": 436,
+        "endChar": 5
+      },
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
