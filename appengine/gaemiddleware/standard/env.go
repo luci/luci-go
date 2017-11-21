@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/settings/admin"
 	"go.chromium.org/luci/server/tsmon"
 
 	"go.chromium.org/luci/appengine/gaeauth/client"
@@ -96,7 +96,7 @@ var classicEnv = gaemiddleware.Environment{
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
 		gaeauth.InstallHandlers(r, base)
 		gaetsmon.InstallHandlers(r, base)
-		admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
+		portal.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
 		gaeconfig.InstallCacheCronHandler(r, base.Extend(gaemiddleware.RequireCron))
 	},
 }

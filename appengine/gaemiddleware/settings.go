@@ -21,6 +21,7 @@ import (
 
 	mc "go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
 
@@ -41,7 +42,7 @@ type gaeSettings struct {
 
 	// DisableDSCache is true to disable dscache (the memcache layer on top of
 	// the datastore).
-	DisableDSCache settings.YesOrNo `json:"disable_dscache"`
+	DisableDSCache portal.YesOrNo `json:"disable_dscache"`
 }
 
 // fetchCachedSettings fetches gaeSettings from the settings store or panics.
@@ -73,20 +74,20 @@ func fetchCachedSettings(c context.Context) gaeSettings {
 ////////////////////////////////////////////////////////////////////////////////
 // UI for GAE settings.
 
-type settingsUIPage struct {
-	settings.BaseUIPage
+type settingsPage struct {
+	portal.BasePage
 }
 
-func (settingsUIPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(c context.Context) (string, error) {
 	return "Appengine related settings", nil
 }
 
-func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	return []settings.UIField{
+func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+	return []portal.Field{
 		{
 			ID:    "LoggingLevel",
 			Title: "Minimal logging level",
-			Type:  settings.UIFieldChoice,
+			Type:  portal.FieldChoice,
 			ChoiceVariants: []string{
 				"debug",
 				"info",
@@ -100,7 +101,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Help: `Log entries below this level will be <b>completely</b> ignored.
 They won't even reach GAE logging service.`,
 		},
-		settings.YesOrNoField(settings.UIField{
+		portal.YesOrNoField(portal.Field{
 			ID:    "DisableDSCache",
 			Title: "Disable datastore cache",
 			Help: `Usually caching is a good thing and it can be left enabled. You may
@@ -113,7 +114,7 @@ setting.`,
 	}, nil
 }
 
-func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	s := gaeSettings{}
 	err := settings.GetUncached(c, settingsKey, &s)
 	if err != nil && err != settings.ErrNoSettings {
@@ -125,7 +126,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}, nil
 }
 
-func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	modified := gaeSettings{}
 	if err := modified.LoggingLevel.Set(values["LoggingLevel"]); err != nil {
 		return err
@@ -151,5 +152,5 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 }
 
 func init() {
-	settings.RegisterUIPage(settingsKey, settingsUIPage{})
+	portal.RegisterPage(settingsKey, settingsPage{})
 }
