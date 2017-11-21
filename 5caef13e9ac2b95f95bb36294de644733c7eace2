@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "250d6d34_f4eaab6f",
+        "filename": "server/portal/internal/assets/pages/done.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-21T23:04:11Z",
+      "side": 1,
+      "message": "Admin",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 26
+      },
+      "revId": "5caef13e9ac2b95f95bb36294de644733c7eace2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24532b50_77eb6061",
+        "filename": "server/portal/internal/assets/pages/done.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-21T23:04:11Z",
+      "side": 1,
+      "message": "err.. just \"Back\" I guess...",
+      "range": {
+        "startLine": 10,
+        "startChar": 36,
+        "endLine": 10,
+        "endChar": 52
+      },
+      "revId": "5caef13e9ac2b95f95bb36294de644733c7eace2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ea1c4eb_c9fcb1b3",
+        "filename": "server/portal/internal/assets/pages/error.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-21T23:04:11Z",
+      "side": 1,
+      "message": "Admin",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 26
+      },
+      "revId": "5caef13e9ac2b95f95bb36294de644733c7eace2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e45d2f5e_68ecab5e",
+        "filename": "server/portal/internal/assets/pages/index.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-21T23:04:11Z",
+      "side": 1,
+      "message": "Admin",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 26
+      },
+      "revId": "5caef13e9ac2b95f95bb36294de644733c7eace2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16bbf2ea_51fa5d8b",
+        "filename": "server/portal/internal/assets/pages/index.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-21T23:04:11Z",
+      "side": 1,
+      "message": "All pages",
+      "range": {
+        "startLine": 7,
+        "startChar": 4,
+        "endLine": 7,
+        "endChar": 16
+      },
+      "revId": "5caef13e9ac2b95f95bb36294de644733c7eace2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc611b2a_3602edac",
+        "filename": "server/portal/internal/assets/pages/settings.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-21T23:04:11Z",
+      "side": 1,
+      "message": "Admin\n\nAlso the file should be renamed to page.html.",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 26
+      },
+      "revId": "5caef13e9ac2b95f95bb36294de644733c7eace2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b83e307d_51a595bc",
+        "filename": "server/portal/internal/assets/pages/validation_error.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-21T23:04:11Z",
+      "side": 1,
+      "message": "Admin",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 26
+      },
+      "revId": "5caef13e9ac2b95f95bb36294de644733c7eace2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
