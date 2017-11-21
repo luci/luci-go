@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94de036a_fb79cd42",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T17:03:36Z",
+      "side": 1,
+      "message": "for !os.IsNotExist(os.Stat(path))",
+      "revId": "a200700da3081dccc603f9da05923a91e79252f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54744da9_d2f8d455",
+        "filename": "mmutex/lib/shared.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T17:03:36Z",
+      "side": 1,
+      "message": "do we want to wait if drain files appears after we started to wait for the lock at lockFilePath?",
+      "revId": "a200700da3081dccc603f9da05923a91e79252f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
