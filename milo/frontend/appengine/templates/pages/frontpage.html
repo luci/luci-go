@@ -6,7 +6,7 @@
 <h1>All Projects</h1>
 <div class="project-list">
   {{ range .frontpage.Projects }}
-  <a href="/p/{{.ID}}/consoles" aria-label="Project {{.ID}}">
+  <a href="/p/{{.ID}}" aria-label="Project {{.ID}}">
     <div class="project">
       {{ if .LogoURL }}
         <img src="{{.LogoURL}}" />
