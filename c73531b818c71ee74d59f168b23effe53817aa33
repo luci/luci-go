@@ -22,6 +22,30 @@
       "revId": "c73531b818c71ee74d59f168b23effe53817aa33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3593f2b9_c52a3978",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-21T04:41:40Z",
+      "side": 1,
+      "message": "If that\u0027s resolved, how are the nth-child(even, odd) resolved?",
+      "parentUuid": "233e1968_86a35127",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 0
+      },
+      "revId": "c73531b818c71ee74d59f168b23effe53817aa33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
