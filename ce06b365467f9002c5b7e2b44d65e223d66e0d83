@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "14e849d4_8c9e365c",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T00:25:17Z",
+      "side": 0,
+      "message": "this is very noisy",
+      "revId": "ce06b365467f9002c5b7e2b44d65e223d66e0d83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
