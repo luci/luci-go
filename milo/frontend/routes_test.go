@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/server/router"
 )
 
 type testPackage struct {
@@ -108,7 +109,7 @@ func TestPages(t *testing.T) {
 	Convey("Testing basic rendering.", t, func() {
 		c := context.Background()
 		c = memory.Use(c)
-		c = withRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})
+		c = withRouterContext(c, &router.Context{Request: &http.Request{URL: &url.URL{Path: "/foobar"}}})
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 		c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))

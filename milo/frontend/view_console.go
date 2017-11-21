@@ -458,12 +458,14 @@ func ConsoleHandler(c *router.Context) {
 	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
 		"Console": consoleRenderer{result},
 		"Reload":  reload,
-		"Navi":    ProjectLinks(project, group),
 	})
 }
 
 // ProjectLink returns the navigation list surrounding a project and optionally group.
 func ProjectLinks(project, group string) []ui.LinkGroup {
+	if project == "" {
+		return nil
+	}
 	projLinks := []*ui.Link{
 		ui.NewLink(
 			"Project",
@@ -535,7 +537,6 @@ func ConsolesHandler(c *router.Context, projectName string) {
 		"ProjectName": projectName,
 		"Consoles":    consoles,
 		"Reload":      reload,
-		"Navi":        ProjectLinks(projectName, ""),
 	})
 }
 
@@ -562,7 +563,6 @@ func consoleTestData() []common.TestBundle {
 		{
 			Description: "Full console with Header",
 			Data: templates.Args{
-				"Navi": ProjectLinks("Testing", "Test"),
 				"Console": consoleRenderer{&ui.Console{
 					Name:    "Test",
 					Project: "Testing",
