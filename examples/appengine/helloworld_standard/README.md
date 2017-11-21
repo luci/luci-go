@@ -105,7 +105,7 @@ To configure OAuth2:
 1.  In "Authorized redirect URIs" add
     `https://<yourapp>.appspot.com/auth/openid/callback`.
 1.  As a result you'll get client ID and client secret strings. Note them.
-1.  Go to `https://<yourapp>.appspot.com/admin/settings/openid_auth`. You must
+1.  Go to `https://<yourapp>.appspot.com/admin/portal/openid_auth`. You must
     be GAE level administrator of the app to access this page.
 1.  In "Discovery URL" field enter `https://accounts.google.com/.well-known/openid-configuration`
 1.  In "OAuth client ID", "OAuth client secret" and "Redirect URI" fields put
@@ -122,7 +122,7 @@ To start using auth groups from some existing auth service
 1.  Go to [Cloud Console](https://console.developers.google.com) project that
     contain your GAE app.
 1.  In "API Manager" section enable "Google Cloud Pub/Sub" API.
-1.  Go to `https://<yourapp>.appspot.com/admin/settings/auth_service`.
+1.  Go to `https://<yourapp>.appspot.com/admin/portal/auth_service`.
 1.  Note service account ID corresponding to your GAE app. It is highlighted in
     bold in "Authorization settings" section.
 1.  Add this account to `auth-trusted-services` group on the auth service. You
