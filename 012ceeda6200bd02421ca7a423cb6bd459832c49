@@ -1,0 +1,749 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "897a97e3_ba501d27",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "this entire package is about go, so this can be omitted",
+      "range": {
+        "startLine": 7,
+        "startChar": 31,
+        "endLine": 7,
+        "endChar": 47
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca905a6d_6f4010f9",
+        "filename": "common/config/validation/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "\u003e 80 col",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e9323c5_cc31c3fc",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "validation/ directory already has \"validation.go\", and this CL adds \"validator.go\", which is very similar. Most importantly, this file implements the validation protocol/handler, so let\u0027s rename it to reflect that",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1174ebf_e70bc605",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "it should not be copied in every file. doc.go is enough",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c451bcd_1ce547bd",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "let\u0027s use \"administrators\" as the default",
+      "range": {
+        "startLine": 37,
+        "startChar": 20,
+        "endLine": 37,
+        "endChar": 33
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16e260d5_20d41bf9",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "this should not be hardcoded\nuse https://godoc.org/go.chromium.org/luci/server/settings\nsee its usage for examples\n\nconfig-admins can be put there too",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "352b27d3_2b8205b8",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 49,
+        "startChar": 20,
+        "endLine": 49,
+        "endChar": 23
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f27550f1_6c95b554",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "for comments, we try to keep them under 80cols",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6162bfab_b9c7ef36",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "\"to implement config validation protocol\"\n\nGET/POST/metadata are details of the protocol",
+      "range": {
+        "startLine": 56,
+        "startChar": 69,
+        "endLine": 57,
+        "endChar": 34
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22466755_0b085183",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "this type is inside a package that already has \"config\", so the context of this package is already scoped to configs. This can be omitted",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 11
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d675cfae_dd760c37",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "nit: \u003e80col",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1268a609_df8e20d4",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "this does not provide much value because a reader can that from the function signature.",
+      "range": {
+        "startLine": 62,
+        "startChar": 13,
+        "endLine": 62,
+        "endChar": 106
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4533a337_e8410c40",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 64,
+        "startChar": 38,
+        "endLine": 64,
+        "endChar": 45
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afe811c6_12ca4830",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 64,
+        "startChar": 25,
+        "endLine": 64,
+        "endChar": 32
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f78a3e3_08b5a315",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 67,
+        "startChar": 55,
+        "endLine": 67,
+        "endChar": 63
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bca5e4b_b9b8f0fe",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "in all InstallHandlers r goes first https://cs.chromium.org/search/?q\u003dInstallHandlers+file:%5Einfra/go/src/go%5C.chromium%5C.org/+package:%5Echromium$\u0026type\u003dcs",
+      "range": {
+        "startLine": 69,
+        "startChar": 55,
+        "endLine": 69,
+        "endChar": 71
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "656e13e6_2daa3e89",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "validator",
+      "range": {
+        "startLine": 69,
+        "startChar": 21,
+        "endLine": 69,
+        "endChar": 36
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2ee210a_4ad5b9ac",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": ".Extend(a.GetMiddleware(), checkAuth)",
+      "range": {
+        "startLine": 76,
+        "startChar": 51,
+        "endLine": 76,
+        "endChar": 60
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4269240_05362148",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "we should accept this as a parameter",
+      "range": {
+        "startLine": 76,
+        "startChar": 11,
+        "endLine": 76,
+        "endChar": 26
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2047995a_bd8e3367",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "let\u0027s put leading slash into paths instead",
+      "range": {
+        "startLine": 77,
+        "startChar": 7,
+        "endLine": 77,
+        "endChar": 39
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5cec75f7_ca534d48",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "this can be omitted. HTTP status is already tracked in HTTP logs",
+      "range": {
+        "startLine": 82,
+        "startChar": 20,
+        "endLine": 82,
+        "endChar": 34
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b580eac3_b95f98ac",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "comment should start with the symbol name",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 9
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7dc74d2_a5677654",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "the contents of err is lost",
+      "range": {
+        "startLine": 90,
+        "startChar": 4,
+        "endLine": 90,
+        "endChar": 7
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "932622cf_3370da3f",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "return",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6e499a2_04fc3fe5",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "swap these two. there is no point in checking email if isConfigAdmin",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "792e19f8_9dceb9e2",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "var reqBody struct {",
+      "range": {
+        "startLine": 104,
+        "startChar": 1,
+        "endLine": 104,
+        "endChar": 19
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4051e12_21ce2d73",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "[]byte\n\njson package will decode base64 for you",
+      "range": {
+        "startLine": 107,
+        "startChar": 12,
+        "endLine": 107,
+        "endChar": 18
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "088dd432_a585d707",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "that\u0027s not an internal error. that\u0027s bad request",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24a1f2ca_ec7a3e7e",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "c",
+      "range": {
+        "startLine": 148,
+        "startChar": 34,
+        "endLine": 148,
+        "endChar": 40
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fc56712_80e28f09",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "msg",
+      "range": {
+        "startLine": 149,
+        "startChar": 1,
+        "endLine": 149,
+        "endChar": 11
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b63ebbd_e5b86a86",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "we don\u0027t assume that. Context supports only errors now",
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b30e5c71_ee16e1d9",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "please move these definitions into metadataRequestHandler\n\nhowever consider using map[string]interface{}. In this particular case, it is as type safe",
+      "range": {
+        "startLine": 158,
+        "startChar": 0,
+        "endLine": 171,
+        "endChar": 1
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf2b1109_f6495d3b",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "please use c.Request.URL.Host",
+      "range": {
+        "startLine": 177,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 2
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a9f6267_f1e7c720",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "p",
+      "range": {
+        "startLine": 182,
+        "startChar": 8,
+        "endLine": 182,
+        "endChar": 21
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b6014af_e88868e0",
+        "filename": "common/config/validation/validator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:15:05Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 183,
+        "startChar": 2,
+        "endLine": 183,
+        "endChar": 13
+      },
+      "revId": "012ceeda6200bd02421ca7a423cb6bd459832c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
