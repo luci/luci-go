@@ -25,6 +25,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
 
@@ -133,20 +134,20 @@ func DefaultSettings(c context.Context) Settings {
 // store.
 const settingsKey = "gaeconfig"
 
-type settingsUIPage struct {
-	settings.BaseUIPage
+type settingsPage struct {
+	portal.BasePage
 }
 
-func (settingsUIPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(c context.Context) (string, error) {
 	return "Configuration service settings", nil
 }
 
-func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	return []settings.UIField{
+func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+	return []portal.Field{
 		{
 			ID:    "ConfigServiceHost",
 			Title: `Config service host`,
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Validator: func(v string) error {
 				if strings.ContainsRune(v, '/') {
 					return fmt.Errorf("host must be a host name, not a URL")
@@ -162,7 +163,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 		{
 			ID:    "CacheExpirationSec",
 			Title: "Cache expiration, sec",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Validator: func(v string) error {
 				if i, err := strconv.Atoi(v); err != nil || i < 0 {
 					return errors.New("expecting a non-negative integer")
@@ -176,7 +177,7 @@ disable local cache.</p>`,
 		{
 			ID:    "DatastoreCacheMode",
 			Title: "Enable datastore-backed config caching",
-			Type:  settings.UIFieldChoice,
+			Type:  portal.FieldChoice,
 			ChoiceVariants: []string{
 				dsCacheDisabledSetting,
 				string(DSCacheEnabled),
@@ -192,7 +193,7 @@ package doc for instructions how to setup this cron job.</p>`,
 	}, nil
 }
 
-func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	s := DefaultSettings(c)
 	err := settings.GetUncached(c, settingsKey, &s)
 	if err != nil && err != settings.ErrNoSettings {
@@ -220,7 +221,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}, nil
 }
 
-func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	dsMode := DSCacheMode(values["DatastoreCacheMode"])
 	switch dsMode {
 	case DSCacheEnabled: // Valid.
@@ -269,5 +270,5 @@ func translateConfigURLToHost(v string) string {
 }
 
 func init() {
-	settings.RegisterUIPage(settingsKey, settingsUIPage{})
+	portal.RegisterPage(settingsKey, settingsPage{})
 }
