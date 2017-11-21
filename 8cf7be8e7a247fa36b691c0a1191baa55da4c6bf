@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c1123aa9_a6668891",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T00:40:41Z",
+      "side": 1,
+      "message": "I\u0027d call this buildbotBuilders",
+      "range": {
+        "startLine": 106,
+        "startChar": 5,
+        "endLine": 106,
+        "endChar": 20
+      },
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e41455d9_8546753a",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T00:40:41Z",
+      "side": 1,
+      "message": "Unused?",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 17
+      },
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef20a7b5_9153f40b",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T00:40:41Z",
+      "side": 1,
+      "message": "backend, group, builderName, err :\u003d buildsource.BuilderID(h.BuilderID).Split()\n\nshould work\n\nIn fact h.BuilderID should probably be of type buildsource.BuilderID",
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "599e4dc8_4561c5de",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T00:40:41Z",
+      "side": 1,
+      "message": "If buildstore.GetPendingCounts returned a map[string]int instead, then we can get rid of pendingHists.",
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
