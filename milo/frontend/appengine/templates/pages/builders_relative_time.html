@@ -11,22 +11,25 @@
 {{define "body"}}
 <h1>{{ .ProjectName }} Builders</h1>
 
+<div class="builders-list">
 {{ range .Builders }}
   {{ $builder := .BuilderID }}
   <div class="builder-row">
     <a class="builder-name"
        href="{{ .BuilderLink }}"
        aria-label="Recent state of builder {{ $builder }}">{{ $builder }}</a>
-    <a class="builder-state-bubble pending-builds status-NotRun"
-       href="{{ .BuilderLink }}"
-       aria-label="builder {{ $builder }}">
-      {{ .NumPending }} pending
-    </a>
-    <a class="builder-state-bubble running-builds status-Running"
-       href="{{ .BuilderLink }}"
-       aria-label="builder {{ $builder }}">
-      {{ .NumRunning }} running
-    </a>
+    <div class="current-builds-group">
+      <a class="builder-state-bubble current-builds-state-bubble status-NotRun"
+         href="{{ .BuilderLink }}"
+         aria-label="builder {{ $builder }}">
+        {{ .NumPending }} pending
+      </a>
+      <a class="builder-state-bubble current-builds-state-bubble status-Running"
+         href="{{ .BuilderLink }}"
+         aria-label="builder {{ $builder }}">
+        {{ .NumRunning }} running
+      </a>
+    </div>
     <div class="finished-builds">
     {{ range $i, $build := .RecentBuilds }}
       <a class="build-status"
@@ -43,6 +46,7 @@
     </div>
   </div>
 {{ end }}
+</div>
 
 <div class="epiloge" style="margin-top: 1em">
   (Show:
