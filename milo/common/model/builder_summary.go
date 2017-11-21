@@ -16,7 +16,6 @@ package model
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -24,12 +23,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
-
-	"go.chromium.org/luci/milo/common"
 )
 
 // InvalidBuilderIDURL is returned if a BuilderID cannot be parsed and a URL generated.
@@ -72,12 +66,12 @@ func (b *BuilderSummary) LastFinishedBuildIDLink() string {
 
 // SelfLink returns a link to the associated builder.
 func (b *BuilderSummary) SelfLink() string {
-	return builderIDLink(b.BuilderID, b.ProjectID)
+	return BuilderIDLink(b.BuilderID, b.ProjectID)
 }
 
-// builderIDLink gets a builder link from builder ID and project.
+// BuilderIDLink gets a builder link from builder ID and project.
 // Depends on routes.go.
-func builderIDLink(b, project string) string {
+func BuilderIDLink(b, project string) string {
 	parts := strings.Split(b, "/")
 	if len(parts) != 3 {
 		return InvalidBuilderIDURL
@@ -131,144 +125,4 @@ func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
 	builder.LastFinishedStatus = build.Summary.Status
 	builder.LastFinishedBuildID = build.BuildID
 	return datastore.Put(c, builder)
-}
-
-// BuilderHistory stores the recent history of a builder.
-type BuilderHistory struct {
-	// ID of Builder associated with this builder.
-	BuilderID string
-
-	// Link associated with this builder.
-	BuilderLink string
-
-	// Number of pending builds in this builder.
-	NumPending int
-
-	// Number of running builds in this builder.
-	NumRunning int
-
-	// Recent build summaries from this builder.
-	RecentBuilds []*BuildSummary
-}
-
-// GetBuilderHistories gets the recent histories for the builders in the given project.
-func GetBuilderHistories(c context.Context, project, console string, limit int) ([]*BuilderHistory, error) {
-	builders, err := getBuildersForProject(c, project, console)
-	if err != nil {
-		return nil, err
-	}
-
-	// Populate the recent histories.
-	hists := make([]*BuilderHistory, len(builders))
-	err = parallel.WorkPool(16, func(ch chan<- func() error) {
-		for i, builder := range builders {
-			i := i
-			builder := builder
-			ch <- func() error {
-				hist, err := getHistory(c, builder, project, limit)
-				if err != nil {
-					return errors.Annotate(
-						err, "error populating history for builder %s", builder).Err()
-				}
-				hists[i] = hist
-				return nil
-			}
-		}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return hists, nil
-}
-
-// getBuildersForProject gets the sorted builder IDs associated with the given project.
-func getBuildersForProject(c context.Context, project, console string) ([]string, error) {
-	var cons []*common.Console
-
-	// Get consoles for project and extract builders into set.
-	projKey := datastore.MakeKey(c, "Project", project)
-	if console == "" {
-		q := datastore.NewQuery("Console").Ancestor(projKey)
-		if err := datastore.GetAll(c, q, &cons); err != nil {
-			return nil, errors.Annotate(
-				err, "error getting consoles for project %s: %v", project).Err()
-		}
-	} else {
-		con := common.Console{Parent: projKey, ID: console}
-		switch err := datastore.Get(c, &con); err {
-		case nil:
-		case datastore.ErrNoSuchEntity:
-			return nil, errors.Annotate(
-				err, "error getting console %s in project %s", console, project).
-				Tag(common.CodeNotFound).Err()
-		default:
-			return nil, errors.Annotate(
-				err, "error getting console %s in project %s", console, project).Err()
-		}
-		cons = append(cons, &con)
-	}
-
-	bSet := stringset.New(0)
-	for _, con := range cons {
-		for _, builder := range con.Builders {
-			bSet.Add(builder)
-		}
-	}
-
-	// Get sorted builders.
-	builders := bSet.ToSlice()
-	sort.Strings(builders)
-	return builders, nil
-}
-
-// getHistory gets the recent history of the given builder.
-// Depends on status.go for filtering finished builds.
-func getHistory(c context.Context, builderID, project string, limit int) (*BuilderHistory, error) {
-	hist := BuilderHistory{
-		BuilderID:    builderID,
-		BuilderLink:  builderIDLink(builderID, project),
-		RecentBuilds: make([]*BuildSummary, 0, limit),
-	}
-
-	// Do fetches.
-	return &hist, parallel.FanOutIn(func(fetch chan<- func() error) {
-		// Pending builds
-		fetch <- func() error {
-			q := datastore.NewQuery("BuildSummary").
-				Eq("BuilderID", builderID).
-				Eq("Summary.Status", NotRun)
-			pending, err := datastore.Count(c, q)
-			hist.NumPending = int(pending)
-			return err
-		}
-
-		// Running builds
-		fetch <- func() error {
-			q := datastore.NewQuery("BuildSummary").
-				Eq("BuilderID", builderID).
-				Eq("Summary.Status", Running)
-			running, err := datastore.Count(c, q)
-			hist.NumRunning = int(running)
-			return err
-		}
-
-		// Last {limit} builds
-		fetch <- func() error {
-			q := datastore.NewQuery("BuildSummary").
-				Eq("BuilderID", builderID).
-				Order("-Created")
-			return datastore.Run(c, q, func(b *BuildSummary) error {
-				if !b.Summary.Status.Terminal() {
-					return nil
-				}
-
-				hist.RecentBuilds = append(hist.RecentBuilds, b)
-				if len(hist.RecentBuilds) >= limit {
-					return datastore.Stop
-				}
-				return nil
-			})
-		}
-	})
 }
