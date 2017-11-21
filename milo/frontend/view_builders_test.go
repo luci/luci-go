@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -30,21 +28,8 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 )
-
-// addBuildSummary populates the given BuildSummary array at specified index, returning the next
-// index.
-func addBuildSummary(c context.Context, builds *[]*model.BuildSummary, project, builder string, summary model.Summary) {
-	i := len(*builds)
-	*builds = append(*builds, &model.BuildSummary{
-		BuildKey:  datastore.MakeKey(c, "build", i+1),
-		ProjectID: project,
-		BuilderID: builder,
-		BuildID:   fmt.Sprintf("%s/%d", builder, i),
-		Created:   testclock.TestRecentTimeUTC.Add(time.Duration(i) * time.Hour),
-		Summary:   summary,
-	})
-}
 
 func TestGetBuilderHistories(t *testing.T) {
 	t.Parallel()
@@ -70,21 +55,6 @@ func TestGetBuilderHistories(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 		datastore.GetTestable(c).Consistent(true)
 
-		nBuilds := 10
-		statuses := []model.Summary{
-			{Status: model.Running},      /* b2 */
-			{Status: model.Success},      /* b2 */
-			{Status: model.Running},      /* b2 */
-			{Status: model.Exception},    /* b2 */
-			{Status: model.Running},      /* b2 */
-			{Status: model.InfraFailure}, /* b2 */
-			{Status: model.NotRun},       /* b2 */
-			{Status: model.NotRun},       /* b2 */
-			{Status: model.Success},      /* b3 */
-			{Status: model.Success},      /* b4 */
-		}
-		So(statuses, ShouldHaveLength, nBuilds)
-
 		p := "proj"
 		proj := datastore.MakeKey(c, "Project", p)
 
@@ -103,22 +73,37 @@ func TestGetBuilderHistories(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Populate builds.
-		builds := make([]*model.BuildSummary, 0, nBuilds)
+		var builds []*model.BuildSummary
+		addBuilds := func(builder string, pending int, statuses ...model.Status) {
+			err = buildstore.PutPendingCount(c, "master", builder, pending)
+			So(err, ShouldBeNil)
 
-		// One builder is on a console but has no builds.
-
-		// One builder has lots of builds.
-		builder := "buildbot/master/b2"
-		for i := 0; i < 8; i++ {
-			addBuildSummary(c, &builds, p, builder, statuses[i])
+			for i, status := range statuses {
+				buildID := fmt.Sprintf("buildbot/master/%s/%d", builder, i)
+				builds = append(builds, &model.BuildSummary{
+					BuildKey:  datastore.MakeKey(c, "build", buildID),
+					ProjectID: p,
+					BuilderID: "buildbot/master/" + builder,
+					BuildID:   buildID,
+					Created:   testclock.TestRecentTimeUTC.Add(time.Duration(len(builds)) * time.Hour),
+					Summary:   model.Summary{Status: status},
+				})
+			}
 		}
 
+		// One builder has lots of builds.
+		// Save number of pending builds.
+		addBuilds("b2", 2,
+			model.Running,
+			model.Success,
+			model.Running,
+			model.Exception,
+			model.Running,
+			model.InfraFailure)
 		// One builder is not on any project's consoles.
-		addBuildSummary(c, &builds, p, "buildbot/master/b3", statuses[8])
-
+		addBuilds("b3", 0, model.Success)
 		// One builder is on two consoles.
-		addBuildSummary(c, &builds, p, "buildbot/master/b4", statuses[9])
-
+		addBuilds("b4", 0, model.Success)
 		err = datastore.Put(c, builds)
 		So(err, ShouldBeNil)
 
@@ -129,26 +114,28 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(hists, ShouldHaveLength, 3)
 
-					So(*hists[0], ShouldResemble, builderHistory{
+					So(hists[0], ShouldResemble, &builderHistory{
 						BuilderID:    "buildbot/master/b1",
 						BuilderLink:  "/buildbot/master/b1",
 						RecentBuilds: []*model.BuildSummary{},
 					})
 
-					So(hists[1].BuilderID, ShouldEqual, "buildbot/master/b2")
-					So(hists[1].BuilderLink, ShouldEqual, "/buildbot/master/b2")
-					So(hists[1].NumPending, ShouldEqual, 2)
-					So(hists[1].NumRunning, ShouldEqual, 3)
-					So(hists[1].RecentBuilds, ShouldHaveLength, 2)
-					So(hists[1].RecentBuilds[0].BuildID, ShouldEqual, builds[5].BuildID)
-					So(hists[1].RecentBuilds[1].BuildID, ShouldEqual, builds[3].BuildID)
+					b2Hist := hists[1]
+					So(b2Hist.BuilderID, ShouldEqual, "buildbot/master/b2")
+					So(b2Hist.BuilderLink, ShouldEqual, "/buildbot/master/b2")
+					So(b2Hist.NumPending, ShouldEqual, 2)
+					So(b2Hist.NumRunning, ShouldEqual, 3)
+					So(b2Hist.RecentBuilds, ShouldHaveLength, 2)
+					So(b2Hist.RecentBuilds[0].BuildID, ShouldEqual, "buildbot/master/b2/5")
+					So(b2Hist.RecentBuilds[1].BuildID, ShouldEqual, "buildbot/master/b2/3")
 
-					So(hists[2].BuilderID, ShouldEqual, "buildbot/master/b4")
-					So(hists[2].BuilderLink, ShouldEqual, "/buildbot/master/b4")
-					So(hists[2].NumPending, ShouldEqual, 0)
-					So(hists[2].NumRunning, ShouldEqual, 0)
-					So(hists[2].RecentBuilds, ShouldHaveLength, 1)
-					So(hists[2].RecentBuilds[0].BuildID, ShouldEqual, builds[9].BuildID)
+					b4Hist := hists[2]
+					So(b4Hist.BuilderID, ShouldEqual, "buildbot/master/b4")
+					So(b4Hist.BuilderLink, ShouldEqual, "/buildbot/master/b4")
+					So(b4Hist.NumPending, ShouldEqual, 0)
+					So(b4Hist.NumRunning, ShouldEqual, 0)
+					So(b4Hist.RecentBuilds, ShouldHaveLength, 1)
+					So(b4Hist.RecentBuilds[0].BuildID, ShouldEqual, "buildbot/master/b4/0")
 				})
 
 				Convey("with limit greater than number of finished builds works", func() {
@@ -156,27 +143,29 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(hists, ShouldHaveLength, 3)
 
-					So(*hists[0], ShouldResemble, builderHistory{
+					So(hists[0], ShouldResemble, &builderHistory{
 						BuilderID:    "buildbot/master/b1",
 						BuilderLink:  "/buildbot/master/b1",
 						RecentBuilds: []*model.BuildSummary{},
 					})
 
-					So(hists[1].BuilderID, ShouldEqual, "buildbot/master/b2")
-					So(hists[1].BuilderLink, ShouldEqual, "/buildbot/master/b2")
-					So(hists[1].NumPending, ShouldEqual, 2)
-					So(hists[1].NumRunning, ShouldEqual, 3)
-					So(hists[1].RecentBuilds, ShouldHaveLength, 3)
-					So(hists[1].RecentBuilds[0].BuildID, ShouldEqual, builds[5].BuildID)
-					So(hists[1].RecentBuilds[1].BuildID, ShouldEqual, builds[3].BuildID)
-					So(hists[1].RecentBuilds[2].BuildID, ShouldEqual, builds[1].BuildID)
+					b2Hist := hists[1]
+					So(b2Hist.BuilderID, ShouldEqual, "buildbot/master/b2")
+					So(b2Hist.BuilderLink, ShouldEqual, "/buildbot/master/b2")
+					So(b2Hist.NumPending, ShouldEqual, 2)
+					So(b2Hist.NumRunning, ShouldEqual, 3)
+					So(b2Hist.RecentBuilds, ShouldHaveLength, 3)
+					So(b2Hist.RecentBuilds[0].BuildID, ShouldEqual, "buildbot/master/b2/5")
+					So(b2Hist.RecentBuilds[1].BuildID, ShouldEqual, "buildbot/master/b2/3")
+					So(b2Hist.RecentBuilds[2].BuildID, ShouldEqual, "buildbot/master/b2/1")
 
-					So(hists[2].BuilderID, ShouldEqual, "buildbot/master/b4")
-					So(hists[2].BuilderLink, ShouldEqual, "/buildbot/master/b4")
-					So(hists[2].NumPending, ShouldEqual, 0)
-					So(hists[2].NumRunning, ShouldEqual, 0)
-					So(hists[2].RecentBuilds, ShouldHaveLength, 1)
-					So(hists[2].RecentBuilds[0].BuildID, ShouldEqual, builds[9].BuildID)
+					b4Hist := hists[2]
+					So(b4Hist.BuilderID, ShouldEqual, "buildbot/master/b4")
+					So(b4Hist.BuilderLink, ShouldEqual, "/buildbot/master/b4")
+					So(b4Hist.NumPending, ShouldEqual, 0)
+					So(b4Hist.NumRunning, ShouldEqual, 0)
+					So(b4Hist.RecentBuilds, ShouldHaveLength, 1)
+					So(b4Hist.RecentBuilds[0].BuildID, ShouldEqual, "buildbot/master/b4/0")
 				})
 			})
 
@@ -189,7 +178,7 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(hists[0].BuilderID, ShouldEqual, "buildbot/master/b4")
 					So(hists[0].BuilderLink, ShouldEqual, "/buildbot/master/b4")
 					So(hists[0].RecentBuilds, ShouldHaveLength, 1)
-					So(hists[0].RecentBuilds[0].BuildID, ShouldResemble, builds[9].BuildID)
+					So(hists[0].RecentBuilds[0].BuildID, ShouldResemble, "buildbot/master/b4/0")
 				})
 
 				Convey("for an invalid console works", func() {
