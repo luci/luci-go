@@ -79,6 +79,40 @@ func (c *Console) Project() string {
 	return c.Parent.StringID()
 }
 
+func (c *Console) ConsoleID() ConsoleID {
+	return ConsoleID{Project: c.Project(), ID: c.ID}
+}
+
+// ConsoleID is a reference to a console.
+type ConsoleID struct {
+	Project string
+	ID      string
+}
+
+func NewConsoleID(id string) ConsoleID {
+	components := strings.SplitN(id, "/", 2)
+	if len(components) != 2 {
+		// This should never happen
+		panic("invalid console id: " + id)
+	}
+	return ConsoleID{
+		Project: components[0],
+		ID:      components[1],
+	}
+}
+
+func (con *ConsoleID) String() string {
+	return fmt.Sprintf("%s/%s", con.Project, con.ID)
+}
+
+// NewEntity returns an empty Console datastore entity keyed with itself.
+func (con *ConsoleID) NewEntity(c context.Context) *Console {
+	return &Console{
+		Parent: datastore.MakeKey(c, "Project", con.Project),
+		ID:     con.ID,
+	}
+}
+
 // ErrConsoleNotFound is returned from GetConsole if the requested console
 // isn't known to exist.
 var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
@@ -462,4 +496,27 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 	default:
 		return nil, err
 	}
+}
+
+// GetConsole returns the requested consoles.
+//
+// TODO-perf(iannucci,hinoka): Memcache this.
+func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
+	result := make([]*Console, len(consoles))
+	for i, con := range consoles {
+		result[i] = con.NewEntity(c)
+	}
+	if err := datastore.Get(c, result); err != nil {
+		me := err.(errors.MultiError)
+		lme := errors.NewLazyMultiError(len(me))
+		// Replace NSE with ConsoleNotFound
+		for i, ierr := range me {
+			if ierr == datastore.ErrNoSuchEntity {
+				ierr = ErrConsoleNotFound
+			}
+			lme.Assign(i, ierr)
+		}
+		return result, lme.Get()
+	}
+	return result, nil
 }
