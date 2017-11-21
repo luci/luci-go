@@ -17,6 +17,7 @@ package frontend
 import (
 	"html/template"
 
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 
 	"golang.org/x/net/context"
@@ -60,35 +61,31 @@ func GetUncachedSettings(c context.Context) (*DatabaseSettings, error) {
 	}
 }
 
-// DatabaseSettingsUI implements settings.UIPage around DatabaseSettings.
-type DatabaseSettingsUI struct {
-}
-
 // Fields returns the form fields for configuring these settings.
-func (DatabaseSettings) Fields(c context.Context) ([]settings.UIField, error) {
-	fields := []settings.UIField{
+func (DatabaseSettings) Fields(c context.Context) ([]portal.Field, error) {
+	fields := []portal.Field{
 		{
 			ID:    "Server",
 			Title: "Server",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help:  "<p>Server to use (for Cloud SQL should be of the form project:region:database)</p>",
 		},
 		{
 			ID:    "Username",
 			Title: "Username",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help:  "<p>Username to authenticate to the SQL database with</p>",
 		},
 		{
 			ID:    "Password",
 			Title: "Password",
-			Type:  settings.UIFieldPassword,
+			Type:  portal.FieldPassword,
 			Help:  "<p>Password to authenticate to the SQL database with</p>",
 		},
 		{
 			ID:    "Database",
 			Title: "Database",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help:  "<p>SQL database to use</p>",
 		},
 	}
@@ -134,5 +131,5 @@ func (DatabaseSettings) WriteSettings(c context.Context, values map[string]strin
 
 // InstallSettings installs the database settings UI. The settings UI must already be installed.
 func InstallSettings() {
-	settings.RegisterUIPage(settingsKey, DatabaseSettings{})
+	portal.RegisterPage(settingsKey, DatabaseSettings{})
 }

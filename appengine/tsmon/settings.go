@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
 
@@ -41,7 +42,7 @@ type tsmonSettings struct {
 	// Enabled is false to completely shutoff the monitoring.
 	//
 	// Default is false.
-	Enabled settings.YesOrNo `json:"enabled"`
+	Enabled portal.YesOrNo `json:"enabled"`
 
 	// ProdXAccount is a service account to use to send metrics to ProdX endpoint.
 	//
@@ -56,7 +57,7 @@ type tsmonSettings struct {
 	// ReportRuntimeStats is true to enable reporting of Go RT stats on flush.
 	//
 	// Default is false.
-	ReportRuntimeStats settings.YesOrNo `json:"report_runtime_stats"`
+	ReportRuntimeStats portal.YesOrNo `json:"report_runtime_stats"`
 }
 
 // Prefilled portion of settings.
@@ -89,21 +90,21 @@ func fetchCachedSettings(c context.Context) tsmonSettings {
 ////////////////////////////////////////////////////////////////////////////////
 // UI for Tsmon settings.
 
-type settingsUIPage struct {
-	settings.BaseUIPage
+type settingsPage struct {
+	portal.BasePage
 }
 
-func (settingsUIPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(c context.Context) (string, error) {
 	return "Time series monitoring settings", nil
 }
 
-func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
+func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 	serviceAcc, err := info.ServiceAccount(c)
 	if err != nil {
 		return nil, err
 	}
-	return []settings.UIField{
-		settings.YesOrNoField(settings.UIField{
+	return []portal.Field{
+		portal.YesOrNoField(portal.Field{
 			ID:    "Enabled",
 			Title: "Enabled",
 			Help: `If not enabled, all metrics manipulations are ignored and the ` +
@@ -116,7 +117,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 		{
 			ID:    "ProdXAccount",
 			Title: "ProdX Service Account",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help: template.HTML(fmt.Sprintf(
 				`Name of a properly configured service account inside a ProdX-enabled `+
 					`Cloud Project to use for sending metrics. "Google Identity and Access `+
@@ -128,7 +129,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 		{
 			ID:    "FlushIntervalSec",
 			Title: "Flush interval, sec",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Validator: func(v string) error {
 				if i, err := strconv.Atoi(v); err != nil || i < 10 {
 					return errors.New("expecting an integer larger than 9")
@@ -138,7 +139,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Help: "How often to flush metrics, in seconds. The default value (60 sec) " +
 				"is highly recommended. Change it only if you know what you are doing.",
 		},
-		settings.YesOrNoField(settings.UIField{
+		portal.YesOrNoField(portal.Field{
 			ID:    "ReportRuntimeStats",
 			Title: "Report runtime stats",
 			Help: "If enabled, Go runtime state (e.g. memory allocator statistics) " +
@@ -148,7 +149,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 	}, nil
 }
 
-func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	s := tsmonSettings{}
 	switch err := settings.GetUncached(c, settingsKey, &s); {
 	case err == settings.ErrNoSettings:
@@ -164,7 +165,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}, nil
 }
 
-func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	modified := tsmonSettings{}
 	modified.ProdXAccount = values["ProdXAccount"]
 	if err := modified.Enabled.Set(values["Enabled"]); err != nil {
@@ -203,5 +204,5 @@ func canActAsProdX(c context.Context, account string) error {
 }
 
 func init() {
-	settings.RegisterUIPage(settingsKey, settingsUIPage{})
+	portal.RegisterPage(settingsKey, settingsPage{})
 }
