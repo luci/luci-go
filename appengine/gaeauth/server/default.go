@@ -74,7 +74,7 @@ func (m cookieAuthMethod) LogoutURL(c context.Context, dest string) (string, err
 
 func init() {
 	// Flip to true to enable OpenID login on devserver for debugging. Requires
-	// a configuration (see /admin/settings/openid_auth page).
+	// a configuration (see /admin/portal/openid_auth page).
 	const useOIDOnDevServer = false
 
 	if appengine.IsDevAppServer() && !useOIDOnDevServer {

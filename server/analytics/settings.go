@@ -21,6 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
 
@@ -65,15 +66,15 @@ var rAllowed = regexp.MustCompile("UA-\\d+-\\d+")
 ////////////////////////////////////////////////////////////////////////////////
 // UI for GAE settings.
 
-type settingsUIPage struct {
-	settings.BaseUIPage
+type settingsPage struct {
+	portal.BasePage
 }
 
-func (settingsUIPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(c context.Context) (string, error) {
 	return "Google Analytics Related Settings", nil
 }
 
-func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
+func (settingsPage) Overview(c context.Context) (template.HTML, error) {
 	return template.HTML(`<p>To generate a Google Analytics Tracking ID</p>
 <ul>
 <li> Sign in to <a href="https://www.google.com/analytics/web/#home/">your Analytics account.</a></li>
@@ -84,19 +85,19 @@ func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
 </ul>`), nil
 }
 
-func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	return []settings.UIField{
+func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+	return []portal.Field{
 		{
 			ID:    "AnalyticsID",
 			Title: "Google Analytics Tracking ID",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help: `Tracking ID used for Google Analytics. Filling this in enables
 Google Analytics tracking across the app.`,
 		},
 	}, nil
 }
 
-func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	s := analyticsSettings{}
 	err := settings.GetUncached(c, settingsKey, &s)
 	if err != nil && err != settings.ErrNoSettings {
@@ -107,7 +108,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}, nil
 }
 
-func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	modified := analyticsSettings{}
 	id := values["AnalyticsID"]
 	if id != "" {
@@ -121,5 +122,5 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 }
 
 func init() {
-	settings.RegisterUIPage(settingsKey, settingsUIPage{})
+	portal.RegisterPage(settingsKey, settingsPage{})
 }
