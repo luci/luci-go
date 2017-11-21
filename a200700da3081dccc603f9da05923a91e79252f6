@@ -19,6 +19,29 @@
     },
     {
       "key": {
+        "uuid": "b53265d5_c7f424ee",
+        "filename": "mmutex/lib/shared.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-21T17:16:39Z",
+      "side": 1,
+      "message": "An alternative interface to consider is `RunIfShared() -\u003e ErrDraining`. The behavior of that function would be to run command under the shared lock iff the draining file is not present. So it would:\n\n  * do a single stat for the drain file, ErrDraining if present\n  * attempt to get the shared lock, but aborting if getting it takes \u003e 5s, ErrExclusive if fail\n  * check for the drain file again, ErrDraining if present\n  * command()\n\nI think the caller should be able to express \"If you can run `command` in the next 5 seconds, please do so, otherwise tell me the status of the system (Exclusive, Draining).\"\n\nIt could live side-by-side with RunSharedASAP (this implementation). I\u0027m not sure which one will be needed more often (swarming\u0027s scheduler would need RunIfShared, and the command line tool may need both (could use RunIfShared to implement a `stat` command)).",
+      "range": {
+        "startLine": 38,
+        "startChar": 10,
+        "endLine": 38,
+        "endChar": 30
+      },
+      "revId": "a200700da3081dccc603f9da05923a91e79252f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "54744da9_d2f8d455",
         "filename": "mmutex/lib/shared.go",
         "patchSetId": 2
