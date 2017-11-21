@@ -163,7 +163,7 @@ this LogDog service (defined in
 
 After deploying the Coordiantor to a suitable cloud project, several
 configuration parameters must be defined visit its settings page at:
-`https://<your-app>/admin/settings`, and configure:
+`https://<your-app>/admin/portal`, and configure:
 
 * Configure the "Configuration Service Settings" to point to the **Configuration
   Service** instance.

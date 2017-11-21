@@ -12,8 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package admin implements HTTP routes for settings UI.
-package admin
+// Package portal implements HTTP routes for portal pages.
+//
+// These pages can be registered at init()-time, and will be routed to
+// /admin/portal.
+//
+// Typically they read/write `settings` as defined by
+// `go.chromium.org/luci/server/settings`, but they can also be used to provide
+// information to administrators or to provide admin-only actions (such as
+// clearing queues or providing admin tokens).
+package portal
 
 import (
 	"html/template"
@@ -33,7 +41,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/server/settings/admin/internal/assets"
+	"go.chromium.org/luci/server/portal/internal/assets"
 )
 
 // InstallHandlers installs HTTP handlers that implement admin UI.
@@ -69,7 +77,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 		},
 	}
 
-	rr := r.Subrouter("/admin/settings")
+	rr := r.Subrouter("/admin/portal")
 	rr.Use(base.Extend(
 		templates.WithTemplates(tmpl),
 		adminDB.install,
@@ -78,8 +86,8 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 	))
 
 	rr.GET("", router.MiddlewareChain{}, indexPage)
-	rr.GET("/:SettingsKey", router.MiddlewareChain{}, settingsPageGET)
-	rr.POST("/:SettingsKey", router.NewMiddlewareChain(xsrf.WithTokenCheck), settingsPagePOST)
+	rr.GET("/:PageKey", router.MiddlewareChain{}, portalPageGET)
+	rr.POST("/:PageKey", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalPagePOST)
 }
 
 // replyError sends HTML error page with status 500 on transient errors or 400

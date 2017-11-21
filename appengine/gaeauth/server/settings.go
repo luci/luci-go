@@ -25,18 +25,18 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
-	"go.chromium.org/luci/server/settings"
+	"go.chromium.org/luci/server/portal"
 )
 
-type settingsUIPage struct {
-	settings.BaseUIPage
+type settingsPage struct {
+	portal.BasePage
 }
 
-func (settingsUIPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(c context.Context) (string, error) {
 	return "Authorization settings", nil
 }
 
-func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
+func (settingsPage) Overview(c context.Context) (template.HTML, error) {
 	serviceAcc, err := info.ServiceAccount(c)
 	if err != nil {
 		return "", err
@@ -73,12 +73,12 @@ service per LUCI deployment.</p>
 </ul>`, html.EscapeString(serviceAcc))), nil
 }
 
-func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	return []settings.UIField{
+func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+	return []portal.Field{
 		{
 			ID:    "AuthServiceURL",
 			Title: "Auth service URL",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Validator: func(authServiceURL string) (err error) {
 				if authServiceURL != "" {
 					_, err = normalizeAuthServiceURL(authServiceURL)
@@ -89,12 +89,12 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 		{
 			ID:    "LatestRev",
 			Title: "Latest fetched revision",
-			Type:  settings.UIFieldStatic,
+			Type:  portal.FieldStatic,
 		},
 	}, nil
 }
 
-func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	switch info, err := authdbimpl.GetLatestSnapshotInfo(c); {
 	case err != nil:
 		return nil, err
@@ -111,7 +111,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}
 }
 
-func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	authServiceURL := values["AuthServiceURL"]
 	if authServiceURL != "" {
 		var err error
@@ -139,5 +139,5 @@ func normalizeAuthServiceURL(authServiceURL string) (string, error) {
 }
 
 func init() {
-	settings.RegisterUIPage("auth_service", settingsUIPage{})
+	portal.RegisterPage("auth_service", settingsPage{})
 }

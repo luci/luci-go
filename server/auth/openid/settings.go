@@ -20,6 +20,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
 
@@ -66,15 +67,15 @@ func fetchCachedSettings(c context.Context) (*Settings, error) {
 ////////////////////////////////////////////////////////////////////////////////
 // UI for configuring OpenID.
 
-type settingsUIPage struct {
-	settings.BaseUIPage
+type settingsPage struct {
+	portal.BasePage
 }
 
-func (settingsUIPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(c context.Context) (string, error) {
 	return "OpenID authentication settings", nil
 }
 
-func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
+func (settingsPage) Overview(c context.Context) (template.HTML, error) {
 	return `<p>OpenID Connect is the primary authentication protocol used by
 luci services to authenticate web users. It is triggered whenever incoming HTTP
 request doesn't have a session cookie set or the session has expired.</p>
@@ -83,12 +84,12 @@ request doesn't have a session cookie set or the session has expired.</p>
 to authenticate calls to it.</p>`, nil
 }
 
-func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	return []settings.UIField{
+func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+	return []portal.Field{
 		{
 			ID:    "DiscoveryURL",
 			Title: "Discovery URL",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help: `Where to grab OpenID Connect discovery document with provider's
 config. Use <b>https://accounts.google.com/.well-known/openid-configuration</b>
 for Google OpenID Connect provider.`,
@@ -96,7 +97,7 @@ for Google OpenID Connect provider.`,
 		{
 			ID:    "ClientID",
 			Title: "OAuth client ID",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help: `Identifies OAuth2 Web Client representing the application.
 Create one in <a href="https://console.developers.google.com">Cloud Console</a>
 if using Google OpenID Connect provider. It is fine to reuse an existing OAuth2
@@ -105,14 +106,14 @@ client as long as you register additional redirect URI in its configuration.`,
 		{
 			ID:    "ClientSecret",
 			Title: "OAuth client secret",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help: `Secret associated with OAuth2 Web Client. Grab it from
 <a href="https://console.developers.google.com">Cloud Console</a>.`,
 		},
 		{
 			ID:    "RedirectURI",
 			Title: "Redirect URI",
-			Type:  settings.UIFieldText,
+			Type:  portal.FieldText,
 			Help: `OpenID callback URI that must be set to
 <b>https://<i>your-host</i>/auth/openid/callback</b>. Configure OAuth2 Web
 Client with exact same value.`,
@@ -120,7 +121,7 @@ Client with exact same value.`,
 	}, nil
 }
 
-func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	s := Settings{}
 	err := settings.GetUncached(c, SettingsKey, &s)
 	if err != nil && err != settings.ErrNoSettings {
@@ -134,7 +135,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}, nil
 }
 
-func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	return settings.SetIfChanged(c, SettingsKey, &Settings{
 		DiscoveryURL: values["DiscoveryURL"],
 		ClientID:     values["ClientID"],
@@ -144,5 +145,5 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 }
 
 func init() {
-	settings.RegisterUIPage(SettingsKey, settingsUIPage{})
+	portal.RegisterPage(SettingsKey, settingsPage{})
 }

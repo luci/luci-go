@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package settings
+package portal
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ import (
 
 // YesOrNo is a bool that serializes to 'yes' or 'no'.
 //
-// Useful in UIFields that define boolean values.
+// Useful in Fields that define boolean values.
 type YesOrNo bool
 
 // String returns "yes" or "no".
@@ -47,8 +47,8 @@ func (yn *YesOrNo) Set(v string) error {
 // YesOrNoField modifies the field so that it corresponds to YesOrNo value.
 //
 // It sets 'Type', 'ChoiceVariants' and 'Validator' properties.
-func YesOrNoField(f UIField) UIField {
-	f.Type = UIFieldChoice
+func YesOrNoField(f Field) Field {
+	f.Type = FieldChoice
 	f.ChoiceVariants = []string{"yes", "no"}
 	f.Validator = func(v string) error {
 		var x YesOrNo

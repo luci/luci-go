@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package admin
+package portal
 
 import (
 	"sort"
@@ -41,7 +41,7 @@ func indexPage(ctx *router.Context) {
 	c, rw := ctx.Context, ctx.Writer
 
 	entries := pageIndexEntries{}
-	for id, p := range settings.GetUIPages() {
+	for id, p := range GetPages() {
 		title, err := p.Title(c)
 		if err != nil {
 			replyError(c, rw, err)

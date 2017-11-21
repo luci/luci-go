@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package settings
+package portal
 
 import (
 	"errors"
@@ -23,20 +23,20 @@ import (
 	"golang.org/x/net/context"
 )
 
-// UIPage controls how some settings section (usually corresponding to a key in
+// Page controls how some portal section (usually corresponding to a key in
 // global settings JSON blob) is displayed and edited in UI.
 //
 // Packages that wishes to expose UI for managing their settings register a page
-// via RegisterUIPage(...) call during init() time.
-type UIPage interface {
-	// Title is used in UI to name this settings page.
+// via RegisterPage(...) call during init() time.
+type Page interface {
+	// Title is used in UI to name this page.
 	Title(c context.Context) (string, error)
 
-	// Overview is optional HTML paragraph describing this settings page.
+	// Overview is optional HTML paragraph describing this page.
 	Overview(c context.Context) (template.HTML, error)
 
-	// Fields describes the schema of this settings page.
-	Fields(c context.Context) ([]UIField, error)
+	// Fields describes the schema of this page.
+	Fields(c context.Context) ([]Field, error)
 
 	// ReadSettings returns a map "field ID => field value to display".
 	//
@@ -49,77 +49,77 @@ type UIPage interface {
 	WriteSettings(c context.Context, values map[string]string, who, why string) error
 }
 
-// UIField is description of a single UI element of the settings page.
+// Field is description of a single UI element of the page.
 //
 // Its ID acts as a key in map used by ReadSettings\WriteSettings.
-type UIField struct {
+type Field struct {
 	ID             string             // page unique ID
 	Title          string             // human friendly name
-	Type           UIFieldType        // how the field is displayed and behaves
+	Type           FieldType          // how the field is displayed and behaves
 	Placeholder    string             // optional placeholder value
 	Validator      func(string) error // optional value validation
 	Help           template.HTML      // optional help text
-	ChoiceVariants []string           // valid only for UIFieldChoice
+	ChoiceVariants []string           // valid only for FieldChoice
 }
 
-// UIFieldType describes look and feel of UI field, see the enum below.
-type UIFieldType string
+// FieldType describes look and feel of UI field, see the enum below.
+type FieldType string
 
 // Note: exact values here are important. They are referenced in the HTML
-// template that renders the settings page. See server/settings/admin/*.
+// template that renders the settings page. See server/portal/*.
 const (
-	UIFieldText     UIFieldType = "text"     // one line of text, editable
-	UIFieldChoice   UIFieldType = "choice"   // pick one of predefined choices
-	UIFieldStatic   UIFieldType = "static"   // one line of text, read only
-	UIFieldPassword UIFieldType = "password" // one line of text, editable but obscured
+	FieldText     FieldType = "text"     // one line of text, editable
+	FieldChoice   FieldType = "choice"   // pick one of predefined choices
+	FieldStatic   FieldType = "static"   // one line of text, read only
+	FieldPassword FieldType = "password" // one line of text, editable but obscured
 )
 
 // IsEditable returns true for fields that can be edited.
-func (f UIFieldType) IsEditable() bool {
-	return f != UIFieldStatic
+func (f FieldType) IsEditable() bool {
+	return f != FieldStatic
 }
 
-// BaseUIPage can be embedded into UIPage implementers to provide default
+// BasePage can be embedded into Page implementers to provide default
 // behavior.
-type BaseUIPage struct{}
+type BasePage struct{}
 
-// Title is used in UI to name this settings block.
-func (BaseUIPage) Title(c context.Context) (string, error) {
-	return "Untitled settings", nil
+// Title is used in UI to name this portal page.
+func (BasePage) Title(c context.Context) (string, error) {
+	return "Untitled portal page", nil
 }
 
-// Overview is optional HTML paragraph describing this settings block.
-func (BaseUIPage) Overview(c context.Context) (template.HTML, error) {
+// Overview is optional HTML paragraph describing this portal page.
+func (BasePage) Overview(c context.Context) (template.HTML, error) {
 	return "", nil
 }
 
 // Fields describes the schema of the config page.
-func (BaseUIPage) Fields(c context.Context) ([]UIField, error) {
+func (BasePage) Fields(c context.Context) ([]Field, error) {
 	return nil, errors.New("not implemented")
 }
 
 // ReadSettings returns a map "field ID => field value to display".
-func (BaseUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (BasePage) ReadSettings(c context.Context) (map[string]string, error) {
 	return nil, errors.New("not implemented")
 }
 
 // WriteSettings saves settings described as a map "field ID => field value".
-func (BaseUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (BasePage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	return errors.New("not implemented")
 }
 
-// RegisterUIPage makes exposes UI for a block of settings (identified by given
+// RegisterPage makes exposes UI for a portal page (identified by given
 // unique key).
 //
 // Should be called once when application starts (e.g. from init() of a package
-// that defines the settings). Panics if such key is already registered.
-func RegisterUIPage(settingsKey string, p UIPage) {
-	registry.registerUIPage(settingsKey, p)
+// that defines the page). Panics if such key is already registered.
+func RegisterPage(pageKey string, p Page) {
+	registry.registerPage(pageKey, p)
 }
 
-// GetUIPages returns a map with all registered pages.
-func GetUIPages() map[string]UIPage {
-	return registry.getUIPages()
+// GetPages returns a map with all registered pages.
+func GetPages() map[string]Page {
+	return registry.getPages()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,25 +129,25 @@ var registry pageRegistry
 
 type pageRegistry struct {
 	lock  sync.RWMutex
-	pages map[string]UIPage
+	pages map[string]Page
 }
 
-func (r *pageRegistry) registerUIPage(settingsKey string, p UIPage) {
+func (r *pageRegistry) registerPage(pageKey string, p Page) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	if r.pages == nil {
-		r.pages = make(map[string]UIPage)
+		r.pages = make(map[string]Page)
 	}
-	if existing, _ := r.pages[settingsKey]; existing != nil {
-		panic(fmt.Errorf("settings UI page for %s is already registered: %T", settingsKey, existing))
+	if existing, _ := r.pages[pageKey]; existing != nil {
+		panic(fmt.Errorf("portal page for %s is already registered: %T", pageKey, existing))
 	}
-	r.pages[settingsKey] = p
+	r.pages[pageKey] = p
 }
 
-func (r *pageRegistry) getUIPages() map[string]UIPage {
+func (r *pageRegistry) getPages() map[string]Page {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	cpy := make(map[string]UIPage, len(r.pages))
+	cpy := make(map[string]Page, len(r.pages))
 	for k, v := range r.pages {
 		cpy[k] = v
 	}
