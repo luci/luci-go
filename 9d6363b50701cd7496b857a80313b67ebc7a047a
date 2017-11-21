@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3dd3443_2491c733",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-21T04:17:09Z",
+      "side": 1,
+      "message": "can we have an example line?\n\n  Example:\n    gerrit change-query ??? https://gerrit.host.example.com/repo owner:💩@example.com\n\nI\u0027m not sure I understand what options looks like on the command line.",
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85422e75_04232f1f",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-21T04:17:09Z",
+      "side": 1,
+      "message": "document that - supports stdout.",
+      "range": {
+        "startLine": 156,
+        "startChar": 88,
+        "endLine": 156,
+        "endChar": 90
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

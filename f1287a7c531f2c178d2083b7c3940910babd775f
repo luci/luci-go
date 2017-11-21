@@ -22,6 +22,30 @@
       "revId": "f1287a7c531f2c178d2083b7c3940910babd775f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4d3d3be_9d82afbc",
+        "filename": "client/cmd/gerrit/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-21T04:17:09Z",
+      "side": 1,
+      "message": "I mean... you do support - so maybe just a very human oriented rendering?",
+      "parentUuid": "0b7ec86a_5de3f8fe",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 103,
+        "endChar": 43
+      },
+      "revId": "f1287a7c531f2c178d2083b7c3940910babd775f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
