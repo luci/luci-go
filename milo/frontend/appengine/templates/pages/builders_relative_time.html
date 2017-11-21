@@ -1,4 +1,4 @@
-{{define "title"}}Milo {{.ProjectName}} Builders{{end}}
+{{define "title"}}Milo {{.ProjectID}} Builders{{end}}
 
 {{define "head"}}
 {{ if .Reload }}
@@ -9,7 +9,8 @@
 {{end}}
 
 {{define "body"}}
-<h1>{{ .ProjectName }} Builders</h1>
+<h1>{{ .ProjectID }}</h1>
+<h2>Builders</h2>
 
 <div class="builders-list">
 {{ range .Builders }}

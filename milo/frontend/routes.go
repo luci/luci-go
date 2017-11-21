@@ -95,24 +95,8 @@ func Run(templatePath string) {
 	})
 	r.GET("/p/:project/", frontendMW, movedPermanently("/p/:project"))
 	r.GET("/p/:project/g", frontendMW, movedPermanently("/p/:project"))
-	r.GET("/p/:project/g/:group/console", htmlMW,
-		func(c *router.Context) {
-			// If group is a tryserver group, go to builders view, else console view.
-			if group := c.Params.ByName("group"); strings.Contains(group, "tryserver") {
-				u := *c.Request.URL
-				u.Path = fmt.Sprintf("/p/%s/g/%s/builders", c.Params.ByName("project"), group)
-				http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
-			} else {
-				ConsoleHandler(c)
-			}
-		})
-	r.GET("/p/:project/g/:group", htmlMW,
-		func(c *router.Context) {
-			u := *c.Request.URL
-			u.Path = fmt.Sprintf(
-				"/p/%s/g/%s/console", c.Params.ByName("project"), c.Params.ByName("group"))
-			http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
-		})
+	r.GET("/p/:project/g/:group/console", htmlMW, ConsoleHandler)
+	r.GET("/p/:project/g/:group", htmlMW, redirect("/p/:project/g/:group/console", http.StatusFound))
 	r.GET("/p/:project/g/:group/", frontendMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
@@ -224,11 +208,9 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 	return c, nil
 }
 
-// movedPermanently returns a handler that responds with HTTP 301
-// (Moved Permanently) with a location specified by the pathTemplate.
-//
-// TODO(nodir,iannucci): delete all usages.
-func movedPermanently(pathTemplate string) router.Handler {
+// redirect returns a handler that responds with given HTTP status
+// with a location specified by the pathTemplate.
+func redirect(pathTemplate string, status int) router.Handler {
 	if !strings.HasPrefix(pathTemplate, "/") {
 		panic("pathTemplate must start with /")
 	}
@@ -242,6 +224,15 @@ func movedPermanently(pathTemplate string) router.Handler {
 		}
 		u := *c.Request.URL
 		u.Path = strings.Join(parts, "/")
-		http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
+		http.Redirect(c.Writer, c.Request, u.String(), status)
 	}
+}
+
+// movedPermanently is a special instance of redirect, returning a handler
+// that responds with HTTP 301 (Moved Permanently) with a location specified
+// by the pathTemplate.
+//
+// TODO(nodir,iannucci): delete all usages.
+func movedPermanently(pathTemplate string) router.Handler {
+	return redirect(pathTemplate, http.StatusMovedPermanently)
 }
