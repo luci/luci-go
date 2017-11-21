@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8436b197_c8b96f22",
+        "filename": "milo/frontend/appengine/templates/pages/builders_relative_time.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:19:02Z",
+      "side": 1,
+      "message": "if you have a chance, please rename to ProjectID\n(because it is not a project name)\n\napplies to other pages too",
+      "range": {
+        "startLine": 12,
+        "startChar": 8,
+        "endLine": 12,
+        "endChar": 19
+      },
+      "revId": "bed4e44033c472ff6295d0d45297752e4c1c7b12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c92fa24_9531ebcc",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:19:02Z",
+      "side": 1,
+      "message": "nit: lowercase g?",
+      "range": {
+        "startLine": 12,
+        "startChar": 12,
+        "endLine": 12,
+        "endChar": 13
+      },
+      "revId": "bed4e44033c472ff6295d0d45297752e4c1c7b12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c15b264_92f39173",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:19:02Z",
+      "side": 1,
+      "message": "please remove this TODO. Using the more general redirect is fine.",
+      "revId": "bed4e44033c472ff6295d0d45297752e4c1c7b12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa0b4829_6a0aa74b",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T03:19:02Z",
+      "side": 1,
+      "message": "reuse 80lvl :D",
+      "revId": "bed4e44033c472ff6295d0d45297752e4c1c7b12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
