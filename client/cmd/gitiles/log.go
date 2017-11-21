@@ -71,9 +71,13 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 
 	repo := args[0]
 	treeish := args[1]
+	opts := []gitiles.LogOption{}
+	if c.limit != 0 {
+		opts = append(opts, gitiles.Limit(c.limit))
+	}
 
 	g := &gitiles.Client{Client: authCl}
-	commits, err := g.Log(ctx, repo, treeish, gitiles.Limit(c.limit))
+	commits, err := g.Log(ctx, repo, treeish, opts...)
 	if err != nil {
 		return err
 	}
