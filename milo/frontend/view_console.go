@@ -433,7 +433,7 @@ func ConsoleHandler(c *router.Context) {
 		ErrorHandler(c, errors.New("Missing Project", common.CodeParameterError))
 		return
 	}
-	name := c.Params.ByName("name")
+	group := c.Params.ByName("group")
 	const defaultLimit = 50
 	const maxLimit = 1000
 	limit := defaultLimit
@@ -444,7 +444,7 @@ func ConsoleHandler(c *router.Context) {
 		limit = maxLimit
 	}
 
-	result, err := console(c.Context, project, name, limit)
+	result, err := console(c.Context, project, group, limit)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
