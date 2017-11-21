@@ -16,6 +16,24 @@
       "revId": "9877aecda25d03e005ab5cd97ecd0617d52a6ded",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d40191c_7cf67f53",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T04:41:59Z",
+      "side": 1,
+      "message": "For example /buildbucket/b\u003cbuildID\u003e, you should be able to add in project and builder.",
+      "parentUuid": "e5afe1fb_57b862ed",
+      "revId": "9877aecda25d03e005ab5cd97ecd0617d52a6ded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
