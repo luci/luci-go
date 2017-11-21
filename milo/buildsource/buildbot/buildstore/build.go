@@ -184,7 +184,6 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 	for _, f := range funcs {
 		if bset, err := f.CB(); err == nil {
 			bs.BuildSet = append(bs.BuildSet, bset.String())
-			logging.Infof(c, "applied %s: %q", f.Name, bset)
 		} else if err != errMissingProperties {
 			logging.WithError(err).Warningf(c, "failed to apply %s", f.Name)
 		}

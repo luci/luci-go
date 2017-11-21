@@ -15,6 +15,7 @@
 package buildstore
 
 import (
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -198,6 +199,43 @@ func AllMasters(c context.Context, checkAccess bool) ([]*Master, error) {
 	return masters, err
 }
 
+// GetPendingCounts returns numbers of pending builds in builders.
+// builders must be a list of slash-separated master, builder names.
+func GetPendingCounts(c context.Context, builders []string) ([]int, error) {
+	entities := make([]builderEntity, len(builders))
+	for i, b := range builders {
+		parts := strings.SplitN(b, "/", 2)
+		if len(parts) < 2 {
+			return nil, errors.Reason("builder does not have a slash: %q", b).Err()
+		}
+		entities[i].MasterKey = datastore.MakeKey(c, masterKind, parts[0])
+		entities[i].Name = parts[1]
+	}
+	if err := datastore.Get(c, entities); err != nil {
+		for _, e := range err.(errors.MultiError) {
+			if e != nil && e != datastore.ErrNoSuchEntity {
+				return nil, err
+			}
+		}
+	}
+
+	counts := make([]int, len(entities))
+	for i, e := range entities {
+		counts[i] = e.PendingCount
+	}
+	return counts, nil
+}
+
+// PutPendingCount persists number of pending builds to a builder.
+// Useful for testing.
+func PutPendingCount(c context.Context, master, builder string, count int) error {
+	return datastore.Put(c, &builderEntity{
+		MasterKey:    datastore.MakeKey(c, masterKind, master),
+		Name:         builder,
+		PendingCount: count,
+	})
+}
+
 // ExpireCallback is called when a build is marked as expired.
 type ExpireCallback func(b *buildbot.Build, reason string)
 
@@ -210,7 +248,13 @@ type ExpireCallback func(b *buildbot.Build, reason string)
 func SaveMaster(c context.Context, master *buildbot.Master,
 	internal bool, expireCallback ExpireCallback) error {
 
-	for _, builder := range master.Builders {
+	entity := &masterEntity{
+		Name:     master.Name,
+		Internal: internal,
+		Modified: clock.Now(c).UTC(),
+	}
+	toPut := []interface{}{entity}
+	for builderName, builder := range master.Builders {
 		// Trim out extra info in the "Changes" portion of the pending build state,
 		// we don't actually need comments, files, and properties
 		for _, pbs := range builder.PendingBuildStates {
@@ -221,13 +265,12 @@ func SaveMaster(c context.Context, master *buildbot.Master,
 				c.Properties = nil
 			}
 		}
+		toPut = append(toPut, &builderEntity{
+			MasterKey:    datastore.KeyForObj(c, entity),
+			Name:         builderName,
+			PendingCount: builder.PendingBuilds,
+		})
 	}
-	entity := masterEntity{
-		Name:     master.Name,
-		Internal: internal,
-		Modified: clock.Now(c).UTC(),
-	}
-	toPut := []interface{}{&entity}
 	publicTag := &masterPublic{Name: master.Name}
 	if internal {
 		// do the deletion immediately so that the 'public' bit is removed from
@@ -383,4 +426,12 @@ func (m *masterEntity) decode() (*Master, error) {
 		Modified: m.Modified,
 	}
 	return &res, decode(&res.Master, m.Data)
+}
+
+// builderEntity is a child of masterEntity, specific to a Builder.
+type builderEntity struct {
+	_kind        string         `gae:"$kind,buildbotBuilder"`
+	Name         string         `gae:"$id"` // builder name
+	MasterKey    *datastore.Key `gae:"$parent"`
+	PendingCount int
 }

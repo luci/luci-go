@@ -13,6 +13,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -72,4 +73,13 @@ func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder
 	}
 
 	panic("impossible")
+}
+
+// SelfLink returns LUCI URL of the builder.
+func (b BuilderID) SelfLink(project string) string {
+	return model.BuilderIDLink(string(b), project)
+}
+
+func (b BuilderID) Buildbot() bool {
+	return strings.HasPrefix(string(b), "buildbot/")
 }
