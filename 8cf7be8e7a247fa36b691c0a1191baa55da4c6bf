@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ec05d6f9_f88f0bac",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T01:31:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c1123aa9_a6668891",
+      "range": {
+        "startLine": 106,
+        "startChar": 5,
+        "endLine": 106,
+        "endChar": 20
+      },
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e41455d9_8546753a",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "905aa436_fd62106c",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T01:31:23Z",
+      "side": 1,
+      "message": "used in L121",
+      "parentUuid": "e41455d9_8546753a",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 17
+      },
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef20a7b5_9153f40b",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 6
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "f4b0fbf9_36b6b608",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T01:31:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef20a7b5_9153f40b",
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "599e4dc8_4561c5de",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 6
@@ -79,6 +145,24 @@
       "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02499dfd_5fbb1053",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T01:31:23Z",
+      "side": 1,
+      "message": "yeah, but then we would do len(hists) map lookups which is more than O(buildbotHist) times getting an element of a slice",
+      "parentUuid": "599e4dc8_4561c5de",
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
