@@ -18,21 +18,27 @@ package flex
 
 import (
 	"net/http"
+	"strings"
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/mutexpool"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tsmon"
 
 	authClient "go.chromium.org/luci/appengine/gaeauth/client"
 	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	gaetsmon "go.chromium.org/luci/appengine/tsmon"
 
 	"go.chromium.org/gae/impl/cloud"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
 	"cloud.google.com/go/compute/metadata"
 
@@ -48,10 +54,6 @@ var (
 
 	// globalFlexConfig is a process-wide Flex enviornment configuration.
 	globalFlexConfig *cloud.Config
-
-	// globalRequestCounter is a per-instance atomic counter used to differentiate
-	// requests from each other.
-	globalRequestCounter uint32
 
 	// globalAuthConfig is configuration of the server/auth library.
 	//
@@ -72,6 +74,28 @@ var (
 		Locks:               &mutexpool.P{},
 		IsDevMode:           !metadata.OnGCE(),
 	}
+
+	// globalTsMonState holds configuration and state related to time series
+	// monitoring.
+	//
+	// TODO(vadimsh): We can flush asynchronously on Flex. Unfortunately, the
+	// request context is canceled as soon as the request ends, killing all
+	// outliving goroutines. We either need a way to detach it, or run the flush
+	// using the global context (the logging is moot in this case, since we'll
+	// have no trace ID for logs).
+	globalTsMonState = &tsmon.State{
+		IsDevMode: !metadata.OnGCE(),
+		Target: func(c context.Context) target.Task {
+			return target.Task{
+				DataCenter:  "appengine",
+				ServiceName: info.AppID(c),
+				JobName:     info.ModuleName(c),
+				HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
+			}
+		},
+		InstanceID:       info.InstanceID,
+		TaskNumAllocator: gaetsmon.DatastoreTaskNumAllocator{},
+	}
 )
 
 func init() {
@@ -87,6 +111,13 @@ func init() {
 var ReadOnlyFlex = gaemiddleware.Environment{
 	MemcacheAvailable: false,
 	DSReadOnly:        true,
+	DSReadOnlyPredicate: func(k *datastore.Key) (isRO bool) {
+		// HACK(vadimsh): This is needed to allow tsmon middleware to bypass
+		// read-only filter on the datastore. It needs writable access to the
+		// datastore for DatastoreTaskNumAllocator to work. It doesn't rely on
+		// dscache, and thus it is safe to mutate datastore from Flex side.
+		return k.Namespace() != gaetsmon.DatastoreNamespace
+	},
 	Prepare: func(c context.Context) {
 		globalFlex = &cloud.Flex{
 			Cache: lru.New(65535),
@@ -106,7 +137,7 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 	WithAuth: func(c context.Context) context.Context {
 		return auth.SetConfig(c, &globalAuthConfig)
 	},
-	MonitoringMiddleware: nil, // TODO: Add monitoring middleware.
+	MonitoringMiddleware: globalTsMonState.Middleware,
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
 		// Install a handler for basic health checking. We respond with HTTP 200 to
 		// indicate that we're always healthy.

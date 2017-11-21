@@ -61,6 +61,12 @@ type Environment struct {
 	// used in conjunction with a non-read-only Classic AppEngine instance.
 	DSReadOnly bool
 
+	// DSReadOnlyPredicate returns true for keys that must not be mutated.
+	//
+	// Effective only when DSReadOnly is true. If nil, all keys are considered
+	// read-only.
+	DSReadOnlyPredicate readonly.Predicate
+
 	// Prepare will be called once after init() time, but before serving requests.
 	//
 	// The given context is very bare, use it only for logging and deadlines and
@@ -177,7 +183,7 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 		c = dscache.AlwaysFilterRDS(c)
 	}
 	if e.DSReadOnly {
-		c = readonly.FilterRDS(c)
+		c = readonly.FilterRDS(c, e.DSReadOnlyPredicate)
 	}
 
 	// The rest of the service may use applied configuration.

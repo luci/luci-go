@@ -31,6 +31,9 @@ import (
 	"go.chromium.org/luci/server/tsmon"
 )
 
+// DatastoreNamespace is a datastore namespace with all tsmon state.
+const DatastoreNamespace = "ts_mon_instance_namespace"
+
 // DatastoreTaskNumAllocator implements TaskNumAllocator on top of datastore.
 //
 // Its NotifyTaskIsAlive registers a claim for a task number, which is later
@@ -40,7 +43,7 @@ type DatastoreTaskNumAllocator struct {
 
 // NotifyTaskIsAlive is part of TaskNumAllocator interface.
 func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, task *target.Task, instanceID string) (taskNum int, err error) {
-	c = info.MustNamespace(c, instanceNamespace)
+	c = info.MustNamespace(c, DatastoreNamespace)
 
 	// Exact values here are not important. Important properties are:
 	//  * 'entityID' is unique, and depends on both 'task' and 'instanceID'.
@@ -79,7 +82,7 @@ func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, task *targ
 // Must be used from some (global per project) cron if DatastoreTaskNumAllocator
 // is used. Use 'InstallHandlers' to install the corresponding cron handler.
 func AssignTaskNumbers(c context.Context) error {
-	c = info.MustNamespace(c, instanceNamespace)
+	c = info.MustNamespace(c, DatastoreNamespace)
 
 	now := clock.Now(c)
 	cutoff := now.Add(-instanceExpirationTimeout)
@@ -134,7 +137,6 @@ func AssignTaskNumbers(c context.Context) error {
 ////////////////////////////////////////////////////////////////////////////////
 
 const (
-	instanceNamespace         = "ts_mon_instance_namespace"
 	instanceExpirationTimeout = 30 * time.Minute
 	taskQueryBatchSize        = 500
 )
