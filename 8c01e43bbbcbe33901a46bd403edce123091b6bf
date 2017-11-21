@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4200007_460c221d",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T01:11:05Z",
+      "side": 1,
+      "message": "nit: inline",
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c4fa452_c977449d",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T01:11:05Z",
+      "side": 1,
+      "message": "should used a temp redirect (302) instead of a permanent one (301).  This is so that if we change this page in the future, the browser would remember the perm redirect and bypass it entirely.",
+      "range": {
+        "startLine": 110,
+        "startChar": 43,
+        "endLine": 110,
+        "endChar": 59
+      },
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13506527_e6b01e7f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-21T01:11:05Z",
+      "side": 1,
+      "message": "group",
+      "range": {
+        "startLine": 436,
+        "startChar": 1,
+        "endLine": 436,
+        "endChar": 5
+      },
+      "revId": "8c01e43bbbcbe33901a46bd403edce123091b6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
