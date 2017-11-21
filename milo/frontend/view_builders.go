@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 )
@@ -51,8 +52,10 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) {
 		return
 	}
 
+	navi := []ui.LinkGroup{ProjectLink(projectID, group)}
 	templates.MustRender(c.Context, c.Writer, "pages/builders_relative_time.html", templates.Args{
 		"Builders": hists,
+		"Navi":     navi,
 	})
 }
 
