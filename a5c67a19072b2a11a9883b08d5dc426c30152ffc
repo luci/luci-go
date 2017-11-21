@@ -22,6 +22,30 @@
       "revId": "a5c67a19072b2a11a9883b08d5dc426c30152ffc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b78a1c16_955c6fe8",
+        "filename": "mmutex/lib/shared.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-21T14:22:18Z",
+      "side": 1,
+      "message": "This actually does the opposite: it blocks *while* the file exists, rather than blocking waiting for the file to appear. This makes sense in the context of RunShared(): while the drain file exists, we want to hold off on scheduling work. Maybe blockWhileFileExists() would be a better name?",
+      "parentUuid": "7492ba71_5093d47b",
+      "range": {
+        "startLine": 38,
+        "startChar": 10,
+        "endLine": 38,
+        "endChar": 29
+      },
+      "revId": "a5c67a19072b2a11a9883b08d5dc426c30152ffc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
