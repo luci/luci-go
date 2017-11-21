@@ -3,7 +3,7 @@
 {{define "head"}}
 {{ if .Console.FaviconURL }}
 <link rel="icon" type="{{ .Console.FaviconURL | faviconMIMEType }}" href="{{ .Console.FaviconURL }}" />
-{{ end }}
+{{end}}
 
 {{ if .Reload }}
 <meta http-equiv="refresh" content="{{ .Reload }}">
