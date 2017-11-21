@@ -143,7 +143,7 @@ func GetConsoleSummary(c context.Context, consoleID string) (ui.ConsoleSummary, 
 
 	// Set Name label.
 	ariaLabel := fmt.Sprintf("Console %s in project %s", id, project)
-	summary.Name = ui.NewLink(id, fmt.Sprintf("/p/%s/consoles/%s", project, id), ariaLabel)
+	summary.Name = ui.NewLink(id, fmt.Sprintf("/p/%s/g/%s/console", project, id), ariaLabel)
 
 	// Fetch the config first.
 	def, err := common.GetConsole(c, project, id)
