@@ -144,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "90e2f050_341cd1a3",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-21T01:43:25Z",
+      "side": 1,
+      "message": "yeah, pointers",
+      "parentUuid": "5323140e_17436285",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 17
+      },
+      "revId": "8cf7be8e7a247fa36b691c0a1191baa55da4c6bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef20a7b5_9153f40b",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 6
