@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7492ba71_5093d47b",
+        "filename": "mmutex/lib/shared.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-21T00:27:50Z",
+      "side": 1,
+      "message": "I\u0027m not sure why we want to block for the file to appear? Don\u0027t we just want to check for it once, acquire the shared lock and then double-check for the file?",
+      "range": {
+        "startLine": 38,
+        "startChar": 10,
+        "endLine": 38,
+        "endChar": 29
+      },
+      "revId": "a5c67a19072b2a11a9883b08d5dc426c30152ffc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
