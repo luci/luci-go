@@ -29,6 +29,7 @@ import (
 	cloudLogging "cloud.google.com/go/logging"
 	iamAPI "google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
+	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -110,11 +111,22 @@ func (f *Flex) Configure(c context.Context, opts ...option.ClientOption) (cfg *C
 		return nil, errors.Annotate(err, "failed to instantiate datastore client").Err()
 	}
 
-	// Cloud Logging Client, only when running for real.
+	// Cloud Logging logger, only when running for real.
 	if !cfg.IsDev {
-		if cfg.L, err = cloudLogging.NewClient(c, cfg.ProjectID, opts...); err != nil {
-			return nil, errors.Annotate(err, "could not create logger").Err()
+		// TODO(vadimsh): Strictly speaking we should close the client when the
+		// process stops, to gracefully flush all pending logs.
+		client, err := cloudLogging.NewClient(c, cfg.ProjectID, opts...)
+		if err != nil {
+			return nil, errors.Annotate(err, "could not create logger client").Err()
 		}
+		cfg.L = client.Logger("request", cloudLogging.CommonResource(&mrpb.MonitoredResource{
+			Labels: map[string]string{
+				"module_id":  cfg.ServiceName,
+				"project_id": cfg.ProjectID,
+				"version_id": cfg.VersionName,
+			},
+			Type: "gae_app",
+		}))
 	}
 
 	return

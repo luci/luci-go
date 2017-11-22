@@ -32,18 +32,28 @@ var LogIDRegexp = regexp.MustCompile(`^[A-Za-z0-9/_\-\.]{0,512}$`)
 
 // WithLogger installs an instance of a logging.Logger that forwards logs to an
 // underlying StackDriver Logger into the supplied Context.
-func WithLogger(c context.Context, l *cloudLogging.Logger) context.Context {
+//
+// The given labels will be applied to each log entry. This allows to reuse
+// Logger instance between requests, even if they have different default labels.
+//
+// An alternative is to construct Logger per request, setting request labels via
+// CommonLabels(...) option. But it is more heavy solution, and at the time of
+// writing it leads to memory leaks:
+// https://github.com/GoogleCloudPlatform/google-cloud-go/issues/720#issuecomment-346199870
+func WithLogger(c context.Context, l *cloudLogging.Logger, labels map[string]string) context.Context {
 	return logging.SetFactory(c, func(c context.Context) logging.Logger {
 		return &boundLogger{
 			Context: c,
 			cl:      l,
+			labels:  labels,
 		}
 	})
 }
 
 type boundLogger struct {
 	context.Context
-	cl *cloudLogging.Logger
+	cl     *cloudLogging.Logger
+	labels map[string]string
 }
 
 func (bl *boundLogger) Debugf(format string, args ...interface{}) {
@@ -69,10 +79,20 @@ func (bl *boundLogger) LogCall(lvl logging.Level, calldepth int, format string, 
 		line = fmt.Sprintf("%s :: %s", line, fields.String())
 	}
 
+	// Per docs, 'Log' takes ownership of Labels map, so make a copy.
+	var labels map[string]string
+	if len(bl.labels) != 0 {
+		labels = make(map[string]string, len(bl.labels))
+		for k, v := range bl.labels {
+			labels[k] = v
+		}
+	}
+
 	// Generate a LogEntry for the supplied parameters.
 	bl.cl.Log(cloudLogging.Entry{
 		Severity: severityForLevel(lvl),
 		Payload:  line,
+		Labels:   labels,
 	})
 }
 

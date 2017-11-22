@@ -26,7 +26,6 @@ import (
 	"cloud.google.com/go/datastore"
 	cloudLogging "cloud.google.com/go/logging"
 	"github.com/bradfitz/gomemcache/memcache"
-	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 
 	"golang.org/x/net/context"
 )
@@ -92,9 +91,9 @@ type Config struct {
 	// be installed.
 	MC *memcache.Client
 
-	// L is the cloud logging service client. If populated, the logging service
-	// will be installed.
-	L *cloudLogging.Client
+	// L is the Cloud Logging logger to use for requests. If populated, the
+	// logging service will be installed.
+	L *cloudLogging.Logger
 }
 
 // Request is the set of request-specific parameters.
@@ -130,34 +129,19 @@ func (cfg *Config) Use(c context.Context, req *Request) context.Context {
 	// If no logging service is available, fall back onto an existing logger in
 	// the context (usually a console (STDERR) logger).
 	//
-	// The combination of CommonLabels and CommonResource magically enable the
-	// Flex environment to associate its logs with the Flex request logs. See:
+	// trace_id label is required to magically associate the logs produced by us
+	// with GAE own request logs. This also assumes Resource fields in the logger
+	// are already properly set to indicate "gae_app" resource. See:
 	//
 	//	https://github.com/GoogleCloudPlatform/google-cloud-go/issues/720
 	if cfg.L != nil {
-		clOpts := make([]cloudLogging.LoggerOption, 0, 2)
-
-		// If we have a TraceID, add it to our logger's common labels.
+		var labels map[string]string
 		if req.TraceID != "" {
-			clOpts = append(clOpts, cloudLogging.CommonLabels(map[string]string{
+			labels = map[string]string{
 				"appengine.googleapis.com/trace_id": req.TraceID,
-			}))
+			}
 		}
-
-		// If we have service information populated, add those as a monitored
-		// logging resource.
-		if cfg.ProjectID != "" && cfg.ServiceName != "" && cfg.VersionName != "" {
-			clOpts = append(clOpts, cloudLogging.CommonResource(&mrpb.MonitoredResource{
-				Labels: map[string]string{
-					"module_id":  cfg.ServiceName,
-					"project_id": cfg.ProjectID,
-					"version_id": cfg.VersionName,
-				},
-				Type: "gae_app",
-			}))
-		}
-
-		c = WithLogger(c, cfg.L.Logger("request", clOpts...))
+		c = WithLogger(c, cfg.L, labels)
 	}
 
 	// Setup and install the "info" service.
