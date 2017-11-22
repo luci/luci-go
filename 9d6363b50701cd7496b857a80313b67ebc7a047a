@@ -284,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "54d2c19d_f64165f2",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T03:00:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fcd8547_346703a6",
+      "range": {
+        "startLine": 200,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 11
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b29d5696_7e5cfbea",
         "filename": "client/cmd/gerrit/common.go",
         "patchSetId": 2

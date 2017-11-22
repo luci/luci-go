@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "1dbd47a5_969db7c0",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T03:00:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09c3577c_93f96ea1",
+      "range": {
+        "startLine": 235,
+        "startChar": 0,
+        "endLine": 257,
+        "endChar": 1
+      },
+      "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "62db7b72_d9f2bb49",
         "filename": "client/cmd/gerrit/main.go",
         "patchSetId": 3
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "3e08f9a7_fc475831",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T03:00:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62db7b72_d9f2bb49",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 44
+      },
+      "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7942d5f5_d9446af6",
         "filename": "client/cmd/gerrit/main.go",
         "patchSetId": 3
@@ -116,6 +164,30 @@
       "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6a17e9c_0d05e81d",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T03:00:06Z",
+      "side": 1,
+      "message": "Leftover from debugging.",
+      "parentUuid": "7942d5f5_d9446af6",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 78
+      },
+      "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
