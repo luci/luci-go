@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88b5abea_880f67a5",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-22T00:11:22Z",
+      "side": 1,
+      "message": "{{if .Alt and (not .Img)}} evaluates True even when .Alt is an empty string, for whatever reason.",
+      "revId": "a9e6d00f62d52ae45a32c7825c5f9ee9aba1da1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
