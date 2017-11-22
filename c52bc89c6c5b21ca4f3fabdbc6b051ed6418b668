@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "77528170_e80cb331",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T02:00:51Z",
+      "side": 1,
+      "message": "Soooo... just ID and project? Anything else?",
+      "parentUuid": "808888e5_05de788d",
+      "range": {
+        "startLine": 235,
+        "startChar": 0,
+        "endLine": 257,
+        "endChar": 1
+      },
+      "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "62db7b72_d9f2bb49",
         "filename": "client/cmd/gerrit/main.go",
         "patchSetId": 3
