@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0592b382_de038614",
+        "filename": "machine-db/appengine/settings/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-22T05:13:43Z",
+      "side": 1,
+      "message": "the ordering of methods here was very odd...",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 86,
+        "endChar": 0
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e7a5ba19_76114cb7",
+        "filename": "server/portal/internal/assets/includes/base.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-22T05:13:43Z",
+      "side": 1,
+      "message": "Native bootstrap dialogs pull in a lot of crap as dependency (mostly jquery and some additional code). I didn\u0027t want to include jquery into every our binary image (remember, admin stuff is linked directly into the binary), so I found this small vanilla JS library instead. Looks same, but only 14Kb.\n\nAlso it has to be at the end for some reason, otherwise it raises exception when loading *shrug*",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 71
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbebd101_4da86bd7",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-22T05:13:43Z",
+      "side": 1,
+      "message": "I didn\u0027t want to mix templates with javascript, so JS pulls various stuff from DOM element attributes instead. I feel it is cleaner that way.",
+      "range": {
+        "startLine": 79,
+        "startChar": 8,
+        "endLine": 79,
+        "endChar": 25
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3391763_e907b8f3",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-22T05:13:43Z",
+      "side": 1,
+      "message": "actually, I should probably just have a global boolean... This doesn\u0027t forbid clicking some other button.",
+      "range": {
+        "startLine": 110,
+        "startChar": 4,
+        "endLine": 110,
+        "endChar": 63
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e06831fe_984d9acb",
+        "filename": "server/portal/internal/assets/third_party/bootstrap/bootstrap.min.css",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-22T05:13:43Z",
+      "side": 1,
+      "message": "this is regenerated to include CSS for modal dialogs",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 3
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1299d313_17695cae",
+        "filename": "server/portal/internal/assets/third_party/modal-vanilla/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-22T05:13:43Z",
+      "side": 1,
+      "message": "this is what github page says *shrug*",
+      "range": {
+        "startLine": 4,
+        "startChar": 9,
+        "endLine": 4,
+        "endChar": 21
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
