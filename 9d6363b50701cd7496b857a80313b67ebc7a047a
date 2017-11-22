@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b05dd395_252bc74a",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T01:19:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d23f1f64_7b1188bc",
+      "range": {
+        "startLine": 36,
+        "startChar": 36,
+        "endLine": 36,
+        "endChar": 52
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3dd3443_2491c733",
         "filename": "client/cmd/gerrit/change.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae19ce9b_86083fca",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T01:19:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3dd3443_2491c733",
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "31c35f98_ef4e136b",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T01:19:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "713986f4_3cdd5450",
+      "range": {
+        "startLine": 43,
+        "startChar": 28,
+        "endLine": 43,
+        "endChar": 95
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e902f4b3_864e0e88",
         "filename": "client/cmd/gerrit/change.go",
         "patchSetId": 2
@@ -79,6 +145,24 @@
       "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2ba0ce4_d9c30c0b",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T01:19:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e902f4b3_864e0e88",
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "765610e8_9e995880",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T01:19:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85422e75_04232f1f",
+      "range": {
+        "startLine": 156,
+        "startChar": 88,
+        "endLine": 156,
+        "endChar": 90
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f93a4622_d0f598f5",
         "filename": "client/cmd/gerrit/change.go",
         "patchSetId": 2
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "ff086d0d_2103e14c",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T01:19:41Z",
+      "side": 1,
+      "message": "I deduplicated the output and also made it prettier.",
+      "parentUuid": "f93a4622_d0f598f5",
+      "range": {
+        "startLine": 200,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 11
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b29d5696_7e5cfbea",
         "filename": "client/cmd/gerrit/common.go",
         "patchSetId": 2
@@ -139,6 +271,30 @@
       "writtenOn": "2017-11-21T04:41:04Z",
       "side": 1,
       "message": "jsonOuput seems also common",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 16
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48bbaab5_1bd5a304",
+        "filename": "client/cmd/gerrit/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-22T01:19:41Z",
+      "side": 1,
+      "message": "I\u0027m planning on adding more commands in the future and I dunno if it\u0027s going to be common for all of them. If yes, we can move it here.",
+      "parentUuid": "b29d5696_7e5cfbea",
       "range": {
         "startLine": 29,
         "startChar": 5,
