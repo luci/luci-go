@@ -376,6 +376,30 @@
       "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aab09dd5_9205bbe4",
+        "filename": "client/cmd/gerrit/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-22T02:17:55Z",
+      "side": 1,
+      "message": "ah, i see. I think we still need output to handle errors, it proved very useful in debugging weird states of Gerrit CLs to know exact error.",
+      "parentUuid": "1f044597_ceaff645",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 16
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
