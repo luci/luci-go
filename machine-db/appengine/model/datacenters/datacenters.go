@@ -37,13 +37,13 @@ func EnsureDatacenters(c context.Context, datacenters []*config.DatacenterConfig
 	// TODO(smut): Update existing datacenters, remove datacenters no longer referenced in the config.
 	// For now we just delete and re-add datacenters. Since only one cron job calls this, and only
 	// every 10 minutes, we don't use a transaction because we don't expect any collisions yet.
-	rows, err := db.QueryContext(c, "SELECT `id`, `name` from `datacenters`")
+	rows, err := db.QueryContext(c, "SELECT id, name from datacenters")
 	if err != nil {
 		return fmt.Errorf("failed to fetch datacenters: %s", err.Error())
 	}
 	defer rows.Close()
 	// TODO(smut): Delete multiple at once.
-	statement, err := db.PrepareContext(c, "DELETE FROM `datacenters` WHERE `id` = ?")
+	statement, err := db.PrepareContext(c, "DELETE FROM datacenters WHERE id = ?")
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %s", err.Error())
 	}
@@ -60,7 +60,7 @@ func EnsureDatacenters(c context.Context, datacenters []*config.DatacenterConfig
 	}
 
 	// TODO(smut): Insert multiple at once.
-	statement, err = db.PrepareContext(c, "INSERT INTO `datacenters` (`name`, `description`) VALUES (?, ?)")
+	statement, err = db.PrepareContext(c, "INSERT INTO datacenters (name, description) VALUES (?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %s", err.Error())
 	}
@@ -114,7 +114,7 @@ func (d *DatacentersServer) GetDatacenters(c context.Context, req *crimson.Datac
 // getDatacenters returns a list of datacenters in the database.
 func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
 	db := database.Get(c)
-	rows, err := db.QueryContext(c, "SELECT `id`, `name`, `description` from `datacenters`")
+	rows, err := db.QueryContext(c, "SELECT id, name, description from datacenters")
 	if err != nil {
 		logging.Errorf(c, "Failed to fetch datacenters: %s", err.Error())
 		return nil, err
