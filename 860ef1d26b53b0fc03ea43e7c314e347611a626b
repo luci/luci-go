@@ -452,6 +452,30 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f53c74bf_dbb818f8",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-22T22:39:29Z",
+      "side": 1,
+      "message": "Note: go-sqlite3 will likely not work on our CI builders, since it requires sqlite3 C library to be preinstalled.",
+      "parentUuid": "7ed7a0a4_6a85c6ec",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
