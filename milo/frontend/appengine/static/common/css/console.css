@@ -13,6 +13,16 @@
  * limitations under the License.
  */
 
+.foo1 {
+	display: flex;
+	flex-grow: 0;
+	flex-wrap: wrap;
+}
+
+.foo2 {
+  display: flex;
+}
+
 /* Generic */
 
 .console-column {
@@ -82,11 +92,6 @@
   width: 64%;
 }
 
-.console-header-list {
-  display: flex;
-  flex-direction: column;
-}
-
 .console-header-groups {
   display: flex;
   justify-content: space-evenly;
@@ -148,13 +153,6 @@
 
 .console-header-group-title a {
   text-decoration: none;
-}
-
-.console-header-summaries {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
 }
 
 .console-header-name {
@@ -391,6 +389,19 @@
 }
 
 /* Console List */
+
+.console-list-builders {
+  display: flex;
+  flex-grow: 1;
+  /*flex-flow: row wrap;
+	flex-wrap: wrap;*/
+  align-items: center;
+  padding: 0.5em;
+}
+
+.console-list-builders > * {
+  margin: 0.05em;
+}
 
 .console-list-builder {
   display: flex;

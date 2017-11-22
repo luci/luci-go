@@ -434,9 +434,9 @@ func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 						<div class="console-top-row">`,
 			template.HTMLEscapeString(c.Name),
 		))
-	} else if depth <= 1 {
+	} /*else if depth <= 1 {
 		must(buffer.WriteString(`<div class="console-builder-summary">`))
-	}
+	}*/
 
 	for _, child := range c.Children {
 		child.RenderHTML(buffer, depth+1, maxDepth)
@@ -444,9 +444,9 @@ func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 
 	if maxDepth > 0 {
 		must(buffer.WriteString(`</div></div>`))
-	} else {
+	} /*else {
 		if depth <= 1 {
 			must(buffer.WriteString(`</div>`))
 		}
-	}
+	}*/
 }
