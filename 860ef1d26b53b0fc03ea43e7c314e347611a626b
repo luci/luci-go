@@ -404,6 +404,30 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c1f07e3b_0b3642c2",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T03:34:46Z",
+      "side": 1,
+      "message": "yeah, that makes perfect sense. Since you strive for black box testing, did you consider https://github.com/mattn/go-sqlite3 in memory mode?",
+      "parentUuid": "7652f5ce_a7fa196a",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

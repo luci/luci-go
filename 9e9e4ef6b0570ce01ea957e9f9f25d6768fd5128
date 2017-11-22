@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff611b0c_883b168a",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T03:34:46Z",
+      "side": 1,
+      "message": "we are missing\n\n  defer func() {\n\terr :\u003d mock.ExpectationsWereMet()\n        So(err, ShouldBeNil)\n  }()",
+      "revId": "9e9e4ef6b0570ce01ea957e9f9f25d6768fd5128",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c2de0b2_075e7140",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T03:34:46Z",
+      "side": 1,
+      "message": "note that \\\\ can be avoided by using ` instead of \": https://play.golang.org/p/iu4MpcdWy4",
+      "range": {
+        "startLine": 36,
+        "startChar": 55,
+        "endLine": 36,
+        "endChar": 57
+      },
+      "revId": "9e9e4ef6b0570ce01ea957e9f9f25d6768fd5128",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02ee2892_52787ef5",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T03:34:46Z",
+      "side": 1,
+      "message": "FWIU, this shouldn\u0027t be necessary because nil is a valid empty slice",
+      "revId": "9e9e4ef6b0570ce01ea957e9f9f25d6768fd5128",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
