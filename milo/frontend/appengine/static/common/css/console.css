@@ -47,15 +47,15 @@
 /* Tree Status */
 
 .tree-status {
-	margin-bottom: 1em;
-	padding: 0.5em;
-	font-weight: normal;
-	font-size: 16px;
-	font-family: Verdana, Cursor;
-	text-align: center;
-	border-top-right-radius: 24px;
-	border-top-left-radius: 24px;
-	box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+  margin-bottom: 6px;
+  padding: 0.5em;
+  font-weight: normal;
+  font-size: 16px;
+  font-family: Verdana, Cursor;
+  text-align: center;
+  border-top-right-radius: 24px;
+  border-top-left-radius: 24px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
 }
 
 /* Header */
