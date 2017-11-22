@@ -35,8 +35,14 @@ type Page interface {
 	// Overview is optional HTML paragraph describing this page.
 	Overview(c context.Context) (template.HTML, error)
 
-	// Fields describes the schema of this page.
+	// Fields describes the schema of the settings on the page (if any).
 	Fields(c context.Context) ([]Field, error)
+
+	// Actions is additional list of actions to present on the page.
+	//
+	// Each action is essentially a clickable button that triggers a parameterless
+	// callback.
+	Actions(c context.Context) ([]Action, error)
 
 	// ReadSettings returns a map "field ID => field value to display".
 	//
@@ -79,6 +85,20 @@ func (f FieldType) IsEditable() bool {
 	return f != FieldStatic
 }
 
+// Action corresponds to a button that triggers a parameterless callback.
+type Action struct {
+	ID           string        // page-unique ID
+	Title        string        // what's displayed on the button
+	Help         template.HTML // optional help text
+	Confirmation string        // optional text for "Are you sure?" confirmation prompt
+
+	// Callback is executed on click.
+	//
+	// The context is derived through the base middleware in the router. The
+	// return values is presented to the user as is.
+	Callback func(c context.Context) (template.HTML, error)
+}
+
 // BasePage can be embedded into Page implementers to provide default
 // behavior.
 type BasePage struct{}
@@ -93,14 +113,19 @@ func (BasePage) Overview(c context.Context) (template.HTML, error) {
 	return "", nil
 }
 
-// Fields describes the schema of the config page.
+// Fields describes the schema of the settings on the page (if any).
 func (BasePage) Fields(c context.Context) ([]Field, error) {
-	return nil, errors.New("not implemented")
+	return nil, nil
+}
+
+// Actions is additional list of actions to present on the page.
+func (BasePage) Actions(c context.Context) ([]Action, error) {
+	return nil, nil
 }
 
 // ReadSettings returns a map "field ID => field value to display".
 func (BasePage) ReadSettings(c context.Context) (map[string]string, error) {
-	return nil, errors.New("not implemented")
+	return nil, nil
 }
 
 // WriteSettings saves settings described as a map "field ID => field value".

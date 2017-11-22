@@ -55,9 +55,8 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 		Loader:          templates.AssetsLoader(assets.Assets()),
 		DefaultTemplate: "base",
 		FuncMap: template.FuncMap{
-			"includeCSS": func(name string) template.CSS {
-				return template.CSS(assets.GetAsset(name))
-			},
+			"includeCSS": func(name string) template.CSS { return template.CSS(assets.GetAsset(name)) },
+			"includeJS":  func(name string) template.JS { return template.JS(assets.GetAsset(name)) },
 		},
 		DefaultArgs: func(c context.Context) (templates.Args, error) {
 			logoutURL, err := auth.LogoutURL(c, "/")
@@ -88,6 +87,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 	rr.GET("", router.MiddlewareChain{}, indexPage)
 	rr.GET("/:PageKey", router.MiddlewareChain{}, portalPageGET)
 	rr.POST("/:PageKey", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalPagePOST)
+	rr.POST("/:PageKey/:ActionID", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalActionPOST)
 }
 
 // replyError sends HTML error page with status 500 on transient errors or 400

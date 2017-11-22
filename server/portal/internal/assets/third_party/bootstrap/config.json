@@ -387,8 +387,9 @@
     "forms.less",
     "buttons.less",
     "breadcrumbs.less",
-    "alerts.less"
+    "alerts.less",
+    "modals.less"
   ],
   "js": [],
-  "customizerUrl": "http://getbootstrap.com/customize/?id=04994031350cf851d37c"
+  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=37757440cb374361f2cde3c444058053"
 }
