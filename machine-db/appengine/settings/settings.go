@@ -74,8 +74,18 @@ func GetUncached(c context.Context) (*DatabaseSettings, error) {
 	}
 }
 
+// Title returns the title of this settings page.
+func (*DatabaseSettings) Title(c context.Context) (string, error) {
+	return "Database settings", nil
+}
+
+// Overview returns an overview of these settings.
+func (*DatabaseSettings) Overview(c context.Context) (template.HTML, error) {
+	return "<p>SQL database configuration</p>", nil
+}
+
 // Fields returns the form fields for configuring these settings.
-func (DatabaseSettings) Fields(c context.Context) ([]portal.Field, error) {
+func (*DatabaseSettings) Fields(c context.Context) ([]portal.Field, error) {
 	fields := []portal.Field{
 		{
 			ID:    "Server",
@@ -105,13 +115,13 @@ func (DatabaseSettings) Fields(c context.Context) ([]portal.Field, error) {
 	return fields, nil
 }
 
-// Overview returns an overview of these settings.
-func (DatabaseSettings) Overview(c context.Context) (template.HTML, error) {
-	return "<p>SQL database configuration</p>", nil
+// Actions is additional list of actions to present on the page.
+func (*DatabaseSettings) Actions(c context.Context) ([]portal.Action, error) {
+	return nil, nil
 }
 
 // ReadSettings returns settings for display.
-func (DatabaseSettings) ReadSettings(c context.Context) (map[string]string, error) {
+func (*DatabaseSettings) ReadSettings(c context.Context) (map[string]string, error) {
 	databaseSettings, err := GetUncached(c)
 	if err != nil {
 		return nil, err
@@ -125,13 +135,8 @@ func (DatabaseSettings) ReadSettings(c context.Context) (map[string]string, erro
 	}, nil
 }
 
-// Title returns the title of this settings page.
-func (DatabaseSettings) Title(c context.Context) (string, error) {
-	return "Database settings", nil
-}
-
 // WriteSettings commits any changes to the settings.
-func (DatabaseSettings) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (*DatabaseSettings) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	databaseSettings := &DatabaseSettings{
 		Server:   values["Server"],
 		Username: values["Username"],
@@ -144,5 +149,5 @@ func (DatabaseSettings) WriteSettings(c context.Context, values map[string]strin
 
 // init registers the database settings UI.
 func init() {
-	portal.RegisterPage(settingsKey, DatabaseSettings{})
+	portal.RegisterPage(settingsKey, &DatabaseSettings{})
 }

@@ -1,5 +1,18 @@
 {{define "title"}}Admin - {{.Title}}{{end}}
 
+{{define "style"}}
+<style>
+.action-div {
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  padding: 10px;
+}
+.action-div p {
+  margin: 10px;
+}
+</style>
+{{end}}
+
 {{define "content"}}
 <div class="row">
 <div class="col-md-offset-2 col-md-8">
@@ -23,13 +36,13 @@
     <div class="col-sm-9">
       {{if or (eq $field.Type "text") (eq $field.Type "password")}}
         <input
-          type="{{$field.Type}}" class="form-control" aria-describedby="{{$field.ID}}-help"
+          type="{{$field.Type}}" class="form-control" aria-describedby="help-{{$field.ID}}"
           {{if $field.Placeholder}}
           placeholder="{{$field.Placeholder}}"
           {{end}}
           name="{{$field.ID}}" value="{{$field.Value}}">
       {{else if eq .Type "choice"}}
-        <select class="form-control" aria-describedby="{{$field.ID}}-help"
+        <select class="form-control" aria-describedby="help-{{$field.ID}}"
           name="{{$field.ID}}" value="{{$field.Value}}">
           {{range $choice := $field.ChoiceVariants}}
             <option {{if eq $field.Value $choice}}selected{{end}}>{{$choice}}</option>
@@ -39,17 +52,42 @@
         <p class="form-control-static">{{$field.Value}}</p>
       {{end}}
       {{if $field.Help}}
-        <span id="{{$field.ID}}-help" class="help-block">{{$field.Help}}</span>
+        <span id="help-{{$field.ID}}" class="help-block">{{$field.Help}}</span>
       {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if .Actions}}
+  <hr>
+  {{end}}
+
+  {{range $action := .Actions}}
+  <div class="form-group">
+    <div class="col-sm-12 action-div">
+      {{if $action.Help}}
+      <p>{{$action.Help}}</p>
+      {{end}}
+      <button
+        type="button"
+        {{if $action.Confirmation}}
+        class="btn btn-danger btn-block action-button"
+        {{else}}
+        class="btn btn-default btn-block action-button"
+        {{end}}
+        data-action-id="{{$action.ID}}"
+        data-confirmation="{{$action.Confirmation}}">{{$action.Title}}</button>
     </div>
   </div>
   {{end}}
 
   <hr>
   <div class="form-group">
+    {{if .Fields}}
     <div class="col-sm-2">
       <button type="submit" class="btn btn-primary">Save settings</button>
     </div>
+    {{end}}
     <div class="col-sm-2">
       <a href="/admin/portal" class="btn btn-default">Back</a>
     </div>
@@ -58,4 +96,45 @@
 
 </div>
 </div>
+
+{{if .Actions}}
+<form id="form-action" method="POST" style="display:none" action="./{{.ID}}/">
+  {{.XsrfTokenField}}
+</form>
+
+<script>
+window.onload = function () {
+  'use strict';
+
+  let actionLaunched = false;
+
+  function launchAction(actionID) {
+    if (!actionLaunched) {
+      actionLaunched = true;
+      const form = document.getElementById('form-action');
+      form.setAttribute('action', form.getAttribute('action') + actionID);
+      form.submit();
+    }
+  }
+
+  for (const btn of document.getElementsByClassName('action-button')) {
+    btn.onclick = function() {
+      const actionID = this.getAttribute('data-action-id');
+      const confirmation = this.getAttribute('data-confirmation');
+      if (confirmation) {
+        const dialog = Modal.confirm('Are you sure?', {content: confirmation});
+        dialog.show().once('dismiss', (modal, ev, button) => {
+          if (button && button.value) {
+            launchAction(actionID);
+          }
+        });
+      } else {
+        launchAction(actionID);
+      }
+    }
+  }
+};
+</script>
+{{end}}
+
 {{end}}

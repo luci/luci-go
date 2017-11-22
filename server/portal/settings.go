@@ -70,6 +70,10 @@ func portalPageGET(ctx *router.Context) {
 		if err != nil {
 			return err
 		}
+		actions, err := page.Actions(c)
+		if err != nil {
+			return err
+		}
 		values, err := page.ReadSettings(c)
 		if err != nil {
 			return err
@@ -88,6 +92,7 @@ func portalPageGET(ctx *router.Context) {
 			"Title":          title,
 			"Overview":       overview,
 			"Fields":         withValues,
+			"Actions":        actions,
 			"XsrfTokenField": xsrf.TokenField(c),
 		})
 		return nil
@@ -144,6 +149,53 @@ func portalPagePOST(ctx *router.Context) {
 		templates.MustRender(c, rw, "pages/done.html", templates.Args{
 			"ID":    id,
 			"Title": title,
+		})
+		return nil
+	})
+}
+
+func portalActionPOST(ctx *router.Context) {
+	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
+	actionID := p.ByName("ActionID")
+
+	withPage(c, rw, p, func(id string, page Page) error {
+		title, err := page.Title(c)
+		if err != nil {
+			return err
+		}
+		actions, err := page.Actions(c)
+		if err != nil {
+			return err
+		}
+
+		var action *Action
+		for i := range actions {
+			if actions[i].ID == actionID {
+				action = &actions[i]
+				break
+			}
+		}
+		if action == nil {
+			rw.WriteHeader(http.StatusNotFound)
+			templates.MustRender(c, rw, "pages/error.html", templates.Args{
+				"Error": "No such action defined",
+			})
+			return nil
+		}
+
+		result, err := action.Callback(c)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			templates.MustRender(c, rw, "pages/error.html", templates.Args{
+				"Error": err.Error(),
+			})
+			return nil
+		}
+
+		templates.MustRender(c, rw, "pages/action_done.html", templates.Args{
+			"ID":     id,
+			"Title":  title,
+			"Result": result,
 		})
 		return nil
 	})
