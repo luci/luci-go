@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "808888e5_05de788d",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-22T01:42:32Z",
+      "side": 1,
+      "message": "tbh, i think i prefer bare minimum printed for debugging, not \"batteries included\".\nOtherwise we can start arguing whether labels should be included (yes, for CQ), approval status (yes for recipe roller), and so on. Each could be useful sometimes, but I think for a non-user facing tool, json output is that is necessary. WDYT?",
+      "range": {
+        "startLine": 235,
+        "startChar": 0,
+        "endLine": 257,
+        "endChar": 1
+      },
+      "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62db7b72_d9f2bb49",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-22T01:42:32Z",
+      "side": 1,
+      "message": "remove then",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 44
+      },
+      "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7942d5f5_d9446af6",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-22T01:42:32Z",
+      "side": 1,
+      "message": "does it really work w/o this?",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 78
+      },
+      "revId": "c52bc89c6c5b21ca4f3fabdbc6b051ed6418b668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

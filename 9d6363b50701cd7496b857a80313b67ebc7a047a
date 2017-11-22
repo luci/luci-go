@@ -260,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "2fcd8547_346703a6",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-22T01:42:32Z",
+      "side": 1,
+      "message": "minor: logic for handling \u0027-\u0027 as stdout and otherwise file could also go be de-duped.",
+      "parentUuid": "ff086d0d_2103e14c",
+      "range": {
+        "startLine": 200,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 11
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b29d5696_7e5cfbea",
         "filename": "client/cmd/gerrit/common.go",
         "patchSetId": 2
@@ -295,6 +319,30 @@
       "side": 1,
       "message": "I\u0027m planning on adding more commands in the future and I dunno if it\u0027s going to be common for all of them. If yes, we can move it here.",
       "parentUuid": "b29d5696_7e5cfbea",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 16
+      },
+      "revId": "9d6363b50701cd7496b857a80313b67ebc7a047a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14d80eab_4368061e",
+        "filename": "client/cmd/gerrit/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-22T01:42:32Z",
+      "side": 1,
+      "message": "do you mean pure human readable command w/o machine readable output?",
+      "parentUuid": "48bbaab5_1bd5a304",
       "range": {
         "startLine": 29,
         "startChar": 5,
