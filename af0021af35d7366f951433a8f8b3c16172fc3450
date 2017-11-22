@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "d01d80ae_ad7f6c31",
+        "filename": "server/portal/internal/assets/includes/base.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "e7a5ba19_76114cb7",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 71
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bbebd101_4da86bd7",
         "filename": "server/portal/internal/assets/pages/page.html",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5752f6a_6978e800",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "yeah, that looks like an idiomatic use of data-* attributes",
+      "parentUuid": "bbebd101_4da86bd7",
+      "range": {
+        "startLine": 79,
+        "startChar": 8,
+        "endLine": 79,
+        "endChar": 25
+      },
+      "revId": "af0021af35d7366f951433a8f8b3c16172fc3450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

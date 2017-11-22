@@ -1,0 +1,302 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8646804e_fb5beab6",
+        "filename": "machine-db/appengine/settings/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "since you are making these changes anyway...\n\nwe probably should not be copying entire struct for nothing. Maybe go compiler optimizes this case though. Consider making the receiver a pointer,",
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fccc0fd3_14cccc9a",
+        "filename": "server/portal/internal/assets/includes/base.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "use block instead of template so that you don\u0027t have to define dummy templates in pages",
+      "range": {
+        "startLine": 9,
+        "startChar": 2,
+        "endLine": 9,
+        "endChar": 10
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b6a9518_b9f94d95",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "what if someone passes \"action-form\" as ID? let\u0027s prefix it with \"action-\". Same for fields. The doc in Action.ID doesn\u0027t say that it should not clash with field ids",
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cca56691_cf7e4675",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "let\u0027s use modern age JS\n\ns/var/let/",
+      "range": {
+        "startLine": 109,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 5
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5052e5f2_aa2e550c",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 114,
+        "startChar": 6,
+        "endLine": 114,
+        "endChar": 9
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c49fbe61_200b16e8",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 118,
+        "startChar": 3,
+        "endLine": 118,
+        "endChar": 4
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f32b5a12_90834253",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "for (const btn of document.getElementsByClassName(\u0027action-button\u0027)) {",
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3e7b736_fb59745d",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 124,
+        "startChar": 6,
+        "endLine": 124,
+        "endChar": 9
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de698b2c_2ca4b2c2",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 126,
+        "startChar": 8,
+        "endLine": 126,
+        "endChar": 11
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815149fb_f4a29a0e",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "(modal, ev, button) \u003d\u003e {\n\nand then you don\u0027t need L123",
+      "range": {
+        "startLine": 127,
+        "startChar": 38,
+        "endLine": 127,
+        "endChar": 65
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50134346_0072398f",
+        "filename": "server/portal/page.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "callback\n\nso it is consistent with L44",
+      "range": {
+        "startLine": 88,
+        "startChar": 64,
+        "endLine": 88,
+        "endChar": 70
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43e786e7_7e1248e4",
+        "filename": "server/portal/page.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "require",
+      "range": {
+        "startLine": 93,
+        "startChar": 55,
+        "endLine": 93,
+        "endChar": 63
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "601519ad_2ec9e2c9",
+        "filename": "server/portal/page.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "please explain what the value of this field means exactly",
+      "range": {
+        "startLine": 93,
+        "startChar": 1,
+        "endLine": 93,
+        "endChar": 13
+      },
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5186dcdb_0f97a95a",
+        "filename": "server/portal/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T07:21:43Z",
+      "side": 1,
+      "message": "rw.WriteHeader(http.StatusInternalServerError)",
+      "revId": "23163dc1f09823f437e8ba94f002f09b7d6f830c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
