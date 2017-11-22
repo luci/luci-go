@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "47cf2ff4_dff1da5d",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd216449_976da35a",
+      "range": {
+        "startLine": 44,
+        "startChar": 9,
+        "endLine": 44,
+        "endChar": 94
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e715e6cb_7cc36097",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0365b93d_b84c67bb",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e715e6cb_7cc36097",
+      "range": {
+        "startLine": 60,
+        "startChar": 17,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "3debd786_b66fab75",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bedba199_f54052ee",
+      "range": {
+        "startLine": 78,
+        "startChar": 28,
+        "endLine": 78,
+        "endChar": 32
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a852b6e_e63623eb",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 4
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "3276439d_db96d7c8",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a852b6e_e63623eb",
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b1c5749e_27c81519",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 4
@@ -102,6 +192,24 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1bcaf0e_e558f8ad",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1c5749e_27c81519",
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +248,24 @@
     },
     {
       "key": {
+        "uuid": "5bbea47e_16691a86",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1b68f63d_8057616c",
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5770af42_9eb0913a",
         "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
         "patchSetId": 4
@@ -160,6 +286,30 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b6953b3_a0fdb02f",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5770af42_9eb0913a",
+      "range": {
+        "startLine": 34,
+        "startChar": 9,
+        "endLine": 34,
+        "endChar": 10
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -186,6 +336,30 @@
     },
     {
       "key": {
+        "uuid": "c9277fc7_1ea63f33",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94f0e586_0087f659",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 38,
+        "endChar": 20
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20490155_ac2554a3",
         "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
         "patchSetId": 4
@@ -206,6 +380,30 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7652f5ce_a7fa196a",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-22T00:06:45Z",
+      "side": 1,
+      "message": "Done, but the reason it was this way is because I believe that unit tests should be black box tests which call a function with some arguments and assert the output without caring what the function actually did to produce those results. It\u0027s antithetical to that style of testing to assert the specific details of everything the unit under test does.\n\nIdeally for testing I\u0027d be using an in-memory MySQL database which actually executes the statements, then in the Convey I\u0027d just populate the database, provide a config for the EnsureDatacenters call, and assert what\u0027s in the database at the end without caring what SQL statements were executed by EnsureDatacenters to achieve that result.",
+      "parentUuid": "20490155_ac2554a3",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
