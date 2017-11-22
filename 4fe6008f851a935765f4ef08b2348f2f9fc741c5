@@ -1,0 +1,359 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22afc268_54bc5e47",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "we made quite a few change since ps1. consider updating",
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee8a5de3_6ecfaece",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "slice",
+      "range": {
+        "startLine": 114,
+        "startChar": 12,
+        "endLine": 114,
+        "endChar": 17
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcdb59d7_e69fedfc",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 129,
+        "startChar": 85,
+        "endLine": 129,
+        "endChar": 86
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b54d3d2e_31f92f6f",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "slice",
+      "range": {
+        "startLine": 130,
+        "startChar": 12,
+        "endLine": 130,
+        "endChar": 17
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbbe1795_0223dd2b",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "nice, this is exactly what I had in mind",
+      "range": {
+        "startLine": 148,
+        "startChar": 18,
+        "endLine": 148,
+        "endChar": 32
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2aeffefc_871a47c2",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "inconsistent with ConsoleID above. Generally go does not like getters to have Get prefix https://golang.org/doc/effective_go.html#Getters",
+      "range": {
+        "startLine": 88,
+        "startChar": 20,
+        "endLine": 88,
+        "endChar": 23
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2d4c4c8_7aaf0dcd",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "i am worried that this may cause actual panics in our code. Consider returning an error",
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e066e20c_43b29c6b",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "ReplaceNSEWith",
+      "range": {
+        "startLine": 158,
+        "startChar": 3,
+        "endLine": 158,
+        "endChar": 12
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8db99d8_51ca7c53",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "outdated comment",
+      "range": {
+        "startLine": 164,
+        "startChar": 21,
+        "endLine": 164,
+        "endChar": 36
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd2db536_47a32707",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 519,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "GetConsoles",
+      "range": {
+        "startLine": 519,
+        "startChar": 3,
+        "endLine": 519,
+        "endChar": 13
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "044a951d_e903b94d",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "we can use ParseConsoleID here now",
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4adc57ff_86fa6b81",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "header parameter is used only for setting the ConsoleGroups. The primary responsibility of this functions seems to be computation of console groups. Would it be simpler to scope this function only to that? \n\n  func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]ui.ConsoleSummary) []ui.ConsoleGroup\n\nthis way this function looks more like extractBuilderSummaries (does not set anything). Also such function may be easier to test (don\u0027t have to deal with ui.ConsoleHeader)",
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34260c2d_56b7824f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "unused\n\nwhich is a sign that this function got simpler, which is great",
+      "range": {
+        "startLine": 174,
+        "startChar": 51,
+        "endLine": 174,
+        "endChar": 64
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "536731bd_2a106fbc",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "please accept common.ConsoleID instead. The caller already has it",
+      "range": {
+        "startLine": 213,
+        "startChar": 34,
+        "endLine": 213,
+        "endChar": 52
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0829df1_b3316300",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "do we need this var though? calling GetHeader makes sense only if def may be nil. I think we can use `def.Header` in places where headerDef is used.",
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a927cf2_1d7a766c",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "maybe move this close to L271 which uses that. I think this line belongs there",
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75c777fe_f77f48cd",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-22T04:29:54Z",
+      "side": 1,
+      "message": "we might have less code if we had\n\n  consoleIDSet :\u003d map[common.ConsoleID]struct{}{}\n  var consoleIDs []common.ConsoleID\n\ninstead of stringset and called common.ParseConsoleID in L425. And then validateConsoleID would be simpler because it does not have to parse \u003cproject\u003e/\u003cconsole\u003e (we parse console id twice now)",
+      "range": {
+        "startLine": 431,
+        "startChar": 1,
+        "endLine": 436,
+        "endChar": 23
+      },
+      "revId": "4fe6008f851a935765f4ef08b2348f2f9fc741c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
