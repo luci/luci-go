@@ -5,13 +5,13 @@
 Use of this source code is governed under the Apache License, Version 2.0
 that can be found in the LICENSE file. -->
 <head><title>{{template "title" .}}</title></head>
-<style>
-{{includeCSS "third_party/bootstrap/bootstrap.min.css"}}
-</style>
+<style>{{includeCSS "third_party/bootstrap/bootstrap.min.css"}}</style>
+{{template "style" .}}
 <body>
 <div class="container">
 {{template "content" .}}
 </div>
 </body>
+<script>{{includeJS "third_party/modal-vanilla/modal.min.js"}}</script>
 </html>
 {{end}}
