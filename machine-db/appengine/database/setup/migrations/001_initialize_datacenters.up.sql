@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS `datacenters` (
 	`name` varchar(255),
 	-- A description of this datacenter.
 	`description` varchar(255),
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`id`),
+	UNIQUE (`name`)
 );
 
 CREATE TABLE IF NOT EXISTS `racks` (
@@ -35,7 +36,8 @@ CREATE TABLE IF NOT EXISTS `racks` (
 	-- The state of this rack.
 	`state` varchar(255),
 	PRIMARY KEY (`id`),
-	FOREIGN KEY (`datacenter_id`) REFERENCES `datacenters` (`id`)
+	FOREIGN KEY (`datacenter_id`) REFERENCES `datacenters` (`id`),
+	UNIQUE (`name`)
 );
 
 CREATE TABLE IF NOT EXISTS `switches` (
@@ -51,5 +53,6 @@ CREATE TABLE IF NOT EXISTS `switches` (
 	-- The state of this switch.
 	`state` varchar(255),
 	PRIMARY KEY (`id`),
-	FOREIGN KEY (`rack_id`) REFERENCES `racks` (`id`)
+	FOREIGN KEY (`rack_id`) REFERENCES `racks` (`id`),
+	UNIQUE (`name`)
 );
