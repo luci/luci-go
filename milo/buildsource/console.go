@@ -17,12 +17,12 @@ package buildsource
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -79,7 +79,7 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 	}
 	partialKey := model.NewPartialManifestKey(project, console.Id, console.ManifestName, url)
 	q := datastore.NewQuery("BuildSummary")
-	err := parallel.WorkPool(4, func(ch chan<- func() error) {
+	err := parallel.WorkPool(16, func(ch chan<- func() error) {
 		for i := range rawCommits {
 			i := i
 			r := &ConsoleRow{Commit: commits[i]}
@@ -110,65 +110,69 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 // with only the builder's latest build.
 type ConsolePreview map[BuilderID]*model.BuildSummary
 
-// GetConsoleSummaries returns a list of console summaries from the datastore.
+// GetConsoleSummariesFromIDs returns a list of console summaries from the datastore
+// using a slice of console IDs as input.
 //
 // This list of console summaries directly corresponds to the input list of
 // console IDs.
-func GetConsoleSummaries(c context.Context, consoleIDs []string) ([]ui.ConsoleSummary, error) {
-	summaries := make([]ui.ConsoleSummary, len(consoleIDs))
-	err := parallel.WorkPool(4, func(ch chan<- func() error) {
-		for i, id := range consoleIDs {
-			i := i
-			id := id
-			ch <- func() error {
-				var err error
-				summaries[i], err = GetConsoleSummary(c, id)
-				return err
-			}
-		}
-	})
+func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID) (
+	map[common.ConsoleID]ui.ConsoleSummary, error) {
+
+	// Get the console definitions and builders, then rearrange them into console summaries.
+	defs, err := common.GetConsoles(c, consoleIDs)
 	if err != nil {
 		return nil, err
 	}
-	return summaries, nil
+	return GetConsoleSummariesFromDefs(c, defs)
 }
 
-// GetConsoleSummary returns a single console summary from the datastore.
-func GetConsoleSummary(c context.Context, consoleID string) (ui.ConsoleSummary, error) {
-	summary := ui.ConsoleSummary{}
-	// It's safe to SplitN because we assume the ID has already been validated.
-	consoleComponents := strings.SplitN(consoleID, "/", 2)
-	project := consoleComponents[0]
-	id := consoleComponents[1]
-
-	// Set Name label.
-	ariaLabel := fmt.Sprintf("Console %s in project %s", id, project)
-	summary.Name = ui.NewLink(id, fmt.Sprintf("/p/%s/g/%s/console", project, id), ariaLabel)
-
-	// Fetch the config first.
-	def, err := common.GetConsole(c, project, id)
-	if err != nil {
-		return summary, errors.Annotate(err, "getting %s", consoleID).Err()
+// GetConsoleSummariesFromDefs returns a list of console summaries from the datastore
+// using a slice of console definitions as input.
+//
+// This list of console summaries directly corresponds to the input list of
+// console definition entities.
+func GetConsoleSummariesFromDefs(c context.Context, defs []*common.Console) (map[common.ConsoleID]ui.ConsoleSummary, error) {
+	builders := stringset.New(len(defs) * 10) // We'll start with approx 10 builders per console.
+	for _, def := range defs {
+		for _, builder := range def.Builders {
+			builders.Add(builder)
+		}
 	}
-
-	// Fetch the data from datastore.
-	summary.Builders = make([]*model.BuilderSummary, len(def.Builders))
-	for i, builderID := range def.Builders {
-		summary.Builders[i] = &model.BuilderSummary{BuilderID: builderID}
-	}
-	if err = datastore.Get(c, summary.Builders); err != nil {
+	bs := make([]*model.BuilderSummary, 0, builders.Len())
+	builders.Iter(func(builderID string) bool {
+		bs = append(bs, &model.BuilderSummary{BuilderID: builderID})
+		return true
+	})
+	if err := datastore.Get(c, bs); err != nil {
 		// Return an error only if we encouter an error other than datastore.ErrNoSuchEntity.
-		me := err.(errors.MultiError)
-		lme := errors.NewLazyMultiError(len(me))
-		for i, ierr := range me {
-			if ierr == datastore.ErrNoSuchEntity {
-				summary.Builders[i] = &model.BuilderSummary{BuilderID: def.Builders[i]}
+		if err = common.ReplaceNSEWith(err.(errors.MultiError), nil); err != nil {
+			return nil, err
+		}
+	}
+	// Rearrange the result into a map, for easy access later.
+	bsMap := make(map[string]*model.BuilderSummary, len(bs))
+	for _, b := range bs {
+		bsMap[b.BuilderID] = b
+	}
+
+	// Now rearrange the builders into their respective consoles
+	summaries := make(map[common.ConsoleID]ui.ConsoleSummary, len(defs))
+	for _, def := range defs {
+		ariaLabel := fmt.Sprintf("Console %s in project %s", def.ID, def.Project())
+		summary := ui.ConsoleSummary{
+			Builders: make([]*model.BuilderSummary, len(def.Builders)),
+			Name: ui.NewLink(
+				def.ID, fmt.Sprintf("/p/%s/g/%s/console", def.Project(), def.ID), ariaLabel),
+		}
+		for i, builderID := range def.Builders {
+			if builder, ok := bsMap[builderID]; ok {
+				summary.Builders[i] = builder
 			} else {
-				lme.Assign(i, ierr)
+				// This should never happen.
+				panic(fmt.Sprintf("%s disappeared somehow", builderID))
 			}
 		}
-		err = lme.Get()
+		summaries[def.ConsoleID()] = summary
 	}
-
-	return summary, err
+	return summaries, nil
 }

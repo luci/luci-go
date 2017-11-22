@@ -277,7 +277,7 @@ type Link struct {
 	// Img is an icon for the link.  Not compatible with label.  Rendered as <img>
 	Img string `json:",omitempty"`
 
-	// Alt text for the image, only supported with img.
+	// Alt text for the image, or title text with text link.
 	Alt string `json:",omitempty"`
 
 	// Alias, if true, means that this link is an [alias link].
@@ -296,7 +296,8 @@ var (
 		template.New("linkify").
 			Parse(
 				`<a{{if .URL}} href="{{.URL}}"{{end}}` +
-					`{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}>` +
+					`{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}` +
+					`{{if .Alt}}{{if not .Img}} title="{{.Alt}}"{{end}}{{end}}>` +
 					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
 					`{{else if .Alias}}[{{.Label}}]` +
 					`{{else}}{{.Label}}{{end}}` +

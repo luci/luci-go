@@ -79,15 +79,51 @@ func (c *Console) Project() string {
 	return c.Parent.StringID()
 }
 
+func (c *Console) ConsoleID() ConsoleID {
+	return ConsoleID{Project: c.Project(), ID: c.ID}
+}
+
+// ProjectID retrieves the project ID string of the console out of the Console's
+// parent key.
+func (con *Console) ProjectID() string {
+	return con.Parent.StringID()
+}
+
+// ConsoleID is a reference to a console.
+type ConsoleID struct {
+	Project string
+	ID      string
+}
+
+func ParseConsoleID(id string) (cid ConsoleID, err error) {
+	components := strings.Split(id, "/")
+	if len(components) != 2 {
+		err = errors.New("invalid console id: " + id)
+		return
+	}
+	return ConsoleID{
+		Project: components[0],
+		ID:      components[1],
+	}, nil
+}
+
+func (id *ConsoleID) String() string {
+	return fmt.Sprintf("%s/%s", id.Project, id.ID)
+}
+
+// NewEntity returns an empty Console datastore entity keyed with itself.
+func (id *ConsoleID) SetID(c context.Context, console *Console) *Console {
+	if console == nil {
+		console = &Console{}
+	}
+	console.Parent = datastore.MakeKey(c, "Project", id.Project)
+	console.ID = id.ID
+	return console
+}
+
 // ErrConsoleNotFound is returned from GetConsole if the requested console
 // isn't known to exist.
 var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
-
-// GetProjectID retrieves the project ID of the console out of the Console's
-// parent key.
-func (con *Console) GetProjectID() string {
-	return con.Parent.StringID()
-}
 
 // LuciConfigURL returns a user friendly URL that specifies where to view
 // this console definition.
@@ -117,6 +153,21 @@ type ServiceConfig struct {
 	Text string `gae:",noindex"`
 	// LastUpdated is the time this config was last updated.
 	LastUpdated time.Time
+}
+
+// ReplaceNSEWith takes an errors.MultiError returned by a datastore.Get() on a slice
+// (which is always a MultiError), filters out all datastore.ErrNoSuchEntitiy
+// or replaces it with replacement instances, and returns an error generated
+// by errors.LazyMultiError.
+func ReplaceNSEWith(err errors.MultiError, replacement error) error {
+	lme := errors.NewLazyMultiError(len(err))
+	for i, ierr := range err {
+		if ierr == datastore.ErrNoSuchEntity {
+			ierr = replacement
+		}
+		lme.Assign(i, ierr)
+	}
+	return lme.Get()
 }
 
 // GetSettings returns the service (aka global) config for the current
@@ -462,4 +513,18 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 	default:
 		return nil, err
 	}
+}
+
+// GetConsoles returns the requested consoles.
+//
+// TODO-perf(iannucci,hinoka): Memcache this.
+func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
+	result := make([]*Console, len(consoles))
+	for i, con := range consoles {
+		result[i] = con.SetID(c, nil)
+	}
+	if err := datastore.Get(c, result); err != nil {
+		return result, ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
+	}
+	return result, nil
 }
