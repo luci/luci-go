@@ -36,13 +36,10 @@ func TestValidateDatacenters(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 
-		updateStmt := `^UPDATE datacenters SET description = \? WHERE id = \?$`
-		deleteStmt := `^DELETE FROM datacenters WHERE id = \?$`
 		insertStmt := `^INSERT INTO datacenters \(name, description\) VALUES \(\?, \?\)$`
+		deleteStmt := `^DELETE FROM datacenters WHERE id = \?$`
+		updateStmt := `^UPDATE datacenters SET description = \? WHERE id = \?$`
 		selectStmt := `^SELECT id, name, description FROM datacenters$`
-		m.ExpectPrepare(updateStmt)
-		m.ExpectPrepare(deleteStmt)
-		m.ExpectPrepare(insertStmt)
 		query := m.ExpectQuery(selectStmt)
 		rows := sqlmock.NewRows([]string{"id", "name", "description"})
 
@@ -66,6 +63,7 @@ func TestValidateDatacenters(t *testing.T) {
 					Description: "description",
 				},
 			}
+			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(datacenters[0].Name, datacenters[0].Description).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(insertStmt).WithArgs(datacenters[1].Name, datacenters[1].Description).WillReturnResult(sqlmock.NewResult(2, 1))
 			test(datacenters)
