@@ -15,44 +15,44 @@
 -- Required fields are not enforced by this schema.
 -- The Machine Database will enforce any such constraints.
 
-CREATE TABLE IF NOT EXISTS `datacenters` (
-	`id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS datacenters (
+	id int NOT NULL AUTO_INCREMENT,
 	-- The name of this datacenter.
-	`name` varchar(255),
+	name varchar(255),
 	-- A description of this datacenter.
-	`description` varchar(255),
-	PRIMARY KEY (`id`),
-	UNIQUE (`name`)
+	description varchar(255),
+	PRIMARY KEY (id),
+	UNIQUE (name)
 );
 
-CREATE TABLE IF NOT EXISTS `racks` (
-	`id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS racks (
+	id int NOT NULL AUTO_INCREMENT,
 	-- The name of this rack.
-	`name` varchar(255),
+	name varchar(255),
 	-- A description of this rack.
-	`description` varchar(255),
+	description varchar(255),
 	-- The datacenter this rack belongs to.
-	`datacenter_id` int,
+	datacenter_id int,
 	-- The state of this rack.
-	`state` varchar(255),
-	PRIMARY KEY (`id`),
-	FOREIGN KEY (`datacenter_id`) REFERENCES `datacenters` (`id`),
-	UNIQUE (`name`)
+	state varchar(255),
+	PRIMARY KEY (id),
+	FOREIGN KEY (datacenter_id) REFERENCES datacenters (id),
+	UNIQUE (name)
 );
 
-CREATE TABLE IF NOT EXISTS `switches` (
-	`id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS switches (
+	id int NOT NULL AUTO_INCREMENT,
 	-- The name of this switch.
-	`name` varchar(255),
+	name varchar(255),
 	-- A description of this switch.
-	`description` varchar(255),
+	description varchar(255),
 	-- The number of ports this switch has.
-	`ports` int,
+	ports int,
 	-- The rack this switch belongs to.
-	`rack_id` int,
+	rack_id int,
 	-- The state of this switch.
-	`state` varchar(255),
-	PRIMARY KEY (`id`),
-	FOREIGN KEY (`rack_id`) REFERENCES `racks` (`id`),
-	UNIQUE (`name`)
+	state varchar(255),
+	PRIMARY KEY (id),
+	FOREIGN KEY (rack_id) REFERENCES racks (id),
+	UNIQUE (name)
 );
