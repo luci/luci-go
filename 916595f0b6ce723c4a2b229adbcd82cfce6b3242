@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a92d2d0_3da11783",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-23T06:03:52Z",
+      "side": 1,
+      "message": "we may add actionID many times here, perhaps it is better to use data-action attr, but it probably does not matter because we leave the page after corrupting it",
+      "revId": "916595f0b6ce723c4a2b229adbcd82cfce6b3242",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
