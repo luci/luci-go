@@ -233,7 +233,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 	}
 
 	consoleID := common.ConsoleID{Project: project, ID: id}
-	header := &ui.ConsoleHeader{}
+	var header *ui.ConsoleHeader
 	var rows []*buildsource.ConsoleRow
 	var commits []ui.Commit
 	var consoleSummaries map[common.ConsoleID]ui.ConsoleSummary
@@ -265,7 +265,9 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 
 	// Reassemble builder summaries into both the current console
 	// and also the header.
-	header.ConsoleGroups = getConsoleGroups(def.Header, consoleSummaries)
+	if header != nil {
+		header.ConsoleGroups = getConsoleGroups(def.Header, consoleSummaries)
+	}
 
 	// Reassemble the builder summaries and rows into the categoryTree.
 	builderSummaries := extractBuilderSummaries(consoleID, consoleSummaries)
