@@ -500,6 +500,30 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "efbd7cc0_124e7357",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-23T07:49:53Z",
+      "side": 1,
+      "message": "FWIU this happens specifically because we are trying to modify the table (update/delete) while still reading it. I am not sure it won\u0027t happen in MySQL. I am not sure what behavior I\u0027d expect if this was happening in a transaction (should SELECT return rows that were there the moment transaction started?). We might want to avoid these questions altogether if we avoid reading and writing from/to same table as the same time\n\nI\u0027ve written https://gist.github.com/nodirt/c2fd75b1a8a74e8862e718e57c40b61c which can be used in all SELECT statements like this:\n\n// getDatacenters returns a list of datacenters in the database.\nfunc getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {\n\tvar datacenters []*crimson.Datacenter\n\tquery :\u003d \"SELECT id, name, description from datacenters\"\n\terr :\u003d database.Run(c, query, func(id int, name, description string) {\n\t\tif names.Has(name) || names.Len() \u003d\u003d 0 {\n\t\t\tdatacenters \u003d append(datacenters, \u0026crimson.Datacenter{\n\t\t\t\tName:        name,\n\t\t\t\tDescription: description,\n\t\t\t})\n\t\t}\n\t})\n\treturn datacenters, err\n}\n\n\nit is a bit nicer than working with rows directly and it closes rows right aways. And then, if \"TODO(smut): Collect the names of datacenters to update/delete and batch the operations.\" is done, we don\u0027t write/read to/from the same table at the same time.\n\n--\n\nsqllite3 being cgo is still a problem though. It might be possible to package c lib in a CIPD and deploy to a bot, but it sounds complex.",
+      "parentUuid": "abd62ad8_a77586f9",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
