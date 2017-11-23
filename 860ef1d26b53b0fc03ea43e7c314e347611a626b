@@ -476,6 +476,30 @@
       "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "abd62ad8_a77586f9",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-23T00:26:16Z",
+      "side": 1,
+      "message": "Hm, apparently sqlite locks very aggressively anytime it does anything. The way datacenters.go is currently structured, you can\u0027t use go-sqlite3 for testing. Right now datacenters.go does something like:\n\ndeleteStmt :\u003d db.Prepare(\"DELETE FROM ...\")\ndefer deleteStmt.Close()\n\nrows :\u003d db.Query(\"SELECT ...\")\ndefer rows.Close()\n\nfor rows.next() {\n  if dc needs to be deleted {\n    deleteStmt.Exec(id)\n  }\n}\n\nWhich results in \"table is locked\" because rows.Close() hasn\u0027t been called yet and we\u0027re trying to execute another statement. I would likely have to restructure to something like:\n\ndcs :\u003d []int\nrows :\u003d db.Query(\"SELECT ...\")\nfor rows.Next() {\n  if dc needs to be deleted {\n    append(dcs, id)\n  }\n}\nrows.Close()\n\ndeleteStmt :\u003d db.Prepare(\"DELETE FROM ...\")\nfor _, id :\u003d range ids {\n  deleteStmt.Exec(id)\n}\n\nI wonder if MySQL has the same issue.",
+      "parentUuid": "f53c74bf_dbb818f8",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "860ef1d26b53b0fc03ea43e7c314e347611a626b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
