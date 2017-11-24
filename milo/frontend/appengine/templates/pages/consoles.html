@@ -13,7 +13,7 @@
 
 <div class="console-column">
 {{ range .Consoles }}
-  <div class="console-title">
+  <div class="console-builder-summary-flex">
     {{ if .Render.FaviconURL }}
       <img src="{{ .Render.FaviconURL }}" />
     {{ end }}
@@ -21,7 +21,9 @@
          href="/p/{{ .ProjectID }}/g/{{ .Def.Id }}/console"
          aria-label="console {{ .Def.Name }}">{{ .Def.Name }}</a>
       <a href="{{ .Def.RepoUrl }}/+/{{ .Def.Ref }}">(repo)</a>
-    {{ .Render.ConsoleSummary }}
+      <div class="console-builder-summary-grid">
+      {{ .Render.ConsoleSummary }}
+      </div>
   </div>
 {{ else }}
   <h4> No consoles defined </h4>
