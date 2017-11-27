@@ -1,0 +1,221 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da55ae65_b3ef6379",
+        "filename": "common/config/validation/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "make it fit 80cols please",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3be34161_6980bee4",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "\"Func\" is a typical abbreviation in Golang",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 9
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7521e8fd_f346a275",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "this parameter is called \"base\" in other InstallHandlers functions https://cs.chromium.org/search/?q\u003dInstallHandlers\u0026sq\u003dpackage:chromium\u0026type\u003dcs",
+      "range": {
+        "startLine": 62,
+        "startChar": 39,
+        "endLine": 62,
+        "endChar": 42
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ed94939_332b8d6d",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "unnecessary\n\nand then {} are unnecessary in L81\n\n--\n\nhowever, it occurred to me that we better reuse https://godoc.org/go.chromium.org/luci/common/proto/config#ValidationRequestMessage",
+      "range": {
+        "startLine": 77,
+        "startChar": 13,
+        "endLine": 77,
+        "endChar": 15
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6248f8c5_f72a5c31",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "we have 3 cases here, let\u0027s use switch\n\nswitch err :\u003d json.NewDecoder(r.Body).Decode(\u0026reqBody); {\ncase err !\u003d nil:\n  ...\ncase reqBody.ConfigSet \u003d\u003d \"\":\n  ...\ncase reqBody.Path \u003d\u003d \"\":\n  ...\n}",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fda36384_613a1541",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "let\u0027s pass bytes. The config is not necessarily text and this conversion is expensive (copied file content)",
+      "range": {
+        "startLine": 97,
+        "startChar": 53,
+        "endLine": 97,
+        "endChar": 76
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af4c539d_5a18389f",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "this handler returns ServiceDynamicMetadata message in JSON format, but it is not obvious from reading this code.\n\nHowever, it just occurred to me that it would be more readable and type safe to construct https://godoc.org/go.chromium.org/luci/common/proto/config#ServiceDynamicMetadata here and then use json.NewEncoder(w).Encode(msg) same way you do it with maps",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fbf8d09_a6045c24",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "dot imports should be in the last import block",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30d38438_1a710c6c",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "this import belongs to the prev block",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03b50285_94b85e59",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "So(err, ShouldBeNil)",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27b1146e_facd33a3",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-27T23:10:27Z",
+      "side": 1,
+      "message": "did you know that Convey can have sub-conveys?\n\nConvey(....., func() {\n  // initialization, e.g. create routes, install handlers, etc\n\n  Convey(........, func() {\n     // the test\n  })\n  Convey(........, func() {\n     // the test 2\n  })\n})\n\nthis is not limited to 2 levels\n\nsee how Convey is used in this repo\n\n--\n\nand then these helper functions will do only the call, without initialization",
+      "range": {
+        "startLine": 54,
+        "startChar": 2,
+        "endLine": 56,
+        "endChar": 52
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
