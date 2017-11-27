@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2b7ef9b3_9339b46a",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-27T18:21:56Z",
+      "side": 1,
+      "message": "We can\u0027t quite do this because we need to use the second (error) return value of os.Stat, not the first. It\u0027s also kind of award to do this with the normal\n\nfor init; condition; post { ... }\n\nformat because the init and the post need to be the same.\n\nTo get around this, I added a helper function (fileExists)",
+      "parentUuid": "94de036a_fb79cd42",
+      "revId": "a200700da3081dccc603f9da05923a91e79252f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b53265d5_c7f424ee",
         "filename": "mmutex/lib/shared.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "d26c646d_472274aa",
+        "filename": "mmutex/lib/shared.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-27T18:21:56Z",
+      "side": 1,
+      "message": "I think it\u0027s a little hard for me to contribute meaningfully to the conversation here because I don\u0027t fully understand the need for swarming\u0027s scheduler to time out immediately if the drain file exists. I\u0027m a little confused though by what you mean by \"swarming\u0027s scheduler\"? The main task loop that launches swarming tasks can\u0027t use mmutex as an entry point to the maintenance mutex (for the reasons listed under \"Swarming\" in https://docs.google.com/document/d/1J5WcsGPDCL1QxS8m9V9qtB6DRtuI7s1wljGFFjHJPug/edit#). As far as I know, there aren\u0027t even any planned clients of the mmutex \"shared\" command.\n\nIt also seems like, conceptually, it would make more sense to separate out the command timeout from the lock acquisition timeout. That would make the swarming command you described the same as mmutex shared --lock_acquisition_timeout\u003d0 --command_timeout\u003d30m -- \u003ccommand\u003e",
+      "parentUuid": "b53265d5_c7f424ee",
+      "range": {
+        "startLine": 38,
+        "startChar": 10,
+        "endLine": 38,
+        "endChar": 30
+      },
+      "revId": "a200700da3081dccc603f9da05923a91e79252f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "54744da9_d2f8d455",
         "filename": "mmutex/lib/shared.go",
         "patchSetId": 2
@@ -53,6 +95,24 @@
       "writtenOn": "2017-11-21T17:03:36Z",
       "side": 1,
       "message": "do we want to wait if drain files appears after we started to wait for the lock at lockFilePath?",
+      "revId": "a200700da3081dccc603f9da05923a91e79252f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dc4c4cc_d4c9e213",
+        "filename": "mmutex/lib/shared.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-27T18:21:56Z",
+      "side": 1,
+      "message": "+iannucci@chromium.org, who suggested something similar above\n\nAFAICT, the behavior for this wasn\u0027t spelled out explicitly in https://docs.google.com/document/d/1J5WcsGPDCL1QxS8m9V9qtB6DRtuI7s1wljGFFjHJPug/edit#. \n\nI\u0027m not sure how important this check is. It complicates the logic here, though, because we\u0027d have to exit the \"WithSharedBlocking\" block and reenter it once the drain file goes away. I guess we could just put the whole thing in a loop, but it would definitely complicate things a bit.\n\nThe reason I don\u0027t feel it\u0027s important is that, generally, if the drain file doesn\u0027t exist, that means that we\u0027re in one of two states:\n\n1) One other command is running while holding the exclusive lock\n2) Zero or more other commands are running while holding a shared lock\n\nIn the case of 1), we\u0027ll block due to the \"WithSharedBlocking\" command anyhow and get to run after that exclusive command terminates and we can acquire the shared lock.\n\nIn the case of 2), we\u0027ll get to run immediately. \n\nThe one case where this kind of seems to matter is when an exclusive command is queued in between the time that this shared command tried to acquire the lock and the time that the lock was acquired. In this case, I can\u0027t think of any reason that we should give preference to the exclusive command to run over the shared one: the shared one has the lock, and should therefore be given the opportunity to run. It\u0027s not like doing so will cause the exclusive lock seeker to starve: the next shared task to try to run will see that the drain file exists and hold off on performing the command until that drain file goes away and it can acquire the mutex, which seems fair.",
+      "parentUuid": "54744da9_d2f8d455",
       "revId": "a200700da3081dccc603f9da05923a91e79252f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
