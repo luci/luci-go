@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1e22079d_d0183673",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-27T18:57:45Z",
+      "side": 1,
+      "message": "Yea, upon further thought, I think the way that adding on to the way that I\u0027d previously written this (an infinite loop with a break) is probably the easiest way to write this.\n\nExpressing the logic that we need succinctly in the init; condition; post of a for loop isn\u0027t really possibly, given that we probably want to treat some errors (the file not existing) different than others (permission errors)",
+      "parentUuid": "c7012e49_53f5d1c7",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 27
+      },
+      "revId": "9110adefc5587621859f97e282716bee68d09984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "774da6d6_4e3c3866",
         "filename": "mmutex/lib/lock_file_helpers.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "9110adefc5587621859f97e282716bee68d09984",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c800b01e_905a4f7a",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-11-27T18:57:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "774da6d6_4e3c3866",
+      "range": {
+        "startLine": 101,
+        "startChar": 10,
+        "endLine": 101,
+        "endChar": 78
+      },
+      "revId": "9110adefc5587621859f97e282716bee68d09984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
