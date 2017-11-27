@@ -48,7 +48,7 @@ func TestShared(t *testing.T) {
 				Exists: true,
 			},
 		}
-		lockFilePath, _, err := computeMutexPaths(env)
+		lockFilePath, drainFilePath, err := computeMutexPaths(env)
 		So(err, ShouldBeNil)
 		ctx := context.Background()
 
@@ -84,8 +84,55 @@ func TestShared(t *testing.T) {
 			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldBeNil)
 		})
 
-		// TODO(charliea): Add a test to ensure that RunShared() treats the presence of a drain file the
-		// same as a held lock.
+		Convey("waits for drain file to go away before requesting lock", func() {
+			file, err := os.OpenFile(drainFilePath, os.O_RDONLY|os.O_CREATE, 0666)
+			So(err, ShouldBeNil)
+			err = file.Close()
+			So(err, ShouldBeNil)
+
+			commandResult := make(chan error)
+			runSharedErr := make(chan error)
+			go func() {
+				runSharedErr <- RunShared(ctx, env, func(ctx context.Context) error {
+					// Block RunShared() immediately after it starts executing the command.
+					return <-commandResult
+				})
+			}()
+
+			// Sleep a millisecond so that RunShared() has an opportunity to reach the
+			// logic where it checks for a drain file.
+			clock.Sleep(ctx, time.Millisecond)
+
+			// The lock should be available: RunShared() didn't acquire it due to the presence
+			// of the drain file. Verify this by acquiring and immediately releasing the lock.
+			handle, err := fslock.Lock(lockFilePath)
+			So(err, ShouldBeNil)
+			err = handle.Unlock()
+			So(err, ShouldBeNil)
+
+			// Removing the drain file should allow RunShared() to progress as normal.
+			err = os.Remove(drainFilePath)
+			So(err, ShouldBeNil)
+
+			commandResult <- nil
+			So(<-runSharedErr, ShouldBeNil)
+		})
+
+		Convey("times out if drain file doesn't go away", func() {
+			file, err := os.OpenFile(drainFilePath, os.O_RDONLY|os.O_CREATE, 0666)
+			So(err, ShouldBeNil)
+			err = file.Close()
+			So(err, ShouldBeNil)
+			defer os.Remove(drainFilePath)
+
+			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
+			runSharedErr := make(chan error)
+			go func() {
+				runSharedErr <- RunShared(ctx, env, fnThatReturns(nil))
+			}()
+
+			So(<-runSharedErr, ShouldErrLike, "timed out waiting for drain file to disappear")
+		})
 
 		Convey("acts as a passthrough if lockFileDir is empty", func() {
 			So(RunShared(ctx, subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)

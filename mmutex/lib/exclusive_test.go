@@ -115,7 +115,7 @@ func TestExclusive(t *testing.T) {
 			runExclusiveErr := make(chan error)
 			go func() {
 				runExclusiveErr <- RunExclusive(ctx, env, func(ctx context.Context) error {
-					// Block run exclusive immediately after it starts executing the command.
+					// Block RunExclusive() immediately after it starts executing the command.
 					// The drain file should have been cleaned up immediately before this point.
 					return <-commandResult
 				})
