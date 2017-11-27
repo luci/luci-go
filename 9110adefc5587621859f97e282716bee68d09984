@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c7012e49_53f5d1c7",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-27T18:32:18Z",
+      "side": 1,
+      "message": "I think if there\u0027s, e.g. a permission error, this returns true. That may not be what you want (e.g. if you don\u0027t have permission to read from the directory containing the file, the blockWhileFileExists would block forever).",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 27
+      },
+      "revId": "9110adefc5587621859f97e282716bee68d09984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "774da6d6_4e3c3866",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-27T18:32:18Z",
+      "side": 1,
+      "message": "errors.New(\"message without format parameters\")",
+      "range": {
+        "startLine": 101,
+        "startChar": 10,
+        "endLine": 101,
+        "endChar": 78
+      },
+      "revId": "9110adefc5587621859f97e282716bee68d09984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
