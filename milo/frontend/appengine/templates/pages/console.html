@@ -44,53 +44,49 @@
     <!-- Oncalls -->
     <div class="console-header-group">
       <div class="console-header-group-title">Oncalls</div>
-      <div class="console-header-list">
-        <div class="console-header-groups">
-        {{ range $header.Oncalls }}
-          <div class="console-header-oncalls-group">
-            <div class="console-header-group-name">
-              {{ .Name }}
-            </div>
-            <div class="console-header-group-content">
-              {{ $numEmails := (len .Emails) }}
-              {{ if gt $numEmails 0 }}
-                {{ range $i, $email := .Emails }}
-                  <span>{{ . | obfuscateEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
-                {{ end }}
-              {{ else if .Primary }}
-                <span>{{ .Primary }}</span>
-                {{if .Secondaries }}
-                  (primary)
-                  {{ range .Secondaries }}
-                    <span>, {{ . }}</span>
-                  {{ end }}
-                {{ end }}
-              {{ else }}
-                <span>&lt;none&gt;</span>
-              {{ end }}
-            </div>
+      <div class="console-header-groups">
+      {{ range $header.Oncalls }}
+        <div class="console-header-oncalls-group">
+          <div class="console-header-group-name">
+            {{ .Name }}
           </div>
-        {{ end }}
+          <div class="console-header-group-content">
+            {{ $numEmails := (len .Emails) }}
+            {{ if gt $numEmails 0 }}
+              {{ range $i, $email := .Emails }}
+                <span>{{ . | obfuscateEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
+              {{ end }}
+            {{ else if .Primary }}
+              <span>{{ .Primary }}</span>
+              {{if .Secondaries }}
+                (primary)
+                {{ range .Secondaries }}
+                  <span>, {{ . }}</span>
+                {{ end }}
+              {{ end }}
+            {{ else }}
+              <span>&lt;none&gt;</span>
+            {{ end }}
+          </div>
         </div>
+      {{ end }}
       </div>
     </div>
 
     <!-- Links -->
     <div class="console-header-group">
       <div class="console-header-group-title">Links</div>
-      <div class="console-header-list">
-        <div class="console-header-groups">
-        {{ range $header.Links }}
-          <div class="console-header-links-group">
-            <div class="console-header-group-name">{{ .Name }}</div>
-            <div class="console-header-group-content">
-            {{ range .Links }}
-              <span>{{ .HTML }}</span>
-            {{ end }}
-            </div>
+      <div class="console-header-groups">
+      {{ range $header.Links }}
+        <div class="console-header-links-group">
+          <div class="console-header-group-name">{{ .Name }}</div>
+          <div class="console-header-group-content">
+          {{ range .Links }}
+            <span>{{ .HTML }}</span>
+          {{ end }}
           </div>
-        {{ end }}
         </div>
+      {{ end }}
       </div>
     </div>
   </div>
@@ -107,26 +103,33 @@
         {{ .Title.HTML }}
       </div>
     {{ end }}
-      <div class="console-header-summaries">
+      <div class="console-header-groups">
       {{ range .Consoles }}
-        <div class="console-builder-summary">
+        {{ if gt (len .Builders) 30 }}
+        <div class="console-builder-summary-flex fill-row">
           <div class="console-header-name">
             {{ .Name.HTML }}
           </div>
-          {{ $console_name := .Name.Link.Label }}
-          {{ $num_builders := (len .Builders) }}
-          {{ range .Builders }}
-            <a class="console-builder-status"
-               href="{{ .LastFinishedBuildIDLink }}"
-               title="{{ .LastFinishedBuildID }}"
-               aria-label="builder {{ .BuilderID }} on console {{ $console_name }} has last status {{ .LastFinishedStatus }}">
-              {{ if lt $num_builders 50 }}
+          <div class="console-builder-summary-grid">
+        {{ else }}
+        <div class="console-builder-summary-flex">
+          <div class="console-header-name">
+            {{ .Name.HTML }}
+          </div>
+          <div class="console-builder-summary-flex">
+        {{ end }}
+
+            {{ $console_name := .Name.Link.Label }}
+
+            {{ range .Builders }}
+              <a class="console-builder-status"
+                 href="{{ .LastFinishedBuildIDLink }}"
+                 title="{{ .LastFinishedBuildID }}"
+                 aria-label="builder {{ .BuilderID }} on console {{ $console_name }} has last status {{ .LastFinishedStatus }}">
                 <div class="console-header-builder status-{{ .LastFinishedStatus }}"></div>
-              {{ else }}
-                <div class="console-list-builder status-{{ .LastFinishedStatus }}"></div>
-              {{ end }}
-            </a>
-          {{ end }}
+              </a>
+            {{ end }}
+          </div>
         </div>
       {{ end }}
       </div>
