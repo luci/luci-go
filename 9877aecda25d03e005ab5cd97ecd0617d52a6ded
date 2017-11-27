@@ -52,6 +52,24 @@
       "revId": "9877aecda25d03e005ab5cd97ecd0617d52a6ded",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "857a62a6_e4500f90",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-27T23:20:43Z",
+      "side": 1,
+      "message": "I mean you can add in:\nLinks(\nrc.Params.ByName(\"project\"),\nrc.Params.ByName(\"group\"), \nrc.Params.ByName(\"bucket\"), \nrc.Params.ByName(\"builder\"))\n\nDoesn\u0027t have to be in this CL tho.",
+      "parentUuid": "cf10babe_33b9c04a",
+      "revId": "9877aecda25d03e005ab5cd97ecd0617d52a6ded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
