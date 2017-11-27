@@ -50,6 +50,11 @@ const lockAcquisitionAttempts = 100
 // timeout is specified.
 const defaultLockPollingInterval = time.Millisecond
 
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
 // computeMutexPaths returns the lock and drain file paths based on the environment,
 // or empty strings if no lock files should be used.
 func computeMutexPaths(env subcommands.Env) (lockFilePath string, drainFilePath string, err error) {
@@ -85,4 +90,17 @@ func createLockBlocker(ctx context.Context) fslock.Blocker {
 		// Returning nil signals that the lock should be retried.
 		return nil
 	}
+}
+
+// blockWhileFileExists blocks until the file located at path no longer exists.
+// For convenience, this method reuses the Blocker interface exposed by fslock
+// and used elsewhere in this package.
+func blockWhileFileExists(path string, blocker fslock.Blocker) error {
+	for fileExists(path) {
+		if err := blocker(); err != nil {
+			return errors.Reason("timed out waiting for drain file to disappear").Err()
+		}
+	}
+
+	return nil
 }
