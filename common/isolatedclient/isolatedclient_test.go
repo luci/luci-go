@@ -15,6 +15,7 @@
 package isolatedclient
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -53,17 +54,31 @@ func TestIsolateServerCaps(t *testing.T) {
 	})
 }
 
-func TestIsolateServerSmall(t *testing.T) {
+func TestIsolateServerUploadSmall(t *testing.T) {
 	t.Parallel()
 	Convey(``, t, func() {
-		testNormal(context.Background(), t, foo, bar)
+		testNormalUpload(context.Background(), t, foo, bar)
 	})
 }
 
-func TestIsolateServerLarge(t *testing.T) {
+func TestIsolateServerUploadLarge(t *testing.T) {
 	t.Parallel()
 	Convey(``, t, func() {
-		testNormal(context.Background(), t, large)
+		testNormalUpload(context.Background(), t, large)
+	})
+}
+
+func TestIsolateServerDownloadSmall(t *testing.T) {
+	t.Parallel()
+	Convey(``, t, func() {
+		testNormalDownload(context.Background(), t, foo, bar)
+	})
+}
+
+func TestIsolateServerDownloadLarge(t *testing.T) {
+	t.Parallel()
+	Convey(``, t, func() {
+		testNormalDownload(context.Background(), t, large)
 	})
 }
 
@@ -74,7 +89,7 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 	t.Parallel()
 	Convey(``, t, func() {
 		server := isolatedfake.New()
-		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
+		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/upload": 1024}}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
 		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry, nil)
@@ -156,7 +171,7 @@ func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest,
 	return digests, contents, expected
 }
 
-func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
+func testNormalUpload(ctx context.Context, t *testing.T, contents ...[]byte) {
 	Convey(``, func() {
 		digests, _, expected := makeItems(contents...)
 		server := isolatedfake.New()
@@ -183,7 +198,27 @@ func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
 	})
 }
 
-func TestRetry(t *testing.T) {
+func testNormalDownload(ctx context.Context, t *testing.T, contents ...[]byte) {
+	Convey(``, func() {
+		server := isolatedfake.New()
+		hashes := make([]isolated.HexDigest, 0, len(contents))
+		for _, file := range contents {
+			hashes = append(hashes, server.Inject(file))
+		}
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		client := New(nil, nil, ts.URL, DefaultNamespace, noRetry, nil)
+		for i, hash := range hashes {
+			var buffer bytes.Buffer
+			err := client.Fetch(ctx, hash, &buffer)
+			So(err, ShouldBeNil)
+			So(buffer.Bytes(), ShouldResemble, contents[i])
+		}
+		So(server.Error(), ShouldBeNil)
+	})
+}
+
+func TestUploadRetry(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
@@ -292,21 +327,21 @@ func TestRetry(t *testing.T) {
 			{
 				name:         "retry gs upload",
 				items:        [][]byte{large},
-				errURL:       "/fake/cloudstorage",
+				errURL:       "/fake/cloudstorage/upload",
 				retryFactory: fastRetry,
 				result:       success,
 			},
 			{
 				name:         "skip retry of gs upload",
 				items:        [][]byte{large},
-				errURL:       "/fake/cloudstorage",
+				errURL:       "/fake/cloudstorage/upload",
 				retryFactory: noRetry,
 				result:       failedPush,
 			},
 			{
 				name:         "gs upload failure is irrelevant for small files",
 				items:        [][]byte{small},
-				fatalURL:     "/fake/cloudstorage",
+				fatalURL:     "/fake/cloudstorage/upload",
 				retryFactory: noRetry,
 				result:       success,
 			},
