@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1987bf23_3fabba94",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-28T20:08:54Z",
+      "side": 1,
+      "message": "What is \u0027Serve\u0027? ServeFunc?",
+      "range": {
+        "startLine": 51,
+        "startChar": 7,
+        "endLine": 51,
+        "endChar": 12
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62d76f76_448f6378",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-28T20:08:54Z",
+      "side": 1,
+      "message": "isn\u0027t this default?",
+      "range": {
+        "startLine": 72,
+        "startChar": 42,
+        "endLine": 72,
+        "endChar": 52
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "874cace1_8fe1023d",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-28T20:08:54Z",
+      "side": 1,
+      "message": "maybe include the port",
+      "range": {
+        "startLine": 74,
+        "startChar": 63,
+        "endLine": 74,
+        "endChar": 69
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebbac57d_8570c1b5",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-28T20:08:54Z",
+      "side": 1,
+      "message": "i think this code is dead. it may happen only if L82 didn\u0027t run yet, but in that case L78 didn\u0027t run either, so killServe would return \"not initialized\"",
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dcc4cc1_f57bb63e",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-28T20:08:54Z",
+      "side": 1,
+      "message": "would it be simpler to just pass listener and ctx as parameters? then you don\u0027t need locking, I think",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 13
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
