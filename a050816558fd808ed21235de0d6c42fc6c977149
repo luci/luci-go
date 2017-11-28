@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "749a9f4f_0a43382b",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-28T19:49:57Z",
+      "side": 1,
+      "message": "I assume this is where \u0027large\u0027 files are supposed to live? Right now isolatedfake has support for downloading files from staging, but I\u0027m not sure if that even makes sense. I just noticed RetrieveResponse from isolateserver seems to give one of two ways of downloading, (a link to GCS, or it\u0027s directly in the content), so I\u0027m not sure how to model that here.",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 8
+      },
+      "revId": "a050816558fd808ed21235de0d6c42fc6c977149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
