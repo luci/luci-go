@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "27dba8e1_e91a6084",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-28T21:48:51Z",
+      "side": 1,
+      "message": "Since this function will typically be generating files, I feel like maybe this should be a WriteCloser so that Downloader can manage closing the files as opposed to the user. This is especially painful for the user since this function gets called in a thread-unsafe way, so if it modifies any closed-over variables, they will need locks. :/",
+      "range": {
+        "startLine": 32,
+        "startChar": 35,
+        "endLine": 32,
+        "endChar": 44
+      },
+      "revId": "a050816558fd808ed21235de0d6c42fc6c977149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "749a9f4f_0a43382b",
         "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
         "patchSetId": 1
