@@ -34,7 +34,9 @@
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
-    "Text": []
+    "Text": [
+      "build successful"
+    ]
   },
   "Trigger": {
     "AuthorName": "",
