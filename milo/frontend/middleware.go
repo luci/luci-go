@@ -55,6 +55,7 @@ var funcMap = template.FuncMap{
 	"startswith":      strings.HasPrefix,
 	"sub":             sub,
 	"toLower":         strings.ToLower,
+	"substitute":      substitute,
 }
 
 // localTime returns a <span> element with t in human format
@@ -152,6 +153,11 @@ func shortHash(s string) string {
 		return s[0:6]
 	}
 	return s
+}
+
+// substitute substitutes "from "with "to" in the given string.
+func substitute(from string, to string, s string) string {
+	return strings.Replace(s, from, to, -1)
 }
 
 // GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from
