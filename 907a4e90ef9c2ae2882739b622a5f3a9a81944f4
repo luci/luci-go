@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3b932241_8a6828b2",
+        "filename": "common/config/validation/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da55ae65_b3ef6379",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3be34161_6980bee4",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8709cfd0_cb757ea7",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3be34161_6980bee4",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 9
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "29dc0304_a7f116c7",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7521e8fd_f346a275",
+      "range": {
+        "startLine": 62,
+        "startChar": 39,
+        "endLine": 62,
+        "endChar": 42
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ed94939_332b8d6d",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 3
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "64d2d76b_dec0ea95",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ed94939_332b8d6d",
+      "range": {
+        "startLine": 77,
+        "startChar": 13,
+        "endLine": 77,
+        "endChar": 15
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6248f8c5_f72a5c31",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 3
@@ -105,6 +195,24 @@
     },
     {
       "key": {
+        "uuid": "06c49b7c_629859b0",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6248f8c5_f72a5c31",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fda36384_613a1541",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 3
@@ -116,6 +224,30 @@
       "writtenOn": "2017-11-27T23:10:27Z",
       "side": 1,
       "message": "let\u0027s pass bytes. The config is not necessarily text and this conversion is expensive (copied file content)",
+      "range": {
+        "startLine": 97,
+        "startChar": 53,
+        "endLine": 97,
+        "endChar": 76
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d47c5646_4641442b",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "I had a question about this with respect to using config.ValidationRequestMessage.\nThe content field within that struct is *string, which means that when the json body is decoded into the config.ValidationRequestMessage, it will stay a base64-encoded string.\nDoes that mean that I should not base64-decode it here and leave it to Validator.Func to decode it and leave a note in the comments that the string is base64-encoded?",
+      "parentUuid": "fda36384_613a1541",
       "range": {
         "startLine": 97,
         "startChar": 53,
@@ -145,6 +277,24 @@
     },
     {
       "key": {
+        "uuid": "744a0a0e_19025559",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af4c539d_5a18389f",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7fbf8d09_a6045c24",
         "filename": "common/config/validation/handler_test.go",
         "patchSetId": 3
@@ -159,6 +309,24 @@
       "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "541be1c9_9be8e643",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fbf8d09_a6045c24",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -179,6 +347,24 @@
     },
     {
       "key": {
+        "uuid": "eaf9f998_212ccd59",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30d38438_1a710c6c",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03b50285_94b85e59",
         "filename": "common/config/validation/handler_test.go",
         "patchSetId": 3
@@ -193,6 +379,24 @@
       "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02855fa7_05a352ea",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "03b50285_94b85e59",
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -216,6 +420,30 @@
       "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e4d0222_8f289d06",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-28T21:47:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "27b1146e_facd33a3",
+      "range": {
+        "startLine": 54,
+        "startChar": 2,
+        "endLine": 56,
+        "endChar": 52
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
