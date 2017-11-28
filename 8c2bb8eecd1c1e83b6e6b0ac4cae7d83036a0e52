@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b55bed65_a3b0ea33",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-28T23:41:23Z",
+      "side": 1,
+      "message": "this is tiny nit to avoid \n\u003chr\u003e\n\u003chr\u003e \n\nwhen .Fields are empty",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 29
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "036cd48f_da090724",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-28T23:41:23Z",
+      "side": 1,
+      "message": "modified this part to pass \"Tok\"",
+      "range": {
+        "startLine": 208,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 2
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14297463_4b86cec9",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-28T23:41:23Z",
+      "side": 1,
+      "message": "and modified this to put Tok into URLs",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 74
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

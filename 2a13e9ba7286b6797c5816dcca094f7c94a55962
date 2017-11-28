@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7be7de29_ec52eb37",
+        "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-28T23:41:23Z",
+      "side": 0,
+      "message": "this was uses, default mux wasn\u0027t served by anything.",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 20
+      },
+      "revId": "2a13e9ba7286b6797c5816dcca094f7c94a55962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
