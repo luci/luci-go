@@ -32,7 +32,6 @@ import (
 
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/auth/localauth/rpcs"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -40,6 +39,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/lucictx"
+
+	"go.chromium.org/luci/common/auth/internal/localsrv"
 )
 
 // TokenGenerator produces access tokens.
@@ -104,13 +105,7 @@ type Server struct {
 	// Port is a local TCP port to bind to or 0 to allow the OS to pick one.
 	Port int
 
-	l        sync.Mutex
-	secret   []byte             // the clients are expected to send this secret
-	listener net.Listener       // to know what to stop in killServe, nil after that
-	wg       sync.WaitGroup     // +1 for each request being processed now
-	ctx      context.Context    // derived from ctx in Start, never resets to nil after that
-	cancel   context.CancelFunc // cancels 'ctx'
-	stopped  chan struct{}      // closed when serve() goroutine stops
+	srv localsrv.Server
 
 	testingServeHook func() // called right before serving
 }
@@ -126,28 +121,19 @@ type Server struct {
 //
 // The server must be eventually stopped with Stop().
 func (s *Server) Start(ctx context.Context) (*lucictx.LocalAuth, error) {
-	s.l.Lock()
-	defer s.l.Unlock()
-
-	if s.ctx != nil {
-		return nil, fmt.Errorf("already initialized")
-	}
-
-	// Bind to the port.
-	la, err := s.initializeLocked(ctx)
+	la, err := s.initLocalAuth(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to initialize LocalAuth").Err()
 	}
 
-	// Start serving in background.
-	s.stopped = make(chan struct{})
-	go func() {
-		defer close(s.stopped)
-		if err := s.serve(); err != nil {
-			logging.WithError(err).Errorf(s.ctx, "Unexpected error in the local auth server loop")
-		}
-	}()
+	addr, err := s.srv.Start(ctx, "local_auth", s.Port, func(c context.Context, l net.Listener, wg *sync.WaitGroup) error {
+		return s.serve(c, l, wg, la.Secret)
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to start the local server").Err()
+	}
 
+	la.RPCPort = uint32(addr.Port)
 	return la, nil
 }
 
@@ -160,31 +146,11 @@ func (s *Server) Start(ctx context.Context) (*lucictx.LocalAuth, error) {
 // Uses the given context for the deadline when waiting for the serving loop
 // to stop.
 func (s *Server) Stop(ctx context.Context) error {
-	// Close the socket. It notifies the serving loop to stop.
-	if err := s.killServe(); err != nil {
-		return err
-	}
-
-	if s.stopped == nil {
-		return nil // the serving loop is not running
-	}
-
-	// Wait for the serving loop to actually stop.
-	select {
-	case <-s.stopped:
-		logging.Debugf(ctx, "The local auth server stopped")
-	case <-clock.After(ctx, 10*time.Second):
-		logging.Errorf(ctx, "Giving up waiting for the local auth server to stop")
-	}
-
-	return nil
+	return s.srv.Stop(ctx)
 }
 
-// initializeLocked binds the server to a local port and prepares it for
-// serving.
-//
-// Called under the lock.
-func (s *Server) initializeLocked(ctx context.Context) (*lucictx.LocalAuth, error) {
+// initLocalAuth generates new LocalAuth struct with RPC port blank.
+func (s *Server) initLocalAuth(ctx context.Context) (*lucictx.LocalAuth, error) {
 	// Build a sorted list of LocalAuthAccount to put into the context, grab
 	// emails from the generators.
 	ids := make([]string, 0, len(s.TokenGenerators))
@@ -209,17 +175,7 @@ func (s *Server) initializeLocked(ctx context.Context) (*lucictx.LocalAuth, erro
 		return nil, err
 	}
 
-	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", s.Port))
-	if err != nil {
-		return nil, err
-	}
-
-	s.ctx, s.cancel = context.WithCancel(ctx)
-	s.listener = ln
-	s.secret = secret
-
 	return &lucictx.LocalAuth{
-		RPCPort:          uint32(ln.Addr().(*net.TCPAddr).Port),
 		Secret:           secret,
 		Accounts:         accounts,
 		DefaultAccountID: s.DefaultAccountID,
@@ -227,67 +183,19 @@ func (s *Server) initializeLocked(ctx context.Context) (*lucictx.LocalAuth, erro
 }
 
 // serve runs the serving loop.
-//
-// It unblocks once killServe is called and all pending requests are served.
-//
-// Returns nil if serving was stopped by killServe or non-nil if it failed for
-// some other reason.
-func (s *Server) serve() (err error) {
-	s.l.Lock()
-	if s.listener == nil {
-		s.l.Unlock()
-		return fmt.Errorf("already closed")
-	}
-	listener := s.listener // accessed outside the lock
-	srv := http.Server{
-		Handler: &protocolHandler{
-			ctx:    s.ctx,
-			wg:     &s.wg,
-			secret: s.secret,
-			tokens: s.TokenGenerators,
-		},
-	}
-	s.l.Unlock()
-
-	// Notify unit tests that we have initialized.
+func (s *Server) serve(ctx context.Context, l net.Listener, wg *sync.WaitGroup, secret []byte) error {
 	if s.testingServeHook != nil {
 		s.testingServeHook()
 	}
-
-	err = srv.Serve(listener) // blocks until killServe() is called
-	s.wg.Wait()               // waits for all pending requests to finish
-
-	// If it was a planned shutdown with killServe(), ignore the error. It says
-	// that the listening socket was closed.
-	s.l.Lock()
-	if s.listener == nil {
-		err = nil
+	srv := http.Server{
+		Handler: &protocolHandler{
+			ctx:    ctx,
+			wg:     wg,
+			secret: secret,
+			tokens: s.TokenGenerators,
+		},
 	}
-	s.l.Unlock()
-
-	return
-}
-
-// killServe notifies the serving goroutine to stop (if it is running).
-func (s *Server) killServe() error {
-	s.l.Lock()
-	defer s.l.Unlock()
-
-	if s.ctx == nil {
-		return fmt.Errorf("not initialized")
-	}
-
-	// Stop accepting requests, unblocks serve(). Do it only once.
-	if s.listener != nil {
-		logging.Debugf(s.ctx, "Stopping the local auth server...")
-		if err := s.listener.Close(); err != nil {
-			logging.WithError(err).Errorf(s.ctx, "Failed to close the listening socket")
-		}
-		s.listener = nil
-	}
-	s.cancel() // notify all running handlers to stop
-
-	return nil
+	return srv.Serve(l)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
