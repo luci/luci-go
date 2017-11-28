@@ -31,33 +31,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-func TestServerLifecycle(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	Convey("Double Start", t, func() {
-		s := Server{}
-		defer s.Stop(ctx)
-		_, err := s.Start(ctx)
-		So(err, ShouldBeNil)
-		_, err = s.Start(ctx)
-		So(err, ShouldErrLike, "already initialized")
-	})
-
-	Convey("Start after Stop", t, func() {
-		s := Server{}
-		_, err := s.Start(ctx)
-		So(err, ShouldBeNil)
-		So(s.Stop(ctx), ShouldBeNil)
-		_, err = s.Start(ctx)
-		So(err, ShouldErrLike, "already initialized")
-	})
-
-}
 
 func TestProtocol(t *testing.T) {
 	t.Parallel()
