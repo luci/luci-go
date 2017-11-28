@@ -112,7 +112,7 @@ func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
 		Duration:    b.Times.Duration(),
 		Type:        ui.Summary, // This is more or less ignored.
 		LevelsDeep:  1,
-		Text:        []string{}, // Status messages.  Eg "This build failed on..xyz"
+		Text:        mergeText(b.Text), // Status messages.  Eg "This build failed on..xyz"
 	}
 
 	return sum
