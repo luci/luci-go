@@ -112,6 +112,17 @@
     <h2>No Pending Build Requests</h2>
   {{ end }}
   </div>
+
+  {{- if .Builder.Groups -}}
+  <div class="column">
+    <h2>Builder groups</h2>
+    <ul>
+    {{- range .Builder.Groups -}}
+      <li>{{ .HTML }}</li>
+    {{- end -}}
+    </ul>
+  </div>
+  {{- end }}
 </div>
 
 <div class="clear"></div>
