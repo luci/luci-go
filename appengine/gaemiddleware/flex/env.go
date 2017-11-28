@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/pprof"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tsmon"
 
@@ -139,6 +140,7 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 	},
 	MonitoringMiddleware: globalTsMonState.Middleware,
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
+		pprof.InstallHandlers(r, base)
 		// Install a handler for basic health checking. We respond with HTTP 200 to
 		// indicate that we're always healthy.
 		r.GET("/_ah/health", router.MiddlewareChain{},
