@@ -23,7 +23,9 @@
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
-    "Text": []
+    "Text": [
+      "failed compile (with patch)"
+    ]
   },
   "Trigger": {
     "AuthorName": "",
