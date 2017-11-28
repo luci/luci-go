@@ -15,44 +15,58 @@
 package datacenters
 
 import (
+	"database/sql"
 	"testing"
-
-	"github.com/DATA-DOG/go-sqlmock"
 
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
 	"golang.org/x/net/context"
 
+	_ "github.com/mattn/go-sqlite3"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidateDatacenters(t *testing.T) {
-	Convey("EnsureDatacenters", t, func() {
-		db, m, _ := sqlmock.New()
-		defer func() {
-			So(m.ExpectationsWereMet(), ShouldBeNil)
-		}()
-		defer db.Close()
-		c := database.With(context.Background(), db)
+	Convey("Ensure", t, func() {
+		type datacenter struct {
+			Name, Description string
+		}
 
-		updateStmt := `^UPDATE datacenters SET description = \? WHERE id = \?$`
-		deleteStmt := `^DELETE FROM datacenters WHERE id = \?$`
-		insertStmt := `^INSERT INTO datacenters \(name, description\) VALUES \(\?, \?\)$`
-		selectStmt := `^SELECT id, name, description FROM datacenters$`
-		m.ExpectPrepare(updateStmt)
-		m.ExpectPrepare(deleteStmt)
-		m.ExpectPrepare(insertStmt)
-		query := m.ExpectQuery(selectStmt)
-		rows := sqlmock.NewRows([]string{"id", "name", "description"})
+		test := func(datacenters []*config.DatacenterConfig, preexisting []datacenter, expected []datacenter) {
+			// Set up a new database.
+			db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
+			So(err, ShouldBeNil)
+			defer db.Close()
+			_, err = db.Exec("CREATE TABLE datacenters (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255), description VARCHAR(255))")
+			So(err, ShouldBeNil)
+			for _, row := range preexisting {
+				_, err = db.Exec("INSERT INTO datacenters (name, description) VALUES (?, ?)", row.Name, row.Description)
+				So(err, ShouldBeNil)
+			}
 
-		test := func(datacenters []*config.DatacenterConfig) {
-			query.WillReturnRows(rows)
-			So(EnsureDatacenters(c, datacenters), ShouldBeNil)
+			// Manipulate the database.
+			So(EnsureDatacenters(database.With(context.Background(), db), datacenters), ShouldBeNil)
+
+			// Make assertions about the state of the database.
+			actual, _ := db.Query("SELECT name, description FROM datacenters")
+			i := 0
+			defer actual.Close()
+			for actual.Next() {
+				So(i, ShouldBeLessThan, len(expected))
+				var name, description string
+				err = actual.Scan(&name, &description)
+				So(err, ShouldBeNil)
+				So(name, ShouldEqual, expected[i].Name)
+				So(description, ShouldEqual, expected[i].Description)
+				i += 1
+			}
+			So(i, ShouldEqual, len(expected))
 		}
 
 		Convey("empty", func() {
-			test(nil)
+			test(nil, nil, nil)
 		})
 
 		Convey("insert", func() {
@@ -66,29 +80,48 @@ func TestValidateDatacenters(t *testing.T) {
 					Description: "description",
 				},
 			}
-			m.ExpectExec(insertStmt).WithArgs(datacenters[0].Name, datacenters[0].Description).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertStmt).WithArgs(datacenters[1].Name, datacenters[1].Description).WillReturnResult(sqlmock.NewResult(2, 1))
-			test(datacenters)
+			expected := []datacenter{
+				{
+					Name:        datacenters[0].Name,
+					Description: datacenters[0].Description,
+				},
+				{
+					Name:        datacenters[1].Name,
+					Description: datacenters[1].Description,
+				},
+			}
+			test(datacenters, nil, expected)
 		})
 
 		Convey("update", func() {
 			datacenters := []*config.DatacenterConfig{
 				{
-					Name: "datacenter",
+					Name:        "datacenter",
+					Description: "description 1",
 				},
 			}
-			rows.AddRow(1, datacenters[0].Name, "description")
-			m.ExpectPrepare(updateStmt)
-			m.ExpectExec(updateStmt).WithArgs(datacenters[0].Description, 1).WillReturnResult(sqlmock.NewResult(1, 1))
-			test(datacenters)
+			preexisting := []datacenter{
+				{
+					Name:        datacenters[0].Name,
+					Description: "description 2",
+				},
+			}
+			expected := []datacenter{
+				{
+					Name:        datacenters[0].Name,
+					Description: datacenters[0].Description,
+				},
+			}
+			test(datacenters, preexisting, expected)
 		})
 
 		Convey("delete", func() {
-			datacenters := []*config.DatacenterConfig{}
-			rows.AddRow(1, "datacenter", "description")
-			m.ExpectPrepare(deleteStmt)
-			m.ExpectExec(deleteStmt).WithArgs(1).WillReturnResult(sqlmock.NewResult(1, 1))
-			test(datacenters)
+			preexisting := []datacenter{
+				{
+					Name: "datacenter",
+				},
+			}
+			test(nil, preexisting, nil)
 		})
 
 		Convey("ok", func() {
@@ -98,8 +131,20 @@ func TestValidateDatacenters(t *testing.T) {
 					Description: "description",
 				},
 			}
-			rows.AddRow(1, datacenters[0].Name, datacenters[0].Description)
-			test(datacenters)
+			preexisting := []datacenter{
+				{
+					Name:        datacenters[0].Name,
+					Description: datacenters[0].Description,
+				},
+			}
+			expected := []datacenter{
+				{
+					Name:        datacenters[0].Name,
+					Description: datacenters[0].Description,
+				},
+			}
+			test(datacenters, preexisting, expected)
 		})
+
 	})
 }
