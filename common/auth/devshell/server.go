@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package devshell implements Devshell protocol for locally getting auth token.
+//
+// Some Google Cloud tools know how to use it for authentication.
 package devshell
 
 import (

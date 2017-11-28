@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/client/authcli"
 	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/devshell"
+	"go.chromium.org/luci/common/auth/devshell"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exitcode"
