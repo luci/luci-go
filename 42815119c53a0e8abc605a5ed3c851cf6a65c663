@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "5ee59336_332bf74d",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-28T01:37:21Z",
+      "side": 1,
+      "message": "Looks like it works.",
+      "parentUuid": "1b674ba5_6d1e6d8a",
+      "range": {
+        "startLine": 62,
+        "startChar": 41,
+        "endLine": 62,
+        "endChar": 48
+      },
+      "revId": "42815119c53a0e8abc605a5ed3c851cf6a65c663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3a0ec9a_2e29b245",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "93ce9bb6_c47fbe6e",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-28T01:37:21Z",
+      "side": 1,
+      "message": "Generally no, unless it\u0027s (for example) an infra failure in swarming, but swarming failed to provide us with a failure reason.  In that case I think \"Internal Failure\" is appropriate.",
+      "parentUuid": "d3a0ec9a_2e29b245",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 26
+      },
+      "revId": "42815119c53a0e8abc605a5ed3c851cf6a65c663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca68e0ef_db88d63c",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
@@ -91,6 +139,30 @@
       "revId": "42815119c53a0e8abc605a5ed3c851cf6a65c663",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40976c53_c5cd054b",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-28T01:37:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca68e0ef_db88d63c",
+      "range": {
+        "startLine": 71,
+        "startChar": 19,
+        "endLine": 71,
+        "endChar": 26
+      },
+      "revId": "42815119c53a0e8abc605a5ed3c851cf6a65c663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
