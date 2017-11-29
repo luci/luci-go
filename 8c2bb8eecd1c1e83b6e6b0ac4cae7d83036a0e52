@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "f1abe76d_33814582",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T22:40:37Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "30a3ae6c_93900c32",
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "036cd48f_da090724",
         "filename": "server/pprof/internal/pprof.go",
         "patchSetId": 1
@@ -396,6 +414,24 @@
       "side": 1,
       "message": "Well, it is embarrassing really, but there\u0027s no simple way to get host URL from deep inside a request handler. It is available only in *http.Request which we don\u0027t put in context.",
       "parentUuid": "deb9bb65_8a7c310a",
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "505cc7bc_6fe0e88f",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T22:40:37Z",
+      "side": 1,
+      "message": "gross :\u0027( \u003ccat kind\u003d\"business cat\"\u003ewe should fix that....\u003c/cat\u003e",
+      "parentUuid": "d0492191_bbae9e0e",
       "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
