@@ -49,6 +49,10 @@ const (
 // mode.
 const dsCacheDisabledSetting = "Disabled"
 
+const configServiceEmail = "luci-config@appspot.gserviceaccount.com"
+
+const configServiceAdmins = "administrators"
+
 // Settings are stored in the datastore via appengine/gaesettings package.
 type Settings struct {
 	// ConfigServiceHost is host name (and port) of the luci-config service to
@@ -60,8 +64,14 @@ type Settings struct {
 	// CacheExpirationSec is how long to hold configs in local cache.
 	CacheExpirationSec int `json:"cache_expiration_sec"`
 
-	// DatastoreCacheMode, is the datastore caching mode.
+	// DatastoreCacheMode is the datastore caching mode.
 	DatastoreCacheMode DSCacheMode `json:"datastore_enabled"`
+
+	// ConfigServiceEmail is the email address that identifies luci-config
+	ConfigServiceEmail string `json:"config_service_email"`
+
+	// Administrators is the admin group of config-service
+	Administrators string `json:"administrators"`
 }
 
 // SetIfChanged sets "s" to be the new Settings if it differs from the current
@@ -123,6 +133,8 @@ func DefaultSettings(c context.Context) Settings {
 	return Settings{
 		CacheExpirationSec: exp,
 		DatastoreCacheMode: DSCacheDisabled,
+		ConfigServiceEmail: configServiceEmail,
+		Administrators:     configServiceAdmins,
 	}
 }
 
@@ -189,6 +201,30 @@ independent cron job out of band with any user requests. See
 <a href="https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware/#hdr-Cron_setup">gaemiddleware</a>
 package doc for instructions how to setup this cron job.</p>`,
 		},
+		{
+			ID:    "ConfigServiceEmail",
+			Title: "Email of config service",
+			Type:  settings.UIFieldText,
+			Validator: func(v string) error {
+				if !strings.ContainsRune(v, '@') {
+					return fmt.Errorf("email must be a valid email")
+				}
+				return nil
+			},
+			Help: `<p>This is the email associated with the Config service host.</p>`,
+		},
+		{
+			ID:    "Administrators",
+			Title: "Administrator group of config service",
+			Type:  settings.UIFieldText,
+			Validator: func(v string) error {
+				if v == "" {
+					return fmt.Errorf("administrator group cannot be an empty string")
+				}
+				return nil
+			},
+			Help: `<p>This is the name of the administrator group of the config service.</p>`,
+		},
 	}, nil
 }
 
@@ -217,6 +253,8 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 		"ConfigServiceHost":  s.ConfigServiceHost,
 		"CacheExpirationSec": strconv.Itoa(s.CacheExpirationSec),
 		"DatastoreCacheMode": cacheModeString,
+		"ConfigServiceEmail": s.ConfigServiceEmail,
+		"Administrators":     s.Administrators,
 	}, nil
 }
 
@@ -235,6 +273,8 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	modified := Settings{
 		ConfigServiceHost:  values["ConfigServiceHost"],
 		DatastoreCacheMode: dsMode,
+		ConfigServiceEmail: values["ConfigServiceEmail"],
+		Administrators:     values["Administrators"],
 	}
 
 	var err error
