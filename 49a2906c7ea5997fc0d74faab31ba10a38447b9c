@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7e9afee4_a7715ad8",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T00:24:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1987bf23_3fabba94",
+      "range": {
+        "startLine": 51,
+        "startChar": 7,
+        "endLine": 51,
+        "endChar": 12
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "62d76f76_448f6378",
         "filename": "common/auth/internal/localsrv/localsrv.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f46b5e1e_7012de40",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T00:24:07Z",
+      "side": 1,
+      "message": "No, default is \"listen on all interfaces\". We don\u0027t want this, it would be pretty bad.",
+      "parentUuid": "62d76f76_448f6378",
+      "range": {
+        "startLine": 72,
+        "startChar": 42,
+        "endLine": 72,
+        "endChar": 52
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "77a6871b_e9cfbacc",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T00:24:07Z",
+      "side": 1,
+      "message": "nah, it is always 0 currently in all real applications",
+      "parentUuid": "874cace1_8fe1023d",
+      "range": {
+        "startLine": 74,
+        "startChar": 63,
+        "endLine": 74,
+        "endChar": 69
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ebbac57d_8570c1b5",
         "filename": "common/auth/internal/localsrv/localsrv.go",
         "patchSetId": 3
@@ -85,6 +157,24 @@
       "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b613c87_5e159d5b",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T00:24:07Z",
+      "side": 1,
+      "message": "Right. Removed.",
+      "parentUuid": "ebbac57d_8570c1b5",
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -108,6 +198,30 @@
       "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff4c1979_7854ff82",
+        "filename": "common/auth/internal/localsrv/localsrv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T00:24:07Z",
+      "side": 1,
+      "message": "s.listener must be a member of Server to be able to nil it in killServe (see line 170). It acts as a signal that we are closing gracefully, see line 144.",
+      "parentUuid": "6dcc4cc1_f57bb63e",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 13
+      },
+      "revId": "49a2906c7ea5997fc0d74faab31ba10a38447b9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
