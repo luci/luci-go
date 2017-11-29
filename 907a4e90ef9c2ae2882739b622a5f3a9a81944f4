@@ -260,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "6b4dbfbf_69cf34a7",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-29T01:15:30Z",
+      "side": 1,
+      "message": "nodir has more context, but in light of what you wrote above, \nyou should base64-decode first *here* and pass result of decoding in whatever form is more efficient.\n\nLooking at https://golang.org/pkg/encoding/base64/, it\u0027d probably be bytes.\nBut maybe we can pass io.Reader instead (see  https://golang.org/pkg/encoding/base64/#NewDecoder),\nwhich could be more efficient for parsing longish config files. The downside is that implementations of Validator.Function will have to perform error checking of base64 format decoding on their side (basically, closing the io.Reader).",
+      "parentUuid": "d47c5646_4641442b",
+      "range": {
+        "startLine": 97,
+        "startChar": 53,
+        "endLine": 97,
+        "endChar": 76
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "af4c539d_5a18389f",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 3
