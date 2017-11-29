@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "15365058_d7c48b3c",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-29T22:59:49Z",
+      "side": 1,
+      "message": "I switched this to WriteCloser so that Downloader closes the opened file automatically, and added a comment that any mutable state captured by WriterGenerator should be accessed atomically. I\u0027m not sure if this is sufficient.",
+      "parentUuid": "27dba8e1_e91a6084",
+      "range": {
+        "startLine": 32,
+        "startChar": 35,
+        "endLine": 32,
+        "endChar": 44
+      },
+      "revId": "a050816558fd808ed21235de0d6c42fc6c977149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "749a9f4f_0a43382b",
         "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
         "patchSetId": 1
