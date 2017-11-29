@@ -22,9 +22,6 @@ package module
 import (
 	"net/http"
 
-	// Importing pprof implicitly installs "/debug/*" profiling handlers.
-	_ "net/http/pprof"
-
 	adminPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
