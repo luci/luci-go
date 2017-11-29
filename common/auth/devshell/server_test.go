@@ -41,12 +41,10 @@ func TestProtocol(t *testing.T) {
 
 	Convey("With server", t, func(c C) {
 		s := Server{
-			Source: tokenSource{
-				token: &oauth2.Token{
-					AccessToken: "tok1",
-					Expiry:      clock.Now(ctx).Add(30 * time.Minute),
-				},
-			},
+			Source: oauth2.StaticTokenSource(&oauth2.Token{
+				AccessToken: "tok1",
+				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
+			}),
 			Email: "some@example.com",
 		}
 		p, err := s.Start(ctx)
@@ -66,14 +64,6 @@ func TestProtocol(t *testing.T) {
 			So(call(conn, "{BADJSON"), ShouldEqual, `["failed to deserialize from JSON: invalid character 'B' looking for beginning of object key string"]`)
 		})
 	})
-}
-
-type tokenSource struct {
-	token *oauth2.Token
-}
-
-func (t tokenSource) Token() (*oauth2.Token, error) {
-	return t.token, nil
 }
 
 func call(conn net.Conn, req string) string {
