@@ -216,34 +216,55 @@
 <div class="clear"></div>
 
 
-<div class="console-row">
+<div id="console" class="console-row merged">
 
   
   <div class="console-column" style="justify-content: flex-end">
     <div class="console-row">
       <div class="console-commit-column">
       
-        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357446871">Wednesday, 12-Dec-12 12:12:12 UTC</span></div>
-      
-        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357447871">Wednesday, 12-Dec-12 12:12:11 UTC</span></div>
-      
-      </div>
-      <div class="console-commit-column">
-      
         <div class="console-commit-item">
-          <a href="blah%20blah%20blah">
-            <span class="commit" title="Me too.">
-              x@example.com
-            </span>
-          </a>
+          <div class="console-commit-summary">
+            <div class="console-commit-time"><span class="local-time" data-timestamp="-6418357446871">Wednesday, 12-Dec-12 12:12:12 UTC</span></div>
+            <div class="console-commit-author">
+              <a href="blah%20blah%20blah" aria-label="commit by x@example.com">
+                <span class="commit" title="Me too.">
+                  x@example.com
+                </span>
+              </a>
+            </div>
+          </div>
+          <div class="console-commit-description">
+            <div class="console-commit-description-overlay">
+              <p>
+                
+                  Me too.<br>
+                
+              </p>
+            </div>
+          </div>
         </div>
       
         <div class="console-commit-item">
-          <a href="blah%20blah%20blah%201">
-            <span class="commit" title="I did something.">
-              y@example.com
-            </span>
-          </a>
+          <div class="console-commit-summary">
+            <div class="console-commit-time"><span class="local-time" data-timestamp="-6418357447871">Wednesday, 12-Dec-12 12:12:11 UTC</span></div>
+            <div class="console-commit-author">
+              <a href="blah%20blah%20blah%201" aria-label="commit by y@example.com">
+                <span class="commit" title="I did something.">
+                  y@example.com
+                </span>
+              </a>
+            </div>
+          </div>
+          <div class="console-commit-description">
+            <div class="console-commit-description-overlay">
+              <p>
+                
+                  I did something.<br>
+                
+              </p>
+            </div>
+          </div>
         </div>
       
       </div>
@@ -253,7 +274,7 @@
   
   <div class="console-column"><div class="console-top-item">cat1</div>
 						<div class="console-top-row"><div class="console-column"><div class="console-top-item">cat2</div>
-						<div class="console-top-row"><div class="console-builder-column" style="flex-grow: 1"><div><span class="console-InfraFailure"><a class="console-builder-item" href="/tester" title="tester">tst</a></span></div><div class="console-build-column"><div><a class="console-cell-top status-Success" href="#invalid-build-id"></a></div><div><a class="console-cell-middle status-Success" href="#invalid-build-id"></a></div></div></div></div></div></div></div>
+						<div class="console-top-row"><div class="console-builder-column" style="flex-grow: 1"><div><span class="console-InfraFailure"><a class="console-builder-item" href="/tester" title="">tst</a></span></div><div class="console-build-column"><div class="console-cell-container"><a class="console-cell-top status-Success" href="#invalid-build-id" title=""></a><div class="console-cell-spacer"></div></div><div class="console-cell-container"><a class="console-cell-middle status-Success" href="#invalid-build-id" title=""></a><div class="console-cell-spacer"></div></div></div></div></div></div></div></div>
 </div>
 
 <div class="epiloge" style="margin-top: 1em">
@@ -264,7 +285,44 @@
   <a href="?numbuilds=100">100</a>
   <a href="?numbuilds=200">200</a>
   )
+  [
+    <a href="#" id="expand">expand</a>
+    <a href="#" id="merge" style="display: none;">collapse</a>
+  ]
 </div>
+<script>
+(function () {
+  'use strict';
+  $("#expand").click(function() {
+    $("#console").toggleClass("merged", false);
+    let sizes = [];
+    let width = 0;
+    $("#console").children("div").each(function() {
+      width += $(this).width();
+    });
+    $(".console-commit-description").each(function() {
+      sizes.push($(this).height());
+    });
+    console.log("sizes: " + sizes)
+    $(".console-build-column").each(function() {
+      let containers = $(this).find(".console-cell-spacer");
+      for (let i in sizes) {
+        $(containers[i]).height(sizes[i]);
+      }
+    });
+    $(".console-commit-description-overlay").each(function() {
+      $(this).width(width);
+    });
+    $("#merge").show();
+    $(this).hide();
+  });
+  $("#merge").click(function() {
+    $("#console").toggleClass("merged", true);
+    $("#expand").show();
+    $(this).hide();
+  });
+})();
+</script>
 
 
   <footer>
