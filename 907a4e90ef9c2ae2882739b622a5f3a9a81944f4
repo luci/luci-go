@@ -308,6 +308,30 @@
     },
     {
       "key": {
+        "uuid": "d057e2a2_49ad5d94",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-29T20:02:42Z",
+      "side": 1,
+      "message": "Nodir and I talked this morning and we just decided to change the proto file instead so that content is []byte. Then, it already base64 decodes for us in the json decoding.",
+      "parentUuid": "49b26d5b_012f6859",
+      "range": {
+        "startLine": 97,
+        "startChar": 53,
+        "endLine": 97,
+        "endChar": 76
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "af4c539d_5a18389f",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 3
