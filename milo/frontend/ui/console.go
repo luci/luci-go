@@ -416,7 +416,8 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		}
 		// Write current state's information.
 		must(fmt.Fprintf(buffer,
-			`<div><a class="console-%s status-%s" href="%s"></a></div>`,
+			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s">`+
+				`</a><div class="console-cell-spacer"></div></div>`,
 			class, status, link))
 
 		// Update state.
