@@ -17,9 +17,6 @@ package main
 import (
 	"net/http"
 
-	// Importing pprof implicitly installs "/debug/*" profiling handlers.
-	_ "net/http/pprof"
-
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
@@ -79,7 +76,6 @@ func main() {
 	base := mw.Base().Extend(gsvc.Base)
 	svr.InstallHandlers(r, base)
 
-	http.Handle("/", r)
 	logging.Infof(c, "Listening on port 8080...")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		logging.WithError(err).Errorf(c, "Failed HTTP listen.")

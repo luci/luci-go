@@ -17,9 +17,6 @@ package module
 import (
 	"net/http"
 
-	// Importing pprof implicitly installs "/debug/*" profiling handlers.
-	_ "net/http/pprof"
-
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"

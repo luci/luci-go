@@ -20,11 +20,6 @@ inbound_services:
   - warmup
 
 handlers:
-- url: "/debug/*"
-  script: _go_app
-  secure: always
-  login: admin
-
 - url: "/internal/*"
   script: _go_app
   secure: always
