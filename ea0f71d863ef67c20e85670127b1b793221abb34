@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "17526e3d_883fd0bb",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-29T22:30:35Z",
+      "side": 1,
+      "message": "Maybe log this case? Or add a comment about this behavior? This generally shouldn\u0027t happen correct?\n\nAlternatively, maybe add this method to BuilderRef, since it\u0027s closer to the frontend and in some sense should tolerate this better...?",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 11
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ede5867_a7c50cc8",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-11-29T22:30:35Z",
+      "side": 1,
+      "message": "This is pretty simple, so couldn\u0027t you expose \"strings.Split\" in middleware.go as \"split\"? Since Description is exported anyway, it ends up being a little bit more general. I\u0027m not sure what the goal is on determining what goes into middleware.go.",
+      "range": {
+        "startLine": 131,
+        "startChar": 17,
+        "endLine": 131,
+        "endChar": 26
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
