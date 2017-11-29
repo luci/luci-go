@@ -160,24 +160,33 @@
 <div class="clear"></div>
 
 <!-- Container -->
-<div class="console-row">
+<div id="console" class="console-row merged">
 
   <!-- Commits -->
   <div class="console-column" style="justify-content: flex-end">
     <div class="console-row">
       <div class="console-commit-column">
       {{ range $console.Commit }}
-        <div class="console-commit-item">{{ .CommitTime | localTime "N/A" }}</div>
-      {{ end }}
-      </div>
-      <div class="console-commit-column">
-      {{ range $console.Commit }}
         <div class="console-commit-item">
-          <a href="{{.Revision.URL}}">
-            <span class="commit" title="{{ .Description }}">
-              {{ .AuthorEmail }}
-            </span>
-          </a>
+          <div class="console-commit-summary">
+            <div class="console-commit-time">{{ .CommitTime | localTime "N/A" }}</div>
+            <div class="console-commit-author">
+              <a href="{{.Revision.URL}}" aria-label="commit by {{ .AuthorEmail }}">
+                <span class="commit" title="{{ .Description }}">
+                  {{ .AuthorEmail }}
+                </span>
+              </a>
+            </div>
+          </div>
+          <div class="console-commit-description">
+            <div class="console-commit-description-overlay">
+              <p>
+                {{ range .DescLines }}
+                  {{ . }}<br>
+                {{ end }}
+              </p>
+            </div>
+          </div>
         </div>
       {{ end }}
       </div>
@@ -196,6 +205,43 @@
   <a href="?numbuilds=100">100</a>
   <a href="?numbuilds=200">200</a>
   )
+  [
+    <a href="#" id="expand">expand</a>
+    <a href="#" id="merge" style="display: none;">collapse</a>
+  ]
 </div>
+<script>
+(function () {
+  'use strict';
+  $("#expand").click(function() {
+    $("#console").toggleClass("merged", false);
+    let sizes = [];
+    let width = 0;
+    $("#console").children("div").each(function() {
+      width += $(this).width();
+    });
+    $(".console-commit-description").each(function() {
+      sizes.push($(this).height());
+    });
+    console.log("sizes: " + sizes)
+    $(".console-build-column").each(function() {
+      let containers = $(this).find(".console-cell-spacer");
+      for (let i in sizes) {
+        $(containers[i]).height(sizes[i]);
+      }
+    });
+    $(".console-commit-description-overlay").each(function() {
+      $(this).width(width);
+    });
+    $("#merge").show();
+    $(this).hide();
+  });
+  $("#merge").click(function() {
+    $("#console").toggleClass("merged", true);
+    $("#expand").show();
+    $(this).hide();
+  });
+})();
+</script>
 
 {{end}} <!-- Body -->

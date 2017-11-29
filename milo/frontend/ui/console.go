@@ -304,7 +304,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		buffer, `<span class="%s"><a class="console-builder-item" href="/%s" title="%s">%s</a></span>`,
 		template.HTMLEscapeString(extraStatus),
 		template.HTMLEscapeString(br.Name),
-		template.HTMLEscapeString(br.Name),
+		template.HTMLEscapeString(br.Builder.Name()),
 		template.HTMLEscapeString(br.ShortName)))
 	must(buffer.WriteString(`</div>`))
 
@@ -416,8 +416,9 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		}
 		// Write current state's information.
 		must(fmt.Fprintf(buffer,
-			`<div><a class="console-%s status-%s" href="%s"></a></div>`,
-			class, status, link))
+			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
+				`</a><div class="console-cell-spacer"></div></div>`,
+			class, status, link, br.Builder.Name()))
 
 		// Update state.
 		state = nextState

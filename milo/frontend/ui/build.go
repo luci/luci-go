@@ -127,6 +127,11 @@ func (c *Commit) Title() string {
 	}
 }
 
+// DescLines returns the description as a slice, one line per item.
+func (c *Commit) DescLines() []string {
+	return strings.Split(c.Description, "\n")
+}
+
 // BuildProgress is a way to show progress.  Percent should always be specified.
 type BuildProgress struct {
 	// The total number of entries. Shows up as a tooltip.  Leave at 0 to

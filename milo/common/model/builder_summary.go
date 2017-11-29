@@ -64,6 +64,15 @@ func (b *BuilderSummary) SelfLink() string {
 	return BuilderIDLink(b.BuilderID, b.ProjectID)
 }
 
+// Name returns the last component of the BuilderID.
+func (b *BuilderSummary) Name() string {
+	comp := strings.SplitN(b.BuilderID, "/", 3)
+	if len(comp) != 3 {
+		return ""
+	}
+	return comp[2]
+}
+
 // BuilderIDLink gets a builder link from builder ID and project.
 // Depends on routes.go.
 func BuilderIDLink(b, project string) string {
