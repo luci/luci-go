@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/lucictx"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type callbackGen struct {
@@ -53,46 +52,6 @@ func (g *callbackGen) GetEmail() (string, error) {
 
 func makeGenerator(email string, cb func(context.Context, []string, time.Duration) (*oauth2.Token, error)) TokenGenerator {
 	return &callbackGen{email, cb}
-}
-
-func TestServerLifecycle(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	Convey("Double Start", t, func() {
-		s := Server{}
-		defer s.Stop(ctx)
-		_, err := s.Start(ctx)
-		So(err, ShouldBeNil)
-		_, err = s.Start(ctx)
-		So(err, ShouldErrLike, "already initialized")
-	})
-
-	Convey("Start after Stop", t, func() {
-		s := Server{}
-		_, err := s.Start(ctx)
-		So(err, ShouldBeNil)
-		So(s.Stop(ctx), ShouldBeNil)
-		_, err = s.Start(ctx)
-		So(err, ShouldErrLike, "already initialized")
-	})
-
-	Convey("Stop works", t, func() {
-		serving := make(chan struct{})
-		s := Server{
-			testingServeHook: func() { close(serving) },
-		}
-		_, err := s.Start(ctx)
-		So(err, ShouldBeNil)
-
-		<-serving // wait until really started
-
-		// Stop it.
-		So(s.Stop(ctx), ShouldBeNil)
-		// Doing it second time is ok too.
-		So(s.Stop(ctx), ShouldBeNil)
-	})
 }
 
 func TestProtocol(t *testing.T) {
