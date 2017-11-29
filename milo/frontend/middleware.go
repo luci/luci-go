@@ -53,6 +53,7 @@ var funcMap = template.FuncMap{
 	"percent":         percent,
 	"shortHash":       shortHash,
 	"startswith":      strings.HasPrefix,
+	"stripDomain":      stripDomain,
 	"sub":             sub,
 	"toLower":         strings.ToLower,
 }
@@ -152,6 +153,11 @@ func shortHash(s string) string {
 		return s[0:6]
 	}
 	return s
+}
+
+// stripDomain strips the domain from an email.
+func stripDomain(email string) string {
+	return strings.SplitN(email, "@", 2)[0]
 }
 
 // GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from
