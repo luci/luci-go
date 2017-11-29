@@ -22,6 +22,53 @@
       "revId": "cc65db437a97a85e12b18c8f89ebd84664a005ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2db06e04_3c86decc",
+        "filename": "client/cmd/gsutil-auth/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-29T20:12:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "48b738bd_ff967865",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 19,
+        "endChar": 12
+      },
+      "revId": "cc65db437a97a85e12b18c8f89ebd84664a005ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14a22441_97c42042",
+        "filename": "common/auth/gsutil/gsutil.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-29T20:12:03Z",
+      "side": 1,
+      "message": "good thinking",
+      "range": {
+        "startLine": 200,
+        "startChar": 1,
+        "endLine": 210,
+        "endChar": 2
+      },
+      "revId": "cc65db437a97a85e12b18c8f89ebd84664a005ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
