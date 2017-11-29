@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8623ce41_dc44a61a",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-29T03:12:06Z",
+      "side": 1,
+      "message": "Ack, thanks. See https://chromium-review.googlesource.com/c/chromium/src/+/795235",
+      "parentUuid": "bc0e07e0_8959e1f0",
+      "range": {
+        "startLine": 51,
+        "startChar": 23,
+        "endLine": 51,
+        "endChar": 47
+      },
+      "revId": "de9265d28417053c04d55f99bc4127d8995a033c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9395c40_55afb3e0",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "de9265d28417053c04d55f99bc4127d8995a033c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf5c7ecf_2dcbdc37",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-29T03:12:06Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "c9395c40_55afb3e0",
+      "range": {
+        "startLine": 57,
+        "startChar": 29,
+        "endLine": 57,
+        "endChar": 73
+      },
+      "revId": "de9265d28417053c04d55f99bc4127d8995a033c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
