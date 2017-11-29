@@ -284,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "49b26d5b_012f6859",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-29T02:11:40Z",
+      "side": 1,
+      "message": "i guess most (all?) configs are protobuf based, which means that io.Reader isn\u0027t really useful, because golang\u0027s protobuf package deserializes from buffer only:\n\nhttps://godoc.org/github.com/golang/protobuf/proto#Unmarshal :(",
+      "parentUuid": "6b4dbfbf_69cf34a7",
+      "range": {
+        "startLine": 97,
+        "startChar": 53,
+        "endLine": 97,
+        "endChar": 76
+      },
+      "revId": "907a4e90ef9c2ae2882739b622a5f3a9a81944f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "af4c539d_5a18389f",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 3
