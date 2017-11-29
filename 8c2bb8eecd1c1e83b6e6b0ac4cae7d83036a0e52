@@ -66,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "30a3ae6c_93900c32",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "I prefer not to fight this battle. They are aware of the problems and they are quite defensive regarding this package:\n1) https://github.com/golang/go/issues/22085\n2) https://github.com/golang/go/issues/14286#issuecomment-276821365\n\nIt\u0027s not a gigantic amount of code to copy-paste anyway.",
+      "parentUuid": "ec5c73d9_da21296e",
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "036cd48f_da090724",
         "filename": "server/pprof/internal/pprof.go",
         "patchSetId": 1
@@ -110,6 +128,30 @@
       "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28223b28_c781abce",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "Done, though information in the header is sufficient to just construct a diff when necessary to apply the changes to another revision of upstream file.",
+      "parentUuid": "70eef6fa_a814b63c",
+      "range": {
+        "startLine": 208,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 2
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -160,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "50eda238_bb27d542",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6d3a0f8_e3bf4a44",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 74
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "72b5c1af_ddfbb499",
         "filename": "server/pprof/portal.go",
         "patchSetId": 1
@@ -180,6 +246,30 @@
       "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d78b59eb_c72f51c1",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72b5c1af_ddfbb499",
+      "range": {
+        "startLine": 43,
+        "startChar": 22,
+        "endLine": 43,
+        "endChar": 31
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -206,6 +296,30 @@
     },
     {
       "key": {
+        "uuid": "816fb7fe_d98591ea",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "228329ff_71acb6fb",
+      "range": {
+        "startLine": 49,
+        "startChar": 41,
+        "endLine": 49,
+        "endChar": 51
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "065ae472_90a16cbc",
         "filename": "server/pprof/portal.go",
         "patchSetId": 1
@@ -229,6 +343,30 @@
     },
     {
       "key": {
+        "uuid": "0d3db5ce_07445562",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "065ae472_90a16cbc",
+      "range": {
+        "startLine": 52,
+        "startChar": 16,
+        "endLine": 52,
+        "endChar": 17
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "deb9bb65_8a7c310a",
         "filename": "server/pprof/portal.go",
         "patchSetId": 1
@@ -240,6 +378,24 @@
       "writtenOn": "2017-11-29T19:01:08Z",
       "side": 1,
       "message": "why not have a clickable link? or generate the actual real link, if possible?\n\nwould be much easier to copypasta :)",
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0492191_bbae9e0e",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "Well, it is embarrassing really, but there\u0027s no simple way to get host URL from deep inside a request handler. It is available only in *http.Request which we don\u0027t put in context.",
+      "parentUuid": "deb9bb65_8a7c310a",
       "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -266,6 +422,30 @@
       "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a33b65fa_4a9ae0aa",
+        "filename": "server/pprof/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-11-29T19:50:24Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "76e0936e_ffebba5a",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 104
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
