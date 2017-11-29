@@ -25,6 +25,47 @@
     },
     {
       "key": {
+        "uuid": "718f0315_12243e35",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b55bed65_a3b0ea33",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 29
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ec5c73d9_da21296e",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "With a very small amount of cleanup it might be possible to upstream these?\n\ni.e. move the bulk of pprof code to net/http/pprof/manualpprof or something, so that `net/http/pprof` imports still have init, but others could wrap the handler to do what you\u0027re doing here?",
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "036cd48f_da090724",
         "filename": "server/pprof/internal/pprof.go",
         "patchSetId": 1
@@ -36,6 +77,30 @@
       "writtenOn": "2017-11-28T23:41:23Z",
       "side": 1,
       "message": "modified this part to pass \"Tok\"",
+      "range": {
+        "startLine": 208,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 2
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70eef6fa_a814b63c",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "maybe add comment brackets that say this was added?",
+      "parentUuid": "036cd48f_da090724",
       "range": {
         "startLine": 208,
         "startChar": 0,
@@ -64,6 +129,139 @@
         "startChar": 0,
         "endLine": 231,
         "endChar": 74
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6d3a0f8_e3bf4a44",
+        "filename": "server/pprof/internal/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "same? (if possible to add comments to a template without f\u0027ing it up)",
+      "parentUuid": "14297463_4b86cec9",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 74
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72b5c1af_ddfbb499",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "nit: either \"allows exposing pprof endpoints\", or \"allows us to expose pprof endpoints\"",
+      "range": {
+        "startLine": 43,
+        "startChar": 22,
+        "endLine": 43,
+        "endChar": 31
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "228329ff_71acb6fb",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "nit: singular",
+      "range": {
+        "startLine": 49,
+        "startChar": 41,
+        "endLine": 49,
+        "endChar": 51
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "065ae472_90a16cbc",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "(on GAE Flex, and possibly other load-balanced environments)",
+      "range": {
+        "startLine": 52,
+        "startChar": 16,
+        "endLine": 52,
+        "endChar": 17
+      },
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "deb9bb65_8a7c310a",
+        "filename": "server/pprof/portal.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "why not have a clickable link? or generate the actual real link, if possible?\n\nwould be much easier to copypasta :)",
+      "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76e0936e_ffebba5a",
+        "filename": "server/pprof/pprof.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-11-29T19:01:08Z",
+      "side": 1,
+      "message": "can we link to /admin/porta/pprof? or redirect?",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 104
       },
       "revId": "8c2bb8eecd1c1e83b6e6b0ac4cae7d83036a0e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
