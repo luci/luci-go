@@ -15,6 +15,8 @@
 package gerrit
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -145,6 +147,77 @@ func TestGetChangeDetails(t *testing.T) {
 
 	})
 
+}
+
+func TestCreateChange(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("CreateChange", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var ci ChangeInput
+			err := json.NewDecoder(r.Body).Decode(&ci)
+			c.So(err, ShouldBeNil)
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			change := Change{
+				ID:       fmt.Sprintf("%s~%s~I8473b95934b5732ac55d26311a706c9c2bde9941", ci.Project, ci.Branch),
+				ChangeID: "I8473b95934b5732ac55d26311a706c9c2bde9941",
+				Project:  ci.Project,
+				Branch:   ci.Branch,
+				Subject:  ci.Subject,
+				Topic:    ci.Topic,
+				Status:   "NEW",
+				// the rest omitted for brevity...
+			}
+			var buffer bytes.Buffer
+			err = json.NewEncoder(&buffer).Encode(&change)
+			c.So(err, ShouldBeNil)
+			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			ci := ChangeInput{
+				Project: "infra/luci-go",
+				Branch:  "master",
+				Subject: "Let's make a thing. Yeah, a thing.",
+				Topic:   "something-something",
+			}
+			change, err := client.CreateChange(ctx, &ci)
+			So(err, ShouldBeNil)
+			So(change.Project, ShouldResemble, ci.Project)
+			So(change.Branch, ShouldResemble, ci.Branch)
+			So(change.Subject, ShouldResemble, ci.Subject)
+			So(change.Topic, ShouldResemble, ci.Topic)
+			So(change.Status, ShouldResemble, "NEW")
+		})
+
+	})
+
+	Convey("CreateChange but project non-existent", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(404)
+			w.Header().Set("Content-Type", "text/plain")
+			fmt.Fprintf(w, "No such project: blah")
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			ci := ChangeInput{
+				Project: "blah",
+				Branch:  "master",
+				Subject: "beep bop boop I'm a robot",
+				Topic:   "haha",
+			}
+			_, err := c.CreateChange(ctx, &ci)
+			So(err, ShouldNotBeNil)
+		})
+
+	})
 }
 
 func TestIsPureRevert(t *testing.T) {
