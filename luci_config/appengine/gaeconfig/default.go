@@ -17,11 +17,14 @@ package gaeconfig
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
 	"go.chromium.org/luci/appengine/datastorecache"
+	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/common/config/impl/filesystem"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/luci_config/appengine/backend/datastore"
 	"go.chromium.org/luci/luci_config/appengine/backend/memcache"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
@@ -30,6 +33,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/erroring"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/format"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/server/auth"
 	serverCaching "go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
@@ -110,6 +114,38 @@ func installCacheCronHandlerImpl(r *router.Router, base router.MiddlewareChain, 
 	})
 
 	datastore.Cache.InstallCronRoute("/admin/config/cache/manager", r, base)
+}
+
+// InstallValidationHandlers installs handlers for config validation.
+//
+// It implements the necessary auth in the given router.MiddlewareChain.
+// It requires that the hostname and the email of config service have been
+// defined in appengine app settings page before the installed endpoints are
+// called.
+func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, validator *validation.Validator) {
+	a := auth.Authenticator{
+		Methods: []auth.Method{
+			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
+		},
+	}
+	base = base.Extend(a.GetMiddleware(), func(c *router.Context, next router.Handler) {
+		cc, w := c.Context, c.Writer
+		s := mustFetchCachedSettings(cc)
+		switch isAdmin, err := auth.IsMember(cc, s.AdministratorsGroup); {
+		case err != nil:
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("Unable to authenticate"))
+		case s.ConfigServiceHost == "" || s.ConfigServiceEmail == "":
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("ConfigServiceHost or ConfigServiceEmail has not been defined in settings"))
+		case isAdmin || auth.CurrentIdentity(cc).Email() == s.ConfigServiceEmail:
+			next(c)
+		default:
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("Insufficient authority for validation"))
+		}
+	})
+	validation.InstallHandlers(r, base, validator)
 }
 
 // Use installs the default luci-config client.
@@ -202,8 +238,8 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, ccfg cac
 			be = ccfg.GlobalCache(c, be, s)
 		}
 
-		// Add a formatting Backend. All Backends after this will use the formatted
-		// version of the entry.
+		// Add a formatting Backend. All Backends after this will use the
+		// formatted version of the entry.
 		be = &format.Backend{B: be}
 
 		// After raw service, install data-level caching.
