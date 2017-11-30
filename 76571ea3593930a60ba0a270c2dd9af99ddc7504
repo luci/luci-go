@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f0ab386d_6d9f0e3d",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T22:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b424c714_1635120f",
+      "range": {
+        "startLine": 1,
+        "startChar": 37,
+        "endLine": 1,
+        "endChar": 45
+      },
+      "revId": "76571ea3593930a60ba0a270c2dd9af99ddc7504",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0cc0ce61_3df78c45",
         "filename": "milo/frontend/appengine/templates/pages/consoles.html",
         "patchSetId": 2
@@ -115,6 +139,78 @@
       "revId": "76571ea3593930a60ba0a270c2dd9af99ddc7504",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a611af5_747abf24",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T22:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "305cf342_aecd62d8",
+      "range": {
+        "startLine": 29,
+        "startChar": 6,
+        "endLine": 29,
+        "endChar": 7
+      },
+      "revId": "76571ea3593930a60ba0a270c2dd9af99ddc7504",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c1daf426_efe4c093",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T22:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d512f5b1_94fcbd14",
+      "range": {
+        "startLine": 29,
+        "startChar": 26,
+        "endLine": 29,
+        "endChar": 27
+      },
+      "revId": "76571ea3593930a60ba0a270c2dd9af99ddc7504",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "025514ad_07247b8a",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T22:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0cc0ce61_3df78c45",
+      "range": {
+        "startLine": 29,
+        "startChar": 10,
+        "endLine": 29,
+        "endChar": 18
+      },
+      "revId": "76571ea3593930a60ba0a270c2dd9af99ddc7504",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
