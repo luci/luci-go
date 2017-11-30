@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f435136e_6233a13c",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T17:58:40Z",
+      "side": 1,
+      "message": "SG",
+      "parentUuid": "c7fc1dba_675378d3",
+      "range": {
+        "startLine": 69,
+        "startChar": 17,
+        "endLine": 69,
+        "endChar": 44
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "17526e3d_883fd0bb",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 5
@@ -100,6 +124,30 @@
       "writtenOn": "2017-11-30T17:49:22Z",
       "side": 1,
       "message": "Maybe include these options at the top too, so they\u0027re more visible?",
+      "range": {
+        "startLine": 209,
+        "startChar": 20,
+        "endLine": 209,
+        "endChar": 26
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da20770e_0d0e5bce",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T17:58:40Z",
+      "side": 1,
+      "message": "that\u0027s what I thought too, but I think the reason why it is in the bottom is because Buildbot puts it in the bottom, and perhaps what\u0027s what users will expect, for better or worse.\n\nPerhaps we can put expand/collapse button in the top, and write something like \"looking for expand/collapse buttons? Look at the top!\" in the bottom",
+      "parentUuid": "bca83e1b_ef7c43bc",
       "range": {
         "startLine": 209,
         "startChar": 20,
