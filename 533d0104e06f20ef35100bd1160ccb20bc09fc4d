@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cfebe7e8_81e1dd8c",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-30T23:33:15Z",
+      "side": 1,
+      "message": "Done.  It has the unfortunate side effect that the code is defined farther away from where it is used (Since you can\u0027t define a block in a define)",
+      "parentUuid": "1de4d19e_f1b8a866",
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7811348c_bc6c21a5",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 7
@@ -33,6 +51,24 @@
       "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "450b6f5a_80a08238",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-30T23:33:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7811348c_bc6c21a5",
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "0d2b7334_849b9c29",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-30T23:33:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23af860a_cc0f77bd",
+      "range": {
+        "startLine": 251,
+        "startChar": 42,
+        "endLine": 251,
+        "endChar": 43
+      },
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc9d9e45_5a031abe",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 7
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "0af49572_eebf5be4",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-30T23:33:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc9d9e45_5a031abe",
+      "range": {
+        "startLine": 253,
+        "startChar": 17,
+        "endLine": 253,
+        "endChar": 38
+      },
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d4ae80f_059e72cb",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 7
@@ -102,6 +186,30 @@
       "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0e5e0c5_bec18471",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-11-30T23:33:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d4ae80f_059e72cb",
+      "range": {
+        "startLine": 288,
+        "startChar": 14,
+        "endLine": 288,
+        "endChar": 18
+      },
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
