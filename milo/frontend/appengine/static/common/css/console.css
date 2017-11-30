@@ -78,13 +78,13 @@
 .console-header-column-lists {
   display: flex;
   flex-direction: column;
-  width: 33%;
+  width: 25%;
 }
 
 .console-header-column-summaries {
   display: flex;
   flex-direction: column;
-  width: 67%;
+  width: 75%;
 }
 
 .console-header-groups {
