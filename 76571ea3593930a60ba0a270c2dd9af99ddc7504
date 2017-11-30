@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "923e0791_ed9809e3",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-11-30T21:51:46Z",
+      "side": 1,
+      "message": "I think they\u0027re called Groups in this view now.",
+      "range": {
+        "startLine": 1,
+        "startChar": 37,
+        "endLine": 1,
+        "endChar": 45
+      },
+      "revId": "76571ea3593930a60ba0a270c2dd9af99ddc7504",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cc0ce61_3df78c45",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-11-30T21:51:46Z",
+      "side": 1,
+      "message": "groups here, too, and perhaps punctuate.",
+      "range": {
+        "startLine": 29,
+        "startChar": 10,
+        "endLine": 29,
+        "endChar": 18
+      },
+      "revId": "76571ea3593930a60ba0a270c2dd9af99ddc7504",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
