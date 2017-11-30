@@ -15,8 +15,10 @@
 package gerrit
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -27,6 +29,8 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 )
+
+const CONTENT_TYPE = "application/json; charset=UTF-8"
 
 // Change represents a Gerrit CL. Information about these fields in:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
@@ -41,6 +45,7 @@ type Change struct {
 	ChangeID               string      `json:"change_id"`
 	Project                string      `json:"project"`
 	Branch                 string      `json:"branch"`
+	Topic                  string      `json:"topic"`
 	Hashtags               []string    `json:"hashtags"`
 	Subject                string      `json:"subject"`
 	Status                 string      `json:"status"`
@@ -227,6 +232,61 @@ func (c *Client) GetChangeDetails(ctx context.Context, changeID string, options 
 	return resp, nil
 }
 
+// ChangeInput contains the parameters necesary for creating a change in Gerrit.
+//
+// This struct is intended to be one-to-one with the ChangeInput structure
+// described in Gerrit's documentation:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-input
+//
+// The exception is only status, which, although may be set, may only be set to "NEW"
+// (and defaults to "NEW" as well).
+//
+// TODO: Support merge and notify_details.
+type ChangeInput struct {
+	// Project is the name of the project for which this change.
+	Project string `json:"project"`
+
+	// Branch is the name of the target branch for this change.
+	// refs/heads/ prefix is omitted.
+	Branch string `json:"branch"`
+
+	// Subject is the header line of the commit message.
+	Subject string `json:"subject"`
+
+	// Topic is the topic to which this change belongs. Optional.
+	Topic string `json:"topic,omitempty"`
+
+	// IsPrivate sets whether the change is marked private.
+	IsPrivate bool `json:"is_private,omitempty"`
+
+	// WorkInProgress sets the work-in-progress bit for the change.
+	WorkInProgress bool `json:"work_in_progress,omitempty"`
+
+	// BaseChange is the change this new change is based on. Optional.
+	BaseChange string `json:"base_change,omitempty"`
+
+	// NewBranch allows for creating a new branch when set to true.
+	NewBranch bool `json:"new_branch,omitempty"`
+
+	// Notify is an enum specifying whom to send notifications to.
+	//
+	// Valid values are NONE, OWNER, OWNER_REVIEWERS, and ALL.
+	//
+	// Optional. The default is ALL.
+	Notify string `json:"notify,omitempty"`
+}
+
+// CreateChange creates a new change in Gerrit.
+//
+// Returns a Change describing the newly created change or an error.
+func (c *Client) CreateChange(ctx context.Context, ci *ChangeInput) (*Change, error) {
+	var resp Change
+	if _, err := c.post(ctx, "changes/", ci, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // IsChangePureRevert determines if a change is a pure revert of another commit.
 //
 // This method returns a bool and an error.
@@ -269,20 +329,47 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 		}
 		return r.StatusCode, err
 	}
+	return 200, parseResponse(r.Body, result)
+}
+
+func (c *Client) post(ctx context.Context, path string, data interface{}, result interface{}) (int, error) {
+	var buffer bytes.Buffer
+	if err := json.NewEncoder(&buffer).Encode(data); err != nil {
+		return 200, err
+	}
+	u := c.gerritURL
+	u.Path = path
+	r, err := ctxhttp.Post(ctx, c.httpClient, u.String(), CONTENT_TYPE, &buffer)
+	if err != nil {
+		return 0, transient.Tag.Apply(err)
+	}
+	defer r.Body.Close()
+	if r.StatusCode != 200 {
+		err = errors.Reason("failed to post to %q with %v, status code %d", u.String(), data, r.StatusCode).Err()
+		if r.StatusCode >= 500 {
+			// TODO(tandrii): consider retrying.
+			err = transient.Tag.Apply(err)
+		}
+		return r.StatusCode, err
+	}
+	return 200, parseResponse(r.Body, result)
+}
+
+func parseResponse(resp io.Reader, result interface{}) error {
 	// Strip out the jsonp header, which is ")]}'"
 	const gerritPrefix = ")]}'"
 	trash := make([]byte, len(gerritPrefix))
-	cnt, err := r.Body.Read(trash)
+	cnt, err := resp.Read(trash)
 	if err != nil {
-		return 200, errors.Annotate(err, "unexpected response from Gerrit").Err()
+		return errors.Annotate(err, "unexpected response from Gerrit").Err()
 	}
 	if cnt != len(gerritPrefix) || gerritPrefix != string(trash) {
-		return 200, errors.New("unexpected response from Gerrit")
+		return errors.New("unexpected response from Gerrit")
 	}
-	if err = json.NewDecoder(r.Body).Decode(result); err != nil {
-		return 200, errors.Annotate(err, "failed to decode Gerrit response into %T", result).Err()
+	if err = json.NewDecoder(resp).Decode(result); err != nil {
+		return errors.Annotate(err, "failed to decode Gerrit response into %T", result).Err()
 	}
-	return 200, nil
+	return nil
 }
 
 // pureRevertResponse contains the response fields for calls to get-pure-revert
