@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9f05707_c5ff9558",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:18:16Z",
+      "side": 1,
+      "message": "not for this CL\n\ngenerally we should not have to sync percentages of widths. The CSS engine is supported to work like this for us. I noticed that if there are no ConsoleGroups in a header, 75% of header space is blank",
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60a6e4fc_fb21d97e",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:18:16Z",
+      "side": 1,
+      "message": "this does not seem to match CL description and does not seem to be correct? e.g. on https://2409-2a13e9b-tainted-jchinlee-dot-luci-milo-dev.appspot.com/p/chromium/g/main/console I see that a trooper (which is not sheriff) is in the Sheriffs section. What\u0027s the motivation for this change? FWIW \"Oncalls\" is shorter than \"Sheriffs\". Did you mean to strip \" Sheriff\" suffix from the individual rotation names?",
+      "range": {
+        "startLine": 46,
+        "startChar": 46,
+        "endLine": 46,
+        "endChar": 54
+      },
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "419c287d_78ff0fee",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:18:16Z",
+      "side": 1,
+      "message": "gofmt?",
+      "range": {
+        "startLine": 56,
+        "startChar": 20,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a95abe78_51fc69ab",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:18:16Z",
+      "side": 1,
+      "message": "this does not work for users that have different user names in @chromium.org and @google.com domains. Can we replace @google.com with @ instead? It would cover all emails that I currently see at https://luci-milo-dev.appspot.com/p/chromium/g/main/console",
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
