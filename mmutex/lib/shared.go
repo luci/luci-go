@@ -23,7 +23,7 @@ import (
 // RunShared runs the command with the specified context and environment while
 // holding a shared mmutex lock.
 func RunShared(ctx context.Context, env subcommands.Env, command func(context.Context) error) error {
-	lockFilePath, _, err := computeMutexPaths(env)
+	lockFilePath, drainFilePath, err := computeMutexPaths(env)
 	if err != nil {
 		return err
 	}
@@ -32,6 +32,13 @@ func RunShared(ctx context.Context, env subcommands.Env, command func(context.Co
 	}
 
 	blocker := createLockBlocker(ctx)
+
+	// Use the same retry mechanism for checking if the drain file still exists
+	// as we use to request the file lock.
+	if err = blockWhileFileExists(drainFilePath, blocker); err != nil {
+		return err
+	}
+
 	return fslock.WithSharedBlocking(lockFilePath, blocker, func() error {
 		return command(ctx)
 	})

@@ -50,11 +50,6 @@ type BuilderSummary struct {
 	// the builder.
 	LastFinishedBuildID string
 
-	// Consoles lists consoles of which this builder is part.
-	// Elements of this list should be of the form
-	// <common.Console.GetProjectID()>/<common.Console.ID>.
-	Consoles []string // indexed on this
-
 	// Ignore unrecognized fields and strip in future writes.
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
