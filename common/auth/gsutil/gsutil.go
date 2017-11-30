@@ -35,6 +35,7 @@ import (
 	"path/filepath"
 	"sync"
 	"text/template"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -88,6 +89,11 @@ func (s *Server) Start(ctx context.Context) (botoCfg string, err error) {
 	if err != nil {
 		return "", errors.Annotate(err, "failed to start the server").Err()
 	}
+	defer func() {
+		if err != nil {
+			s.srv.Stop(ctx)
+		}
+	}()
 
 	// Prepare new .boto in memory (to simplify IO error handling below).
 	args := map[string]string{
@@ -98,14 +104,12 @@ func (s *Server) Start(ctx context.Context) (botoCfg string, err error) {
 	}
 	buf := bytes.Buffer{}
 	if err := botoCfgTempl.Execute(&buf, args); err != nil {
-		s.srv.Stop(ctx)
 		return "", errors.Annotate(err, "failed to generate .boto").Err()
 	}
 
 	// Drop it to the disk.
 	botoCfg = filepath.Join(s.StateDir, ".boto")
 	if err := ioutil.WriteFile(botoCfg, buf.Bytes(), 0600); err != nil {
-		s.srv.Stop(ctx)
 		return "", errors.Annotate(err, "failed to write %s", botoCfg).Err()
 	}
 
@@ -113,7 +117,6 @@ func (s *Server) Start(ctx context.Context) (botoCfg string, err error) {
 	// after each server launch, since it uses refresh_token (which we generate
 	// randomly) as cache key. We don't really need this cache anyway.
 	if err := os.Remove(filepath.Join(s.StateDir, "credstore")); err != nil && !os.IsNotExist(err) {
-		s.srv.Stop(ctx)
 		return "", errors.Annotate(err, "failed to remove credstore").Err()
 	}
 
@@ -214,19 +217,12 @@ func (s *Server) handleTokenRequest(rw http.ResponseWriter, r *http.Request, sec
 	if err != nil {
 		return err
 	}
-
-	jsonish := struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-		TokenType   string `json:"token_type"`
-	}{
-		tok.AccessToken,
-		int(tok.Expiry.Sub(clock.Now(ctx)).Seconds()),
-		"Bearer",
-	}
-
 	rw.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(rw).Encode(&jsonish)
+	return json.NewEncoder(rw).Encode(map[string]interface{}{
+		"access_token": tok.AccessToken,
+		"expires_in":   clock.Until(ctx, tok.Expiry) / time.Second,
+		"token_type":   "Bearer",
+	})
 }
 
 // handler implements http.Handler by wrapping the given handler with some

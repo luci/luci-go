@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/client/authcli"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/auth/devshell"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exitcode"
@@ -74,13 +75,12 @@ func setEnv(c *exec.Cmd, port int) {
 	c.Env = append(c.Env, newVal)
 }
 
-func main() {
+func run() error {
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "specify a command to run")
-		os.Exit(1)
+		return errors.Reason("specify a command to run").Err()
 	}
 
 	opts, err := flags.Options()
@@ -93,8 +93,7 @@ func main() {
 	if filepath.Base(bin) == bin {
 		path, err := exec.LookPath(bin)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Can't find %q in PATH\n", bin)
-			os.Exit(1)
+			return errors.Annotate(err, "can't find %q in PATH").Err()
 		}
 		bin = path
 	}
@@ -111,13 +110,11 @@ func main() {
 	auth := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	source, err := auth.TokenSource()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to get token source: %v\n", err)
-		os.Exit(1)
+		return errors.Annotate(err, "failed to get token source").Err()
 	}
 	email, err := auth.GetEmail()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to get email: %v\n", err)
-		os.Exit(1)
+		return errors.Annotate(err, "failed to get email").Err()
 	}
 
 	srv := &devshell.Server{
@@ -140,7 +137,14 @@ func main() {
 	case hasCode:
 		os.Exit(code)
 	case err != nil:
-		logging.WithError(err).Errorf(ctx, "Command failed to start")
+		return errors.Annotate(err, "command failed to start").Err()
+	}
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }

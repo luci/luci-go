@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/client/authcli"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/auth/gsutil"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exitcode"
@@ -77,27 +78,24 @@ func setBotoConfigEnv(c *exec.Cmd, botoCfg string) {
 	c.Env = append(c.Env, pfx+botoCfg)
 }
 
-func main() {
+func run() error {
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "specify a command to run")
-		os.Exit(1)
+		return errors.New("specify a command to run")
 	}
 
 	opts, err := flags.Options()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
 
 	bin := args[0]
 	if filepath.Base(bin) == bin {
 		path, err := exec.LookPath(bin)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Can't find %q in PATH\n", bin)
-			os.Exit(1)
+			return errors.Reason("can't find %q in PATH", bin).Err()
 		}
 		bin = path
 	}
@@ -114,15 +112,13 @@ func main() {
 	auth := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	source, err := auth.TokenSource()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to get token source: %v\n", err)
-		os.Exit(1)
+		return errors.Annotate(err, "failed to get token source").Err()
 	}
 
 	// State dir is used to hold .boto and temporary credentials cache.
 	stateDir, err := ioutil.TempDir("", "gsutil-auth")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create gsutil state dir: %v\n", err)
-		os.Exit(1)
+		return errors.Annotate(err, "failed to create gsutil state dir").Err()
 	}
 	defer os.RemoveAll(stateDir)
 
@@ -132,8 +128,7 @@ func main() {
 	}
 	botoCfg, err := srv.Start(ctx)
 	if err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to start the gsutil auth server")
-		os.Exit(1)
+		return errors.Annotate(err, "failed to start the gsutil auth server").Err()
 	}
 	defer srv.Stop(ctx) // close the server no matter what
 
@@ -145,7 +140,14 @@ func main() {
 	case hasCode:
 		os.Exit(code)
 	case err != nil:
-		logging.WithError(err).Errorf(ctx, "Command failed to start")
+		return errors.Annotate(err, "command failed to start").Err()
+	}
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }
