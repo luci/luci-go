@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "42defa48_152a5e1f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b92ed7df_c9825d8d",
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f4e7afe4_779095f2",
         "filename": "luci_config/appengine/gaeconfig/default.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c9839ed_c5b8d6c9",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4e7afe4_779095f2",
+      "range": {
+        "startLine": 119,
+        "startChar": 58,
+        "endLine": 119,
+        "endChar": 68
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,54 @@
     },
     {
       "key": {
+        "uuid": "09db4b9c_a8b7fae7",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ca69595_e8d19044",
+      "range": {
+        "startLine": 120,
+        "startChar": 27,
+        "endLine": 120,
+        "endChar": 28
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d423ed22_7d4e531b",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b2865f3_66d93b69",
+      "range": {
+        "startLine": 120,
+        "startChar": 14,
+        "endLine": 120,
+        "endChar": 26
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc632652_2edad267",
         "filename": "luci_config/appengine/gaeconfig/default.go",
         "patchSetId": 3
@@ -108,6 +198,30 @@
       "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2c4fa0d_64219ee6",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc632652_2edad267",
+      "range": {
+        "startLine": 122,
+        "startChar": 38,
+        "endLine": 122,
+        "endChar": 46
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "db4fddd5_49e6b287",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c790f674_0afc2e38",
+      "range": {
+        "startLine": 132,
+        "startChar": 45,
+        "endLine": 132,
+        "endChar": 59
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d9842ff_80ca4f8d",
         "filename": "luci_config/appengine/gaeconfig/settings.go",
         "patchSetId": 3
@@ -154,6 +292,30 @@
       "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec907572_41b1435b",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d9842ff_80ca4f8d",
+      "range": {
+        "startLine": 52,
+        "startChar": 6,
+        "endLine": 52,
+        "endChar": 25
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -194,6 +356,48 @@
       "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1bd9712_31dca1e5",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0e7207c_0228d8f7",
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "003c0029_1c4a1fd8",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2083b299_81f1c329",
+      "range": {
+        "startLine": 68,
+        "startChar": 26,
+        "endLine": 68,
+        "endChar": 75
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -260,6 +464,72 @@
     },
     {
       "key": {
+        "uuid": "e18710f7_4b1122f6",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96e47727_8d262327",
+      "range": {
+        "startLine": 71,
+        "startChar": 22,
+        "endLine": 71,
+        "endChar": 55
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40fb5b15_a870f699",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8503332_83a2df5e",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 48
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "12200965_8c98dc1c",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "659d6dc3_be79b570",
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94e2b237_d27abc84",
         "filename": "luci_config/appengine/gaeconfig/settings.go",
         "patchSetId": 3
@@ -280,6 +550,30 @@
       "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0738bcfb_5bbf539a",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-11-30T00:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94e2b237_d27abc84",
+      "range": {
+        "startLine": 72,
+        "startChar": 1,
+        "endLine": 72,
+        "endChar": 15
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
