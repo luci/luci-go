@@ -27,6 +27,126 @@ import (
 	"go.chromium.org/luci/common/flag/stringlistflag"
 )
 
+type notifyOption int
+
+const (
+	notifyAll            notifyOption = 0
+	notifyOwner          notifyOption = 1
+	notifyOwnerReviewers notifyOption = 2
+	notifyNone           notifyOption = 3
+)
+
+func (n *notifyOption) String() string {
+	switch *n {
+	case notifyOwner:
+		return "OWNER"
+	case notifyOwnerReviewers:
+		return "OWNER_REVIEWERS"
+	case notifyNone:
+		return "NONE"
+	case notifyAll:
+		fallthrough
+	default:
+		return "ALL"
+	}
+}
+
+func (n *notifyOption) Set(s string) error {
+	switch s {
+	case "OWNER":
+		*n = notifyOwner
+	case "OWNER_REVIEWERS":
+		*n = notifyOwnerReviewers
+	case "NONE":
+		*n = notifyNone
+	case "", "ALL":
+		*n = notifyAll
+	default:
+		return fmt.Errorf("invalid notify option: %s", s)
+	}
+	return nil
+}
+
+func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "change-create <options> url",
+		ShortDesc: "creates a new change",
+		LongDesc: `Creates a new change in Gerrit.
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change`,
+		CommandRun: func() subcommands.CommandRun {
+			c := changeCreateRun{}
+			c.commonFlags.Init(authOpts)
+			c.Flags.StringVar(&c.ci.Project, "project", "", "(required) The project to which this new change belongs.")
+			c.Flags.StringVar(&c.ci.Branch, "branch", "master", "The branch to which this new change belongs.")
+			c.Flags.StringVar(&c.ci.Subject, "subject", "", "The header line of the commit message of the new change.")
+			c.Flags.StringVar(&c.ci.Topic, "topic", "", "The topic to which this new change belongs.")
+			c.Flags.BoolVar(&c.ci.IsPrivate, "private", false, "Whether the new change should be marked as private.")
+			c.Flags.BoolVar(&c.ci.WorkInProgress, "wip", false, "Whether the new change should be set as a Work In Progress.")
+			c.Flags.StringVar(&c.ci.BaseChange, "base", "", "A ChangeID that identifies the base change for the new change.")
+			c.Flags.BoolVar(&c.ci.NewBranch, "allow-new-branch", false, "Allow creating a new branch.")
+			c.Flags.Var(&c.notify, "notify", "Notification handling that defines to whom email notifications should be sent after the change is created.")
+			return &c
+		},
+	}
+}
+
+type changeCreateRun struct {
+	commonFlags
+
+	ci     gerrit.ChangeInput
+	notify notifyOption
+}
+
+func (c *changeCreateRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
+	if len(args) < 1 {
+		return errors.New("position arguments missing")
+	} else if len(args) > 1 {
+		return errors.New("position arguments not expected")
+	}
+	c.ci.Notify = c.notify.String()
+	return nil
+}
+
+func (c *changeCreateRun) main(a subcommands.Application, args []string) error {
+	authCl, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+
+	g, err := gerrit.NewClient(authCl, args[0])
+	if err != nil {
+		return err
+	}
+
+	change, err := g.CreateChange(ctx, &c.ci)
+	if err != nil {
+		return err
+	}
+
+	if c.jsonOutput == "" {
+		print(change)
+		return nil
+	}
+
+	return output(c.jsonOutput, change)
+}
+
+func (c *changeCreateRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+	if err := c.Parse(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	if err := c.main(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	return 0
+}
+
 func cmdChangeQuery(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "change-query <options> url query",
