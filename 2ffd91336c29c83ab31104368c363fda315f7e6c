@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d4f073c8_b0411909",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ea6cadd_78328d20",
+      "range": {
+        "startLine": 80,
+        "startChar": 60,
+        "endLine": 80,
+        "endChar": 61
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bb27d100_f55fb480",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f7f4c4d_0ff2f02c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb27d100_f55fb480",
+      "range": {
+        "startLine": 97,
+        "startChar": 8,
+        "endLine": 97,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "af4c1abf_0bfb356c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "287a6abb_3079ec26",
+      "range": {
+        "startLine": 110,
+        "startChar": 4,
+        "endLine": 110,
+        "endChar": 26
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e8b4c050_69113f8d",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a93359df_d62804cb",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8b4c050_69113f8d",
+      "range": {
+        "startLine": 120,
+        "startChar": 8,
+        "endLine": 120,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "cf0af63f_7b940032",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72c97045_21cf5cd0",
+      "range": {
+        "startLine": 132,
+        "startChar": 4,
+        "endLine": 132,
+        "endChar": 26
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa3a60d1_9ad76558",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 3
@@ -137,6 +257,30 @@
       "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dc0931f_6e5be32e",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa3a60d1_9ad76558",
+      "range": {
+        "startLine": 142,
+        "startChar": 8,
+        "endLine": 142,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "319b30cd_7aac03b6",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a84d73b_19982911",
+      "range": {
+        "startLine": 154,
+        "startChar": 4,
+        "endLine": 154,
+        "endChar": 26
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "42746a57_c349eab0",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 3
@@ -183,6 +351,30 @@
       "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56d35a1e_6be3c71b",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-11-30T22:58:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "42746a57_c349eab0",
+      "range": {
+        "startLine": 164,
+        "startChar": 8,
+        "endLine": 164,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
