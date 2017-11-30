@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ea6cadd_78328d20",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "small thing: here and in L89 we take a pointer of the variable. If you needed to pass diff in more functions, you\u0027d have to take a pointer every time. In my experience I found it more convenient to initialize a variable as a pointer from the start, i.e.\n\n  foo :\u003d \u0026Foo{....}",
+      "range": {
+        "startLine": 80,
+        "startChar": 60,
+        "endLine": 80,
+        "endChar": 61
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb27d100_f55fb480",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "nit: dc\n\nI believe Golang like short names for loop vars",
+      "range": {
+        "startLine": 97,
+        "startChar": 8,
+        "endLine": 97,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "287a6abb_3079ec26",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "unnecessary, len(nil)\u003d\u003d\u003d0",
+      "range": {
+        "startLine": 110,
+        "startChar": 4,
+        "endLine": 110,
+        "endChar": 26
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8b4c050_69113f8d",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "nit: dc",
+      "range": {
+        "startLine": 120,
+        "startChar": 8,
+        "endLine": 120,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72c97045_21cf5cd0",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 132,
+        "startChar": 4,
+        "endLine": 132,
+        "endChar": 26
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa3a60d1_9ad76558",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "nit: dc",
+      "range": {
+        "startLine": 142,
+        "startChar": 8,
+        "endLine": 142,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a84d73b_19982911",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 154,
+        "startChar": 4,
+        "endLine": 154,
+        "endChar": 26
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42746a57_c349eab0",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:51:06Z",
+      "side": 1,
+      "message": "nit: dc",
+      "range": {
+        "startLine": 164,
+        "startChar": 8,
+        "endLine": 164,
+        "endChar": 18
+      },
+      "revId": "2ffd91336c29c83ab31104368c363fda315f7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
