@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "8efc438c_b5a31059",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T17:24:44Z",
+      "side": 1,
+      "message": "It does look different for me --- in particular, setting 25%/75% gives more space to the builder summaries than without setting. I do agree the CSS engine should figure it out for us. The filed bug is about the builder summaries not having enough space, hence the motivation for setting widths specifically.\n\nIf we agree wrapping addresses the filed bug, though, I\u0027m happy to remove these specific widths.",
+      "parentUuid": "d8f3303f_f2fa1d93",
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "60a6e4fc_fb21d97e",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 4
@@ -108,6 +126,30 @@
     },
     {
       "key": {
+        "uuid": "d1adb767_c60b182c",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T17:24:44Z",
+      "side": 1,
+      "message": "Both \"Rotations\" and keeping \"Oncalls\" as the header SGTM. Erik?",
+      "parentUuid": "f9f8580f_4fdc41a8",
+      "range": {
+        "startLine": 46,
+        "startChar": 46,
+        "endLine": 46,
+        "endChar": 54
+      },
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "419c287d_78ff0fee",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 4
@@ -142,6 +184,24 @@
       "writtenOn": "2017-11-30T16:18:16Z",
       "side": 1,
       "message": "this does not work for users that have different user names in @chromium.org and @google.com domains. Can we replace @google.com with @ instead? It would cover all emails that I currently see at https://luci-milo-dev.appspot.com/p/chromium/g/main/console",
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9bf28d4_8a44bfe8",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T17:24:44Z",
+      "side": 1,
+      "message": "What\u0027s the advantage of @ over @google.com?\n\nAs noted in https://bugs.chromium.org/p/chromium/issues/detail?id\u003d787595#c16, only ldaps have previously been displayed anyway to no ill effect. If, however, we are in fact worried about losing information between @chromium.org and @google.com, then we shouldn\u0027t strip the domain at all.",
+      "parentUuid": "a95abe78_51fc69ab",
       "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
