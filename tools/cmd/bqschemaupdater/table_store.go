@@ -14,7 +14,7 @@ import (
 
 type tableStore interface {
 	getTableMetadata(ctx context.Context, datasetID, tableID string) (*bigquery.TableMetadata, error)
-	createTable(ctx context.Context, datasetID, tableID string, option ...bigquery.CreateTableOption) error
+	createTable(ctx context.Context, datasetID, tableID string, md *bigquery.TableMetadata) error
 	updateTable(ctx context.Context, datasetID, tableID string, toUpdate bigquery.TableMetadataToUpdate) error
 }
 
@@ -32,9 +32,9 @@ func (ts bqTableStore) getTableMetadata(ctx context.Context, datasetID, tableID 
 	return t.Metadata(ctx)
 }
 
-func (ts bqTableStore) createTable(ctx context.Context, datasetID, tableID string, option ...bigquery.CreateTableOption) error {
+func (ts bqTableStore) createTable(ctx context.Context, datasetID, tableID string, md *bigquery.TableMetadata) error {
 	t := ts.c.Dataset(datasetID).Table(tableID)
-	return t.Create(ctx, option...)
+	return t.Create(ctx, md)
 }
 
 func (ts bqTableStore) updateTable(ctx context.Context, datasetID, tableID string, toUpdate bigquery.TableMetadataToUpdate) error {

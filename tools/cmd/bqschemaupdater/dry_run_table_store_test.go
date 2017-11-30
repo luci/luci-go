@@ -25,7 +25,7 @@ func TestCreateTableDoesNotMutate(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got: %v; want: %v", got, want)
 	}
-	err := ts.createTable(ctx, dID, tID)
+	err := ts.createTable(ctx, dID, tID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestUpdateTableDoesNotMutate(t *testing.T) {
 	ts := localTableStore{}
 	dID := "test_dataset"
 	tID := "test_table"
-	err := ts.createTable(ctx, dID, tID)
+	err := ts.createTable(ctx, dID, tID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

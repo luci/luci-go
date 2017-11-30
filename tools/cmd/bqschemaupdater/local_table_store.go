@@ -25,19 +25,16 @@ func (ts localTableStore) getTableMetadata(ctx context.Context, datasetID, table
 	return nil, &googleapi.Error{Code: http.StatusNotFound}
 }
 
-func (ts localTableStore) createTable(ctx context.Context, datasetID, tableID string, option ...bigquery.CreateTableOption) error {
-	md := &bigquery.TableMetadata{}
-	for _, o := range option {
-		if s, ok := o.(bigquery.Schema); ok {
-			md.Schema = s
-			break
-		}
-	}
+func (ts localTableStore) createTable(ctx context.Context, datasetID, tableID string, md *bigquery.TableMetadata) error {
 	key := tableKey{datasetID, tableID}
 	if _, ok := ts[key]; ok {
 		return &googleapi.Error{Code: http.StatusConflict}
 	}
-	ts[key] = md
+	var cpy bigquery.TableMetadata
+	if md != nil {
+		cpy = *md
+	}
+	ts[key] = &cpy
 	return nil
 }
 

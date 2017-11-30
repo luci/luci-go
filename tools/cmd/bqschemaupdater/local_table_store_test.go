@@ -31,10 +31,10 @@ func TestCreateTable(t *testing.T) {
 	datasetID := "test_dataset"
 	tableID := "test_table"
 	s := newTestSchema(t)
-	o := bigquery.CreateTableOption(s)
+	md := &bigquery.TableMetadata{Schema: s}
 	t.Run("SimpleCreate", func(t *testing.T) {
 		ts := localTableStore{}
-		if err := ts.createTable(ctx, datasetID, tableID, o); err != nil {
+		if err := ts.createTable(ctx, datasetID, tableID, md); err != nil {
 			t.Fatal(err)
 		}
 		want := &bigquery.TableMetadata{Schema: s}
@@ -48,11 +48,11 @@ func TestCreateTable(t *testing.T) {
 	})
 	t.Run("AlreadyCreated", func(t *testing.T) {
 		ts := localTableStore{}
-		if err := ts.createTable(ctx, datasetID, tableID, o); err != nil {
+		if err := ts.createTable(ctx, datasetID, tableID, md); err != nil {
 			t.Fatal(err)
 		}
 		want := &googleapi.Error{Code: http.StatusConflict}
-		got := ts.createTable(ctx, datasetID, tableID, o)
+		got := ts.createTable(ctx, datasetID, tableID, md)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got: %v; want: %v", got, want)
 		}
@@ -74,8 +74,8 @@ func TestGetTableMetadata(t *testing.T) {
 	t.Run("TableExists", func(t *testing.T) {
 		ts := localTableStore{}
 		want := newTestSchema(t)
-		o := bigquery.CreateTableOption(want)
-		if err := ts.createTable(ctx, datasetID, tableID, o); err != nil {
+		md := &bigquery.TableMetadata{Schema: want}
+		if err := ts.createTable(ctx, datasetID, tableID, md); err != nil {
 			t.Fatal(err)
 		}
 		md, err := ts.getTableMetadata(ctx, datasetID, tableID)
@@ -94,7 +94,7 @@ func TestUpdateTable(t *testing.T) {
 	ts := localTableStore{}
 	datasetID := "test_dataset"
 	s := newTestSchema(t)
-	o := bigquery.CreateTableOption(s)
+	initialMD := &bigquery.TableMetadata{Schema: s}
 	otherS, err := bigquery.InferSchema(testSchemaB{})
 	if err != nil {
 		t.Fatal(err)
@@ -148,7 +148,7 @@ func TestUpdateTable(t *testing.T) {
 	}
 	for _, tc := range cases {
 		if tc.createTable {
-			if err := ts.createTable(ctx, datasetID, tc.tableID, o); err != nil {
+			if err := ts.createTable(ctx, datasetID, tc.tableID, initialMD); err != nil {
 				t.Fatal(err)
 			}
 		}

@@ -28,8 +28,8 @@ func (ts dryRunTableStore) getTableMetadata(ctx context.Context, datasetID, tabl
 	return md, nil
 }
 
-func (ts dryRunTableStore) createTable(ctx context.Context, datasetID, tableID string, option ...bigquery.CreateTableOption) error {
-	fmt.Fprintf(ts.w, "Would run createTable with datasetID %v, tableID %v, options %+v\n", datasetID, tableID, option)
+func (ts dryRunTableStore) createTable(ctx context.Context, datasetID, tableID string, md *bigquery.TableMetadata) error {
+	fmt.Fprintf(ts.w, "Would run createTable with datasetID %v, tableID %v, metadata %+v\n", datasetID, tableID, md)
 	return nil
 }
 
