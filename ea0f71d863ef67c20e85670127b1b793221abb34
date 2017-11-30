@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c7fc1dba_675378d3",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T17:49:22Z",
+      "side": 1,
+      "message": "Related to both comments --- how about just Split, check length, and return last element?",
+      "parentUuid": "3d64e186_83f5f6fb",
+      "range": {
+        "startLine": 69,
+        "startChar": 17,
+        "endLine": 69,
+        "endChar": 44
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "17526e3d_883fd0bb",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 5
@@ -59,6 +83,29 @@
       "writtenOn": "2017-11-30T14:34:05Z",
       "side": 1,
       "message": "padding: 1px 1em;\n\nwould be shorter",
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bca83e1b_ef7c43bc",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T17:49:22Z",
+      "side": 1,
+      "message": "Maybe include these options at the top too, so they\u0027re more visible?",
+      "range": {
+        "startLine": 209,
+        "startChar": 20,
+        "endLine": 209,
+        "endChar": 26
+      },
       "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
