@@ -1,0 +1,13 @@
+{{define "title"}}Admin - {{.Title}}{{end}}
+
+{{define "content"}}
+<div class="row">
+  <div class="col-md-offset-2 col-md-8">
+    <h2>Done</h2>
+    <hr>
+    {{.Result}}
+    <hr>
+    <a href="/admin/portal/{{.ID}}">Back</a>
+  </div>
+</div>
+{{end}}

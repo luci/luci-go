@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package admin
+package portal
 
 import (
 	"net/http"
@@ -23,12 +23,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 )
 
 type fieldWithValue struct {
-	settings.UIField
+	Field
 	Value string
 }
 
@@ -38,15 +37,15 @@ type validationError struct {
 	Error      string
 }
 
-type pageCallback func(id string, p settings.UIPage) error
+type pageCallback func(id string, p Page) error
 
 func withPage(c context.Context, rw http.ResponseWriter, p httprouter.Params, cb pageCallback) {
-	id := p.ByName("SettingsKey")
-	page := settings.GetUIPages()[id]
+	id := p.ByName("PageKey")
+	page := GetPages()[id]
 	if page == nil {
 		rw.WriteHeader(http.StatusNotFound)
 		templates.MustRender(c, rw, "pages/error.html", templates.Args{
-			"Error": "No such settings",
+			"Error": "No such portal page",
 		})
 		return
 	}
@@ -55,10 +54,10 @@ func withPage(c context.Context, rw http.ResponseWriter, p httprouter.Params, cb
 	}
 }
 
-func settingsPageGET(ctx *router.Context) {
+func portalPageGET(ctx *router.Context) {
 	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
 
-	withPage(c, rw, p, func(id string, page settings.UIPage) error {
+	withPage(c, rw, p, func(id string, page Page) error {
 		title, err := page.Title(c)
 		if err != nil {
 			return err
@@ -71,6 +70,10 @@ func settingsPageGET(ctx *router.Context) {
 		if err != nil {
 			return err
 		}
+		actions, err := page.Actions(c)
+		if err != nil {
+			return err
+		}
 		values, err := page.ReadSettings(c)
 		if err != nil {
 			return err
@@ -79,26 +82,27 @@ func settingsPageGET(ctx *router.Context) {
 		withValues := make([]fieldWithValue, len(fields))
 		for i, f := range fields {
 			withValues[i] = fieldWithValue{
-				UIField: f,
-				Value:   values[f.ID],
+				Field: f,
+				Value: values[f.ID],
 			}
 		}
 
-		templates.MustRender(c, rw, "pages/settings.html", templates.Args{
+		templates.MustRender(c, rw, "pages/page.html", templates.Args{
 			"ID":             id,
 			"Title":          title,
 			"Overview":       overview,
 			"Fields":         withValues,
+			"Actions":        actions,
 			"XsrfTokenField": xsrf.TokenField(c),
 		})
 		return nil
 	})
 }
 
-func settingsPagePOST(ctx *router.Context) {
+func portalPagePOST(ctx *router.Context) {
 	c, rw, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
 
-	withPage(c, rw, p, func(id string, page settings.UIPage) error {
+	withPage(c, rw, p, func(id string, page Page) error {
 		title, err := page.Title(c)
 		if err != nil {
 			return err
@@ -145,6 +149,53 @@ func settingsPagePOST(ctx *router.Context) {
 		templates.MustRender(c, rw, "pages/done.html", templates.Args{
 			"ID":    id,
 			"Title": title,
+		})
+		return nil
+	})
+}
+
+func portalActionPOST(ctx *router.Context) {
+	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
+	actionID := p.ByName("ActionID")
+
+	withPage(c, rw, p, func(id string, page Page) error {
+		title, err := page.Title(c)
+		if err != nil {
+			return err
+		}
+		actions, err := page.Actions(c)
+		if err != nil {
+			return err
+		}
+
+		var action *Action
+		for i := range actions {
+			if actions[i].ID == actionID {
+				action = &actions[i]
+				break
+			}
+		}
+		if action == nil {
+			rw.WriteHeader(http.StatusNotFound)
+			templates.MustRender(c, rw, "pages/error.html", templates.Args{
+				"Error": "No such action defined",
+			})
+			return nil
+		}
+
+		result, err := action.Callback(c)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			templates.MustRender(c, rw, "pages/error.html", templates.Args{
+				"Error": err.Error(),
+			})
+			return nil
+		}
+
+		templates.MustRender(c, rw, "pages/action_done.html", templates.Args{
+			"ID":     id,
+			"Title":  title,
+			"Result": result,
 		})
 		return nil
 	})

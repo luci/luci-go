@@ -49,15 +49,15 @@ type buildMap map[builderRef]*buildbot.Build
 // words that should be merged together, this combines them into a single
 // line.
 func mergeText(text []string) []string {
-	result := make([]string, 0, len(text))
+	merged := make([]string, 0, len(text))
 	merge := false
 	for _, line := range text {
 		if merge {
 			merge = false
-			result[len(result)-1] += " " + line
+			merged[len(merged)-1] += " " + line
 			continue
 		}
-		result = append(result, line)
+		merged = append(merged, line)
 		switch line {
 		case "build", "failed", "exception":
 			merge = true
@@ -66,13 +66,14 @@ func mergeText(text []string) []string {
 		}
 	}
 
-	// We can remove error messages about the step "steps" if it's part of a longer
-	// message because this step is an artifact of running on recipes and it's
-	// not important to users.
-	if len(result) > 1 {
-		switch result[0] {
-		case "failed steps", "exception steps":
-			result = result[1:]
+	// Filter out special cased statuses to make the presentation look cleaner.
+	result := make([]string, 0, len(merged))
+	for _, item := range merged {
+		switch item {
+		case "failed steps", "failed Failure reason":
+			// Ignore because they're recipe artifacts.
+		default:
+			result = append(result, item)
 		}
 	}
 	return result

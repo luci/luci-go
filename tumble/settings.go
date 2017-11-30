@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 	"golang.org/x/net/context"
 )
@@ -30,16 +31,16 @@ const (
 	settingEnabled  = "enabled"
 )
 
-// settingsUIPage is a UI page to configure a static Tumble configuration.
-type settingsUIPage struct {
-	settings.BaseUIPage
+// settingsPage is a UI page to configure a static Tumble configuration.
+type settingsPage struct {
+	portal.BasePage
 }
 
-func (settingsUIPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(c context.Context) (string, error) {
 	return "Tumble settings", nil
 }
 
-func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
+func (settingsPage) Overview(c context.Context) (template.HTML, error) {
 	return template.HTML(`<p>Configuration parameters for the
 <a href="https://github.com/luci/luci-go/tree/master/tumble">tumble
 service</a> can be found in its
@@ -47,47 +48,47 @@ service</a> can be found in its
 documentation</a>.</p>.`), nil
 }
 
-func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	return []settings.UIField{
+func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+	return []portal.Field{
 		{
 			ID:          "NumShards",
 			Title:       "Number of shards to use",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: strconv.FormatUint(defaultConfig.NumShards, 10),
 			Validator:   intValidator(true),
 		},
 		{
 			ID:          "NumGoroutines",
 			Title:       "Number of goroutines per shard",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: strconv.Itoa(defaultConfig.NumGoroutines),
 			Validator:   intValidator(true),
 		},
 		{
 			ID:          "TemporalMinDelay",
 			Title:       "Temporal minimum delay (s, m, h)",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: defaultConfig.TemporalMinDelay.String(),
 			Validator:   validateDuration,
 		},
 		{
 			ID:          "TemporalRoundFactor",
 			Title:       "Temporal round factor, for batching (s, m, h)",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: defaultConfig.TemporalRoundFactor.String(),
 			Validator:   validateDuration,
 		},
 		{
 			ID:          "ProcessLoopDuration",
 			Title:       "Maximum lifetime of batch processing loop",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: defaultConfig.ProcessLoopDuration.String(),
 			Validator:   validateDuration,
 		},
 		{
 			ID:          "DustSettleTimeout",
 			Title:       "Amount of time to wait for datastore to settle in between mutation rounds (s, m, h)",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: defaultConfig.DustSettleTimeout.String(),
 			Validator:   validateDuration,
 		},
@@ -95,7 +96,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			ID: "MaxNoWorkDelay",
 			Title: "Maximum amount of time to sleep in between rounds if here was no work done " +
 				"the previous round (s, m, h)",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: defaultConfig.MaxNoWorkDelay.String(),
 			Validator:   validateDuration,
 		},
@@ -103,27 +104,27 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			ID: "NoWorkDelayGrowth",
 			Title: "Growth factor for the delay in between loops when no work was done. " +
 				"If <= 1, no growth will be applied. The delay is capped by MaxNoWorkDelay.",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: strconv.Itoa(int(defaultConfig.NoWorkDelayGrowth)),
 			Validator:   intValidator(true),
 		},
 		{
 			ID:          "ProcessMaxBatchSize",
 			Title:       "Number of mutations to include per commit (negative for unlimited)",
-			Type:        settings.UIFieldText,
+			Type:        portal.FieldText,
 			Placeholder: strconv.Itoa(int(defaultConfig.ProcessMaxBatchSize)),
 			Validator:   intValidator(false),
 		},
 		{
 			ID:             "DelayedMutations",
 			Title:          "Delayed mutations (index MUST be present)",
-			Type:           settings.UIFieldChoice,
+			Type:           portal.FieldChoice,
 			ChoiceVariants: []string{settingDisabled, settingEnabled},
 		},
 	}, nil
 }
 
-func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	var cfg Config
 	switch err := settings.GetUncached(c, baseName, &cfg); err {
 	case nil:
@@ -171,7 +172,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	return values, nil
 }
 
-func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	// Start with our default config and shape it with populated values.
 	cfg := defaultConfig
 
@@ -276,5 +277,5 @@ func getToggleSetting(v bool) string {
 }
 
 func init() {
-	settings.RegisterUIPage("tumble", settingsUIPage{})
+	portal.RegisterPage("tumble", settingsPage{})
 }

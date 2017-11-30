@@ -249,9 +249,9 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 			// will specify their manifest as "REVISION", and we'll do lookups with null
 			// URL fields.
 			for _, con := range consoles {
-				bs.AddManifestKey(con.GetProjectID(), con.ID, "REVISION", "", revision)
+				bs.AddManifestKey(con.ProjectID(), con.ID, "REVISION", "", revision)
 
-				bs.AddManifestKey(con.GetProjectID(), con.ID, "BUILD_SET/GitilesCommit",
+				bs.AddManifestKey(con.ProjectID(), con.ID, "BUILD_SET/GitilesCommit",
 					commit.RepoURL(), revision)
 			}
 		}
