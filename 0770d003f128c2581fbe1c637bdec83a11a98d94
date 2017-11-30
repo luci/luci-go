@@ -229,6 +229,24 @@
       "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "637b5cdf_17bae28a",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T17:33:55Z",
+      "side": 1,
+      "message": "the advantage of (replacing \"@google.com\" with \"@\" or \"\") over (stripping domain entirely) is that if foo@google.com is using bar@chromium.org and bar@chromium.org is a sheriff, we don\u0027t display ambiguous \"bar\". \n\nIf we strip domain only if it is @google.com, then we 1) still don\u0027t loose info 2) it is still short",
+      "parentUuid": "a9bf28d4_8a44bfe8",
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
