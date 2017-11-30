@@ -39,16 +39,20 @@ type tableDef struct {
 }
 
 func updateFromTableDef(ctx context.Context, ts tableStore, td tableDef) error {
-	_, err := ts.getTableMetadata(ctx, td.DataSetID, td.TableID)
-	if isNotFound(err) {
-		var options []bigquery.CreateTableOption
+	switch _, err := ts.getTableMetadata(ctx, td.DataSetID, td.TableID); {
+	case isNotFound(err):
+		md := &bigquery.TableMetadata{
+			Name:        td.FriendlyName,
+			Description: td.Description,
+			Schema:      td.Schema,
+		}
 		if !td.PartitioningDisabled {
-			options = append(options, bigquery.TimePartitioning{Expiration: td.PartitioningExpiration})
+			md.TimePartitioning = &bigquery.TimePartitioning{
+				Expiration: td.PartitioningExpiration,
+			}
 		}
-		if err = ts.createTable(ctx, td.DataSetID, td.TableID, options...); err != nil {
-			return err
-		}
-	} else if err != nil {
+		return ts.createTable(ctx, td.DataSetID, td.TableID, md)
+	case err != nil:
 		return err
 	}
 	return ts.updateTable(ctx, td.DataSetID, td.TableID, bigquery.TableMetadataToUpdate{

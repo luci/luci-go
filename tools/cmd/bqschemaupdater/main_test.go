@@ -48,7 +48,10 @@ func TestBQSchemaUpdater(t *testing.T) {
 			So(err, ShouldBeNil)
 			got, err := ts.getTableMetadata(ctx, datasetID, tableID)
 			So(err, ShouldBeNil)
-			want := &bigquery.TableMetadata{Schema: tc}
+			want := &bigquery.TableMetadata{
+				Schema:           tc,
+				TimePartitioning: &bigquery.TimePartitioning{},
+			}
 			So(got, ShouldResemble, want)
 		}
 	})
