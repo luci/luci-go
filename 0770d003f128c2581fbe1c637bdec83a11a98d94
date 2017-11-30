@@ -174,6 +174,30 @@
     },
     {
       "key": {
+        "uuid": "115ce95a_21a686b2",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T18:22:43Z",
+      "side": 1,
+      "message": "I\u0027ll just keep oncalls since that\u0027s in line with what Milo calls the oncalls internally.",
+      "parentUuid": "23da01d6_42a5a077",
+      "range": {
+        "startLine": 46,
+        "startChar": 46,
+        "endLine": 46,
+        "endChar": 54
+      },
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "419c287d_78ff0fee",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 4
@@ -244,6 +268,24 @@
       "side": 1,
       "message": "the advantage of (replacing \"@google.com\" with \"@\" or \"\") over (stripping domain entirely) is that if foo@google.com is using bar@chromium.org and bar@chromium.org is a sheriff, we don\u0027t display ambiguous \"bar\". \n\nIf we strip domain only if it is @google.com, then we 1) still don\u0027t loose info 2) it is still short",
       "parentUuid": "a9bf28d4_8a44bfe8",
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f438cf7f_255ef9ff",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-11-30T18:22:43Z",
+      "side": 1,
+      "message": "OK, we had a misunderstanding.\n\nI thought you meant to \u0027replace @google.com with @ instead of \"\"\u0027, not \u0027replace /only/ @google.com, with either @ or \"\"\u0027.\n\nI\u0027d prefer going with replacing @google.com with \"\", just because the concern in this bug is giving space to the builder summaries.\n\nNote that this won\u0027t look any different from the existing display, since all emails are @google.com.",
+      "parentUuid": "637b5cdf_17bae28a",
       "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
