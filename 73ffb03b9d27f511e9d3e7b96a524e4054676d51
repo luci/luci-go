@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "864436e0_549c1c48",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T22:35:58Z",
+      "side": 1,
+      "message": "i think this check can be moved above actual check for COnfigServiceEmail, thus you\u0027d get two logical blocks:\n first, check that settings are correct, which requires 3 things to be set.\n second, check if either emails match or isAdmin.\n\n\nFurthermore, and it\u0027s very much my opinion, it\u0027s easier to not miss next(c) if second part was written like this:\n\nif auth.CurrentIdentity(cc).Email() !\u003d s.ConfigServiceEmail {\n  switch isAdmin, err :\u003d ...{\n    case err !\u003d nil: ..., return\n    case !isAdmin: ..., return\n  }\n}\n\n// All \"allowed\" outcomes are here.\nnext(c)",
+      "range": {
+        "startLine": 149,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 34
+      },
+      "revId": "73ffb03b9d27f511e9d3e7b96a524e4054676d51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2c7fd606_7d9702f5",
         "filename": "luci_config/appengine/gaeconfig/default.go",
         "patchSetId": 10
