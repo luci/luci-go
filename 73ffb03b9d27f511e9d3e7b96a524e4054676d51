@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4217d9c_0af7686f",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:31:44Z",
+      "side": 1,
+      "message": "we have 4 ifs that handle 4 cases. let\u0027s use switch\n\nand if returns annoy you in these cases, move the switch@L153 into the `default: ` of the new switch",
+      "range": {
+        "startLine": 149,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "73ffb03b9d27f511e9d3e7b96a524e4054676d51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c7fd606_7d9702f5",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T22:31:44Z",
+      "side": 1,
+      "message": "consider logging.Errorf the msg if status\u003e\u003d500\nso that a service owner knows how to fix an http500\notherwise only luci-config sees this error message",
+      "revId": "73ffb03b9d27f511e9d3e7b96a524e4054676d51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
