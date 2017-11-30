@@ -611,7 +611,7 @@ func ProjectLinks(project, group string) []ui.LinkGroup {
 }
 
 // ConsolesHandler is responsible for taking a project name and rendering the
-// console list page (defined in ./appengine/templates/pages/consoles.html).
+// console list page (defined in ./appengine/templates/pages/builder_groups.html).
 func ConsolesHandler(c *router.Context, projectName string) {
 	cons, err := common.GetProjectConsoles(c.Context, projectName)
 	if err != nil {
@@ -653,7 +653,7 @@ func ConsolesHandler(c *router.Context, projectName string) {
 		reload = &tReload
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/consoles.html", templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/builder_groups.html", templates.Args{
 		"ProjectName": projectName,
 		"Consoles":    consoles,
 		"Reload":      reload,
