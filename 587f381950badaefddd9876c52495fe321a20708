@@ -46,6 +46,237 @@
       "revId": "587f381950badaefddd9876c52495fe321a20708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c8a55a9_07af25dd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "really cool, thanks.",
+      "parentUuid": "407adea3_ebfb3d0a",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 47
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "477a6230_fd046508",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "nit: contentType (https://stackoverflow.com/a/22689940)",
+      "range": {
+        "startLine": 33,
+        "startChar": 6,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6c44cc8_80b0c552",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "necesSary",
+      "range": {
+        "startLine": 235,
+        "startChar": 39,
+        "endLine": 235,
+        "endChar": 47
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7cb8e98_f99ba66a",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "this confused me, i thought you have a status field in this struct, but you actually don\u0027t (which is good). Can you clarify that it can set in Gerrit\u0027s ChangeInput, but not in this struct.",
+      "range": {
+        "startLine": 241,
+        "startChar": 31,
+        "endLine": 241,
+        "endChar": 59
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39928a24_0b887eba",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "style nit: TODO(username) is preferred (and will be read as \"ask \u003cusername\u003e for more info if you actually need this\")",
+      "range": {
+        "startLine": 244,
+        "startChar": 3,
+        "endLine": 244,
+        "endChar": 7
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06ace0df_f07c1e6c",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 246,
+        "startChar": 43,
+        "endLine": 246,
+        "endChar": 48
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf4b25e0_4c6180a7",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "\"is\" or \"can be\"?\n\nIf the answer \"can be\", that is createChange works with \"refs/heads/\u003cbranchname\u003e\", I\u0027d strongly ask you to make this DestinationRef and require it to start with \"refs/\".\n\nstrong bias disclaimer: my pet peeve is to ramble against \"branches\" being used sometimes as synonym for ref and sometimes for just resf/heads/*, even inside the Gerrit project, which I unreasonably expected to be more consistent :(",
+      "range": {
+        "startLine": 250,
+        "startChar": 23,
+        "endLine": 250,
+        "endChar": 33
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6d0de17_09b30794",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "can you give example of possible value right here or say a link to https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id",
+      "range": {
+        "startLine": 265,
+        "startChar": 18,
+        "endLine": 265,
+        "endChar": 28
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ba6a408_4adf08b3",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "same comment as for Branch",
+      "range": {
+        "startLine": 269,
+        "startChar": 1,
+        "endLine": 269,
+        "endChar": 10
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6674a5a_da890c8e",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T19:27:38Z",
+      "side": 1,
+      "message": "remove. Posts shouldn\u0027t be retried, because calls are not idempotent in Gerrit - we may end up creating many changes.",
+      "range": {
+        "startLine": 350,
+        "startChar": 3,
+        "endLine": 350,
+        "endChar": 39
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
