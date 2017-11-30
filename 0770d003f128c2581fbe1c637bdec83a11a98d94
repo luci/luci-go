@@ -60,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "7ab6f329_72313921",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-11-30T16:54:23Z",
+      "side": 1,
+      "message": "I\u0027m not concerned about trooper not technically being a sheriff but didn\u0027t realize this was hardcoded in milo and not all non-Chromium teams use the term sheriff. I\u0027m ok with this staying Oncalls but still dropping the sheriff ending in the config.",
+      "parentUuid": "60a6e4fc_fb21d97e",
+      "range": {
+        "startLine": 46,
+        "startChar": 46,
+        "endLine": 46,
+        "endChar": 54
+      },
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "419c287d_78ff0fee",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 4
