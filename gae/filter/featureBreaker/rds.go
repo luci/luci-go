@@ -41,6 +41,9 @@ type dsState struct {
 }
 
 func (r *dsState) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return r.run(r.c, func() error {
 		return r.rds.AllocateIDs(keys, cb)
 	})
@@ -109,18 +112,27 @@ func (r *dsState) CommitTransaction(c context.Context) error {
 // to the callback correctly.
 
 func (r *dsState) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return r.run(r.c, func() error {
 		return r.rds.DeleteMulti(keys, cb)
 	})
 }
 
 func (r *dsState) GetMulti(keys []*ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return r.run(r.c, func() error {
 		return r.rds.GetMulti(keys, meta, cb)
 	})
 }
 
 func (r *dsState) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return r.run(r.c, func() (err error) {
 		return r.rds.PutMulti(keys, vals, cb)
 	})

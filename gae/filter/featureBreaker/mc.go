@@ -28,22 +28,37 @@ type mcState struct {
 }
 
 func (m *mcState) GetMulti(keys []string, cb mc.RawItemCB) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return m.run(m.c, func() error { return m.RawInterface.GetMulti(keys, cb) })
 }
 
 func (m *mcState) AddMulti(items []mc.Item, cb mc.RawCB) error {
+	if len(items) == 0 {
+		return nil
+	}
 	return m.run(m.c, func() error { return m.RawInterface.AddMulti(items, cb) })
 }
 
 func (m *mcState) SetMulti(items []mc.Item, cb mc.RawCB) error {
+	if len(items) == 0 {
+		return nil
+	}
 	return m.run(m.c, func() error { return m.RawInterface.SetMulti(items, cb) })
 }
 
 func (m *mcState) DeleteMulti(keys []string, cb mc.RawCB) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return m.run(m.c, func() error { return m.RawInterface.DeleteMulti(keys, cb) })
 }
 
 func (m *mcState) CompareAndSwapMulti(items []mc.Item, cb mc.RawCB) error {
+	if len(items) == 0 {
+		return nil
+	}
 	return m.run(m.c, func() error { return m.RawInterface.CompareAndSwapMulti(items, cb) })
 }
 
