@@ -1,0 +1,285 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b92ed7df_c9825d8d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "nit: CL title is highly unclear for anyone not in {me,you,nodir} group.\nWhat settings are modified and why? Handler for what are installing?",
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4e7afe4_779095f2",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "for\n(they aren\u0027t just related, that\u0027s their purpose, right?)\nso the whole thing can just be:\n\n... installs handlers for config validation.\n\n(see also comment below)",
+      "range": {
+        "startLine": 119,
+        "startChar": 58,
+        "endLine": 119,
+        "endChar": 68
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ca69595_e8d19044",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "add 1 empty line. Generally docs should be like this:\n\ntl;dr \u003cfirst sentence\u003e\n\n\u003cbla blah this is extended explanation if you, \ndear reader, \nare still interested\u003e",
+      "range": {
+        "startLine": 120,
+        "startChar": 27,
+        "endLine": 120,
+        "endChar": 28
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b2865f3_66d93b69",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "consider someone reading this doc wondering how/whether to use this func. \"metadata\" isn\u0027t adding clarity but merely raises more questions. I\u0027d remove this part.",
+      "range": {
+        "startLine": 120,
+        "startChar": 14,
+        "endLine": 120,
+        "endChar": 26
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc632652_2edad267",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "settings (see doc below for function Use)\n\nif you want to be more descriptive, you may mention in \"appengine app settings page\"",
+      "range": {
+        "startLine": 122,
+        "startChar": 38,
+        "endLine": 122,
+        "endChar": 46
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c790f674_0afc2e38",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "so, afaiu, this limits who can call validation endpoint(s). Right?\nIf so, this should be documented in the settings next to administrators field.",
+      "range": {
+        "startLine": 132,
+        "startChar": 45,
+        "endLine": 132,
+        "endChar": 59
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d9842ff_80ca4f8d",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "document;you may refer to it as \"... is default value for Settings.Administrators config option below\"",
+      "range": {
+        "startLine": 52,
+        "startChar": 6,
+        "endLine": 52,
+        "endChar": 25
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0e7207c_0228d8f7",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "nit: missing period at the end.",
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2083b299_81f1c329",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "i get that it\u0027s related to config service, but i don\u0027t get what actual email it should be. Can you give an example? Is this luci-config@something.com?",
+      "range": {
+        "startLine": 68,
+        "startChar": 26,
+        "endLine": 68,
+        "endChar": 75
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96e47727_8d262327",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "is this admin group as defined in config service being used (see ConfigServiceHost), or some other admin group?\nAlso, what\u0027s the implication of setting or not setting it?",
+      "range": {
+        "startLine": 71,
+        "startChar": 22,
+        "endLine": 71,
+        "endChar": 55
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "659d6dc3_be79b570",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "nit: missing period at the end.",
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8503332_83a2df5e",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "space \" \", for consistency with above.",
+      "range": {
+        "startLine": 71,
+        "startChar": 47,
+        "endLine": 71,
+        "endChar": 48
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94e2b237_d27abc84",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T00:03:46Z",
+      "side": 1,
+      "message": "i\u0027d name it AdministratorsGroup.",
+      "range": {
+        "startLine": 72,
+        "startChar": 1,
+        "endLine": 72,
+        "endChar": 15
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
