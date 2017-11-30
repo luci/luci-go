@@ -285,7 +285,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 			logging.Warningf(c, "could not find builder summary for %s", name)
 		}
 		return &ui.BuilderRef{
-			Name:      name,
+			ID:        name,
 			ShortName: shortname,
 			Build:     builds,
 			Builder:   builder,
@@ -314,7 +314,7 @@ func consolePreview(c context.Context, summaries ui.ConsoleSummary, def *config.
 			logging.Warningf(c, "could not find builder summary for %s", name)
 		}
 		return &ui.BuilderRef{
-			Name:      name,
+			ID:        name,
 			ShortName: shortname,
 			Builder:   builder,
 		}
@@ -663,7 +663,7 @@ func ConsolesHandler(c *router.Context, projectName string) {
 
 func consoleTestData() []common.TestBundle {
 	builder := &ui.BuilderRef{
-		Name:      "tester",
+		ID:        "tester",
 		ShortName: "tst",
 		Build: []*model.BuildSummary{
 			{
