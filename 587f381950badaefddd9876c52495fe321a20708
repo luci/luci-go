@@ -22,6 +22,30 @@
       "revId": "587f381950badaefddd9876c52495fe321a20708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "407adea3_ebfb3d0a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-11-30T04:57:56Z",
+      "side": 1,
+      "message": "Correct, this is for our autorollers. Using create API rather than `git push ...` has two advantages:\n\n1. We get back ID in a machine rather readable format so we don\u0027t have to parse the Git output.\n2. Some properties can be only specified only through the API, e.g. the merge strategy which for rollers should typically be \"Fast-forward\".",
+      "parentUuid": "3f68f680_093f4049",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 47
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
