@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "3d64e186_83f5f6fb",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "comment says that Name returns the last component of the BuilderID, but it isn\u0027t true for \"a/b/c/d\". I think slashes are not OK in builder names, and BuilderIDLink agrees with that",
+      "range": {
+        "startLine": 69,
+        "startChar": 17,
+        "endLine": 69,
+        "endChar": 44
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "17526e3d_883fd0bb",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 5
@@ -25,6 +48,235 @@
     },
     {
       "key": {
+        "uuid": "b8df4e0c_6eb69229",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 5
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "padding: 1px 1em;\n\nwould be shorter",
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11f7d0df_0df63aad",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "this is collapse\n\nmerge means something different",
+      "range": {
+        "startLine": 210,
+        "startChar": 20,
+        "endLine": 210,
+        "endChar": 25
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07a51b8a_9b286804",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "should this be wrapped in $(function() { ... }) aka ready function?",
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4acdd4e7_d4baa70d",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "removeClass(\"merged\")",
+      "range": {
+        "startLine": 217,
+        "startChar": 18,
+        "endLine": 217,
+        "endChar": 46
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c8eee5c_f5add2c6",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "$(\"#console \u003e div\")",
+      "range": {
+        "startLine": 220,
+        "startChar": 4,
+        "endLine": 220,
+        "endChar": 33
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1de43971_4cb0e3a6",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 227,
+        "startChar": 6,
+        "endLine": 227,
+        "endChar": 9
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eb64f73_f9c238af",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 228,
+        "startChar": 11,
+        "endLine": 228,
+        "endChar": 14
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54fabdaf_faced3ad",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "not for this CL, but I wonder if using \u003ctable\u003e would be simpler for console. Because we are rendering a table and need heights and widths to be synchronized, so it looks like a grid.\n\nif not table, I suspect using `display: grid` might be simpler.",
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "04b4d2ec_7fd18366",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "$(\".console-commit-description-overlay\").width(width);",
+      "range": {
+        "startLine": 232,
+        "startChar": 4,
+        "endLine": 234,
+        "endChar": 7
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8530a670_e91aff17",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "why do we all the computation above each time user clicks expand? I think widths and spacer heights do not change. If it is so fast we can afford doing it each time, why not to do the computation before buttons are clicked. Then, I think, the logic of click handlers of both buttons is so simple and similar, we can get away with just one button, one handler and changes its text from expand to collapse and back.",
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7915d0f_4b329f11",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "addClass",
+      "range": {
+        "startLine": 239,
+        "startChar": 18,
+        "endLine": 239,
+        "endChar": 45
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8ede5867_a7c50cc8",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 5
@@ -41,6 +293,29 @@
         "startChar": 17,
         "endLine": 131,
         "endChar": 26
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a992858_8f8149fd",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 421,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T14:34:05Z",
+      "side": 1,
+      "message": "HTMLEscape this please",
+      "range": {
+        "startLine": 421,
+        "startChar": 24,
+        "endLine": 421,
+        "endChar": 41
       },
       "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
