@@ -2,7 +2,7 @@
 
 package ui
 
-import "fmt"
+import "strconv"
 
 const _BotStatus_name = "UnknownStatusIdleBusyDisconnected"
 
@@ -10,7 +10,7 @@ var _BotStatus_index = [...]uint8{0, 13, 17, 21, 33}
 
 func (i BotStatus) String() string {
 	if i < 0 || i >= BotStatus(len(_BotStatus_index)-1) {
-		return fmt.Sprintf("BotStatus(%d)", i)
+		return "BotStatus(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _BotStatus_name[_BotStatus_index[i]:_BotStatus_index[i+1]]
 }

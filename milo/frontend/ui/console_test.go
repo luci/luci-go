@@ -53,12 +53,12 @@ func TestCategory(t *testing.T) {
 		cat2 := []string{"test.data"}
 		deepcat := []string{"Hi", "Goodbye"}
 		br1 := &BuilderRef{
-			Name:      "test 1",
+			ID:        "test 1",
 			ShortName: "t1",
 			Build:     []*model.BuildSummary{},
 		}
 		br2 := &BuilderRef{
-			Name:      "test 2",
+			ID:        "test 2",
 			ShortName: "t2",
 			Build:     []*model.BuildSummary{},
 		}
@@ -70,14 +70,14 @@ func TestCategory(t *testing.T) {
 
 		Convey("With builder", func() {
 			root := buildVerifyRoot("_root_", []testBuilder{{br1, emptycat}}, 1)
-			So(root.Children[0].(*BuilderRef).Name, ShouldEqual, br1.Name)
+			So(root.Children[0].(*BuilderRef).ID, ShouldEqual, br1.ID)
 		})
 
 		Convey("With nested categories", func() {
 			root := buildVerifyRoot("o_o", []testBuilder{{br1, deepcat}}, 1)
 			child1 := verifyCategory(root.Children[0], 1, deepcat[0])
 			child2 := verifyCategory(child1.Children[0], 1, deepcat[1])
-			So(child2.Children[0].(*BuilderRef).Name, ShouldEqual, br1.Name)
+			So(child2.Children[0].(*BuilderRef).ID, ShouldEqual, br1.ID)
 		})
 
 		Convey("Multiple categories", func() {
@@ -86,9 +86,9 @@ func TestCategory(t *testing.T) {
 				{br2, cat2},
 			}, 2)
 			child1 := verifyCategory(root.Children[0], 1, cat1[0])
-			So(child1.Children[0].(*BuilderRef).Name, ShouldEqual, br1.Name)
+			So(child1.Children[0].(*BuilderRef).ID, ShouldEqual, br1.ID)
 			child2 := verifyCategory(root.Children[1], 1, cat2[0])
-			So(child2.Children[0].(*BuilderRef).Name, ShouldEqual, br2.Name)
+			So(child2.Children[0].(*BuilderRef).ID, ShouldEqual, br2.ID)
 		})
 
 		Convey("Reusing existing categories", func() {
@@ -97,8 +97,8 @@ func TestCategory(t *testing.T) {
 				{br2, cat1},
 			}, 1)
 			child := verifyCategory(root.Children[0], 2, cat1[0])
-			So(child.Children[0].(*BuilderRef).Name, ShouldEqual, br1.Name)
-			So(child.Children[1].(*BuilderRef).Name, ShouldEqual, br2.Name)
+			So(child.Children[0].(*BuilderRef).ID, ShouldEqual, br1.ID)
+			So(child.Children[1].(*BuilderRef).ID, ShouldEqual, br2.ID)
 		})
 	})
 }
