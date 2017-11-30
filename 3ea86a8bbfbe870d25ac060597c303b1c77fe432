@@ -530,6 +530,30 @@
     },
     {
       "key": {
+        "uuid": "ce1bc157_3a7b9b36",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T01:54:39Z",
+      "side": 1,
+      "message": "perfect!",
+      "parentUuid": "e18710f7_4b1122f6",
+      "range": {
+        "startLine": 71,
+        "startChar": 22,
+        "endLine": 71,
+        "endChar": 55
+      },
+      "revId": "3ea86a8bbfbe870d25ac060597c303b1c77fe432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94e2b237_d27abc84",
         "filename": "luci_config/appengine/gaeconfig/settings.go",
         "patchSetId": 3
