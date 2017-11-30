@@ -51,6 +51,7 @@ var funcMap = template.FuncMap{
 	"pagedURL":        pagedURL,
 	"parseRFC3339":    parseRFC3339,
 	"percent":         percent,
+	"shortenEmail":    shortenEmail,
 	"shortHash":       shortHash,
 	"startswith":      strings.HasPrefix,
 	"sub":             sub,
@@ -144,6 +145,11 @@ func formatTime(t time.Time) string {
 // smart enough to do that.
 func sub(a, b int) int {
 	return a - b
+}
+
+// shortenEmail shortens Google emails.
+func shortenEmail(email string) string {
+	return strings.Replace(email, "@google.com", "", -1)
 }
 
 // shortHash abbriviates a git hash into 6 characters.

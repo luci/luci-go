@@ -54,7 +54,7 @@
             {{ $numEmails := (len .Emails) }}
             {{ if gt $numEmails 0 }}
               {{ range $i, $email := .Emails }}
-                <span>{{ . | obfuscateEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
+                <span>{{ . | shortenEmail | obfuscateEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
               {{ end }}
             {{ else if .Primary }}
               <span>{{ .Primary }}</span>
