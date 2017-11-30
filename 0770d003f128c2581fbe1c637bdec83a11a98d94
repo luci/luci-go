@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d8f3303f_f2fa1d93",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:48:50Z",
+      "side": 1,
+      "message": "i just unchecked 25% and 75% in devtools on https://2409-2a13e9b-tainted-jchinlee-dot-luci-milo-dev.appspot.com/p/chromium/g/main/console\nand the result was about the same. Do we really need this?",
+      "parentUuid": "c9f05707_c5ff9558",
+      "revId": "0770d003f128c2581fbe1c637bdec83a11a98d94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "60a6e4fc_fb21d97e",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 4
