@@ -25,6 +25,93 @@
     },
     {
       "key": {
+        "uuid": "120f9ab9_25316028",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "06af7ae0_7e2dd407",
+      "range": {
+        "startLine": 121,
+        "startChar": 21,
+        "endLine": 121,
+        "endChar": 30
+      },
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2abb4b34_9f223239",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "we should check that this is not \"\" before calling IsMember",
+      "range": {
+        "startLine": 134,
+        "startChar": 43,
+        "endLine": 134,
+        "endChar": 64
+      },
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df013d66_f6bfebba",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "let\u0027s respond with HTTP 500 so that admins are not wondering why access is denied",
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54606338_13d491bf",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "in 99% of cases the user is the luci-config, so the IsMember call was for nothing. I\u0027d prefer to do this check first and if it passes, do not do other checks",
+      "range": {
+        "startLine": 141,
+        "startChar": 18,
+        "endLine": 141,
+        "endChar": 74
+      },
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aad48dd7_bbf91e4f",
         "filename": "luci_config/appengine/gaeconfig/settings.go",
         "patchSetId": 8
@@ -71,6 +158,23 @@
     },
     {
       "key": {
+        "uuid": "492bbc55_eb8b2e25",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "there is a comprehensive email check in https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/auth/identity/identity.go#50\n\nplease use https://godoc.org/go.chromium.org/luci/common/auth/identity#MakeIdentity and check the returned error",
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2e845d7_64d4a9c6",
         "filename": "luci_config/appengine/gaeconfig/settings.go",
         "patchSetId": 8
@@ -110,6 +214,76 @@
         "startChar": 3,
         "endLine": 218,
         "endChar": 12
+      },
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18cd8302_a6d05b0b",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "65fc8984_4cec42b2",
+      "range": {
+        "startLine": 218,
+        "startChar": 3,
+        "endLine": 218,
+        "endChar": 12
+      },
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1db0c9a1_3f6495fc",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "remove? looks like typo",
+      "range": {
+        "startLine": 230,
+        "startChar": 44,
+        "endLine": 230,
+        "endChar": 47
+      },
+      "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf346541_a83df7c5",
+        "filename": "luci_config/appengine/gaeconfig/settings.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:50:53Z",
+      "side": 1,
+      "message": "this may make the reader think that this the ONLY group that can call the API (which is false). Perhaps this can be rephrased to something like\n\n  Members of this group can call the validation endpoint.",
+      "range": {
+        "startLine": 230,
+        "startChar": 13,
+        "endLine": 231,
+        "endChar": 8
       },
       "revId": "e3601198f00cd954c8b5ec4a7b1cad343a4a3160",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
