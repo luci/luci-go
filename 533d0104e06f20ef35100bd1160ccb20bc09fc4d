@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1de4d19e_f1b8a866",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T23:12:48Z",
+      "side": 1,
+      "message": "IMO we should generally try harder not to copy-paste. Why not\n\n{{define \"controls\"}}\n  controls here\n{{end}}\n\nand then inject it using {{template \"controls\"}}\n?",
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7811348c_bc6c21a5",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T23:12:48Z",
+      "side": 1,
+      "message": "e.preventDefault(), see estaab\u0027s comment",
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23af860a_cc0f77bd",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T23:12:48Z",
+      "side": 1,
+      "message": "w",
+      "range": {
+        "startLine": 251,
+        "startChar": 42,
+        "endLine": 251,
+        "endChar": 43
+      },
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc9d9e45_5a031abe",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T23:12:48Z",
+      "side": 1,
+      "message": "this is not the last component (not what advertised), e.g. for \"a/b/c/d\". We should not have slashes in builder names, so I think strings.Split(br.ID, \"/\") should be fine",
+      "range": {
+        "startLine": 253,
+        "startChar": 17,
+        "endLine": 253,
+        "endChar": 38
+      },
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d4ae80f_059e72cb",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T23:12:48Z",
+      "side": 1,
+      "message": "id",
+      "range": {
+        "startLine": 288,
+        "startChar": 14,
+        "endLine": 288,
+        "endChar": 18
+      },
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
