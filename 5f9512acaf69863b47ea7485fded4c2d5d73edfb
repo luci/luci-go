@@ -16,6 +16,24 @@
       "revId": "5f9512acaf69863b47ea7485fded4c2d5d73edfb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70caade3_70cb42f0",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T21:33:31Z",
+      "side": 1,
+      "message": "oh, this CL landed while I was reviewing it. I will do this myself",
+      "parentUuid": "2faf1e6b_74db712a",
+      "revId": "5f9512acaf69863b47ea7485fded4c2d5d73edfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
