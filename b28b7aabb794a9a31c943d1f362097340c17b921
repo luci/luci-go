@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "890adbda_bc0ce99f",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "i think golint will complain that this should be ID",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 3
+      },
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ee53f5c_b4220f7c",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "let\u0027s avoid copy-pasting fields by embedding a pointer to the proto",
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "600cfa79_4dd56a46",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "we have two lists of same fields here and L66-67 and they must be in sync. Better not to copy paste them:\n\n  var dc Datacenter\n  if err :\u003d rows.Scan(\u0026dc.ID, \u0026dc.Name, \u0026dc.Description); ...\n\nless code this way",
+      "range": {
+        "startLine": 76,
+        "startChar": 5,
+        "endLine": 78,
+        "endChar": 41
+      },
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f8fe133_0d5b3048",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "this creation of datacenter is very similar to the one in L75, i.e. copy-pasta. Can be solved by scanning a row into a datacenter struct",
+      "range": {
+        "startLine": 88,
+        "startChar": 59,
+        "endLine": 91,
+        "endChar": 4
+      },
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e6803d0_27ec6087",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "if we use embedding in Datacenter struct, the list of fields does not have to be synchronized here, and values do not have to be copied",
+      "range": {
+        "startLine": 101,
+        "startChar": 53,
+        "endLine": 104,
+        "endChar": 4
+      },
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a14163e_c9290035",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "this code assumes we never pass empty non-nil slice. Better not to assume that by checking len(datacenters) \u003d\u003d 0. In general, I believe checking that a slice is not nil is a kind of antipattern",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 22
+      },
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8498e2da_601195f1",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85103bd8_117fe1d5",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T13:03:55Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "b28b7aabb794a9a31c943d1f362097340c17b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
