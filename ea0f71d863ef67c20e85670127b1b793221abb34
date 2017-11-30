@@ -160,6 +160,30 @@
     },
     {
       "key": {
+        "uuid": "d92539e7_7b6ab536",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-11-30T22:10:57Z",
+      "side": 1,
+      "message": "I saw the most-recent demo where the link appears in both places and I think it looks good and works well.",
+      "parentUuid": "da20770e_0d0e5bce",
+      "range": {
+        "startLine": 209,
+        "startChar": 20,
+        "endLine": 209,
+        "endChar": 26
+      },
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "11f7d0df_0df63aad",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 5
@@ -343,6 +367,23 @@
       "writtenOn": "2017-11-30T14:34:05Z",
       "side": 1,
       "message": "why do we all the computation above each time user clicks expand? I think widths and spacer heights do not change. If it is so fast we can afford doing it each time, why not to do the computation before buttons are clicked. Then, I think, the logic of click handlers of both buttons is so simple and similar, we can get away with just one button, one handler and changes its text from expand to collapse and back.",
+      "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9359a85_4e8b2aae",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-11-30T22:10:57Z",
+      "side": 1,
+      "message": "for both .click() handlers please use function(e) { ... e.preventDefault(); }\n\nso it doesn\u0027t jump to the top of the page when clicked.",
       "revId": "ea0f71d863ef67c20e85670127b1b793221abb34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
