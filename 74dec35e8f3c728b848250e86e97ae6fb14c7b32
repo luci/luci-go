@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2386d7ff_73ff9cbe",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T02:45:04Z",
+      "side": 1,
+      "message": "config",
+      "range": {
+        "startLine": 7,
+        "startChar": 16,
+        "endLine": 7,
+        "endChar": 17
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9df28d93_0cb877f2",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T02:45:04Z",
+      "side": 1,
+      "message": "feature request, possibly for follow up CLs:\npass request\u0027s context.Context so that validator Func can do logging, \nas well other stuff for which general context.Context is required.\n\n\nfunc MyValidator(ctx context.Context, configSet, path, content, vctx validation.Context){\n  // motivation example 1:\n  if cfg.fieldIWantToDeprecate !\u003d nil {\n    // Config is still valid, nothing is depreacted **yet**.\n    // but I want to know how many configs rely on this feature and maybe other circumstances \n    // such as whether cfg.AnotherField is also set, etc.\n    // The easiest way to do this is through logging.\n    loging.Warningf(ctx, \"note to myself (aka app owner): this field is used in project ...\", ...)\n  }\n  // motivation example 2:\n  // There could be other use cases for which logging is generally useful,\n  // say in case of non-trivial algos that check that config with references\n  // such as acl_sets{ name string; include_others: \u003cnames\u003e } don\u0027t create a \n  // circular loop.\n}",
+      "range": {
+        "startLine": 56,
+        "startChar": 51,
+        "endLine": 56,
+        "endChar": 63
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89c7dbb6_c58b872f",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T02:45:04Z",
+      "side": 1,
+      "message": "nit: V  (upper case for logging messages; arbitrary convention, but at the very least you should be consistent throughout one file/package :) )",
+      "range": {
+        "startLine": 81,
+        "startChar": 36,
+        "endLine": 81,
+        "endChar": 37
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88d220be_3f37a116",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-11-30T02:45:04Z",
+      "side": 1,
+      "message": "you are missing a test that checks that content passed here is actually correct.",
+      "range": {
+        "startLine": 95,
+        "startChar": 52,
+        "endLine": 95,
+        "endChar": 66
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
