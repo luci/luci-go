@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "377fb7a1_e9ff2b8f",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "good examples, let\u0027s do it in a separate CL",
+      "parentUuid": "9df28d93_0cb877f2",
+      "range": {
+        "startLine": 56,
+        "startChar": 51,
+        "endLine": 56,
+        "endChar": 63
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89c7dbb6_c58b872f",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 5
@@ -71,6 +95,275 @@
     },
     {
       "key": {
+        "uuid": "eec92133_0630b724",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "IMO this should be Warningf, i.e. we should not have errors in the log because a user is doing something wrong",
+      "range": {
+        "startLine": 81,
+        "startChar": 25,
+        "endLine": 81,
+        "endChar": 31
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "426ad7e6_cf86e6c1",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": ".GetFoo() is better than just .Foo only if the receiver may be nil, which cannot happen in this case. Please use `case reqBody.ConfigSet \u003d\u003d \"\"`:\n\nsame below",
+      "range": {
+        "startLine": 84,
+        "startChar": 14,
+        "endLine": 84,
+        "endChar": 28
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d60308d0_540ab851",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "return",
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29024716_0581647b",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "return",
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db4e834d_1efc41df",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "please use https://godoc.org/go.chromium.org/luci/common/proto/config#ValidationResponseMessage",
+      "range": {
+        "startLine": 97,
+        "startChar": 37,
+        "endLine": 97,
+        "endChar": 80
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "252ada96_3aff5159",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "use errStatus?",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 47
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2578bf01_54778307",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "for all 4 variables that exist only to get a string pointer (css, ps, url, version), use https://godoc.org/github.com/golang/protobuf/proto#String instead and remove the variables.",
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4549c77d_f233272d",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "this line is a bit long. Perhaps instead of val variable for config.Validator, add meta variable for config.ServiceDynamicMetadata and inline val there.",
+      "range": {
+        "startLine": 116,
+        "startChar": 37,
+        "endLine": 116,
+        "endChar": 103
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "454b4a9c_c5b1d90d",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "use errorStatus?\n\nperhaps add a helper function `respond(w http.ResponseWriter, body interface{})` and use it here and in L97",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 47
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61e2693d_5f1a79bf",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "please move both functions into the top-level convey and remove these parameters",
+      "range": {
+        "startLine": 39,
+        "startChar": 17,
+        "endLine": 39,
+        "endChar": 49
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "648b2bbd_3716401a",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "rr can be moved to the top-level convey, and then you don\u0027t have to create/return it in this/above function and all calls become simpler",
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33293f4a_dd1b1b09",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "http.StatusOK",
+      "range": {
+        "startLine": 56,
+        "startChar": 28,
+        "endLine": 56,
+        "endChar": 31
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3ec2d5a_1c27e862",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "this test is not sufficient. Please decode the response to a proto message and use ShouldResemble to validate contents of the response\n\nsame applies below\n\nperhaps it is better to make metaCall and valCall return response proto messages so that each test does not decode response",
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "88d220be_3f37a116",
         "filename": "common/config/validation/handler_test.go",
         "patchSetId": 5
@@ -87,6 +380,29 @@
         "startChar": 52,
         "endLine": 95,
         "endChar": 66
+      },
+      "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecbdf20c_ad69f384",
+        "filename": "common/proto/config/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-11-30T16:08:41Z",
+      "side": 1,
+      "message": "what is following here?\n\nMaybe \".proto files in this directory\"?",
+      "range": {
+        "startLine": 1,
+        "startChar": 4,
+        "endLine": 1,
+        "endChar": 13
       },
       "revId": "74dec35e8f3c728b848250e86e97ae6fb14c7b32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
