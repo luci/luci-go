@@ -1,5 +1,5 @@
-// Copyright 2015 The Swarming Authors. All rights reserved.
-// Use of this source code is governed by the Apache v2.0 license that can be
+// Copyright 2015 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
 // Schemas for config files in services/luci-config config set.
@@ -61,6 +61,7 @@ message Service {
   // Where to import "services/<id>" config set from. If config_location.url is
   // relative, it is relative to the current configuration file.
   // If not specified, defaults to "../<id>/".
+  // Not yet implemented.
   optional ConfigSetLocation config_location = 3;
   // An HTTPS endpoint that returns JSON-encoded ServiceDynamicMetadata in body.
   optional string metadata_url = 4;
@@ -102,6 +103,12 @@ message AclCfg {
   // Name of the group that has access to all projects/* config sets.
   // Only trusted services should be in this group.
   optional string project_access_group = 2;
+  // Name of the group that has admin access to the app.
+  optional string admin_group = 3;
+  // Name of the group that can access configs by hash.
+  optional string config_get_by_hash_group = 4;
+  // Name of the group that may call validation API.
+  optional string validation_group = 5;
 }
 
 // Schema for import.cfg. It specified how to import configuration files from
@@ -173,7 +180,7 @@ message ValidationRequestMessage {
   // Path of the config file to validate.
   optional string path = 2;
   // Base64-encoded contents of the file.
-  optional string content = 3;
+  optional bytes content = 3;
 }
 
 // This message is used only in JSON form. It is expected from an external
