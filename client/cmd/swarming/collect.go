@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"time"
 
@@ -132,6 +133,7 @@ type collectRun struct {
 	timeout         time.Duration
 	taskSummaryJSON string
 	taskOutput      taskOutputOption
+	outputDir       string
 	perf            bool
 	jsonInput       string
 }
@@ -143,6 +145,7 @@ func (c *collectRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.taskSummaryJSON, "task-summary-json", "", "Dump a summary of task results to a file as json.")
 	c.Flags.BoolVar(&c.perf, "perf", false, "Includes performance statistics.")
 	c.Flags.Var(&c.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
+	c.Flags.StringVar(&c.outputDir, "output-dir", "", "Where to download isolated output to.")
 	c.Flags.StringVar(&c.jsonInput, "requests-json", "", "Load the task IDs from a .json file as saved by \"trigger -dump-json\"")
 }
 
@@ -220,7 +223,13 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		output = taskOutput.Output
 	}
 
-	// TODO: Fetch additional files from isolate server.
+	// Download the result isolated if available and if we have a place to put it.
+	if len(c.outputDir) > 0 && result.OutputsRef != nil {
+		dir := filepath.Clean(c.outputDir)
+		if err := service.GetTaskOutputs(ctx, result.OutputsRef, dir); err != nil {
+			return taskResult{taskID: taskID, err: err}
+		}
+	}
 
 	return taskResult{
 		taskID: taskID,
@@ -305,7 +314,7 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 		return err
 	}
 	s.BasePath = c.commonFlags.serverURL + swarmingAPISuffix
-	service := &swarmingServiceImpl{s}
+	service := &swarmingServiceImpl{client, s}
 
 	// Prepare context.
 	// TODO(mknyszek): Use cancel func to implement graceful exit on SIGINT.

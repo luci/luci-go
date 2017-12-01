@@ -107,6 +107,7 @@ type triggerRun struct {
 	rawCmd      bool
 	dumpJSON    string
 	cipdPackage stringmapflag.Value
+	outputs     common.Strings
 }
 
 func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
@@ -124,6 +125,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
 	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task.")
 	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
+	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
 	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
 	c.Flags.IntVar(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
 	c.Flags.IntVar(&c.deadline, "deadline", 0, "TODO(rogerta)")
@@ -270,6 +272,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		GracePeriodSecs:      30,
 		Idempotent:           c.idempotent,
 		InputsRef:            inputsRefs,
+		Outputs:              c.outputs,
 		IoTimeoutSecs:        c.ioTimeout,
 	}
 
