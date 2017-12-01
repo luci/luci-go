@@ -2,6 +2,57 @@
   "comments": [
     {
       "key": {
+        "uuid": "9bfacfa3_8cd87285",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "for another CL\n\nI think we should put context.Context into validation.Context, like router.Context does that. \nbut then ctx should be the first parameter",
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4aa6312f_03a26766",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "second parameter in Warningf is a format string, but msg is not a format string. I see two options:\n\n1) put msg param after err and add `args ...interface{}`. Then pass msg and args to warningf\n2) logging.Warningf(c, \"%s\", msg)",
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dcc369d_7e62b452",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "put it in a separate import block, between stdlib and go.chormium.org/luci/*",
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4af90bb8_b67953ee",
         "filename": "common/config/validation/handler_test.go",
         "patchSetId": 7
@@ -18,6 +69,116 @@
         "startChar": 51,
         "endLine": 52,
         "endChar": 58
+      },
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8262221_fa7ef09f",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "we know the status, it is rr.Code, so we could check that",
+      "parentUuid": "4af90bb8_b67953ee",
+      "range": {
+        "startLine": 52,
+        "startChar": 51,
+        "endLine": 52,
+        "endChar": 58
+      },
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4da2576b_1824e7c5",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "bytes.NewReader(respBodyJSON)",
+      "range": {
+        "startLine": 59,
+        "startChar": 55,
+        "endLine": 59,
+        "endChar": 94
+      },
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d085335c_7a1b3de2",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "please invert the condition, so that L63-66 can be unindented",
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "623757d2_5987699d",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "this equals \"https:///api/config/v1/metadata\" and it a bit confusing. Please add example.com to the request so this looks more realistic",
+      "range": {
+        "startLine": 78,
+        "startChar": 23,
+        "endLine": 78,
+        "endChar": 62
+      },
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa1b9416_2be23958",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:37:50Z",
+      "side": 1,
+      "message": "please move this } to the next line, so it is consistent with L93",
+      "range": {
+        "startLine": 97,
+        "startChar": 42,
+        "endLine": 97,
+        "endChar": 43
       },
       "revId": "f320b2413a03479e514a452872bc81b2cee17121",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
