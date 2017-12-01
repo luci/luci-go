@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2f61e10_64e03943",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-01T22:33:13Z",
+      "side": 1,
+      "message": "Typo (extraneous b in datacenters).",
+      "range": {
+        "startLine": 12,
+        "startChar": 8,
+        "endLine": 12,
+        "endChar": 9
+      },
+      "revId": "4e408451efc0e005a46923c40fd7e9eb04fbcea2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e93f83b_be6bdbbd",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-01T22:33:13Z",
+      "side": 1,
+      "message": "The order this iteration happens is non-deterministic, which affects the current tests (since we have to manually assert every single statement that gets executed).",
+      "revId": "4e408451efc0e005a46923c40fd7e9eb04fbcea2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
