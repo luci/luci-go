@@ -83,6 +83,9 @@ type Builder struct {
 	// and is expected to be nil.
 	MachinePool *MachinePool
 
+	// Groups is a list of links to builder groups that contain this builder.
+	Groups []*Link
+
 	// PrevCursor is a cursor to the previous page.
 	PrevCursor string `json:",omitempty"`
 	// NextCursor is a cursor to the next page.

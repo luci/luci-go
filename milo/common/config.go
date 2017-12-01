@@ -69,24 +69,17 @@ type Console struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
-// Project returns the id of the project the console is a part of, extracted
-// from the parent key.  If the underlying entity does not have a proper parent
-// key, this returns "".
-func (c *Console) Project() string {
-	if c.Parent == nil {
-		return ""
-	}
-	return c.Parent.StringID()
-}
-
 func (c *Console) ConsoleID() ConsoleID {
-	return ConsoleID{Project: c.Project(), ID: c.ID}
+	return ConsoleID{Project: c.ProjectID(), ID: c.ID}
 }
 
 // ProjectID retrieves the project ID string of the console out of the Console's
 // parent key.
-func (con *Console) ProjectID() string {
-	return con.Parent.StringID()
+func (c *Console) ProjectID() string {
+	if c.Parent == nil {
+		return ""
+	}
+	return c.Parent.StringID()
 }
 
 // ConsoleID is a reference to a console.
@@ -527,4 +520,11 @@ func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
 		return result, ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
 	}
 	return result, nil
+}
+
+// GetConsolesByBuilderID returns all consoles that reference a builder.
+func GetConsolesByBuilderID(c context.Context, builderID string) ([]*Console, error) {
+	q := datastore.NewQuery("Console").Eq("Builders", builderID)
+	var consoles []*Console
+	return consoles, datastore.GetAll(c, q, &consoles)
 }
