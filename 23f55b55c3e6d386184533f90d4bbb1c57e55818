@@ -46,6 +46,30 @@
       "revId": "23f55b55c3e6d386184533f90d4bbb1c57e55818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1137c967_24e028c3",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T19:35:53Z",
+      "side": 1,
+      "message": "\u003e why not build numbers?\n\nthere was a long debate whether we need build numbers at all. They require a global lock on a builder, e.g. we cannot generate \u003e10 build numbers per second with current simple implementation. We had to implement them for Chromium, but don\u0027t recommend them to others.\n\nI agree that having a link to the latest build for the builder is nice, better than an extra hop through builder page. My concern is that link \"title\" (builder) does not match the href (build).\nHow would you feel about displaying a rich tooltip with a link to the latest build?",
+      "parentUuid": "1894bcfc_10c86184",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 50
+      },
+      "revId": "23f55b55c3e6d386184533f90d4bbb1c57e55818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
