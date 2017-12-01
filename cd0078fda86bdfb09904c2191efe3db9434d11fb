@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4d8252c2_4ed27e98",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T15:46:30Z",
+      "side": 1,
+      "message": "I dont\u0027t know Andrii, we have 5 returns in this function. I think putting exactly two\n\n  default:\n    next(c)\n\nwould be simpler (2\u003c5) and there would be no risk that someone forgets to add return after errStatus",
+      "revId": "cd0078fda86bdfb09904c2191efe3db9434d11fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
