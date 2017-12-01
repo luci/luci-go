@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9f26cc9c_2bc0c1d7",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T23:46:03Z",
+      "side": 1,
+      "message": "nit: Go likes upper case abbreviations : projectACLMiddleware",
+      "range": {
+        "startLine": 310,
+        "startChar": 10,
+        "endLine": 310,
+        "endChar": 13
+      },
+      "revId": "5eb8d0917b407f43a5ce49ef5556d5dd854bab0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab6c401b_11e85089",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T23:46:03Z",
+      "side": 1,
+      "message": "nit: we have 3 cases here, please use switch \n\nswitch allowed, err :\u003d .....; {\ncase err !\u003d nil:\n  ...\ncase !allowed:\n  ...\ndefault:\n  ...\n}\n\nthen you don\u0027t need returns",
+      "revId": "5eb8d0917b407f43a5ce49ef5556d5dd854bab0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3710b177_2ba39100",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T23:46:03Z",
+      "side": 1,
+      "message": "this one too",
+      "range": {
+        "startLine": 94,
+        "startChar": 22,
+        "endLine": 94,
+        "endChar": 28
+      },
+      "revId": "5eb8d0917b407f43a5ce49ef5556d5dd854bab0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
