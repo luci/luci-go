@@ -34,6 +34,24 @@
       "revId": "88c04927a2f04471fe55894c830b1d230ad4d6e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5df50d2_e5265381",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:02:35Z",
+      "side": 1,
+      "message": "Yeah uploading multiple concurrently makes sense as a performance optimisation.\nDownloading concurrently doesn\u0027t really make sense at all. And if it were, each would be in a separate directory.",
+      "parentUuid": "78603f35_48bf8ec1",
+      "revId": "88c04927a2f04471fe55894c830b1d230ad4d6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
