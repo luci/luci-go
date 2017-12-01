@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "0b357b9d_75d30a53",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-01T02:00:11Z",
+      "side": 1,
+      "message": "Decided to combine both suggestions!",
+      "parentUuid": "864436e0_549c1c48",
+      "range": {
+        "startLine": 149,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 34
+      },
+      "revId": "73ffb03b9d27f511e9d3e7b96a524e4054676d51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f129fec7_a6615863",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-01T02:00:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4217d9c_0af7686f",
+      "range": {
+        "startLine": 149,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "73ffb03b9d27f511e9d3e7b96a524e4054676d51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2c7fd606_7d9702f5",
         "filename": "luci_config/appengine/gaeconfig/default.go",
         "patchSetId": 10
@@ -62,6 +110,24 @@
       "revId": "73ffb03b9d27f511e9d3e7b96a524e4054676d51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1731c830_1387933f",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-01T02:00:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c7fd606_7d9702f5",
+      "revId": "73ffb03b9d27f511e9d3e7b96a524e4054676d51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
