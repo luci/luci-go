@@ -68,6 +68,7 @@ func TestGetDatacenters(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
+
 		Convey("matches", func() {
 			names := stringset.NewFromSlice("datacenter 2", "datacenter 3")
 			rows.AddRow("datacenter 1", "description 1")
@@ -103,6 +104,96 @@ func TestGetDatacenters(t *testing.T) {
 				{
 					Name:        "datacenter 2",
 					Description: "description 2",
+				},
+			})
+			So(err, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+	})
+}
+
+func TestGetRacks(t *testing.T) {
+	Convey("getRacks", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		selectStmt := `^SELECT racks.name, racks.description, datacenters.name FROM racks, datacenters WHERE racks.datacenter_id = datacenters.id$`
+		columns := []string{"racks.name", "racks.description", "datacenters.name"}
+		rows := sqlmock.NewRows(columns)
+
+		Convey("query failed", func() {
+			names := stringset.NewFromSlice("rack")
+			dcs := stringset.NewFromSlice("datacenter")
+			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
+			racks, err := getRacks(c, names, dcs)
+			So(racks, ShouldHaveLength, 0)
+			So(err, ShouldErrLike, "failed to fetch racks")
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("empty", func() {
+			names := stringset.NewFromSlice("rack")
+			dcs := stringset.NewFromSlice("datacenter")
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			racks, err := getRacks(c, names, dcs)
+			So(racks, ShouldHaveLength, 0)
+			So(err, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("no matches", func() {
+			names := stringset.NewFromSlice("rack")
+			dcs := stringset.NewFromSlice("datacenter")
+			rows.AddRow("rack 1", "description 1", "datacenter 1")
+			rows.AddRow("rack 2", "description 2", "datacenter 2")
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			racks, err := getRacks(c, names, dcs)
+			So(racks, ShouldHaveLength, 0)
+			So(err, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("matches", func() {
+			names := stringset.NewFromSlice("rack 2", "rack 3")
+			dcs := stringset.NewFromSlice("datacenter 2", "datacenter 3")
+			rows.AddRow("rack 1", "description 1", "datacenter 1")
+			rows.AddRow("rack 2", "description 2", "datacenter 2")
+			rows.AddRow("rack 3", "description 3", "datacenter 3")
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			racks, err := getRacks(c, names, dcs)
+			So(racks, ShouldResemble, []*crimson.Rack{
+				{
+					Name:        "rack 2",
+					Description: "description 2",
+					Datacenter:  "datacenter 2",
+				},
+				{
+					Name:        "rack 3",
+					Description: "description 3",
+					Datacenter:  "datacenter 3",
+				},
+			})
+			So(err, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("ok", func() {
+			names := stringset.New(0)
+			dcs := stringset.New(0)
+			rows.AddRow("rack 1", "description 1", "datacenter 1")
+			rows.AddRow("rack 2", "description 2", "datacenter 2")
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			racks, err := getRacks(c, names, dcs)
+			So(racks, ShouldResemble, []*crimson.Rack{
+				{
+					Name:        "rack 1",
+					Description: "description 1",
+					Datacenter:  "datacenter 1",
+				},
+				{
+					Name:        "rack 2",
+					Description: "description 2",
+					Datacenter:  "datacenter 2",
 				},
 			})
 			So(err, ShouldBeNil)

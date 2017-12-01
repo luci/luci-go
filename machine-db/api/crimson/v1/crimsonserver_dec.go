@@ -36,3 +36,18 @@ func (s *DecoratedCrimson) GetDatacenters(c context.Context, req *DatacentersReq
 	}
 	return
 }
+
+func (s *DecoratedCrimson) GetRacks(c context.Context, req *RacksRequest) (rsp *RacksResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetRacks", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetRacks(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetRacks", rsp, err)
+	}
+	return
+}
