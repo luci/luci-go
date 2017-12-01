@@ -156,9 +156,9 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 		return err
 	}
 	if existing.DisableDSCache && !modified.DisableDSCache {
-		logging.Warningf(c, "DSCache was reenabled, wiping memcache")
+		logging.Warningf(c, "DSCache was reenabled, flushing memcache")
 		if err := mc.Flush(c); err != nil {
-			return err
+			return fmt.Errorf("failed to flush memcache after reenabling dscache - %s", err)
 		}
 	}
 

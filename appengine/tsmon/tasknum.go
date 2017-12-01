@@ -20,6 +20,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/filter/dscache"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 
@@ -43,7 +44,7 @@ type DatastoreTaskNumAllocator struct {
 
 // NotifyTaskIsAlive is part of TaskNumAllocator interface.
 func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, task *target.Task, instanceID string) (taskNum int, err error) {
-	c = info.MustNamespace(c, DatastoreNamespace)
+	c = dsContext(c)
 
 	// Exact values here are not important. Important properties are:
 	//  * 'entityID' is unique, and depends on both 'task' and 'instanceID'.
@@ -82,7 +83,7 @@ func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, task *targ
 // Must be used from some (global per project) cron if DatastoreTaskNumAllocator
 // is used. Use 'InstallHandlers' to install the corresponding cron handler.
 func AssignTaskNumbers(c context.Context) error {
-	c = info.MustNamespace(c, DatastoreNamespace)
+	c = dsContext(c)
 
 	now := clock.Now(c)
 	cutoff := now.Add(-instanceExpirationTimeout)
@@ -140,6 +141,18 @@ const (
 	instanceExpirationTimeout = 30 * time.Minute
 	taskQueryBatchSize        = 500
 )
+
+// dsContext is used for all datastore accesses that touch 'instance' entities.
+//
+// It switches the namespace and disables dscache, since these entities are
+// updated from Flex, which doesn't work with dscache. Besides, all reads happen
+// either in transactions or through queries - dscache is useless anyhow.
+func dsContext(c context.Context) context.Context {
+	c = info.MustNamespace(c, DatastoreNamespace)
+	return dscache.AddShardFunctions(c, func(*datastore.Key) (shards int, ok bool) {
+		return 0, true
+	})
+}
 
 // instance corresponds to one process that flushes metrics.
 type instance struct {
