@@ -307,6 +307,20 @@ func getRequest(c context.Context) *http.Request {
 	panic("No http.request found in context")
 }
 
+// projectAclMiddleware adds ACL checks on a per-project basis.
+// Expects c.Params to have project parameter.
+func projectAclMiddleware(c *router.Context, next router.Handler) {
+	allowed, err := common.IsAllowed(c.Context, c.Params.ByName("project"))
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	} else if !allowed {
+		ErrorHandler(c, errors.New("no access to project", common.CodeNoAccess))
+		return
+	}
+	next(c)
+}
+
 // emulationMiddleware adds emulation options to the context.
 // Expects c.Params to have master and builder parameters.
 func emulationMiddleware(c *router.Context, next router.Handler) {
