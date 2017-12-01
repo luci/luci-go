@@ -20,8 +20,8 @@ import (
 
 // Authenticate returns a middleware that performs authentication.
 //
-// This is simplest form of this middleware that uses only one authentication
-// method. It is sufficient in most cases.
+// Typically you only one one Method, but you may specify multiple Methods to be
+// tried in order (see Authenticator).
 //
 // This middleware either updates the context by injecting the authentication
 // state into it (enabling functions like CurrentIdentity and IsMember), or
@@ -30,7 +30,7 @@ import (
 // Note that it passes through anonymous requests. CurrentIdentity returns
 // identity.AnonymousIdentity in this case. Use separate authorization layer to
 // further restrict the access, if necessary.
-func Authenticate(m Method) router.Middleware {
-	a := &Authenticator{Methods: []Method{m}}
+func Authenticate(m ...Method) router.Middleware {
+	a := &Authenticator{Methods: m}
 	return a.GetMiddleware()
 }
