@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c9fa4f6_2a936080",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:30:50Z",
+      "side": 1,
+      "message": "I think \u0027err\u0027 would be better.",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93e55e25_a4b04b6a",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:30:50Z",
+      "side": 1,
+      "message": "- rename mu\n- put it above what it controls",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52b02d27_94783d28",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:30:50Z",
+      "side": 1,
+      "message": "In practice, the error will lack context, hash is not present, what failed to decode? no idea. :)",
+      "range": {
+        "startLine": 90,
+        "startChar": 4,
+        "endLine": 90,
+        "endChar": 12
+      },
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e135029_186c6cb9",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:30:50Z",
+      "side": 1,
+      "message": "optional nit: I like when public functions are grouped up first, but not a big deal.",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1d9ef0d_2c392ca9",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:30:50Z",
+      "side": 1,
+      "message": "Not needed in this CL but eventually we should add testing for the following cases:\n- cut off download\n- cut off upload\n- http 429",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
