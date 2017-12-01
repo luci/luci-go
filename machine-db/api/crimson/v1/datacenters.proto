@@ -20,7 +20,7 @@ message DatacentersRequest {
 
 // Datacenter describes a datacenter.
 message Datacenter {
-  // The name of this datacenter.
+  // The name of this datacenter. Uniquely identifies this datacenter.
   string name = 1;
   // A description of this datacenter.
   string description = 2;

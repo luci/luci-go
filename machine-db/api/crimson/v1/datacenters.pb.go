@@ -96,7 +96,7 @@ func (m *DatacentersRequest) GetNames() []string {
 
 // Datacenter describes a datacenter.
 type Datacenter struct {
-	// The name of this datacenter.
+	// The name of this datacenter. Uniquely identifies this datacenter.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this datacenter.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
