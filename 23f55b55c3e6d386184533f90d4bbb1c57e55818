@@ -22,6 +22,30 @@
       "revId": "23f55b55c3e6d386184533f90d4bbb1c57e55818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1894bcfc_10c86184",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-01T19:21:15Z",
+      "side": 1,
+      "message": "If someone sees a red box representing a failed build, I\u0027d think they usually want to go to the failed build. Do we have evidence to the contrary?\n\nIt feels odd to drop the build number information when we do have it. We unfortunately don\u0027t have evidence in support of or against its use, so I don\u0027t feel tremendously strongly about retaining build number if others feel strongly about only having one (builder ID) or the other (build number).\n\nIf we have to have only one or the other, I\u0027d propose tooltipping builder ID while linking to build (as motivated above). Otherwise, if we\u0027re OK with a bit of redundancy, \"\u003cbuilder ID\u003e (build ID)\" or a somewhat hackier fix of only including builder ID if it\u0027s not already included in build ID.\n\nOut of curiosity, why does Fuchsia not use build numbers?",
+      "parentUuid": "5cf73e36_275c6a69",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 50
+      },
+      "revId": "23f55b55c3e6d386184533f90d4bbb1c57e55818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
