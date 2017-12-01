@@ -355,6 +355,30 @@
     },
     {
       "key": {
+        "uuid": "a1472da5_fb7b3cf3",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:54:36Z",
+      "side": 1,
+      "message": "With that said, I don\u0027t like this very much either. :(\n\nSee here for a reference: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-input",
+      "parentUuid": "e5c2a64d_deaab1dc",
+      "range": {
+        "startLine": 250,
+        "startChar": 23,
+        "endLine": 250,
+        "endChar": 33
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c6d0de17_09b30794",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
