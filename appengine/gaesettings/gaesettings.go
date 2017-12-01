@@ -29,6 +29,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/filter/dscache"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
@@ -56,16 +57,16 @@ type settingsEntity struct {
 	Who     string    `gae:",noindex"`
 	Why     string    `gae:",noindex"`
 	When    time.Time `gae:",noindex"`
-
-	// Disable dscache, since settings must remain functional in case memcache is
-	// malfunctioning.
-	_ ds.Toggle `gae:"$dscache.enable,false"`
 }
 
 // defaultContext returns datastore interface configured to use default
-// namespace and escape any current transaction.
+// namespace, escape any current transaction, and don't use dscache (since it
+// may not be available when modifying settings).
 func defaultContext(c context.Context) context.Context {
-	return ds.WithoutTransaction(info.MustNamespace(c, ""))
+	c = ds.WithoutTransaction(info.MustNamespace(c, ""))
+	return dscache.AddShardFunctions(c, func(*ds.Key) (shards int, ok bool) {
+		return 0, true
+	})
 }
 
 // latestSettings returns settingsEntity with prefilled key pointing to latest
