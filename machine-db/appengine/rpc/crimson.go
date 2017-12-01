@@ -79,7 +79,7 @@ func (*Service) GetDatacenters(c context.Context, req *crimson.DatacentersReques
 	}, nil
 }
 
-// getDatacenters returns a list of datacenters in the database.
+// getDatacenters returns a slice of datacenters in the database.
 func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, "SELECT name, description FROM datacenters")
@@ -99,4 +99,37 @@ func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacent
 		}
 	}
 	return datacenters, nil
+}
+
+// GetRacks handles a request to retrieve racks.
+func (*Service) GetRacks(c context.Context, req *crimson.RacksRequest) (*crimson.RacksResponse, error) {
+	racks, err := getRacks(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Datacenters...))
+	if err != nil {
+		return nil, internalError(c, err)
+	}
+	return &crimson.RacksResponse{
+		Racks: racks,
+	}, nil
+}
+
+// getRacks returns a slice of racks in the database.
+func getRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.Rack, error) {
+	db := database.Get(c)
+	rows, err := db.QueryContext(c, "SELECT racks.name, racks.description, datacenters.name FROM racks, datacenters WHERE racks.datacenter_id = datacenters.id")
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch racks").Err()
+	}
+	defer rows.Close()
+
+	var racks []*crimson.Rack
+	for rows.Next() {
+		rack := &crimson.Rack{}
+		if err = rows.Scan(&rack.Name, &rack.Description, &rack.Datacenter); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch rack").Err()
+		}
+		if (names.Has(rack.Name) || names.Len() == 0) && (datacenters.Has(rack.Datacenter) || datacenters.Len() == 0) {
+			racks = append(racks, rack)
+		}
+	}
+	return racks, nil
 }

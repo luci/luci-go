@@ -17,17 +17,19 @@ package config
 import (
 	"net/http"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
-	"go.chromium.org/luci/machine-db/api/config/v1"
-	"go.chromium.org/luci/machine-db/appengine/model/datacenters"
 	"go.chromium.org/luci/server/router"
 
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/machine-db/api/config/v1"
+	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
 // datacentersConfig is the name of the config file enumerating datacenter files.
@@ -41,6 +43,7 @@ func configImportHandler(c *router.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
 
 	if err := importConfigs(c.Context); err != nil {
+		errors.Log(c.Context, err)
 		c.Writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -54,27 +57,24 @@ func importConfigs(c context.Context) error {
 	datacenterFiles := &config.DatacentersConfig{}
 	metadata := &cfgclient.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacentersConfig, textproto.Message(datacenterFiles), metadata); err != nil {
-		logging.Errorf(c, "Failed to load %s: %s", datacentersConfig, err.Error())
-		return err
+		return errors.Annotate(err, "failed to load config: %s", datacentersConfig).Err()
 	}
 	logging.Infof(c, "Found config revision: %s", metadata.Revision)
 
 	validationContext := &validation.Context{Logger: logging.Get(c)}
 	validateDatacentersConfig(validationContext, datacenterFiles)
 	if err := validationContext.Finalize(); err != nil {
-		logging.Errorf(c, "Failed to validate the config: %s", err.Error())
-		return err
+		return errors.Annotate(err, "failed to validate config").Err()
 	}
 
 	// datacenterConfigFiles will be a map of datacenter config filename to DatacenterConfig.
 	datacenterConfigFiles := make(map[string]*config.DatacenterConfig, len(datacenterFiles.Datacenter))
-	// datacenterConfigs will be an array of DatacenterConfigs.
+	// datacenterConfigs will be a slice of DatacenterConfigs.
 	datacenterConfigs := make([]*config.DatacenterConfig, 0, len(datacenterConfigFiles))
 	for _, datacenterFile := range datacenterFiles.Datacenter {
 		datacenter := &config.DatacenterConfig{}
 		if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacenterFile, textproto.Message(datacenter), nil); err != nil {
-			logging.Errorf(c, "Failed to load %s: %s", datacenterFile, err.Error())
-			return err
+			return errors.Annotate(err, "failed to load datacenter config: %s", datacenterFile).Err()
 		}
 		datacenterConfigFiles[datacenterFile] = datacenter
 		datacenterConfigs = append(datacenterConfigs, datacenter)
@@ -83,13 +83,16 @@ func importConfigs(c context.Context) error {
 
 	validateDatacenters(validationContext, datacenterConfigFiles)
 	if err := validationContext.Finalize(); err != nil {
-		logging.Errorf(c, "Failed to validate the config: %s", err.Error())
-		return err
+		return errors.Annotate(err, "failed to validate config").Err()
 	}
 
-	if err := datacenters.EnsureDatacenters(c, datacenterConfigs); err != nil {
-		logging.Errorf(c, "Failed to ensure datacenters: %s", err.Error())
-		return err
+	datacenterIds, err := model.EnsureDatacenters(c, datacenterConfigs)
+	if err != nil {
+		return errors.Annotate(err, "failed to ensure datacenters").Err()
+	}
+	err = model.EnsureRacks(c, datacenterConfigs, datacenterIds)
+	if err != nil {
+		return errors.Annotate(err, "failed to ensure racks").Err()
 	}
 
 	return nil

@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS racks (
 	-- The state of this rack.
 	state varchar(255),
 	PRIMARY KEY (id),
-	FOREIGN KEY (datacenter_id) REFERENCES datacenters (id),
+	FOREIGN KEY (datacenter_id) REFERENCES datacenters (id) ON DELETE CASCADE,
 	UNIQUE (name)
 );
 
@@ -53,6 +53,6 @@ CREATE TABLE IF NOT EXISTS switches (
 	-- The state of this switch.
 	state varchar(255),
 	PRIMARY KEY (id),
-	FOREIGN KEY (rack_id) REFERENCES racks (id),
+	FOREIGN KEY (rack_id) REFERENCES racks (id) ON DELETE CASCADE,
 	UNIQUE (name)
 );
