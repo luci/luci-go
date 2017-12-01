@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34f3d14a_62d83d3d",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:09:55Z",
+      "side": 1,
+      "message": "One error I did in the python code is to have incoherent argument names. I think -output-dir would be fine here, which should be used in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/804394/2/client/cmd/isolated/download.go too.",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b99249f_081625aa",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:09:55Z",
+      "side": 1,
+      "message": "GetTaskOutputs() ?",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05d3f409_94b9061a",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:09:55Z",
+      "side": 1,
+      "message": "merge both lines",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a23e0d80_58983a57",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:09:55Z",
+      "side": 1,
+      "message": "return dl.Close()",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
