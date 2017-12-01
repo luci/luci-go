@@ -17,18 +17,24 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"path"
+	"path/filepath"
 	"os"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 var swarmingAPISuffix = "/api/swarming/v1/"
@@ -39,9 +45,11 @@ type swarmingService interface {
 	// TODO: Add support for trigger-related mocks.
 	GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
+	GetTaskIsolated(c context.Context, ref *swarming.SwarmingRpcsFilesRef, output string) error
 }
 
 type swarmingServiceImpl struct {
+	*http.Client
 	*swarming.Service
 }
 
@@ -51,6 +59,23 @@ func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, pe
 
 func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
 	return s.Service.Task.Stdout(taskID).Context(c).Do()
+}
+
+func (s *swarmingServiceImpl) GetTaskIsolated(c context.Context, ref *swarming.SwarmingRpcsFilesRef, outdir string) error {
+	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
+	dl := downloader.New(c, isolatedClient)
+	dl.FetchIsolated(isolated.HexDigest(ref.Isolated), func(file string) (io.WriteCloser, error) {
+		file = filepath.Clean(file)
+		file = filepath.Join(outdir, file)
+		if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
+			return nil, err
+		}
+		return os.Create(file)
+	})
+	if err := dl.Close(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type taskState int32
