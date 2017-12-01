@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f07b034c_22485f03",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T00:45:54Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 225,
+        "startChar": 4,
+        "endLine": 225,
+        "endChar": 7
+      },
+      "revId": "ebf76e56427fa019660658c1ce9ee97abd62d8f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d888b472_3c9dd7bf",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T00:45:54Z",
+      "side": 1,
+      "message": "please move it closer to usage, i.e. before L230",
+      "revId": "ebf76e56427fa019660658c1ce9ee97abd62d8f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

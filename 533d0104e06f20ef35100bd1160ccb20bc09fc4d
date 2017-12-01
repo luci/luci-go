@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "33eee89a_0e98af02",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T00:45:54Z",
+      "side": 1,
+      "message": "IMO it is as bad as extracting common code to a separate function that is farther away from the callsites (but it is considered ok)",
+      "parentUuid": "cfebe7e8_81e1dd8c",
+      "revId": "533d0104e06f20ef35100bd1160ccb20bc09fc4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7811348c_bc6c21a5",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 7
