@@ -25,6 +25,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
@@ -50,6 +51,10 @@ const (
 // mode.
 const dsCacheDisabledSetting = "Disabled"
 
+// configServiceAdmins is the default value for settings.AdministratorsGroup
+// config setting below.
+const configServiceAdmins = "administrators"
+
 // Settings are stored in the datastore via appengine/gaesettings package.
 type Settings struct {
 	// ConfigServiceHost is host name (and port) of the luci-config service to
@@ -61,8 +66,20 @@ type Settings struct {
 	// CacheExpirationSec is how long to hold configs in local cache.
 	CacheExpirationSec int `json:"cache_expiration_sec"`
 
-	// DatastoreCacheMode, is the datastore caching mode.
+	// DatastoreCacheMode is the datastore caching mode.
 	DatastoreCacheMode DSCacheMode `json:"datastore_enabled"`
+
+	// ConfigServiceEmail is the email address of the config service with which
+	// the config service will authenticate when calling config validation
+	// endpoints of this service.
+	//
+	// For example, for luci-config.appspot.com service, it would be
+	// luci-config@appspot.gserviceaccount.com.
+	ConfigServiceEmail string `json:"config_service_email"`
+
+	// Administrators is the auth group of users that can call the validation
+	// endpoint.
+	AdministratorsGroup string `json:"administrators_group"`
 }
 
 // SetIfChanged sets "s" to be the new Settings if it differs from the current
@@ -122,8 +139,9 @@ func DefaultSettings(c context.Context) Settings {
 		exp = int(DefaultExpire.Seconds())
 	}
 	return Settings{
-		CacheExpirationSec: exp,
-		DatastoreCacheMode: DSCacheDisabled,
+		CacheExpirationSec:  exp,
+		DatastoreCacheMode:  DSCacheDisabled,
+		AdministratorsGroup: configServiceAdmins,
 	}
 }
 
@@ -190,6 +208,31 @@ independent cron job out of band with any user requests. See
 <a href="https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware/#hdr-Cron_setup">gaemiddleware</a>
 package doc for instructions how to setup this cron job.</p>`,
 		},
+		{
+			ID:    "ConfigServiceEmail",
+			Title: "Email of config service",
+			Type:  portal.FieldText,
+			Validator: func(v string) error {
+				_, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, v))
+				return err
+			},
+			Help: `<p>This is the email of the config service. For
+luci-config.appspot.com, it should be luci-config@appspot.gserviceaccount.com.</p>`,
+		},
+		{
+			ID:    "AdministratorsGroup",
+			Title: "Administrator group of config service",
+			Type:  portal.FieldText,
+			Validator: func(v string) error {
+				if v == "" {
+					return fmt.Errorf("administrator group cannot be an empty string")
+				}
+				return nil
+			},
+			Help: `<p>Members of this group can call the validation endpoint of
+the service. If you do not know what this is, you probably don't want to use it and can
+leave the field unchanged.</p>`,
+		},
 	}, nil
 }
 
@@ -215,9 +258,11 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	}
 
 	return map[string]string{
-		"ConfigServiceHost":  s.ConfigServiceHost,
-		"CacheExpirationSec": strconv.Itoa(s.CacheExpirationSec),
-		"DatastoreCacheMode": cacheModeString,
+		"ConfigServiceHost":   s.ConfigServiceHost,
+		"CacheExpirationSec":  strconv.Itoa(s.CacheExpirationSec),
+		"DatastoreCacheMode":  cacheModeString,
+		"ConfigServiceEmail":  s.ConfigServiceEmail,
+		"AdministratorsGroup": s.AdministratorsGroup,
 	}, nil
 }
 
@@ -234,8 +279,10 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 	}
 
 	modified := Settings{
-		ConfigServiceHost:  values["ConfigServiceHost"],
-		DatastoreCacheMode: dsMode,
+		ConfigServiceHost:   values["ConfigServiceHost"],
+		DatastoreCacheMode:  dsMode,
+		ConfigServiceEmail:  values["ConfigServiceEmail"],
+		AdministratorsGroup: values["AdministratorsGroup"],
 	}
 
 	var err error
