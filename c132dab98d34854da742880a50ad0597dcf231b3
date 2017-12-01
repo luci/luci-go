@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1a6fe77a_0caf2268",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T02:05:46Z",
+      "side": 1,
+      "message": "...good question. I reformatted. Should be fixed.",
+      "parentUuid": "866d3ff1_1af62436",
+      "range": {
+        "startLine": 251,
+        "startChar": 15,
+        "endLine": 251,
+        "endChar": 16
+      },
+      "revId": "c132dab98d34854da742880a50ad0597dcf231b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28a4edd4_08fbc179",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "c132dab98d34854da742880a50ad0597dcf231b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa4bd235_6ab121c9",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T02:05:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28a4edd4_08fbc179",
+      "range": {
+        "startLine": 267,
+        "startChar": 53,
+        "endLine": 272,
+        "endChar": 3
+      },
+      "revId": "c132dab98d34854da742880a50ad0597dcf231b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
