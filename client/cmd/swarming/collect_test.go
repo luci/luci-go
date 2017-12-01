@@ -81,7 +81,7 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 	})
 }
 
-func testCollectPollWithServer(output taskOutputOption, s *testService) taskResult {
+func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
 	c, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 	c, _ = clock.WithTimeout(c, 100*time.Second)
 
@@ -91,7 +91,6 @@ func testCollectPollWithServer(output taskOutputOption, s *testService) taskResu
 	})
 
 	results := make(chan taskResult, 1)
-	runner := collectRun{taskOutput: output}
 	go runner.pollForTaskResult(c, "10982374012938470", s, results)
 	ret := <-results
 	return ret
@@ -106,7 +105,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 				return nil, &googleapi.Error{Code: 404}
 			},
 		}
-		result := testCollectPollWithServer(taskOutputNone, service)
+		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
 		So(result.err, ShouldErrLike, "404")
 	})
 
@@ -116,24 +115,40 @@ func TestCollectPollForTaskResult(t *testing.T) {
 				return nil, &googleapi.Error{Code: 502}
 			},
 		}
-		result := testCollectPollWithServer(taskOutputNone, service)
+		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
 		So(result.err, ShouldErrLike, "context deadline exceeded")
 	})
 
 	Convey(`Test bot finished`, t, func() {
+		var written_to string
+		var written_isolated string
 		service := &testService{
 			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
-				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
+				return &swarming.SwarmingRpcsTaskResult{
+					State:      "COMPLETED",
+					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+				}, nil
 			},
 			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
+			getTaskOutputs: func(c context.Context, ref *swarming.SwarmingRpcsFilesRef, output string) error {
+				written_to = output
+				written_isolated = ref.Isolated
+				return nil
+			},
 		}
-		result := testCollectPollWithServer(taskOutputAll, service)
+		runner := &collectRun{
+			taskOutput: taskOutputAll,
+			outputDir:  "bah",
+		}
+		result := testCollectPollWithServer(runner, service)
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)
 		So(result.result.State, ShouldResemble, "COMPLETED")
 		So(result.output, ShouldResemble, "yipeeee")
+		So(written_to, ShouldResemble, "bah")
+		So(written_isolated, ShouldResemble, "aaaaaaaaa")
 	})
 
 	Convey(`Test bot finished after failures`, t, func() {
@@ -148,7 +163,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
 			},
 		}
-		result := testCollectPollWithServer(taskOutputNone, service)
+		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
 		So(i, ShouldEqual, maxTries)
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)

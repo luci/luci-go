@@ -15,14 +15,21 @@
 package main
 
 import (
+	"net/http"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 )
 
 type testService struct {
-	getTaskResult func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
-	getTaskOutput func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
+	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
+	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
+	getTaskOutputs func(context.Context, *swarming.SwarmingRpcsFilesRef, string) error
+}
+
+func (s testService) Client() *http.Client {
+	return nil
 }
 
 func (s testService) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
@@ -31,4 +38,8 @@ func (s testService) GetTaskResult(c context.Context, taskID string, perf bool) 
 
 func (s testService) GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
 	return s.getTaskOutput(c, taskID)
+}
+
+func (s testService) GetTaskOutputs(c context.Context, ref *swarming.SwarmingRpcsFilesRef, output string) error {
+	return s.getTaskOutputs(c, ref, output)
 }
