@@ -97,5 +97,6 @@
       "Build": null
     }
   ],
-  "MachinePool": null
+  "MachinePool": null,
+  "Groups": null
 }

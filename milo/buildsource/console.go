@@ -158,11 +158,11 @@ func GetConsoleSummariesFromDefs(c context.Context, defs []*common.Console) (map
 	// Now rearrange the builders into their respective consoles
 	summaries := make(map[common.ConsoleID]ui.ConsoleSummary, len(defs))
 	for _, def := range defs {
-		ariaLabel := fmt.Sprintf("Console %s in project %s", def.ID, def.Project())
+		ariaLabel := fmt.Sprintf("Console %s in project %s", def.ID, def.ProjectID())
 		summary := ui.ConsoleSummary{
 			Builders: make([]*model.BuilderSummary, len(def.Builders)),
 			Name: ui.NewLink(
-				def.ID, fmt.Sprintf("/p/%s/g/%s/console", def.Project(), def.ID), ariaLabel),
+				def.ID, fmt.Sprintf("/p/%s/g/%s/console", def.ProjectID(), def.ID), ariaLabel),
 		}
 		for i, builderID := range def.Builders {
 			if builder, ok := bsMap[builderID]; ok {

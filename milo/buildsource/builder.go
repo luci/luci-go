@@ -5,11 +5,15 @@
 package buildsource
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
+
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
@@ -59,20 +63,45 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 // BuilderID.
 func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder, error) {
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
-	source, group, builder, err := b.Split()
+	source, group, builderName, err := b.Split()
 	if err != nil {
 		return nil, err
 	}
 
-	switch source {
-	case "buildbot":
-		return buildbot.GetBuilder(c, group, builder, limit, cursor)
-
-	case "buildbucket":
-		return buildbucket.GetBuilder(c, group, builder, limit)
+	var builder *ui.Builder
+	var consoles []*common.Console
+	err = parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (err error) {
+			switch source {
+			case "buildbot":
+				builder, err = buildbot.GetBuilder(c, group, builderName, limit, cursor)
+			case "buildbucket":
+				builder, err = buildbucket.GetBuilder(c, group, builderName, limit)
+			default:
+				panic(fmt.Errorf("unexpected build source %q", source))
+			}
+			return
+		}
+		work <- func() (err error) {
+			consoles, err = common.GetConsolesByBuilderID(c, string(b))
+			return
+		}
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	panic("impossible")
+	builder.Groups = make([]*ui.Link, len(consoles))
+	for i, c := range consoles {
+		builder.Groups[i] = ui.NewLink(
+			fmt.Sprintf("%s / %s", c.ProjectID(), c.ID),
+			fmt.Sprintf("/p/%s/g/%s", c.ProjectID(), c.ID),
+			fmt.Sprintf("builder group %s in project %s", c.ID, c.ProjectID()))
+	}
+	sort.Slice(builder.Groups, func(i, j int) bool {
+		return builder.Groups[i].Label < builder.Groups[j].Label
+	})
+	return builder, nil
 }
 
 // SelfLink returns LUCI URL of the builder.
