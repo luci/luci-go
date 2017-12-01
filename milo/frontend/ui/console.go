@@ -281,7 +281,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		if br.Builder != nil && br.Builder.LastFinishedBuildID != "" {
 			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="%s" title="%s">`,
 				template.HTMLEscapeString(br.Builder.LastFinishedBuildIDLink()),
-				template.HTMLEscapeString(br.Builder.LastFinishedBuildID),
+				template.HTMLEscapeString(br.Builder.BuilderID),
 			))
 			must(fmt.Fprintf(buffer, `<div class="console-list-builder status-%s"></div>`,
 				template.HTMLEscapeString(br.Builder.LastFinishedStatus.String()),

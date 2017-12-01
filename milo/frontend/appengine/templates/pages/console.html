@@ -138,7 +138,7 @@
             {{ range .Builders }}
               <a class="console-builder-status"
                  href="{{ .LastFinishedBuildIDLink }}"
-                 title="{{ .LastFinishedBuildID }}"
+                 title="{{ .BuilderID }}"
                  aria-label="builder {{ .BuilderID }} on console {{ $console_name }} has last status {{ .LastFinishedStatus }}">
                 <div class="console-header-builder status-{{ .LastFinishedStatus }}"></div>
               </a>
