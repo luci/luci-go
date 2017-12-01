@@ -1,10 +1,5 @@
 {{define "title"}}Builder {{ .Builder.Name }}{{end}}
 
-{{define "head"}}
-<link id="favicon" rel="shortcut icon"
-      type="image/png" href="/static/common/favicon/milo-32.png">
-{{end}}
-
 {{define "blamelist"}}
 {{ if . }}
   {{ $nb := len . }}
