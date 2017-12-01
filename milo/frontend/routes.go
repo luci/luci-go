@@ -50,7 +50,7 @@ func Run(templatePath string) {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	baseMW := standard.Base().Extend(withRequestMiddleware)
+	baseMW := standard.Base().Extend(withRouterContextMiddleware)
 	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute))
 	htmlMW := frontendMW.Extend(
 		auth.Authenticate(server.CookieAuth),
@@ -202,7 +202,7 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 		GetExcludeDeprecated() bool
 	})
 	if ok && !deprecatable.GetExcludeDeprecated() {
-		logging.Warningf(c, "user agent %q might be using deprecated API!", getRequest(c).UserAgent())
+		logging.Warningf(c, "user agent %q might be using deprecated API!", getRouterContext(c).Request.UserAgent())
 	}
 
 	return c, nil

@@ -52,9 +52,7 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) {
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/builders_relative_time.html", templates.Args{
-		"ProjectID": projectID,
-		"Builders":  hists,
-		"Navi":      ProjectLinks(projectID, group),
+		"Builders": hists,
 	})
 }
 
