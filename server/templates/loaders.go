@@ -45,16 +45,17 @@ func AssetsLoader(assets map[string]string) Loader {
 		toplevel := map[string]*template.Template{}
 		for name, body := range assets {
 			if strings.HasPrefix(name, "pages/") {
-				t, err := template.New(name).Funcs(funcMap).Parse(body)
-				if err != nil {
-					return nil, err
-				}
+				t := template.New(name).Funcs(funcMap)
 				// TODO(vadimsh): There's probably a way to avoid reparsing includes
 				// all the time.
 				for _, includeSrc := range includes {
 					if _, err := t.Parse(includeSrc); err != nil {
 						return nil, err
 					}
+				}
+
+				if _, err := t.Parse(body); err != nil {
+					return nil, err
 				}
 				toplevel[name] = t
 			}
