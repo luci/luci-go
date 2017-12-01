@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56cfebba_941708a7",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T20:12:58Z",
+      "side": 1,
+      "message": "any reason why there is no \\b between }} and {{ ?",
+      "range": {
+        "startLine": 20,
+        "startChar": 7,
+        "endLine": 20,
+        "endChar": 11
+      },
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c3b395b_e07beed8",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T20:12:58Z",
+      "side": 1,
+      "message": "\u003chtml\u003e is not recommended by style guide because it is optional, as well as body, head, etc https://google.github.io/styleguide/htmlcssguide.html#Optional_Tags\nsince you are changing this code, perhaps it is better to remove \u003chtml\u003e altogether",
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ec78337_9e98e76f",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T20:12:58Z",
+      "side": 1,
+      "message": "{{end}} to be consistent with L9, or change L9 to {{ end }}\n\nother lines are inconsistent too, probably should be made consistent in another CL. I personally prefer no spaces, but it might be considered inconsistent with {{- blah }} which requires a space after/before dash",
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b155fb5e_50f73409",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T20:12:58Z",
+      "side": 1,
+      "message": "perhaps join with prev line so it is consistent with L52",
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
