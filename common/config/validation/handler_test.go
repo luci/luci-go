@@ -15,36 +15,33 @@
 package validation
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
-
-	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/server/router"
 
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInstallHandlers(t *testing.T) {
 	Convey("Initialization of validator, validation routes and handlers", t, func() {
-		v := &Validator{Func: func(ctx *Context, configSet, path string, content []byte) {
+		v := &Validator{Func: func(configSet, path string, content []byte, ctx *Context) {
 			ctx.errors = append(ctx.errors, errors.New("deadbeef"))
 		}}
 		r := router.New()
 		rr := httptest.NewRecorder()
-		host := "example.com"
 
 		metaCall := func() *config.ServiceDynamicMetadata {
 			req, err := http.NewRequest("GET", metadataPath, nil)
 			So(err, ShouldBeNil)
-			req.URL.Host = host
 			r.ServeHTTP(rr, req)
 
 			var resp config.ServiceDynamicMetadata
@@ -52,23 +49,23 @@ func TestInstallHandlers(t *testing.T) {
 			So(err, ShouldBeNil)
 			return &resp
 		}
-		valCall := func(configSet, path, content string) *config.ValidationResponseMessage {
+		valCall := func(configSet, path, content string, getResp bool) *config.ValidationResponseMessage {
 			respBodyJSON, err := json.Marshal(config.ValidationRequestMessage{
 				ConfigSet: proto.String(configSet),
 				Path:      proto.String(path),
 				Content:   []byte(content),
 			})
 			So(err, ShouldBeNil)
-			req, err := http.NewRequest("POST", validationPath, bytes.NewReader(respBodyJSON))
+			req, err := http.NewRequest("POST", validationPath, strings.NewReader(string(respBodyJSON)))
 			So(err, ShouldBeNil)
 			r.ServeHTTP(rr, req)
-			if rr.Code != http.StatusOK {
-				return nil
+			if getResp {
+				var resp config.ValidationResponseMessage
+				err = json.NewDecoder(rr.Body).Decode(&resp)
+				So(err, ShouldBeNil)
+				return &resp
 			}
-			var resp config.ValidationResponseMessage
-			err = json.NewDecoder(rr.Body).Decode(&resp)
-			So(err, ShouldBeNil)
-			return &resp
+			return nil
 		}
 
 		InstallHandlers(r, router.NewMiddlewareChain(), v)
@@ -78,7 +75,7 @@ func TestInstallHandlers(t *testing.T) {
 			So(metaCall(), ShouldResemble, &config.ServiceDynamicMetadata{
 				Version: proto.String(metaDataFormatVersion),
 				Validation: &config.Validator{
-					Url: proto.String(fmt.Sprintf("https://%s%s", host, metadataPath)),
+					Url: proto.String(fmt.Sprintf("https://%s", metadataPath)),
 				},
 			})
 		})
@@ -88,29 +85,27 @@ func TestInstallHandlers(t *testing.T) {
 			So(err, ShouldBeNil)
 			pp, err := pattern.Parse("path")
 			So(err, ShouldBeNil)
-			v.ConfigPatterns = append(v.ConfigPatterns, ConfigPattern{ConfigSet: cp, Path: pp})
+			v.ConfigPatterns = append(v.ConfigPatterns, &ConfigPattern{ConfigSet: cp, Path: pp})
 			meta := metaCall()
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(meta, ShouldResemble, &config.ServiceDynamicMetadata{
 				Version: proto.String(metaDataFormatVersion),
 				Validation: &config.Validator{
-					Url: proto.String(fmt.Sprintf("https://%s%s", host, metadataPath)),
-					Patterns: []*config.ConfigPattern{
-						{
-							ConfigSet: proto.String(cp.String()),
-							Path:      proto.String(pp.String()),
-						},
+					Url: proto.String(fmt.Sprintf("https://%s", metadataPath)),
+					Patterns: []*config.ConfigPattern{{
+						ConfigSet: proto.String(cp.String()),
+						Path:      proto.String(pp.String())},
 					},
 				},
 			})
 		})
 
 		Convey("Basic validationHandler call", func() {
-			v.Func = func(ctx *Context, configSet, path string, content []byte) {
+			v.Func = func(configSet, path string, content []byte, ctx *Context) {
 				So(string(content), ShouldEqual, "content")
 				ctx.errors = append(ctx.errors, errors.New("deadbeef"))
 			}
-			valResp := valCall("dead", "beef", "content")
+			valResp := valCall("dead", "beef", "content", true)
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(valResp, ShouldResemble, &config.ValidationResponseMessage{
 				Messages: []*config.ValidationResponseMessage_Message{{
@@ -121,13 +116,13 @@ func TestInstallHandlers(t *testing.T) {
 		})
 
 		Convey("validationHandler call with no configSet or path", func() {
-			valCall("", "", "")
+			valCall("", "", "", false)
 			So(rr.Code, ShouldEqual, http.StatusBadRequest)
 			So(rr.Body.String(), ShouldEqual, "Must specify the config_set of the file to validate")
 		})
 
 		Convey("validationHandler call with no path", func() {
-			valCall("dead", "", "")
+			valCall("dead", "", "", false)
 			So(rr.Code, ShouldEqual, http.StatusBadRequest)
 			So(rr.Body.String(), ShouldEqual, "Must specify the path of the file to validate")
 		})

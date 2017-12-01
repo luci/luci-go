@@ -50,12 +50,12 @@ type ConfigPattern struct {
 type Validator struct {
 	// ConfigPatterns is the list of patterns of configSets and paths that the
 	// service is responsible for validating.
-	ConfigPatterns []ConfigPattern
+	ConfigPatterns []*ConfigPattern
 
 	// Func performs the actual config validation and stores the
 	// associated results in the validation.Context.
 	// TODO(myjang): pass request's context.Context.
-	Func func(ctx *Context, configSet, path string, content []byte)
+	Func func(configSet, path string, content []byte, ctx *Context)
 }
 
 // InstallHandlers installs the metadata and validation handlers as defined by
@@ -69,16 +69,16 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, validator *V
 
 func badRequestStatus(c context.Context, w http.ResponseWriter, msg string, err error) {
 	if err != nil {
-		logging.WithError(err).Warningf(c, "%s", msg)
+		logging.WithError(err).Warningf(c, msg)
 	} else {
-		logging.Warningf(c, "%s", msg)
+		logging.Warningf(c, msg)
 	}
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(msg))
 }
 
 func internalErrStatus(c context.Context, w http.ResponseWriter, msg string, err error) {
-	logging.WithError(err).Errorf(c, "%s", msg)
+	logging.WithError(err).Errorf(c, msg)
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte(msg))
 }
@@ -100,7 +100,7 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 		return
 	}
 	vc := &Context{}
-	validator.Func(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
+	validator.Func(reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent(), vc)
 	w.Header().Set("Content-Type", "application/json")
 	var msgList []*config.ValidationResponseMessage_Message
 	for _, error := range vc.errors {
