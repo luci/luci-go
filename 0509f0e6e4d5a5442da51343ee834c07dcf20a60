@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2e21e155_1210e5f9",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-01T23:01:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff58013e_68c6fedb",
+      "range": {
+        "startLine": 53,
+        "startChar": 18,
+        "endLine": 53,
+        "endChar": 19
+      },
+      "revId": "0509f0e6e4d5a5442da51343ee834c07dcf20a60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b3f2703_f89a76a1",
         "filename": "common/config/validation/handler.go",
         "patchSetId": 8
