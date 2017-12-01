@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "2d8623c6_c478709e",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "477a6230_fd046508",
+      "range": {
+        "startLine": 33,
+        "startChar": 6,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e6c44cc8_80b0c552",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
@@ -116,6 +140,30 @@
       "revId": "587f381950badaefddd9876c52495fe321a20708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbc60195_fdc6ee09",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6c44cc8_80b0c552",
+      "range": {
+        "startLine": 235,
+        "startChar": 39,
+        "endLine": 235,
+        "endChar": 47
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -142,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "9962e206_2c7852ca",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7cb8e98_f99ba66a",
+      "range": {
+        "startLine": 241,
+        "startChar": 31,
+        "endLine": 241,
+        "endChar": 59
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39928a24_0b887eba",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
@@ -162,6 +234,30 @@
       "revId": "587f381950badaefddd9876c52495fe321a20708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f9c78d0_dfb1a79a",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39928a24_0b887eba",
+      "range": {
+        "startLine": 244,
+        "startChar": 3,
+        "endLine": 244,
+        "endChar": 7
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -188,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "a4a24fb6_e5d08647",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06ace0df_f07c1e6c",
+      "range": {
+        "startLine": 246,
+        "startChar": 43,
+        "endLine": 246,
+        "endChar": 48
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bf4b25e0_4c6180a7",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
@@ -199,6 +319,30 @@
       "writtenOn": "2017-11-30T19:27:38Z",
       "side": 1,
       "message": "\"is\" or \"can be\"?\n\nIf the answer \"can be\", that is createChange works with \"refs/heads/\u003cbranchname\u003e\", I\u0027d strongly ask you to make this DestinationRef and require it to start with \"refs/\".\n\nstrong bias disclaimer: my pet peeve is to ramble against \"branches\" being used sometimes as synonym for ref and sometimes for just resf/heads/*, even inside the Gerrit project, which I unreasonably expected to be more consistent :(",
+      "range": {
+        "startLine": 250,
+        "startChar": 23,
+        "endLine": 250,
+        "endChar": 33
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5c2a64d_deaab1dc",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "According to Gerrit, \"is\". I\u0027m pretty sure the semantics here are you either use \"master\" or you explicitly say \"refs/meta/config\". I don\u0027t think it will accept \"refs/heads/*\", based on the wording.",
+      "parentUuid": "bf4b25e0_4c6180a7",
       "range": {
         "startLine": 250,
         "startChar": 23,
@@ -234,6 +378,30 @@
     },
     {
       "key": {
+        "uuid": "bb3375b2_55d3d0d0",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6d0de17_09b30794",
+      "range": {
+        "startLine": 265,
+        "startChar": 18,
+        "endLine": 265,
+        "endChar": 28
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ba6a408_4adf08b3",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
@@ -257,6 +425,30 @@
     },
     {
       "key": {
+        "uuid": "b59ad2e9_c26edc30",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "this is a bool so I\u0027m not sure if it applies? I think this arg is related to creating a new branch with Branch.",
+      "parentUuid": "2ba6a408_4adf08b3",
+      "range": {
+        "startLine": 269,
+        "startChar": 1,
+        "endLine": 269,
+        "endChar": 10
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f6674a5a_da890c8e",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
@@ -268,6 +460,30 @@
       "writtenOn": "2017-11-30T19:27:38Z",
       "side": 1,
       "message": "remove. Posts shouldn\u0027t be retried, because calls are not idempotent in Gerrit - we may end up creating many changes.",
+      "range": {
+        "startLine": 350,
+        "startChar": 3,
+        "endLine": 350,
+        "endChar": 39
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df7b9895_3e19d1ca",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T00:53:30Z",
+      "side": 1,
+      "message": "good point! bad copypasta on my part.",
+      "parentUuid": "f6674a5a_da890c8e",
       "range": {
         "startLine": 350,
         "startChar": 3,
