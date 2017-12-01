@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da28e375_34d8bfc8",
+        "filename": "appengine/gaemiddleware/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-01T00:22:12Z",
+      "side": 1,
+      "message": "looks like this: https://screenshot.googleplex.com/yM8fwd6XdeL",
+      "range": {
+        "startLine": 116,
+        "startChar": 2,
+        "endLine": 116,
+        "endChar": 35
+      },
+      "revId": "75c2f42923c53a92af35b8d3f5f1d6a1e44f566b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
