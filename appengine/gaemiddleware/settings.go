@@ -43,6 +43,11 @@ type gaeSettings struct {
 	// DisableDSCache is true to disable dscache (the memcache layer on top of
 	// the datastore).
 	DisableDSCache portal.YesOrNo `json:"disable_dscache"`
+
+	// SimulateMemcacheOutage is true to make every memcache call fail.
+	//
+	// Useful to verify apps can survive a memcache outage.
+	SimulateMemcacheOutage portal.YesOrNo `json:"simulate_memcache_outage"`
 }
 
 // fetchCachedSettings fetches gaeSettings from the settings store or panics.
@@ -62,10 +67,7 @@ func fetchCachedSettings(c context.Context) gaeSettings {
 		return s
 	case err == settings.ErrNoSettings:
 		// Defaults.
-		return gaeSettings{
-			LoggingLevel:   logging.Debug,
-			DisableDSCache: false,
-		}
+		return gaeSettings{LoggingLevel: logging.Debug}
 	default:
 		panic(fmt.Errorf("could not fetch GAE settings - %s", err))
 	}
@@ -111,6 +113,14 @@ dscache documentation</a> for more information. Toggling this on and off has
 consequences: <b>memcache is completely flushed</b>. Do not toy with this
 setting.`,
 		}),
+		portal.YesOrNoField(portal.Field{
+			ID:    "SimulateMemcacheOutage",
+			Title: "Simulate memcache outage",
+			Help: `<b>Intended for development only. Do not use in production
+applications.</b> When Yes, all memcache calls will fail, as if the memcache
+service is unavailable. This is useful to test how application behaves when a
+real memcache outage happens.`,
+		}),
 	}, nil
 }
 
@@ -121,8 +131,9 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 		return nil, err
 	}
 	return map[string]string{
-		"LoggingLevel":   s.LoggingLevel.String(),
-		"DisableDSCache": s.DisableDSCache.String(),
+		"LoggingLevel":           s.LoggingLevel.String(),
+		"DisableDSCache":         s.DisableDSCache.String(),
+		"SimulateMemcacheOutage": s.SimulateMemcacheOutage.String(),
 	}, nil
 }
 
@@ -132,6 +143,9 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 		return err
 	}
 	if err := modified.DisableDSCache.Set(values["DisableDSCache"]); err != nil {
+		return err
+	}
+	if err := modified.SimulateMemcacheOutage.Set(values["SimulateMemcacheOutage"]); err != nil {
 		return err
 	}
 

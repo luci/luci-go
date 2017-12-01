@@ -21,10 +21,12 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/dscache"
+	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/filter/readonly"
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/caching"
@@ -36,6 +38,10 @@ import (
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/appengine/gaesettings"
 )
+
+// errSimulatedMemcacheOutage is returned by all memcache calls if
+// SimulateMemcacheOutage setting is enabled.
+var errSimulatedMemcacheOutage = errors.New("simulated memcache outage")
 
 // Environment is a middleware environment. Its parameters define how the
 // middleware is applied, and which services are enlisted.
@@ -179,8 +185,18 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 	// Fetch and apply configuration stored in the datastore.
 	cachedSettings := fetchCachedSettings(c)
 	c = logging.SetLevel(c, cachedSettings.LoggingLevel)
-	if e.MemcacheAvailable && !bool(cachedSettings.DisableDSCache) {
-		c = dscache.AlwaysFilterRDS(c)
+	if e.MemcacheAvailable {
+		if bool(cachedSettings.SimulateMemcacheOutage) {
+			logging.Warningf(c, "Memcache outage simulation is enabled")
+			var fb featureBreaker.FeatureBreaker
+			c, fb = featureBreaker.FilterMC(c, errSimulatedMemcacheOutage)
+			fb.BreakFeatures(nil,
+				"GetMulti", "AddMulti", "SetMulti", "DeleteMulti",
+				"CompareAndSwapMulti", "Flush", "Stats")
+		}
+		if !bool(cachedSettings.DisableDSCache) {
+			c = dscache.AlwaysFilterRDS(c)
+		}
 	}
 	if e.DSReadOnly {
 		c = readonly.FilterRDS(c, e.DSReadOnlyPredicate)
