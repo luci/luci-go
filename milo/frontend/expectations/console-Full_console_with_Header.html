@@ -216,34 +216,69 @@
 <div class="clear"></div>
 
 
-<div class="console-row">
-
+<div id="console" class="console-row collapsed">
   
   <div class="console-column" style="justify-content: flex-end">
+    <div class="console-controls">
+      
+(Show:
+<a href="?numbuilds=">default</a>
+<a href="?numbuilds=25">25</a>
+<a href="?numbuilds=50">50</a>
+<a href="?numbuilds=100">100</a>
+<a href="?numbuilds=200">200</a>
+)
+[
+  <a href="#" class="control-expand">expand</a>
+  <a href="#" class="control-collapse" style="display: none;">collapse</a>
+]
+
+    </div>
     <div class="console-row">
       <div class="console-commit-column">
       
-        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357446871">Wednesday, 12-Dec-12 12:12:12 UTC</span></div>
-      
-        <div class="console-commit-item"><span class="local-time" data-timestamp="-6418357447871">Wednesday, 12-Dec-12 12:12:11 UTC</span></div>
-      
-      </div>
-      <div class="console-commit-column">
-      
         <div class="console-commit-item">
-          <a href="blah%20blah%20blah">
-            <span class="commit" title="Me too.">
-              x@example.com
-            </span>
-          </a>
+          <div class="console-commit-summary">
+            <div class="console-commit-time"><span class="local-time" data-timestamp="-6418357446871">Wednesday, 12-Dec-12 12:12:12 UTC</span></div>
+            <div class="console-commit-author">
+              <a href="blah%20blah%20blah" aria-label="commit by x@example.com">
+                <span class="commit" title="Me too.">
+                  x@example.com
+                </span>
+              </a>
+            </div>
+          </div>
+          <div class="console-commit-description">
+            <div class="console-commit-description-overlay">
+              <p>
+                
+                  Me too.<br>
+                
+              </p>
+            </div>
+          </div>
         </div>
       
         <div class="console-commit-item">
-          <a href="blah%20blah%20blah%201">
-            <span class="commit" title="I did something.">
-              y@example.com
-            </span>
-          </a>
+          <div class="console-commit-summary">
+            <div class="console-commit-time"><span class="local-time" data-timestamp="-6418357447871">Wednesday, 12-Dec-12 12:12:11 UTC</span></div>
+            <div class="console-commit-author">
+              <a href="blah%20blah%20blah%201" aria-label="commit by y@example.com">
+                <span class="commit" title="I did something.">
+                  y@example.com
+                </span>
+              </a>
+            </div>
+          </div>
+          <div class="console-commit-description">
+            <div class="console-commit-description-overlay">
+              <p>
+                
+                  I did something.<br>
+                
+              </p>
+            </div>
+          </div>
         </div>
       
       </div>
@@ -253,18 +288,56 @@
   
   <div class="console-column"><div class="console-top-item">cat1</div>
 						<div class="console-top-row"><div class="console-column"><div class="console-top-item">cat2</div>
-						<div class="console-top-row"><div class="console-builder-column" style="flex-grow: 1"><div><span class="console-InfraFailure"><a class="console-builder-item" href="/tester" title="tester">tst</a></span></div><div class="console-build-column"><div><a class="console-cell-top status-Success" href="#invalid-build-id"></a></div><div><a class="console-cell-middle status-Success" href="#invalid-build-id"></a></div></div></div></div></div></div></div>
+						<div class="console-top-row"><div class="console-builder-column" style="flex-grow: 1"><div><span class="console-InfraFailure"><a class="console-builder-item" href="/tester" title="tester">tst</a></span></div><div class="console-build-column"><div class="console-cell-container"><a class="console-cell-top status-Success" href="#invalid-build-id" title="tester"></a><div class="console-cell-spacer"></div></div><div class="console-cell-container"><a class="console-cell-middle status-Success" href="#invalid-build-id" title="tester"></a><div class="console-cell-spacer"></div></div></div></div></div></div></div></div>
 </div>
 
 <div class="epiloge" style="margin-top: 1em">
-  (Show:
-  <a href="?numbuilds=">default</a>
-  <a href="?numbuilds=25">25</a>
-  <a href="?numbuilds=50">50</a>
-  <a href="?numbuilds=100">100</a>
-  <a href="?numbuilds=200">200</a>
-  )
+  
+(Show:
+<a href="?numbuilds=">default</a>
+<a href="?numbuilds=25">25</a>
+<a href="?numbuilds=50">50</a>
+<a href="?numbuilds=100">100</a>
+<a href="?numbuilds=200">200</a>
+)
+[
+  <a href="#" class="control-expand">expand</a>
+  <a href="#" class="control-collapse" style="display: none;">collapse</a>
+]
+
 </div>
+<script>
+$(function () {
+  'use strict';
+  $(".control-expand").click(function(e) {
+    e.preventDefault();
+    $("#console").removeClass("collapsed");
+    let width = 0;
+    $("#console > div").each(function() {
+      width += $(this).width();
+    });
+    const sizes = [];
+    $(".console-commit-description").each(function() {
+      sizes.push($(this).height());
+    });
+    $(".console-build-column").each(function() {
+      const containers = $(this).find(".console-cell-spacer");
+      for (const i in sizes) {
+        $(containers[i]).height(sizes[i]);
+      }
+    });
+    $(".console-commit-description-overlay").width(width);
+    $(".control-collapse").show();
+    $(".control-expand").hide();
+  });
+  $(".control-collapse").click(function(e) {
+    e.preventDefault();
+    $("#console").addClass("collapsed");
+    $(".control-expand").show();
+    $(".control-collapse").hide();
+  });
+});
+</script>
 
 
   <footer>
@@ -275,7 +348,7 @@
     version: <b>testVersionID</b><br>
   </footer>
 <script>
-(function () {
+$(function () {
   'use strict';
   milo.makeTimesLocal();
   milo.annotateDurations();
@@ -283,7 +356,7 @@
     show: false,
     hide: false
   });
-})();
+});
 </script>
 <script>
   (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){

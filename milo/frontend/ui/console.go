@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/url"
+	"strings"
 
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -227,7 +228,7 @@ func (c *Category) AddBuilder(categories []string, builder *BuilderRef) {
 			current = newChild
 		}
 	}
-	current.childrenMap[builder.Name] = ConsoleElement(builder)
+	current.childrenMap[builder.ID] = ConsoleElement(builder)
 	current.Children = append(current.Children, ConsoleElement(builder))
 }
 
@@ -237,14 +238,20 @@ func (c *Category) AddBuilder(categories []string, builder *BuilderRef) {
 //
 // Implements ConsoleElement.
 type BuilderRef struct {
-	// Name is the canonical reference to a specific builder.
-	Name string
+	// ID is the canonical reference to a specific builder.
+	ID string
 	// ShortName is a string of length 1-3 used to label the builder.
 	ShortName string
 	// The most recent build summaries for this builder.
 	Build []*model.BuildSummary
 	// The most recent builder summary for this builder.
 	Builder *model.BuilderSummary
+}
+
+// Name returns the last component of ID (which is the Builder Name).
+func (br *BuilderRef) BuilderName() string {
+	comp := strings.Split(br.ID, "/")
+	return comp[len(comp)-1]
 }
 
 // Convenience function for writing to bytes.Buffer: in our case, the
@@ -281,8 +288,8 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			))
 		} else {
 			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="/%s" title="%s">`,
-				template.HTMLEscapeString(br.Name),
-				template.HTMLEscapeString(br.Name),
+				template.HTMLEscapeString(br.ID),
+				template.HTMLEscapeString(br.ID),
 			))
 			must(buffer.WriteString(`<div class="console-list-builder"></div>`))
 		}
@@ -303,8 +310,8 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	must(fmt.Fprintf(
 		buffer, `<span class="%s"><a class="console-builder-item" href="/%s" title="%s">%s</a></span>`,
 		template.HTMLEscapeString(extraStatus),
-		template.HTMLEscapeString(br.Name),
-		template.HTMLEscapeString(br.Name),
+		template.HTMLEscapeString(br.ID),
+		template.HTMLEscapeString(br.BuilderName()),
 		template.HTMLEscapeString(br.ShortName)))
 	must(buffer.WriteString(`</div>`))
 
@@ -416,8 +423,10 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		}
 		// Write current state's information.
 		must(fmt.Fprintf(buffer,
-			`<div><a class="console-%s status-%s" href="%s"></a></div>`,
-			class, status, link))
+			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
+				`</a><div class="console-cell-spacer"></div></div>`,
+			class, status, link,
+			template.HTMLEscapeString(br.BuilderName())))
 
 		// Update state.
 		state = nextState

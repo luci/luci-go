@@ -271,21 +271,21 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 
 	// Reassemble the builder summaries and rows into the categoryTree.
 	builderSummaries := extractBuilderSummaries(consoleID, consoleSummaries)
-	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *ui.BuilderRef {
+	categoryTree, depth := buildTreeFromDef(def, func(id, shortname string) *ui.BuilderRef {
 		// Group together all builds for this builder.
 		builds := make([]*model.BuildSummary, len(commits))
-		id := buildsource.BuilderID(name)
+		builderID := buildsource.BuilderID(id)
 		for row := 0; row < len(commits); row++ {
-			if summaries := rows[row].Builds[id]; len(summaries) > 0 {
+			if summaries := rows[row].Builds[builderID]; len(summaries) > 0 {
 				builds[row] = summaries[0]
 			}
 		}
-		builder, ok := builderSummaries[name]
+		builder, ok := builderSummaries[id]
 		if !ok {
-			logging.Warningf(c, "could not find builder summary for %s", name)
+			logging.Warningf(c, "could not find builder summary for %s", id)
 		}
 		return &ui.BuilderRef{
-			Name:      name,
+			ID:        id,
 			ShortName: shortname,
 			Build:     builds,
 			Builder:   builder,
@@ -314,7 +314,7 @@ func consolePreview(c context.Context, summaries ui.ConsoleSummary, def *config.
 			logging.Warningf(c, "could not find builder summary for %s", name)
 		}
 		return &ui.BuilderRef{
-			Name:      name,
+			ID:        name,
 			ShortName: shortname,
 			Builder:   builder,
 		}
@@ -663,7 +663,7 @@ func ConsolesHandler(c *router.Context, projectName string) {
 
 func consoleTestData() []common.TestBundle {
 	builder := &ui.BuilderRef{
-		Name:      "tester",
+		ID:        "tester",
 		ShortName: "tst",
 		Build: []*model.BuildSummary{
 			{

@@ -2,7 +2,7 @@
 
 package buildbot
 
-import "fmt"
+import "strconv"
 
 const _Result_name = "NoResultSuccessWarningFailureSkippedExceptionRetryresultEnd"
 
@@ -11,7 +11,7 @@ var _Result_index = [...]uint8{0, 8, 15, 22, 29, 36, 45, 50, 59}
 func (i Result) String() string {
 	i -= -1
 	if i < 0 || i >= Result(len(_Result_index)-1) {
-		return fmt.Sprintf("Result(%d)", i+-1)
+		return "Result(" + strconv.FormatInt(int64(i+-1), 10) + ")"
 	}
 	return _Result_name[_Result_index[i]:_Result_index[i+1]]
 }
