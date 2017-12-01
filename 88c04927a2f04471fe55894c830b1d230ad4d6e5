@@ -16,6 +16,24 @@
       "revId": "88c04927a2f04471fe55894c830b1d230ad4d6e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78603f35_48bf8ec1",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-01T22:44:07Z",
+      "side": 1,
+      "message": "The Downloader can fetch isolated trees in parallel, so I figured I would allow the user to do this too. I might be misunderstanding the model of isolated tree; if you download several at once I guess they\u0027ll all get dropped into the same directory. Is this what you mean by merging?",
+      "parentUuid": "7551a374_b1a77453",
+      "revId": "88c04927a2f04471fe55894c830b1d230ad4d6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
