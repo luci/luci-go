@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff58013e_68c6fedb",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T19:06:14Z",
+      "side": 1,
+      "message": "ConfigPattern is just a tuple of two patterns and it is unlikely that we will add more fields there. Thus I think that ConfigPattern should not be generally mutable like this, so let\u0027s make it a non-pointer",
+      "range": {
+        "startLine": 53,
+        "startChar": 18,
+        "endLine": 53,
+        "endChar": 19
+      },
+      "revId": "0509f0e6e4d5a5442da51343ee834c07dcf20a60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b3f2703_f89a76a1",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T19:06:14Z",
+      "side": 1,
+      "message": "here too",
+      "revId": "0509f0e6e4d5a5442da51343ee834c07dcf20a60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
