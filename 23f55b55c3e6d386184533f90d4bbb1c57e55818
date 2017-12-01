@@ -70,6 +70,30 @@
       "revId": "23f55b55c3e6d386184533f90d4bbb1c57e55818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad5c2263_aed23346",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-01T19:42:03Z",
+      "side": 1,
+      "message": "I see, thanks.\n\nI\u0027m not overly concerned about the title not matching href; isn\u0027t that fairly common?\n\nRich tooltip with link to latest build sounds fine (with disclaimer that we don\u0027t know how it looks yet, may find it\u0027s too cluttered/fussy-looking in implementation).\n\nI\u0027m also fine just with \"\u003cbuilder ID\u003e (\u003cbuild ID\u003e)\" as mentioned earlier, if you\u0027re all OK with a bit of stutter.",
+      "parentUuid": "1137c967_24e028c3",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 50
+      },
+      "revId": "23f55b55c3e6d386184533f90d4bbb1c57e55818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
