@@ -32,7 +32,7 @@ func GetAllBuilders(c context.Context) (*ui.CIService, error) {
 		return nil, errors.New("buildbucket settings missing in config")
 	}
 	result := &ui.CIService{
-		Name: "Swarmbucket",
+		Name: "LUCI",
 		Host: ui.NewLink(bucketSettings.Name, "https://"+bucketSettings.Host,
 			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
 	}
