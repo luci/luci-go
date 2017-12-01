@@ -16,6 +16,24 @@
       "revId": "cd0078fda86bdfb09904c2191efe3db9434d11fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d5cabb6_e0eee56a",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-01T20:01:35Z",
+      "side": 1,
+      "message": "tl;dr I\u0027m fine either way.\n\n\u003d\u003d\u003d\nhehe, that\u0027s why I wrote \"very much my opinion\" :)\n\nI **prefer** success at the end because Go style of error checking usually leads to lots of early returns due to error, which trained my neural network to look for the \"meat\" of the function at its end.",
+      "parentUuid": "4d8252c2_4ed27e98",
+      "revId": "cd0078fda86bdfb09904c2191efe3db9434d11fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
