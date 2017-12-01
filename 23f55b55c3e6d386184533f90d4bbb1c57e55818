@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cf73e36_275c6a69",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-01T19:10:16Z",
+      "side": 1,
+      "message": "since the block now represents a builder, perhaps the link should take to the builder too? That would be .SelfLink.\n\nThat would make LastFinishedBuildIDLink dead/unnecessary.\n\nJao-ke, WDYT?",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 50
+      },
+      "revId": "23f55b55c3e6d386184533f90d4bbb1c57e55818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
