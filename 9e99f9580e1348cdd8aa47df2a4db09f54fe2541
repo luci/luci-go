@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0acd8f0e_897cca59",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-12-01T22:39:09Z",
+      "side": 1,
+      "message": "Less diffs in the expectations.  I\u0027ll add a break",
+      "parentUuid": "56cfebba_941708a7",
+      "range": {
+        "startLine": 20,
+        "startChar": 7,
+        "endLine": 20,
+        "endChar": 11
+      },
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c3b395b_e07beed8",
         "filename": "milo/frontend/appengine/templates/includes/base.html",
         "patchSetId": 5
@@ -39,6 +63,24 @@
       "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3e812e5_e932bb4f",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-12-01T22:39:09Z",
+      "side": 1,
+      "message": "Sort of, unless html has a lang attribute (Used to ensuring Chrome doesn\u0027t try to translate the page) or body has a class (Leftover from buildbot, it adopts the style), which this does.\n\n(Linked from the style guide)\nhttps://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-omission\nIf the body element in this example had to have a class attribute and the html element had to have a lang attribute, the markup would have to become:\n\nI can remove the end tag though.",
+      "parentUuid": "7c3b395b_e07beed8",
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "84aabcf6_013e14ba",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-12-01T22:39:09Z",
+      "side": 1,
+      "message": "Yeah the spacing is a bit inconsistent :/\n\nSo far there is a vague consistency of using {{nospace}} with top-level tags, and {{ withspace }} for non-top level tags, but I agree with picking one or the other.  I personally prefer {{ withSpace }} because I think the whitespace helps parsability.",
+      "parentUuid": "7ec78337_9e98e76f",
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b155fb5e_50f73409",
         "filename": "server/templates/loaders.go",
         "patchSetId": 5
@@ -73,6 +133,24 @@
       "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33d1c060_df4bd54f",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-12-01T22:39:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b155fb5e_50f73409",
+      "revId": "9e99f9580e1348cdd8aa47df2a4db09f54fe2541",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
