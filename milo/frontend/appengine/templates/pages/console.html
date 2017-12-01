@@ -1,14 +1,18 @@
 {{define "title"}}{{ .Console.Name }} Console{{end}}
 
-{{define "head"}}
-{{ if .Console.FaviconURL }}
-<link rel="icon" type="{{ .Console.FaviconURL | faviconMIMEType }}" href="{{ .Console.FaviconURL }}" />
-{{ end }}
+{{define "favicon"}}
+  {{if .Console.FaviconURL}}
+    <link rel="icon" type="{{ .Console.FaviconURL | faviconMIMEType }}" href="{{ .Console.FaviconURL }}" />
+  {{else}}
+    <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/milo-32.png">
+  {{end}}
+{{end}}
 
-{{ if .Reload }}
-<meta http-equiv="refresh" content="{{ .Reload }}">
-{{ end }}
-<link rel="stylesheet" href="/static/common/css/console.css" type="text/css">
+{{define "head"}}
+  {{if .Reload}}
+    <meta http-equiv="refresh" content="{{ .Reload }}">
+  {{end}}
+  <link rel="stylesheet" href="/static/common/css/console.css" type="text/css">
 {{end}}
 
 {{ define "controls" }}

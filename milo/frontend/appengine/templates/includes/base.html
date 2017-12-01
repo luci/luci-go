@@ -15,7 +15,10 @@ that can be found in the LICENSE file. -->
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
-{{template "head" . }}
+{{ block "favicon" . }}
+<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/milo-32.png">
+{{ end -}}
+{{- block "head" .}}{{ end }}
 
 <body class="interface">
   <header>
@@ -70,4 +73,3 @@ $(function () {
 </script>
 {{ .Analytics }}
 {{end}}
-</html>
