@@ -379,6 +379,30 @@
     },
     {
       "key": {
+        "uuid": "27e21307_f93d8721",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-01T01:04:14Z",
+      "side": 1,
+      "message": "tl;dr ignore this request of mine.\n\nI think it actually does accept refs/heads/whatever as well refs/what/ever, afair from Gerrit source.\n\nAnyways, after more thinking, I think there is value in keeping same names as Gerrit -\u003e whoever uses this needs to read Gerrit docs anyway. Unless we fix this in Gerrit, but that\u0027s outside of our work scope (i presume about yours here)",
+      "parentUuid": "a1472da5_fb7b3cf3",
+      "range": {
+        "startLine": 250,
+        "startChar": 23,
+        "endLine": 250,
+        "endChar": 33
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6d0de17_09b30794",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
@@ -473,6 +497,30 @@
     },
     {
       "key": {
+        "uuid": "c9ec5f3e_a6b8fe76",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-01T01:04:14Z",
+      "side": 1,
+      "message": "i meant i\u0027d rather have it as \"NewRef\", but in light of above, let\u0027s keep as is.",
+      "parentUuid": "b59ad2e9_c26edc30",
+      "range": {
+        "startLine": 269,
+        "startChar": 1,
+        "endLine": 269,
+        "endChar": 10
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6674a5a_da890c8e",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
@@ -517,6 +565,30 @@
       "revId": "587f381950badaefddd9876c52495fe321a20708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77e1ab9d_f517c61b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-01T01:04:14Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "df7b9895_3e19d1ca",
+      "range": {
+        "startLine": 350,
+        "startChar": 3,
+        "endLine": 350,
+        "endChar": 39
+      },
+      "revId": "587f381950badaefddd9876c52495fe321a20708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
