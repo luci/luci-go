@@ -17,9 +17,20 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path"
+	"path/filepath"
+
+	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/client/downloader"
+	"go.chromium.org/luci/client/internal/common"
 )
 
 func cmdDownload(authOpts auth.Options) *subcommands.Command {
@@ -32,6 +43,8 @@ Files are referenced by their hash`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
 			c.commonFlags.Init(authOpts)
+			c.Flags.StringVar(&c.outDir, "out-dir", ".", "The directory where files will be downloaded to.")
+			c.Flags.Var(&c.isolated, "isolated", "(repeatable) Hash of a .isolated tree to download.")
 			return &c
 		},
 	}
@@ -39,6 +52,8 @@ Files are referenced by their hash`,
 
 type downloadRun struct {
 	commonFlags
+	outDir string
+	isolated common.Strings
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
@@ -52,7 +67,27 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *downloadRun) main(a subcommands.Application, args []string) error {
-	return errors.New("TODO")
+	// Prepare isolated client.
+	authClient, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
+
+	// TODO(mknyszek): Add support for cancelling with Ctrl+C through context.
+	ctx := context.Background()
+	dl := downloader.New(ctx, client)
+	for _, isolatedHash := range c.isolated {
+		dl.FetchIsolated(isolated.HexDigest(isolatedHash), func(file string) (io.WriteCloser, error) {
+			file = filepath.Clean(file)
+			file = filepath.Join(c.outDir, file)
+			if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
+				return nil, err
+			}
+			return os.Create(file)
+		})
+	}
+	return dl.Close()
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
