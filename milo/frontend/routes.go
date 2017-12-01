@@ -56,6 +56,7 @@ func Run(templatePath string) {
 		auth.Authenticate(server.CookieAuth),
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
+	projectMW := htmlMW.Extend(projectACLMiddleware)
 	backendMW := baseMW.Extend(middleware.WithContextTimeout(10 * time.Minute))
 	cronMW := backendMW.Extend(gaemiddleware.RequireCron)
 
@@ -73,13 +74,13 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 
 	// Builds.
-	r.GET("/p/:project/builds/b:id", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/builds/b:id", projectMW, func(c *router.Context) {
 		BuildHandler(c, &buildbucket.BuildID{
 			Project: c.Params.ByName("project"),
 			Address: c.Params.ByName("id"),
 		})
 	})
-	r.GET("/p/:project/builders/:bucket/:builder/:number", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/builders/:bucket/:builder/:number", projectMW, func(c *router.Context) {
 		BuildHandler(c, &buildbucket.BuildID{
 			Project: c.Params.ByName("project"),
 			Address: fmt.Sprintf("%s/%s/%s",
@@ -90,20 +91,20 @@ func Run(templatePath string) {
 	})
 
 	// Console
-	r.GET("/p/:project", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project", projectMW, func(c *router.Context) {
 		ConsolesHandler(c, c.Params.ByName("project"))
 	})
 	r.GET("/p/:project/", frontendMW, movedPermanently("/p/:project"))
 	r.GET("/p/:project/g", frontendMW, movedPermanently("/p/:project"))
-	r.GET("/p/:project/g/:group/console", htmlMW, ConsoleHandler)
-	r.GET("/p/:project/g/:group", htmlMW, redirect("/p/:project/g/:group/console", http.StatusFound))
+	r.GET("/p/:project/g/:group/console", projectMW, ConsoleHandler)
+	r.GET("/p/:project/g/:group", projectMW, redirect("/p/:project/g/:group/console", http.StatusFound))
 	r.GET("/p/:project/g/:group/", frontendMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
-	r.GET("/p/:project/builders", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/builders", projectMW, func(c *router.Context) {
 		BuildersRelativeHandler(c, c.Params.ByName("project"), "")
 	})
-	r.GET("/p/:project/g/:group/builders", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/g/:group/builders", projectMW, func(c *router.Context) {
 		BuildersRelativeHandler(c, c.Params.ByName("project"), c.Params.ByName("group"))
 	})
 
@@ -133,7 +134,7 @@ func Run(templatePath string) {
 	// Buildbucket
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
-	r.GET("/p/:project/builders/:bucket/:builder", htmlMW, func(c *router.Context) {
+	r.GET("/p/:project/builders/:bucket/:builder", projectMW, func(c *router.Context) {
 		// TODO(nodir): use project parameter.
 		// Besides implementation, requires deleting the redirect for
 		// /buildbucket/:bucket/:builder
