@@ -90,6 +90,24 @@
       "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09759ce4_d97088fb",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-01T23:32:54Z",
+      "side": 1,
+      "message": "Reference: https://crbug.com/785101",
+      "parentUuid": "d1d9ef0d_2c392ca9",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
