@@ -29,28 +29,20 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-// DatacenterDiff encapsulates differences between a datacenter in the database and config.
-type DatacenterDiff struct {
-	// Config is the datacenter entry in the config.
-	Config *config.DatacenterConfig
-	// Database is the datacenter entry in the database.
-	Database *config.DatacenterConfig
-	// Id is the row ID of this datacenter.
-	Id int
+// Change is a change to the datacenters table.
+type Change struct {
+	// Add is a list of datacenters to add.
+	Add []*config.DatacenterConfig
+	// Update is a list of datacenters to update.
+	// The key is a database row primary key.
+	Update map[int]*config.DatacenterConfig
+	// Delete is a list of datacenters to delete.
+	// The key is a database row primary key.
+	Delete map[int]*config.DatacenterConfig
 }
 
-// Differences encapsulates the differences between datacenters in the database and config.
-type Differences struct {
-	// Extraneous is a list of datacenters present in the database but not the config.
-	Extraneous []*DatacenterDiff
-	// Mismatched is a list of datacenters present in the database but not matching the config.
-	Mismatched []*DatacenterDiff
-	// Missing is a list of datacenters present in the config but not the database.
-	Missing []*DatacenterDiff
-}
-
-// getDifferences returns the state of datacenters in the database with respect to the config.
-func getDifferences(c context.Context, datacenterConfigs []*config.DatacenterConfig) (*Differences, error) {
+// getDifferences returns a Change to the database with respect to the config.
+func getDifferences(c context.Context, datacenterConfigs []*config.DatacenterConfig) (*Change, error) {
 	// Convert the list of DatacenterConfigs into a map of datacenter name to DatacenterConfig.
 	datacenters := make(map[string]*config.DatacenterConfig, len(datacenterConfigs))
 	for _, datacenter := range datacenterConfigs {
@@ -64,29 +56,30 @@ func getDifferences(c context.Context, datacenterConfigs []*config.DatacenterCon
 	}
 	defer rows.Close()
 
-	differences := &Differences{}
+	change := &Change{
+		Update: map[int]*config.DatacenterConfig{},
+		Delete: map[int]*config.DatacenterConfig{},
+	}
 	for rows.Next() {
-		diff := &DatacenterDiff{
-			Database: &config.DatacenterConfig{},
-		}
-		if err := rows.Scan(&diff.Id, &diff.Database.Name, &diff.Database.Description); err != nil {
+		var id int
+		var dbDC config.DatacenterConfig
+		if err := rows.Scan(&id, &dbDC.Name, &dbDC.Description); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch datacenter").Err()
 		}
-		if datacenter, ok := datacenters[diff.Database.Name]; ok {
+		if cfgDC, ok := datacenters[dbDC.Name]; ok {
 			// Datacenter found in the config.
-			diff.Config = datacenter
-			if diff.Database.Description != diff.Config.Description {
+			if cfgDC.Description != dbDC.Description {
 				// Datacenter doesn't match the config.
-				differences.Mismatched = append(differences.Mismatched, diff)
+				change.Update[id] = cfgDC
 			}
 			// The config and database enforce global uniqueness of names, so we don't
 			// expect to see the same named datacenter again. Remove it from the map,
 			// which will leave only those datacenters which don't exist in the database
 			// when the loop terminates.
-			delete(datacenters, diff.Database.Name)
+			delete(datacenters, dbDC.Name)
 		} else {
 			// Datacenter not found in the config.
-			differences.Extraneous = append(differences.Extraneous, diff)
+			change.Delete[id] = &dbDC
 		}
 	}
 
@@ -96,16 +89,14 @@ func getDifferences(c context.Context, datacenterConfigs []*config.DatacenterCon
 	// array, checking if each datacenter is in the map.
 	for _, dc := range datacenterConfigs {
 		if _, ok := datacenters[dc.Name]; ok {
-			differences.Missing = append(differences.Missing, &DatacenterDiff{
-				Config: dc,
-			})
+			change.Add = append(change.Add, dc)
 		}
 	}
-	return differences, nil
+	return change, nil
 }
 
 // addDatacenters adds the given datacenters to the database.
-func addDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
+func addDatacenters(c context.Context, datacenters []*config.DatacenterConfig) error {
 	// Avoid using the database connection to prepare unnecessary statements.
 	if len(datacenters) == 0 {
 		return nil
@@ -118,16 +109,16 @@ func addDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
 	}
 	defer stmt.Close()
 	for _, dc := range datacenters {
-		if _, err := stmt.ExecContext(c, dc.Config.Name, dc.Config.Description); err != nil {
-			return errors.Annotate(err, "failed to add datacenter: %s", dc.Config.Name).Err()
+		if _, err := stmt.ExecContext(c, dc.Name, dc.Description); err != nil {
+			return errors.Annotate(err, "failed to add datacenter: %s", dc.Name).Err()
 		}
-		logging.Infof(c, "Added datacenter: %s", dc.Config.Name)
+		logging.Infof(c, "Added datacenter: %s", dc.Name)
 	}
 	return nil
 }
 
 // updateDatacenters updates the given datacenters in the database.
-func updateDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
+func updateDatacenters(c context.Context, datacenters map[int]*config.DatacenterConfig) error {
 	// Avoid using the database connection to prepare unnecessary statements.
 	if len(datacenters) == 0 {
 		return nil
@@ -139,17 +130,17 @@ func updateDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
 	defer stmt.Close()
-	for _, dc := range datacenters {
-		if _, err := stmt.ExecContext(c, dc.Config.Description, dc.Id); err != nil {
-			return errors.Annotate(err, "failed to update datacenter: %s", dc.Config.Name).Err()
+	for id, dc := range datacenters {
+		if _, err := stmt.ExecContext(c, dc.Description, id); err != nil {
+			return errors.Annotate(err, "failed to update datacenter %s", dc.Name).Err()
 		}
-		logging.Infof(c, "Updated datacenter: %s", dc.Config.Name)
+		logging.Infof(c, "Updated datacenter: %s", dc.Name)
 	}
 	return nil
 }
 
 // deleteDatacenters deletes the given datacenters from the database.
-func deleteDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
+func deleteDatacenters(c context.Context, datacenters map[int]*config.DatacenterConfig) error {
 	// Avoid using the database connection to prepare unnecessary statements.
 	if len(datacenters) == 0 {
 		return nil
@@ -161,28 +152,28 @@ func deleteDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
 	defer stmt.Close()
-	for _, dc := range datacenters {
-		if _, err := stmt.ExecContext(c, dc.Id); err != nil {
-			return errors.Annotate(err, "failed to delete datacenter: %s", dc.Database.Name).Err()
+	for id, dc := range datacenters {
+		if _, err := stmt.ExecContext(c, id); err != nil {
+			return errors.Annotate(err, "failed to delete datacenter: %s", dc.Name).Err()
 		}
-		logging.Infof(c, "Deleted datacenter: %s", dc.Database.Name)
+		logging.Infof(c, "Deleted datacenter: %s", dc.Name)
 	}
 	return nil
 }
 
 // EnsureDatacenters ensures the database contains exactly the given datacenters.
 func EnsureDatacenters(c context.Context, datacenterConfigs []*config.DatacenterConfig) error {
-	differences, err := getDifferences(c, datacenterConfigs)
+	change, err := getDifferences(c, datacenterConfigs)
 	if err != nil {
 		return errors.Annotate(err, "failed to get datacenters").Err()
 	}
-	if err = addDatacenters(c, differences.Missing); err != nil {
+	if err = addDatacenters(c, change.Add); err != nil {
 		return errors.Annotate(err, "failed to add datacenters").Err()
 	}
-	if err = updateDatacenters(c, differences.Mismatched); err != nil {
+	if err = updateDatacenters(c, change.Update); err != nil {
 		return errors.Annotate(err, "failed to update datacenters").Err()
 	}
-	if err = deleteDatacenters(c, differences.Extraneous); err != nil {
+	if err = deleteDatacenters(c, change.Delete); err != nil {
 		return errors.Annotate(err, "failed to delete datacenters").Err()
 	}
 	return nil
