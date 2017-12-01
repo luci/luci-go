@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4af90bb8_b67953ee",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-01T00:39:38Z",
+      "side": 1,
+      "message": "Added this little flag here since if it returns a message associated with 400, it won\u0027t be decodable into json.",
+      "range": {
+        "startLine": 52,
+        "startChar": 51,
+        "endLine": 52,
+        "endChar": 58
+      },
+      "revId": "f320b2413a03479e514a452872bc81b2cee17121",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
