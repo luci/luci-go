@@ -1,7 +1,5 @@
 {{define "title"}}Error: {{.Code}}{{end}}
 
-{{define "head"}}{{end}}
-
 {{define "body"}}
 <h1>Error: {{.Code}}</h1>
 {{ if eq .Code 401 }}
