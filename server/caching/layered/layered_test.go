@@ -15,7 +15,10 @@
 package layered
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -23,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 
@@ -37,6 +41,7 @@ func TestCache(t *testing.T) {
 
 	Convey("With fake time", t, func() {
 		ctx := context.Background()
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		ctx, tc := testclock.UseTime(ctx, time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC))
 		ctx = caching.WithEmptyProcessCache(ctx)
 
@@ -53,6 +58,7 @@ func TestCache(t *testing.T) {
 
 		calls := 0
 		value := []byte("value")
+		anotherValue := []byte("anotherValue")
 
 		getter := func() (interface{}, time.Duration, error) {
 			calls++
@@ -129,6 +135,101 @@ func TestCache(t *testing.T) {
 				So(calls, ShouldEqual, 2) // new call!
 			})
 		})
+
+		Convey("Never expiring item", func() {
+			item, err := c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return value, 0, nil
+			})
+			So(err, ShouldBeNil)
+			So(item, ShouldResemble, value)
+
+			tc.Add(100 * time.Hour)
+
+			item, err = c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return nil, 0, errors.New("must not be called")
+			})
+			So(err, ShouldBeNil)
+			So(item, ShouldResemble, value)
+		})
+
+		Convey("WithMinTTL works", func() {
+			item, err := c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return value, time.Hour, nil
+			})
+			So(err, ShouldBeNil)
+			So(item, ShouldResemble, value)
+
+			tc.Add(50 * time.Minute)
+
+			// 9 min minTTL is still ok.
+			item, err = c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return nil, 0, errors.New("must not be called")
+			}, WithMinTTL(9*time.Minute))
+			So(err, ShouldBeNil)
+			So(item, ShouldResemble, value)
+
+			// But 10 min is not and the item is refreshed.
+			item, err = c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return anotherValue, time.Hour, nil
+			}, WithMinTTL(10*time.Minute))
+			So(err, ShouldBeNil)
+			So(item, ShouldResemble, anotherValue)
+		})
+
+		Convey("ErrCantSatisfyMinTTL", func() {
+			_, err := c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return value, time.Minute, nil
+			}, WithMinTTL(2*time.Minute))
+			So(err, ShouldEqual, ErrCantSatisfyMinTTL)
+		})
+
+		oneRandomizedTrial := func(now, threshold time.Duration) (cacheHit bool) {
+			// Reset state (except RNG).
+			ctx := caching.WithEmptyProcessCache(ctx)
+			ctx, tc := testclock.UseTime(ctx, time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC))
+
+			// Put the item in the cache.
+			item, err := c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return value, time.Hour, nil
+			})
+			So(err, ShouldBeNil)
+			So(item, ShouldResemble, value)
+
+			tc.Add(now)
+
+			// Grab it (or trigger a refresh if randomly expired).
+			item, err = c.GetOrCreate(ctx, "item", func() (interface{}, time.Duration, error) {
+				return anotherValue, time.Hour, nil
+			}, WithRandomizedExpiration(threshold))
+			So(err, ShouldBeNil)
+			return bytes.Equal(item.([]byte), value)
+		}
+
+		testCases := []struct {
+			now, threshold  time.Duration
+			expectedHitRate int
+		}{
+			{50 * time.Minute, 10 * time.Minute, 100}, // before threshold, no random expiration
+			{51 * time.Minute, 10 * time.Minute, 90},  // slightly above => some expiration
+			{59 * time.Minute, 10 * time.Minute, 11},  // almost at the threshold => heavy expiration
+			{61 * time.Minute, 10 * time.Minute, 0},   // outside item expiration => always expired
+		}
+
+		for i := 0; i < len(testCases); i++ {
+			now := testCases[i].now
+			threshold := testCases[i].threshold
+			expectedHitRate := testCases[i].expectedHitRate
+
+			Convey(fmt.Sprintf("WithRandomizedExpiration (now = %s)", now), func() {
+				cacheHits := 0
+				for i := 0; i < 100; i++ {
+					if oneRandomizedTrial(now, threshold) {
+						cacheHits++
+					}
+				}
+				So(cacheHits, ShouldEqual, expectedHitRate)
+			})
+		}
 	})
 }
 
@@ -148,27 +249,27 @@ func TestSerialization(t *testing.T) {
 		}
 
 		Convey("Happy path with deadline", func() {
-			originalItem := []byte("blah-blah")
+			originalItem := itemWithExp{[]byte("blah-blah"), now}
 
-			blob, err := c.serializeItem(originalItem, now)
+			blob, err := c.serializeItem(&originalItem)
 			So(err, ShouldBeNil)
 
-			item, expTS, err := c.deserializeItem(blob)
+			item, err := c.deserializeItem(blob)
 			So(err, ShouldBeNil)
-			So(expTS.Equal(now), ShouldBeTrue)
-			So(item, ShouldResemble, originalItem)
+			So(item.exp.Equal(now), ShouldBeTrue)
+			So(item.val, ShouldResemble, originalItem.val)
 		})
 
 		Convey("Happy path without deadline", func() {
-			originalItem := []byte("blah-blah")
+			originalItem := itemWithExp{[]byte("blah-blah"), time.Time{}}
 
-			blob, err := c.serializeItem(originalItem, time.Time{})
+			blob, err := c.serializeItem(&originalItem)
 			So(err, ShouldBeNil)
 
-			item, expTS, err := c.deserializeItem(blob)
+			item, err := c.deserializeItem(blob)
 			So(err, ShouldBeNil)
-			So(expTS.IsZero(), ShouldBeTrue)
-			So(item, ShouldResemble, originalItem)
+			So(item.exp.IsZero(), ShouldBeTrue)
+			So(item.val, ShouldResemble, originalItem.val)
 		})
 
 		Convey("Marshal error", func() {
@@ -176,17 +277,17 @@ func TestSerialization(t *testing.T) {
 			c.Marshal = func(item interface{}) ([]byte, error) {
 				return nil, fail
 			}
-			_, err := c.serializeItem(nil, time.Time{})
+			_, err := c.serializeItem(&itemWithExp{})
 			So(err, ShouldEqual, fail)
 		})
 
 		Convey("Small buffer in Unmarshal", func() {
-			_, _, err := c.deserializeItem([]byte{formatVersionByte, 0})
+			_, err := c.deserializeItem([]byte{formatVersionByte, 0})
 			So(err, ShouldErrLike, "buffer is too small")
 		})
 
 		Convey("Bad version in Unmarshal", func() {
-			_, _, err := c.deserializeItem([]byte{formatVersionByte + 1, 0, 0, 0, 0, 0, 0, 0, 0})
+			_, err := c.deserializeItem([]byte{formatVersionByte + 1, 0, 0, 0, 0, 0, 0, 0, 0})
 			So(err, ShouldErrLike, "bad format version")
 		})
 
@@ -196,10 +297,10 @@ func TestSerialization(t *testing.T) {
 				return nil, fail
 			}
 
-			blob, err := c.serializeItem([]byte("blah-blah"), now)
+			blob, err := c.serializeItem(&itemWithExp{[]byte("blah-blah"), now})
 			So(err, ShouldBeNil)
 
-			_, _, err = c.deserializeItem(blob)
+			_, err = c.deserializeItem(blob)
 			So(err, ShouldEqual, fail)
 		})
 	})
