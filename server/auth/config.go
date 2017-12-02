@@ -21,7 +21,6 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
 )
@@ -75,18 +74,6 @@ type Config struct {
 	// outlive it.
 	AnonymousTransport AnonymousTransportProvider
 
-	// Cache implements a strongly consistent cache.
-	//
-	// Usually backed by memcache. Should do namespacing itself (i.e. the auth
-	// library assumes full ownership of the keyspace).
-	Cache Cache
-
-	// Locks is a process-local mutex pool used internally to serialize some heavy
-	// operations to avoid doing them multiple times.
-	//
-	// Must be initialized by whoever creates the initial Config struct.
-	Locks *mutexpool.P
-
 	// IsDevMode is true when running the server locally during development.
 	//
 	// Setting this to true changes default deadlines. For instance, GAE dev
@@ -97,9 +84,6 @@ type Config struct {
 
 // SetConfig completely replaces the configuration in the context.
 func SetConfig(c context.Context, cfg *Config) context.Context {
-	if cfg.Locks == nil {
-		panic("auth.Config.Locks must not be nil")
-	}
 	return context.WithValue(c, &cfgContextKey, cfg)
 }
 
@@ -111,8 +95,6 @@ func ModifyConfig(c context.Context, cb func(Config) Config) context.Context {
 	var cfg Config
 	if cur := getConfig(c); cur != nil {
 		cfg = *cur
-	} else {
-		cfg.Locks = &mutexpool.P{}
 	}
 	cfg = cb(cfg)
 	return SetConfig(c, &cfg)
