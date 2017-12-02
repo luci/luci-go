@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6aa8264c_bffb9b94",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T16:16:49Z",
+      "side": 1,
+      "message": "if you use `1 \u003c\u003c iota` here, then we can use\n\n  type Permissions map[string]buildbucket.Action\n\nand check it like \n\n  func (p Permissions) Can(bucket string, action buildbucket.Action) bool {\n\treturn (p[bucket] \u0026 action) \u003d\u003d action\n}",
+      "range": {
+        "startLine": 25,
+        "startChar": 19,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52712b65_d53ad76d",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T16:16:49Z",
+      "side": 1,
+      "message": "unnecessary, it is implied, same below",
+      "range": {
+        "startLine": 28,
+        "startChar": 10,
+        "endLine": 28,
+        "endChar": 24
+      },
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e3b57cc_dc3da2d4",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T16:16:49Z",
+      "side": 1,
+      "message": "ideally we minimize number of listings, right now we have 3 (definitions, action-\u003estr, str-\u003eaction). See my comment below and then we can derive map[string]Action from map[Action]string",
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7134ff42_a8c94f37",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T16:16:49Z",
+      "side": 1,
+      "message": "it might be shorter to express using a global map variable",
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
