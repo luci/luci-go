@@ -1,0 +1,175 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b24c0b8f_e163d09e",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "drive-by: report(err, label) here\n(trying to understand what is label)",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dabe917c_8458c504",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 37,
+        "startChar": 66,
+        "endLine": 37,
+        "endChar": 70
+      },
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d968aea_765c8cc3",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "used for caching of\n\nor just\n\n  cached OAuth2 token",
+      "range": {
+        "startLine": 95,
+        "startChar": 19,
+        "endLine": 95,
+        "endChar": 34
+      },
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9a84acd_60d929e1",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0594b4bf_75d9f66f",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "double logging, at least in rpc_mint_oauth_token_via_grant.go:106",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2eea9f8b_c4d93aae",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "heh, for the second time I review someone implements options, later they (you, Robbie) end up constructing a slice of them, which pretty much defeats the purpose of this style of API, i.e. \n\n  type Options struct {\n    MinTTL time.Duration\n    RandomizedExpiration time.Duration\n  }\n\nwould be simpler",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "458ffcc0_2766b2c8",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "FWIU this can happen only if op.Mint returned empty label. I think this would be more obvious if (label \u003d\u003d \"\") handling was in L152",
+      "range": {
+        "startLine": 167,
+        "startChar": 2,
+        "endLine": 168,
+        "endChar": 30
+      },
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb3c53bd_ea5bb92d",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "nit, optional: after above comment, we will have 4 cases. How do you like:\n\n  switch tok, _ :\u003d fetched.(*cachedToken): {\n  case err \u003d\u003d layred.ErrCantSatisfyMinTTL:\n    ...\n  case err !\u003d nil:\n    ...\n  case tok.Key !\u003d op.CacheKey:\n    ...\n  default:\n    ...\n  }",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2235c2e_d9f8622a",
+        "filename": "server/auth/delegation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T06:47:40Z",
+      "side": 1,
+      "message": "drive-by: report(err, label) here",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
