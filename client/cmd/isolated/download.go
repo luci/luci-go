@@ -17,9 +17,20 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+
+	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/client/downloader"
 )
 
 func cmdDownload(authOpts auth.Options) *subcommands.Command {
@@ -32,6 +43,10 @@ Files are referenced by their hash`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
 			c.commonFlags.Init(authOpts)
+			// TODO(mknyszek): Add support for downloading individual files.
+			c.Flags.IntVar(&c.goroutines, "j", runtime.NumCPU(), "The maximum amount of goroutines to use when downloading.")
+			c.Flags.StringVar(&c.outDir, "out-dir", ".", "The directory where files will be downloaded to.")
+			c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of a .isolated tree to download.")
 			return &c
 		},
 	}
@@ -39,20 +54,46 @@ Files are referenced by their hash`,
 
 type downloadRun struct {
 	commonFlags
+	goroutines int
+	outDir string
+	isolated string
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
+	if c.goroutines <= 0 {
+		return errors.New("number of goroutines must be non-zero and non-negative")
+	}
 	if len(args) != 0 {
 		return errors.New("position arguments not expected")
+	}
+	if len(c.isolated) == 0 {
+		return errors.New("isolated is required")
 	}
 	return nil
 }
 
 func (c *downloadRun) main(a subcommands.Application, args []string) error {
-	return errors.New("TODO")
+	// Prepare isolated client.
+	authClient, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
+
+	// TODO(mknyszek): Add support for cancelling with Ctrl+C through context.
+	ctx := context.Background()
+	dl := downloader.New(ctx, client, c.goroutines)
+	dl.FetchIsolated(isolated.HexDigest(c.isolated), func(file string) (io.WriteCloser, error) {
+		file = filepath.Join(c.outDir, filepath.Clean(file))
+		if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
+			return nil, err
+		}
+		return os.Create(file)
+	})
+	return dl.Close()
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
