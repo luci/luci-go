@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dae0759a_13a213a7",
+        "filename": "server/caching/layered/layered.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T00:37:39Z",
+      "side": 1,
+      "message": "\"that\"?",
+      "range": {
+        "startLine": 116,
+        "startChar": 9,
+        "endLine": 116,
+        "endChar": 10
+      },
+      "revId": "a770db8d3af289024a1761070994e3df53c85173",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a90f824_9615249f",
+        "filename": "server/caching/layered/layered.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T00:37:39Z",
+      "side": 1,
+      "message": "this check makes sense only in case `exp \u003e 0:`. Perhaps it should be there",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 161,
+        "endChar": 3
+      },
+      "revId": "a770db8d3af289024a1761070994e3df53c85173",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a70ea3b3_0d85b797",
+        "filename": "server/caching/layered/layered.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-02T00:37:39Z",
+      "side": 1,
+      "message": "nit: zero",
+      "range": {
+        "startLine": 256,
+        "startChar": 61,
+        "endLine": 256,
+        "endChar": 65
+      },
+      "revId": "a770db8d3af289024a1761070994e3df53c85173",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
