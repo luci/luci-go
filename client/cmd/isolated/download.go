@@ -18,8 +18,15 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	"github.com/maruel/subcommands"
+
+	"go.chromium.org/luci/client/downloader"
+	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 func cmdDownload(authOpts auth.Options) *subcommands.Command {
@@ -32,6 +39,9 @@ Files are referenced by their hash`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
 			c.commonFlags.Init(authOpts)
+			// TODO(mknyszek): Add support for downloading individual files.
+			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
+			c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of a .isolated tree to download.")
 			return &c
 		},
 	}
@@ -39,6 +49,8 @@ Files are referenced by their hash`,
 
 type downloadRun struct {
 	commonFlags
+	outputDir string
+	isolated  string
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
@@ -48,11 +60,23 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 	if len(args) != 0 {
 		return errors.New("position arguments not expected")
 	}
+	if len(c.isolated) == 0 {
+		return errors.New("isolated is required")
+	}
 	return nil
 }
 
 func (c *downloadRun) main(a subcommands.Application, args []string) error {
-	return errors.New("TODO")
+	// Prepare isolated client.
+	authClient, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
+	ctx := context.Background()
+	dl := downloader.New(ctx, client, 8)
+	common.CancelOnCtrlC(dl)
+	return dl.FetchIsolated(isolated.HexDigest(c.isolated), c.outputDir)
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
