@@ -52,6 +52,24 @@
       "revId": "88c04927a2f04471fe55894c830b1d230ad4d6e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84430e39_06f4bca4",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:33:42Z",
+      "side": 1,
+      "message": "It only expects one isolated now. I added a TODO to download individual files.",
+      "parentUuid": "f5df50d2_e5265381",
+      "revId": "88c04927a2f04471fe55894c830b1d230ad4d6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
