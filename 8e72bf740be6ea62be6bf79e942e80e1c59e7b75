@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "127798e0_2d873646",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34f3d14a_62d83d3d",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b99249f_081625aa",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ff3051e_ca125fe0",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b99249f_081625aa",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "3ae0544b_307473f8",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05d3f409_94b9061a",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a23e0d80_58983a57",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 2
@@ -67,6 +121,24 @@
       "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a98b70f3_41707c48",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a23e0d80_58983a57",
+      "revId": "8e72bf740be6ea62be6bf79e942e80e1c59e7b75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
