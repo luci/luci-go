@@ -20,6 +20,7 @@
 
   
   <link rel="stylesheet" href="/static/common/css/console.css" type="text/css">
+  <script src="/static/common/third_party/js/js.cookie.js"></script>
 
 
 <body class="interface">
@@ -321,13 +322,18 @@ $(function () {
     $(".console-commit-description-overlay").width(width);
     $(".control-collapse").show();
     $(".control-expand").hide();
+    Cookies.set('expand', 1);
   });
   $(".control-collapse").click(function(e) {
     e.preventDefault();
     $("#console").addClass("collapsed");
     $(".control-expand").show();
     $(".control-collapse").hide();
+    Cookies.remove('expand');
   });
+  if (Cookies.get('expand')) {
+    $(".control-expand").first().click();
+  }
 });
 </script>
 
