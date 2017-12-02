@@ -461,7 +461,7 @@ func GetAllProjects(c context.Context) ([]Project, error) {
 	}
 	result := []Project{}
 	for _, proj := range projs {
-		switch allowed, err := IsAllowed(c, proj.ID); {
+		switch allowed, err := IsAllowedProject(c, proj.ID); {
 		case err != nil:
 			return nil, err
 		case allowed:
@@ -474,7 +474,7 @@ func GetAllProjects(c context.Context) ([]Project, error) {
 // GetProjectConsoles returns all consoles for the given project.
 func GetProjectConsoles(c context.Context, projectName string) ([]*Console, error) {
 	// Check ACLs if user is allowed to access this project.
-	ok, err := IsAllowed(c, projectName)
+	ok, err := IsAllowedProject(c, projectName)
 	switch {
 	case err != nil:
 		return nil, err

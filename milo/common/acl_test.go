@@ -47,12 +47,12 @@ func TestACL(t *testing.T) {
 					IdentityGroups: []string{"all"},
 				})
 				Convey("Read public project", func() {
-					ok, err := IsAllowed(c, "opensource")
+					ok, err := IsAllowedProject(c, "opensource")
 					So(ok, ShouldEqual, true)
 					So(err, ShouldBeNil)
 				})
 				Convey("Read private project", func() {
-					ok, err := IsAllowed(c, "secret")
+					ok, err := IsAllowedProject(c, "secret")
 					So(ok, ShouldEqual, false)
 					So(err, ShouldBeNil)
 				})
@@ -64,7 +64,7 @@ func TestACL(t *testing.T) {
 					IdentityGroups: []string{"googlers", "all"},
 				})
 				Convey("Read private project", func() {
-					ok, err := IsAllowed(c, "secret")
+					ok, err := IsAllowedProject(c, "secret")
 					So(ok, ShouldEqual, true)
 					So(err, ShouldBeNil)
 				})
@@ -76,12 +76,12 @@ func TestACL(t *testing.T) {
 					IdentityGroups: []string{"all"},
 				})
 				Convey("Read public project", func() {
-					ok, err := IsAllowed(c, "opensource")
+					ok, err := IsAllowedProject(c, "opensource")
 					So(ok, ShouldEqual, true)
 					So(err, ShouldBeNil)
 				})
 				Convey("Read private project", func() {
-					ok, err := IsAllowed(c, "secret")
+					ok, err := IsAllowedProject(c, "secret")
 					So(ok, ShouldEqual, false)
 					So(err, ShouldBeNil)
 				})

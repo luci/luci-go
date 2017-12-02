@@ -15,11 +15,13 @@
 package buildbucket
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -29,7 +31,7 @@ func GetAllBuilders(c context.Context) (*ui.CIService, error) {
 	settings := common.GetSettings(c)
 	bucketSettings := settings.Buildbucket
 	if bucketSettings == nil {
-		return nil, errors.New("buildbucket settings missing in config")
+		return nil, errors.Reason("buildbucket settings missing in config").Err()
 	}
 	result := &ui.CIService{
 		Name: "Swarmbucket",
@@ -46,11 +48,26 @@ func GetAllBuilders(c context.Context) (*ui.CIService, error) {
 		return nil, err
 	}
 
+	// Get permissions for all buckets.
+	bucketNames := make([]string, 0, len(r.Buckets))
+	for _, bucket := range r.Buckets {
+		bucketNames = append(bucketNames, bucket.Name)
+	}
+	permissions, err := common.BucketPermissions(c, bucketNames)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to check permissions").Err()
+	}
+
 	result.BuilderGroups = make([]ui.BuilderGroup, len(r.Buckets))
 	for i, bucket := range r.Buckets {
 		// TODO(nodir): instead of assuming luci.<project>. bucket prefix,
 		// expect project explicitly in bucket struct.
 		if !strings.HasPrefix(bucket.Name, "luci.") {
+			continue
+		}
+		// If the current identity doesn't have sufficient permissions, skip
+		// the bucket.
+		if !permissions.Can(bucket.Name, buildbucket.AccessBucket) {
 			continue
 		}
 		// buildbucket guarantees that buckets that start with "luci.",

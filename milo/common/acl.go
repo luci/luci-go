@@ -15,8 +15,14 @@
 package common
 
 import (
+	"net/http"
+
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/errors"
+	accessProto "go.chromium.org/luci/common/proto/access"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient/access"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
@@ -25,9 +31,9 @@ import (
 
 // Helper functions for ACL checking.
 
-// IsAllowed checks to see if the user in the context is allowed to access
+// IsAllowedProject checks to see if the user in the context is allowed to access
 // the given project.
-func IsAllowed(c context.Context, project string) (bool, error) {
+func IsAllowedProject(c context.Context, project string) (bool, error) {
 	switch admin, err := IsAdmin(c); {
 	case err != nil:
 		return false, err
@@ -46,6 +52,65 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	default:
 		return false, err
 	}
+}
+
+// Permissions represents a set of permitted actions for a set of buckets.
+//
+// The slice of actions will always be small (<15 elements) so searching
+// linearly is reasonably fast.
+type Permissions map[string][]buildbucket.Action
+
+// Can checks whether an Action is allowed for a given bucket.
+func (p Permissions) Can(bucket string, action buildbucket.Action) bool {
+	actions, ok := p[bucket]
+	if !ok {
+		return false
+	}
+	for _, a := range actions {
+		if a == action {
+			return true
+		}
+	}
+	return false
+}
+
+// BucketPermissions retrieves the current identity's permitted actions for
+// a set of buckets.
+func BucketPermissions(c context.Context, buckets []string) (Permissions, error) {
+	// Set up buildbucket pRPC client.
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	if err != nil {
+		return nil, errors.Reason("failed to get transport for buildbucket server").Err()
+	}
+	client := accessProto.NewAccessPRPCClient(&prpc.Client{
+		C:    &http.Client{Transport: t},
+		Host: GetSettings(c).Buildbucket.Host,
+	})
+
+	// Make permitted actions call.
+	req := accessProto.PermittedActionsRequest{
+		ResourceKind: "bucket",
+		ResourceIds:  buckets,
+	}
+	resp, err := client.PermittedActions(c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse proto into a convenient format.
+	perms := make(map[string][]buildbucket.Action, len(resp.Permitted))
+	for bucket, actions := range resp.Permitted {
+		newActions := make([]buildbucket.Action, len(actions.Actions))
+		for _, action := range actions.Actions {
+			newAction, err := buildbucket.ParseAction(action)
+			if err != nil {
+				return nil, err
+			}
+			newActions = append(newActions, newAction)
+		}
+		perms[bucket] = newActions
+	}
+	return perms, nil
 }
 
 // IsAdmin returns true if the current identity is an administrator.

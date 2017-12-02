@@ -697,7 +697,7 @@ func isAllowed(c context.Context, tags []string) bool {
 			}
 			logging.Debugf(c, "Checking if user has access to %s", sp[1])
 			// sp[1] is the project ID.
-			allowed, err := common.IsAllowed(c, sp[1])
+			allowed, err := common.IsAllowedProject(c, sp[1])
 			if err != nil {
 				logging.WithError(err).Errorf(c, "could not perform acl check")
 				return false
