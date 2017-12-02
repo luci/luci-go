@@ -52,6 +52,7 @@ that can be found in the LICENSE file. -->
     built: <b>{{.CurrentTime | localTime "" }}</b><br>
     version: <b>{{.AppVersion}}</b><br>
   </footer>
+</body>
 <script>
 $(function () {
   'use strict';
@@ -72,4 +73,5 @@ $(function () {
   crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3EPlatform%3EMilo');
 </script>
 {{ .Analytics }}
+</html>
 {{end}}
