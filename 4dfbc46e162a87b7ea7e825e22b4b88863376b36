@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cab60398_b8157f13",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c9fa4f6_2a936080",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93e55e25_a4b04b6a",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce21a608_9943ba2c",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93e55e25_a4b04b6a",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "8eee85fd_459e876f",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:34Z",
+      "side": 1,
+      "message": "I added both hash and type (is it a file or is it an isolated) as arguments, and it will get annotated before it gets added to the MultiError.",
+      "parentUuid": "52b02d27_94783d28",
+      "range": {
+        "startLine": 90,
+        "startChar": 4,
+        "endLine": 90,
+        "endChar": 12
+      },
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e135029_186c6cb9",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 4
@@ -73,6 +133,24 @@
       "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cafcdbb9_b6cb600b",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e135029_186c6cb9",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -108,6 +186,24 @@
       "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87f4b418_8825aeb8",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-02T02:31:34Z",
+      "side": 1,
+      "message": "So there actually is a teardown test for upload (see isolatedclient_test.go:TestIsolateServerUploadRetryGCSPartial) so I added a similar teardown test for download. I also added retry tests for downloading.\n\nSince those are all covered, I just put a TODO at the top of the file for http 429.",
+      "parentUuid": "09759ce4_d97088fb",
+      "revId": "4dfbc46e162a87b7ea7e825e22b4b88863376b36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
