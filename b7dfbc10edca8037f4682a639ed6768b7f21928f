@@ -201,6 +201,24 @@
     },
     {
       "key": {
+        "uuid": "31184b95_af42faf2",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-04T20:54:51Z",
+      "side": 1,
+      "message": "why not add additional info using Annotate?",
+      "parentUuid": "6e1aadf2_aae3d626",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2eea9f8b_c4d93aae",
         "filename": "server/auth/cache.go",
         "patchSetId": 2
@@ -230,6 +248,24 @@
       "side": 1,
       "message": "It won\u0027t be simpler for clients that don\u0027t want to pass any options (and there are tons of them). I opted for options to avoid modifying all such clients.",
       "parentUuid": "2eea9f8b_c4d93aae",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d28234fc_a8a08ec3",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-04T20:54:51Z",
+      "side": 1,
+      "message": "i mean, passing nil is not that hard",
+      "parentUuid": "fcce50f7_56af1f2c",
       "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
