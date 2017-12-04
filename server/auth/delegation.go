@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
 
@@ -97,7 +98,7 @@ type DelegationTokenParams struct {
 	// MinTTL defines an acceptable token lifetime.
 	//
 	// The returned token will be valid for at least MinTTL, but no longer than
-	// MaxDelegationTokenTTL (which is 12h).
+	// MaxDelegationTokenTTL (which is 3h).
 	//
 	// Default is 10 min.
 	MinTTL time.Duration
@@ -134,12 +135,12 @@ type tokenMinterClient interface {
 // delegationTokenCache is used to store delegation tokens in the cache.
 //
 // The underlying token type is delegation.Token.
-var delegationTokenCache = tokenCache{
-	Kind:                "delegation",
-	Version:             5,
-	ExpRandPercent:      10,
-	MinAcceptedLifetime: 5 * time.Minute,
-}
+var delegationTokenCache = newTokenCache(tokenCacheConfig{
+	Kind:                         "delegation",
+	Version:                      6,
+	ProcessLRUCache:              caching.RegisterLRUCache(8192),
+	ExpiryRandomizationThreshold: MaxDelegationTokenTTL / 10, // 10%
+})
 
 // MintDelegationToken returns a delegation token that can be used by the
 // current service to "pretend" to be the current caller (as returned by
@@ -194,7 +195,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 
 	// Config contains the cache implementation.
 	cfg := getConfig(ctx)
-	if cfg == nil || cfg.Cache == nil {
+	if cfg == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
@@ -242,14 +243,13 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 	cacheKey := fmt.Sprintf("%s\n%s\n%s\n%d\n%s",
 		userID, tokenServiceHost, target, len(tags), strings.Join(tags, "\n"))
 
-	cached, label, err := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
-		Config:   cfg,
-		Cache:    &delegationTokenCache,
-		CacheKey: cacheKey,
-		MinTTL:   p.MinTTL,
+	cached, err, label := delegationTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+		CacheKey:    cacheKey,
+		MinTTL:      p.MinTTL,
+		MintTimeout: cfg.adjustedTimeout(10 * time.Second),
 
 		// Mint is called on cache miss, under the lock.
-		Mint: func(ctx context.Context) (*cachedToken, error, string) {
+		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
 			// Grab a token server client (or its mock).
 			rpcClient := p.rpcClient
 			if rpcClient == nil {
@@ -327,11 +327,9 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 		},
 	})
 
+	report(err, label)
 	if err != nil {
-		report(err, label)
 		return nil, err
 	}
-
-	report(nil, label)
 	return cached.DelegationToken, nil
 }

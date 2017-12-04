@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
@@ -71,8 +70,6 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: authClient.GetAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
-		Cache:               &auth.MemoryCache{LRU: lru.New(65535)},
-		Locks:               &mutexpool.P{},
 		IsDevMode:           !metadata.OnGCE(),
 	}
 
