@@ -88,10 +88,17 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
-			start := time.Now()
+			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
 			RunExclusive(ctx, env, fnThatReturns(nil))
-			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
+
+			timedOut := false
+			select {
+			case <-ctx.Done():
+				timedOut = true
+			default:
+			}
+
+			So(timedOut, ShouldBeTrue)
 		})
 
 		Convey("creates drain file while acquiring the lock", func() {
