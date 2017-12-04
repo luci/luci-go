@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/pprof"
 	"go.chromium.org/luci/server/router"
@@ -88,12 +89,11 @@ var (
 // classicEnv is an AppEngine Classic GAE environment configuration. This is the
 // default AppEngine environment for simple (all-classic) layouts.
 var classicEnv = gaemiddleware.Environment{
-	MemcacheAvailable:    true,
-	PassthroughPanics:    appengine.IsDevAppServer(),
-	WithInitialRequest:   prod.Use,
-	WithConfig:           gaeconfig.Use,
-	WithAuth:             func(c context.Context) context.Context { return auth.SetConfig(c, &globalAuthConfig) },
-	MonitoringMiddleware: globalTsMonState.Middleware,
+	MemcacheAvailable:  true,
+	WithInitialRequest: prod.Use,
+	WithConfig:         gaeconfig.Use,
+	WithAuth:           func(c context.Context) context.Context { return auth.SetConfig(c, &globalAuthConfig) },
+	ExtraMiddleware:    makeFoundationMiddlewareChain(),
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
 		gaeauth.InstallHandlers(r, base)
 		gaetsmon.InstallHandlers(r, base)
@@ -101,6 +101,15 @@ var classicEnv = gaemiddleware.Environment{
 		gaeconfig.InstallCacheCronHandler(r, base.Extend(gaemiddleware.RequireCron))
 		pprof.InstallHandlers(r, base)
 	},
+}
+
+func makeFoundationMiddlewareChain() router.MiddlewareChain {
+	mw := make([]router.Middleware, 0, 2)
+	if !appengine.IsDevAppServer() {
+		mw = append(mw, middleware.WithPanicCatcher)
+	}
+	mw = append(mw, globalTsMonState.Middleware)
+	return router.NewMiddlewareChain(mw...)
 }
 
 // With adds various production GAE LUCI services to the context.

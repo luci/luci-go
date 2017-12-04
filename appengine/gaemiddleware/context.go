@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/warmup"
@@ -49,10 +48,6 @@ var errSimulatedMemcacheOutage = errors.New("simulated memcache outage")
 // This is low-level API. Use either 'gaemiddeware/standard' or
 // 'gaemiddeware/flex' packages to target a specific flavor of GAE environment.
 type Environment struct {
-	// PassthroughPanics, if true, instructs the Environment not to install panic
-	// catching middleware.
-	PassthroughPanics bool
-
 	// MemcacheAvailable is true if the environment has working memcache.
 	//
 	// If false, also implies disabled datastore caching layer.
@@ -97,9 +92,9 @@ type Environment struct {
 	// If nil, no auth layer will be installed.
 	WithAuth func(context.Context) context.Context
 
-	// MonitoringMiddleware, if not nil, is additional middleware to append to the
-	// end of the Base middleware chain to perform per-request monitoring.
-	MonitoringMiddleware router.Middleware
+	// ExtraMiddleware, if not nil, is additional middleware chain to append to
+	// the end of the Base middleware chain to perform per-request monitoring.
+	ExtraMiddleware router.MiddlewareChain
 
 	// ExtraHandlers, if not nil, is used to install additional handlers when
 	// InstallHandlers is called.
@@ -247,11 +242,6 @@ func (e *Environment) Base() router.MiddlewareChain {
 	}
 
 	mw := router.NewMiddlewareChain(addServices)
-	if !e.PassthroughPanics {
-		mw = mw.Extend(middleware.WithPanicCatcher)
-	}
-	if e.MonitoringMiddleware != nil {
-		mw = mw.Extend(e.MonitoringMiddleware)
-	}
+	mw = mw.ExtendFrom(e.ExtraMiddleware)
 	return mw
 }
