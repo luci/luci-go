@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e801a1d8_f8d650b0",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa16c53d_e1754bd8",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 9
+      },
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d312594_daa9bbcd",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -36,6 +60,24 @@
       "writtenOn": "2017-12-04T15:26:58Z",
       "side": 1,
       "message": "Do you mean that .Close() and .Write() can be called concurrently or somethings else? If it\u0027s this, call this out specifically.",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a944c92e_50e8ee63",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "No it\u0027s moreso that WriterGenerator is call for from multiple threads, so WriterGenerator captures some mutable state and accesses it, without a lock or some kind of synchronization you could risk corrupting state.",
+      "parentUuid": "9d312594_daa9bbcd",
       "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "8fb3f0ef_41339a0e",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "I\u0027m not strongly for async either, my only concern was future use-cases where maybe you want to download many isolated trees or files at a time. Then you don\u0027t need to roll your own work pool on top of the sync calls. The only use-case that comes to mind is maybe downloading many files in parallel, outside of an isolated tree (which would need a work pool anyway, so I figured why not just have isolated trees and files share the pool, the implementation becomes a bit cleaner that way).\n\nIf I do make these calls sync, then I\u0027d like to ask whether I should just spin up the pool specially for FetchIsolated? Since FetchFile doesn\u0027t need anything special.",
+      "parentUuid": "b6d27219_72aa2603",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ea6a880c_53550bbc",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -73,6 +133,24 @@
       "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fe76884_a0ffd219",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea6a880c_53550bbc",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -93,6 +171,24 @@
     },
     {
       "key": {
+        "uuid": "bcb76478_645f3d3f",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "858891d6_bc4a1070",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13070cc5_cbf706fe",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -110,6 +206,24 @@
     },
     {
       "key": {
+        "uuid": "d909d4b9_5133f0e8",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13070cc5_cbf706fe",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ff76066_6e7dc2ab",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -121,6 +235,24 @@
       "writtenOn": "2017-12-04T15:26:58Z",
       "side": 1,
       "message": "One of challenge here is that it\u0027s impossible to know when the DAG is fully fetched and mark the token/item as done. This is useful for timing information, albeit not a blocker for this CL.",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69a12d49_b2dcf83e",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "Hm... good point. I have a solution in mind (wait group per isolated tree download) but it\u0027s not great.",
+      "parentUuid": "7ff76066_6e7dc2ab",
       "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

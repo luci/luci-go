@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "0f0afc24_b8aada03",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "The client absolutely can manage the lifetime of the handles, and it was a design point I was considering. I just felt like in the common cases were simpler.\n\n(I\u0027m sorry about the essay ahead, I just wanted to brain-dump what was going through my head when I wrote this.)\n\nFor example, if WriterGenerator just returned a io.Writer, the client would need to put these handles somewhere. Since isolated dependencies are discovered dynamically, this could result in many extra allocations as one drops the handles into a map or slice, which then is iterated over at the end to close everything (since only the Downloader has the context to know when it\u0027s actually OK to close). If we don\u0027t block on Fetch calls then this data structure needs a lock on it too. This data structure can then also get quite large (especially since you mentioned ~50k files living in a single isolated tree). In the common case, you don\u0027t want to modify the file once contents have been written to it, you just want to actually download the files so something else can use it, so having the Downloader taking ownership felt OK. However, this sort of ends up defeating the purpose of having a WriterGenerator, because you typically can\u0027t Close() in-memory buffers, if that\u0027s what you wanted to write to (which was one of the big reasons for having a WriterGenerator in the first place). I was trying to go for something like an option to Close() if the io.Writer also happens to be an io.WriteCloser, since it\u0027s so much cleaner for the Downloader to handle closing for the common case (no new data structures, no management of handles). I suppose I could do this with reflection, but then the semantics become very weird and non-standard. Alternatively, I could just add a separate FetchIsolatedAndClose() which will use a WriteCloserGenerator?\n\nRe: blocking Fetch calls, while I considered that initially, I went with the current design for the following reasons:\n1) If Fetch calls are blocking, and one day someone decides \"well, I want to download several different isolated in parallel from different sources\" or \"I want to download a bunch of files and an isolated\" or something like that, they\u0027d basically need to have some sort of work pool on top of what Downloader has to make that happen, which can get cumbersome. I was planning on eventually having the `isolated` client being able to do this (though you\u0027d need to specify like -isolated output-dir:hash or something), but not for any particular use-case. Perhaps this is just over-engineering, then. :)\n2) Having non-blocking calls mirrors the Archiver\u0027s behavior (which isn\u0027t necessarily a \"good\" reason since downloading is simpler and perhaps the Downloader should be simpler too).\n\nI\u0027d like to also note that a lot of these design decisions are based on the current notion of the \"Downloader,\" but I wouldn\u0027t be surprised if there\u0027s an overall better design for this. I defer to you because I don\u0027t have much notion of common present use-cases as well as potential future use-cases.",
+      "parentUuid": "46c02dde_1e9d9d2d",
+      "range": {
+        "startLine": 32,
+        "startChar": 35,
+        "endLine": 32,
+        "endChar": 44
+      },
+      "revId": "a050816558fd808ed21235de0d6c42fc6c977149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b12cd43f_733c23f8",
         "filename": "common/isolatedclient/isolatedclient.go",
         "patchSetId": 1
@@ -131,6 +155,30 @@
       "side": 1,
       "message": "Yes it\u0027s for large fies. Files in staging shouldn\u0027t be fetchable yet. They have to be \"finalized\" first.",
       "parentUuid": "749a9f4f_0a43382b",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 8
+      },
+      "revId": "a050816558fd808ed21235de0d6c42fc6c977149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87ca67e5_6f3f98e6",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-04T19:58:07Z",
+      "side": 1,
+      "message": "Yeah, I figured it out. :) This should be fixed and cleaned up already (you can see I just check if the file is \"large\" and drop the /fake/cloudstorage/download URL into the response).",
+      "parentUuid": "35a02f34_c9d00bcf",
       "range": {
         "startLine": 83,
         "startChar": 1,
