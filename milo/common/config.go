@@ -52,6 +52,9 @@ type Console struct {
 	// ID is the ID of the console.
 	ID string `gae:"$id"`
 
+	// Ordinal specifies the console's ordering in its project's consoles list.
+	Ordinal int
+
 	// The URL to the luci-config definition of this console.
 	ConfigURL string
 
@@ -312,7 +315,7 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	// known ones if needed.
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
 		toPut := make([]*Console, 0, len(proj.Consoles))
-		for _, pc := range proj.Consoles {
+		for i, pc := range proj.Consoles {
 			if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
 				// Inject a header if HeaderId is specified, and it doesn't already have one.
 				pc.Header = header
@@ -323,7 +326,7 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 			case ErrConsoleNotFound:
 				// continue
 			case nil:
-				// Check if revisions match, if so just skip it.
+				// Check if revisions match; if so just skip it.
 				if con.ConfigRevision == cfg.Revision {
 					continue
 				}
@@ -333,6 +336,7 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 			toPut = append(toPut, &Console{
 				Parent:         parentKey,
 				ID:             pc.Id,
+				Ordinal:        i,
 				ConfigURL:      LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision),
 				ConfigRevision: cfg.Revision,
 				Builders:       pc.AllBuilderIDs(),
