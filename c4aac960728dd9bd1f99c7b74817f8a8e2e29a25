@@ -34,6 +34,24 @@
       "revId": "c4aac960728dd9bd1f99c7b74817f8a8e2e29a25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95c68561_17d44009",
+        "filename": "milo/common/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-12-04T21:35:06Z",
+      "side": 1,
+      "message": "Yeah you can probably remove it everywhere else too, or keep it here for parity.  Either way is fine.",
+      "parentUuid": "d75970b6_3e11c06b",
+      "revId": "c4aac960728dd9bd1f99c7b74817f8a8e2e29a25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
