@@ -62,9 +62,16 @@ func TestShared(t *testing.T) {
 			defer handle.Unlock()
 
 			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
-			start := time.Now()
 			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
-			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
+
+			timedOut := false
+			select {
+			case <-ctx.Done():
+				timedOut = true
+			default:
+			}
+
+			So(timedOut, ShouldBeTrue)
 		})
 
 		Convey("uses context parameter as basis for new context", func() {
