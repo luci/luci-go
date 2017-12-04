@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9bc97841_b8deabbc",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "Done.\n\nlabel is monitoring metric field name to be able to group operations by result or a flavor of error",
+      "parentUuid": "b24c0b8f_e163d09e",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dabe917c_8458c504",
         "filename": "server/auth/cache.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1255a9e_ede99abf",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dabe917c_8458c504",
+      "range": {
+        "startLine": 37,
+        "startChar": 66,
+        "endLine": 37,
+        "endChar": 70
+      },
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "48c3f8c6_22fea010",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "It should have been \"set when caching ..., otherwise nil\". It is important that it is set only when cachedToken represents OAuth token.",
+      "parentUuid": "0d968aea_765c8cc3",
+      "range": {
+        "startLine": 95,
+        "startChar": 19,
+        "endLine": 95,
+        "endChar": 34
+      },
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9a84acd_60d929e1",
         "filename": "server/auth/cache.go",
         "patchSetId": 2
@@ -79,6 +145,24 @@
       "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "685f08d8_48b56b7c",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9a84acd_60d929e1",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "6e1aadf2_aae3d626",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "Logging here has more information in logging fields (populated in MintAccessTokenForServiceAccount). I think it\u0027s OK to log in this case, since it gives additional information.",
+      "parentUuid": "0594b4bf_75d9f66f",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2eea9f8b_c4d93aae",
         "filename": "server/auth/cache.go",
         "patchSetId": 2
@@ -113,6 +215,24 @@
       "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcce50f7_56af1f2c",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "It won\u0027t be simpler for clients that don\u0027t want to pass any options (and there are tons of them). I opted for options to avoid modifying all such clients.",
+      "parentUuid": "2eea9f8b_c4d93aae",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -139,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "dad0e01b_c58f2bd2",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "Fine, though strictly speaking GetOrCreate can return an error even if the body returns success (in case the item it produced is not serializable).",
+      "parentUuid": "458ffcc0_2766b2c8",
+      "range": {
+        "startLine": 167,
+        "startChar": 2,
+        "endLine": 168,
+        "endChar": 30
+      },
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bb3c53bd_ea5bb92d",
         "filename": "server/auth/cache.go",
         "patchSetId": 2
@@ -156,6 +300,24 @@
     },
     {
       "key": {
+        "uuid": "1d14f18b_bb69053f",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb3c53bd_ea5bb92d",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2235c2e_d9f8622a",
         "filename": "server/auth/delegation.go",
         "patchSetId": 2
@@ -170,6 +332,24 @@
       "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a82a670_bafa50a9",
+        "filename": "server/auth/delegation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T19:55:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2235c2e_d9f8622a",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
