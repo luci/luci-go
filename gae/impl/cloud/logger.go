@@ -16,44 +16,156 @@ package cloud
 
 import (
 	"fmt"
+	"os"
 	"regexp"
+	"sync"
+	"sync/atomic"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 
 	cloudLogging "cloud.google.com/go/logging"
 
 	"golang.org/x/net/context"
 )
 
-// LogIDRegexp is a regular expression that can be used to validate a Log ID.
+var (
+	// LogIDRegexp is a regular expression that can be used to validate a Log ID.
+	//
+	// From: https://godoc.org/cloud.google.com/go/logging#Client.Logger
+	LogIDRegexp = regexp.MustCompile(`^[A-Za-z0-9/_\-\.]{0,512}$`)
+
+	// TraceIDLogLabel is the label used to express a request's trace ID in
+	// Stackdriver LogEntry messages. Attaching a consistent trace ID label to
+	// different logs allows them to be associated with the same trace.
+	TraceIDLogLabel = "appengine.googleapis.com/trace_id"
+
+	consoleLoggerConfig = gologger.LoggerConfig{
+		Out:    os.Stderr,
+		Format: gologger.StdFormat,
+	}
+)
+
+// InsertIDGenerator generates logging Insert IDs from a base key and an
+// atomically-incrementing number. It is safe for concurrent usage.
 //
-// From: https://godoc.org/cloud.google.com/go/logging#Client.Logger
-var LogIDRegexp = regexp.MustCompile(`^[A-Za-z0-9/_\-\.]{0,512}$`)
+// Insert IDs must be unique, so it's critical that Base is unique for any given
+// InsertIDGenerator.
+type InsertIDGenerator struct {
+	Counter int64
+	Base    string
+}
+
+// Next returns the next InsertID in the InsertIDGenerator sequence.
+//
+// As a convenience, a nil InsertIDGenerator will return an empty string.
+func (gen *InsertIDGenerator) Next() string {
+	if gen == nil {
+		return ""
+	}
+
+	nextValue := atomic.AddInt64(&gen.Counter, 1)
+	if nextValue == 0 {
+		// (This should be impossible)
+		panic("insert ID generator counter wrapped")
+	}
+	return fmt.Sprintf("%s_%d", gen.Base, nextValue-1)
+}
+
+// LogSeverityTracker tracks the highest observed log severity. It is safe for
+// concurrent access.
+type LogSeverityTracker struct {
+	observed        bool
+	highestSeverity cloudLogging.Severity
+	lock            sync.Mutex
+}
+
+// HighestSeverity returns the highest logging severity that is been observed.
+//
+// If no logging severity has been explicitly observed, Default severity will
+// be returned.
+func (lst *LogSeverityTracker) HighestSeverity() cloudLogging.Severity {
+	lst.lock.Lock()
+	defer lst.lock.Unlock()
+
+	if !lst.observed {
+		return cloudLogging.Default
+	}
+	return lst.highestSeverity
+}
+
+// Observe updates the LogSeverityTracker's highest observed log severity.
+//
+// Observe is safe for concurrent usage.
+func (lst *LogSeverityTracker) Observe(s cloudLogging.Severity) {
+	lst.lock.Lock()
+	defer lst.lock.Unlock()
+
+	if !lst.observed || s > lst.highestSeverity {
+		lst.highestSeverity = s
+		lst.observed = true
+	}
+}
+
+// NewConsoleLogger instantiates a new Logger instance that logs to STDERR.
+//
+// STDERR is independently captured in Flex environments.
+func NewConsoleLogger(c context.Context) logging.Logger {
+	return consoleLoggerConfig.NewLogger(c)
+}
+
+// LoggerConfig configures a Logger instance.
+type LoggerConfig struct {
+	// SeverityTracker, if not nil, will be updated with the severity of log
+	// messages sent through the generated Logger(s).
+	SeverityTracker *LogSeverityTracker
+	// InsertIDGenerator, if not nil, will be used to generate InsertIDs for
+	// generated logs.
+	InsertIDGenerator *InsertIDGenerator
+
+	// Trace, if not empty, is the trace to associated with each log entry.
+	Trace string
+
+	// LogToSTDERR, if true, indicates that log messages should be tee'd to
+	// a simple STDERR logger prior to being written.
+	LogToSTDERR bool
+
+	// The given labels will be applied to each log entry. This allows to reuse
+	// Logger instance between requests, even if they have different default
+	// labels.
+	Labels map[string]string
+}
 
 // WithLogger installs an instance of a logging.Logger that forwards logs to an
-// underlying StackDriver Logger into the supplied Context.
-//
-// The given labels will be applied to each log entry. This allows to reuse
-// Logger instance between requests, even if they have different default labels.
+// underlying Stackdriver Logger into the supplied Context.
 //
 // An alternative is to construct Logger per request, setting request labels via
 // CommonLabels(...) option. But it is more heavy solution, and at the time of
 // writing it leads to memory leaks:
 // https://github.com/GoogleCloudPlatform/google-cloud-go/issues/720#issuecomment-346199870
-func WithLogger(c context.Context, l *cloudLogging.Logger, labels map[string]string) context.Context {
+func WithLogger(c context.Context, l *cloudLogging.Logger, cfg *LoggerConfig) context.Context {
+	if cfg == nil {
+		cfg = &LoggerConfig{}
+	}
+
 	return logging.SetFactory(c, func(c context.Context) logging.Logger {
-		return &boundLogger{
-			Context: c,
-			cl:      l,
-			labels:  labels,
+		bl := boundLogger{
+			Context:      c,
+			LoggerConfig: *cfg,
+			cl:           l,
 		}
+		if cfg.LogToSTDERR {
+			bl.stderrLogger = NewConsoleLogger(c)
+		}
+		return &bl
 	})
 }
 
 type boundLogger struct {
 	context.Context
-	cl     *cloudLogging.Logger
-	labels map[string]string
+	LoggerConfig
+	stderrLogger logging.Logger
+	cl           *cloudLogging.Logger
 }
 
 func (bl *boundLogger) Debugf(format string, args ...interface{}) {
@@ -73,6 +185,15 @@ func (bl *boundLogger) Errorf(format string, args ...interface{}) {
 }
 
 func (bl *boundLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
+	if bl.stderrLogger != nil {
+		bl.stderrLogger.LogCall(lvl, calldepth+1, format, args)
+	}
+
+	severity := severityForLevel(lvl)
+	if bl.SeverityTracker != nil {
+		bl.SeverityTracker.Observe(severity)
+	}
+
 	fields := logging.GetFields(bl)
 	line := fmt.Sprintf(format, args...)
 	if len(fields) > 0 {
@@ -81,18 +202,20 @@ func (bl *boundLogger) LogCall(lvl logging.Level, calldepth int, format string, 
 
 	// Per docs, 'Log' takes ownership of Labels map, so make a copy.
 	var labels map[string]string
-	if len(bl.labels) != 0 {
-		labels = make(map[string]string, len(bl.labels))
-		for k, v := range bl.labels {
+	if len(bl.Labels) != 0 {
+		labels = make(map[string]string, len(bl.Labels))
+		for k, v := range bl.Labels {
 			labels[k] = v
 		}
 	}
 
 	// Generate a LogEntry for the supplied parameters.
 	bl.cl.Log(cloudLogging.Entry{
-		Severity: severityForLevel(lvl),
+		Severity: severity,
 		Payload:  line,
 		Labels:   labels,
+		InsertID: bl.InsertIDGenerator.Next(),
+		Trace:    bl.Trace,
 	})
 }
 
