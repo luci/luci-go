@@ -219,6 +219,24 @@
     },
     {
       "key": {
+        "uuid": "0e49ead0_70eae6cb",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T21:56:46Z",
+      "side": 1,
+      "message": "Because I still need this info for logging below for non-erroring case. I\u0027d rather not duplicate it.",
+      "parentUuid": "31184b95_af42faf2",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2eea9f8b_c4d93aae",
         "filename": "server/auth/cache.go",
         "patchSetId": 2
@@ -266,6 +284,24 @@
       "side": 1,
       "message": "i mean, passing nil is not that hard",
       "parentUuid": "fcce50f7_56af1f2c",
+      "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cbbee190_c427fe65",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-04T21:56:46Z",
+      "side": 1,
+      "message": "Not passing nil is ever simpler...",
+      "parentUuid": "d28234fc_a8a08ec3",
       "revId": "b7dfbc10edca8037f4682a639ed6768b7f21928f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
