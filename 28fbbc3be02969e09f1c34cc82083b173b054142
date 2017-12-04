@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "53d30f65_e161c9a0",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-12-04T19:27:46Z",
+      "side": 1,
+      "message": "Search | LUCI would be better (More important first, LUCI is less important).\n\nThis way \"LUCI\" would get cut off first",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 31
+      },
+      "revId": "28fbbc3be02969e09f1c34cc82083b173b054142",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
