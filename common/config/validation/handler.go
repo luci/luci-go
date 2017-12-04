@@ -54,7 +54,6 @@ type Validator struct {
 
 	// Func performs the actual config validation and stores the
 	// associated results in the validation.Context.
-	// TODO(myjang): pass request's context.Context.
 	Func func(ctx *Context, configSet, path string, content []byte)
 }
 
@@ -99,7 +98,7 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 		badRequestStatus(c, w, "Must specify the path of the file to validate", nil)
 		return
 	}
-	vc := &Context{}
+	vc := &Context{Context: c}
 	validator.Func(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
 	w.Header().Set("Content-Type", "application/json")
 	var msgList []*config.ValidationResponseMessage_Message
