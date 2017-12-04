@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e8db572_38508112",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-12-04T21:01:09Z",
+      "side": 1,
+      "message": "Hopefully it\u0027s okay that I included this change (and the corresponding shared) one in this CL. If not, I can split off.",
+      "range": {
+        "startLine": 83,
+        "startChar": 26,
+        "endLine": 83,
+        "endChar": 42
+      },
+      "revId": "c2cb1eefacd8adf993af8f8f7b60478497b3620c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
