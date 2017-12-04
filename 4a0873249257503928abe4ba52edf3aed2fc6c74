@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c8b14f01_e91f6dbc",
+        "filename": "client/cmd/isolated/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T21:47:55Z",
+      "side": 1,
+      "message": "Still try to print the digest. This will be helpful to know if the file was missing or something else happened.",
+      "revId": "4a0873249257503928abe4ba52edf3aed2fc6c74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e6b5dfc_f41a92ce",
+        "filename": "client/cmd/isolated/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T21:47:55Z",
+      "side": 1,
+      "message": "IIUC, err is aliased right here. This means anything following uses the aliased version. (I could be wrong)",
+      "revId": "4a0873249257503928abe4ba52edf3aed2fc6c74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0ac7901_c80380c7",
+        "filename": "client/cmd/isolated/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T21:47:55Z",
+      "side": 1,
+      "message": "if cerr :\u003d arch.Close(); err \u003d\u003d nil {",
+      "revId": "4a0873249257503928abe4ba52edf3aed2fc6c74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01989ef7_63209232",
+        "filename": "client/cmd/isolated/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T21:47:55Z",
+      "side": 1,
+      "message": "This is wasteful to do it as archiver has to do it right after. This can be significant on HDD with a lot of files.\n\nMaybe update Item to have a Mode/Size methods?",
+      "revId": "4a0873249257503928abe4ba52edf3aed2fc6c74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95bfcdff_ba482aa5",
+        "filename": "client/cmd/isolated/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T21:47:55Z",
+      "side": 1,
+      "message": "var rawComposite bytes.Buffer\n\ndoesn\u0027t need to be in heap.",
+      "revId": "4a0873249257503928abe4ba52edf3aed2fc6c74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04442f23_264c265f",
+        "filename": "client/cmd/isolated/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T21:47:55Z",
+      "side": 1,
+      "message": "data.isolated ?",
+      "revId": "4a0873249257503928abe4ba52edf3aed2fc6c74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
