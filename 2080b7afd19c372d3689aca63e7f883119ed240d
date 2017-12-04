@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "558f6ed8_5ad4d1a5",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-04T19:08:31Z",
+      "side": 1,
+      "message": "I think this is actually cleaner. You can look at the middleware chain and see concisely what order things are in, and that makes the struct specification also less wordy. WDYT?",
+      "parentUuid": "2ed27950_426bf39b",
+      "range": {
+        "startLine": 156,
+        "startChar": 5,
+        "endLine": 156,
+        "endChar": 29
+      },
+      "revId": "2080b7afd19c372d3689aca63e7f883119ed240d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b7511f5a_1235903e",
         "filename": "appengine/gaemiddleware/standard/env.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "2080b7afd19c372d3689aca63e7f883119ed240d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9547650c_e392e9c7",
+        "filename": "appengine/gaemiddleware/standard/env.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-04T19:08:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7511f5a_1235903e",
+      "range": {
+        "startLine": 106,
+        "startChar": 5,
+        "endLine": 106,
+        "endChar": 34
+      },
+      "revId": "2080b7afd19c372d3689aca63e7f883119ed240d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
