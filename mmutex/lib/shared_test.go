@@ -64,7 +64,11 @@ func TestShared(t *testing.T) {
 			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
 			start := time.Now()
 			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
-			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
+
+			// Assume that the overhead of recording two timestamps might add a second
+			// of error, and that context-based deadlines are accurate within a second,
+			// then RunShared should have blocked for at least 3 seconds.
+			So(time.Now(), ShouldHappenOnOrAfter, start.Add(3*time.Millisecond))
 		})
 
 		Convey("uses context parameter as basis for new context", func() {
