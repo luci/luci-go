@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -39,9 +40,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
-
-		// Create an LRU large enough that it will never cycle during test.
-		tokenCache := NewMemoryCache(1024)
+		ctx = caching.WithEmptyProcessCache(ctx)
 
 		returnedToken := "token1"
 		transport := &clientRPCTransportMock{
@@ -72,7 +71,6 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		ctx = ModifyConfig(ctx, func(cfg Config) Config {
 			cfg.AccessTokenProvider = transport.getAccessToken
 			cfg.AnonymousTransport = transport.getTransport
-			cfg.Cache = tokenCache
 			return cfg
 		})
 
@@ -88,9 +86,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		})
 
 		// Cached now.
-		So(tokenCache.(*MemoryCache).LRU.Len(), ShouldEqual, 1)
-		v, _ := tokenCache.Get(ctx, fmt.Sprintf("as_actor_tokens/%d/b16kofTATGlqFdw3fKVf2-pyMEs", actorTokenCache.Version))
-		So(v, ShouldNotBeNil)
+		So(actorTokenCache.lc.ProcessLRUCache.LRU(ctx).Len(), ShouldEqual, 1)
 
 		// On subsequence request the cached token is used.
 		returnedToken = "token2"
