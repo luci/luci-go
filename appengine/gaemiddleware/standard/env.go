@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"strings"
 
-	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
@@ -45,9 +44,6 @@ import (
 )
 
 var (
-	// globalAuthCache is used to cache various auth token.
-	globalAuthCache = &gaeauth.Memcache{Namespace: "__luciauth__"}
-
 	// globalAuthConfig is configuration of the server/auth library.
 	//
 	// It specifies concrete GAE-based implementations for various interfaces
@@ -63,8 +59,6 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,
-		Cache:               globalAuthCache,
-		Locks:               &mutexpool.P{},
 		IsDevMode:           appengine.IsDevAppServer(),
 	}
 

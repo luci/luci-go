@@ -40,7 +40,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/runtime/profiling"
-	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/grpc/prpc"
@@ -90,13 +89,6 @@ const (
 	// minAuthTokenLifetime is the amount of time that an access token has before
 	// expiring.
 	minAuthTokenLifetime = 2 * time.Minute
-
-	// authCacheSize is the maximum number of elements to store in the auth
-	// global cache LRU.
-	//
-	// We don't expect to load too many different authentication tokens, so a
-	// relatively low number should be fine here.
-	authCacheSize = 128
 )
 
 // Service is a base class full of common LogDog service application parameters.
@@ -647,8 +639,6 @@ func (s *Service) withAuthService(c context.Context) context.Context {
 		AnonymousTransport: func(ic context.Context) http.RoundTripper {
 			return s.unauthenticatedTransport()
 		},
-		Cache: serverAuth.NewMemoryCache(authCacheSize),
-		Locks: &mutexpool.P{},
 	})
 }
 

@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/caching"
 )
 
 // MintAccessTokenParams is passed to MintAccessTokenForServiceAccount.
@@ -54,12 +55,12 @@ type MintAccessTokenParams struct {
 // current service has "iam.serviceAccountActor" role in.
 //
 // The underlying token type is cachedOAuth2Token.
-var actorTokenCache = tokenCache{
-	Kind:                "as_actor_tokens",
-	Version:             3,
-	ExpRandPercent:      10,
-	MinAcceptedLifetime: 5 * time.Minute,
-}
+var actorTokenCache = newTokenCache(tokenCacheConfig{
+	Kind:                         "as_actor_tokens",
+	Version:                      4,
+	ProcessLRUCache:              caching.RegisterLRUCache(8192),
+	ExpiryRandomizationThreshold: 5 * time.Minute, // ~10% of regular 1h expiration
+})
 
 // cachedOAuth2Token is JSON-serializable representation of the oauth2.Token.
 //
@@ -101,7 +102,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 	report := durationReporter(ctx, mintAccessTokenDuration)
 
 	cfg := getConfig(ctx)
-	if cfg == nil || cfg.AccessTokenProvider == nil || cfg.Cache == nil {
+	if cfg == nil || cfg.AccessTokenProvider == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
@@ -136,14 +137,13 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		"scopes":  strings.Join(sortedScopes, " "),
 	})
 
-	cached, label, err := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
-		Config:   cfg,
-		Cache:    &actorTokenCache,
-		CacheKey: strings.Join(parts, "\n"),
-		MinTTL:   params.MinTTL,
+	cached, err, label := actorTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+		CacheKey:    strings.Join(parts, "\n"),
+		MinTTL:      params.MinTTL,
+		MintTimeout: cfg.adjustedTimeout(10 * time.Second),
 
 		// Mint is called on cache miss, under the lock.
-		Mint: func(ctx context.Context) (*cachedToken, error, string) {
+		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
 			// Need an authenticating transport to talk to IAM.
 			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
 			if err != nil {
@@ -186,11 +186,9 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		},
 	})
 
+	report(err, label)
 	if err != nil {
-		report(err, label)
 		return nil, err
 	}
-
-	report(nil, label)
 	return cached.OAuth2Token.toToken(), nil
 }

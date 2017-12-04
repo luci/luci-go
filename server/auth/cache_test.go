@@ -15,7 +15,7 @@
 package auth
 
 import (
-	"math/rand"
+	"errors"
 	"testing"
 	"time"
 
@@ -23,93 +23,120 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/jsontime"
-	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
+	"go.chromium.org/luci/server/caching/layered"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var testCache = caching.RegisterLRUCache(8)
 
 func TestTokenCache(t *testing.T) {
 	t.Parallel()
 
 	Convey("with in-process cache", t, func() {
-		// Create a cache large enough that the LRU doesn't cycle.
-		cache := NewMemoryCache(1024)
-
 		ctx := context.Background()
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
+		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx = caching.WithEmptyProcessCache(ctx)
 
-		tc := tokenCache{
-			Kind:           "testing",
-			Version:        1,
-			ExpRandPercent: 10,
-		}
-
-		someToken := &cachedOAuth2Token{AccessToken: "blah"}
-
-		Convey("check basic usage", func() {
-			itm, err := tc.Fetch(ctx, cache, "some\nkey", 0)
-			So(err, ShouldBeNil)
-			So(itm, ShouldBeNil)
-
-			tok := cachedToken{
-				Key:         "some\nkey",
-				OAuth2Token: someToken,
-				Created:     jsontime.Time{clock.Now(ctx).UTC()},
-				Expiry:      jsontime.Time{clock.Now(ctx).Add(100 * time.Minute).UTC()},
-			}
-			So(tc.Store(ctx, cache, &tok), ShouldBeNil)
-
-			itm, err = tc.Fetch(ctx, cache, "some\nkey", 0)
-			So(err, ShouldBeNil)
-			So(itm, ShouldResemble, &tok)
-
-			// minTTL works. After 80 min the tokens TTL is 20 min, but we request it
-			// to be at least 21 min.
-			clock.Get(ctx).(testclock.TestClock).Add(80 * time.Minute)
-			itm, err = tc.Fetch(ctx, cache, "some\nkey", 21*time.Minute)
-			So(err, ShouldBeNil)
-			So(itm, ShouldBeNil)
-
-			mc := cache.(*MemoryCache)
-			So(mc.LRU.Len(), ShouldEqual, 1)
+		global := &cachingtest.BlobCache{LRU: lru.New(0)}
+		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+			globalCacheNamespace: global,
 		})
 
-		Convey("check expiration randomization", func() {
-			tok := cachedToken{
-				Key:         "some\nkey",
-				OAuth2Token: someToken,
-				Created:     jsontime.Time{clock.Now(ctx).UTC()},
-				Expiry:      jsontime.Time{clock.Now(ctx).Add(100 * time.Minute).UTC()},
-			}
-			So(tc.Store(ctx, cache, &tok), ShouldBeNil)
+		cache := newTokenCache(tokenCacheConfig{
+			Kind:            "testing",
+			ProcessLRUCache: testCache,
+		})
 
-			// 89% of token's life has passed. The token is still alive
-			// (no randomization).
-			clock.Get(ctx).(testclock.TestClock).Add(89 * time.Minute)
-			for i := 0; i < 50; i++ {
-				itm, _ := tc.Fetch(ctx, cache, "some\nkey", 0)
-				So(itm, ShouldNotBeNil)
+		makeTestToken := func(ctx context.Context, val string) *cachedToken {
+			return &cachedToken{
+				Created: jsontime.Time{clock.Now(ctx)},
+				Expiry:  jsontime.Time{clock.Now(ctx).Add(time.Hour)},
+				OAuth2Token: &cachedOAuth2Token{
+					AccessToken: val,
+				},
 			}
+		}
 
-			// 91% of token's life has passed. 'Fetch' pretends the token is not
-			// there with ~=10% chance.
-			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Minute)
-			missing := 0
-			for i := 0; i < 100; i++ {
-				if itm, _ := tc.Fetch(ctx, cache, "some\nkey", 0); itm == nil {
-					missing++
-				}
-			}
-			So(missing, ShouldEqual, 10)
+		call := func(mocked *cachedToken, err error, label string) (*cachedToken, error, string) {
+			return cache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+				CacheKey: "key",
+				MinTTL:   10 * time.Minute,
+				Mint: func(ctx context.Context) (*cachedToken, error, string) {
+					return mocked, err, label
+				},
+			})
+		}
 
-			// Token has expired. 0% chance of seeing it.
-			clock.Get(ctx).(testclock.TestClock).Add(9 * time.Minute)
-			for i := 0; i < 50; i++ {
-				itm, _ := tc.Fetch(ctx, cache, "some\nkey", 0)
-				So(itm, ShouldBeNil)
-			}
+		Convey("Basic usage", func() {
+			// Generate initial token.
+			tok1 := makeTestToken(ctx, "token-1")
+			tok, err, label := call(tok1, nil, "")
+			So(err, ShouldBeNil)
+			So(label, ShouldEqual, "SUCCESS_CACHE_MISS")
+			So(tok, ShouldEqual, tok1)
+
+			// Some time later still cache hit.
+			tc.Add(49 * time.Minute)
+			tok, err, label = call(nil, errors.New("must not be called"), "")
+			So(err, ShouldBeNil)
+			So(label, ShouldEqual, "SUCCESS_CACHE_HIT")
+			So(tok, ShouldEqual, tok1)
+
+			// Lifetime of the existing token is not good enough => refreshed.
+			tc.Add(2 * time.Minute)
+			tok2 := makeTestToken(ctx, "token-1")
+			tok, err, label = call(tok2, nil, "")
+			So(err, ShouldBeNil)
+			So(label, ShouldEqual, "SUCCESS_CACHE_MISS")
+			So(tok, ShouldEqual, tok2)
+		})
+
+		Convey("Marhsalling works", func() {
+			// Generate initial token.
+			tok1 := makeTestToken(ctx, "token-1")
+			tok, err, label := call(tok1, nil, "")
+			So(err, ShouldBeNil)
+			So(label, ShouldEqual, "SUCCESS_CACHE_MISS")
+			So(tok, ShouldEqual, tok1)
+
+			// Kick it out of local cache by wiping it. It still in global cache.
+			ctx = caching.WithEmptyProcessCache(ctx)
+
+			// Cache hit through the global cache.
+			tok, err, label = call(nil, errors.New("must not be called"), "")
+			So(err, ShouldBeNil)
+			So(label, ShouldEqual, "SUCCESS_CACHE_HIT")
+			So(tok.Created.Equal(tok1.Created.Time), ShouldBeTrue)
+			So(tok.Expiry.Equal(tok1.Expiry.Time), ShouldBeTrue)
+			So(tok.OAuth2Token.AccessToken, ShouldEqual, tok1.OAuth2Token.AccessToken)
+		})
+
+		Convey("Mint error", func() {
+			err := errors.New("some error")
+			tok, err, label := call(nil, err, "SOME_LABEL")
+			So(tok, ShouldBeNil)
+			So(err, ShouldEqual, err)
+			So(label, ShouldEqual, "SOME_LABEL")
+
+			tok, err, label = call(nil, err, "")
+			So(tok, ShouldBeNil)
+			So(err, ShouldEqual, err)
+			So(label, ShouldEqual, "ERROR_UNSPECIFIED")
+		})
+
+		Convey("Small TTL", func() {
+			tok1 := makeTestToken(ctx, "token")
+			tok1.Expiry.Time = tok1.Created.Time.Add(time.Second)
+
+			tok, err, label := call(tok1, nil, "")
+			So(tok, ShouldBeNil)
+			So(err, ShouldEqual, layered.ErrCantSatisfyMinTTL)
+			So(label, ShouldEqual, "ERROR_INSUFFICIENT_MINTED_TTL")
 		})
 	})
 }
