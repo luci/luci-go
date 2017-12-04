@@ -5,6 +5,7 @@
 // A Series of time based utilites for Milo.
 // Requires: moment.js, moment-timezone.js, jquery, jquery-ui
 
+// This file cannot use EcmaScript6: crbug.com/791528
 
 (function(window) {
   'use strict';
@@ -41,12 +42,12 @@
     if (!st.isValid()) {
       return null;
     }
-    var hover = st.format("[Started: ] YYYY-MM-DD LT (z)")
-    hover += "\nEnded: "
+    var hover = st.format("[Started: ] YYYY-MM-DD LT (z)");
+    hover += "\nEnded: ";
     if (end == null) {
       hover += "N/A";
     } else {
-      var et =  moment.tz(end, tz)
+      var et =  moment.tz(end, tz);
       if (!et.isValid()) {
         return null
       }
@@ -98,7 +99,8 @@
 
   // Export all methods and attributes as module level functions.
   Object.assign(window.milo = window.milo || {}, {
-    makeTimesLocal, annotateDurations
+    makeTimesLocal: makeTimesLocal,
+    annotateDurations: annotateDurations
   });
 
 }(window));
