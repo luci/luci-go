@@ -16,6 +16,24 @@
       "revId": "5fe5fa871fede609202294b69f0bb1fa14e5926a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81916e1d_696984e1",
+        "filename": "milo/common/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-04T22:32:02Z",
+      "side": 1,
+      "message": "Chatted with Nodir; we\u0027ll add the check for now and take it out after implementing the more general Version check for Console.",
+      "parentUuid": "3d16ad6e_dbe3981d",
+      "revId": "5fe5fa871fede609202294b69f0bb1fa14e5926a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
