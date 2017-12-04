@@ -80,7 +80,7 @@ func TestExclusive(t *testing.T) {
 			err := RunExclusive(ctx, env, func(ctx context.Context) error {
 				return clock.Sleep(ctx, time.Millisecond).Err
 			})
-			So(err, ShouldErrLike, "context canceled")
+			So(err, ShouldErrLike, context.Canceled)
 		})
 
 		Convey("respects timeout", func() {
@@ -88,10 +88,9 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
-			start := time.Now()
+			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
 			RunExclusive(ctx, env, fnThatReturns(nil))
-			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
+			So(ctx.Err(), ShouldErrLike, context.DeadlineExceeded)
 		})
 
 		Convey("creates drain file while acquiring the lock", func() {
