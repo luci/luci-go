@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d16ad6e_dbe3981d",
+        "filename": "milo/common/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-04T22:22:39Z",
+      "side": 1,
+      "message": "True/false: if we check here whether whether the Ordinal field matches, we don\u0027t have to wait for new config revisions to be checked in.",
+      "revId": "5fe5fa871fede609202294b69f0bb1fa14e5926a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
