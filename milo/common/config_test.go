@@ -18,6 +18,8 @@ import (
 	"errors"
 	"testing"
 
+	"go.chromium.org/gae/service/datastore"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
@@ -30,6 +32,7 @@ func TestConfig(t *testing.T) {
 
 	Convey("Test Environment", t, func() {
 		c := gaetesting.TestingContextWithAppID("dev~luci-milo")
+		datastore.GetTestable(c).Consistent(true)
 
 		Convey("Tests about global configs", func() {
 			Convey("Read a config before anything is set", func() {
@@ -63,7 +66,7 @@ func TestConfig(t *testing.T) {
 				cs, err := GetConsole(c, "foo", "default")
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "default")
-				So(cs.Def.RepoUrl, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
+				So(cs.Ordinal, ShouldEqual, 0)
 				So(cs.Def.Header, ShouldBeNil)
 			})
 
@@ -71,9 +74,46 @@ func TestConfig(t *testing.T) {
 				cs, err := GetConsole(c, "foo", "default_header")
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "default_header")
-				So(cs.Def.RepoUrl, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
+				So(cs.Ordinal, ShouldEqual, 1)
 				So(cs.Def.Header.Id, ShouldEqual, "main_header")
 				So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
+			})
+
+			Convey("Check second update reorders", func() {
+				mockedConfigsUpdate["services/luci-milo"] = memcfg.ConfigSet{
+					"settings.cfg": settingsCfg,
+				}
+				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigsUpdate))
+				_, err = UpdateServiceConfig(c)
+				So(err, ShouldBeNil)
+				// Send update here
+				So(UpdateConsoles(c), ShouldBeNil)
+
+				Convey("Check Console config removed", func() {
+					cs, err := GetConsole(c, "foo", "default")
+					So(err, ShouldNotBeNil)
+					So(cs, ShouldEqual, nil)
+				})
+
+				Convey("Check builder group configs in correct order", func() {
+					cs, err := GetConsole(c, "foo", "default_header")
+					So(err, ShouldBeNil)
+					So(cs.ID, ShouldEqual, "default_header")
+					So(cs.Ordinal, ShouldEqual, 0)
+					So(cs.Def.Header.Id, ShouldEqual, "main_header")
+					So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
+					cs, err = GetConsole(c, "foo", "console.bar")
+					So(err, ShouldBeNil)
+					So(cs.ID, ShouldEqual, "console.bar")
+					So(cs.Ordinal, ShouldEqual, 1)
+					So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.something/bar"})
+
+					cs, err = GetConsole(c, "foo", "console.baz")
+					So(err, ShouldBeNil)
+					So(cs.ID, ShouldEqual, "console.baz")
+					So(cs.Ordinal, ShouldEqual, 2)
+					So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.other/baz"})
+				})
 			})
 		})
 	})
@@ -117,6 +157,49 @@ consoles: {
 }
 `
 
+var fooCfg2 = `
+headers: {
+	id: "main_header"
+	tree_status_host: "blarg.example.com"
+}
+consoles: {
+	id: "default_header"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	ref: "master"
+	builders: {
+		name: "buildbucket/luci.foo.something/bar"
+		category: "main|something"
+		short_name: "s"
+	}
+	builders: {
+		name: "buildbucket/luci.foo.other/baz"
+		category: "main|other"
+		short_name: "o"
+	}
+	header_id: "main_header"
+}
+consoles: {
+	id: "console.bar"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	ref: "master"
+	builders: {
+		name: "buildbucket/luci.foo.something/bar"
+		category: "main|something"
+		short_name: "s"
+	}
+}
+consoles: {
+	id: "console.baz"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	ref: "master"
+	builders: {
+		name: "buildbucket/luci.foo.other/baz"
+		category: "main|other"
+		short_name: "o"
+	}
+}
+`
+
 var settingsCfg = `
 buildbot: {
 	internal_reader: "googlers"
@@ -126,5 +209,11 @@ buildbot: {
 var mockedConfigs = map[string]memcfg.ConfigSet{
 	"projects/foo": {
 		"luci-milo.cfg": fooCfg,
+	},
+}
+
+var mockedConfigsUpdate = map[string]memcfg.ConfigSet{
+	"projects/foo": {
+		"luci-milo.cfg": fooCfg2,
 	},
 }
