@@ -1,0 +1,129 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa16c53d_e1754bd8",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "It is not mutable nor locked through mu, so move it up. I\u0027d recommend to embed it, then lines 100-113 are unnecessary.",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 9
+      },
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d312594_daa9bbcd",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "Do you mean that .Close() and .Write() can be called concurrently or somethings else? If it\u0027s this, call this out specifically.",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6d27219_72aa2603",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "If this one and FetchFile are non blocking, maybe the name should be changed to something that hints this is async, e.g. EnqueueXXX, FetchAsync or something like that. In particular there\u0027s no way to know when it completed for the caller.\n\nThe more I think about it, the more I think I\u0027d prefer it to be sync (but I\u0027m not strongly for, so feel free to push back).\n\nIn the case of https://godoc.org/go.chromium.org/luci/client/archiver#Archiver.Push I decided to return a token because I needed the client to know at which stage the item is, to be able to have https://godoc.org/go.chromium.org/luci/client/archiver#Item.WaitForHashed. This is important as this permits efficient hashing (and caching of thereof) in the pipeline. This is not needed for download.",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea6a880c_53550bbc",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "int8 ? :)\nor at least, int so that 32 bits platforms are not required to use two registers for this.",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "858891d6_bc4a1070",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": ".String() shouldn\u0027t be necessary.",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13070cc5_cbf706fe",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "s/rootBuffer/buf/ ?",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ff76066_6e7dc2ab",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "One of challenge here is that it\u0027s impossible to know when the DAG is fully fetched and mark the token/item as done. This is useful for timing information, albeit not a blocker for this CL.",
+      "revId": "202af8115b472ffaa293a9c0ac0f42a4fad8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

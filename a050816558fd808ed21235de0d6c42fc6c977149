@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "46c02dde_1e9d9d2d",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "You feel you need this because the caller lacks context to be able to know when it\u0027s done. By this, the client is effectively passing ownership to the Download.\n\nWhy do you feel that the client cannot manage the lifetime of the handle? What\u0027s the gain, vs fully blocking Fetch calls?",
+      "parentUuid": "15365058_d7c48b3c",
+      "range": {
+        "startLine": 32,
+        "startChar": 35,
+        "endLine": 32,
+        "endChar": 44
+      },
+      "revId": "a050816558fd808ed21235de0d6c42fc6c977149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "749a9f4f_0a43382b",
         "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
         "patchSetId": 1
@@ -60,6 +84,30 @@
       "writtenOn": "2017-11-28T19:49:57Z",
       "side": 1,
       "message": "I assume this is where \u0027large\u0027 files are supposed to live? Right now isolatedfake has support for downloading files from staging, but I\u0027m not sure if that even makes sense. I just noticed RetrieveResponse from isolateserver seems to give one of two ways of downloading, (a link to GCS, or it\u0027s directly in the content), so I\u0027m not sure how to model that here.",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 8
+      },
+      "revId": "a050816558fd808ed21235de0d6c42fc6c977149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35a02f34_c9d00bcf",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-04T15:26:58Z",
+      "side": 1,
+      "message": "Yes it\u0027s for large fies. Files in staging shouldn\u0027t be fetchable yet. They have to be \"finalized\" first.",
+      "parentUuid": "749a9f4f_0a43382b",
       "range": {
         "startLine": 83,
         "startChar": 1,
