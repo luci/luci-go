@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2bd98922_479ab195",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-04T21:10:26Z",
+      "side": 1,
+      "message": "it is a bug that you cannot use ShouldEqual here,\nI filed https://github.com/smartystreets/goconvey/issues/507",
+      "revId": "30ff449e7f9d4e05e2823a731d2571b18c9377f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
