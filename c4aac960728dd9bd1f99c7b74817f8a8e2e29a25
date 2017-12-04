@@ -16,6 +16,24 @@
       "revId": "c4aac960728dd9bd1f99c7b74817f8a8e2e29a25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d75970b6_3e11c06b",
+        "filename": "milo/common/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-04T21:28:11Z",
+      "side": 1,
+      "message": "Any reason we have it in the tests above then? I included it to maintain parity but yes, agreed the other pieces of info are more useful. If there\u0027s no particular reason I can keep one and remove the rest.",
+      "parentUuid": "8d72a075_aaca52b3",
+      "revId": "c4aac960728dd9bd1f99c7b74817f8a8e2e29a25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
