@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package flex exposes gaemiddleware Environments for AppEngine's Flex
-// enviornment.
+// environment.
 package flex
 
 import (
@@ -52,7 +52,7 @@ var (
 	// globalFlex is the global luci/gae cloud Flex services definition.
 	globalFlex *cloud.Flex
 
-	// globalFlexConfig is a process-wide Flex enviornment configuration.
+	// globalFlexConfig is a process-wide Flex environment configuration.
 	globalFlexConfig *cloud.Config
 
 	// globalAuthConfig is configuration of the server/auth library.
@@ -126,16 +126,21 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		}
 	},
 	WithInitialRequest: func(c context.Context, req *http.Request) context.Context {
-		// Install the HTTP inbound request into the Context.
-		c = withHTTPRequest(c, req)
 		// Install our Cloud services.
-		return globalFlexConfig.Use(c, globalFlex.Request(req))
+		if globalFlexConfig == nil {
+			// This can happen when Prepare fails.
+			panic("global Flex config is not initialized")
+		}
+		return globalFlexConfig.Use(c, globalFlex.Request(c, req))
 	},
 	WithConfig: gaeconfig.UseFlex,
 	WithAuth: func(c context.Context) context.Context {
 		return auth.SetConfig(c, &globalAuthConfig)
 	},
-	MonitoringMiddleware: globalTsMonState.Middleware,
+	ExtraMiddleware: router.NewMiddlewareChain(
+		flexFoundationMiddleware,
+		globalTsMonState.Middleware,
+	),
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
 		pprof.InstallHandlers(r, base)
 		// Install a handler for basic health checking. We respond with HTTP 200 to
@@ -143,6 +148,17 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		r.GET("/_ah/health", router.MiddlewareChain{},
 			func(c *router.Context) { c.Writer.WriteHeader(http.StatusOK) })
 	},
+}
+
+func flexFoundationMiddleware(c *router.Context, next router.Handler) {
+	sr := cloud.ScopedRequestHandler{
+		CapturePanics: true,
+	}
+	sr.Handle(c.Context, c.Writer, func(ctx context.Context, rw http.ResponseWriter) {
+		c.Context = ctx
+		c.Writer = rw
+		next(c)
+	})
 }
 
 // WithGlobal returns a Context that is not attached to a specific request.
