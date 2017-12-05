@@ -22,6 +22,30 @@
       "revId": "1d8e7bc40154b34c6be7dbe5355a2c12eae1c179",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "141d39cf_f23aa04d",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-05T21:40:20Z",
+      "side": 1,
+      "message": "Ooops, seems like I had forgotten to upload my changes in the previous reply.",
+      "parentUuid": "e1cd5cd6_6ca4609d",
+      "range": {
+        "startLine": 52,
+        "startChar": 28,
+        "endLine": 52,
+        "endChar": 35
+      },
+      "revId": "1d8e7bc40154b34c6be7dbe5355a2c12eae1c179",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
