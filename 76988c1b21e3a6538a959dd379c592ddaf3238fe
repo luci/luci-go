@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aad2b408_da05ef79",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-05T21:22:16Z",
+      "side": 1,
+      "message": "should we still wait for all the items and return all errors? Not sure actually.",
+      "revId": "76988c1b21e3a6538a959dd379c592ddaf3238fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ff311d0_0a5a58d6",
+        "filename": "client/isolated/scattergather.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-05T21:22:16Z",
+      "side": 1,
+      "message": "maybe use rel instead?\notherwise, do:\nrel \u003d filepath.Clean(rel)",
+      "range": {
+        "startLine": 48,
+        "startChar": 43,
+        "endLine": 48,
+        "endChar": 50
+      },
+      "revId": "76988c1b21e3a6538a959dd379c592ddaf3238fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b13bfde0_4aa8b33b",
+        "filename": "client/isolated/scattergather.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-05T21:22:16Z",
+      "side": 1,
+      "message": "m :\u003d make(map[string][]string{}, len(*sc))",
+      "revId": "76988c1b21e3a6538a959dd379c592ddaf3238fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
