@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/enLXlbupWTPq3NasHijDRxB8guI\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/uckQiZ_foYP3l86gD4SaPAcSAGM\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -432,16 +432,6 @@
     }
    }
   },
-  "SwarmingRpcsFileContentRequest": {
-   "id": "SwarmingRpcsFileContentRequest",
-   "type": "object",
-   "description": "Content of a file.",
-   "properties": {
-    "content": {
-     "type": "string"
-    }
-   }
-  },
   "SwarmingRpcsFilesRef": {
    "id": "SwarmingRpcsFilesRef",
    "type": "object",
@@ -684,6 +674,13 @@
      "description": "Represents a mapping of string to string.",
      "items": {
       "$ref": "SwarmingRpcsStringPair"
+     }
+    },
+    "env_prefixes": {
+     "type": "array",
+     "description": "Represents a mapping of string to list of strings.",
+     "items": {
+      "$ref": "SwarmingRpcsStringListPair"
      }
     },
     "execution_timeout_secs": {
@@ -1358,14 +1355,7 @@
      "id": "swarming.server.get_bootstrap",
      "path": "server/get_bootstrap",
      "httpMethod": "GET",
-     "description": "Retrieves the current or a previous version of bootstrap.py. When the file is sourced via luci-config, the version parameter is ignored. Eventually the support for 'version' will be removed completely.",
-     "parameters": {
-      "version": {
-       "type": "string",
-       "format": "int64",
-       "location": "query"
-      }
-     },
+     "description": "Retrieves the current version of bootstrap.py.",
      "response": {
       "$ref": "SwarmingRpcsFileContent"
      },
@@ -1377,14 +1367,7 @@
      "id": "swarming.server.get_bot_config",
      "path": "server/get_bot_config",
      "httpMethod": "GET",
-     "description": "Retrieves the current or a previous version of bot_config.py. When the file is sourced via luci-config, the version parameter is ignored. Eventually the support for 'version' will be removed completely.",
-     "parameters": {
-      "version": {
-       "type": "string",
-       "format": "int64",
-       "location": "query"
-      }
-     },
+     "description": "Retrieves the current version of bot_config.py.",
      "response": {
       "$ref": "SwarmingRpcsFileContent"
      },
@@ -1399,38 +1382,6 @@
      "description": "Returns the caller's permissions.",
      "response": {
       "$ref": "SwarmingRpcsClientPermissions"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/userinfo.email"
-     ]
-    },
-    "put_bootstrap": {
-     "id": "swarming.server.put_bootstrap",
-     "path": "server/put_bootstrap",
-     "httpMethod": "POST",
-     "description": "Stores a new version of bootstrap.py. Warning: if a file exists in luci-config, the file stored by this function is ignored. Uploads are not blocked in case the file is later deleted from luci-config.",
-     "request": {
-      "$ref": "SwarmingRpcsFileContentRequest",
-      "parameterName": "resource"
-     },
-     "response": {
-      "$ref": "SwarmingRpcsFileContent"
-     },
-     "scopes": [
-      "https://www.googleapis.com/auth/userinfo.email"
-     ]
-    },
-    "put_bot_config": {
-     "id": "swarming.server.put_bot_config",
-     "path": "server/put_bot_config",
-     "httpMethod": "POST",
-     "description": "Stores a new version of bot_config.py. Warning: if a file exists in luci-config, the file stored by this function is ignored. Uploads are not blocked in case the file is later deleted from luci-config.",
-     "request": {
-      "$ref": "SwarmingRpcsFileContentRequest",
-      "parameterName": "resource"
-     },
-     "response": {
-      "$ref": "SwarmingRpcsFileContent"
      },
      "scopes": [
       "https://www.googleapis.com/auth/userinfo.email"

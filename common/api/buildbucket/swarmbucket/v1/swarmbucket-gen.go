@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // Package swarmbucket provides access to the Buildbucket-Swarming integration.
 //
@@ -99,8 +109,8 @@ type ApiPubSubCallbackMessage struct {
 }
 
 func (s *ApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiPubSubCallbackMessage
-	raw := noMethod(*s)
+	type NoMethod ApiPubSubCallbackMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -114,6 +124,8 @@ type ApiPutRequestMessage struct {
 	CanaryPreference string `json:"canary_preference,omitempty"`
 
 	ClientOperationId string `json:"client_operation_id,omitempty"`
+
+	Experimental bool `json:"experimental,omitempty"`
 
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
 
@@ -141,8 +153,8 @@ type ApiPutRequestMessage struct {
 }
 
 func (s *ApiPutRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiPutRequestMessage
-	raw := noMethod(*s)
+	type NoMethod ApiPutRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -169,8 +181,8 @@ type SwarmingSwarmbucketApiBucketMessage struct {
 }
 
 func (s *SwarmingSwarmbucketApiBucketMessage) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingSwarmbucketApiBucketMessage
-	raw := noMethod(*s)
+	type NoMethod SwarmingSwarmbucketApiBucketMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -197,8 +209,8 @@ type SwarmingSwarmbucketApiBuilderMessage struct {
 }
 
 func (s *SwarmingSwarmbucketApiBuilderMessage) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingSwarmbucketApiBuilderMessage
-	raw := noMethod(*s)
+	type NoMethod SwarmingSwarmbucketApiBuilderMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -227,8 +239,8 @@ type SwarmingSwarmbucketApiGetBuildersResponseMessage struct {
 }
 
 func (s *SwarmingSwarmbucketApiGetBuildersResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingSwarmbucketApiGetBuildersResponseMessage
-	raw := noMethod(*s)
+	type NoMethod SwarmingSwarmbucketApiGetBuildersResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -253,8 +265,8 @@ type SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage struct {
 }
 
 func (s *SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage
-	raw := noMethod(*s)
+	type NoMethod SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -284,8 +296,8 @@ type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
 }
 
 func (s *SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage
-	raw := noMethod(*s)
+	type NoMethod SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -314,8 +326,8 @@ type SwarmingSwarmbucketApiSetNextBuildNumberRequest struct {
 }
 
 func (s *SwarmingSwarmbucketApiSetNextBuildNumberRequest) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingSwarmbucketApiSetNextBuildNumberRequest
-	raw := noMethod(*s)
+	type NoMethod SwarmingSwarmbucketApiSetNextBuildNumberRequest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -424,7 +436,7 @@ func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucket
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -541,7 +553,7 @@ func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucketA
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil

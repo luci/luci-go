@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/snIPT1YiVhkSe4BNRdyhQm_l_oA\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/F3DOCCigvCx-vPYopAdz3sZ1DqY\"",
  "discoveryVersion": "v1",
  "id": "swarmbucket:v1",
  "name": "swarmbucket",
@@ -109,6 +109,9 @@
     },
     "client_operation_id": {
      "type": "string"
+    },
+    "experimental": {
+     "type": "boolean"
     },
     "lease_expiration_ts": {
      "type": "string",

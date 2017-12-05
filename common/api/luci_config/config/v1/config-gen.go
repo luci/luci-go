@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // Package config provides access to the Configuration Service.
 //
@@ -103,8 +113,8 @@ type ComponentsConfigEndpointValidationMessage struct {
 }
 
 func (s *ComponentsConfigEndpointValidationMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ComponentsConfigEndpointValidationMessage
-	raw := noMethod(*s)
+	type NoMethod ComponentsConfigEndpointValidationMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -139,8 +149,8 @@ type LuciConfigConfigSet struct {
 }
 
 func (s *LuciConfigConfigSet) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigConfigSet
-	raw := noMethod(*s)
+	type NoMethod LuciConfigConfigSet
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -173,8 +183,8 @@ type LuciConfigConfigSetImportAttempt struct {
 }
 
 func (s *LuciConfigConfigSetImportAttempt) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigConfigSetImportAttempt
-	raw := noMethod(*s)
+	type NoMethod LuciConfigConfigSetImportAttempt
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -200,8 +210,8 @@ type LuciConfigFile struct {
 }
 
 func (s *LuciConfigFile) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigFile
-	raw := noMethod(*s)
+	type NoMethod LuciConfigFile
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -230,8 +240,8 @@ type LuciConfigGetConfigByHashResponseMessage struct {
 }
 
 func (s *LuciConfigGetConfigByHashResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetConfigByHashResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetConfigByHashResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -260,8 +270,8 @@ type LuciConfigGetConfigMultiResponseMessage struct {
 }
 
 func (s *LuciConfigGetConfigMultiResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetConfigMultiResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetConfigMultiResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -294,8 +304,8 @@ type LuciConfigGetConfigMultiResponseMessageConfigEntry struct {
 }
 
 func (s *LuciConfigGetConfigMultiResponseMessageConfigEntry) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetConfigMultiResponseMessageConfigEntry
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetConfigMultiResponseMessageConfigEntry
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -330,8 +340,8 @@ type LuciConfigGetConfigResponseMessage struct {
 }
 
 func (s *LuciConfigGetConfigResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetConfigResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetConfigResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -361,8 +371,8 @@ type LuciConfigGetConfigSetsResponseMessage struct {
 }
 
 func (s *LuciConfigGetConfigSetsResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetConfigSetsResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetConfigSetsResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -391,8 +401,8 @@ type LuciConfigGetMappingResponseMessage struct {
 }
 
 func (s *LuciConfigGetMappingResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetMappingResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetMappingResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -419,8 +429,8 @@ type LuciConfigGetMappingResponseMessageMapping struct {
 }
 
 func (s *LuciConfigGetMappingResponseMessageMapping) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetMappingResponseMessageMapping
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetMappingResponseMessageMapping
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -449,8 +459,8 @@ type LuciConfigGetProjectsResponseMessage struct {
 }
 
 func (s *LuciConfigGetProjectsResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetProjectsResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetProjectsResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -479,8 +489,8 @@ type LuciConfigGetRefsResponseMessage struct {
 }
 
 func (s *LuciConfigGetRefsResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetRefsResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetRefsResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -505,8 +515,8 @@ type LuciConfigGetRefsResponseMessageRef struct {
 }
 
 func (s *LuciConfigGetRefsResponseMessageRef) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigGetRefsResponseMessageRef
-	raw := noMethod(*s)
+	type NoMethod LuciConfigGetRefsResponseMessageRef
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -539,8 +549,8 @@ type LuciConfigProject struct {
 }
 
 func (s *LuciConfigProject) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigProject
-	raw := noMethod(*s)
+	type NoMethod LuciConfigProject
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -572,8 +582,8 @@ type LuciConfigRevision struct {
 }
 
 func (s *LuciConfigRevision) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigRevision
-	raw := noMethod(*s)
+	type NoMethod LuciConfigRevision
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -600,8 +610,8 @@ type LuciConfigValidateConfigRequestMessage struct {
 }
 
 func (s *LuciConfigValidateConfigRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigValidateConfigRequestMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigValidateConfigRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -628,8 +638,8 @@ type LuciConfigValidateConfigRequestMessageFile struct {
 }
 
 func (s *LuciConfigValidateConfigRequestMessageFile) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigValidateConfigRequestMessageFile
-	raw := noMethod(*s)
+	type NoMethod LuciConfigValidateConfigRequestMessageFile
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -658,8 +668,8 @@ type LuciConfigValidateConfigResponseMessage struct {
 }
 
 func (s *LuciConfigValidateConfigResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod LuciConfigValidateConfigResponseMessage
-	raw := noMethod(*s)
+	type NoMethod LuciConfigValidateConfigResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -786,7 +796,7 @@ func (c *GetConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigRe
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -938,7 +948,7 @@ func (c *GetConfigByHashCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetCo
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1089,7 +1099,7 @@ func (c *GetConfigSetsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1231,7 +1241,7 @@ func (c *GetMappingCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetMapping
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1370,7 +1380,7 @@ func (c *GetProjectConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGet
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1507,7 +1517,7 @@ func (c *GetProjectsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetProjec
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1640,7 +1650,7 @@ func (c *GetRefConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1780,7 +1790,7 @@ func (c *GetRefsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetRefsRespon
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1995,7 +2005,7 @@ func (c *ValidateConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigValida
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
