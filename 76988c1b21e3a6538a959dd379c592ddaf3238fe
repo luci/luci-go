@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "683344ec_18f98390",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-05T22:04:02Z",
+      "side": 1,
+      "message": "I\u0027m not sure either. Here I deferred to what the isolate client library does, and I think what it does makes sense. If you\u0027re try to make an isolated by isolating a bunch of files, it doesn\u0027t really make sense to continue if part of it fails since there\u0027s no use for a partially uploaded isolated tree. On the other hand, you won\u0027t know all the possible errors until you actually try again, but that\u0027s probably OK?\n\nIt\u0027s a simple fix if you think there\u0027s reason to use it, though.",
+      "parentUuid": "aad2b408_da05ef79",
+      "revId": "76988c1b21e3a6538a959dd379c592ddaf3238fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5ff311d0_0a5a58d6",
         "filename": "client/isolated/scattergather.go",
         "patchSetId": 3
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "8b0f67cd_80b3f341",
+        "filename": "client/isolated/scattergather.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-05T22:04:02Z",
+      "side": 1,
+      "message": "Ah, good point. Done",
+      "parentUuid": "5ff311d0_0a5a58d6",
+      "range": {
+        "startLine": 48,
+        "startChar": 43,
+        "endLine": 48,
+        "endChar": 50
+      },
+      "revId": "76988c1b21e3a6538a959dd379c592ddaf3238fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b13bfde0_4aa8b33b",
         "filename": "client/isolated/scattergather.go",
         "patchSetId": 3
@@ -56,6 +98,24 @@
       "revId": "76988c1b21e3a6538a959dd379c592ddaf3238fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c86732cb_509c23e7",
+        "filename": "client/isolated/scattergather.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-05T22:04:02Z",
+      "side": 1,
+      "message": "len(*sc) could potentially be overkill here, but I suppose it\u0027s still better than many allocations. Done",
+      "parentUuid": "b13bfde0_4aa8b33b",
+      "revId": "76988c1b21e3a6538a959dd379c592ddaf3238fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
