@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "938db3aa_730286a7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-05T18:58:49Z",
+      "side": 1,
+      "message": "the request does not necessarily come from a request",
+      "range": {
+        "startLine": 7,
+        "startChar": 5,
+        "endLine": 7,
+        "endChar": 13
+      },
+      "revId": "4da51e609eb0cf7062a5fa74621192238dab5452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "439894c3_e36a28c9",
         "filename": "common/config/validation/validation.go",
         "patchSetId": 1
