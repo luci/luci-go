@@ -69,6 +69,30 @@
       "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1447489a_30ba74f6",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-05T17:55:58Z",
+      "side": 1,
+      "message": "There\u0027s already TODO that implies these things or things similar to that.\n\nWith current implementation these optimizations make little sense, since all group checks currently are basically O(1) map lookups (like 5 lookups per group tops). Reducing 5 to 2 (or something) won\u0027t make large difference. Parallelizing this is also useless, since it is CPU bound and GAE has only 1 CPU. Caching stuff in the process cache would broke consistency promise of auth.DB: it is currently strongly consistent.\n\nThese TODOs are for the time when we start sharding auth.DB or otherwise adapt it for large groups, so there\u0027ll be some IO involved in fetching them (and it would need to be parallelized).",
+      "parentUuid": "d0bdf3e1_9bbb01f0",
+      "range": {
+        "startLine": 209,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 1
+      },
+      "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
