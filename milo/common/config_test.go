@@ -114,6 +114,17 @@ func TestConfig(t *testing.T) {
 					So(cs.Ordinal, ShouldEqual, 2)
 					So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.other/baz"})
 				})
+
+				Convey("Check getting project builder groups in correct order", func() {
+					cs, err := GetProjectConsoles(c, "foo")
+					So(err, ShouldBeNil)
+
+					ids := make([]string, 0, len(cs))
+					for _, c := range cs {
+						ids = append(ids, c.ID)
+					}
+					So(ids, ShouldResemble, []string{"default_header", "console.bar", "console.baz"})
+				})
 			})
 		})
 	})
