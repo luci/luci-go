@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76ea9f2f_a44c9a0b",
+        "filename": "server/auth/authdb/db.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-05T04:31:01Z",
+      "side": 1,
+      "message": "significant change #1",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 92
+      },
+      "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8e1fd962_d668fefc",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-05T04:31:01Z",
+      "side": 1,
+      "message": "significant change #2 (the actual production implementation)\n\nIt is not super smart of fast or anything, but the goal is to have future friendly API so we can make implementation smart when necessary.\n\nAll other changes are glue, mocks, etc.",
+      "range": {
+        "startLine": 209,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 1
+      },
+      "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
