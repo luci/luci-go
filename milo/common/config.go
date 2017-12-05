@@ -16,6 +16,7 @@ package common
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -474,7 +475,7 @@ func GetAllProjects(c context.Context) ([]Project, error) {
 	return result, nil
 }
 
-// GetProjectConsoles returns all consoles for the given project.
+// GetProjectConsoles returns all consoles for the given project ordered as in config.
 func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error) {
 	// Query datastore for consoles related to the project.
 	q := datastore.NewQuery("Console")
@@ -482,6 +483,7 @@ func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error)
 	q = q.Ancestor(parentKey)
 	con := []*Console{}
 	err := datastore.GetAll(c, q, &con)
+	sort.Slice(con, func(i, j int) bool { return con[i].Ordinal < con[j].Ordinal })
 	return con, err
 }
 

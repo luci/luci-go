@@ -582,6 +582,7 @@ func ConsolesHandler(c *router.Context, projectName string) {
 		ErrorHandler(c, err)
 		return
 	}
+
 	type fullConsole struct {
 		ProjectID string
 		Def       *config.Console
