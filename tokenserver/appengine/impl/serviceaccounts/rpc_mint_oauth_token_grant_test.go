@@ -133,7 +133,7 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 				Response:  resp,
 				GrantBody: lastBody,
 				ConfigRev: cfg.revision,
-				Rule:      cfg.rules["account@robots.com"].Rule,
+				Rule:      cfg.rulesPerAcc["account@robots.com"].Rule,
 				PeerIP:    net.ParseIP("127.10.10.10"),
 				RequestID: "gae-request-id",
 				AuthDBRev: 1234,

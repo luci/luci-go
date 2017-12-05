@@ -141,7 +141,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Valid:            false,
 			Signed:           true,
 			NonExpired:       true,
-			InvalidityReason: "not allowed by the rules",
+			InvalidityReason: "the service account is not specified in the rules (rev fake-revision)",
 			SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
 			TokenBody:        &another,
 		})

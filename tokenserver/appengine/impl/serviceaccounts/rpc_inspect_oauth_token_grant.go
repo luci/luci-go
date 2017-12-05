@@ -5,6 +5,8 @@
 package serviceaccounts
 
 import (
+	"fmt"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -43,6 +45,16 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 		InvalidityReason: inspection.InvalidityReason,
 	}
 
+	addInvalidityReason := func(msg string, args ...interface{}) {
+		reason := fmt.Sprintf(msg, args...)
+		resp.Valid = false
+		if resp.InvalidityReason == "" {
+			resp.InvalidityReason = reason
+		} else {
+			resp.InvalidityReason += "; " + reason
+		}
+	}
+
 	if env, _ := inspection.Envelope.(*tokenserver.OAuthTokenGrantEnvelope); env != nil {
 		resp.SigningKeyId = env.KeyId
 	}
@@ -58,12 +70,24 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 
 		// Always return the rule that matches the service account, even if the
 		// token itself is not allowed by it (we check it separately below).
-		if rule := rules.Rule(resp.TokenBody.ServiceAccount); rule != nil {
+		rule, err := rules.Rule(c, resp.TokenBody.ServiceAccount)
+		switch {
+		case err != nil:
+			// Note: InspectOAuthTokenGrant is admin API. It is fine to return the
+			// detailed error response.
+			return nil, grpc.Errorf(
+				codes.Internal, "failed to query rules for account %q using config rev %s - %s",
+				resp.TokenBody.ServiceAccount, rules.ConfigRevision(), err)
+		case rule == nil:
+			addInvalidityReason("the service account is not specified in the rules (rev %s)", rules.ConfigRevision())
+			return resp, nil
+		default:
 			resp.MatchingRule = rule.Rule
 		}
 
 		q := &RulesQuery{
 			ServiceAccount: resp.TokenBody.ServiceAccount,
+			Rule:           rule,
 			Proxy:          identity.Identity(resp.TokenBody.Proxy),
 			EndUser:        identity.Identity(resp.TokenBody.EndUser),
 		}
@@ -73,10 +97,7 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 		case grpc.Code(err) == codes.Internal:
 			return nil, err // a transient error when checking rules
 		default: // fatal gRPC error => the rules forbid the token
-			if resp.Valid {
-				resp.Valid = false
-				resp.InvalidityReason = "not allowed by the rules"
-			}
+			addInvalidityReason("not allowed by the rules (rev %s)", rules.ConfigRevision())
 		}
 	}
 
