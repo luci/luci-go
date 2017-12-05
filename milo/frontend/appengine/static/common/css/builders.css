@@ -33,6 +33,7 @@
 .builder-name {
   display: flex;
   flex-direction: row;
+  word-break:break-all;
   align-items: center;
   justify-content: left;
   width: 20%;
