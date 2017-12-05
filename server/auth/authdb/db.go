@@ -36,7 +36,18 @@ type DB interface {
 	//
 	// Unknown groups are considered empty. May return errors if underlying
 	// datastore has issues.
-	IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error)
+	IsMember(c context.Context, id identity.Identity, groups []string) (bool, error)
+
+	// CheckMembership returns groups from the given list the identity belongs to.
+	//
+	// Unlike IsMember, it doesn't stop on the first hit but continues evaluating
+	// all groups.
+	//
+	// Unknown groups are considered empty. The order of groups in the result may
+	// be different from the order in 'groups'.
+	//
+	// May return errors if underlying datastore has issues.
+	CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error)
 
 	// GetCertificates returns a bundle with certificates of a trusted signer.
 	//

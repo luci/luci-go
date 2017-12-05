@@ -112,7 +112,7 @@ func CurrentIdentity(c context.Context) identity.Identity {
 // issues).
 func IsMember(c context.Context, groups ...string) (bool, error) {
 	if s := GetState(c); s != nil {
-		return s.DB().IsMember(c, s.User().Identity, groups...)
+		return s.DB().IsMember(c, s.User().Identity, groups)
 	}
 	return false, ErrNoAuthState
 }

@@ -97,7 +97,7 @@ func (devServerDB) IsAllowedOAuthClientID(c context.Context, email, clientID str
 	return true, nil
 }
 
-func (devServerDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+func (devServerDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
 	if !info.IsDevAppServer(c) {
 		return false, errNotConfigured
 	}
@@ -105,6 +105,16 @@ func (devServerDB) IsMember(c context.Context, id identity.Identity, groups ...s
 		return false, nil
 	}
 	return id.Kind() != identity.Anonymous, nil
+}
+
+func (devServerDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
+	if !info.IsDevAppServer(c) {
+		return nil, errNotConfigured
+	}
+	if id.Kind() == identity.Anonymous {
+		return nil, nil
+	}
+	return groups, nil
 }
 
 func (devServerDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {

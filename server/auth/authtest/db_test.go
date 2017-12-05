@@ -20,8 +20,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/auth/identity"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFakeDB(t *testing.T) {
@@ -31,27 +32,27 @@ func TestFakeDB(t *testing.T) {
 			"user:abc@def.com": []string{"group a", "group b"},
 		}
 
-		resp, err := db.IsMember(c, identity.Identity("user:abc@def.com"))
+		resp, err := db.IsMember(c, identity.Identity("user:abc@def.com"), nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldBeFalse)
 
-		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), "group b")
+		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"group b"})
 		So(err, ShouldBeNil)
 		So(resp, ShouldBeTrue)
 
-		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), "another", "group b")
+		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"another", "group b"})
 		So(err, ShouldBeNil)
 		So(resp, ShouldBeTrue)
 
-		resp, err = db.IsMember(c, identity.Identity("user:another@def.com"), "group b")
+		resp, err = db.IsMember(c, identity.Identity("user:another@def.com"), []string{"group b"})
 		So(err, ShouldBeNil)
 		So(resp, ShouldBeFalse)
 
-		resp, err = db.IsMember(c, identity.Identity("user:another@def.com"), "another", "group b")
+		resp, err = db.IsMember(c, identity.Identity("user:another@def.com"), []string{"another", "group b"})
 		So(err, ShouldBeNil)
 		So(resp, ShouldBeFalse)
 
-		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), "another")
+		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"another"})
 		So(err, ShouldBeNil)
 		So(resp, ShouldBeFalse)
 	})
@@ -65,11 +66,11 @@ func TestFakeErroringDB(t *testing.T) {
 			Error:  errors.New("boo"),
 		}
 
-		_, err := db.IsMember(c, identity.Identity("user:abc@def.com"), "group a")
+		_, err := db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"group a"})
 		So(err.Error(), ShouldEqual, "boo")
 
 		db.Error = nil
-		resp, err := db.IsMember(c, identity.Identity("user:abc@def.com"), "group a")
+		resp, err := db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"group a"})
 		So(err, ShouldBeNil)
 		So(resp, ShouldBeTrue)
 	})

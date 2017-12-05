@@ -33,17 +33,61 @@ import (
 )
 
 func TestSnapshotDB(t *testing.T) {
-	Convey("IsAllowedOAuthClientID works", t, func() {
-		c := context.Background()
-		db, err := NewSnapshotDB(&protocol.AuthDB{
-			OauthClientId: strPtr("primary-client-id"),
-			OauthAdditionalClientIds: []string{
-				"additional-client-id-1",
-				"additional-client-id-2",
-			},
-		}, "http://auth-service", 1234)
-		So(err, ShouldBeNil)
+	c := context.Background()
 
+	db, err := NewSnapshotDB(&protocol.AuthDB{
+		OauthClientId: strPtr("primary-client-id"),
+		OauthAdditionalClientIds: []string{
+			"additional-client-id-1",
+			"additional-client-id-2",
+		},
+		TokenServerUrl: strPtr("http://token-server"),
+		Groups: []*protocol.AuthGroup{
+			{
+				Name:    strPtr("direct"),
+				Members: []string{"user:abc@example.com"},
+			},
+			{
+				Name:  strPtr("via glob"),
+				Globs: []string{"user:*@example.com"},
+			},
+			{
+				Name:   strPtr("via nested"),
+				Nested: []string{"direct"},
+			},
+			{
+				Name:   strPtr("cycle"),
+				Nested: []string{"cycle"},
+			},
+			{
+				Name:   strPtr("unknown nested"),
+				Nested: []string{"unknown"},
+			},
+		},
+		IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
+			{
+				Identity:    strPtr("user:abc@example.com"),
+				IpWhitelist: strPtr("whitelist"),
+			},
+		},
+		IpWhitelists: []*protocol.AuthIPWhitelist{
+			{
+				Name: strPtr("whitelist"),
+				Subnets: []string{
+					"1.2.3.4/32",
+					"10.0.0.0/8",
+				},
+			},
+			{
+				Name: strPtr("empty"),
+			},
+		},
+	}, "http://auth-service", 1234)
+	if err != nil {
+		panic(err)
+	}
+
+	Convey("IsAllowedOAuthClientID works", t, func() {
 		call := func(email, clientID string) bool {
 			res, err := db.IsAllowedOAuthClientID(c, email, clientID)
 			So(err, ShouldBeNil)
@@ -59,35 +103,8 @@ func TestSnapshotDB(t *testing.T) {
 	})
 
 	Convey("IsMember works", t, func() {
-		c := context.Background()
-		db, err := NewSnapshotDB(&protocol.AuthDB{
-			Groups: []*protocol.AuthGroup{
-				{
-					Name:    strPtr("direct"),
-					Members: []string{"user:abc@example.com"},
-				},
-				{
-					Name:  strPtr("via glob"),
-					Globs: []string{"user:*@example.com"},
-				},
-				{
-					Name:   strPtr("via nested"),
-					Nested: []string{"direct"},
-				},
-				{
-					Name:   strPtr("cycle"),
-					Nested: []string{"cycle"},
-				},
-				{
-					Name:   strPtr("unknown nested"),
-					Nested: []string{"unknown"},
-				},
-			},
-		}, "http://auth-service", 1234)
-		So(err, ShouldBeNil)
-
 		call := func(ident string, groups ...string) bool {
-			res, err := db.IsMember(c, identity.Identity(ident), groups...)
+			res, err := db.IsMember(c, identity.Identity(ident), groups)
 			So(err, ShouldBeNil)
 			return res
 		}
@@ -110,17 +127,32 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("user:abc@example.com", "via glob", "direct"), ShouldBeTrue)
 	})
 
-	Convey("GetCertificates works", t, func(c C) {
-		db, err := NewSnapshotDB(&protocol.AuthDB{
-			OauthClientId: strPtr("primary-client-id"),
-			OauthAdditionalClientIds: []string{
-				"additional-client-id-1",
-				"additional-client-id-2",
-			},
-			TokenServerUrl: strPtr("http://token-server"),
-		}, "http://auth-service", 1234)
-		So(err, ShouldBeNil)
+	Convey("CheckMembership works", t, func() {
+		call := func(ident string, groups ...string) []string {
+			res, err := db.CheckMembership(c, identity.Identity(ident), groups)
+			So(err, ShouldBeNil)
+			return res
+		}
 
+		So(call("user:abc@example.com", "direct"), ShouldResemble, []string{"direct"})
+		So(call("user:another@example.com", "direct"), ShouldBeNil)
+
+		So(call("user:abc@example.com", "via glob"), ShouldResemble, []string{"via glob"})
+		So(call("user:abc@another.com", "via glob"), ShouldBeNil)
+
+		So(call("user:abc@example.com", "via nested"), ShouldResemble, []string{"via nested"})
+		So(call("user:another@example.com", "via nested"), ShouldBeNil)
+
+		So(call("user:abc@example.com", "cycle"), ShouldBeNil)
+		So(call("user:abc@example.com", "unknown"), ShouldBeNil)
+		So(call("user:abc@example.com", "unknown nested"), ShouldBeNil)
+
+		So(call("user:abc@example.com"), ShouldBeNil)
+		So(call("user:abc@example.com", "unknown", "direct"), ShouldResemble, []string{"direct"})
+		So(call("user:abc@example.com", "via glob", "direct"), ShouldResemble, []string{"via glob", "direct"})
+	})
+
+	Convey("GetCertificates works", t, func(c C) {
 		tokenService := signingtest.NewSigner(1, &signing.ServiceInfo{
 			AppID:              "token-server",
 			ServiceAccountName: "token-server-account@example.com",
@@ -161,29 +193,6 @@ func TestSnapshotDB(t *testing.T) {
 	})
 
 	Convey("IsInWhitelist works", t, func() {
-		c := context.Background()
-		db, err := NewSnapshotDB(&protocol.AuthDB{
-			IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
-				{
-					Identity:    strPtr("user:abc@example.com"),
-					IpWhitelist: strPtr("whitelist"),
-				},
-			},
-			IpWhitelists: []*protocol.AuthIPWhitelist{
-				{
-					Name: strPtr("whitelist"),
-					Subnets: []string{
-						"1.2.3.4/32",
-						"10.0.0.0/8",
-					},
-				},
-				{
-					Name: strPtr("empty"),
-				},
-			},
-		}, "http://auth-service", 1234)
-		So(err, ShouldBeNil)
-
 		wl, err := db.GetWhitelistForIdentity(c, "user:abc@example.com")
 		So(err, ShouldBeNil)
 		So(wl, ShouldEqual, "whitelist")
@@ -257,6 +266,6 @@ func BenchmarkIsMember(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		db.IsMember(c, "user:somedude@example.com", "outer")
+		db.IsMember(c, "user:somedude@example.com", []string{"outer"})
 	}
 }

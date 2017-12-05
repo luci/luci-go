@@ -95,7 +95,7 @@ func (s *Set) IsMember(c context.Context, id identity.Identity) (bool, error) {
 		for gr := range s.Groups {
 			groups = append(groups, gr)
 		}
-		return auth.GetState(c).DB().IsMember(c, id, groups...)
+		return auth.GetState(c).DB().IsMember(c, id, groups)
 	}
 
 	return false, nil

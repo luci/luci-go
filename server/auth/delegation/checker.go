@@ -76,7 +76,7 @@ type GroupsChecker interface {
 	//
 	// Unknown groups are considered empty. May return errors if underlying
 	// datastore has issues.
-	IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error)
+	IsMember(c context.Context, id identity.Identity, groups []string) (bool, error)
 }
 
 // CheckTokenParams is passed to CheckToken.
@@ -261,7 +261,7 @@ func checkSubtokenAudience(c context.Context, t *messages.Subtoken, ident identi
 		}
 	}
 	// Search through groups now.
-	switch ok, err := checker.IsMember(c, ident, groups...); {
+	switch ok, err := checker.IsMember(c, ident, groups); {
 	case err != nil:
 		return err // transient error during group lookup
 	case ok:
