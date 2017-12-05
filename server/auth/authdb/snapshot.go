@@ -184,7 +184,7 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(c context.Context, email, clientID 
 //
 // Unknown groups are considered empty. May return errors if underlying
 // datastore has issues.
-func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
 		switch found, err := db.isMemberImpl(c, id, gr); {
@@ -195,6 +195,28 @@ func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups .
 		}
 	}
 	return false, nil
+}
+
+// CheckMembership returns groups from the given list the identity belongs to.
+//
+// Unlike IsMember, it doesn't stop on the first hit but continues evaluating
+// all groups.
+//
+// Unknown groups are considered empty. The order of groups in the result may
+// be different from the order in 'groups'.
+//
+// May return errors if underlying datastore has issues.
+func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, groups []string) (out []string, err error) {
+	// TODO(vadimsh): Optimize multi-group case.
+	for _, gr := range groups {
+		switch found, err := db.isMemberImpl(c, id, gr); {
+		case err != nil:
+			return nil, err
+		case found:
+			out = append(out, gr)
+		}
+	}
+	return
 }
 
 // isMemberImpl implements IsMember check for a single group only.

@@ -245,7 +245,7 @@ type fakeGroups struct {
 	groups map[string]string // if nil, IsMember always returns false
 }
 
-func (f *fakeGroups) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+func (f *fakeGroups) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
 	for _, group := range groups {
 		if f.groups[group] == string(id) {
 			return true, nil

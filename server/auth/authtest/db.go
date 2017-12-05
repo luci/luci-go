@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
@@ -48,15 +49,25 @@ func (db FakeDB) Use(c context.Context) context.Context {
 // IsMember is part of authdb.DB interface.
 //
 // It returns true if any of 'groups' is listed in db[id].
-func (db FakeDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
-	for _, group := range groups {
-		for _, gr := range db[id] {
-			if gr == group {
-				return true, nil
-			}
+func (db FakeDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
+	hits, err := db.CheckMembership(c, id, groups)
+	if err != nil {
+		return false, err
+	}
+	return len(hits) > 0, nil
+}
+
+// CheckMembership is part of authdb.DB interface.
+//
+// It returns a list of groups the identity belongs to.
+func (db FakeDB) CheckMembership(c context.Context, id identity.Identity, groups []string) (out []string, err error) {
+	belongsTo := stringset.NewFromSlice(db[id]...)
+	for _, g := range groups {
+		if belongsTo.Has(g) {
+			out = append(out, g)
 		}
 	}
-	return false, nil
+	return
 }
 
 // IsAllowedOAuthClientID is part of authdb.DB interface. Panics.
@@ -100,11 +111,21 @@ type FakeErroringDB struct {
 // IsMember is part of authdb.DB interface.
 //
 // It returns db.Error if it is not nil.
-func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
 	if db.Error != nil {
 		return false, db.Error
 	}
-	return db.FakeDB.IsMember(c, id, groups...)
+	return db.FakeDB.IsMember(c, id, groups)
+}
+
+// CheckMembership is part of authdb.DB interface.
+//
+// It returns db.Error if it is not nil.
+func (db *FakeErroringDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
+	if db.Error != nil {
+		return nil, db.Error
+	}
+	return db.FakeDB.CheckMembership(c, id, groups)
 }
 
 // Use installs the fake db into the context.

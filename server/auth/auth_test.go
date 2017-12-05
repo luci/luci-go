@@ -26,13 +26,13 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -257,8 +257,12 @@ func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID stri
 	return clientID == db.allowedClientID, nil
 }
 
-func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
 	return len(groups) != 0, nil
+}
+
+func (db *fakeDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
+	return groups, nil
 }
 
 func (db *fakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {

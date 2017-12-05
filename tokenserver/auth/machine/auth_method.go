@@ -103,7 +103,7 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
-	ok, err := db.IsMember(c, signerServiceAccount, TokenServersGroup)
+	ok, err := db.IsMember(c, signerServiceAccount, []string{TokenServersGroup})
 	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
