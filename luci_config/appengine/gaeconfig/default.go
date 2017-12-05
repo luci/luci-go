@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"go.chromium.org/luci/appengine/datastorecache"
+	"go.chromium.org/luci/appengine/datastoreCache"
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/common/config/impl/filesystem"
 	"go.chromium.org/luci/common/config/validation"

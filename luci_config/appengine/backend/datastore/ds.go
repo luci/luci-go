@@ -17,7 +17,7 @@ package datastore
 import (
 	"time"
 
-	"go.chromium.org/luci/appengine/datastorecache"
+	"go.chromium.org/luci/appengine/datastoreCache"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"

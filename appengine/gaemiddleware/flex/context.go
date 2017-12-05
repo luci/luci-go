@@ -17,17 +17,14 @@ package flex
 import (
 	"net/http"
 
+	"go.chromium.org/gae/impl/cloud"
+
 	"golang.org/x/net/context"
 )
 
-var httpRequestKey = "flex/Inbound HTTP Request"
-
-func withHTTPRequest(c context.Context, req *http.Request) context.Context {
-	return context.WithValue(c, &httpRequestKey, req)
-}
-
 // HTTPRequest returns the inbound HTTP request associated with the current
-// Context. This value will always be available.
-func HTTPRequest(c context.Context) *http.Request {
-	return c.Value(&httpRequestKey).(*http.Request)
-}
+// Context.
+//
+// This value will always be available if the Context has been initialized
+// by Use.
+func HTTPRequest(c context.Context) *http.Request { return cloud.HTTPRequest(c) }
