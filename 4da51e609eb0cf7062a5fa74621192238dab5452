@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3701a218_ae7460fb",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-05T16:28:46Z",
+      "side": 1,
+      "message": "router.Context has Context field. Did you have the same problem with router.Context?\n\nbesides, RequestContext seems to assume that there is some kind of Request is happening, but this package is in common, not even server. There might be no request.",
+      "parentUuid": "439894c3_e36a28c9",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 52,
+        "endChar": 8
+      },
+      "revId": "4da51e609eb0cf7062a5fa74621192238dab5452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "204b4198_054d3314",
         "filename": "common/config/validation/validation.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-12-05T06:43:19Z",
       "side": 1,
       "message": "unrelated to this CL: is this logger supposed to be used by validating function?",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 7
+      },
+      "revId": "4da51e609eb0cf7062a5fa74621192238dab5452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1680456a_c655241b",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-05T16:28:46Z",
+      "side": 1,
+      "message": "now that we have context, perhaps we should use \n\n  logging.XXXXf(c,",
+      "parentUuid": "204b4198_054d3314",
       "range": {
         "startLine": 53,
         "startChar": 1,
