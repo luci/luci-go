@@ -41,6 +41,7 @@ func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
 
 	names := stringset.New(0)
 	accounts := map[string]string{} // service account -> rule name where its defined
+	groups := map[string]string{}   // group with accounts -> rule name where its defined
 	for i, rule := range cfg.Rules {
 		// Rule name must be unique. Missing name will be handled by 'validateRule'.
 		if rule.Name != "" {
@@ -52,12 +53,21 @@ func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
 		}
 
 		// There should be no overlap between service account sets covered by each
-		// rule.
+		// rule. Unfortunately we can't reliably dive into groups, since they may
+		// change after the config validation step. So compare only top level group
+		// names, Rules.Rule() method relies on this.
 		for _, account := range rule.ServiceAccount {
 			if name, ok := accounts[account]; ok {
 				ctx.Error("service account %q is mentioned by more than one rule (%q and %q)", account, name, rule.Name)
 			} else {
 				accounts[account] = rule.Name
+			}
+		}
+		for _, group := range rule.ServiceAccountGroup {
+			if name, ok := groups[group]; ok {
+				ctx.Error("service account group %q is mentioned by more than one rule (%q and %q)", group, name, rule.Name)
+			} else {
+				groups[group] = rule.Name
 			}
 		}
 
@@ -85,6 +95,7 @@ func validateRule(title string, r *admin.ServiceAccountRule, ctx *validation.Con
 	// Note: we allow any of the sets to be empty. The rule will just not match
 	// anything in this case, this is fine.
 	validateEmails("service_account", r.ServiceAccount, ctx)
+	validateGroups("service_account_group", r.ServiceAccountGroup, ctx)
 	validateScopes("allowed_scope", r.AllowedScope, ctx)
 	validateIdSet("end_user", r.EndUser, ctx)
 	validateIdSet("proxy", r.Proxy, ctx)
@@ -99,6 +110,16 @@ func validateEmails(field string, emails []string, ctx *validation.Context) {
 		// We reuse 'user:' identity validator, user identities are emails too.
 		if _, err := identity.MakeIdentity("user:" + email); err != nil {
 			ctx.Error("bad email %q - %s", email, err)
+		}
+	}
+}
+
+func validateGroups(field string, groups []string, ctx *validation.Context) {
+	ctx.Enter("%q", field)
+	defer ctx.Exit()
+	for _, gr := range groups {
+		if gr == "" {
+			ctx.Error("the group name must not be empty")
 		}
 	}
 }

@@ -16,6 +16,8 @@ package serviceaccounts
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,7 +27,9 @@ import (
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
@@ -50,8 +54,10 @@ const (
 
 // Rules is queryable representation of service_accounts.cfg rules.
 type Rules struct {
-	revision string           // config revision this policy is imported from
-	rules    map[string]*Rule // service account email -> rule for it
+	revision      string           // config revision this policy is imported from
+	rulesPerAcc   map[string]*Rule // service account email -> rule for it
+	rulesPerGroup map[string]*Rule // group with accounts -> rule for it
+	groups        []string         // list of keys in 'rulesPerGroup'
 }
 
 // Rule is queriable in-memory representation of ServiceAccountRule.
@@ -72,6 +78,7 @@ type Rule struct {
 // Passed to 'Check'.
 type RulesQuery struct {
 	ServiceAccount string            // email of an account being used
+	Rule           *Rule             // the matching rule, if already known
 	Proxy          identity.Identity // who's calling the Token Server
 	EndUser        identity.Identity // who initiates the usage of an account
 }
@@ -160,23 +167,37 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 		return nil, err
 	}
 
-	rules := map[string]*Rule{}
+	rulesPerAcc := map[string]*Rule{}
+	rulesPerGroup := map[string]*Rule{}
 	for _, ruleProto := range parsed.Rules {
 		r, err := makeRule(ruleProto, &defaults, revision)
 		if err != nil {
 			return nil, err
 		}
 		for _, account := range ruleProto.ServiceAccount {
-			if rules[account] != nil {
+			if rulesPerAcc[account] != nil {
 				return nil, fmt.Errorf("two rules for service account %q", account)
 			}
-			rules[account] = r
+			rulesPerAcc[account] = r
+		}
+		for _, group := range ruleProto.ServiceAccountGroup {
+			if rulesPerGroup[group] != nil {
+				return nil, fmt.Errorf("two rules for service account group %q", group)
+			}
+			rulesPerGroup[group] = r
 		}
 	}
 
+	groups := make([]string, 0, len(rulesPerGroup))
+	for g := range rulesPerGroup {
+		groups = append(groups, g)
+	}
+
 	return &Rules{
-		revision: revision,
-		rules:    rules,
+		revision:      revision,
+		rulesPerAcc:   rulesPerAcc,
+		rulesPerGroup: rulesPerGroup,
+		groups:        groups,
 	}, nil
 }
 
@@ -187,9 +208,57 @@ func (r *Rules) ConfigRevision() string {
 
 // Rule returns a rule governing the access to the given service account.
 //
-// Returns nil if such service account is not specified in the config.
-func (r *Rules) Rule(serviceAccount string) *Rule {
-	return r.rules[serviceAccount]
+// On success returns the corresponding rule or nil if the given accounts is not
+// in the config. Returns an error if the check failed, in particular if the
+// account is mentioned in more than one rule.
+//
+// Relatively heavy operation, try to reuse the result.
+func (r *Rules) Rule(c context.Context, serviceAccount string) (*Rule, error) {
+	// TODO(vadimsh): This will not scale when the number of rules becomes large.
+	// At some point we'll have to give up the perfect consistency and start
+	// caching the results.
+
+	// Set of rules that match the service account. If the service account matches
+	// some rule via multiple different groups, this is NOT an error, since
+	// there's no ambiguity in this case.
+	matchingRules := make(map[*Rule]struct{}, 1)
+
+	// Query all groups mentioned in the config to figure out which ones the
+	// account belongs to and then pick the corresponding rules.
+	if len(r.groups) != 0 {
+		ident := identity.Identity("user:" + serviceAccount)
+		groups, err := auth.GetState(c).DB().CheckMembership(c, ident, r.groups)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to check membership of %s", serviceAccount).Err()
+		}
+		for _, g := range groups {
+			matchingRules[r.rulesPerGroup[g]] = struct{}{}
+		}
+	}
+
+	// Try rules with explicitly mentioned accounts too.
+	if rule := r.rulesPerAcc[serviceAccount]; rule != nil {
+		matchingRules[rule] = struct{}{}
+	}
+
+	// There should be at most one hit.
+	switch len(matchingRules) {
+	case 0:
+		return nil, nil
+	case 1:
+		for rule := range matchingRules {
+			return rule, nil
+		}
+		panic("impossible")
+	default:
+		names := make([]string, 0, len(matchingRules))
+		for r := range matchingRules {
+			names = append(names, fmt.Sprintf("%q", r.Rule.Name))
+		}
+		sort.Strings(names)
+		return nil, errors.Reason(
+			"account %s matches multiple rules: %s", serviceAccount, strings.Join(names, ", ")).Err()
+	}
 }
 
 // Check checks that rules allow the requested usage.
@@ -201,15 +270,23 @@ func (r *Rules) Rule(serviceAccount string) *Rule {
 // It is supposed to be called as part of some RPC handler. It logs errors
 // internally, so no need to log them outside.
 func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
-	// Grab the rule for this account. Don't leak information about presence or
-	// absence of the account to the caller, they may not be authorized to see the
-	// account at all.
-	rule := r.rules[query.ServiceAccount]
+	rule := query.Rule
+
 	if rule == nil {
-		logging.Errorf(c, "No rule for service account %q in the config rev %s", query.ServiceAccount, r.revision)
-		return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+		// Grab the rule for this account. Don't leak information about presence or
+		// absence of the account to the caller, they may not be authorized to see
+		// the account at all.
+		var err error
+		switch rule, err = r.Rule(c, query.ServiceAccount); {
+		case err != nil:
+			logging.WithError(err).Errorf(c, "Failed to query rules for account %q using config rev %s", query.ServiceAccount, r.revision)
+			return nil, grpc.Errorf(codes.Internal, "internal error when querying rules, see logs")
+		case rule == nil:
+			logging.Errorf(c, "No rule for service account %q in the config rev %s", query.ServiceAccount, r.revision)
+			return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+		}
+		logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Rule.Name, r.revision)
 	}
-	logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Rule.Name, r.revision)
 
 	// Trusted proxies are allowed to skip the end user check. We trust them to do
 	// it themselves.

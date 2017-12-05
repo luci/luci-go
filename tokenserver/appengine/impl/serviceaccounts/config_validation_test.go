@@ -40,6 +40,7 @@ func TestValidation(t *testing.T) {
 					name: "rule 1"
 					owner: "developer@example.com"
 					service_account: "abc@robots.com"
+					service_account_group: "accounts-group-1"
 					allowed_scope: "https://www.googleapis.com/scope"
 					end_user: "user:abc@example.com"
 					end_user: "group:enduser-group"
@@ -53,6 +54,7 @@ func TestValidation(t *testing.T) {
 					name: "rule 2"
 					owner: "developer@example.com"
 					service_account: "def@robots.com"
+					service_account_group: "accounts-group-2"
 					allowed_scope: "https://www.googleapis.com/scope"
 					end_user: "user:abc@example.com"
 					end_user: "group:enduser-group"
@@ -106,10 +108,34 @@ func TestValidation(t *testing.T) {
 		{
 			Cfg: `
 				rules {
+					name: "rule 1"
+					service_account_group: "group1"
+				}
+				rules {
+					name: "rule 2"
+					service_account_group: "group1"
+				}
+			`,
+			Errors: []string{"mentioned by more than one rule"},
+		},
+
+		{
+			Cfg: `
+				rules {
 					service_account: "abc@robots.com"
 				}
 			`,
 			Errors: []string{`"name" is required`},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					service_account_group: ""
+				}
+			`,
+			Errors: []string{`the group name must not be empty`},
 		},
 
 		{
