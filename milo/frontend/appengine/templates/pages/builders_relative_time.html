@@ -12,26 +12,38 @@
 <h1>{{ .ProjectID }}</h1>
 <h2>Builders</h2>
 
-<div class="builders-list">
-{{ range .Builders }}
-  {{ $builder := .BuilderID }}
-  <div class="builder-row">
-    <a class="builder-name"
-       href="{{ .BuilderLink }}"
-       aria-label="Recent state of builder {{ $builder }}">{{ $builder }}</a>
-    <div class="current-builds-group">
+<div class="builder-summaries">
+  <div class="builders-list-column">
+  {{ range .Builders }}
+    <div class="builders-list-cell">
+      <a class="builder-name"
+         href="{{ .BuilderLink }}"
+         aria-label="Recent state of builder {{ .BuilderID }}">{{ .BuilderID }}</a>
+    </div>
+  {{ end }}
+  </div>
+
+  <div class="builders-list-column">
+  {{ range .Builders }}
+    <div class="builders-list-cell">
       <a class="builder-state-bubble current-builds-state-bubble status-NotRun"
          href="{{ .BuilderLink }}"
-         aria-label="builder {{ $builder }}">
-        {{ .NumPending }} pending
+         aria-label="builder {{ .BuilderID }}">
+        {{ .NumPending }}&nbsp;pending
       </a>
       <a class="builder-state-bubble current-builds-state-bubble status-Running"
          href="{{ .BuilderLink }}"
-         aria-label="builder {{ $builder }}">
-        {{ .NumRunning }} running
+         aria-label="builder {{ .BuilderID }}">
+        {{ .NumRunning }}&nbsp;running
       </a>
     </div>
-    <div class="finished-builds">
+  {{ end }}
+  </div>
+
+  <div class="builders-list-column build-results-column">
+  {{ range .Builders }}
+    {{ $builder := .BuilderID }}
+    <div class="builders-list-cell finished-builds">
     {{ range $i, $build := .RecentBuilds }}
       <a class="build-status"
          href="{{ $build.SelfLink }}"
@@ -45,8 +57,8 @@
       </a>
     {{ end }}
     </div>
+  {{ end }}
   </div>
-{{ end }}
 </div>
 
 <div class="epiloge" style="margin-top: 1em">

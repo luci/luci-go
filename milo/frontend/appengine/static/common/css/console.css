@@ -75,16 +75,9 @@
   padding: 0.5em;
 }
 
-.console-header-column-lists {
+.console-header-column {
   display: flex;
   flex-direction: column;
-  width: 25%;
-}
-
-.console-header-column-summaries {
-  display: flex;
-  flex-direction: column;
-  width: 75%;
 }
 
 .console-header-groups {
