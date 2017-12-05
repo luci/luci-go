@@ -17,7 +17,7 @@ package config
 import (
 	"time"
 
-	"go.chromium.org/luci/appengine/datastoreCache"
+	"go.chromium.org/luci/appengine/datastorecache"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/luci_config/appengine/backend/datastore"

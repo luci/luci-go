@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/appengine/datastoreCache"
+	"go.chromium.org/luci/appengine/datastorecache"
 	memConfig "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/errors"
 	configPB "go.chromium.org/luci/common/proto/config"
