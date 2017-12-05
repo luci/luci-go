@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "644ff02f_6c0250bc",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-05T23:37:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65fca741_18bfb4bd",
+      "revId": "36b11cdd972330c98ca84bb1d6d8c3025b023232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d99028ee_18adfcd7",
         "filename": "milo/frontend/appengine/static/common/css/builders.css",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "36b11cdd972330c98ca84bb1d6d8c3025b023232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc93d02b_0ad42ace",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-05T23:37:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d99028ee_18adfcd7",
+      "revId": "36b11cdd972330c98ca84bb1d6d8c3025b023232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "8fe68128_ea1b2887",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-05T23:37:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5269f2f5_0caa24e9",
+      "revId": "36b11cdd972330c98ca84bb1d6d8c3025b023232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73234c13_d4e7c69f",
         "filename": "milo/frontend/appengine/static/common/css/builders.css",
         "patchSetId": 3
@@ -67,6 +121,24 @@
       "revId": "36b11cdd972330c98ca84bb1d6d8c3025b023232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "641e24d5_72003177",
+        "filename": "milo/frontend/appengine/static/common/css/builders.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-05T23:37:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73234c13_d4e7c69f",
+      "revId": "36b11cdd972330c98ca84bb1d6d8c3025b023232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
