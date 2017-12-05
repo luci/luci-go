@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // Package buildbucket provides access to the Build Bucket Service.
 //
@@ -110,8 +120,8 @@ type ApiBucketMessage struct {
 }
 
 func (s *ApiBucketMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiBucketMessage
-	raw := noMethod(*s)
+	type NoMethod ApiBucketMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -143,8 +153,8 @@ type ApiBuildResponseMessage struct {
 }
 
 func (s *ApiBuildResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiBuildResponseMessage
-	raw := noMethod(*s)
+	type NoMethod ApiBuildResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -171,19 +181,21 @@ type ApiCancelBatchRequestMessage struct {
 }
 
 func (s *ApiCancelBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiCancelBatchRequestMessage
-	raw := noMethod(*s)
+	type NoMethod ApiCancelBatchRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 type ApiCancelBatchResponseMessage struct {
+	Error *ApiErrorMessage `json:"error,omitempty"`
+
 	Results []*ApiCancelBatchResponseMessageOneResult `json:"results,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "Results") to
+	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -191,8 +203,8 @@ type ApiCancelBatchResponseMessage struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Results") to include in
-	// API requests with the JSON null value. By default, fields with empty
+	// NullFields is a list of field names (e.g. "Error") to include in API
+	// requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
@@ -201,8 +213,8 @@ type ApiCancelBatchResponseMessage struct {
 }
 
 func (s *ApiCancelBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiCancelBatchResponseMessage
-	raw := noMethod(*s)
+	type NoMethod ApiCancelBatchResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -232,8 +244,8 @@ type ApiCancelBatchResponseMessageOneResult struct {
 }
 
 func (s *ApiCancelBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
-	type noMethod ApiCancelBatchResponseMessageOneResult
-	raw := noMethod(*s)
+	type NoMethod ApiCancelBatchResponseMessageOneResult
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -259,8 +271,8 @@ type ApiCancelRequestBodyMessage struct {
 }
 
 func (s *ApiCancelRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiCancelRequestBodyMessage
-	raw := noMethod(*s)
+	type NoMethod ApiCancelRequestBodyMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -286,6 +298,8 @@ type ApiCommonBuildMessage struct {
 	CreatedBy string `json:"created_by,omitempty"`
 
 	CreatedTs int64 `json:"created_ts,omitempty,string"`
+
+	Experimental bool `json:"experimental,omitempty"`
 
 	// Possible values:
 	//   "BUILDBUCKET_FAILURE"
@@ -350,8 +364,8 @@ type ApiCommonBuildMessage struct {
 }
 
 func (s *ApiCommonBuildMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiCommonBuildMessage
-	raw := noMethod(*s)
+	type NoMethod ApiCommonBuildMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -380,8 +394,8 @@ type ApiDeleteManyBuildsResponse struct {
 }
 
 func (s *ApiDeleteManyBuildsResponse) MarshalJSON() ([]byte, error) {
-	type noMethod ApiDeleteManyBuildsResponse
-	raw := noMethod(*s)
+	type NoMethod ApiDeleteManyBuildsResponse
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -416,8 +430,8 @@ type ApiErrorMessage struct {
 }
 
 func (s *ApiErrorMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiErrorMessage
-	raw := noMethod(*s)
+	type NoMethod ApiErrorMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -455,8 +469,8 @@ type ApiFailRequestBodyMessage struct {
 }
 
 func (s *ApiFailRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiFailRequestBodyMessage
-	raw := noMethod(*s)
+	type NoMethod ApiFailRequestBodyMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -481,8 +495,8 @@ type ApiHeartbeatBatchRequestMessage struct {
 }
 
 func (s *ApiHeartbeatBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiHeartbeatBatchRequestMessage
-	raw := noMethod(*s)
+	type NoMethod ApiHeartbeatBatchRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -511,19 +525,21 @@ type ApiHeartbeatBatchRequestMessageOneHeartbeat struct {
 }
 
 func (s *ApiHeartbeatBatchRequestMessageOneHeartbeat) MarshalJSON() ([]byte, error) {
-	type noMethod ApiHeartbeatBatchRequestMessageOneHeartbeat
-	raw := noMethod(*s)
+	type NoMethod ApiHeartbeatBatchRequestMessageOneHeartbeat
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 type ApiHeartbeatBatchResponseMessage struct {
+	Error *ApiErrorMessage `json:"error,omitempty"`
+
 	Results []*ApiHeartbeatBatchResponseMessageOneHeartbeatResult `json:"results,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "Results") to
+	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -531,8 +547,8 @@ type ApiHeartbeatBatchResponseMessage struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Results") to include in
-	// API requests with the JSON null value. By default, fields with empty
+	// NullFields is a list of field names (e.g. "Error") to include in API
+	// requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
@@ -541,8 +557,8 @@ type ApiHeartbeatBatchResponseMessage struct {
 }
 
 func (s *ApiHeartbeatBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiHeartbeatBatchResponseMessage
-	raw := noMethod(*s)
+	type NoMethod ApiHeartbeatBatchResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -571,8 +587,8 @@ type ApiHeartbeatBatchResponseMessageOneHeartbeatResult struct {
 }
 
 func (s *ApiHeartbeatBatchResponseMessageOneHeartbeatResult) MarshalJSON() ([]byte, error) {
-	type noMethod ApiHeartbeatBatchResponseMessageOneHeartbeatResult
-	raw := noMethod(*s)
+	type NoMethod ApiHeartbeatBatchResponseMessageOneHeartbeatResult
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -600,8 +616,8 @@ type ApiHeartbeatRequestBodyMessage struct {
 }
 
 func (s *ApiHeartbeatRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiHeartbeatRequestBodyMessage
-	raw := noMethod(*s)
+	type NoMethod ApiHeartbeatRequestBodyMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -627,8 +643,8 @@ type ApiLeaseRequestBodyMessage struct {
 }
 
 func (s *ApiLeaseRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiLeaseRequestBodyMessage
-	raw := noMethod(*s)
+	type NoMethod ApiLeaseRequestBodyMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -659,18 +675,18 @@ type ApiLongestPendingTimeResponse struct {
 }
 
 func (s *ApiLongestPendingTimeResponse) MarshalJSON() ([]byte, error) {
-	type noMethod ApiLongestPendingTimeResponse
-	raw := noMethod(*s)
+	type NoMethod ApiLongestPendingTimeResponse
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 func (s *ApiLongestPendingTimeResponse) UnmarshalJSON(data []byte) error {
-	type noMethod ApiLongestPendingTimeResponse
+	type NoMethod ApiLongestPendingTimeResponse
 	var s1 struct {
 		LongestPendingTimeSec gensupport.JSONFloat64 `json:"longest_pending_time_sec"`
-		*noMethod
+		*NoMethod
 	}
-	s1.noMethod = (*noMethod)(s)
+	s1.NoMethod = (*NoMethod)(s)
 	if err := json.Unmarshal(data, &s1); err != nil {
 		return err
 	}
@@ -709,8 +725,8 @@ type ApiPubSubCallbackMessage struct {
 }
 
 func (s *ApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiPubSubCallbackMessage
-	raw := noMethod(*s)
+	type NoMethod ApiPubSubCallbackMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -735,8 +751,8 @@ type ApiPutBatchRequestMessage struct {
 }
 
 func (s *ApiPutBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiPutBatchRequestMessage
-	raw := noMethod(*s)
+	type NoMethod ApiPutBatchRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -767,8 +783,8 @@ type ApiPutBatchResponseMessage struct {
 }
 
 func (s *ApiPutBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiPutBatchResponseMessage
-	raw := noMethod(*s)
+	type NoMethod ApiPutBatchResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -798,8 +814,8 @@ type ApiPutBatchResponseMessageOneResult struct {
 }
 
 func (s *ApiPutBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
-	type noMethod ApiPutBatchResponseMessageOneResult
-	raw := noMethod(*s)
+	type NoMethod ApiPutBatchResponseMessageOneResult
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -813,6 +829,8 @@ type ApiPutRequestMessage struct {
 	CanaryPreference string `json:"canary_preference,omitempty"`
 
 	ClientOperationId string `json:"client_operation_id,omitempty"`
+
+	Experimental bool `json:"experimental,omitempty"`
 
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
 
@@ -840,8 +858,8 @@ type ApiPutRequestMessage struct {
 }
 
 func (s *ApiPutRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiPutRequestMessage
-	raw := noMethod(*s)
+	type NoMethod ApiPutRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -871,8 +889,8 @@ type ApiRetryRequestMessage struct {
 }
 
 func (s *ApiRetryRequestMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiRetryRequestMessage
-	raw := noMethod(*s)
+	type NoMethod ApiRetryRequestMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -906,8 +924,8 @@ type ApiSearchResponseMessage struct {
 }
 
 func (s *ApiSearchResponseMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiSearchResponseMessage
-	raw := noMethod(*s)
+	type NoMethod ApiSearchResponseMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -936,8 +954,8 @@ type ApiStartRequestBodyMessage struct {
 }
 
 func (s *ApiStartRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiStartRequestBodyMessage
-	raw := noMethod(*s)
+	type NoMethod ApiStartRequestBodyMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -968,8 +986,8 @@ type ApiSucceedRequestBodyMessage struct {
 }
 
 func (s *ApiSucceedRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiSucceedRequestBodyMessage
-	raw := noMethod(*s)
+	type NoMethod ApiSucceedRequestBodyMessage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1171,7 +1189,7 @@ func (c *CancelCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage,
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1300,7 +1318,7 @@ func (c *CancelBatchCall) Do(opts ...googleapi.CallOption) (*ApiCancelBatchRespo
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1429,7 +1447,7 @@ func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*ApiDeleteManyB
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1583,7 +1601,7 @@ func (c *FailCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, e
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1724,7 +1742,7 @@ func (c *GetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1861,7 +1879,7 @@ func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*ApiBucketMessage, err
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1990,7 +2008,7 @@ func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessa
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2119,7 +2137,7 @@ func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*ApiHeartbeatBatc
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2242,7 +2260,7 @@ func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2381,7 +2399,7 @@ func (c *LongestPendingTimeCall) Do(opts ...googleapi.CallOption) (*ApiLongestPe
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2510,7 +2528,7 @@ func (c *PauseCall) Do(opts ...googleapi.CallOption) (*ApiPauseResponse, error) 
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2665,7 +2683,7 @@ func (c *PeekCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, 
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2795,7 +2813,7 @@ func (c *PutCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2913,7 +2931,7 @@ func (c *PutBatchCall) Do(opts ...googleapi.CallOption) (*ApiPutBatchResponseMes
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3029,7 +3047,7 @@ func (c *ResetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3159,7 +3177,7 @@ func (c *RetryCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3258,6 +3276,13 @@ func (c *SearchCall) CreationTsLow(creationTsLow int64) *SearchCall {
 //   "INVALID_BUILD_DEFINITION"
 func (c *SearchCall) FailureReason(failureReason string) *SearchCall {
 	c.urlParams_.Set("failure_reason", failureReason)
+	return c
+}
+
+// IncludeExperimental sets the optional parameter
+// "include_experimental":
+func (c *SearchCall) IncludeExperimental(includeExperimental bool) *SearchCall {
+	c.urlParams_.Set("include_experimental", fmt.Sprint(includeExperimental))
 	return c
 }
 
@@ -3394,7 +3419,7 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3453,6 +3478,10 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
+	//     },
+	//     "include_experimental": {
+	//       "location": "query",
+	//       "type": "boolean"
 	//     },
 	//     "max_builds": {
 	//       "format": "int32",
@@ -3615,7 +3644,7 @@ func (c *StartCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3749,7 +3778,7 @@ func (c *SucceedCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil

@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // Package swarming provides access to the .
 //
@@ -161,8 +171,8 @@ type SwarmingRpcsBootstrapToken struct {
 }
 
 func (s *SwarmingRpcsBootstrapToken) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBootstrapToken
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBootstrapToken
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -207,8 +217,8 @@ type SwarmingRpcsBotEvent struct {
 }
 
 func (s *SwarmingRpcsBotEvent) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBotEvent
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBotEvent
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -241,8 +251,8 @@ type SwarmingRpcsBotEvents struct {
 }
 
 func (s *SwarmingRpcsBotEvents) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBotEvents
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBotEvents
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -304,8 +314,8 @@ type SwarmingRpcsBotInfo struct {
 }
 
 func (s *SwarmingRpcsBotInfo) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBotInfo
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBotInfo
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -342,8 +352,8 @@ type SwarmingRpcsBotList struct {
 }
 
 func (s *SwarmingRpcsBotList) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBotList
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBotList
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -378,8 +388,8 @@ type SwarmingRpcsBotTasks struct {
 }
 
 func (s *SwarmingRpcsBotTasks) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBotTasks
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBotTasks
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -417,8 +427,8 @@ type SwarmingRpcsBotsCount struct {
 }
 
 func (s *SwarmingRpcsBotsCount) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBotsCount
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBotsCount
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -453,8 +463,8 @@ type SwarmingRpcsBotsDimensions struct {
 }
 
 func (s *SwarmingRpcsBotsDimensions) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsBotsDimensions
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsBotsDimensions
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -490,8 +500,8 @@ type SwarmingRpcsCacheEntry struct {
 }
 
 func (s *SwarmingRpcsCacheEntry) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsCacheEntry
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsCacheEntry
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -523,8 +533,8 @@ type SwarmingRpcsCancelResponse struct {
 }
 
 func (s *SwarmingRpcsCancelResponse) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsCancelResponse
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsCancelResponse
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -559,8 +569,8 @@ type SwarmingRpcsCipdInput struct {
 }
 
 func (s *SwarmingRpcsCipdInput) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsCipdInput
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsCipdInput
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -591,8 +601,8 @@ type SwarmingRpcsCipdPackage struct {
 }
 
 func (s *SwarmingRpcsCipdPackage) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsCipdPackage
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsCipdPackage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -625,8 +635,8 @@ type SwarmingRpcsCipdPins struct {
 }
 
 func (s *SwarmingRpcsCipdPins) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsCipdPins
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsCipdPins
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -668,8 +678,8 @@ type SwarmingRpcsClientPermissions struct {
 }
 
 func (s *SwarmingRpcsClientPermissions) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsClientPermissions
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsClientPermissions
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -699,8 +709,8 @@ type SwarmingRpcsDeletedResponse struct {
 }
 
 func (s *SwarmingRpcsDeletedResponse) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsDeletedResponse
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsDeletedResponse
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -736,35 +746,8 @@ type SwarmingRpcsFileContent struct {
 }
 
 func (s *SwarmingRpcsFileContent) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsFileContent
-	raw := noMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-// SwarmingRpcsFileContentRequest: Content of a file.
-type SwarmingRpcsFileContentRequest struct {
-	Content string `json:"content,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Content") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Content") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *SwarmingRpcsFileContentRequest) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsFileContentRequest
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsFileContent
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -795,8 +778,8 @@ type SwarmingRpcsFilesRef struct {
 }
 
 func (s *SwarmingRpcsFilesRef) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsFilesRef
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsFilesRef
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -845,8 +828,8 @@ type SwarmingRpcsNewTaskRequest struct {
 }
 
 func (s *SwarmingRpcsNewTaskRequest) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsNewTaskRequest
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsNewTaskRequest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -887,18 +870,18 @@ type SwarmingRpcsOperationStats struct {
 }
 
 func (s *SwarmingRpcsOperationStats) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsOperationStats
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsOperationStats
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 func (s *SwarmingRpcsOperationStats) UnmarshalJSON(data []byte) error {
-	type noMethod SwarmingRpcsOperationStats
+	type NoMethod SwarmingRpcsOperationStats
 	var s1 struct {
 		Duration gensupport.JSONFloat64 `json:"duration"`
-		*noMethod
+		*NoMethod
 	}
-	s1.noMethod = (*noMethod)(s)
+	s1.NoMethod = (*NoMethod)(s)
 	if err := json.Unmarshal(data, &s1); err != nil {
 		return err
 	}
@@ -931,18 +914,18 @@ type SwarmingRpcsPerformanceStats struct {
 }
 
 func (s *SwarmingRpcsPerformanceStats) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsPerformanceStats
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsPerformanceStats
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 func (s *SwarmingRpcsPerformanceStats) UnmarshalJSON(data []byte) error {
-	type noMethod SwarmingRpcsPerformanceStats
+	type NoMethod SwarmingRpcsPerformanceStats
 	var s1 struct {
 		BotOverhead gensupport.JSONFloat64 `json:"bot_overhead"`
-		*noMethod
+		*NoMethod
 	}
-	s1.noMethod = (*noMethod)(s)
+	s1.NoMethod = (*NoMethod)(s)
 	if err := json.Unmarshal(data, &s1); err != nil {
 		return err
 	}
@@ -988,8 +971,8 @@ type SwarmingRpcsServerDetails struct {
 }
 
 func (s *SwarmingRpcsServerDetails) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsServerDetails
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsServerDetails
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1018,8 +1001,8 @@ type SwarmingRpcsStringListPair struct {
 }
 
 func (s *SwarmingRpcsStringListPair) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsStringListPair
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsStringListPair
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1047,8 +1030,8 @@ type SwarmingRpcsStringPair struct {
 }
 
 func (s *SwarmingRpcsStringPair) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsStringPair
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsStringPair
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1084,8 +1067,8 @@ type SwarmingRpcsTaskList struct {
 }
 
 func (s *SwarmingRpcsTaskList) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTaskList
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTaskList
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1115,8 +1098,8 @@ type SwarmingRpcsTaskOutput struct {
 }
 
 func (s *SwarmingRpcsTaskOutput) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTaskOutput
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTaskOutput
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1143,6 +1126,9 @@ type SwarmingRpcsTaskProperties struct {
 
 	// Env: Represents a mapping of string to string.
 	Env []*SwarmingRpcsStringPair `json:"env,omitempty"`
+
+	// EnvPrefixes: Represents a mapping of string to list of strings.
+	EnvPrefixes []*SwarmingRpcsStringListPair `json:"env_prefixes,omitempty"`
 
 	ExecutionTimeoutSecs int64 `json:"execution_timeout_secs,omitempty,string"`
 
@@ -1180,8 +1166,8 @@ type SwarmingRpcsTaskProperties struct {
 }
 
 func (s *SwarmingRpcsTaskProperties) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTaskProperties
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTaskProperties
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1236,8 +1222,8 @@ type SwarmingRpcsTaskRequest struct {
 }
 
 func (s *SwarmingRpcsTaskRequest) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTaskRequest
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTaskRequest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1277,8 +1263,8 @@ type SwarmingRpcsTaskRequestMetadata struct {
 }
 
 func (s *SwarmingRpcsTaskRequestMetadata) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTaskRequestMetadata
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTaskRequestMetadata
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1315,8 +1301,8 @@ type SwarmingRpcsTaskRequests struct {
 }
 
 func (s *SwarmingRpcsTaskRequests) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTaskRequests
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTaskRequests
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1414,19 +1400,19 @@ type SwarmingRpcsTaskResult struct {
 }
 
 func (s *SwarmingRpcsTaskResult) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTaskResult
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTaskResult
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 func (s *SwarmingRpcsTaskResult) UnmarshalJSON(data []byte) error {
-	type noMethod SwarmingRpcsTaskResult
+	type NoMethod SwarmingRpcsTaskResult
 	var s1 struct {
 		CostSavedUsd gensupport.JSONFloat64 `json:"cost_saved_usd"`
 		Duration     gensupport.JSONFloat64 `json:"duration"`
-		*noMethod
+		*NoMethod
 	}
-	s1.noMethod = (*noMethod)(s)
+	s1.NoMethod = (*NoMethod)(s)
 	if err := json.Unmarshal(data, &s1); err != nil {
 		return err
 	}
@@ -1462,8 +1448,8 @@ type SwarmingRpcsTasksCancelRequest struct {
 }
 
 func (s *SwarmingRpcsTasksCancelRequest) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTasksCancelRequest
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTasksCancelRequest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1498,8 +1484,8 @@ type SwarmingRpcsTasksCancelResponse struct {
 }
 
 func (s *SwarmingRpcsTasksCancelResponse) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTasksCancelResponse
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTasksCancelResponse
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1531,8 +1517,8 @@ type SwarmingRpcsTasksCount struct {
 }
 
 func (s *SwarmingRpcsTasksCount) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTasksCount
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTasksCount
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1566,8 +1552,8 @@ type SwarmingRpcsTasksTags struct {
 }
 
 func (s *SwarmingRpcsTasksTags) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTasksTags
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTasksTags
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1598,8 +1584,8 @@ type SwarmingRpcsTerminateResponse struct {
 }
 
 func (s *SwarmingRpcsTerminateResponse) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsTerminateResponse
-	raw := noMethod(*s)
+	type NoMethod SwarmingRpcsTerminateResponse
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -1701,7 +1687,7 @@ func (c *BotDeleteCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsDeletedRe
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1837,7 +1823,7 @@ func (c *BotEventsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotEvents
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1974,7 +1960,7 @@ func (c *BotGetCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotInfo, err
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2114,7 +2100,7 @@ func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, 
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2243,7 +2229,7 @@ func (c *BotTerminateCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTermin
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2436,7 +2422,7 @@ func (c *BotsCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotsCount
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2635,7 +2621,7 @@ func (c *BotsDimensionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBots
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -2818,7 +2804,7 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3016,7 +3002,7 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsServe
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3045,18 +3031,9 @@ type ServerGetBootstrapCall struct {
 	header_      http.Header
 }
 
-// GetBootstrap: Retrieves the current or a previous version of
-// bootstrap.py. When the file is sourced via luci-config, the version
-// parameter is ignored. Eventually the support for 'version' will be
-// removed completely.
+// GetBootstrap: Retrieves the current version of bootstrap.py.
 func (r *ServerService) GetBootstrap() *ServerGetBootstrapCall {
 	c := &ServerGetBootstrapCall{s: r.s, urlParams_: make(gensupport.URLParams)}
-	return c
-}
-
-// Version sets the optional parameter "version":
-func (c *ServerGetBootstrapCall) Version(version int64) *ServerGetBootstrapCall {
-	c.urlParams_.Set("version", fmt.Sprint(version))
 	return c
 }
 
@@ -3146,21 +3123,14 @@ func (c *ServerGetBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
 	// {
-	//   "description": "Retrieves the current or a previous version of bootstrap.py. When the file is sourced via luci-config, the version parameter is ignored. Eventually the support for 'version' will be removed completely.",
+	//   "description": "Retrieves the current version of bootstrap.py.",
 	//   "httpMethod": "GET",
 	//   "id": "swarming.server.get_bootstrap",
-	//   "parameters": {
-	//     "version": {
-	//       "format": "int64",
-	//       "location": "query",
-	//       "type": "string"
-	//     }
-	//   },
 	//   "path": "server/get_bootstrap",
 	//   "response": {
 	//     "$ref": "SwarmingRpcsFileContent"
@@ -3182,18 +3152,9 @@ type ServerGetBotConfigCall struct {
 	header_      http.Header
 }
 
-// GetBotConfig: Retrieves the current or a previous version of
-// bot_config.py. When the file is sourced via luci-config, the version
-// parameter is ignored. Eventually the support for 'version' will be
-// removed completely.
+// GetBotConfig: Retrieves the current version of bot_config.py.
 func (r *ServerService) GetBotConfig() *ServerGetBotConfigCall {
 	c := &ServerGetBotConfigCall{s: r.s, urlParams_: make(gensupport.URLParams)}
-	return c
-}
-
-// Version sets the optional parameter "version":
-func (c *ServerGetBotConfigCall) Version(version int64) *ServerGetBotConfigCall {
-	c.urlParams_.Set("version", fmt.Sprint(version))
 	return c
 }
 
@@ -3283,21 +3244,14 @@ func (c *ServerGetBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
 	// {
-	//   "description": "Retrieves the current or a previous version of bot_config.py. When the file is sourced via luci-config, the version parameter is ignored. Eventually the support for 'version' will be removed completely.",
+	//   "description": "Retrieves the current version of bot_config.py.",
 	//   "httpMethod": "GET",
 	//   "id": "swarming.server.get_bot_config",
-	//   "parameters": {
-	//     "version": {
-	//       "format": "int64",
-	//       "location": "query",
-	//       "type": "string"
-	//     }
-	//   },
 	//   "path": "server/get_bot_config",
 	//   "response": {
 	//     "$ref": "SwarmingRpcsFileContent"
@@ -3411,7 +3365,7 @@ func (c *ServerPermissionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsC
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3422,248 +3376,6 @@ func (c *ServerPermissionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsC
 	//   "path": "server/permissions",
 	//   "response": {
 	//     "$ref": "SwarmingRpcsClientPermissions"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
-// method id "swarming.server.put_bootstrap":
-
-type ServerPutBootstrapCall struct {
-	s                              *Service
-	swarmingrpcsfilecontentrequest *SwarmingRpcsFileContentRequest
-	urlParams_                     gensupport.URLParams
-	ctx_                           context.Context
-	header_                        http.Header
-}
-
-// PutBootstrap: Stores a new version of bootstrap.py. Warning: if a
-// file exists in luci-config, the file stored by this function is
-// ignored. Uploads are not blocked in case the file is later deleted
-// from luci-config.
-func (r *ServerService) PutBootstrap(swarmingrpcsfilecontentrequest *SwarmingRpcsFileContentRequest) *ServerPutBootstrapCall {
-	c := &ServerPutBootstrapCall{s: r.s, urlParams_: make(gensupport.URLParams)}
-	c.swarmingrpcsfilecontentrequest = swarmingrpcsfilecontentrequest
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *ServerPutBootstrapCall) Fields(s ...googleapi.Field) *ServerPutBootstrapCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *ServerPutBootstrapCall) Context(ctx context.Context) *ServerPutBootstrapCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *ServerPutBootstrapCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *ServerPutBootstrapCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcsfilecontentrequest)
-	if err != nil {
-		return nil, err
-	}
-	reqHeaders.Set("Content-Type", "application/json")
-	c.urlParams_.Set("alt", alt)
-	urls := googleapi.ResolveRelative(c.s.BasePath, "server/put_bootstrap")
-	urls += "?" + c.urlParams_.Encode()
-	req, _ := http.NewRequest("POST", urls, body)
-	req.Header = reqHeaders
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "swarming.server.put_bootstrap" call.
-// Exactly one of *SwarmingRpcsFileContent or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *SwarmingRpcsFileContent.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *ServerPutBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsFileContent, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &SwarmingRpcsFileContent{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Stores a new version of bootstrap.py. Warning: if a file exists in luci-config, the file stored by this function is ignored. Uploads are not blocked in case the file is later deleted from luci-config.",
-	//   "httpMethod": "POST",
-	//   "id": "swarming.server.put_bootstrap",
-	//   "path": "server/put_bootstrap",
-	//   "request": {
-	//     "$ref": "SwarmingRpcsFileContentRequest",
-	//     "parameterName": "resource"
-	//   },
-	//   "response": {
-	//     "$ref": "SwarmingRpcsFileContent"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
-// method id "swarming.server.put_bot_config":
-
-type ServerPutBotConfigCall struct {
-	s                              *Service
-	swarmingrpcsfilecontentrequest *SwarmingRpcsFileContentRequest
-	urlParams_                     gensupport.URLParams
-	ctx_                           context.Context
-	header_                        http.Header
-}
-
-// PutBotConfig: Stores a new version of bot_config.py. Warning: if a
-// file exists in luci-config, the file stored by this function is
-// ignored. Uploads are not blocked in case the file is later deleted
-// from luci-config.
-func (r *ServerService) PutBotConfig(swarmingrpcsfilecontentrequest *SwarmingRpcsFileContentRequest) *ServerPutBotConfigCall {
-	c := &ServerPutBotConfigCall{s: r.s, urlParams_: make(gensupport.URLParams)}
-	c.swarmingrpcsfilecontentrequest = swarmingrpcsfilecontentrequest
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *ServerPutBotConfigCall) Fields(s ...googleapi.Field) *ServerPutBotConfigCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *ServerPutBotConfigCall) Context(ctx context.Context) *ServerPutBotConfigCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *ServerPutBotConfigCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *ServerPutBotConfigCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcsfilecontentrequest)
-	if err != nil {
-		return nil, err
-	}
-	reqHeaders.Set("Content-Type", "application/json")
-	c.urlParams_.Set("alt", alt)
-	urls := googleapi.ResolveRelative(c.s.BasePath, "server/put_bot_config")
-	urls += "?" + c.urlParams_.Encode()
-	req, _ := http.NewRequest("POST", urls, body)
-	req.Header = reqHeaders
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "swarming.server.put_bot_config" call.
-// Exactly one of *SwarmingRpcsFileContent or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *SwarmingRpcsFileContent.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *ServerPutBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsFileContent, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &SwarmingRpcsFileContent{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Stores a new version of bot_config.py. Warning: if a file exists in luci-config, the file stored by this function is ignored. Uploads are not blocked in case the file is later deleted from luci-config.",
-	//   "httpMethod": "POST",
-	//   "id": "swarming.server.put_bot_config",
-	//   "path": "server/put_bot_config",
-	//   "request": {
-	//     "$ref": "SwarmingRpcsFileContentRequest",
-	//     "parameterName": "resource"
-	//   },
-	//   "response": {
-	//     "$ref": "SwarmingRpcsFileContent"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3760,7 +3472,7 @@ func (c *ServerTokenCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBootstr
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -3873,7 +3585,7 @@ func (c *TaskCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsCancelRe
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -4009,7 +3721,7 @@ func (c *TaskRequestCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskReq
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -4156,7 +3868,7 @@ func (c *TaskResultCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskResu
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -4296,7 +4008,7 @@ func (c *TaskStdoutCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskOutp
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -4422,7 +4134,7 @@ func (c *TasksCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCa
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -4585,7 +4297,7 @@ func (c *TasksCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCou
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -4826,7 +4538,7 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -5023,7 +4735,7 @@ func (c *TasksNewCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskReques
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -5218,7 +4930,7 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -5420,7 +5132,7 @@ func (c *TasksTagsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksTags
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil

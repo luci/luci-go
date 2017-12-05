@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/Zlsck0JvMfbtBPR2bHGDwh30tp8\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/N69l9lt1N7dZ6sznySPJlGlF4dY\"",
  "discoveryVersion": "v1",
  "id": "config:v1",
  "name": "config",
@@ -355,7 +355,8 @@
    "type": "object",
    "properties": {
     "content": {
-     "type": "string"
+     "type": "string",
+     "format": "byte"
     },
     "path": {
      "type": "string"

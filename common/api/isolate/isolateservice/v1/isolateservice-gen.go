@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // Package isolateservice provides access to the .
 //
@@ -101,8 +111,8 @@ type HandlersEndpointsV1Digest struct {
 }
 
 func (s *HandlersEndpointsV1Digest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1Digest
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1Digest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -133,8 +143,8 @@ type HandlersEndpointsV1DigestCollection struct {
 }
 
 func (s *HandlersEndpointsV1DigestCollection) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1DigestCollection
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1DigestCollection
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -161,8 +171,8 @@ type HandlersEndpointsV1FinalizeRequest struct {
 }
 
 func (s *HandlersEndpointsV1FinalizeRequest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1FinalizeRequest
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1FinalizeRequest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -193,8 +203,8 @@ type HandlersEndpointsV1Namespace struct {
 }
 
 func (s *HandlersEndpointsV1Namespace) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1Namespace
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1Namespace
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -225,8 +235,8 @@ type HandlersEndpointsV1PreuploadStatus struct {
 }
 
 func (s *HandlersEndpointsV1PreuploadStatus) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1PreuploadStatus
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1PreuploadStatus
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -257,8 +267,8 @@ type HandlersEndpointsV1PushPing struct {
 }
 
 func (s *HandlersEndpointsV1PushPing) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1PushPing
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1PushPing
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -290,8 +300,8 @@ type HandlersEndpointsV1RetrieveRequest struct {
 }
 
 func (s *HandlersEndpointsV1RetrieveRequest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1RetrieveRequest
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1RetrieveRequest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -324,8 +334,8 @@ type HandlersEndpointsV1RetrievedContent struct {
 }
 
 func (s *HandlersEndpointsV1RetrievedContent) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1RetrievedContent
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1RetrievedContent
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -355,8 +365,8 @@ type HandlersEndpointsV1ServerDetails struct {
 }
 
 func (s *HandlersEndpointsV1ServerDetails) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1ServerDetails
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1ServerDetails
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -385,8 +395,8 @@ type HandlersEndpointsV1StorageRequest struct {
 }
 
 func (s *HandlersEndpointsV1StorageRequest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1StorageRequest
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1StorageRequest
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -418,8 +428,8 @@ type HandlersEndpointsV1UrlCollection struct {
 }
 
 func (s *HandlersEndpointsV1UrlCollection) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV1UrlCollection
-	raw := noMethod(*s)
+	type NoMethod HandlersEndpointsV1UrlCollection
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -519,7 +529,7 @@ func (c *FinalizeGsUploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoi
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -644,7 +654,7 @@ func (c *PreuploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1Ur
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -763,7 +773,7 @@ func (c *RetrieveCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1Ret
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -888,7 +898,7 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoints
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1001,7 +1011,7 @@ func (c *StoreInlineCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil

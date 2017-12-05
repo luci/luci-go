@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/dYE7IFjE4FX8zcyITSl9cHcx1SQ\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/3TGo3HWIm9T8OLWY_DD4AVWv1Os\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -129,6 +129,9 @@
    "id": "ApiCancelBatchResponseMessage",
    "type": "object",
    "properties": {
+    "error": {
+     "$ref": "ApiErrorMessage"
+    },
     "results": {
      "type": "array",
      "items": {
@@ -208,6 +211,9 @@
     "created_ts": {
      "type": "string",
      "format": "int64"
+    },
+    "experimental": {
+     "type": "boolean"
     },
     "failure_reason": {
      "type": "string",
@@ -412,6 +418,9 @@
    "id": "ApiHeartbeatBatchResponseMessage",
    "type": "object",
    "properties": {
+    "error": {
+     "$ref": "ApiErrorMessage"
+    },
     "results": {
      "type": "array",
      "items": {
@@ -558,6 +567,9 @@
     },
     "client_operation_id": {
      "type": "string"
+    },
+    "experimental": {
+     "type": "boolean"
     },
     "lease_expiration_ts": {
      "type": "string",
@@ -1131,6 +1143,10 @@
       "",
       ""
      ],
+     "location": "query"
+    },
+    "include_experimental": {
+     "type": "boolean",
      "location": "query"
     },
     "max_builds": {
