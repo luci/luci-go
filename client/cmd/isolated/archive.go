@@ -17,6 +17,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"time"
 
@@ -24,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -32,15 +35,30 @@ import (
 func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options>...",
-		ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
-		LongDesc:  "All the files listed in the .isolated file are put in the isolate server.",
+		ShortDesc: "creates a .isolated file and uploads the tree to an isolate server",
+		LongDesc: `Given a list of files and directories, creates a .isolated file and uploads the
+tree to to an isolate server.
+
+When specifying directories and files, you must also specify a current working
+directory for that file or directory. The current working directory will not
+be included in the archived path. For example, to isolate './usr/foo/bar' and
+have it appear as 'foo/bar' in the .isolated, specify '-files ./usr:foo/bar' or
+'-files usr:foo/bar'. When the .isolated is then downloaded, it will then appear
+under 'foo/bar' in the desired directory.
+
+Note that '.' may be omitted in general, so to upload 'foo' from the current
+working directory, '-files :foo' is sufficient.`,
 		CommandRun: func() subcommands.CommandRun {
 			c := archiveRun{}
 			c.commonFlags.Init(defaultAuthOpts)
-			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive")
-			c.Flags.Var(&c.files, "files", "Individual file(s) to archive")
+			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
+			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
 			c.Flags.Var(&c.blacklist, "blacklist",
 				"List of regexp to use as blacklist filter when uploading directories")
+			c.Flags.StringVar(&c.dumpHash, "dump-hash", "",
+				"Write the composite isolated hash to a file")
+			c.Flags.StringVar(&c.isolated, "isolated", "",
+				"Write the composite isolated to a file")
 			return &c
 		},
 	}
@@ -48,9 +66,11 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type archiveRun struct {
 	commonFlags
-	dirs      common.Strings
-	files     common.Strings
+	dirs      isolated.ScatterGather
+	files     isolated.ScatterGather
 	blacklist common.Strings
+	dumpHash  string
+	isolated  string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -63,44 +83,54 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
-func (c *archiveRun) main(a subcommands.Application, args []string) error {
+func (c *archiveRun) main(a subcommands.Application, args []string) (err error) {
 	start := time.Now()
 	out := os.Stdout
-	prefix := "\n"
-	if c.defaultFlags.Quiet {
-		prefix = ""
-	}
 
-	authClient, err := c.createAuthClient()
+	var authClient *http.Client
+	authClient, err = c.createAuthClient()
 	if err != nil {
-		return err
+		return
 	}
+	isolatedClient := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
-	arch := archiver.New(ctx, isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
+	arch := archiver.New(ctx, isolatedClient, out)
+	defer func() {
+		// This waits for all uploads.
+		if cerr := arch.Close(); err == nil {
+			err = cerr
+			return
+		}
+	}()
 	common.CancelOnCtrlC(arch)
-	items := make([]*archiver.Item, 0, len(c.files)+len(c.dirs))
-	names := make([]string, 0, cap(items))
-	for _, file := range c.files {
-		items = append(items, arch.PushFile(file, file, 0))
-		names = append(names, file)
-	}
 
-	for _, d := range c.dirs {
-		items = append(items, archiver.PushDirectory(arch, d, "", nil))
-		names = append(names, d)
-	}
-
-	for i, item := range items {
-		item.WaitForHashed()
-		if err := item.Error(); err == nil {
-			fmt.Printf("%s%s  %s\n", prefix, item.Digest(), names[i])
-		} else {
-			fmt.Printf("%s%s failed: %s\n", prefix, names[i], err)
+	var dumpIsolated *os.File
+	if len(c.isolated) != 0 {
+		dumpIsolated, err = os.Create(c.isolated)
+		if err != nil {
+			return err
 		}
 	}
-	// This waits for all uploads.
-	err = arch.Close()
+
+	opts := isolated.ArchiveOptions{
+		Files:        c.files,
+		Dirs:         c.dirs,
+		Blacklist:    []string(c.blacklist),
+		Isolated:     c.isolated,
+		LeakIsolated: dumpIsolated,
+	}
+	item := isolated.Archive(ctx, arch, &opts)
+	if err = item.Error(); err != nil {
+		return
+	}
+
+	item.WaitForHashed()
+	if len(c.dumpHash) != 0 {
+		if err = ioutil.WriteFile(c.dumpHash, []byte(item.Digest()), 0644); err != nil {
+			return
+		}
+	}
 	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
 		stats := arch.Stats()
@@ -108,7 +138,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
 	}
-	return err
+	return
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
