@@ -236,6 +236,30 @@
       "revId": "4da51e609eb0cf7062a5fa74621192238dab5452",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b32de6c0_33639c66",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-05T20:03:31Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "bfa29628_b7e22457",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 7
+      },
+      "revId": "4da51e609eb0cf7062a5fa74621192238dab5452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
