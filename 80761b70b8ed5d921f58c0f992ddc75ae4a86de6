@@ -93,6 +93,30 @@
       "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "04e1fe0f_bd588378",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-05T17:58:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1447489a_30ba74f6",
+      "range": {
+        "startLine": 209,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 1
+      },
+      "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
