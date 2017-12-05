@@ -45,6 +45,30 @@
       "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d0bdf3e1_9bbb01f0",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-05T16:57:07Z",
+      "side": 1,
+      "message": "please add a TODO to\n\n0) reuse results of checking of membership of subgroups. i.e. assume groups A and B, A includes B, B is huge. Calling CheckMembership for A and B will check B twice.\n\n1) parallelize this. \n\nor just do them.\n(1) is actually not that hard. We could use a simple mutex on out here.\n\nif (1) is done, (0) can be achieved by using process cache in isMember @L239",
+      "parentUuid": "8e1fd962_d668fefc",
+      "range": {
+        "startLine": 209,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 1
+      },
+      "revId": "80761b70b8ed5d921f58c0f992ddc75ae4a86de6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
