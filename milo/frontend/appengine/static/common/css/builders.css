@@ -13,35 +13,37 @@
  * limitations under the License.
  */
 
-.builders-list {
-}
-
-.builders-list div.builder-row:nth-child(even) {
-  background-color: #ffffff;
-}
-
-.builders-list div.builder-row:nth-child(odd) {
-  background-color: #eee;
-}
-
-.builder-row {
+.builder-summaries {
   display: flex;
-  flex-direction: row;
+}
+
+.builders-list-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.builders-list-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 2em;
   padding: 1em;
 }
 
+.builders-list-column div.builders-list-cell:nth-child(even) {
+  background-color: #ffffff;
+}
+
+.builders-list-column div.builders-list-cell:nth-child(odd) {
+  background-color: #eee;
+}
+
 .builder-name {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: left;
-  width: 20%;
   font-weight: bold;
 }
 
 .builder-state-bubble {
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
   border-width: 1px;
@@ -50,17 +52,15 @@
   border-radius: 0.25em;
 }
 
-.current-builds-group {
-  display: flex;
-  flex-direction: row;
-  width: 10%;
-  margin: 0em 1em;
-}
-
 .current-builds-state-bubble {
   height: 2em;
   width: 50%;
   text-decoration: none;
+  padding: 0em .5em;
+}
+
+.build-results-column {
+  flex-grow: 1;
 }
 
 .finished-builds {
