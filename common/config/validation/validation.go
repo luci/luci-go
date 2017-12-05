@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
@@ -47,7 +49,8 @@ func (v *Error) Error() string {
 // now). Each file may have some internal nested structure. The logical path
 // inside this structure is captured through Enter and Exit calls.
 type Context struct {
-	Logger logging.Logger // logs errors as they appear
+	Context context.Context
+	Logger  logging.Logger // logs errors as they appear
 
 	errors  errors.MultiError // all accumulated errors
 	file    string            // the currently validated file
