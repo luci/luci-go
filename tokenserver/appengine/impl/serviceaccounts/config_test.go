@@ -40,6 +40,8 @@ rules {
 	owner: "developer@example.com"
 	service_account: "abc@robots.com"
 	service_account: "def@robots.com"
+	service_account: "via-group1-and-rule1@robots.com"
+	service_account_group: "account-group-1"
 	allowed_scope: "https://www.googleapis.com/scope1"
 	allowed_scope: "https://www.googleapis.com/scope2"
 	end_user: "user:enduser@example.com"
@@ -51,17 +53,31 @@ rules {
 rules {
 	name: "rule 2"
 	service_account: "xyz@robots.com"
+	service_account: "via-group1-and-rule2@robots.com"
+	service_account_group: "account-group-2"
 }`
 
 func TestRules(t *testing.T) {
 	t.Parallel()
+
+	ctx := auth.WithState(context.Background(), &authtest.FakeState{
+		Identity: "user:unused@example.com",
+		FakeDB: authtest.FakeDB{
+			"user:via-group1@robots.com":           []string{"account-group-1"},
+			"user:via-group2@robots.com":           []string{"account-group-2"},
+			"user:via-both@robots.com":             []string{"account-group-1", "account-group-2"},
+			"user:via-group1-and-rule1@robots.com": []string{"account-group-1"},
+			"user:via-group1-and-rule2@robots.com": []string{"account-group-1"},
+		},
+	})
 
 	Convey("Loads", t, func() {
 		cfg, err := loadConfig(fakeConfig)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
-		rule := cfg.Rule("abc@robots.com")
+		rule, err := cfg.Rule(ctx, "abc@robots.com")
+		So(err, ShouldBeNil)
 		So(rule, ShouldNotBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 1")
 
@@ -92,21 +108,52 @@ func TestRules(t *testing.T) {
 			"user:trusted-proxy@example.com",
 		})
 		So(rule.Rule.MaxGrantValidityDuration, ShouldEqual, 72000)
+	})
 
-		So(cfg.Rule("def@robots.com").Rule.Name, ShouldEqual, "rule 1")
-		So(cfg.Rule("xyz@robots.com").Rule.Name, ShouldEqual, "rule 2")
-		So(cfg.Rule("unknown@robots.com"), ShouldBeNil)
+	Convey("Rule picker works", t, func() {
+		cfg, err := loadConfig(fakeConfig)
+		So(err, ShouldBeNil)
+		So(cfg, ShouldNotBeNil)
+
+		rule, err := cfg.Rule(ctx, "abc@robots.com")
+		So(err, ShouldBeNil)
+		So(rule.Rule.Name, ShouldEqual, "rule 1")
+
+		rule, err = cfg.Rule(ctx, "def@robots.com")
+		So(err, ShouldBeNil)
+		So(rule.Rule.Name, ShouldEqual, "rule 1")
+
+		rule, err = cfg.Rule(ctx, "xyz@robots.com")
+		So(err, ShouldBeNil)
+		So(rule.Rule.Name, ShouldEqual, "rule 2")
+
+		rule, err = cfg.Rule(ctx, "via-group1@robots.com")
+		So(err, ShouldBeNil)
+		So(rule.Rule.Name, ShouldEqual, "rule 1")
+
+		rule, err = cfg.Rule(ctx, "via-group2@robots.com")
+		So(err, ShouldBeNil)
+		So(rule.Rule.Name, ShouldEqual, "rule 2")
+
+		rule, err = cfg.Rule(ctx, "via-both@robots.com")
+		So(err, ShouldErrLike, `matches multiple rules: "rule 1", "rule 2"`)
+
+		rule, err = cfg.Rule(ctx, "via-group1-and-rule1@robots.com")
+		So(err, ShouldBeNil)
+		So(rule.Rule.Name, ShouldEqual, "rule 1")
+
+		rule, err = cfg.Rule(ctx, "via-group1-and-rule2@robots.com")
+		So(err, ShouldErrLike, `matches multiple rules: "rule 1", "rule 2"`)
+
+		rule, err = cfg.Rule(ctx, "unknown@robots.com")
+		So(err, ShouldBeNil)
+		So(rule, ShouldBeNil)
 	})
 
 	Convey("Check works", t, func() {
 		cfg, err := loadConfig(fakeConfig)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
-
-		// Need an auth state for group membership checks to work.
-		ctx := auth.WithState(context.Background(), &authtest.FakeState{
-			Identity: "user:unused@example.com",
-		})
 
 		Convey("Happy path using 'proxy'", func() {
 			r, err := cfg.Check(ctx, &RulesQuery{

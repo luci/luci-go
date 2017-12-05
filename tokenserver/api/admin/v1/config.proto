@@ -168,10 +168,13 @@ message ServiceAccountsPermissions {
   // Rules specify how MintOAuthTokenViaGrant can be used.
   //
   // Rules define a mapping {service account email -> authorization config},
-  // where 'service account email' is matched to 'service_account' field of
-  // ServiceAccountRule, and 'authorization config' is the rest of fields in
-  // ServiceAccountRule that define how exactly the given service account is
-  // allowed to be used.
+  // where 'service account email' is matched to a set of emails specified via
+  // 'service_account' and 'service_account_group' fields of ServiceAccountRule,
+  // and 'authorization config' is the rest of fields in ServiceAccountRule that
+  // define how exactly the given service account is allowed to be used.
+  //
+  // If a service account email matches two (or more) rules, perhaps via
+  // different groups, an error will be returned. Ambiguity is not allowed.
   //
   // See ServiceAccountRule comments for more details.
   repeated ServiceAccountRule rules = 1;
@@ -194,6 +197,9 @@ message ServiceAccountsPermissions {
 //
 // This rule specifies which end users are allowed to act as an account, and
 // through which proxies.
+//
+// Some proxies can be declared as "trusted", in which case they are allowed to
+// use any service account declared by the rule, regardless of an end user.
 message ServiceAccountRule {
   // A descriptive name of this rule, for the audit log.
   string name = 1;
@@ -203,9 +209,13 @@ message ServiceAccountRule {
 
   // Email of service accounts that this rule applies to.
   //
-  // This is the "primary key" in the rules table: there can be only one rule
-  // that applies to a given service account.
+  // Can be used to explicitly list service accounts in the config.
   repeated string service_account = 3;
+
+  // Name of a group with service account emails this rules applies to.
+  //
+  // Works in addition to the explicit service account listing.
+  repeated string service_account_group = 9;
 
   // OAuth scopes we allow to be granted to the OAuth token.
   //

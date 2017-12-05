@@ -106,7 +106,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 			Response:    resp,
 			GrantBody:   grantBody,
 			ConfigRev:   "fake-revision",
-			Rule:        rules.rules["serviceaccount@robots.com"].Rule,
+			Rule:        rules.rulesPerAcc["serviceaccount@robots.com"].Rule,
 			PeerIP:      net.ParseIP("127.10.10.10"),
 			RequestID:   "gae-request-id",
 			AuthDBRev:   1234,
