@@ -78,7 +78,7 @@ func TestInstallHandlers(t *testing.T) {
 			So(metaCall(), ShouldResemble, &config.ServiceDynamicMetadata{
 				Version: proto.String(metaDataFormatVersion),
 				Validation: &config.Validator{
-					Url: proto.String(fmt.Sprintf("https://%s%s", host, metadataPath)),
+					Url: proto.String(fmt.Sprintf("https://%s%s", host, validationPath)),
 				},
 			})
 		})
@@ -94,7 +94,7 @@ func TestInstallHandlers(t *testing.T) {
 			So(meta, ShouldResemble, &config.ServiceDynamicMetadata{
 				Version: proto.String(metaDataFormatVersion),
 				Validation: &config.Validator{
-					Url: proto.String(fmt.Sprintf("https://%s%s", host, metadataPath)),
+					Url: proto.String(fmt.Sprintf("https://%s%s", host, validationPath)),
 					Patterns: []*config.ConfigPattern{
 						{
 							ConfigSet: proto.String(cp.String()),
