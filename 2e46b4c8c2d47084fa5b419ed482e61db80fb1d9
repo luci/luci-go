@@ -179,6 +179,30 @@
     },
     {
       "key": {
+        "uuid": "2e435d49_d8800d7d",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T13:18:02Z",
+      "side": 1,
+      "message": "thinking about this... it might be better to rebase this CL on a CL that moves RPCs to another package, so that this CL does not put even more rpc code (racks) to model",
+      "parentUuid": "ddb66493_951b200e",
+      "range": {
+        "startLine": 263,
+        "startChar": 14,
+        "endLine": 263,
+        "endChar": 20
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a69b709_730ff9d6",
         "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
         "patchSetId": 1
@@ -356,6 +380,30 @@
       "writtenOn": "2017-12-06T07:44:48Z",
       "side": 1,
       "message": "this is a copy-pasta. please move this logic to a router.Middleware function and install the middleware at the prpc level",
+      "range": {
+        "startLine": 276,
+        "startChar": 0,
+        "endLine": 294,
+        "endChar": 2
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "814eb2b9_28a7fa04",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T13:18:02Z",
+      "side": 1,
+      "message": "err, not router.Middleware.\n\nIf this was a single service for both datacenters and racks, we would be able to use `svcdec` tool to generate a service decorator and have auth check in one place\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/9725faf03a9d3ebabf052b788d0d773e27e9abea/milo/frontend/routes.go#190\n\nif you have to have N services, where N is the number of entity types, then IsAuthorized should become a global function and used from both services.",
+      "parentUuid": "b89109d8_5a91ef30",
       "range": {
         "startLine": 276,
         "startChar": 0,
