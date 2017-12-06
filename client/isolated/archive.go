@@ -52,20 +52,11 @@ type ArchiveOptions struct {
 	Blacklist []string
 
 	// Isolated is the display name of the isolated to upload.
-	//
-	// The default is "data.isolated".
 	Isolated string
 
 	// LeakIsolated is handle to a place where Archive will write
 	// the encoded bytes of the isolated file.
 	LeakIsolated io.Writer
-}
-
-// Init initializes with non-nil values.
-func (a *ArchiveOptions) Init() {
-	if len(a.Isolated) == 0 {
-		a.Isolated = "data.isolated"
-	}
 }
 
 // Archive uses the given archiver and options to constructed an isolated file, and
