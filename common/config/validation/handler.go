@@ -127,7 +127,7 @@ func (validator *Validator) metadataRequestHandler(ctx *router.Context) {
 	meta := config.ServiceDynamicMetadata{
 		Version: proto.String(metaDataFormatVersion),
 		Validation: &config.Validator{
-			Url:      proto.String(fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, metadataPath)),
+			Url:      proto.String(fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath)),
 			Patterns: patterns}}
 	if err := json.NewEncoder(w).Encode(meta); err != nil {
 		internalErrStatus(c, w, "Metadata: failed to JSON encode output", err)
