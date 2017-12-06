@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb9916f3_a7666919",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T23:18:17Z",
+      "side": 1,
+      "message": "why would it be nil? I think it should always be set in prod, right?\nIf so, then just set it in all tests and remove this condition.\nElse, when/why shouldn\u0027t it be set?",
+      "range": {
+        "startLine": 105,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 22
+      },
+      "revId": "2cd02c65d9221403f836c78a7b312a1df5d979f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
