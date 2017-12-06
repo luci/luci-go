@@ -19,94 +19,186 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/flag/stringlistflag"
 )
 
-func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
-	return &subcommands.Command{
-		UsageLine: "change-create <options> url",
-		ShortDesc: "creates a new change",
-		LongDesc: `Creates a new change in Gerrit.
-https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change`,
-		CommandRun: func() subcommands.CommandRun {
-			c := changeCreateRun{}
-			c.commonFlags.Init(authOpts)
-			c.Flags.StringVar(&c.ChangeInput.Project, "project", "", "(required) The project to which this new change belongs.")
-			c.Flags.StringVar(&c.ChangeInput.Branch, "branch", "master", "The branch to which this new change belongs.")
-			c.Flags.StringVar(&c.ChangeInput.Subject, "subject", "", "The header line of the commit message of the new change.")
-			c.Flags.StringVar(&c.ChangeInput.Topic, "topic", "", "The topic to which this new change belongs.")
-			c.Flags.BoolVar(&c.ChangeInput.IsPrivate, "private", false, "Whether the new change should be marked as private.")
-			c.Flags.BoolVar(&c.ChangeInput.WorkInProgress, "wip", false, "Whether the new change should be set as a Work In Progress.")
-			c.Flags.StringVar(&c.ChangeInput.BaseChange, "base", "", "A ChangeID that identifies the base change for the new change.")
-			c.Flags.BoolVar(&c.ChangeInput.NewBranch, "allow-new-branch", false, "Allow creating a new branch.")
-			c.Flags.StringVar(&c.ChangeInput.Notify, "notify", "ALL", "Notification handling that defines to whom email notifications should be sent after the change is created. Valid inputs are ALL, OWNERS, OWNERS_REVIEWERS, and NONE.")
-			return &c
-		},
-	}
+type apiCallInput struct {
+	changeID string
+	jsonInput string
+	queryInput string
 }
 
-type changeCreateRun struct {
+type apiCall func(context.Context, *gerrit.Client, *apiCallInput) (interface{}, error)
+
+type changeRun struct {
 	commonFlags
-	gerrit.ChangeInput
+	changeID bool
+	jsonInput bool
+	queryInput bool
+	input apiCallInput
+	apiFunc apiCall
 }
 
-func (c *changeCreateRun) Parse(a subcommands.Application, args []string) error {
+func newChangeRun(authOpts auth.Options, changeID, jsonInput bool, queryInput bool, apiFunc apiCall) *changeRun {
+	c := changeRun{
+		changeID: changeID,
+		jsonInput: jsonInput,
+		queryInput: queryInput,
+		apiFunc: apiFunc,
+	}
+	c.commonFlags.Init(authOpts)
+	if changeID {
+		c.Flags.StringVar(&c.input.changeID, "change-id", "", "(required) an change ID of the form described above")
+	}
+	if jsonInput {
+		c.Flags.StringVar(&c.input.jsonInput, "input", "", "(required) an input file containing the json input for the request")
+	}
+	if queryInput {
+		c.Flags.StringVar(&c.input.queryInput, "params", "", "an input file containing query variables as json")
+	}
+	return &c
+}
+
+func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
-	if len(args) < 1 {
-		return errors.New("position arguments missing")
-	} else if len(args) > 1 {
+	if len(args) != 0 {
 		return errors.New("position arguments not expected")
+	}
+	if c.changeID && len(c.input.changeID) == 0 {
+		return errors.New("change-id is required")
+	}
+	if c.jsonInput && len(c.input.jsonInput) == 0 {
+		return errors.New("input is required")
 	}
 	return nil
 }
 
-func (c *changeCreateRun) main(a subcommands.Application, args []string) error {
+func (c *changeRun) main(a subcommands.Application) error {
 	authCl, err := c.createAuthClient()
 	if err != nil {
 		return err
 	}
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 
-	g, err := gerrit.NewClient(authCl, args[0])
+	g, err := gerrit.NewClient(authCl, c.host)
 	if err != nil {
 		return err
 	}
-
-	change, err := g.CreateChange(ctx, &c.ChangeInput)
+	v, err := c.apiFunc(ctx, g, &c.input)
 	if err != nil {
 		return err
 	}
-
-	if c.jsonOutput == "" {
-		print(change)
-		return nil
+	out := os.Stdout
+	if c.jsonOutput != "-" {
+		out, err = os.Create(c.jsonOutput)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
 	}
-
-	return output(c.jsonOutput, change)
+	data, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = out.Write(data)
+	return err
 }
 
-func (c *changeCreateRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *changeRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
-	if err := c.main(a, args); err != nil {
+	if err := c.main(a); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
 	return 0
 }
 
-func cmdChangeQuery(authOpts auth.Options) *subcommands.Command {
+func readInput(filename string, out interface{}) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	return json.NewDecoder(f).Decode(out)
+}
+
+func cmdChangeAbandon(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		var ai gerrit.AbandonInput
+		if err := readInput(input.jsonInput, &ai); err != nil {
+			return nil, err
+		}
+		change, err := client.AbandonChange(ctx, input.changeID, &ai)
+		if err != nil {
+			return nil, err
+		}
+		return change, nil
+	}
 	return &subcommands.Command{
-		UsageLine: "change-query <options> url query",
+		UsageLine: "change-abandon <options>",
+		ShortDesc: "abandons a change",
+		LongDesc: `Abandons a change in Gerrit.
+
+The changeID parameter may be in any of the forms supported by Gerrit:
+  - "4247"
+  - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+  - etc. See the link below.
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+More information on abandoning changes may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, true, true, false, runner)
+		},
+	}
+}
+
+func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		var ci gerrit.ChangeInput
+		if err := readInput(input.jsonInput, &ci); err != nil {
+			return nil, err
+		}
+		change, err := client.CreateChange(ctx, &ci)
+		if err != nil {
+			return nil, err
+		}
+		return change, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "change-create <options> url",
+		ShortDesc: "creates a new change",
+		LongDesc: `Creates a new change in Gerrit.
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, false, true, false, runner)
+		},
+	}
+}
+
+func cmdChangeQuery(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		var req gerrit.ChangeQueryParams
+		if err := readInput(input.queryInput, &req); err != nil {
+			return nil, err
+		}
+		changes, _, err := client.ChangeQuery(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return changes, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "change-query <options>",
 		ShortDesc: "queries Gerrit for changes",
 		LongDesc: `Queries Gerrit for changes.
 
@@ -119,85 +211,23 @@ Example:
 
   gerrit change-query -options CURRENT_REVISION -options DETAILED_ACCOUNTS https://gerrit.host.example.com/repo owner:name@example.com`,
 		CommandRun: func() subcommands.CommandRun {
-			c := changeQueryRun{}
-			c.commonFlags.Init(authOpts)
-			c.Flags.IntVar(&c.limit, "limit", 0, "Limit the number of changes returned in the response (use 0 for Gerrit's default).")
-			c.Flags.IntVar(&c.skip, "skip", 0, "Skip this many from the list of results.")
-			c.Flags.Var(&c.options, "options", "Include these options in the query.")
-			return &c
+			return newChangeRun(authOpts, false, false, true, runner)
 		},
 	}
 }
 
-type changeQueryRun struct {
-	commonFlags
-	limit   int
-	skip    int
-	options stringlistflag.Flag
-}
-
-func (c *changeQueryRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
-	}
-	if len(args) < 2 {
-		return errors.New("position arguments missing")
-	} else if len(args) > 2 {
-		return errors.New("position arguments not expected")
-	}
-	return nil
-}
-
-func (c *changeQueryRun) main(a subcommands.Application, args []string) error {
-	authCl, err := c.createAuthClient()
-	if err != nil {
-		return err
-	}
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
-
-	url := args[0]
-	query := args[1]
-
-	g, err := gerrit.NewClient(authCl, url)
-	if err != nil {
-		return err
-	}
-
-	req := gerrit.ChangeQueryRequest{
-		Query:   query,
-		N:       c.limit,
-		S:       c.skip,
-		Options: c.options,
-	}
-	changes, _, err := g.ChangeQuery(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	if c.jsonOutput == "" {
-		for _, c := range changes {
-			print(c)
-			fmt.Println()
-		}
-		return nil
-	}
-
-	return output(c.jsonOutput, changes)
-}
-
-func (c *changeQueryRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	if err := c.Parse(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := c.main(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
-}
-
 func cmdChangeDetail(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		var opts gerrit.ChangeDetailsParams
+		if err := readInput(input.queryInput, &opts); err != nil {
+			return nil, err
+		}
+		change, err := client.ChangeDetails(ctx, input.changeID, opts)
+		if err != nil {
+			return nil, err
+		}
+		return change, nil
+	}
 	return &subcommands.Command{
 		UsageLine: "change-detail <options> url id",
 		ShortDesc: "gets details about a single change with optional fields",
@@ -214,92 +244,7 @@ which tells Gerrit to return non-default properties for Change. The supported
 strings for options are listed in Gerrit's api documentation at the link below:
 https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes`,
 		CommandRun: func() subcommands.CommandRun {
-			c := changeDetailRun{}
-			c.commonFlags.Init(authOpts)
-			c.Flags.Var(&c.options, "options", "Include these options in the request.")
-			return &c
+			return newChangeRun(authOpts, true, false, true, runner)
 		},
 	}
-}
-
-type changeDetailRun struct {
-	commonFlags
-	options stringlistflag.Flag
-}
-
-func (c *changeDetailRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
-	}
-	if len(args) < 2 {
-		return errors.New("position arguments missing")
-	} else if len(args) > 2 {
-		return errors.New("position arguments not expected")
-	}
-	return nil
-}
-
-func (c *changeDetailRun) main(a subcommands.Application, args []string) error {
-	authCl, err := c.createAuthClient()
-	if err != nil {
-		return err
-	}
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
-
-	url := args[0]
-	changeID := args[1]
-
-	g, err := gerrit.NewClient(authCl, url)
-	if err != nil {
-		return err
-	}
-
-	change, err := g.GetChangeDetails(ctx, changeID, c.options)
-	if err != nil {
-		return err
-	}
-
-	if c.jsonOutput == "" {
-		print(change)
-		return nil
-	}
-
-	return output(c.jsonOutput, change)
-}
-
-func (c *changeDetailRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	if err := c.Parse(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if err := c.main(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	return 0
-}
-
-func output(name string, v interface{}) error {
-	out := os.Stdout
-	if name != "-" {
-		out, err := os.Create(name)
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-	}
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return err
-	}
-	_, err = out.Write(data)
-	return err
-}
-
-func print(c *gerrit.Change) {
-	fmt.Printf("ID %s\n", c.ID)
-	fmt.Printf("Project: %s\n", c.Project)
-	fmt.Printf("Subject: %s\n", c.Subject)
-	fmt.Printf("Status:  %s\n", strings.ToLower(c.Status))
-	fmt.Printf("Updated: %s\n", c.Updated)
 }
