@@ -96,6 +96,7 @@ type BuildSummary struct {
 	//   * swarming://<host>/bot/<botID>
 	//   * buildbot://<master>/build/<builder>/<number>
 	//   * buildbot://<master>/bot/<bot>
+	//   * buildbucket://<host>/build/<buildID>
 	//
 	// This will be used for queries, and can be used to store semantically-sound
 	// clues about this Build (e.g. to identify the underlying swarming task so

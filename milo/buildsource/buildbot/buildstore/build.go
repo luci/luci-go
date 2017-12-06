@@ -192,6 +192,26 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 	return bs.AddManifestKeysFromBuildSets(c)
 }
 
+// getBuildbucketURI attempts to extract the buildbucket information from the properties
+// of a buildbot build.  The format is in buildbucket://<host>/build/<buildID>.
+// Because all of our buildbot instances point to cr-buildbucket.appspot.com,
+// <host> is always cr-buildbucket.appspot.com.
+func getBuildbucketURI(b *buildbot.Build) (string, bool) {
+	v, ok := b.PropertyValue("buildbucket").(string)
+	if !ok {
+		return "", false
+	}
+	var message struct {
+		Build struct {
+			ID string `json:"id"`
+		} `json:"build"`
+	}
+	if err := json.Unmarshal([]byte(v), &message); err == nil && message.Build.ID != "" {
+		return fmt.Sprintf("buildbucket://cr-buildbucket.appspot.com/build/%s", message.Build.ID), true
+	}
+	return "", false
+}
+
 // summarizeBuild creates a build summary from the buildbot build.
 func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, error) {
 	bs := &model.BuildSummary{
@@ -206,6 +226,11 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 	bs.ContextURI = []string{
 		fmt.Sprintf("buildbot://%s/build/%s/%d", b.Master, b.Buildername, b.Number),
 		fmt.Sprintf("buildbot://%s/bot/%s", b.Master, b.Slave),
+	}
+
+	// Try to extract the Buildbucket URL, if available.
+	if uri, ok := getBuildbucketURI(b); ok {
+		bs.ContextURI = append(bs.ContextURI, uri)
 	}
 
 	bs.Summary.Start = b.Times.Start.Time
