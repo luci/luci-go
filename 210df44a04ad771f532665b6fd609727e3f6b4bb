@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "45659e93_c521c36e",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-06T02:56:11Z",
+      "side": 1,
+      "message": "how about \"project-ci-builders\" and \"project-try-builders\"? luci.project.ci pool will use \u0027allowed_service_account_group: \"project-ci-builders\" and luci.project.try pool will use ... \"-try-builders\". But they still can be specified as a single rule in the token server config (perhaps under the name \"Project X accounts\" or something).\n\nRegardless, I don\u0027t think it hurts to have it repeated.",
+      "parentUuid": "bac9e787_c06cbbfa",
+      "range": {
+        "startLine": 215,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 44
+      },
+      "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a33aa7f3_5df9aa0e",
         "filename": "tokenserver/appengine/impl/serviceaccounts/config_validation.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2017-12-06T02:50:20Z",
       "side": 1,
       "message": "yeah, that\u0027s unfortunate, and the biggest downside of the current approach. Errors are delayed and require looking through logs*, and it\u0027s generally easy to break someone\u0027s production code accidentally by adding their service account wrongly to a group.\n\nNevertheless, I think `cost \u003c benefit` for this CL.",
+      "range": {
+        "startLine": 56,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ae9e6f62_a365f5eb",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config_validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-06T02:56:11Z",
+      "side": 1,
+      "message": "I was contemplating to add a cron that continuously reevaluates all rules expanding all groups, and serving the actual traffic only from such expanded (and validated state). It would also help with performance. But it is too much complexity for now, so I decided not to bother.",
+      "parentUuid": "a33aa7f3_5df9aa0e",
       "range": {
         "startLine": 56,
         "startChar": 12,
