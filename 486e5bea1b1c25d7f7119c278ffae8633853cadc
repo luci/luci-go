@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "172affce_c5e893b6",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T14:14:10Z",
+      "side": 1,
+      "message": "did you mean to use this class in console.html? it is unused",
+      "revId": "486e5bea1b1c25d7f7119c278ffae8633853cadc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
