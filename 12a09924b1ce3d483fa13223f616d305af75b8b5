@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "6a7e4930_469bdf3c",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "URI",
+      "range": {
+        "startLine": 199,
+        "startChar": 19,
+        "endLine": 199,
+        "endChar": 22
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4421c8b2_0c95b363",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "nit: this variable lives for 2 LOC. Maybe use a shorter name, e.g. \"uri\"",
+      "range": {
+        "startLine": 232,
+        "startChar": 4,
+        "endLine": 232,
+        "endChar": 18
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e348761d_32445e20",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 2
@@ -16,6 +62,184 @@
       "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "24df6635_9672d99c",
+        "filename": "milo/buildsource/buildbot/buildstore/build_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "ShouldBeTrue",
+      "range": {
+        "startLine": 26,
+        "startChar": 10,
+        "endLine": 26,
+        "endChar": 27
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d332808_8f26fa59",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "URI",
+      "range": {
+        "startLine": 181,
+        "startChar": 61,
+        "endLine": 181,
+        "endChar": 64
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44024d6b_87b33039",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "this should be int64. Maybe change buildstore/build.go to use int64 for ID too.",
+      "range": {
+        "startLine": 183,
+        "startChar": 48,
+        "endLine": 183,
+        "endChar": 54
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0aab58d9_16e3aee0",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "this allocated memory will be ultimately discarded because it has cap(0) https://play.golang.org/p/t_Y1bm1eq2\n\nsince we set limit to 1, make a cap\u003d1 slice",
+      "range": {
+        "startLine": 186,
+        "startChar": 7,
+        "endLine": 186,
+        "endChar": 30
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ed7bd67_5b4e7a45",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "we have 3 cases here: 1) err 2) 0 builds 3) else\nmaybe use switch",
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6011c5b3_da12ac02",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "i think \n\n  valid buildbot or swarming context not found\n\nwould be more correct",
+      "range": {
+        "startLine": 85,
+        "startChar": 20,
+        "endLine": 85,
+        "endChar": 58
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "335423a0_f66058bb",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "this may be confusing to a reader of logs. maybe \"...not found by ContextURI\" or something",
+      "range": {
+        "startLine": 111,
+        "startChar": 48,
+        "endLine": 111,
+        "endChar": 59
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df74c6b1_6d7f9509",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T23:03:58Z",
+      "side": 1,
+      "message": "this is now more confusing that it was before: the parameter of buildbucket.GetSwarmingID is not an id, but a build address. A string \"\u003cid\u003e\" is a valid build address, that\u0027s why it is passed as a string. So I think that a more correct name for \"id\" variable is \"address\".\n\nhowever, given that I recommend getFromContextURI to accept an int64, I think we can restore the inlined version of the code",
+      "range": {
+        "startLine": 118,
+        "startChar": 46,
+        "endLine": 118,
+        "endChar": 48
+      },
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
