@@ -45,6 +45,8 @@ type BuildID struct {
 	Address string
 }
 
+var ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
+
 // GetSwarmingID returns the swarming task ID of a buildbucket build.
 func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *model.BuildSummary, error) {
 	host, err := getHost(c)
@@ -174,6 +176,23 @@ func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.Bu
 	}
 
 	return ret, nil
+}
+
+// getBuildSummary fetches a build summary where the Context URI matches the
+// given address.
+func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
+	// The host is set to prod because buildbot is hardcoded to talk to prod.
+	uri := fmt.Sprintf("buildbucket://cr-buildbucket.appspot.com/build/%d", id)
+	bs := make([]*model.BuildSummary, 0, 1)
+	q := datastore.NewQuery("BuildSummary").Eq("ContextURI", uri).Limit(1)
+	switch err := datastore.GetAll(c, q, &bs); {
+	case err != nil:
+		return nil, common.ReplaceNSEWith(err.(errors.MultiError), ErrNotFound)
+	case len(bs) == 0:
+		return nil, ErrNotFound
+	default:
+		return bs[0], nil
+	}
 }
 
 // Get returns a resp.MiloBuild based off of the buildbucket ID given by
