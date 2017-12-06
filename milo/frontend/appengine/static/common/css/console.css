@@ -316,6 +316,11 @@
   margin: 0.2em;
 }
 
+.console-builder-summary-grix {
+  /* UAs that support display: grid below will ignore this */
+  display: flex;
+}
+
 .console-builder-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(2em, 1fr));
