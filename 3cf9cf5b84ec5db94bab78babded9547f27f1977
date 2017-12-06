@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f21430a_c72f5da9",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T22:12:16Z",
+      "side": 1,
+      "message": "as user would have to import two \"access\" packages to run this function, which is inconvenient. let\u0027s help the user by adding a helper function that accepts *http.Client, creates prpc.Client, and then the access.AccessClient. Then users can write\n\n  client, err :\u003d access.NewClient(\u0026http.Client{Transport: ...}, \"cr-buildbucket.appspot.com\")\n  // not sure about the order of params here though\n  ...\n  perms :\u003d access.BucketPermissions(c, client, myBuckets)\n  \n\nthis is still does not assume server",
+      "range": {
+        "startLine": 36,
+        "startChar": 49,
+        "endLine": 36,
+        "endChar": 68
+      },
+      "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cddff6b_be4f8a5c",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T22:12:16Z",
+      "side": 1,
+      "message": "this is now O(number_of_actions_types) for the case where there is one action.\nmay restore the L94-96 from ps2 for the fast path",
+      "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9308242_7cfa5d23",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T22:12:16Z",
+      "side": 1,
+      "message": "this does not add a separator (e.g. \", \")\nmaybe add them to a []string, then use strings.Join. Then you don\u0027t need buffer",
+      "range": {
+        "startLine": 98,
+        "startChar": 20,
+        "endLine": 98,
+        "endChar": 27
+      },
+      "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
