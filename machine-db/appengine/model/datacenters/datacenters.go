@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/appengine/model"
 	"go.chromium.org/luci/server/auth"
 
 	"golang.org/x/net/context"
@@ -29,85 +30,83 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-// DatacenterDiff encapsulates differences between a datacenter in the database and config.
-type DatacenterDiff struct {
-	// Config is the datacenter entry in the config.
-	Config *config.DatacenterConfig
-	// Database is the datacenter entry in the database.
-	Database *config.DatacenterConfig
-	// Id is the row ID of this datacenter.
-	Id int
+// Datacenter represents a datacenter.
+type Datacenter struct {
+	*config.DatacenterConfig
+	Id int64
 }
 
-// Differences encapsulates the differences between datacenters in the database and config.
-type Differences struct {
-	// Extraneous is a list of datacenters present in the database but not the config.
-	Extraneous []*DatacenterDiff
-	// Mismatched is a list of datacenters present in the database but not matching the config.
-	Mismatched []*DatacenterDiff
-	// Missing is a list of datacenters present in the config but not the database.
-	Missing []*DatacenterDiff
+// Datacenters represents the table of datacenters in the database.
+type Datacenters struct {
+	// additions is a list of datacenters pending addition to the database.
+	additions []*config.DatacenterConfig
+	// datacenters is the list of datacenters in the database.
+	datacenters []*Datacenter
+	// removals is a list of datacenters pending removal from the database.
+	removals []string
+	// updates is a list of datacenters pending update in the database.
+	updates []*Datacenter
 }
 
-// getDifferences returns the state of datacenters in the database with respect to the config.
-func getDifferences(c context.Context, datacenterConfigs []*config.DatacenterConfig) (*Differences, error) {
-	// Convert the list of DatacenterConfigs into a map of datacenter name to DatacenterConfig.
-	datacenters := make(map[string]*config.DatacenterConfig, len(datacenterConfigs))
-	for _, datacenter := range datacenterConfigs {
-		datacenters[datacenter.Name] = datacenter
-	}
-
+// fetch fetches the datacenters from the database.
+func (d *Datacenters) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, "SELECT id, name, description FROM datacenters")
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch datacenters").Err()
+		return errors.Annotate(err, "failed to select datacenters").Err()
 	}
 	defer rows.Close()
-
-	differences := &Differences{}
 	for rows.Next() {
-		diff := &DatacenterDiff{
-			Database: &config.DatacenterConfig{},
+		datacenter := &Datacenter{
+			DatacenterConfig: &config.DatacenterConfig{},
+			Id:               -1,
 		}
-		if err := rows.Scan(&diff.Id, &diff.Database.Name, &diff.Database.Description); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch datacenter").Err()
+		if err := rows.Scan(&datacenter.Id, &datacenter.Name, &datacenter.Description); err != nil {
+			return errors.Annotate(err, "failed to scan datacenter").Err()
 		}
-		if datacenter, ok := datacenters[diff.Database.Name]; ok {
+		d.datacenters = append(d.datacenters, datacenter)
+	}
+	return nil
+}
+
+// computeChanges computes the changes that need to be made to the datacenters in the database.
+func (d *Datacenters) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) {
+	cfgs := make(map[string]*config.DatacenterConfig, len(datacenters))
+	for _, cfg := range datacenters {
+		cfgs[cfg.Name] = cfg
+	}
+
+	for _, dc := range d.datacenters {
+		if cfg, ok := cfgs[dc.Name]; ok {
 			// Datacenter found in the config.
-			diff.Config = datacenter
-			if diff.Database.Description != diff.Config.Description {
+			if dc.Description != cfg.Description {
 				// Datacenter doesn't match the config.
-				differences.Mismatched = append(differences.Mismatched, diff)
+				d.updates = append(d.updates, &Datacenter{
+					DatacenterConfig: cfg,
+					Id:               dc.Id,
+				})
 			}
-			// The config and database enforce global uniqueness of names, so we don't
-			// expect to see the same named datacenter again. Remove it from the map,
-			// which will leave only those datacenters which don't exist in the database
-			// when the loop terminates.
-			delete(datacenters, diff.Database.Name)
+			// Record that the datacenter config has been seen.
+			delete(cfgs, cfg.Name)
 		} else {
 			// Datacenter not found in the config.
-			differences.Extraneous = append(differences.Extraneous, diff)
+			d.removals = append(d.removals, dc.Name)
 		}
 	}
 
 	// Datacenters remaining in the map are present in the config but not the database.
-	// Iterating over the map would be fast, because it now only contains those datacenters not
-	// present in the database, but non-deterministic. Instead iterate deterministically over the
-	// array, checking if each datacenter is in the map.
-	for _, dc := range datacenterConfigs {
-		if _, ok := datacenters[dc.Name]; ok {
-			differences.Missing = append(differences.Missing, &DatacenterDiff{
-				Config: dc,
-			})
+	// Iterate deterministically over the array to determine which datacenters need to be added.
+	for _, cfg := range datacenters {
+		if _, ok := cfgs[cfg.Name]; ok {
+			d.additions = append(d.additions, cfg)
 		}
 	}
-	return differences, nil
 }
 
-// addDatacenters adds the given datacenters to the database.
-func addDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
+// add adds all datacenters pending addition to the database.
+func (d *Datacenters) add(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(datacenters) == 0 {
+	if len(d.additions) == 0 {
 		return nil
 	}
 
@@ -117,19 +116,72 @@ func addDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
 	defer stmt.Close()
-	for _, dc := range datacenters {
-		if _, err := stmt.ExecContext(c, dc.Config.Name, dc.Config.Description); err != nil {
-			return errors.Annotate(err, "failed to add datacenter: %s", dc.Config.Name).Err()
+
+	// Add each datacenter to the database, and update the list of datacenters with each addition.
+	for len(d.additions) > 0 {
+		cfg := d.additions[0]
+		result, err := stmt.ExecContext(c, cfg.Name, cfg.Description)
+		if err != nil {
+			return errors.Annotate(err, "failed to add datacenter: %s", cfg.Name).Err()
 		}
-		logging.Infof(c, "Added datacenter: %s", dc.Config.Name)
+		dc := &Datacenter{
+			DatacenterConfig: cfg,
+			Id:               -1,
+		}
+		d.datacenters = append(d.datacenters, dc)
+		d.additions = d.additions[1:]
+		logging.Infof(c, "Added datacenter: %s", dc.Name)
+		dc.Id, err = result.LastInsertId()
+		if err != nil {
+			return errors.Annotate(err, "failed to get datacenter ID: %s", cfg.Name).Err()
+		}
 	}
 	return nil
 }
 
-// updateDatacenters updates the given datacenters in the database.
-func updateDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
+// remove removes all datacenters pending removal from the database.
+func (d *Datacenters) remove(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(datacenters) == 0 {
+	if len(d.removals) == 0 {
+		return nil
+	}
+
+	db := database.Get(c)
+	stmt, err := db.PrepareContext(c, "DELETE FROM datacenters WHERE name = ?")
+	if err != nil {
+		return errors.Annotate(err, "failed to prepare statement").Err()
+	}
+	defer stmt.Close()
+
+	// Remove each datacenter from the database. It's more efficient to update the list of
+	// datacenters once at the end rather than for each removal, so use a defer.
+	removed := stringset.New(len(d.removals))
+	defer func() {
+		var dcs []*Datacenter
+		for _, dc := range d.datacenters {
+			if !removed.Has(dc.Name) {
+				dcs = append(dcs, dc)
+			}
+		}
+		d.datacenters = dcs
+	}()
+	for len(d.removals) > 0 {
+		dc := d.removals[0]
+		if _, err := stmt.ExecContext(c, dc); err != nil {
+			// Defer ensures the list of datacenters is updated even if we exit early.
+			return errors.Annotate(err, "failed to remove datacenter: %s", dc).Err()
+		}
+		removed.Add(dc)
+		d.removals = d.removals[1:]
+		logging.Infof(c, "Removed datacenter: %s", dc)
+	}
+	return nil
+}
+
+// update updates all datacenters pending update in the database.
+func (d *Datacenters) update(c context.Context) error {
+	// Avoid using the database connection to prepare unnecessary statements.
+	if len(d.updates) == 0 {
 		return nil
 	}
 
@@ -139,59 +191,55 @@ func updateDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
 	defer stmt.Close()
-	for _, dc := range datacenters {
-		if _, err := stmt.ExecContext(c, dc.Config.Description, dc.Id); err != nil {
-			return errors.Annotate(err, "failed to update datacenter: %s", dc.Config.Name).Err()
+
+	// Update each datacenter in the database. It's more efficient to update the list of
+	// datacenters once at the end rather than for each update, so use a defer.
+	updated := make(map[string]*Datacenter, len(d.updates))
+	defer func() {
+		for _, dc := range d.datacenters {
+			if _, ok := updated[dc.Name]; ok {
+				dc.Description = updated[dc.Name].Description
+			}
 		}
-		logging.Infof(c, "Updated datacenter: %s", dc.Config.Name)
+	}()
+	for len(d.updates) > 0 {
+		dc := d.updates[0]
+		if _, err := stmt.ExecContext(c, dc.Description, dc.Id); err != nil {
+			return errors.Annotate(err, "failed to update datacenter: %s", dc.Name).Err()
+		}
+		updated[dc.Name] = dc
+		d.updates = d.updates[1:]
+		logging.Infof(c, "Updated datacenter: %s", dc.Name)
 	}
 	return nil
 }
 
-// deleteDatacenters deletes the given datacenters from the database.
-func deleteDatacenters(c context.Context, datacenters []*DatacenterDiff) error {
-	// Avoid using the database connection to prepare unnecessary statements.
-	if len(datacenters) == 0 {
-		return nil
+// ids returns a map of datacenter names to IDs.
+func (d *Datacenters) ids(c context.Context) map[string]int64 {
+	dcs := make(map[string]int64, len(d.datacenters))
+	for _, dc := range d.datacenters {
+		dcs[dc.Name] = dc.Id
 	}
-
-	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, "DELETE FROM datacenters WHERE id = ?")
-	if err != nil {
-		return errors.Annotate(err, "failed to prepare statement").Err()
-	}
-	defer stmt.Close()
-	for _, dc := range datacenters {
-		if _, err := stmt.ExecContext(c, dc.Id); err != nil {
-			return errors.Annotate(err, "failed to delete datacenter: %s", dc.Database.Name).Err()
-		}
-		logging.Infof(c, "Deleted datacenter: %s", dc.Database.Name)
-	}
-	return nil
+	return dcs
 }
 
 // EnsureDatacenters ensures the database contains exactly the given datacenters.
-func EnsureDatacenters(c context.Context, datacenterConfigs []*config.DatacenterConfig) error {
-	differences, err := getDifferences(c, datacenterConfigs)
-	if err != nil {
-		return errors.Annotate(err, "failed to get datacenters").Err()
+func EnsureDatacenters(c context.Context, cfgs []*config.DatacenterConfig) error {
+	d := &Datacenters{}
+	if err := d.fetch(c); err != nil {
+		return errors.Annotate(err, "failed to fetch datacenters").Err()
 	}
-	if err = addDatacenters(c, differences.Missing); err != nil {
+	d.computeChanges(c, cfgs)
+	if err := d.add(c); err != nil {
 		return errors.Annotate(err, "failed to add datacenters").Err()
 	}
-	if err = updateDatacenters(c, differences.Mismatched); err != nil {
+	if err := d.remove(c); err != nil {
+		return errors.Annotate(err, "failed to remove datacenters").Err()
+	}
+	if err := d.update(c); err != nil {
 		return errors.Annotate(err, "failed to update datacenters").Err()
 	}
-	if err = deleteDatacenters(c, differences.Extraneous); err != nil {
-		return errors.Annotate(err, "failed to delete datacenters").Err()
-	}
-	return nil
-}
-
-// Logs and returns an internal gRPC error.
-func internalRPCError(c context.Context, err error) error {
-	errors.Log(c, err)
-	return grpc.Errorf(codes.Internal, "Internal server error")
+	return EnsureRacks(c, cfgs, d.ids(c))
 }
 
 // DatacentersServer handles datacenter RPCs.
@@ -212,7 +260,7 @@ func (d *DatacentersServer) IsAuthorized(c context.Context) (bool, error) {
 func (d *DatacentersServer) GetDatacenters(c context.Context, req *crimson.DatacentersRequest) (*crimson.DatacentersResponse, error) {
 	switch authorized, err := d.IsAuthorized(c); {
 	case err != nil:
-		return nil, internalRPCError(c, err)
+		return nil, model.InternalRPCError(c, err)
 	case !authorized:
 		return nil, grpc.Errorf(codes.PermissionDenied, "Unauthorized user")
 	}
@@ -220,9 +268,9 @@ func (d *DatacentersServer) GetDatacenters(c context.Context, req *crimson.Datac
 	for _, name := range req.Names {
 		names.Add(name)
 	}
-	datacenters, err := getDatacenters(c, names)
+	datacenters, err := d.getDatacenters(c, names)
 	if err != nil {
-		return nil, internalRPCError(c, err)
+		return nil, model.InternalRPCError(c, err)
 	}
 	return &crimson.DatacentersResponse{
 		Datacenters: datacenters,
@@ -230,9 +278,9 @@ func (d *DatacentersServer) GetDatacenters(c context.Context, req *crimson.Datac
 }
 
 // getDatacenters returns a list of datacenters in the database.
-func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
+func (d *DatacentersServer) getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
 	db := database.Get(c)
-	rows, err := db.QueryContext(c, "SELECT id, name, description from datacenters")
+	rows, err := db.QueryContext(c, "SELECT name, description FROM datacenters")
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch datacenters").Err()
 	}
@@ -240,9 +288,8 @@ func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacent
 
 	var datacenters []*crimson.Datacenter
 	for rows.Next() {
-		var id int
 		var name, description string
-		if err = rows.Scan(&id, &name, &description); err != nil {
+		if err = rows.Scan(&name, &description); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch datacenter").Err()
 		}
 		if names.Has(name) || names.Len() == 0 {

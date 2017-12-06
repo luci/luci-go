@@ -42,6 +42,7 @@ func init() {
 
 	api := prpc.Server{}
 	crimson.RegisterDatacentersServer(&api, &datacenters.DatacentersServer{})
+	crimson.RegisterRacksServer(&api, &datacenters.RacksServer{})
 	discovery.Enable(&api)
 	api.InstallHandlers(r, databaseMiddleware)
 
