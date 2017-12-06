@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6c0a8fb_135b1719",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T19:45:57Z",
+      "side": 1,
+      "message": "please tell me this is generated",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 1
+      },
+      "revId": "263b7b4e83ea9d8bac57169779bd9ba927ba48ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e0b39a2_40b5f0c8",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T19:45:57Z",
+      "side": 1,
+      "message": "why do you want this as int here and then convert to back to string later?\nin other words, I\u0027d just keep it simple string here and just pass as is to ChangeInput; this way there is less logic to update if Gerrit adds a new option value.",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 145
+      },
+      "revId": "263b7b4e83ea9d8bac57169779bd9ba927ba48ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d21cdf8b_3e72888d",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T19:45:57Z",
+      "side": 1,
+      "message": "good job! Sorry, I missed this one before.",
+      "range": {
+        "startLine": 288,
+        "startChar": 26,
+        "endLine": 288,
+        "endChar": 29
+      },
+      "revId": "263b7b4e83ea9d8bac57169779bd9ba927ba48ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
