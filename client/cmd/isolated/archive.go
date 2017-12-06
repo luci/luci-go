@@ -105,20 +105,19 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 	}()
 	common.CancelOnCtrlC(arch)
 
-	var dumpIsolated *os.File
+	opts := isolated.ArchiveOptions{
+		Files:     c.files,
+		Dirs:      c.dirs,
+		Blacklist: []string(c.blacklist),
+		Isolated:  c.isolated,
+	}
 	if len(c.isolated) != 0 {
+		var dumpIsolated *os.File
 		dumpIsolated, err = os.Create(c.isolated)
 		if err != nil {
-			return err
+			return
 		}
-	}
-
-	opts := isolated.ArchiveOptions{
-		Files:        c.files,
-		Dirs:         c.dirs,
-		Blacklist:    []string(c.blacklist),
-		Isolated:     c.isolated,
-		LeakIsolated: dumpIsolated,
+		opts.LeakIsolated = dumpIsolated
 	}
 	item := isolated.Archive(ctx, arch, &opts)
 	if err = item.Error(); err != nil {
