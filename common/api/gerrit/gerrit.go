@@ -291,6 +291,46 @@ func (c *Client) CreateChange(ctx context.Context, ci *ChangeInput) (*Change, er
 	return &resp, nil
 }
 
+// AbandonInput contains information for abandoning a change.
+//
+// This struct is intended to be one-to-one with the AbandonInput structure
+// described in Gerrit's documentation:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-input
+//
+// TODO(mknyszek): Support notify_details.
+type AbandonInput struct {
+	// Message to be added as review comment to the change when abandoning it.
+	Message string `json:"message,omitempty"`
+
+	// Notify is an enum specifying whom to send notifications to.
+	//
+	// Valid values are NONE, OWNER, OWNER_REVIEWERS, and ALL.
+	//
+	// Optional. The default is ALL.
+	Notify string `json:"notify,omitempty"`
+}
+
+// AbandonChange abandons an existing change in Gerrit.
+//
+// Returns a Change referenced by changeID, with status ABANDONED, if
+// abandoned.
+//
+// AbandonInput is optional (that is, may be nil).
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) AbandonChange(ctx context.Context, changeID string, ai *AbandonInput) (*Change, error) {
+	var resp Change
+	path := fmt.Sprintf("a/changes/%s/abandon", url.PathEscape(changeID))
+	if _, err := c.post(ctx, path, ai, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // IsChangePureRevert determines if a change is a pure revert of another commit.
 //
 // This method returns a bool and an error.

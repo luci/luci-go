@@ -220,6 +220,56 @@ func TestCreateChange(t *testing.T) {
 	})
 }
 
+func TestAbandonChange(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("AbandonChange", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var ai AbandonInput
+			err := json.NewDecoder(r.Body).Decode(&ai)
+			c.So(err, ShouldBeNil)
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n%s\n", fakeCL4Str)
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			change, err := client.AbandonChange(ctx, "629279", nil)
+			So(err, ShouldBeNil)
+			So(change.Status, ShouldResemble, "ABANDONED")
+		})
+
+		Convey("Basic with message", func() {
+			ai := AbandonInput{
+				Message: "duplicate",
+			}
+			change, err := client.AbandonChange(ctx, "629279", &ai)
+			So(err, ShouldBeNil)
+			So(change.Status, ShouldResemble, "ABANDONED")
+		})
+	})
+
+	Convey("AbandonChange but change non-existent", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(404)
+			w.Header().Set("Content-Type", "text/plain")
+			fmt.Fprintf(w, "No such change: 629279")
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			_, err := c.AbandonChange(ctx, "629279", nil)
+			So(err, ShouldNotBeNil)
+		})
+
+	})
+}
+
 func TestIsPureRevert(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -358,6 +408,27 @@ var (
 	    "owner": {
 		"_account_id": 1178184
 	    }
+	}`
+	fakeCL4Str = `{
+	    "id": "infra%2Finfra~master~Ia292f77ae6bd94afbd746da0b08500f738904d15",
+	    "project": "infra/infra",
+	    "branch": "master",
+	    "hashtags": [],
+	    "change_id": "Ia292f77ae6bd94afbd746da0b08500f738904d15",
+	    "subject": "[Findit] Add flake analyzer forced rerun instructions to makefile.",
+	    "status": "ABANDONED",
+	    "created": "2017-08-23 17:25:40.000000000",
+	    "updated": "2017-08-23 22:51:03.000000000",
+	    "submitted": "2017-08-23 22:51:03.000000000",
+	    "insertions": 4,
+	    "deletions": 1,
+	    "unresolved_comment_count": 0,
+	    "has_review_started": true,
+	    "_number": 629279,
+	    "owner": {
+		"_account_id": 1178184
+	    },
+	    "_has_more_changes": true
 	}`
 )
 
