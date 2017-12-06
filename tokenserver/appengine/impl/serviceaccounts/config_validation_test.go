@@ -226,7 +226,7 @@ func TestValidation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			ctx := validation.Context{}
-			validateConfigs(policy.ConfigBundle{serviceAccountsCfg: cfg}, &ctx)
+			validateConfigs(&ctx, policy.ConfigBundle{serviceAccountsCfg: cfg})
 			verr := ctx.Finalize()
 
 			if len(cs.Errors) == 0 { // no errors expected

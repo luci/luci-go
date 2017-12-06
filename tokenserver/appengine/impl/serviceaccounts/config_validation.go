@@ -27,7 +27,7 @@ import (
 )
 
 // validateConfigs validates the structure of configs fetched by fetchConfigs.
-func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
+func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
 	ctx.SetFile(serviceAccountsCfg)
 	cfg, ok := bundle[serviceAccountsCfg].(*admin.ServiceAccountsPermissions)
 	if !ok {
@@ -36,7 +36,7 @@ func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
 	}
 
 	if cfg.Defaults != nil {
-		validateDefaults("defaults", cfg.Defaults, ctx)
+		validateDefaults(ctx, "defaults", cfg.Defaults)
 	}
 
 	names := stringset.New(0)
@@ -71,20 +71,20 @@ func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
 			}
 		}
 
-		validateRule(fmt.Sprintf("rule #%d: %q", i+1, rule.Name), rule, ctx)
+		validateRule(ctx, fmt.Sprintf("rule #%d: %q", i+1, rule.Name), rule)
 	}
 }
 
 // validateDefaults checks ServiceAccountRuleDefaults proto.
-func validateDefaults(title string, d *admin.ServiceAccountRuleDefaults, ctx *validation.Context) {
+func validateDefaults(ctx *validation.Context, title string, d *admin.ServiceAccountRuleDefaults) {
 	ctx.Enter(title)
 	defer ctx.Exit()
-	validateScopes("allowed_scope", d.AllowedScope, ctx)
-	validateMaxGrantValidityDuration(d.MaxGrantValidityDuration, ctx)
+	validateScopes(ctx, "allowed_scope", d.AllowedScope)
+	validateMaxGrantValidityDuration(ctx, d.MaxGrantValidityDuration)
 }
 
 // validateRule checks single ServiceAccountRule proto.
-func validateRule(title string, r *admin.ServiceAccountRule, ctx *validation.Context) {
+func validateRule(ctx *validation.Context, title string, r *admin.ServiceAccountRule) {
 	ctx.Enter(title)
 	defer ctx.Exit()
 
@@ -94,16 +94,16 @@ func validateRule(title string, r *admin.ServiceAccountRule, ctx *validation.Con
 
 	// Note: we allow any of the sets to be empty. The rule will just not match
 	// anything in this case, this is fine.
-	validateEmails("service_account", r.ServiceAccount, ctx)
-	validateGroups("service_account_group", r.ServiceAccountGroup, ctx)
-	validateScopes("allowed_scope", r.AllowedScope, ctx)
-	validateIdSet("end_user", r.EndUser, ctx)
-	validateIdSet("proxy", r.Proxy, ctx)
-	validateIdSet("trusted_proxy", r.TrustedProxy, ctx)
-	validateMaxGrantValidityDuration(r.MaxGrantValidityDuration, ctx)
+	validateEmails(ctx, "service_account", r.ServiceAccount)
+	validateGroups(ctx, "service_account_group", r.ServiceAccountGroup)
+	validateScopes(ctx, "allowed_scope", r.AllowedScope)
+	validateIDSet(ctx, "end_user", r.EndUser)
+	validateIDSet(ctx, "proxy", r.Proxy)
+	validateIDSet(ctx, "trusted_proxy", r.TrustedProxy)
+	validateMaxGrantValidityDuration(ctx, r.MaxGrantValidityDuration)
 }
 
-func validateEmails(field string, emails []string, ctx *validation.Context) {
+func validateEmails(ctx *validation.Context, field string, emails []string) {
 	ctx.Enter("%q", field)
 	defer ctx.Exit()
 	for _, email := range emails {
@@ -114,7 +114,7 @@ func validateEmails(field string, emails []string, ctx *validation.Context) {
 	}
 }
 
-func validateGroups(field string, groups []string, ctx *validation.Context) {
+func validateGroups(ctx *validation.Context, field string, groups []string) {
 	ctx.Enter("%q", field)
 	defer ctx.Exit()
 	for _, gr := range groups {
@@ -124,7 +124,7 @@ func validateGroups(field string, groups []string, ctx *validation.Context) {
 	}
 }
 
-func validateScopes(field string, scopes []string, ctx *validation.Context) {
+func validateScopes(ctx *validation.Context, field string, scopes []string) {
 	ctx.Enter("%q", field)
 	defer ctx.Exit()
 	for _, scope := range scopes {
@@ -134,7 +134,7 @@ func validateScopes(field string, scopes []string, ctx *validation.Context) {
 	}
 }
 
-func validateIdSet(field string, ids []string, ctx *validation.Context) {
+func validateIDSet(ctx *validation.Context, field string, ids []string) {
 	ctx.Enter("%q", field)
 	defer ctx.Exit()
 	for _, entry := range ids {
@@ -148,7 +148,7 @@ func validateIdSet(field string, ids []string, ctx *validation.Context) {
 	}
 }
 
-func validateMaxGrantValidityDuration(dur int64, ctx *validation.Context) {
+func validateMaxGrantValidityDuration(ctx *validation.Context, dur int64) {
 	switch {
 	case dur == 0:
 		// valid

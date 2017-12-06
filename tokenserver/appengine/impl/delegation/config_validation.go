@@ -27,7 +27,7 @@ import (
 )
 
 // validateConfigs validates the structure of configs fetched by fetchConfigs.
-func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
+func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
 	ctx.SetFile(delegationCfg)
 	cfg, ok := bundle[delegationCfg].(*admin.DelegationPermissions)
 	if !ok {
@@ -43,14 +43,14 @@ func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
 			}
 			names.Add(rule.Name)
 		}
-		validateRule(fmt.Sprintf("rule #%d: %q", i+1, rule.Name), rule, ctx)
+		validateRule(ctx, fmt.Sprintf("rule #%d: %q", i+1, rule.Name), rule)
 	}
 }
 
 // validateRule checks single DelegationRule proto.
 //
 // See config.proto, DelegationRule for the description of allowed values.
-func validateRule(title string, r *admin.DelegationRule, ctx *validation.Context) {
+func validateRule(ctx *validation.Context, title string, r *admin.DelegationRule) {
 	ctx.Enter(title)
 	defer ctx.Exit()
 

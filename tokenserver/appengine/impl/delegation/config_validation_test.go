@@ -218,7 +218,7 @@ func TestValidation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			ctx := validation.Context{}
-			validateConfigs(policy.ConfigBundle{delegationCfg: cfg}, &ctx)
+			validateConfigs(&ctx, policy.ConfigBundle{delegationCfg: cfg})
 			verr := ctx.Finalize()
 
 			if len(cs.Errors) == 0 { // no errors expected
