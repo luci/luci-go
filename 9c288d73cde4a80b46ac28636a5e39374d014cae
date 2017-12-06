@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1592ec69_3bb3e03f",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T18:25:53Z",
+      "side": 1,
+      "message": "wow, derp. fixed.",
+      "parentUuid": "9e2d05b0_8e962088",
+      "range": {
+        "startLine": 30,
+        "startChar": 68,
+        "endLine": 30,
+        "endChar": 75
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed6a6aa8_9973a479",
         "filename": "buildbucket/access/acl.go",
         "patchSetId": 2
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "6c62d363_12e38fbf",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T18:25:53Z",
+      "side": 1,
+      "message": "that I also found fishy... hm. I just dropped it for now, since it\u0027s definitely not needed in here.",
+      "parentUuid": "cfca8b63_75545c9c",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 1
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "64ffc535_ea491d48",
         "filename": "buildbucket/access/acl.go",
         "patchSetId": 2
@@ -92,6 +140,30 @@
       "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "640bed60_f6d8b66e",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T18:25:53Z",
+      "side": 1,
+      "message": "ah, good point. this is bad copypasta. fixed.",
+      "parentUuid": "64ffc535_ea491d48",
+      "range": {
+        "startLine": 51,
+        "startChar": 35,
+        "endLine": 51,
+        "endChar": 53
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -139,6 +211,30 @@
       "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00f258fb_865a7a72",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T18:25:53Z",
+      "side": 1,
+      "message": "that\u0027s probably preferred since the network tests have a higher chance of flake, right? (they depend on the bot\u0027s networking facilities to work, etc.) done",
+      "parentUuid": "7554ff1a_fa915b7c",
+      "range": {
+        "startLine": 53,
+        "startChar": 42,
+        "endLine": 53,
+        "endChar": 61
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
