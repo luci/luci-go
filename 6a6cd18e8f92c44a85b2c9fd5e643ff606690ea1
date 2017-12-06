@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a9338d74_0d04029e",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T19:59:57Z",
+      "side": 1,
+      "message": "this copy-pasta worries me from maintenance PoV. Futhermore, we don\u0027t expect humans to call this cmd by typing all the params.\n\nSo, WDYT about changing flags to just json input? We don\u0027t have to document it beyond having a struct defined for each cmd:\n\ncmdBlahJsonInput{\n  ChangeId string\n  ai       gerrit.AbandonInput\n  notify   string\n}\n\n\nand each sub-command will have essentially the same invocation:\n$ gerrit --host \u003cgerrit-host\u003e [--other-shared-options...] \u003ccmd\u003e --input in.json --output out.json",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 1
+      },
+      "revId": "6a6cd18e8f92c44a85b2c9fd5e643ff606690ea1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
