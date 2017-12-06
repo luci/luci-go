@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3254c2fa_b4f9b16c",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T02:28:55Z",
+      "side": 1,
+      "message": "Done, you\u0027re right, that\u0027s a lot better.",
+      "parentUuid": "6aa8264c_bffb9b94",
+      "range": {
+        "startLine": 25,
+        "startChar": 19,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "52712b65_d53ad76d",
         "filename": "buildbucket/acl.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-12-02T16:16:49Z",
       "side": 1,
       "message": "unnecessary, it is implied, same below",
+      "range": {
+        "startLine": 28,
+        "startChar": 10,
+        "endLine": 28,
+        "endChar": 24
+      },
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08720ef5_2cb55ac6",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T02:28:55Z",
+      "side": 1,
+      "message": "The reason I did this is because the linter complains if the consts are spaced out... Should I just ignore it?",
+      "parentUuid": "52712b65_d53ad76d",
       "range": {
         "startLine": 28,
         "startChar": 10,
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "74d7e433_50dc4f3f",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T02:28:55Z",
+      "side": 1,
+      "message": "Done? I\u0027m not sure what the idiomatic way to do this in golang is.",
+      "parentUuid": "6e3b57cc_dc3da2d4",
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7134ff42_a8c94f37",
         "filename": "buildbucket/acl.go",
         "patchSetId": 1
@@ -79,6 +145,24 @@
       "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b14c8af0_8d4cefad",
+        "filename": "buildbucket/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T02:28:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7134ff42_a8c94f37",
+      "revId": "c220a9c644aecbffb811e8a6a6450e6f72ef657c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

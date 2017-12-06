@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ed6a6aa8_9973a479",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T02:28:55Z",
+      "side": 1,
+      "message": "I recognize this isn\u0027t specific to buildbucket. I just don\u0027t know where else to place it (I assume it\u0027s going to be a very common operation to create a prpc client...).",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 1
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48b2b447_5efd7ca9",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T02:28:55Z",
+      "side": 1,
+      "message": "A prpc.Client here is passed for testing purposes, which is why NewClient exists.",
+      "range": {
+        "startLine": 53,
+        "startChar": 42,
+        "endLine": 53,
+        "endChar": 61
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
