@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "9e2d05b0_8e962088",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "bitwise?",
+      "range": {
+        "startLine": 30,
+        "startChar": 68,
+        "endLine": 30,
+        "endChar": 75
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ed6a6aa8_9973a479",
         "filename": "buildbucket/access/acl.go",
         "patchSetId": 2
@@ -18,6 +41,53 @@
         "startChar": 0,
         "endLine": 49,
         "endChar": 1
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfca8b63_75545c9c",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "yeah, i think it will be\n\nthe problem i have with this is that it assumes this code is running on a server: it uses server/auth package.",
+      "parentUuid": "ed6a6aa8_9973a479",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 1
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64ffc535_ea491d48",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "strictly speaking, we don\u0027t know that. it depends on the client.",
+      "range": {
+        "startLine": 51,
+        "startChar": 35,
+        "endLine": 51,
+        "endChar": 53
       },
       "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -42,6 +112,104 @@
         "endLine": 53,
         "endChar": 61
       },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7554ff1a_fa915b7c",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "we can accept access client here and tests can pass a fake client (that does not do network requests at all)",
+      "parentUuid": "48b2b447_5efd7ca9",
+      "range": {
+        "startLine": 53,
+        "startChar": 42,
+        "endLine": 53,
+        "endChar": 61
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77bc541e_5eca95bb",
+        "filename": "buildbucket/access/acl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "nit: move before luci imports",
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35f4397c_7d35c79b",
+        "filename": "buildbucket/access/acl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "nit: blank line before this",
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9799718f_8669765d",
+        "filename": "buildbucket/access/acl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "yeah, it looks like prpctest does more than we really need. we don\u0027t really need start up a tcp server and make requests. \n\ntake a look at\nhttps://cs.chromium.org/chromium/infra/go/src/infra/monorail/monorailtest/client.go?l\u003d11",
+      "range": {
+        "startLine": 49,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 13
+      },
+      "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d7e001b1_7315df89",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T08:42:44Z",
+      "side": 1,
+      "message": "entirely optional:\n\nsomeone may call .String() on a bitwise-orred action. WDYT about returning \n\n  ADD_BUILD, VIEW_BUILD, foo, bar\n\nstring?",
       "revId": "9c288d73cde4a80b46ac28636a5e39374d014cae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
