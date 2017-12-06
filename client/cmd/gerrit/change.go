@@ -27,6 +27,84 @@ import (
 	"go.chromium.org/luci/common/flag/stringlistflag"
 )
 
+func cmdChangeAbandon(authOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "change-abandon <options> url id",
+		ShortDesc: "abandons a change",
+		LongDesc: `Abandons a change in Gerrit.
+
+The changeID parameter may be in any of the forms supported by Gerrit:
+  - "4247"
+  - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+  - etc. See the link below.
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+More information on abandoning changes may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change`,
+		CommandRun: func() subcommands.CommandRun {
+			c := changeAbandonRun{}
+			c.commonFlags.Init(authOpts)
+			c.Flags.StringVar(&c.AbandonInput.Message, "message", "", "Message to include when abandoning a change.")
+			c.Flags.StringVar(&c.AbandonInput.Notify, "notify", "ALL", "Notification handling that defines to whom email notifications should be sent after the change is created. Valid inputs are ALL, OWNERS, OWNERS_REVIEWERS, and NONE.")
+			return &c
+		},
+	}
+}
+
+type changeAbandonRun struct {
+	commonFlags
+	gerrit.AbandonInput
+}
+
+func (c *changeAbandonRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
+	if len(args) < 2 {
+		return errors.New("position arguments missing")
+	} else if len(args) > 2 {
+		return errors.New("position arguments not expected")
+	}
+	return nil
+}
+
+func (c *changeAbandonRun) main(a subcommands.Application, args []string) error {
+	authCl, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+
+	g, err := gerrit.NewClient(authCl, args[0])
+	if err != nil {
+		return err
+	}
+
+	change, err := g.AbandonChange(ctx, args[1], &c.AbandonInput)
+	if err != nil {
+		return err
+	}
+
+	if c.jsonOutput == "" {
+		print(change)
+		return nil
+	}
+
+	return output(c.jsonOutput, change)
+}
+
+func (c *changeAbandonRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+	if err := c.Parse(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	if err := c.main(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	return 0
+}
+
 func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "change-create <options> url",
