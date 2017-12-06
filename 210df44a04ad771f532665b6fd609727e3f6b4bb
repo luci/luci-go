@@ -141,6 +141,30 @@
       "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff7f2a4d_f45813bb",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config_validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-06T03:13:18Z",
+      "side": 1,
+      "message": "with the cron approach it won\u0027t break the serving config. The cron will detect that the new state is broken, and will send an alert (or something), but the service will continue to serve old correct state.\n\nBut yeah.",
+      "parentUuid": "40051dbd_e7ffd11e",
+      "range": {
+        "startLine": 56,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
