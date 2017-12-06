@@ -40,6 +40,7 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Title: "gerrit client",
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
+			cmdChangeAbandon(defaultAuthOpts),
 			cmdChangeCreate(defaultAuthOpts),
 			cmdChangeDetail(defaultAuthOpts),
 			cmdChangeQuery(defaultAuthOpts),
