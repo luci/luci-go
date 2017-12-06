@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bac9e787_c06cbbfa",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T02:50:20Z",
+      "side": 1,
+      "message": "i wonder, does this really need to be repeated?\ngiven that I can\u0027t re-use the same groups elsewhere in rules anyway, what\u0027s the point of allowing multiple groups? I think it\u0027s highly unlikely that a project has S\u003d{s1, s2,.., sN} service accounts split meaningfully into two groups A and B s.t. A and B are referenced elsewhere.",
+      "range": {
+        "startLine": 215,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 44
+      },
+      "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a33aa7f3_5df9aa0e",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config_validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T02:50:20Z",
+      "side": 1,
+      "message": "yeah, that\u0027s unfortunate, and the biggest downside of the current approach. Errors are delayed and require looking through logs*, and it\u0027s generally easy to break someone\u0027s production code accidentally by adding their service account wrongly to a group.\n\nNevertheless, I think `cost \u003c benefit` for this CL.",
+      "range": {
+        "startLine": 56,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
