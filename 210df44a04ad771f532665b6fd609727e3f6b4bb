@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "169ecace_e7fe5b00",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T03:01:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "45659e93_c521c36e",
+      "range": {
+        "startLine": 215,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 44
+      },
+      "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a33aa7f3_5df9aa0e",
         "filename": "tokenserver/appengine/impl/serviceaccounts/config_validation.go",
         "patchSetId": 2
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "I was contemplating to add a cron that continuously reevaluates all rules expanding all groups, and serving the actual traffic only from such expanded (and validated state). It would also help with performance. But it is too much complexity for now, so I decided not to bother.",
       "parentUuid": "a33aa7f3_5df9aa0e",
+      "range": {
+        "startLine": 56,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "210df44a04ad771f532665b6fd609727e3f6b4bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40051dbd_e7ffd11e",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config_validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T03:01:15Z",
+      "side": 1,
+      "message": "agree about complexity, but I don\u0027t think this cronjob addresses my concern -- it\u0027s possible to break things by adding an account to some group w/o knowing it.",
+      "parentUuid": "ae9e6f62_a365f5eb",
       "range": {
         "startLine": 56,
         "startChar": 12,
