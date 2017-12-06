@@ -59,7 +59,7 @@ func importConfigs(c context.Context) error {
 	}
 	logging.Infof(c, "Found config revision: %s", metadata.Revision)
 
-	validationContext := &validation.Context{Logger: logging.Get(c)}
+	validationContext := &validation.Context{Context: c}
 	validateDatacentersConfig(validationContext, datacenterFiles)
 	if err := validationContext.Finalize(); err != nil {
 		logging.Errorf(c, "Failed to validate the config: %s", err.Error())

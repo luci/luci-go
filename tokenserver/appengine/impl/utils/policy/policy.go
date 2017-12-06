@@ -164,7 +164,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 	logging.Infof(c, "Policy config changed: %s -> %s", existingRev, rev)
 
 	if p.Validate != nil {
-		v := validation.Context{Logger: logging.Get(c)}
+		v := validation.Context{Context: c}
 		p.Validate(bundle, &v)
 		if err := v.Finalize(); err != nil {
 			return "", errors.Annotate(err, "configs at rev %s are invalid", rev).Err()

@@ -50,7 +50,6 @@ func (v *Error) Error() string {
 // inside this structure is captured through Enter and Exit calls.
 type Context struct {
 	Context context.Context
-	Logger  logging.Logger // logs errors as they appear
 
 	errors  errors.MultiError // all accumulated errors
 	file    string            // the currently validated file
@@ -103,8 +102,8 @@ func (v *Context) Error(msg string, args ...interface{}) {
 	// So we put ctx in the argument list.
 	msg = "%s: " + msg
 	args = append([]interface{}{ctx}, args...)
-	if v.Logger != nil {
-		v.Logger.Errorf(msg, args...)
+	if v.Context != nil {
+		logging.Errorf(v.Context, msg, args)
 	}
 
 	// Make the file and the logical path also usable through error inspection.

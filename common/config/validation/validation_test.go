@@ -17,8 +17,6 @@ package validation
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/logging"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -36,9 +34,7 @@ func TestValidation(t *testing.T) {
 	})
 
 	Convey("One simple error", t, func() {
-		v := Context{
-			Logger: logging.Null, // for code coverage
-		}
+		v := Context{}
 
 		v.SetFile("file.cfg")
 		v.Enter("ctx %d", 123)
