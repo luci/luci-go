@@ -27,6 +27,83 @@ import (
 	"go.chromium.org/luci/common/flag/stringlistflag"
 )
 
+func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "change-create <options> url",
+		ShortDesc: "creates a new change",
+		LongDesc: `Creates a new change in Gerrit.
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change`,
+		CommandRun: func() subcommands.CommandRun {
+			c := changeCreateRun{}
+			c.commonFlags.Init(authOpts)
+			c.Flags.StringVar(&c.ChangeInput.Project, "project", "", "(required) The project to which this new change belongs.")
+			c.Flags.StringVar(&c.ChangeInput.Branch, "branch", "master", "The branch to which this new change belongs.")
+			c.Flags.StringVar(&c.ChangeInput.Subject, "subject", "", "The header line of the commit message of the new change.")
+			c.Flags.StringVar(&c.ChangeInput.Topic, "topic", "", "The topic to which this new change belongs.")
+			c.Flags.BoolVar(&c.ChangeInput.IsPrivate, "private", false, "Whether the new change should be marked as private.")
+			c.Flags.BoolVar(&c.ChangeInput.WorkInProgress, "wip", false, "Whether the new change should be set as a Work In Progress.")
+			c.Flags.StringVar(&c.ChangeInput.BaseChange, "base", "", "A ChangeID that identifies the base change for the new change.")
+			c.Flags.BoolVar(&c.ChangeInput.NewBranch, "allow-new-branch", false, "Allow creating a new branch.")
+			c.Flags.StringVar(&c.ChangeInput.Notify, "notify", "ALL", "Notification handling that defines to whom email notifications should be sent after the change is created. Valid inputs are ALL, OWNERS, OWNERS_REVIEWERS, and NONE.")
+			return &c
+		},
+	}
+}
+
+type changeCreateRun struct {
+	commonFlags
+	gerrit.ChangeInput
+}
+
+func (c *changeCreateRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
+	if len(args) < 1 {
+		return errors.New("position arguments missing")
+	} else if len(args) > 1 {
+		return errors.New("position arguments not expected")
+	}
+	return nil
+}
+
+func (c *changeCreateRun) main(a subcommands.Application, args []string) error {
+	authCl, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+
+	g, err := gerrit.NewClient(authCl, args[0])
+	if err != nil {
+		return err
+	}
+
+	change, err := g.CreateChange(ctx, &c.ChangeInput)
+	if err != nil {
+		return err
+	}
+
+	if c.jsonOutput == "" {
+		print(change)
+		return nil
+	}
+
+	return output(c.jsonOutput, change)
+}
+
+func (c *changeCreateRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+	if err := c.Parse(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	if err := c.main(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	return 0
+}
+
 func cmdChangeQuery(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "change-query <options> url query",
