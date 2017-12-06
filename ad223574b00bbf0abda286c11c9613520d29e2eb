@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85dd3e6c_a5a129b5",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config_validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-06T23:26:57Z",
+      "side": 1,
+      "message": "nice, very pedantically correct naming :)",
+      "range": {
+        "startLine": 137,
+        "startChar": 14,
+        "endLine": 137,
+        "endChar": 15
+      },
+      "revId": "ad223574b00bbf0abda286c11c9613520d29e2eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
