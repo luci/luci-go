@@ -44,13 +44,15 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
-
 	"go.chromium.org/luci/scheduler/appengine/apiservers"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
@@ -177,6 +179,18 @@ func init() {
 		Catalog:       globalCatalog,
 		TemplatesPath: "templates",
 	})
+
+	// Initialize config validation endpoints.
+	cp, err := pattern.Parse("regex:^projects/.*")
+	if err != nil {
+		panic(err)
+	}
+	pp, err := pattern.Parse("exact:luci-scheduler.cfg")
+	if err != nil {
+		panic(err)
+	}
+	patterns := []validation.ConfigPattern{{ConfigSet: cp, Path: pp}}
+	gaeconfig.InstallValidationHandlers(r, base, &validation.Validator{ConfigPatterns: patterns, Func: globalCatalog.ValidateConfig})
 
 	r.POST("/pubsub", base, pubsubPushHandler) // auth is via custom tokens
 	r.GET("/internal/cron/read-config", base.Extend(gaemiddleware.RequireCron), readConfigCron)
