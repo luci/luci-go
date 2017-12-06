@@ -144,15 +144,15 @@ func NewClient(c *http.Client, gerritURL string) (*Client, error) {
 	return &Client{c, *pu}, nil
 }
 
-// ChangeQueryRequest contains the parameters necessary for querying changes from Gerrit.
-type ChangeQueryRequest struct {
+// ChangeQueryParams contains the parameters necessary for querying changes from Gerrit.
+type ChangeQueryParams struct {
 	// Actual query string, see
 	// https://gerrit-review.googlesource.com/Documentation/user-search.html#_search_operators
-	Query string
+	Query string `json:"q"`
 	// How many changes to include in the response.
-	N int
+	N int `json:"n"`
 	// Skip this many from the list of results (unreliable for paging).
-	S int
+	S int `json:"S"`
 	// Include these options in the queries. Certain options will make
 	// Gerrit fill in additional fields of the response. These require
 	// additional database searches and may delay the response.
@@ -160,12 +160,12 @@ type ChangeQueryRequest struct {
 	// The supported strings for options are listed in Gerrit's api
 	// documentation at the link below:
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
-	Options []string
+	Options []string `json:"o"`
 }
 
-// qs renders the ChangeQueryRequest as a url.Values.
-func (qr *ChangeQueryRequest) qs() url.Values {
-	qs := url.Values{}
+// queryString renders the ChangeQueryParams as a url.Values.
+func (qr *ChangeQueryParams) queryString() url.Values {
+	qs := make(url.Values, len(qr.Options)+3)
 	qs.Add("q", qr.Query)
 	if qr.N > 0 {
 		qs.Add("n", strconv.Itoa(qr.N))
@@ -179,18 +179,18 @@ func (qr *ChangeQueryRequest) qs() url.Values {
 	return qs
 }
 
-// ChangeQuery returns a list of Gerrit changes for a given ChangeQueryRequest.
+// ChangeQuery returns a list of Gerrit changes for a given ChangeQueryParams.
 //
 // One example use case for this is getting the CL for a given commit hash.
 // Only the .Query property of the qr parameter is required.
 //
 // Returns a slice of Change, whether there are more changes to fetch
 // and an error.
-func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryRequest) ([]*Change, bool, error) {
+func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryParams) ([]*Change, bool, error) {
 	var resp struct {
 		Collection []*Change
 	}
-	if _, err := c.get(ctx, "a/changes/", qr.qs(), &resp.Collection); err != nil {
+	if _, err := c.get(ctx, "a/changes/", qr.queryString(), &resp.Collection); err != nil {
 		return nil, false, err
 	}
 	result := resp.Collection
@@ -202,7 +202,27 @@ func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryRequest) ([]*Cha
 	return result, moreChanges, nil
 }
 
-// GetChangeDetails gets details about a single change with optional fields.
+// ChangeDetailsParams contains optional parameters for getting change details from Gerrit.
+type ChangeDetailsParams struct {
+	// Options is a set of optional details to add as additional fieldsof the response.
+	// These require additional database searches and may delay the response.
+	//
+	// The supported strings for options are listed in Gerrit's api
+	// documentation at the link below:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+	Options []string `json:"o"`
+}
+
+// queryString renders the ChangeDetailsParams as a url.Values.
+func (qr *ChangeDetailsParams) queryString() url.Values {
+	qs := make(url.Values, len(qr.Options))
+	for _, o := range qr.Options {
+		qs.Add("o", o)
+	}
+	return qs
+}
+
+// ChangeDetails gets details about a single change with optional fields.
 //
 // This method returns a single *Change and an error.
 //
@@ -216,20 +236,13 @@ func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryRequest) ([]*Cha
 // to return non-default properties for Change. The supported strings for
 // options are listed in Gerrit's api documentation at the link below:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
-func (c *Client) GetChangeDetails(ctx context.Context, changeID string, options []string) (*Change, error) {
-	resp := &Change{}
-	qs := url.Values{}
-	if len(options) > 0 {
-		for _, o := range options {
-			qs.Add("o", o)
-		}
-	}
-
+func (c *Client) ChangeDetails(ctx context.Context, changeID string, options ChangeDetailsParams) (*Change, error) {
+	var resp Change
 	path := fmt.Sprintf("a/changes/%s/detail", url.PathEscape(changeID))
-	if _, err := c.get(ctx, path, qs, resp); err != nil {
+	if _, err := c.get(ctx, path, options.queryString(), &resp); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return &resp, nil
 }
 
 // ChangeInput contains the parameters necesary for creating a change in Gerrit.
@@ -366,7 +379,7 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 	}
 	defer r.Body.Close()
 	if r.StatusCode < 200 || r.StatusCode >= 300 {
-		err = errors.Reason("failed to fetch %q, status code %d", u, r.StatusCode).Err()
+		err = errors.Reason("failed to fetch %q, status code %d", u.String(), r.StatusCode).Err()
 		if r.StatusCode >= 500 {
 			// TODO(tandrii): consider retrying.
 			err = transient.Tag.Apply(err)
