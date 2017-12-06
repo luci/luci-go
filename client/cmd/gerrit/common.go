@@ -31,13 +31,15 @@ type commonFlags struct {
 	defaultFlags   common.Flags
 	authFlags      authcli.Flags
 	parsedAuthOpts auth.Options
+	host           string
 	jsonOutput     string
 }
 
 func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
-	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to (use '-' for stdout).")
+	c.Flags.StringVar(&c.host, "host", "", "(required) Gerrit code-review host (e.g. https://chromium-review.googlesource.com).")
+	c.Flags.StringVar(&c.jsonOutput, "output", "", "(required) Path to write operation results to (use '-' for stdout).")
 }
 
 func (c *commonFlags) Parse() error {
