@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e348761d_32445e20",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-12-06T22:13:56Z",
+      "side": 1,
+      "message": "Turns out we do this for swarming jobs already!",
+      "revId": "12a09924b1ce3d483fa13223f616d305af75b8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
