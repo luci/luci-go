@@ -16,6 +16,24 @@
       "revId": "691256c92cfae73ff99af58cc12d96eb3af2835f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89f7cbf6_601e05ea",
+        "filename": "client/cmd/isolated/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-06T20:35:09Z",
+      "side": 1,
+      "message": "This is my bad! I should be closing the file here. The luci/client/isolated package doesn\u0027t close the file.",
+      "parentUuid": "0f9a2bc1_34483abb",
+      "revId": "691256c92cfae73ff99af58cc12d96eb3af2835f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
