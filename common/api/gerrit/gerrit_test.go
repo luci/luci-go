@@ -94,7 +94,7 @@ func TestQuery(t *testing.T) {
 
 		Convey("Basic", func() {
 			cls, more, err := c.ChangeQuery(ctx,
-				ChangeQueryRequest{
+				ChangeQueryParams{
 					Query: "some_query",
 				})
 			So(err, ShouldBeNil)
@@ -115,7 +115,7 @@ func TestQuery(t *testing.T) {
 
 		Convey("Basic", func() {
 			cls, more, err := c.ChangeQuery(ctx,
-				ChangeQueryRequest{
+				ChangeQueryParams{
 					Query: "4efbec9a685b238fced35b81b7f3444dc60150b1",
 				})
 			So(err, ShouldBeNil)
@@ -126,7 +126,7 @@ func TestQuery(t *testing.T) {
 	})
 
 }
-func TestGetChangeDetails(t *testing.T) {
+func TestChangeDetails(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
@@ -139,7 +139,8 @@ func TestGetChangeDetails(t *testing.T) {
 		defer srv.Close()
 
 		Convey("WithOptions", func() {
-			cl, err := c.GetChangeDetails(ctx, "629279", []string{"CURRENT_REVISION"})
+			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION"}}
+			cl, err := c.ChangeDetails(ctx, "629279", options)
 			So(err, ShouldBeNil)
 			So(cl.RevertOf, ShouldEqual, 629277)
 			So(cl.CurrentRevision, ShouldEqual, "1ee75012c0de")
