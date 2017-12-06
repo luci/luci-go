@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7941c9f8_63e144b9",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-06T18:05:10Z",
+      "side": 1,
+      "message": "oops",
+      "revId": "ffa9111b2ca3dc9d53e731f26d100eb321b2c99a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
