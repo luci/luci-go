@@ -316,10 +316,19 @@
   margin: 0.2em;
 }
 
-.console-builder-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(2em, 1fr));
-  width: 100%;
+@supports not (display: grid) {
+  .console-builder-summary-grid {
+    display: flex;
+    width: 100%;
+  }
+}
+
+@supports (display: grid) {
+  .console-builder-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(2em, 1fr));
+    width: 100%;
+  }
 }
 
 .console-builder-summary-flex * {
