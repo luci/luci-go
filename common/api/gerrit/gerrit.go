@@ -190,7 +190,7 @@ func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryRequest) ([]*Cha
 	var resp struct {
 		Collection []*Change
 	}
-	if _, err := c.get(ctx, "changes/", qr.qs(), &resp.Collection); err != nil {
+	if _, err := c.get(ctx, "a/changes/", qr.qs(), &resp.Collection); err != nil {
 		return nil, false, err
 	}
 	result := resp.Collection
@@ -225,7 +225,7 @@ func (c *Client) GetChangeDetails(ctx context.Context, changeID string, options 
 		}
 	}
 
-	path := fmt.Sprintf("changes/%s/detail", url.PathEscape(changeID))
+	path := fmt.Sprintf("a/changes/%s/detail", url.PathEscape(changeID))
 	if _, err := c.get(ctx, path, qs, resp); err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ type ChangeInput struct {
 // Returns a Change describing the newly created change or an error.
 func (c *Client) CreateChange(ctx context.Context, ci *ChangeInput) (*Change, error) {
 	var resp Change
-	if _, err := c.post(ctx, "changes/", ci, &resp); err != nil {
+	if _, err := c.post(ctx, "a/changes/", ci, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -325,7 +325,7 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 		return 0, transient.Tag.Apply(err)
 	}
 	defer r.Body.Close()
-	if r.StatusCode != 200 {
+	if r.StatusCode < 200 || r.StatusCode >= 300 {
 		err = errors.Reason("failed to fetch %q, status code %d", u, r.StatusCode).Err()
 		if r.StatusCode >= 500 {
 			// TODO(tandrii): consider retrying.
@@ -333,7 +333,7 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 		}
 		return r.StatusCode, err
 	}
-	return 200, parseResponse(r.Body, result)
+	return r.StatusCode, parseResponse(r.Body, result)
 }
 
 func (c *Client) post(ctx context.Context, path string, data interface{}, result interface{}) (int, error) {
@@ -348,14 +348,14 @@ func (c *Client) post(ctx context.Context, path string, data interface{}, result
 		return 0, transient.Tag.Apply(err)
 	}
 	defer r.Body.Close()
-	if r.StatusCode != 200 {
+	if r.StatusCode < 200 || r.StatusCode >= 300 {
 		err = errors.Reason("failed to post to %q with %v, status code %d", u.String(), data, r.StatusCode).Err()
 		if r.StatusCode >= 500 {
 			err = transient.Tag.Apply(err)
 		}
 		return r.StatusCode, err
 	}
-	return 200, parseResponse(r.Body, result)
+	return r.StatusCode, parseResponse(r.Body, result)
 }
 
 func parseResponse(resp io.Reader, result interface{}) error {
