@@ -67,7 +67,7 @@ type Policy struct {
 	// accepted by Prepare without errors.
 	//
 	// Called from cron when ingesting new configs.
-	Validate func(cfg ConfigBundle, v *validation.Context)
+	Validate func(v *validation.Context, cfg ConfigBundle)
 
 	// Prepare converts validated configs into an optimized queryable form.
 	//
@@ -165,7 +165,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 
 	if p.Validate != nil {
 		v := validation.Context{Logger: logging.Get(c)}
-		p.Validate(bundle, &v)
+		p.Validate(&v, bundle)
 		if err := v.Finalize(); err != nil {
 			return "", errors.Annotate(err, "configs at rev %s are invalid", rev).Err()
 		}

@@ -161,7 +161,7 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 // fail if new code uses old configs, still stored in the datastore.
 func makeDelegationRule(rule *admin.DelegationRule) (*delegationRule, error) {
 	v := validation.Context{}
-	validateRule(rule.Name, rule, &v)
+	validateRule(&v, rule.Name, rule)
 	if err := v.Finalize(); err != nil {
 		return nil, err
 	}

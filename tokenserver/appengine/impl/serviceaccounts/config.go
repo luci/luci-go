@@ -162,7 +162,7 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 	// in the datastore (which were validated by old code). In practice this most
 	// certainly never happens.
 	v := validation.Context{}
-	validateDefaults("defaults", &defaults, &v)
+	validateDefaults(&v, "defaults", &defaults)
 	if err := v.Finalize(); err != nil {
 		return nil, err
 	}
@@ -331,7 +331,7 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 // Mutates 'ruleProto' in-place filling in defaults.
 func makeRule(ruleProto *admin.ServiceAccountRule, defaults *admin.ServiceAccountRuleDefaults, rev string) (*Rule, error) {
 	v := validation.Context{}
-	validateRule(ruleProto.Name, ruleProto, &v)
+	validateRule(&v, ruleProto.Name, ruleProto)
 	if err := v.Finalize(); err != nil {
 		return nil, err
 	}

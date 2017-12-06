@@ -109,7 +109,7 @@ func TestImportConfigs(t *testing.T) {
 				So(f.FetchTextProto(c, "config.cfg", &ts), ShouldBeNil)
 				return ConfigBundle{"config.cfg": &ts}, nil
 			},
-			Validate: func(cfg ConfigBundle, v *validation.Context) {
+			Validate: func(v *validation.Context, cfg ConfigBundle) {
 				So(cfg["config.cfg"], ShouldNotBeNil)
 				v.SetFile("config.cfg")
 				v.Error("validation error")
