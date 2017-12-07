@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -106,6 +107,14 @@ type Catalog interface {
 	// It assumes there's cfgclient implementation installed in
 	// the context, will panic if it's not there.
 	GetProjectJobs(c context.Context, projectID string) ([]Definition, error)
+
+	// ValidateConfig performs the config validation and stores any errors in
+	// the validation.Context.
+	//
+	// This is part of the components needed to install validation endpoints
+	// on the service. When a config validation request is received by the
+	// service from luci-config, this is called to perform the validation.
+	ValidateConfig(ctx *validation.Context, configSet, path string, content []byte)
 }
 
 // JobFlavor describes a category of jobs.
@@ -375,6 +384,66 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	metricConfigJobs.Set(c, int64(disabledCount), projectID, "disabled")
 	metricConfigJobs.Set(c, int64(invalidCount), projectID, "invalid")
 	return out, nil
+}
+
+func (cat *catalog) ValidateConfig(ctx *validation.Context, configSet, path string, content []byte) {
+	c := ctx.Context
+	ctx.SetFile(path)
+	var cfg messages.ProjectConfig
+	err := proto.UnmarshalText(string(content), &cfg)
+	if err != nil {
+		ctx.Error(err.Error())
+		return
+	}
+
+	// AclSets
+	ctx.Enter("acl_sets")
+	knownACLSets, err := acl.ValidateAclSets(cfg.GetAclSets())
+	if err != nil {
+		ctx.Error(err.Error())
+		return
+	}
+	ctx.Exit()
+
+	// Jobs
+	ctx.Enter("job")
+	for _, job := range cfg.Job {
+		id := "(empty)"
+		if job.Id != "" {
+			id = job.Id
+		}
+		ctx.Enter(id)
+		if _, err = cat.validateJobProto(c, job); err != nil {
+			ctx.Error(err.Error())
+		}
+		ctx.Enter("acl_sets")
+		if _, err := acl.ValidateTaskAcls(knownACLSets, job.GetAclSets(), job.GetAcls()); err != nil {
+			ctx.Error(err.Error())
+		}
+		ctx.Exit()
+		ctx.Exit()
+	}
+	ctx.Exit()
+
+	// Triggers
+	ctx.Enter("trigger")
+	for _, trigger := range cfg.Trigger {
+		id := "(empty)"
+		if trigger.Id != "" {
+			id = trigger.Id
+		}
+		ctx.Enter(id)
+		if _, err = cat.validateTriggerProto(c, trigger); err != nil {
+			ctx.Error(err.Error())
+		}
+		ctx.Enter("acl_sets")
+		if _, err := acl.ValidateTaskAcls(knownACLSets, trigger.GetAclSets(), trigger.GetAcls()); err != nil {
+			ctx.Error(err.Error())
+		}
+		ctx.Exit()
+		ctx.Exit()
+	}
+	ctx.Exit()
 }
 
 // configFile returns a name of *.cfg file (inside project's config set) with
