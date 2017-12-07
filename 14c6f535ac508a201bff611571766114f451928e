@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc7d2ecf_bf6309c9",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-07T22:03:35Z",
+      "side": 1,
+      "message": "nit; would it help to name the return values so it\u0027s not necessary to repeat `common.Pin{}` at every site?",
+      "range": {
+        "startLine": 216,
+        "startChar": 2,
+        "endLine": 216,
+        "endChar": 8
+      },
+      "revId": "14c6f535ac508a201bff611571766114f451928e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a27e94cd_c661940d",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 942,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-07T22:03:35Z",
+      "side": 1,
+      "message": "nit: don\u0027t need `a`",
+      "range": {
+        "startLine": 942,
+        "startChar": 75,
+        "endLine": 942,
+        "endChar": 1
+      },
+      "revId": "14c6f535ac508a201bff611571766114f451928e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "491db041_f6b3d751",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 955,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-07T22:03:35Z",
+      "side": 1,
+      "message": "why not defer close this? we\u0027d ignore the error anyway, but this way it wouldn\u0027t accidentally leak on a return path",
+      "range": {
+        "startLine": 955,
+        "startChar": 1,
+        "endLine": 955,
+        "endChar": 3
+      },
+      "revId": "14c6f535ac508a201bff611571766114f451928e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
