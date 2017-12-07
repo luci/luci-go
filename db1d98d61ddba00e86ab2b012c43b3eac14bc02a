@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6811bbf_ba93d462",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T23:19:07Z",
+      "side": 1,
+      "message": "if anything, let\u0027s hardcode machine-db-administrators so we have a more fine-grained control at the same low cost",
+      "range": {
+        "startLine": 41,
+        "startChar": 30,
+        "endLine": 41,
+        "endChar": 44
+      },
+      "revId": "db1d98d61ddba00e86ab2b012c43b3eac14bc02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd7e9958_f52d2405",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T23:19:07Z",
+      "side": 1,
+      "message": "nil\n\nthis cannot be non-nil",
+      "range": {
+        "startLine": 45,
+        "startChar": 12,
+        "endLine": 45,
+        "endChar": 15
+      },
+      "revId": "db1d98d61ddba00e86ab2b012c43b3eac14bc02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22f1b215_e6759c41",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T23:19:07Z",
+      "side": 1,
+      "message": "it will either not be used by other packages, or it will need to move to a more common package (e.g. when we build GUI). Let\u0027s make it internal for now",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 16
+      },
+      "revId": "db1d98d61ddba00e86ab2b012c43b3eac14bc02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
