@@ -15,12 +15,24 @@
 package coordinator
 
 import (
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/logdog/common/types"
+	"golang.org/x/net/context"
+)
+
+const (
+	// RegistrationNonceTimeout is how long LogPrefix.IsRetry will consider
+	// a matching nonce to be valid.
+	RegistrationNonceTimeout = 15 * time.Minute
+
+	// RegistrationNonceLength is the exact length that a RegistrationNonce may be.
+	RegistrationNonceLength = 32
 )
 
 // LogPrefix is a datastore model for a prefix space. All log streams sharing
@@ -64,6 +76,16 @@ type LogPrefix struct {
 	// This value may only be returned to LogDog services; it is not user-visible.
 	Secret []byte `gae:",noindex"`
 
+	// RegistrationNonce is provided by the client when calling RegisterPrefix. If
+	// the client provides the same nonce on a subsequent invocation of
+	// RegisterPrefix, the server will respond with success instead of
+	// AlreadyExists.
+	//
+	// This must have a length of either 0 or RegistrationNonceLength.
+	//
+	// The nonce has a valid lifetime of RegistrationNonceTimeout after Created.
+	RegistrationNonce []byte `gae:",noindex"`
+
 	// extra causes datastore to ignore unrecognized fields and strip them in
 	// future writes.
 	extra ds.PropertyMap `gae:"-,extra"`
@@ -86,10 +108,7 @@ func (p *LogPrefix) Load(pmap ds.PropertyMap) error {
 
 	// Validate the log prefix. Don't enforce HashID correctness, since datastore
 	// hasn't populated that field yet.
-	if err := p.validateImpl(false); err != nil {
-		return err
-	}
-	return nil
+	return p.validateImpl(false)
 }
 
 // Save implements ds.PropertyLoadSaver.
@@ -100,6 +119,18 @@ func (p *LogPrefix) Save(withMeta bool) (ds.PropertyMap, error) {
 	p.Schema = CurrentSchemaVersion
 
 	return ds.GetPLS(p).Save(withMeta)
+}
+
+// IsRetry checks to see if this LogPrefix is still in the RegistrationNonce
+// window, and if nonce matches the one in this LogPrefix.
+func (p *LogPrefix) IsRetry(c context.Context, nonce []byte) bool {
+	if len(p.RegistrationNonce) == 0 || len(nonce) != RegistrationNonceLength {
+		return false
+	}
+	if clock.Now(c).Before(p.Created.Add(RegistrationNonceTimeout)) {
+		return subtle.ConstantTimeCompare(p.RegistrationNonce, nonce) == 1
+	}
+	return false
 }
 
 // recalculateID calculates the hash ID from its Prefix field, which must be
@@ -141,6 +172,9 @@ func (p *LogPrefix) validateImpl(enforceHashID bool) error {
 	}
 	if p.Created.IsZero() {
 		return errors.New("created time is not set")
+	}
+	if l := len(p.RegistrationNonce); l > 0 && l != RegistrationNonceLength {
+		return fmt.Errorf("registration nonce has bad length: %d", l)
 	}
 	return nil
 }
