@@ -17,6 +17,8 @@ package config
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 
@@ -28,14 +30,14 @@ func TestValidateDatacentersConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("validateDatacentersConfig: empty config", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacentersConfig := &config.DatacentersConfig{}
 		validateDatacentersConfig(context, datacentersConfig)
 		So(context.Finalize(), ShouldBeNil)
 	})
 
 	Convey("validateDatacentersConfig: unnamed file", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacentersConfig := &config.DatacentersConfig{
 			Datacenter: []string{""},
 		}
@@ -44,7 +46,7 @@ func TestValidateDatacentersConfig(t *testing.T) {
 	})
 
 	Convey("validateDatacentersConfig: ok", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacentersConfig := &config.DatacentersConfig{
 			Datacenter: []string{
 				"duplicate.cfg",
@@ -57,7 +59,7 @@ func TestValidateDatacentersConfig(t *testing.T) {
 	})
 
 	Convey("validateDatacentersConfig: ok", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacentersConfig := &config.DatacentersConfig{
 			Datacenter: []string{
 				"datacenter1.cfg",
@@ -73,14 +75,14 @@ func TestValidateDatacenters(t *testing.T) {
 	t.Parallel()
 
 	Convey("validateDatacenters: empty datacenters config", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{}
 		validateDatacenters(context, datacenterConfigs)
 		So(context.Finalize(), ShouldBeNil)
 	})
 
 	Convey("validateDatacenters: unnamed datacenter", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"unnamed.cfg": {},
 		}
@@ -89,7 +91,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: duplicate datacenters", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter1.cfg": {
 				Name: "duplicate",
@@ -106,7 +108,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: unnamed rack", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -120,7 +122,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: duplicate racks in the same datacenter", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -142,7 +144,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: duplicate racks in different datacenters", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter1.cfg": {
 				Name: "datacenter 1",
@@ -169,7 +171,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: unnamed switch", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -188,7 +190,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: duplicate switches in the same rack", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -218,7 +220,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: duplicate switches in different racks", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter1.cfg": {
 				Name: "datacenter 1",
@@ -258,7 +260,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: missing switch ports", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -279,7 +281,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: negative switch ports", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -301,7 +303,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: zero switch ports", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -323,7 +325,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: excessive switch ports", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter.cfg": {
 				Name: "datacenter",
@@ -345,7 +347,7 @@ func TestValidateDatacenters(t *testing.T) {
 	})
 
 	Convey("validateDatacenters: ok", t, func() {
-		context := &validation.Context{}
+		context := &validation.Context{Context: context.Background()}
 		datacenterConfigs := map[string]*config.DatacenterConfig{
 			"datacenter1.cfg": {
 				Name:        "datacenter 1",

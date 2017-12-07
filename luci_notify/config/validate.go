@@ -18,6 +18,8 @@ import (
 	"net/mail"
 	"regexp"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
@@ -81,28 +83,28 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier,
 
 // validateProjectConfig returns an error if the configuration violates any of the
 // requirements in the proto definition.
-func validateProjectConfig(configName string, projectCfg *notifyConfig.ProjectConfig) error {
-	c := &validation.Context{}
-	c.SetFile(configName)
+func validateProjectConfig(c context.Context, configName string, projectCfg *notifyConfig.ProjectConfig) error {
+	ctx := &validation.Context{Context: c}
+	ctx.SetFile(configName)
 	notifierNames := stringset.New(len(projectCfg.Notifiers))
 	for i, cfgNotifier := range projectCfg.Notifiers {
-		c.Enter("notifier #%d", i+1)
-		validateNotifier(c, cfgNotifier, notifierNames)
-		c.Exit()
+		ctx.Enter("notifier #%d", i+1)
+		validateNotifier(ctx, cfgNotifier, notifierNames)
+		ctx.Exit()
 	}
-	return c.Finalize()
+	return ctx.Finalize()
 }
 
 // validateSettings returns an error if the service configuration violates any
 // of the requirements in the proto definition.
-func validateSettings(settings *notifyConfig.Settings) error {
-	c := &validation.Context{}
-	c.SetFile("settings.cfg")
+func validateSettings(c context.Context, settings *notifyConfig.Settings) error {
+	ctx := &validation.Context{Context: c}
+	ctx.SetFile("settings.cfg")
 	switch {
 	case settings.MiloHost == "":
-		c.Error(requiredFieldError, "milo_host")
+		ctx.Error(requiredFieldError, "milo_host")
 	case validation.ValidateHostname(settings.MiloHost) != nil:
-		c.Error(invalidFieldError, "milo_host")
+		ctx.Error(invalidFieldError, "milo_host")
 	}
-	return c.Finalize()
+	return ctx.Finalize()
 }

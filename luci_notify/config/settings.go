@@ -114,7 +114,7 @@ func updateSettings(c context.Context) error {
 		if err := proto.UnmarshalText(cfg.Content, &newSettings.Settings); err != nil {
 			return errors.Annotate(err, "unmarshalling proto").Err()
 		}
-		if err := validateSettings(&newSettings.Settings); err != nil {
+		if err := validateSettings(c, &newSettings.Settings); err != nil {
 			return errors.Annotate(err, "validating settings").Err()
 		}
 		return datastore.Put(c, &newSettings)

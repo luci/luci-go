@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/testing/assertions"
 
 	"go.chromium.org/luci/luci_notify/testutil"
@@ -33,7 +35,7 @@ func TestValidation(t *testing.T) {
 			Convey(env, func() {
 				cfg, err := testutil.ParseProjectConfig(config)
 				So(err, ShouldBeNil)
-				err = validateProjectConfig("projects/test", cfg)
+				err = validateProjectConfig(context.Background(), "projects/test", cfg)
 				if expectFormat == "" {
 					So(err, assertions.ShouldErrLike)
 					return
@@ -101,7 +103,7 @@ func TestValidation(t *testing.T) {
 			Convey(env, func() {
 				cfg, err := testutil.ParseSettings(config)
 				So(err, ShouldBeNil)
-				err = validateSettings(cfg)
+				err = validateSettings(context.Background(), cfg)
 				if expectFormat == "" {
 					So(err, assertions.ShouldErrLike)
 					return

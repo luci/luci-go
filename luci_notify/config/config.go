@@ -149,7 +149,7 @@ func updateProjects(c context.Context) error {
 			merr = append(merr, errors.Annotate(err, "unmarshalling proto").Err())
 			continue
 		}
-		if err := validateProjectConfig(cfg.ConfigSet, &project); err != nil {
+		if err := validateProjectConfig(c, cfg.ConfigSet, &project); err != nil {
 			merr = append(merr, errors.Annotate(err, "validating config").Err())
 			continue
 		}
