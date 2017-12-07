@@ -6,12 +6,6 @@ syntax = "proto3";
 
 package crimson;
 
-// Datacenters implements a read-only service to retrieve datacenters.
-service Datacenters {
-  // GetDatacenters retrieves datacenters.
-  rpc GetDatacenters(DatacentersRequest) returns (DatacentersResponse);
-}
-
 // DatacentersRequest is a request to retrieve datacenters.
 message DatacentersRequest {
   // The names of datacenters to retrieve.
@@ -20,7 +14,7 @@ message DatacentersRequest {
 
 // Datacenter describes a datacenter.
 message Datacenter {
-  // The name of this datacenter.
+  // The name of this datacenter. Uniquely identifies this datacenter.
   string name = 1;
   // A description of this datacenter.
   string description = 2;

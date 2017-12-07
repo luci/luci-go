@@ -24,11 +24,12 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/router"
+
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/config"
 	"go.chromium.org/luci/machine-db/appengine/database"
-	"go.chromium.org/luci/machine-db/appengine/model/datacenters"
-	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/machine-db/appengine/rpc"
 )
 
 func init() {
@@ -41,7 +42,7 @@ func init() {
 	r.GET("/", standard.Base(), handler)
 
 	api := prpc.Server{}
-	crimson.RegisterDatacentersServer(&api, &datacenters.DatacentersServer{})
+	crimson.RegisterCrimsonServer(&api, rpc.NewServer())
 	discovery.Enable(&api)
 	api.InstallHandlers(r, databaseMiddleware)
 
