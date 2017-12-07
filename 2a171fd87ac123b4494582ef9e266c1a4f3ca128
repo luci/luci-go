@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c52350fe_7898fe19",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-07T23:11:44Z",
+      "side": 1,
+      "message": "oops, I skipped this file during my first review pass",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 2
+      },
+      "revId": "2a171fd87ac123b4494582ef9e266c1a4f3ca128",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac2ab3ae_8d0ce65f",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-07T23:11:44Z",
+      "side": 1,
+      "message": "nit: move this right before it is used (line 89)",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 67
+      },
+      "revId": "2a171fd87ac123b4494582ef9e266c1a4f3ca128",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9583b347_33271a11",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-07T23:11:44Z",
+      "side": 1,
+      "message": "strictly speaking it is possible that two RCPs from same client end up racing and hitting this code. For example:\n1. The client makes an RPC and waits for a reply.\n2. The backend server starts processing it.\n3. The connection between the client and the frontend drops, the client initiates a retry.\n4. Meanwhile the backend is still processing previous RPC.\n5. Now the backend handles two RegisterPrefix RPC from same client concurrently.\n\nSo consider adding OpNonce check here too.",
+      "range": {
+        "startLine": 144,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 32
+      },
+      "revId": "2a171fd87ac123b4494582ef9e266c1a4f3ca128",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8373fa95_1697493e",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-07T23:11:44Z",
+      "side": 1,
+      "message": "can this be done before the transaction?",
+      "range": {
+        "startLine": 156,
+        "startChar": 2,
+        "endLine": 159,
+        "endChar": 3
+      },
+      "revId": "2a171fd87ac123b4494582ef9e266c1a4f3ca128",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
