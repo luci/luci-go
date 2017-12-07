@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "668028a5_6e1d7b67",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T22:49:25Z",
+      "side": 1,
+      "message": "this should happen in v.Error too\n\nErrorf should be basically only a shortcut to Error",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "9f5a21ee32a6cc3d8111505c4b4d397aeaec4edb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25d99ff9_9a1f1864",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T22:49:25Z",
+      "side": 1,
+      "message": "this should happen in v.Error",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 97,
+        "endChar": 55
+      },
+      "revId": "9f5a21ee32a6cc3d8111505c4b4d397aeaec4edb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6388d19f_c1c64853",
+        "filename": "common/config/validation/validation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T22:49:25Z",
+      "side": 1,
+      "message": "this was fine before because \"f1\" is a constant. please undo such changes in other files too",
+      "revId": "9f5a21ee32a6cc3d8111505c4b4d397aeaec4edb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
