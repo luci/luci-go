@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22b79412_812994bb",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "golang discourages using _ in names https://golang.org/doc/effective_go.html#mixed-caps\ni believe golint should complain too",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed1b1e39_0e943d76",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "most of the code of this function can be generalized, see my another comment for an exact example how this could be done",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1869348b_e076264b",
+        "filename": "machine-db/appengine/model/racks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "nit: forgot to mention that dot imports always go in the end, sorry",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b6a890c_7d12f96d",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "we are declaring these fields twice: here and in L93-94. Why not do it once?\n\nvar dc crimson.Datacenter\n... Scan(\u0026dc.Name, \u0026dc.Description) ...",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 30
+      },
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "243473f4_a629ff00",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "ideally database does filtering for us, so we don\u0027t fetch what would ignore, but I understand that manually composing SQL queries makes it complex. I\u0027ve found https://github.com/Masterminds/squirrel which seems to solve this problem:\n\n  q :\u003d sq.\n    Select(\"racks.name\", \"racks.description\", \"datacenters.name\").\n    From(\"racks\").\n    Join(\"datacenters ON racks.datacenter_id \u003d datacenters.id\")\n  if len(names) \u003e 0 {\n    q \u003d q.Where(sq.Eq{\"racks.name\": names)) // no need for stringset anymore\n  }  \n  if len(datacenters) \u003e 0 {\n    q \u003d q.Where(sq.Eq{\"datacenter.name\": datacenters))\n  }  \n\neven without dynamic SQL generation, one may argue that this is more type safe because it calls Go functions for SQL operators.\n\nWith a query that does not require client-side filtering, we can further reduce duplication between L79-L98 and L114-134:\n\nfunc selectTo(c context.Context, q string, slicePtr interface{}) error {\n\tdb :\u003d database.Get(c)\nq\tif err !\u003d nil {\n\t\treturn nil, errors.Annotate(err, \"failed to get database\").Err()\n\t}\n\tdefer rows.Close()\n\n\tslicePtrV :\u003d reflect.ValueOf(slicePtr)\n\tstructType :\u003d slicePtrV.Type().Elem().Elem().Elem()\n\n\tfor rows.Next() {\n\t\trow :\u003d reflect.New(structType)\n                // here I use https://github.com/jmoiron/sqlx\n                // which seems to be useful\n\t\tif err \u003d rows.StructScan(row.Interface()); err !\u003d nil {\n\t\t\treturn nil, errors.Annotate(err, \"failed to scan a row\").Err()\n\t\t}\n\t\tslicePtrV.Set(reflect.Append(slicePtrV.Elem(), row))\n\t}\n\treturn nil\n}\n\nfunc (*CrimsonService) getRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.Rack, error) {\n  q :\u003d sq....\n  var racks []*crimson.Rack\n  err :\u003d selectTo(c, q.ToSql(), \u0026racks)\n  return racks, err\n}",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c42cfad9_61944c0f",
+        "filename": "machine-db/appengine/rpc/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "top-level declaration comments should start with the symbol name",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 7
+      },
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5e0daf2_08fef90d",
+        "filename": "machine-db/appengine/rpc/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "since this utility function is specific to rpc and presumably all RPCs will live in this package, this function can be made private (and thus decrease API surface of this package)",
+      "range": {
+        "startLine": 27,
+        "startChar": 5,
+        "endLine": 27,
+        "endChar": 6
+      },
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8448f769_c0bdc8b9",
+        "filename": "machine-db/appengine/rpc/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T08:05:06Z",
+      "side": 1,
+      "message": "now that this function is inside package \"rpc\", this is redundant",
+      "range": {
+        "startLine": 27,
+        "startChar": 13,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
