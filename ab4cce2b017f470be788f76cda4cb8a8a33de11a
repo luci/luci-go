@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95b240e1_93214c9f",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-07T02:43:57Z",
+      "side": 1,
+      "message": "It\u0027s I/O bound, not CPU bound. In practice, this is fighting against RTT latency, so hard coding to 8 makes more sense. I think you can remove the option, unless you want to perf test but I wouldn\u0027t keep this committed.",
+      "revId": "ab4cce2b017f470be788f76cda4cb8a8a33de11a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "186f3223_7499672e",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-07T02:43:57Z",
+      "side": 1,
+      "message": "Two things:\n- It\u0027s be nice if os.MkdirAll() could be called \"smartly\", e.g. only when necessary.\n- The isolated format does carry over +x file mode but it seems lost.",
+      "revId": "ab4cce2b017f470be788f76cda4cb8a8a33de11a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
