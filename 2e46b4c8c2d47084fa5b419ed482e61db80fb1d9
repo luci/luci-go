@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4e2894d0_aa2056ef",
+        "filename": "machine-db/api/crimson/v1/racks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Easier to read I think. Right now everything about Datacenters is separate from everything about Racks. They have their own protos, and their own go source. If you want to change the racks API you only need to touch racks.proto and racks.go. You also said in another file that racks shouldn\u0027t be part of package datacenters anyways, so shouldn\u0027t the service also be separate?",
+      "parentUuid": "3695568c_6bd8fabc",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "11bf8e19_48dcf02d",
         "filename": "machine-db/api/crimson/v1/racks.proto",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42f409f6_7a09054a",
+        "filename": "machine-db/api/crimson/v1/racks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11bf8e19_48dcf02d",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "dcc8a737_b6980c18",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b922de2_91b24a2c",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 16
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5331ade_0dd351f3",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 1
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "8fb7335a_6181100f",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5331ade_0dd351f3",
+      "range": {
+        "startLine": 45,
+        "startChar": 26,
+        "endLine": 45,
+        "endChar": 37
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b6fe5a8_0f07efbb",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 1
@@ -96,6 +180,24 @@
       "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fba10da9_e92314e5",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b6fe5a8_0f07efbb",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -116,6 +218,24 @@
     },
     {
       "key": {
+        "uuid": "623b780d_feaa166e",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77c1aba1_3308e59e",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "83e26964_a79c5b38",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 1
@@ -133,6 +253,24 @@
     },
     {
       "key": {
+        "uuid": "58637d7b_a19181dd",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83e26964_a79c5b38",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0cb92e8e_01820858",
         "filename": "machine-db/appengine/model/datacenters/datacenters.go",
         "patchSetId": 1
@@ -144,6 +282,30 @@
       "writtenOn": "2017-12-06T07:44:48Z",
       "side": 1,
       "message": "for other packages this reads like `datacenters.DatacentersServer`. The second word datacenters is redundant there. IMO this should be just server. Examples from Go std lib:\n\n  bytes.Buffer\n  bytes.Reader\n  strings.Reader\n  httptest.Server",
+      "range": {
+        "startLine": 260,
+        "startChar": 9,
+        "endLine": 260,
+        "endChar": 26
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b517824c_260dc039",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "It\u0027s to distinguish it from datacenters.RacksServer. I will leave this comment unresolved until we decide if Racks RPCs should be part of the Datacenters service.",
+      "parentUuid": "0cb92e8e_01820858",
       "range": {
         "startLine": 260,
         "startChar": 9,
@@ -203,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "2138adff_f8bb96a7",
+        "filename": "machine-db/appengine/model/datacenters/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "So should I create another directory under appengine, like appengine/rpcs and put all the RPC server code there?",
+      "parentUuid": "2e435d49_d8800d7d",
+      "range": {
+        "startLine": 263,
+        "startChar": 14,
+        "endLine": 263,
+        "endChar": 20
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a69b709_730ff9d6",
         "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
         "patchSetId": 1
@@ -223,6 +409,30 @@
       "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e2bf71a_9634516f",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a69b709_730ff9d6",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 41
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -249,6 +459,30 @@
     },
     {
       "key": {
+        "uuid": "77cc6c57_89f27391",
+        "filename": "machine-db/appengine/model/datacenters/datacenters_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e6f9c23_cb6b5f17",
+      "range": {
+        "startLine": 62,
+        "startChar": 3,
+        "endLine": 68,
+        "endChar": 65
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9f02b7b_afa1b39d",
         "filename": "machine-db/appengine/model/datacenters/racks.go",
         "patchSetId": 1
@@ -266,6 +500,24 @@
     },
     {
       "key": {
+        "uuid": "e7a5be68_38e74e80",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9f02b7b_afa1b39d",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c80d8d6_3b38516d",
         "filename": "machine-db/appengine/model/datacenters/racks.go",
         "patchSetId": 1
@@ -280,6 +532,24 @@
       "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2262d3df_3eb1a04f",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "I was not aware of this order, I thought the order was alphabetical with blank lines separating different hosts. Fixed.",
+      "parentUuid": "5c80d8d6_3b38516d",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -306,6 +576,30 @@
     },
     {
       "key": {
+        "uuid": "abbff1ad_10f9d5d1",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Because this syntax is shorter and it\u0027s common to do it this way. I don\u0027t see any reason to be needlessly verbose.\n\nThat said, your second point is a great observation. Changed not to join at all.",
+      "parentUuid": "39596605_a2e52de7",
+      "range": {
+        "startLine": 59,
+        "startChar": 104,
+        "endLine": 59,
+        "endChar": 165
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a788aa7d_ef54cb0b",
         "filename": "machine-db/appengine/model/datacenters/racks.go",
         "patchSetId": 1
@@ -326,6 +620,30 @@
       "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbd9c473_a99e6813",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a788aa7d_ef54cb0b",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 18
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -352,6 +670,30 @@
     },
     {
       "key": {
+        "uuid": "bd30faff_14b82ef9",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Almost, we still need to set the id. Done.",
+      "parentUuid": "ddd647a9_1804aba5",
+      "range": {
+        "startLine": 96,
+        "startChar": 34,
+        "endLine": 100,
+        "endChar": 5
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3158147f_c0591a5b",
         "filename": "machine-db/appengine/model/datacenters/racks.go",
         "patchSetId": 1
@@ -363,6 +705,24 @@
       "writtenOn": "2017-12-06T07:44:48Z",
       "side": 1,
       "message": "this is 230 lines of copy-pasted code, per table. Before it was 160, I think. That\u0027s a lot. I will look into this tomorrow again. Sending my comments as is for now",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7012dc6d_9d5c73c9",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "It has to be this way because sqlite didn\u0027t like the previous interspersed way. 160 lines was when we were doing:\nfor rows.Next() {\n  detect differences in this row\n  maybe prepare statement\n  maybe exec statement\n}\nrows.Close()\n\nWhich causes deadlock in sqlite implementation because the database is locked until rows.Close() is called.\n\nAt any rate, I don\u0027t think the copy/paste is that bad. Keep in mind this isn\u0027t the kind of copy/paste where you have to update multiple places if something changes. If racks changes (gets a new field for example), you only have to update it in racks.go. Not generalizing means if you want to update one type of entity you only have to know about that one type of entity.",
+      "parentUuid": "3158147f_c0591a5b",
       "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -439,6 +799,30 @@
     },
     {
       "key": {
+        "uuid": "ec966675_f8a69302",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae56863b_ebad075d",
+      "range": {
+        "startLine": 295,
+        "startChar": 10,
+        "endLine": 295,
+        "endChar": 39
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e4bb5dd_adb42fae",
         "filename": "machine-db/appengine/model/datacenters/racks.go",
         "patchSetId": 1
@@ -462,6 +846,30 @@
     },
     {
       "key": {
+        "uuid": "1d29f71c_2f40be63",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e4bb5dd_adb42fae",
+      "range": {
+        "startLine": 313,
+        "startChar": 55,
+        "endLine": 313,
+        "endChar": 69
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9dce6409_b82c2193",
         "filename": "machine-db/appengine/model/datacenters/racks.go",
         "patchSetId": 1
@@ -473,6 +881,30 @@
       "writtenOn": "2017-12-06T07:44:48Z",
       "side": 1,
       "message": "JOIN?",
+      "range": {
+        "startLine": 315,
+        "startChar": 113,
+        "endLine": 315,
+        "endChar": 118
+      },
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6b70384_86ede0c4",
+        "filename": "machine-db/appengine/model/datacenters/racks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Why? This is the same but shorter.",
+      "parentUuid": "9dce6409_b82c2193",
       "range": {
         "startLine": 315,
         "startChar": 113,
@@ -502,6 +934,24 @@
     },
     {
       "key": {
+        "uuid": "46c264e0_53f4413f",
+        "filename": "machine-db/appengine/model/datacenters/racks_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54eeeca5_ed32f04a",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cfba43da_bf5d0f50",
         "filename": "machine-db/appengine/model/datacenters/racks_test.go",
         "patchSetId": 1
@@ -516,6 +966,24 @@
       "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e570ab4_927233b5",
+        "filename": "machine-db/appengine/model/datacenters/racks_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-07T00:26:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cfba43da_bf5d0f50",
+      "revId": "2e46b4c8c2d47084fa5b419ed482e61db80fb1d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
