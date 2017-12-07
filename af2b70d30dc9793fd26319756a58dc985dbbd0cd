@@ -16,6 +16,24 @@
       "revId": "af2b70d30dc9793fd26319756a58dc985dbbd0cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9d7f414_494d6a64",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T19:27:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d73674ac_9645b61a",
+      "revId": "af2b70d30dc9793fd26319756a58dc985dbbd0cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
