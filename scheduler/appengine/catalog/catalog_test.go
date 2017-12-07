@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -283,6 +284,31 @@ func TestConfigReading(t *testing.T) {
 	})
 }
 
+func TestValidateConfig(t *testing.T) {
+	t.Parallel()
+	catalog := New("scheduler.cfg")
+	catalog.RegisterTaskManager(fakeTaskManager{
+		name: "noop",
+		task: &messages.NoopTask{},
+	})
+	catalog.RegisterTaskManager(fakeTaskManager{
+		name: "url_fetch",
+		task: &messages.UrlFetchTask{},
+	})
+
+	Convey("Validation on correct config file content", t, func() {
+		ctx := &validation.Context{Context: testContext()}
+		catalog.ValidateConfig(ctx, "projects/good", "scheduler.cfg", []byte(project3Cfg))
+		So(ctx.Finalize(), ShouldBeNil)
+	})
+
+	Convey("Validation on unmarshallable config file content", t, func() {
+		ctx := &validation.Context{Context: testContext()}
+		catalog.ValidateConfig(ctx, "projects/bad", "scheduler.cfg", []byte("deadbeef"))
+		So(ctx.Finalize(), ShouldNotBeNil)
+	})
+}
+
 ////
 
 type fakeTaskManager struct {
@@ -434,6 +460,40 @@ job {
   id: "noop-job-1"
   schedule: "*/10 * * * * * *"
   noop: {}
+}
+`
+
+const project3Cfg = `
+acl_sets {
+  name: "default"
+  acls {
+    role: READER
+    granted_to: "group:all"
+  }
+  acls {
+    role: OWNER
+    granted_to: "group:all"
+  }
+}
+
+job {
+  id: "noop-job-v2"
+  acl_sets: "default"
+  noop: {
+    sleep_ms: 1000
+  }
+}
+
+trigger {
+  id: "noop-trigger-v2"
+  acl_sets: "default"
+
+  noop: {
+    sleep_ms: 1000
+    triggers_count: 2
+  }
+
+  triggers: "noop-job-v2"
 }
 `
 
