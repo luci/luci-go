@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff215804_d863749d",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-07T23:47:42Z",
+      "side": 1,
+      "message": "is it documented in luci/gae docs that the value of pfx is not touched if there\u0027s no such entity? (I can imagine it being cleared or something)",
+      "range": {
+        "startLine": 159,
+        "startChar": 25,
+        "endLine": 159,
+        "endChar": 29
+      },
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
