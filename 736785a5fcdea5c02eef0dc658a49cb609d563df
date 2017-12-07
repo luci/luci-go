@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07a7b1da_1e508b2d",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-07T02:04:26Z",
+      "side": 1,
+      "message": "So, what I had in mind is to avoid subcmd specific flags completely, hence i\u0027d stick chagne-id and params into input.\n\nBut what you have right now seems reasonable, too, and given that most Gerrit Op are per-change, this actually makes sense.",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 2
+      },
+      "revId": "736785a5fcdea5c02eef0dc658a49cb609d563df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6f54c12c_fc2a1477",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-07T02:04:26Z",
+      "side": 1,
+      "message": "shouldn\u0027t there be a defer f.Close(), or is json.Decoder auto-closes the ioReader?",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 2
+      },
+      "revId": "736785a5fcdea5c02eef0dc658a49cb609d563df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9d8732f_320ab606",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-07T02:04:26Z",
+      "side": 1,
+      "message": "this is hard to read; maybe instead of 3 bools accept a struct with 3 parameters, which is in turn embedded into CHangeRun struct, and then this line will be:\n  newChangeRun(authOpts, smth{ChangeId: True, Params: True}, runner)",
+      "range": {
+        "startLine": 247,
+        "startChar": 33,
+        "endLine": 247,
+        "endChar": 51
+      },
+      "revId": "736785a5fcdea5c02eef0dc658a49cb609d563df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
