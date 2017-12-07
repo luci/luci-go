@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57ef90a7_e15d3317",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-07T02:48:42Z",
+      "side": 1,
+      "message": "I wonder why gerrit present it this way. If not already the case, make sure to use goimports -w or gofmt -w -s on file save.",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d34303c1_2aae97db",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-07T02:48:42Z",
+      "side": 1,
+      "message": "use one of out-dir or output-dir in all tools, but not both.",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "207bd670_bef89ffa",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-07T02:48:42Z",
+      "side": 1,
+      "message": "it is not CPU bound, hard code to 8. If you want to fine tune the value, try it from a workstation in the Sydney or Munich office to get good real world data. Otherwise don\u0027t bother, 8 works for everyone™.",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de51cbd6_71f6814d",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-07T02:48:42Z",
+      "side": 1,
+      "message": "same issue about file mode",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
