@@ -48,6 +48,52 @@
     },
     {
       "key": {
+        "uuid": "6f2896ca_f3dd4669",
+        "filename": "logdog/appengine/coordinator/logPrefix.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-07T22:44:51Z",
+      "side": 1,
+      "message": "nit: return subtle.ConstantTimeCompare(p.RegistrationNonce, nonce) \u003d\u003d 1",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 3
+      },
+      "revId": "184aece2c67e247da2beba0fc0fb2fcc68ef223a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a74f6a2d_81e0cac2",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-07T22:44:51Z",
+      "side": 1,
+      "message": "is there a test for this function somewhere perhaps?..",
+      "range": {
+        "startLine": 96,
+        "startChar": 19,
+        "endLine": 96,
+        "endChar": 27
+      },
+      "revId": "184aece2c67e247da2beba0fc0fb2fcc68ef223a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c349c00_fde03607",
         "filename": "logdog/client/butler/output/logdog/output.go",
         "patchSetId": 1
