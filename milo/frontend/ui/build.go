@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
+	"regexp"
 	"strings"
 	"time"
 
@@ -249,6 +250,19 @@ type BuildComponent struct {
 	// Arbitrary text to display below links.  One line per entry,
 	// newlines are stripped.
 	Text []string
+}
+
+var rLineBreak = regexp.MustCompile("<br */?>")
+
+// TextBR returns Text, but also splits each line by <br>
+func (bc *BuildComponent) TextBR() []string {
+	result := make([]string, len(bc.Text))
+	for _, t := range bc.Text {
+		for _, line := range rLineBreak.Split(t, -1) {
+			result = append(result, line)
+		}
+	}
+	return result
 }
 
 // Navigation is the top bar of the page, used for navigating out of the page.
