@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "2a20557f_7a999e4d",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:43:45Z",
+      "side": 1,
+      "message": "totally right, I\u0027ve been really bad about this lately... :(",
+      "parentUuid": "6f54c12c_fc2a1477",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 2
+      },
+      "revId": "736785a5fcdea5c02eef0dc658a49cb609d563df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9d8732f_320ab606",
         "filename": "client/cmd/gerrit/change.go",
         "patchSetId": 8
@@ -68,6 +92,30 @@
       "revId": "736785a5fcdea5c02eef0dc658a49cb609d563df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43886992_f0f409b3",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:43:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9d8732f_320ab606",
+      "range": {
+        "startLine": 247,
+        "startChar": 33,
+        "endLine": 247,
+        "endChar": 51
+      },
+      "revId": "736785a5fcdea5c02eef0dc658a49cb609d563df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
