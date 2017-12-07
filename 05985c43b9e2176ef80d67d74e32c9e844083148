@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "77cb1d6e_bd941814",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T23:51:26Z",
+      "side": 1,
+      "message": "that\u0027s why more than we need because this is number of chars, not lines. I think this is worse than not preallocating. Either use string.Count(bc.Text, \"\u003cbr\") as a good enough estimation that will work for most of cases (with a comment that this is only an estimation) or not preallocate at all",
+      "range": {
+        "startLine": 259,
+        "startChar": 26,
+        "endLine": 259,
+        "endChar": 38
+      },
+      "revId": "05985c43b9e2176ef80d67d74e32c9e844083148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79c211f1_2892677f",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T23:51:26Z",
+      "side": 1,
+      "message": "result \u003d append(result, rLineBreak.Split(t, -1)...)",
+      "revId": "05985c43b9e2176ef80d67d74e32c9e844083148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
