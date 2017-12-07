@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "997fd7a3_dd7e2130",
+        "filename": "logdog/api/endpoints/coordinator/registration/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-07T21:31:24Z",
+      "side": 1,
+      "message": "(In all fairness, these are trusted clients, so this is probably overkill. 4 bytes would do? But s\u0027all good).",
+      "range": {
+        "startLine": 26,
+        "startChar": 25,
+        "endLine": 26,
+        "endChar": 48
+      },
+      "revId": "184aece2c67e247da2beba0fc0fb2fcc68ef223a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "771cc21e_f63c0f96",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-07T21:31:24Z",
+      "side": 1,
+      "message": "nit: test 15 ? Can we make this a constant?",
+      "range": {
+        "startLine": 137,
+        "startChar": 18,
+        "endLine": 137,
+        "endChar": 20
+      },
+      "revId": "184aece2c67e247da2beba0fc0fb2fcc68ef223a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c349c00_fde03607",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-07T21:31:24Z",
+      "side": 1,
+      "message": "nit: I don\u0027t think we need a crypto-grade random number here, since we\u0027re already a trusted client, but *shrug* MICROOPTIMIZATION!",
+      "range": {
+        "startLine": 150,
+        "startChar": 13,
+        "endLine": 150,
+        "endChar": 23
+      },
+      "revId": "184aece2c67e247da2beba0fc0fb2fcc68ef223a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4631d1e7_198bd626",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-07T21:31:24Z",
+      "side": 1,
+      "message": "These seem redundant?\n\n(I know others in this file behave this way, but those were created *before* we had annotated errors, so the logging was all of the context we got.)",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 74
+      },
+      "revId": "184aece2c67e247da2beba0fc0fb2fcc68ef223a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43adbb82_0c850a20",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-07T21:31:24Z",
+      "side": 1,
+      "message": "Not all errors are transient. grpcutil.WrapIfTransient? https://chromium.googlesource.com/infra/luci/luci-go/+/master/grpc/grpcutil/errors.go#82",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 33
+      },
+      "revId": "184aece2c67e247da2beba0fc0fb2fcc68ef223a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
