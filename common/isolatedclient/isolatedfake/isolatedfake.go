@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -57,13 +58,20 @@ func handlerJSON(f failure, handler jsonAPI) http.Handler {
 	})
 }
 
+func gsURLWithDigestQuery(host, path, digest string) *url.URL {
+	v := url.Values{}
+	v.Add("digest", digest)
+	fullPath := fmt.Sprintf("/fake/cloudstorage/%s", path)
+	return &url.URL{Scheme: "http", Host: host, Path: fullPath, RawQuery: v.Encode()}
+}
+
 // IsolatedFake is a functional fake in-memory isolated server.
 type IsolatedFake interface {
 	http.Handler
 	// Contents returns all the uncompressed data on the fake isolated server.
 	Contents() map[isolated.HexDigest][]byte
 	// Inject adds uncompressed data in the fake isolated server.
-	Inject(data []byte)
+	Inject(data []byte) isolated.HexDigest
 	Error() error
 }
 
@@ -87,11 +95,13 @@ func New() IsolatedFake {
 	server.handleJSON("/api/isolateservice/v1/preupload", server.preupload)
 	server.handleJSON("/api/isolateservice/v1/finalize_gs_upload", server.finalizeGSUpload)
 	server.handleJSON("/api/isolateservice/v1/store_inline", server.storeInline)
-	server.mux.HandleFunc("/fake/cloudstorage", server.fakeCloudStorage)
+	server.handleJSON("/api/isolateservice/v1/retrieve", server.retrieve)
+	server.mux.HandleFunc("/fake/cloudstorage/upload", server.fakeCloudStorageUpload)
+	server.mux.HandleFunc("/fake/cloudstorage/download", server.fakeCloudStorageDownload)
 
 	// Fail on anything else.
 	server.mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		server.Fail(fmt.Errorf("unknwown endpoint %s", req.URL))
+		server.Fail(fmt.Errorf("unknown endpoint %s", req.URL))
 	})
 	return server
 }
@@ -112,11 +122,12 @@ func (server *isolatedFake) Contents() map[isolated.HexDigest][]byte {
 	return out
 }
 
-func (server *isolatedFake) Inject(data []byte) {
+func (server *isolatedFake) Inject(data []byte) isolated.HexDigest {
 	h := isolated.HashBytes(data)
 	server.lock.Lock()
 	defer server.lock.Unlock()
 	server.contents[h] = data
+	return h
 }
 
 func (server *isolatedFake) Fail(err error) {
@@ -173,11 +184,7 @@ func (server *isolatedFake) preupload(r *http.Request) interface{} {
 				UploadTicket: ticket,
 			}
 			if d.Size > 1024 {
-				v := url.Values{}
-				v.Add("digest", string(d.Digest))
-				u := &url.URL{Scheme: "http", Host: r.Host, Path: "/fake/cloudstorage", RawQuery: v.Encode()}
-				s.GsUploadUrl = u.String()
-				//log.Printf("%s", s.GsUploadUrl)
+				s.GsUploadUrl = gsURLWithDigestQuery(r.Host, "upload", d.Digest).String()
 			}
 			out.Items = append(out.Items, s)
 		}
@@ -185,7 +192,7 @@ func (server *isolatedFake) preupload(r *http.Request) interface{} {
 	return out
 }
 
-func (server *isolatedFake) fakeCloudStorage(w http.ResponseWriter, r *http.Request) {
+func (server *isolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Header.Get("Content-Type") != "application/octet-stream" {
 		w.WriteHeader(400)
@@ -221,6 +228,41 @@ func (server *isolatedFake) fakeCloudStorage(w http.ResponseWriter, r *http.Requ
 	defer server.lock.Unlock()
 	server.staging[digest] = raw
 	w.WriteHeader(200)
+}
+
+func (server *isolatedFake) fakeCloudStorageDownload(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	if r.Method != "GET" {
+		w.WriteHeader(405)
+		server.Fail(fmt.Errorf("invalid method: %s", r.Method))
+		return
+	}
+	digest := isolated.HexDigest(r.URL.Query().Get("digest"))
+	data, ok := server.contents[digest]
+	if !ok {
+		w.WriteHeader(404)
+		server.Fail(fmt.Errorf("file not found: %s", digest))
+		return
+	}
+	var buf bytes.Buffer
+	compressor, err := isolated.GetCompressor(&buf)
+	if err != nil {
+		w.WriteHeader(500)
+		server.Fail(err)
+		return
+	}
+	if _, err := io.CopyBuffer(compressor, bytes.NewReader(data), nil); err != nil {
+		compressor.Close()
+		w.WriteHeader(500)
+		server.Fail(err)
+		return
+	}
+	if err := compressor.Close(); err != nil {
+		w.WriteHeader(500)
+		server.Fail(err)
+		return
+	}
+	w.Write(buf.Bytes())
 }
 
 func (server *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
@@ -301,4 +343,45 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 	server.contents[digest] = raw
 	//log.Printf("  storing %s = %d bytes", digest, len(raw))
 	return map[string]string{"ok": "true"}
+}
+
+func (server *isolatedFake) retrieve(r *http.Request) interface{} {
+	data := &isolateservice.HandlersEndpointsV1RetrieveRequest{}
+	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
+		server.Fail(err)
+		return map[string]string{"err": err.Error()}
+	}
+	digest := isolated.HexDigest(data.Digest)
+	rawContent, ok := server.contents[digest]
+	if !ok {
+		err := fmt.Errorf("no such digest %#v", digest)
+		server.Fail(err)
+		return map[string]string{"err": err.Error()}
+	}
+	if len(rawContent) > 1024 {
+		return &isolateservice.HandlersEndpointsV1RetrievedContent{
+			Url: gsURLWithDigestQuery(r.Host, "download", data.Digest).String(),
+		}
+	}
+
+	// Since we decompress when we get the data, we need to recompress when
+	// something is fetched.
+	var buf bytes.Buffer
+	compressor, err := isolated.GetCompressor(&buf)
+	if err != nil {
+		server.Fail(err)
+		return map[string]string{"err": err.Error()}
+	}
+	if _, err := io.CopyBuffer(compressor, bytes.NewReader(rawContent), nil); err != nil {
+		compressor.Close()
+		server.Fail(err)
+		return map[string]string{"err": err.Error()}
+	}
+	if err := compressor.Close(); err != nil {
+		server.Fail(err)
+		return map[string]string{"err": err.Error()}
+	}
+	return &isolateservice.HandlersEndpointsV1RetrievedContent{
+		Content: base64.StdEncoding.EncodeToString(buf.Bytes()),
+	}
 }

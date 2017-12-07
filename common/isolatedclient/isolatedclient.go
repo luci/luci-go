@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -66,7 +65,7 @@ type PushState struct {
 type CloudStorage interface {
 	// Fetch is a handler for retrieving specified content from GCS and storing
 	// the response in the provided destination buffer.
-	Fetch(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.WriteSeeker) error
+	Fetch(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.Writer) error
 	// Push is a handler for pushing content from provided buffer to GCS.
 	Push(context.Context, *Client, isolateservice.HandlersEndpointsV1PreuploadStatus, Source) error
 }
@@ -185,11 +184,11 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 }
 
 // Fetch downloads an item from the server.
-func (i *Client) Fetch(c context.Context, item *isolateservice.HandlersEndpointsV1Digest, dest io.WriteSeeker) error {
+func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Writer) error {
 	// Perform initial request.
 	url := i.url + "/api/isolateservice/v1/retrieve"
 	in := &isolateservice.HandlersEndpointsV1RetrieveRequest{
-		Digest: item.Digest,
+		Digest: string(digest),
 		Namespace: &isolateservice.HandlersEndpointsV1Namespace{
 			DigestHash: "sha-1",
 			Namespace:  i.namespace,
@@ -276,7 +275,7 @@ type defaultGCSHandler struct{}
 
 // Fetch uses the provided HandlersEndpointsV1RetrievedContent response to
 // download content from GCS to the provided dest.
-func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.WriteSeeker) error {
+func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.Writer) error {
 	rgen := func() (*http.Request, error) {
 		return http.NewRequest("GET", content.Url, nil)
 	}
@@ -287,9 +286,6 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 			return err
 		}
 		defer decompressor.Close()
-		if _, err := dest.Seek(0, os.SEEK_SET); err != nil {
-			return err
-		}
 		_, err = io.Copy(dest, decompressor)
 		return err
 	}

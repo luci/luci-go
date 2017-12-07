@@ -15,6 +15,7 @@
 package isolatedclient
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -37,6 +38,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// TODO(mknyszek): Add tests for handling http 429.
+
 func TestIsolateServerCaps(t *testing.T) {
 	ctx := context.Background()
 
@@ -53,28 +56,63 @@ func TestIsolateServerCaps(t *testing.T) {
 	})
 }
 
-func TestIsolateServerSmall(t *testing.T) {
+func TestIsolateServerDownloadSmall(t *testing.T) {
 	t.Parallel()
 	Convey(``, t, func() {
-		testNormal(context.Background(), t, foo, bar)
+		testNormalDownload(context.Background(), t, foo, bar)
 	})
 }
 
-func TestIsolateServerLarge(t *testing.T) {
+func TestIsolateServerDownloadLarge(t *testing.T) {
 	t.Parallel()
 	Convey(``, t, func() {
-		testNormal(context.Background(), t, large)
+		testNormalDownload(context.Background(), t, large)
 	})
 }
 
-func TestIsolateServerRetryGCSPartial(t *testing.T) {
+func TestIsolateServerUploadSmall(t *testing.T) {
+	t.Parallel()
+	Convey(``, t, func() {
+		testNormalUpload(context.Background(), t, foo, bar)
+	})
+}
+
+func TestIsolateServerUploadLarge(t *testing.T) {
+	t.Parallel()
+	Convey(``, t, func() {
+		testNormalUpload(context.Background(), t, large)
+	})
+}
+
+func TestIsolateServerDownloadRetryGCSPartial(t *testing.T) {
+	ctx := context.Background()
+
+	// GCS download is teared down in the middle.
+	t.Parallel()
+	Convey(``, t, func() {
+		server := isolatedfake.New()
+		largeHash := server.Inject(large)
+		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/download": 1024}}
+		flaky.ts = httptest.NewServer(flaky)
+		defer flaky.ts.Close()
+		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry, nil)
+
+		var buffer bytes.Buffer
+		So(client.Fetch(ctx, largeHash, &buffer), ShouldBeNil)
+		So(server.Error(), ShouldBeNil)
+		So(buffer.Bytes(), ShouldResemble, large)
+		So(flaky.tearDown, ShouldResemble, map[string]int{})
+	})
+}
+
+func TestIsolateServerUploadRetryGCSPartial(t *testing.T) {
 	ctx := context.Background()
 
 	// GCS upload is teared down in the middle.
 	t.Parallel()
 	Convey(``, t, func() {
 		server := isolatedfake.New()
-		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
+		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/upload": 1024}}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
 		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry, nil)
@@ -114,76 +152,106 @@ func TestIsolateServerBadURL(t *testing.T) {
 	})
 }
 
-// Private stuff.
+func TestRetryDownload(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
 
-func noRetry() retry.Iterator {
-	return &retry.Limited{
-		Retries: 0,
+	type testCase struct {
+		name         string
+		item         []byte // item to Inject into the server, and which will be downloaded.
+		errURL       string // a request to this URL is expected, and we will serve a 503 once before succeeding on retries.
+		fatalURL     string // the test will fail if this URL is requested.
+		retryFactory func() retry.Iterator
+		failure      bool // expected result of calling testFunc.
 	}
-}
 
-func fastRetry() retry.Iterator {
-	return &retry.Limited{
-		Retries: 10,
-	}
-}
-
-var (
-	bar   = []byte("bar")
-	foo   = []byte("foo")
-	small = []byte("small")
-	large []byte
-)
-
-func init() {
-	src := rand.New(rand.NewSource(0))
-	// It has to be exactly 64kb + 1; as the internal buffering is 64kb. This is
-	// needed to reproduce https://crbug.com/552697
-	large = make([]byte, 64*1024+1)
-	for i := 0; i < len(large); i++ {
-		large[i] = byte(src.Uint32())
-	}
-}
-
-func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest, [][]byte, map[isolated.HexDigest][]byte) {
-	digests := make([]*isolateservice.HandlersEndpointsV1Digest, 0, len(contents))
-	expected := make(map[isolated.HexDigest][]byte, len(contents))
-	for _, content := range contents {
-		hex := isolated.HashBytes(content)
-		digests = append(digests, &isolateservice.HandlersEndpointsV1Digest{Digest: string(hex), IsIsolated: false, Size: int64(len(content))})
-		expected[hex] = content
-	}
-	return digests, contents, expected
-}
-
-func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
-	Convey(``, func() {
-		digests, _, expected := makeItems(contents...)
+	// testFunc injects and then attempts to download tc.item off the server.
+	// Failure may be induced at various points in this process by setting tc.errURL and tc.retryFactory.
+	// Requests to tc.errURL will return a 503 once before succeeding.
+	// tc.retryFactory will be used to decide whether to retry these failed requests.
+	// testFunc will return a failStep which indicates which step in the process failed.
+	testFunc := func(tc testCase) bool {
+		// Construct a server which will serve a single 503 for requests to tc.errURL before succeeding.
 		server := isolatedfake.New()
-		ts := httptest.NewServer(server)
-		defer ts.Close()
-		client := New(nil, nil, ts.URL, DefaultNamespace, noRetry, nil)
-		states, err := client.Contains(ctx, digests)
-		So(err, ShouldBeNil)
-		So(len(states), ShouldResemble, len(digests))
-		for _, state := range states {
-			// The data is automatically compressed.
-			err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
-			So(err, ShouldBeNil)
+		itemHash := server.Inject(tc.item)
+		flaky := &killingMux{server: server, http503: make(map[string]int)}
+		if tc.errURL != "" {
+			flaky.http503[tc.errURL] = 10
 		}
+		flaky.ts = httptest.NewServer(flaky)
+		defer flaky.ts.Close()
+		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, tc.retryFactory, nil)
+
+		var buffer bytes.Buffer
+		err := client.Fetch(ctx, itemHash, &buffer)
 		So(server.Error(), ShouldBeNil)
-		So(server.Contents(), ShouldResemble, expected)
-		states, err = client.Contains(ctx, digests)
-		So(err, ShouldBeNil)
-		So(len(states), ShouldResemble, len(digests))
-		for _, state := range states {
-			So(state, ShouldBeNil)
+		if err != nil {
+			return true
 		}
-		So(server.Error(), ShouldBeNil)
+		So(buffer.Bytes(), ShouldResemble, tc.item)
+
+		_, fatalURLSeen := flaky.seenURLs[tc.fatalURL]
+		So(fatalURLSeen, ShouldBeFalse)
+		So(flaky.http503, ShouldResemble, map[string]int{})
+
+		return false
+	}
+
+	Convey(``, t, func() {
+		testCases := []testCase{
+			{
+				name:         "retry retrieve",
+				item:         small,
+				errURL:       "/api/isolateservice/v1/retrieve",
+				retryFactory: fastRetry,
+				failure:      false,
+			},
+			{
+				name:         "no retry retrieve",
+				item:         small,
+				errURL:       "/api/isolateservice/v1/retrieve",
+				retryFactory: noRetry,
+				failure:      true,
+			},
+			{
+				name:         "large files should give up being retrieved just like small ones",
+				item:         large,
+				errURL:       "/api/isolateservice/v1/retrieve",
+				retryFactory: noRetry,
+				failure:      true,
+			},
+			{
+				name:         "gs download failure is irrelevant for small files",
+				item:         small,
+				fatalURL:     "/fake/cloudstorage/download",
+				retryFactory: noRetry,
+				failure:      false,
+			},
+			{
+				name:         "gs download failure is relevant for large files",
+				item:         large,
+				errURL:       "/fake/cloudstorage/download",
+				retryFactory: noRetry,
+				failure:      true,
+			},
+			{
+				name:         "retry gs download",
+				item:         large,
+				errURL:       "/fake/cloudstorage/download",
+				retryFactory: fastRetry,
+				failure:      false,
+			},
+		}
+		for _, tc := range testCases {
+			tc := tc
+			Convey(tc.name, func() {
+				So(testFunc(tc), ShouldEqual, tc.failure)
+			})
+		}
 	})
 }
 
-func TestRetry(t *testing.T) {
+func TestRetryUpload(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
@@ -292,21 +360,21 @@ func TestRetry(t *testing.T) {
 			{
 				name:         "retry gs upload",
 				items:        [][]byte{large},
-				errURL:       "/fake/cloudstorage",
+				errURL:       "/fake/cloudstorage/upload",
 				retryFactory: fastRetry,
 				result:       success,
 			},
 			{
 				name:         "skip retry of gs upload",
 				items:        [][]byte{large},
-				errURL:       "/fake/cloudstorage",
+				errURL:       "/fake/cloudstorage/upload",
 				retryFactory: noRetry,
 				result:       failedPush,
 			},
 			{
 				name:         "gs upload failure is irrelevant for small files",
 				items:        [][]byte{small},
-				fatalURL:     "/fake/cloudstorage",
+				fatalURL:     "/fake/cloudstorage/upload",
 				retryFactory: noRetry,
 				result:       success,
 			},
@@ -329,10 +397,98 @@ func TestRetry(t *testing.T) {
 		for _, tc := range testCases {
 			tc := tc
 			Convey(tc.name, func() {
-				result := testFunc(tc)
-				So(result, ShouldEqual, tc.result)
+				So(testFunc(tc), ShouldEqual, tc.result)
 			})
 		}
+	})
+}
+
+// Private stuff.
+
+func noRetry() retry.Iterator {
+	return &retry.Limited{
+		Retries: 0,
+	}
+}
+
+func fastRetry() retry.Iterator {
+	return &retry.Limited{
+		Retries: 10,
+	}
+}
+
+var (
+	bar   = []byte("bar")
+	foo   = []byte("foo")
+	small = []byte("small")
+	large []byte
+)
+
+func init() {
+	src := rand.New(rand.NewSource(0))
+	// It has to be exactly 64kb + 1; as the internal buffering is 64kb. This is
+	// needed to reproduce https://crbug.com/552697
+	large = make([]byte, 64*1024+1)
+	for i := 0; i < len(large); i++ {
+		large[i] = byte(src.Uint32())
+	}
+}
+
+func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest, [][]byte, map[isolated.HexDigest][]byte) {
+	digests := make([]*isolateservice.HandlersEndpointsV1Digest, 0, len(contents))
+	expected := make(map[isolated.HexDigest][]byte, len(contents))
+	for _, content := range contents {
+		hex := isolated.HashBytes(content)
+		digests = append(digests, &isolateservice.HandlersEndpointsV1Digest{Digest: string(hex), IsIsolated: false, Size: int64(len(content))})
+		expected[hex] = content
+	}
+	return digests, contents, expected
+}
+
+func testNormalDownload(ctx context.Context, t *testing.T, contents ...[]byte) {
+	Convey(``, func() {
+		server := isolatedfake.New()
+		hashes := make([]isolated.HexDigest, 0, len(contents))
+		for _, file := range contents {
+			hashes = append(hashes, server.Inject(file))
+		}
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		client := New(nil, nil, ts.URL, DefaultNamespace, noRetry, nil)
+		for i, hash := range hashes {
+			var buffer bytes.Buffer
+			err := client.Fetch(ctx, hash, &buffer)
+			So(err, ShouldBeNil)
+			So(buffer.Bytes(), ShouldResemble, contents[i])
+		}
+		So(server.Error(), ShouldBeNil)
+	})
+}
+
+func testNormalUpload(ctx context.Context, t *testing.T, contents ...[]byte) {
+	Convey(``, func() {
+		digests, _, expected := makeItems(contents...)
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		client := New(nil, nil, ts.URL, DefaultNamespace, noRetry, nil)
+		states, err := client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			// The data is automatically compressed.
+			err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
+			So(err, ShouldBeNil)
+		}
+		So(server.Error(), ShouldBeNil)
+		So(server.Contents(), ShouldResemble, expected)
+		states, err = client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			So(state, ShouldBeNil)
+		}
+		So(server.Error(), ShouldBeNil)
 	})
 }
 
@@ -351,6 +507,9 @@ func readBytes(r io.Reader, toRead int) {
 	read := 0
 	for read < toRead {
 		n, _ := r.Read(b[:toRead-read])
+		if n == 0 {
+			return
+		}
 		read += n
 	}
 }
