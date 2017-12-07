@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e65ee94a_22333ea0",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:04:26Z",
+      "side": 1,
+      "message": "Got it (and done).",
+      "parentUuid": "95b240e1_93214c9f",
+      "revId": "ab4cce2b017f470be788f76cda4cb8a8a33de11a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "186f3223_7499672e",
         "filename": "client/cmd/isolated/download.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "ab4cce2b017f470be788f76cda4cb8a8a33de11a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "262c25f7_698d09fb",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:04:26Z",
+      "side": 1,
+      "message": "Both of these things are covered in the changes to the Downloader now. This has been greatly simplified now.",
+      "parentUuid": "186f3223_7499672e",
+      "revId": "ab4cce2b017f470be788f76cda4cb8a8a33de11a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
