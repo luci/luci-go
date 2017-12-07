@@ -134,6 +134,37 @@ func readInput(filename string, out interface{}) error {
 	return json.NewDecoder(f).Decode(out)
 }
 
+func cmdChangeAbandon(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		var ai gerrit.AbandonInput
+		if err := readInput(input.jsonInput, &ai); err != nil {
+			return nil, err
+		}
+		change, err := client.AbandonChange(ctx, input.changeID, &ai)
+		if err != nil {
+			return nil, err
+		}
+		return change, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "change-abandon <options>",
+		ShortDesc: "abandons a change",
+		LongDesc: `Abandons a change in Gerrit.
+
+The changeID parameter may be in any of the forms supported by Gerrit:
+  - "4247"
+  - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+  - etc. See the link below.
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+More information on abandoning changes may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{changeID: true, jsonInput: true}, runner)
+		},
+	}
+}
+
 func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
 		var ci gerrit.ChangeInput
