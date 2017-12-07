@@ -1,0 +1,15 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
+
+// Crimson implements the Crimson service.
+service Crimson {
+  // GetDatacenters retrieves datacenters.
+  rpc GetDatacenters(DatacentersRequest) returns (DatacentersResponse);
+}
