@@ -152,6 +152,30 @@
       "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b6343313_358f3ff8",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T23:24:32Z",
+      "side": 1,
+      "message": "found a benchmark online, but it might not be comparing accurately (Join vs. a tight loop with buffer.WriteString). anyway, I think join is still just better here.",
+      "parentUuid": "0108b81a_c3289441",
+      "range": {
+        "startLine": 98,
+        "startChar": 20,
+        "endLine": 98,
+        "endChar": 27
+      },
+      "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
