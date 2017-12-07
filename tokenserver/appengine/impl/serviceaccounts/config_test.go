@@ -211,7 +211,7 @@ func loadConfig(text string) (*Rules, error) {
 	if err != nil {
 		return nil, err
 	}
-	rules, err := prepareRules(policy.ConfigBundle{serviceAccountsCfg: cfg}, "fake-revision")
+	rules, err := prepareRules(context.Background(), policy.ConfigBundle{serviceAccountsCfg: cfg}, "fake-revision")
 	if err != nil {
 		return nil, err
 	}
