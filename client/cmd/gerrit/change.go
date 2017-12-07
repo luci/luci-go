@@ -145,6 +145,40 @@ func (c *changeRun) Run(a subcommands.Application, args []string, _ subcommands.
 	return 0
 }
 
+func cmdChangeAbandon(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		ai, _ := input.JSONInput.(*gerrit.AbandonInput)
+		change, err := client.AbandonChange(ctx, input.ChangeID, ai)
+		if err != nil {
+			return nil, err
+		}
+		return change, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "change-abandon <options>",
+		ShortDesc: "abandons a change",
+		LongDesc: `Abandons a change in Gerrit.
+
+Input should contain a change ID and optionally a JSON payload, e.g.
+{
+  "change-id": <change-id>,
+  "input": <JSON payload>
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+More information on abandoning changes may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:  true,
+				jsonInput: &gerrit.AbandonInput{},
+			}, runner)
+		},
+	}
+}
+
 func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
 		ci, _ := input.JSONInput.(*gerrit.ChangeInput)
