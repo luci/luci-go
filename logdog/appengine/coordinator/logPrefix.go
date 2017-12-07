@@ -15,12 +15,15 @@
 package coordinator
 
 import (
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/logdog/common/types"
+	"golang.org/x/net/context"
 )
 
 // LogPrefix is a datastore model for a prefix space. All log streams sharing
@@ -64,6 +67,14 @@ type LogPrefix struct {
 	// This value may only be returned to LogDog services; it is not user-visible.
 	Secret []byte `gae:",noindex"`
 
+	// RegistrationNonce is provided by the client when calling RegisterPrefix. If
+	// the client provides the same nonce on a subsequent invocation of
+	// RegisterPrefix, the server will respond with success instead of
+	// AlreadyExists.
+	//
+	// The nonce has a valid lifetime of 15 minutes after Created.
+	RegistrationNonce []byte `gae:",noindex"`
+
 	// extra causes datastore to ignore unrecognized fields and strip them in
 	// future writes.
 	extra ds.PropertyMap `gae:"-,extra"`
@@ -86,10 +97,7 @@ func (p *LogPrefix) Load(pmap ds.PropertyMap) error {
 
 	// Validate the log prefix. Don't enforce HashID correctness, since datastore
 	// hasn't populated that field yet.
-	if err := p.validateImpl(false); err != nil {
-		return err
-	}
-	return nil
+	return p.validateImpl(false)
 }
 
 // Save implements ds.PropertyLoadSaver.
@@ -100,6 +108,20 @@ func (p *LogPrefix) Save(withMeta bool) (ds.PropertyMap, error) {
 	p.Schema = CurrentSchemaVersion
 
 	return ds.GetPLS(p).Save(withMeta)
+}
+
+// IsRetry checks to see if this LogPrefix is still in the RegistrationNonce
+// window, and if nonce matches the one in this LogPrefix.
+func (p *LogPrefix) IsRetry(c context.Context, nonce []byte) bool {
+	if len(p.RegistrationNonce) == 0 || len(nonce) == 0 {
+		return false
+	}
+	if clock.Now(c).Before(p.Created.Add(15 * time.Minute)) {
+		if subtle.ConstantTimeCompare(p.RegistrationNonce, nonce) == 1 {
+			return true
+		}
+	}
+	return false
 }
 
 // recalculateID calculates the hash ID from its Prefix field, which must be

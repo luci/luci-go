@@ -50,17 +50,6 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	// Has the prefix already been registered?
 	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
 
-	// Check for existing prefix registration (non-transactional).
-	switch exists, err := ds.Exists(c, ds.KeyForObj(c, pfx)); {
-	case err != nil:
-		log.WithError(err).Errorf(c, "Failed to check for existing prefix (non-transactional).")
-		return nil, grpcutil.Internal
-
-	case exists.All():
-		log.Errorf(c, "The prefix is already registered (non-transactional).")
-		return nil, grpcutil.AlreadyExists
-	}
-
 	// Load our service and project configurations.
 	svcs := endpoints.GetServices(c)
 	cfg, err := svcs.Config(c)
@@ -73,17 +62,6 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load project configuration.")
 		return nil, grpcutil.Internal
-	}
-
-	// Determine our prefix expiration. This must be > 0, else there will be no
-	// window when log streams can be registered and this prefix is useless.
-	//
-	// We will choose the shortest expiration window defined by our request and
-	// our project and service configurations.
-	expiration := endpoints.MinDuration(req.Expiration, cfg.Coordinator.PrefixExpiration, pcfg.PrefixExpiration)
-	if expiration <= 0 {
-		log.Errorf(c, "Refusing to register prefix in expired state.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "no prefix expiration defined")
 	}
 
 	// Determine our Pub/Sub topic.
@@ -106,6 +84,38 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 			"topic":      pubsubTopic,
 		}.Errorf(c, "Invalid transport Pub/Sub topic.")
 		return nil, grpcutil.Internal
+	}
+
+	// Check for existing prefix registration (non-transactional).
+	switch err := ds.Get(c, pfx); err {
+	case ds.ErrNoSuchEntity:
+		// we'll register it shortly
+
+	case nil:
+		if pfx.IsRetry(c, req.OpNonce) {
+			log.Infof(c, "The prefix is registered, but we observed valid nonce on retry.")
+			return &logdog.RegisterPrefixResponse{
+				Secret:         pfx.Secret,
+				LogBundleTopic: string(pubsubTopic),
+			}, nil
+		}
+		log.Errorf(c, "The prefix is already registered (non-transactional).")
+		return nil, grpcutil.AlreadyExists
+
+	default:
+		log.WithError(err).Errorf(c, "Failed to check for existing prefix (non-transactional).")
+		return nil, grpcutil.Internal
+	}
+
+	// Determine our prefix expiration. This must be > 0, else there will be no
+	// window when log streams can be registered and this prefix is useless.
+	//
+	// We will choose the shortest expiration window defined by our request and
+	// our project and service configurations.
+	expiration := endpoints.MinDuration(req.Expiration, cfg.Coordinator.PrefixExpiration, pcfg.PrefixExpiration)
+	if expiration <= 0 {
+		log.Errorf(c, "Refusing to register prefix in expired state.")
+		return nil, grpcutil.Errf(codes.InvalidArgument, "no prefix expiration defined")
 	}
 
 	// The prefix doesn't appear to be registered. Prepare to transactionally
@@ -142,6 +152,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		pfx.Source = req.SourceInfo
 		pfx.Secret = []byte(secret)
 		pfx.Expiration = now.Add(expiration)
+		pfx.RegistrationNonce = req.OpNonce
 
 		if err := ds.Put(c, pfx); err != nil {
 			log.WithError(err).Errorf(c, "Failed to register prefix.")
