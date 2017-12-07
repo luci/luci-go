@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d73674ac_9645b61a",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-07T02:40:41Z",
+      "side": 1,
+      "message": "You can\u0027t call WriteHeader() after calling Write().\nSee https://golang.org/pkg/net/http/#ResponseWriter\n\nIn practice, 200 is the default, so you can just remove the line.",
+      "revId": "af2b70d30dc9793fd26319756a58dc985dbbd0cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
