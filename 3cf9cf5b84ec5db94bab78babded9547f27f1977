@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c6a24c41_45ed16f6",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:32:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f21430a_c72f5da9",
+      "range": {
+        "startLine": 36,
+        "startChar": 49,
+        "endLine": 36,
+        "endChar": 68
+      },
+      "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9cddff6b_be4f8a5c",
         "filename": "buildbucket/access/action.go",
         "patchSetId": 6
@@ -39,6 +63,24 @@
       "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9271783e_515f499b",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:32:20Z",
+      "side": 1,
+      "message": "Oops, good point. Sorry, I\u0027m a little scattered right now.",
+      "parentUuid": "9cddff6b_be4f8a5c",
+      "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39f89504_38946620",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:32:20Z",
+      "side": 1,
+      "message": "Oops, my bad. I was originally going to use strings.Join, but found that apparently the buffer is faster? I\u0027ll just use strings.Join, it\u0027s much cleaner.",
+      "parentUuid": "a9308242_7cfa5d23",
+      "range": {
+        "startLine": 98,
+        "startChar": 20,
+        "endLine": 98,
+        "endChar": 27
+      },
+      "revId": "3cf9cf5b84ec5db94bab78babded9547f27f1977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
