@@ -1,0 +1,220 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9bbf5691_3b8b7d8f",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "all users of validation lib will need this. Let\u0027s do at the lib level, before calling ValdiateConfig",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2332926_cd886295",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "here we assume that the configSet is a project config. Let\u0027s not assume that. Please extract projectConfig-specific code to a separate function with a name that clearly communicates that the function validates a project config. And then in this function, we can have a switch statement that calls appropriate, concrete validation functions depending on configSet and path.",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8baf5d02_77f0cf84",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "1) ctx.Error accepts a format, while this is a string. It means that the error message happens to have %s, it will be rendered incorrectly. To prevent such mistakes, usually functions that accept a format end with \"f\", e.g. fmt.Errorf, logging.Infof, fmt.Printf, etc.\n2) here we have an error, generates a string out of it by calling .Error(), pass to ctx.Error which creates an error again (L111) but loosing all of its information (stack, etc).\n3) word error is repeated 3 times\n4) (not your CL) to prevent (1)\n\nplease\n\n1) rename existing ctx.Error to ctx.Errorf (in a separate CL)\n2) add ctx.Error that accepts an error. It will require refactoring of ctx.Errorf. It is currently prepends context (file, element info) to the error. This can be done using errors.Annotate(err, \"%s\", ctx) without loosing error info",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f62d2ca2_d88782cb",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "this is less useful than it could be because ValidateAclSets stops on the first error instead of recording all error messages in the validation context. Please update ValidateAclSets to accept validation context.\n\nSince you are making a breaking change to ValidateAclSets, please rename it to ValidateACLSets (Go likes capitalized abbreviations).",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32c49fa7_841254df",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 404,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "i think this should not here",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8235057_075e870f",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa0a305a_638b3e1b",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 421,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f5d42a1_7743eeae",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9554494f_cdd5ed60",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0458493c_ff67b46c",
+        "filename": "scheduler/appengine/frontend/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "redundant",
+      "range": {
+        "startLine": 185,
+        "startChar": 43,
+        "endLine": 185,
+        "endChar": 45
+      },
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0f35af2_2a495455",
+        "filename": "scheduler/appengine/frontend/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "please add `pattern.MustParse` that panics if could not parse. This is a common pattern, see text/template, html/template packages\n\nthen cp and pp can be inlined",
+      "range": {
+        "startLine": 186,
+        "startChar": 1,
+        "endLine": 188,
+        "endChar": 2
+      },
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d8b777d_0cfccbbc",
+        "filename": "scheduler/appengine/frontend/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-07T18:54:21Z",
+      "side": 1,
+      "message": "please structure this as\n\n  gaeconfig.InstallValidationHandlers(r, base, \u0026validation.Validator{\n    ConfigPatterns: [][]validation.ConfigPattern{{\n      ConfigSet: ...\n      Path: ...,\n    },\n    Func: ...,\n  })",
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
