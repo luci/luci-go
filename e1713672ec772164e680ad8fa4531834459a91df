@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "119db030_d4ea2c75",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:01:55Z",
+      "side": 1,
+      "message": "Everything should have been reformatted. I\u0027m not using \u0027git cl\u0027 right now, I need to do some work to fix my workflow.",
+      "parentUuid": "57ef90a7_e15d3317",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d34303c1_2aae97db",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "e1713672ec772164e680ad8fa4531834459a91df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "010040d6_38d6f9d4",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:01:55Z",
+      "side": 1,
+      "message": "I picked output-dir.",
+      "parentUuid": "d34303c1_2aae97db",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "86bfc65a_1060a974",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:01:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "207bd670_bef89ffa",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de51cbd6_71f6814d",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 3
@@ -67,6 +121,24 @@
       "revId": "e1713672ec772164e680ad8fa4531834459a91df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96c90103_49b6f529",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-07T22:01:55Z",
+      "side": 1,
+      "message": "File mode stuff as well as symlinks are all handled by the downloader now. This has been greatly simplified.",
+      "parentUuid": "de51cbd6_71f6814d",
+      "revId": "e1713672ec772164e680ad8fa4531834459a91df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
