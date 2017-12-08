@@ -21,12 +21,14 @@ import (
 
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	ps "go.chromium.org/luci/common/gcloud/pubsub"
 	"go.chromium.org/luci/common/lhttp"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/client/butler/output"
@@ -142,13 +144,26 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		fmt.Sprintf("GOOS=%s", runtime.GOOS),
 	)
 
-	svc := api.NewRegistrationPRPCClient(&client)
-	resp, err := svc.RegisterPrefix(c, &api.RegisterPrefixRequest{
+	nonce := make([]byte, types.OpNonceLength)
+	if _, err = cryptorand.Read(c, nonce); err != nil {
+		log.WithError(err).Errorf(c, "Failed to generate RegisterPrefix nonce.")
+		return nil, errors.Annotate(err, "generating nonce").Err()
+	}
+	req := &api.RegisterPrefixRequest{
 		Project:    string(cfg.Project),
 		Prefix:     string(cfg.Prefix),
 		SourceInfo: sourceInfo,
 		Expiration: google.NewDuration(cfg.PrefixExpiration),
-	})
+		OpNonce:    nonce,
+	}
+
+	svc := api.NewRegistrationPRPCClient(&client)
+	var resp *api.RegisterPrefixResponse
+	err = retry.Retry(c, retry.Default, func() error {
+		var err error
+		resp, err = svc.RegisterPrefix(c, req)
+		return grpcutil.WrapIfTransient(err)
+	}, retry.LogCallback(c, "RegisterPrefix"))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to register prefix with Coordinator service.")
 		return nil, err

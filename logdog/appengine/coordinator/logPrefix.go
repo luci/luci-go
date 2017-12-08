@@ -15,12 +15,22 @@
 package coordinator
 
 import (
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/types"
+	"golang.org/x/net/context"
+)
+
+const (
+	// RegistrationNonceTimeout is how long LogPrefix.IsRetry will consider
+	// a matching nonce to be valid.
+	RegistrationNonceTimeout = 15 * time.Minute
 )
 
 // LogPrefix is a datastore model for a prefix space. All log streams sharing
@@ -64,6 +74,16 @@ type LogPrefix struct {
 	// This value may only be returned to LogDog services; it is not user-visible.
 	Secret []byte `gae:",noindex"`
 
+	// OpNonce is provided by the client when calling RegisterPrefix. If the
+	// client provides the same nonce on a subsequent invocation of
+	// RegisterPrefix, the server will respond with success instead of
+	// AlreadyExists.
+	//
+	// This must have a length of either 0 or types.OpNonceLength.
+	//
+	// The nonce has a valid lifetime of RegistrationNonceTimeout after Created.
+	OpNonce []byte `gae:",noindex"`
+
 	// extra causes datastore to ignore unrecognized fields and strip them in
 	// future writes.
 	extra ds.PropertyMap `gae:"-,extra"`
@@ -86,10 +106,7 @@ func (p *LogPrefix) Load(pmap ds.PropertyMap) error {
 
 	// Validate the log prefix. Don't enforce HashID correctness, since datastore
 	// hasn't populated that field yet.
-	if err := p.validateImpl(false); err != nil {
-		return err
-	}
-	return nil
+	return p.validateImpl(false)
 }
 
 // Save implements ds.PropertyLoadSaver.
@@ -100,6 +117,24 @@ func (p *LogPrefix) Save(withMeta bool) (ds.PropertyMap, error) {
 	p.Schema = CurrentSchemaVersion
 
 	return ds.GetPLS(p).Save(withMeta)
+}
+
+// IsRetry checks to see if this LogPrefix is still in the OpNonce
+// window, and if nonce matches the one in this LogPrefix.
+func (p *LogPrefix) IsRetry(c context.Context, nonce []byte) bool {
+	if len(nonce) != types.OpNonceLength {
+		logging.Infof(c, "user provided invalid nonce length (%d)", len(nonce))
+		return false
+	}
+	if len(p.OpNonce) == 0 {
+		logging.Infof(c, "prefix %q has no associated nonce", p.Prefix)
+		return false
+	}
+	if clock.Now(c).After(p.Created.Add(RegistrationNonceTimeout)) {
+		logging.Infof(c, "prefix %q has expired nonce", p.Prefix)
+		return false
+	}
+	return subtle.ConstantTimeCompare(p.OpNonce, nonce) == 1
 }
 
 // recalculateID calculates the hash ID from its Prefix field, which must be
@@ -141,6 +176,9 @@ func (p *LogPrefix) validateImpl(enforceHashID bool) error {
 	}
 	if p.Created.IsZero() {
 		return errors.New("created time is not set")
+	}
+	if l := len(p.OpNonce); l > 0 && l != types.OpNonceLength {
+		return fmt.Errorf("registration nonce has bad length (%d)", l)
 	}
 	return nil
 }

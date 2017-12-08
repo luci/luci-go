@@ -26,6 +26,9 @@ const (
 	// - Sufficiently large to avoid collisions.
 	// - Can be expressed as a Base64 string without ugly padding.
 	PrefixSecretLength = 36
+
+	// OpNonceLength is the exact length that an OpNonce must be, if supplied.
+	OpNonceLength = 32
 )
 
 // PrefixSecret is the prefix secret value. It is used to assert ownership of
