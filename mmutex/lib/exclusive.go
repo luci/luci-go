@@ -42,6 +42,9 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 		return err
 	}
 
+	// Remove the drain file in case the lock can never be acquired.
+	defer os.Remove(drainFilePath)
+
 	blocker := createLockBlocker(ctx)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
 		// Remove the drain file immediately after acquiring the lock in order
