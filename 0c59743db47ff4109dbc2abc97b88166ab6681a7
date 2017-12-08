@@ -16,6 +16,24 @@
       "revId": "0c59743db47ff4109dbc2abc97b88166ab6681a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76ee9856_519bd36d",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T17:15:21Z",
+      "side": 1,
+      "message": "Ah, good point. With the cache we don\u0027t even need to Stat at all. And also good point with the HDD; it makes sense that concurrent accesses will just have issues.\n\nI added line 92 to \"clean up\" but you\u0027re right that the directory should just exist now, so it\u0027s fine to keep the cache. I guess I was afraid of some weird bug where these directories are deleted but subsequent calls to FetchIsolated don\u0027t know that and will error. There\u0027s no use-case for it now so I\u0027ll just delete it and add a comment to FetchIsolated (and an explicit \"flush cache\" method might be added in the future).\n\nI also made one change: the condition for returning on an err is not err !\u003d nil, but err !\u003d nil \u0026\u0026 !os.IsExist(err), since if the error is simply that the directory already exists, I don\u0027t think we should give up on that (i.e. I don\u0027t think we should assume that outputDir is empty or doesn\u0027t exist).\n\nOtherwise, done.",
+      "parentUuid": "c2e4e441_a3b95947",
+      "revId": "0c59743db47ff4109dbc2abc97b88166ab6681a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
