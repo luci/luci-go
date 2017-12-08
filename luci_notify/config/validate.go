@@ -27,10 +27,11 @@ import (
 var notifierNameRegexp = regexp.MustCompile("^[a-z-]+$")
 
 const (
-	requiredFieldError = "field %q is required"
-	invalidFieldError  = "field %q has invalid format"
-	uniqueFieldError   = "field %q must be unique in %s"
-	badEmailError      = "recipient %q is not a valid RFC 5322 email address"
+	requiredFieldError    = "field %q is required"
+	invalidFieldError     = "field %q has invalid format"
+	uniqueFieldError      = "field %q must be unique in %s"
+	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
+	duplicateBuilderError = "builder %s is specified more than once in project"
 )
 
 // validateNotification is a helper function for validateConfig which validates
@@ -47,18 +48,21 @@ func validateNotification(c *validation.Context, cfgNotification *notifyConfig.N
 
 // validateBuilder is a helper function for validateConfig which validates
 // an individual Builder.
-func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder) {
+func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder, builderNames stringset.Set) {
 	if cfgBuilder.Bucket == "" {
 		c.Errorf(requiredFieldError, "bucket")
 	}
 	if cfgBuilder.Name == "" {
 		c.Errorf(requiredFieldError, "name")
 	}
+	if !builderNames.Add(cfgBuilder.Name) {
+		c.Errorf(duplicateBuilderError, cfgBuilder.Name)
+	}
 }
 
 // validateNotifier is a helper function for validateConfig which validates
 // a Notifier.
-func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier, notifierNames stringset.Set) {
+func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier, notifierNames, builderNames stringset.Set) {
 	switch {
 	case cfgNotifier.Name == "":
 		c.Errorf(requiredFieldError, "name")
@@ -74,7 +78,7 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier,
 	}
 	for i, cfgBuilder := range cfgNotifier.Builders {
 		c.Enter("builder #%d", i+1)
-		validateBuilder(c, cfgBuilder)
+		validateBuilder(c, cfgBuilder, builderNames)
 		c.Exit()
 	}
 }
@@ -85,9 +89,10 @@ func validateProjectConfig(configName string, projectCfg *notifyConfig.ProjectCo
 	c := &validation.Context{}
 	c.SetFile(configName)
 	notifierNames := stringset.New(len(projectCfg.Notifiers))
+	builderNames := stringset.New(0)
 	for i, cfgNotifier := range projectCfg.Notifiers {
 		c.Enter("notifier #%d", i+1)
-		validateNotifier(c, cfgNotifier, notifierNames)
+		validateNotifier(c, cfgNotifier, notifierNames, builderNames)
 		c.Exit()
 	}
 	return c.Finalize()
