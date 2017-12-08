@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0d380401_6da3e12d",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T08:55:18Z",
+      "side": 1,
+      "message": "[]string{} is an empty slice with zero capacity, but it still takes space https://play.golang.org/p/AlidgRR22g. The first attempt to append to it will discard it, so it is not useful\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/816875",
+      "revId": "c0bc826f6f83291a6bf7c53909979fce1db41023",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
