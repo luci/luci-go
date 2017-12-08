@@ -22,6 +22,30 @@
       "revId": "53b813353345dd4cc8e09809f0278ff63304f745",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4e62b90_a650cfa1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T01:37:14Z",
+      "side": 1,
+      "message": "I clarified this as \"test support for downloading\". I also clarified the interface change.",
+      "parentUuid": "7d2664b3_ea81b841",
+      "range": {
+        "startLine": 7,
+        "startChar": 25,
+        "endLine": 7,
+        "endChar": 48
+      },
+      "revId": "53b813353345dd4cc8e09809f0278ff63304f745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
