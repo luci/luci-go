@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "0bb32587_48123db6",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b2540710_b1f6cad9",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1869348b_e076264b",
         "filename": "machine-db/appengine/model/racks_test.go",
         "patchSetId": 3
@@ -186,6 +204,24 @@
       "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7aca1a06_082ca8b9",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "ok.\n\ncopy-pasta worries me. I\u0027ve left a number of comments in datacenters.go and pretty much all of them equally apply to racks.go too. The more lines of code we have, the higher the probability of bugs, the higher complexity, the longer a reader needs to read and thus the longer code review takes; the longer tests run (because there is more of them). Copy-pasting is O(1). Reviewing copy-pasted code is O(N).",
+      "parentUuid": "e3043af3_da1f6b9f",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

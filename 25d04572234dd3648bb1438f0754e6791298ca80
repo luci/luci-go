@@ -1,0 +1,543 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "feecb6a8_c7131bd8",
+        "filename": "machine-db/api/crimson/v1/crimsonserver_dec.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "it\u0027s just occurred to me that there is no generate.go that generates this file. There should be one. example: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/api/proto/generate.go?type\u003dcs\u0026q\u003dsvcdec+file:generate.go\u0026sq\u003dpackage:chromium\u0026l\u003d20\nthis can be done in a separate CL without conflicts",
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b39374e2_dd3f5918",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "the context of this function/scope is not specific to datacenters so we better call it \"datacentersIDs\" or \"datacenters\". we will need rackName-\u003eid mapping when we add switches here.",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 4
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39fdf6cd_e2ea694b",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "i think this type causes complexity throughout this file:\n\n1) DatacentersTable.datacenters could be just map[int]*config.DatacenterConfig. Then L55-57 is one line `dc :- \u0026config.DatacenterConfig{}`. L153-162 would not be needed because we can do simply `delete d.datacenters[id]` (assuming removals is ids, not ints)\n2) same for DatacentersTable.updates. It would simplify L79-81 to one line `d.updates[id] \u003d dc`\n\nthis type is not needed if we use map[int]*config.DatacenterConfig in DatacentersTable.datacenters and DatacentersTable.updates. having one-per-table type less is simpler. L78-81 would become just `d.updates[id] \u003d dc`\n\nsame in racks.go",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "551239a9_084f1b10",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "additions and updates are datacenters too. \"current\" or \"rows\" might communicate the intention more clearly\n\nalso, logically, additions, removals and updates belong together because they are changes, while this is \"committed\" rows. Let\u0027s have have two blank-line-separated blocks of fields, one for changes and one for current rows.\n\nsame in racks.go",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 12
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d310f355_b7ab03af",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "nit: dc",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 12
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65649a65_faafc678",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "this would be one line\n\n  dc :\u003d \u0026config.DatacenterConfig{}",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 57,
+        "endChar": 3
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78b7e987_c9b5501c",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "this would be one line\n\n  d.updates[id] \u003d cfg",
+      "range": {
+        "startLine": 78,
+        "startChar": 4,
+        "endLine": 81,
+        "endChar": 6
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e5a8ba2_5dcef11e",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "slice",
+      "range": {
+        "startLine": 92,
+        "startChar": 39,
+        "endLine": 92,
+        "endChar": 44
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f075d220_c7372b9c",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "it would be faster if we deleted by id, not name, because the database physically sorts rows by primary key. Let\u0027s make d.removed an []int. To log name, we can lookup a dc by id if d.datacenters is a map",
+      "range": {
+        "startLine": 145,
+        "startChar": 66,
+        "endLine": 145,
+        "endChar": 74
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e75ac438_8babc1e0",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "this is unnecessary if d.datacenters is a map",
+      "range": {
+        "startLine": 151,
+        "startChar": 1,
+        "endLine": 162,
+        "endChar": 4
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72f4f741_05d4e27e",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "this would be \n\n  delete d.datacenters[id]",
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5090ab46_32cd3906",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "this is the _ 1 line above that we ignored. let\u0027s use it\n\nsame in racks.go",
+      "range": {
+        "startLine": 197,
+        "startChar": 21,
+        "endLine": 197,
+        "endChar": 37
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17efaf3e_ff78cd8c",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "this is unnecessary if d.datacenters is a map",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 4
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c2cafdf_d05aaf61",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "RacksTable",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 37,
+        "endChar": 8
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2fa992c8_c84073a7",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "unnecessary, see below",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 29
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "644db1e8_5ce621c5",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "we wouldn\u0027t need DatacentersTable.ids() and RacksTable.datacenters if we accepted map[int]*config.DatacenterConfig here.",
+      "range": {
+        "startLine": 72,
+        "startChar": 69,
+        "endLine": 72,
+        "endChar": 93
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ff21312_b4e194af",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "please use errors.Reason\n\nreason could be \"unknown datacenter %q in rack %q\"",
+      "range": {
+        "startLine": 78,
+        "startChar": 11,
+        "endLine": 78,
+        "endChar": 139
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff3a3a02_dfbb28b1",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "slice",
+      "range": {
+        "startLine": 104,
+        "startChar": 39,
+        "endLine": 104,
+        "endChar": 44
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de381cdc_d716a592",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "comment inconsistent with DatacentersTable.add",
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "137e82e0_b24e6650",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "comment inconsistent with DatacentersTable.remove",
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "669c8608_f5301c48",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "comment inconsistent with DatacentersTable.update",
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f699cc9_9ec3a58c",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "slice",
+      "range": {
+        "startLine": 82,
+        "startChar": 28,
+        "endLine": 82,
+        "endChar": 32
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4592043d_138bbcd6",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "slice",
+      "range": {
+        "startLine": 115,
+        "startChar": 22,
+        "endLine": 115,
+        "endChar": 26
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aed19384_978994a6",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "ShouldBeEmpty\n\nin other files too",
+      "range": {
+        "startLine": 129,
+        "startChar": 13,
+        "endLine": 129,
+        "endChar": 32
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7870fb19_ec97a5f3",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T07:55:04Z",
+      "side": 1,
+      "message": "in general it is better to check error before the not-error. otherwise, if an error happened, goconvey will tell you that racks is empty, but you won\u0027t see the error message\n\napplies to all tests",
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
