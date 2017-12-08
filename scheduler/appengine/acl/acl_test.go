@@ -69,17 +69,17 @@ func TestAclsValidation(t *testing.T) {
 
 	Convey("Task Acls", t, func() {
 		Convey("READER and OWNER ACLs are required", func() {
-			_, err := ValidateTaskAcls(nil, []string{},
+			_, err := ValidateTaskAcls(nil, nil,
 				[]*messages.Acl{{Role: messages.Acl_READER, GrantedTo: "group:readers"}})
 			So(err.Error(), ShouldResemble, "Job or Trigger must have OWNER acl set")
 
-			_, err = ValidateTaskAcls(nil, []string{},
+			_, err = ValidateTaskAcls(nil, nil,
 				[]*messages.Acl{{Role: messages.Acl_OWNER, GrantedTo: "group:owners"}})
 			So(err.Error(), ShouldResemble, "Job or Trigger must have READER acl set")
 		})
 
 		Convey("Without AclSets but with bad ACLs", func() {
-			_, err := ValidateTaskAcls(nil, []string{}, []*messages.Acl{
+			_, err := ValidateTaskAcls(nil, nil, []*messages.Acl{
 				{Role: messages.Acl_OWNER, GrantedTo: ""}})
 			So(err, ShouldNotBeNil)
 		})
@@ -92,7 +92,7 @@ func TestAclsValidation(t *testing.T) {
 			}
 			So(len(taskGrants), ShouldEqual, maxGrantsPerJob)
 			Convey("Hitting max is OK", func() {
-				r, err := ValidateTaskAcls(nil, []string{}, taskGrants)
+				r, err := ValidateTaskAcls(nil, nil, taskGrants)
 				So(err, ShouldBeNil)
 				So(len(r.Readers), ShouldEqual, 1)
 				So(len(r.Owners), ShouldEqual, maxGrantsPerJob-1)

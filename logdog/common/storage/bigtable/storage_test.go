@@ -58,7 +58,7 @@ func TestStorage(t *testing.T) {
 				Limit:    limit,
 				KeysOnly: keysOnly,
 			}
-			got := []string{}
+			var got []string
 			err := s.Get(c, req, func(e *storage.Entry) bool {
 				if keysOnly {
 					got = append(got, strconv.Itoa(int(mustGetIndex(e))))
@@ -177,7 +177,7 @@ func TestStorage(t *testing.T) {
 				Convey(`Will fetch {} for INVALID.`, func() {
 					got, err := get("INVALID", 0, 0, false)
 					So(err, ShouldBeNil)
-					So(got, ShouldResemble, []string{})
+					So(got, ShouldBeEmpty)
 				})
 			})
 
