@@ -39,7 +39,7 @@ func validateNotification(c *validation.Context, cfgNotification *notifyConfig.N
 	if cfgNotification.Email != nil {
 		for _, addr := range cfgNotification.Email.Recipients {
 			if _, err := mail.ParseAddress(addr); err != nil {
-				c.Error(badEmailError, addr)
+				c.Errorf(badEmailError, addr)
 			}
 		}
 	}
@@ -49,10 +49,10 @@ func validateNotification(c *validation.Context, cfgNotification *notifyConfig.N
 // an individual Builder.
 func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder) {
 	if cfgBuilder.Bucket == "" {
-		c.Error(requiredFieldError, "bucket")
+		c.Errorf(requiredFieldError, "bucket")
 	}
 	if cfgBuilder.Name == "" {
-		c.Error(requiredFieldError, "name")
+		c.Errorf(requiredFieldError, "name")
 	}
 }
 
@@ -61,11 +61,11 @@ func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder) {
 func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier, notifierNames stringset.Set) {
 	switch {
 	case cfgNotifier.Name == "":
-		c.Error(requiredFieldError, "name")
+		c.Errorf(requiredFieldError, "name")
 	case !notifierNameRegexp.MatchString(cfgNotifier.Name):
-		c.Error(invalidFieldError, "name")
+		c.Errorf(invalidFieldError, "name")
 	case !notifierNames.Add(cfgNotifier.Name):
-		c.Error(uniqueFieldError, "name", "project")
+		c.Errorf(uniqueFieldError, "name", "project")
 	}
 	for i, cfgNotification := range cfgNotifier.Notifications {
 		c.Enter("notification #%d", i+1)
@@ -100,9 +100,9 @@ func validateSettings(settings *notifyConfig.Settings) error {
 	c.SetFile("settings.cfg")
 	switch {
 	case settings.MiloHost == "":
-		c.Error(requiredFieldError, "milo_host")
+		c.Errorf(requiredFieldError, "milo_host")
 	case validation.ValidateHostname(settings.MiloHost) != nil:
-		c.Error(invalidFieldError, "milo_host")
+		c.Errorf(invalidFieldError, "milo_host")
 	}
 	return c.Finalize()
 }

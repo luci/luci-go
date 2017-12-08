@@ -31,7 +31,7 @@ func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
 	ctx.SetFile(serviceAccountsCfg)
 	cfg, ok := bundle[serviceAccountsCfg].(*admin.ServiceAccountsPermissions)
 	if !ok {
-		ctx.Error("unexpectedly wrong proto type %T", cfg)
+		ctx.Errorf("unexpectedly wrong proto type %T", cfg)
 		return
 	}
 
@@ -46,7 +46,7 @@ func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
 		// Rule name must be unique. Missing name will be handled by 'validateRule'.
 		if rule.Name != "" {
 			if names.Has(rule.Name) {
-				ctx.Error("two rules with identical name %q", rule.Name)
+				ctx.Errorf("two rules with identical name %q", rule.Name)
 			} else {
 				names.Add(rule.Name)
 			}
@@ -58,14 +58,14 @@ func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
 		// names, Rules.Rule() method relies on this.
 		for _, account := range rule.ServiceAccount {
 			if name, ok := accounts[account]; ok {
-				ctx.Error("service account %q is mentioned by more than one rule (%q and %q)", account, name, rule.Name)
+				ctx.Errorf("service account %q is mentioned by more than one rule (%q and %q)", account, name, rule.Name)
 			} else {
 				accounts[account] = rule.Name
 			}
 		}
 		for _, group := range rule.ServiceAccountGroup {
 			if name, ok := groups[group]; ok {
-				ctx.Error("service account group %q is mentioned by more than one rule (%q and %q)", group, name, rule.Name)
+				ctx.Errorf("service account group %q is mentioned by more than one rule (%q and %q)", group, name, rule.Name)
 			} else {
 				groups[group] = rule.Name
 			}
@@ -89,7 +89,7 @@ func validateRule(ctx *validation.Context, title string, r *admin.ServiceAccount
 	defer ctx.Exit()
 
 	if r.Name == "" {
-		ctx.Error(`"name" is required`)
+		ctx.Errorf(`"name" is required`)
 	}
 
 	// Note: we allow any of the sets to be empty. The rule will just not match
@@ -109,7 +109,7 @@ func validateEmails(ctx *validation.Context, field string, emails []string) {
 	for _, email := range emails {
 		// We reuse 'user:' identity validator, user identities are emails too.
 		if _, err := identity.MakeIdentity("user:" + email); err != nil {
-			ctx.Error("bad email %q - %s", email, err)
+			ctx.Errorf("bad email %q - %s", email, err)
 		}
 	}
 }
@@ -119,7 +119,7 @@ func validateGroups(ctx *validation.Context, field string, groups []string) {
 	defer ctx.Exit()
 	for _, gr := range groups {
 		if gr == "" {
-			ctx.Error("the group name must not be empty")
+			ctx.Errorf("the group name must not be empty")
 		}
 	}
 }
@@ -129,7 +129,7 @@ func validateScopes(ctx *validation.Context, field string, scopes []string) {
 	defer ctx.Exit()
 	for _, scope := range scopes {
 		if !strings.HasPrefix(scope, "https://www.googleapis.com/") {
-			ctx.Error("bad scope %q", scope)
+			ctx.Errorf("bad scope %q", scope)
 		}
 	}
 }
@@ -140,10 +140,10 @@ func validateIDSet(ctx *validation.Context, field string, ids []string) {
 	for _, entry := range ids {
 		if strings.HasPrefix(entry, "group:") {
 			if entry[len("group:"):] == "" {
-				ctx.Error("bad group entry - no group name")
+				ctx.Errorf("bad group entry - no group name")
 			}
 		} else if _, err := identity.MakeIdentity(entry); err != nil {
-			ctx.Error("bad identity %q - %s", entry, err)
+			ctx.Errorf("bad identity %q - %s", entry, err)
 		}
 	}
 }
@@ -153,8 +153,8 @@ func validateMaxGrantValidityDuration(ctx *validation.Context, dur int64) {
 	case dur == 0:
 		// valid
 	case dur < 0:
-		ctx.Error(`"max_grant_validity_duration" must be positive`)
+		ctx.Errorf(`"max_grant_validity_duration" must be positive`)
 	case dur > maxAllowedMaxGrantValidityDuration:
-		ctx.Error(`"max_grant_validity_duration" must not exceed %d`, maxAllowedMaxGrantValidityDuration)
+		ctx.Errorf(`"max_grant_validity_duration" must not exceed %d`, maxAllowedMaxGrantValidityDuration)
 	}
 }

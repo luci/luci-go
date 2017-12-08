@@ -86,8 +86,13 @@ func (e elementTagType) In(err error) (v []string, ok bool) {
 var fileTag = fileTagType{errors.NewTagKey("holds the file name for tests")}
 var elementTag = elementTagType{errors.NewTagKey("holds the elements for tests")}
 
-// Error records a validation error.
-func (v *Context) Error(msg string, args ...interface{}) {
+// Errorf records the given format string and args as a validation error.
+func (v *Context) Errorf(format string, args ...interface{}) {
+	v.Error(errors.Reason(format, args...).Err())
+}
+
+// Error records the given error as a validation error.
+func (v *Context) Error(err error) {
 	ctx := ""
 	if v.file != "" {
 		ctx = fmt.Sprintf("in %q", v.file)
@@ -97,20 +102,13 @@ func (v *Context) Error(msg string, args ...interface{}) {
 	if len(v.element) != 0 {
 		ctx += " (" + strings.Join(v.element, " / ") + ")"
 	}
-
-	// Prepending ctx to msg before passing it to fmt is not entirely correct,
-	// since ctx may have format specifiers (like %s), that will be misunderstood.
-	// So we put ctx in the argument list.
-	msg = "%s: " + msg
-	args = append([]interface{}{ctx}, args...)
-	if v.Logger != nil {
-		v.Logger.Errorf(msg, args...)
-	}
-
 	// Make the file and the logical path also usable through error inspection.
-	err := errors.Reason(fmt.Sprintf(msg, args...)).
-		Tag(fileTag.With(v.file), elementTag.With(v.element)).Err()
+	err = errors.Annotate(err, "%s", ctx).Tag(fileTag.With(v.file), elementTag.With(v.element)).Err()
 	v.errors = append(v.errors, err)
+
+	if v.Logger != nil {
+		v.Logger.Errorf("%s", err)
+	}
 }
 
 // SetFile records that what follows is errors for this particular file.

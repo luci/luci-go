@@ -31,7 +31,7 @@ func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
 	ctx.SetFile(delegationCfg)
 	cfg, ok := bundle[delegationCfg].(*admin.DelegationPermissions)
 	if !ok {
-		ctx.Error("unexpectedly wrong proto type %T", cfg)
+		ctx.Errorf("unexpectedly wrong proto type %T", cfg)
 		return
 	}
 
@@ -39,7 +39,7 @@ func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
 	for i, rule := range cfg.Rules {
 		if rule.Name != "" {
 			if names.Has(rule.Name) {
-				ctx.Error("two rules with identical name %q", rule.Name)
+				ctx.Errorf("two rules with identical name %q", rule.Name)
 			}
 			names.Add(rule.Name)
 		}
@@ -55,7 +55,7 @@ func validateRule(ctx *validation.Context, title string, r *admin.DelegationRule
 	defer ctx.Exit()
 
 	if r.Name == "" {
-		ctx.Error(`"name" is required`)
+		ctx.Errorf(`"name" is required`)
 	}
 
 	v := identitySetValidator{
@@ -91,11 +91,11 @@ func validateRule(ctx *validation.Context, title string, r *admin.DelegationRule
 
 	switch {
 	case r.MaxValidityDuration == 0:
-		ctx.Error(`"max_validity_duration" is required`)
+		ctx.Errorf(`"max_validity_duration" is required`)
 	case r.MaxValidityDuration < 0:
-		ctx.Error(`"max_validity_duration" must be positive`)
+		ctx.Errorf(`"max_validity_duration" must be positive`)
 	case r.MaxValidityDuration > 24*3600:
-		ctx.Error(`"max_validity_duration" must be smaller than 86401`)
+		ctx.Errorf(`"max_validity_duration" must be smaller than 86401`)
 	}
 }
 
@@ -109,7 +109,7 @@ type identitySetValidator struct {
 
 func (v *identitySetValidator) validate(items []string) {
 	if len(items) == 0 {
-		v.Context.Error("%q is required", v.Field)
+		v.Context.Errorf("%q is required", v.Field)
 		return
 	}
 
@@ -128,10 +128,10 @@ loop:
 		// A group reference?
 		if strings.HasPrefix(s, "group:") {
 			if !v.AllowGroups {
-				v.Context.Error("group entries are not allowed - %q", s)
+				v.Context.Errorf("group entries are not allowed - %q", s)
 			} else {
 				if s == "group:" {
-					v.Context.Error("bad group entry %q", s)
+					v.Context.Errorf("bad group entry %q", s)
 				}
 			}
 			continue
@@ -140,7 +140,7 @@ loop:
 		// An identity then.
 		id, err := identity.MakeIdentity(s)
 		if err != nil {
-			v.Context.Error("%s", err)
+			v.Context.Error(err)
 			continue
 		}
 
@@ -153,7 +153,7 @@ loop:
 				}
 			}
 			if !allowed {
-				v.Context.Error("identity of kind %q is not allowed here - %q", id.Kind(), s)
+				v.Context.Errorf("identity of kind %q is not allowed here - %q", id.Kind(), s)
 			}
 		}
 	}
