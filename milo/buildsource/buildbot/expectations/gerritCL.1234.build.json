@@ -65,9 +65,7 @@
       "LevelsDeep": 0,
       "Verbosity": 2,
       "Text": [
-        "line 1",
-        "",
-        "line 3"
+        "line 1\u003cbr\u003e\u003cbr\u003eline 3"
       ]
     }
   ],

@@ -60,7 +60,7 @@
       <h2>Results:</h2>
       {{ with .Build.Summary }}
         <p class="result status-{{.Status}}">
-        {{ if .Text }}{{ range .Text }}<span class="step-text">{{ . }} </span>{{ end }}
+        {{ if .Text }}{{ range .TextBR }}<span class="step-text">{{ . }} </span>{{ end }}
         {{ else if eq .Status.String "InfraFailure" }}
           Internal Failure
         {{ else if eq .Status.String "Expired" }}
@@ -189,7 +189,7 @@
               {{- end }}
               <b>{{.Label}}</b>
               <span>
-                {{ range .Text -}}
+                {{ range .TextBR -}}
                   <div class="step-text">
                     {{- if . -}}{{- . -}}{{- else -}}&nbsp;{{- end -}}
                   </div>

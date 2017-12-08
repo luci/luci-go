@@ -112,8 +112,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "update_scripts",
-        "git - 0a2c62a48b28ce87da2409b08cdf2c6d50d75bc1"
+        "update_scripts\u003cbr\u003egit - 0a2c62a48b28ce87da2409b08cdf2c6d50d75bc1"
       ]
     },
     {
@@ -162,8 +161,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "setup_build",
-        "running recipe: \"chromium_trybot\""
+        "setup_build\u003cbr\u003erunning recipe: \"chromium_trybot\""
       ]
     },
     {
@@ -212,8 +210,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "bot_update",
-        "[165GB/249GB used (66%)]"
+        "bot_update\u003cbr\u003e[165GB/249GB used (66%)]"
       ]
     },
     {
@@ -262,8 +259,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "ensure_goma.install cipd",
-        "cipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d"
+        "ensure_goma.install cipd\u003cbr\u003ecipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d"
       ]
     },
     {
@@ -312,8 +308,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "swarming.py --version",
-        "0.8.4"
+        "swarming.py --version\u003cbr\u003e0.8.4"
       ]
     },
     {
@@ -391,8 +386,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "read test spec (chromium.gpu.json)",
-        "path: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.gpu.json"
+        "read test spec (chromium.gpu.json)\u003cbr\u003epath: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.gpu.json"
       ]
     },
     {
@@ -421,8 +415,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "read test spec (chromium.win.json)",
-        "path: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.win.json"
+        "read test spec (chromium.win.json)\u003cbr\u003epath: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.win.json"
       ]
     },
     {
@@ -500,8 +493,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "read filter exclusion spec",
-        "path: 'testing\\\\buildbot\\\\trybot_analyze_config.json'"
+        "read filter exclusion spec\u003cbr\u003epath: 'testing\\\\buildbot\\\\trybot_analyze_config.json'"
       ]
     },
     {
@@ -684,8 +676,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "bot_update (without patch)",
-        "[165GB/249GB used (66%)]"
+        "bot_update (without patch)\u003cbr\u003e[165GB/249GB used (66%)]"
       ]
     },
     {
