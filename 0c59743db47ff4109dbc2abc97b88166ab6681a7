@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c2e4e441_a3b95947",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-08T14:58:58Z",
+      "side": 1,
+      "message": "please make this a separate named function. IMHO using the closure like this hinders readability.\n\nYou should use os.Mkdir(), it\u0027d be faster for deep trees, something like:\n\n// ensureDir ensures that the directory d exists.\nfunc (d *Downloader) ensureDir(dir string) error {\n  d.muCache.RLock()\n  h :\u003d d.dirCache.Has(dir)\n  d.muCache.RUnLock()\n  if h {\n    return nil\n  }\n  d.muCache.Lock()\n  defer d.muCache.UnLock()\n  p :\u003d make([]string, 0, 1)\n  for i :\u003d dir; i !\u003d \"\" \u0026\u0026 !d.dirCache.Has(i); i \u003d filepath.Dir(i) {\n    p \u003d append(p, i)\n  }\n  for i :\u003d len(p) - 1; i \u003e\u003d 0; p-- {\n    if err :\u003d os.Mkdir(p[i], os.ModePerm); err !\u003d nil {\n      return err\n    }\n    d.dirCache.Add(p[i])\n  }\n  return nil\n}\n\n\nThis works because of line 82, but I don\u0027t understand why line 92 exists.\n\nNote that this code completely serializes directory creation, but I think it\u0027s generally a good idea; on HDD doing it concurrently will slow down due to head seeking, and I don\u0027t think it\u0027s going to be slow enough on an SSD to mater.The most important saving is the 3x less syscalls, which is expensive.",
+      "revId": "0c59743db47ff4109dbc2abc97b88166ab6681a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
