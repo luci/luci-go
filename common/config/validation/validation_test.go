@@ -42,7 +42,7 @@ func TestValidation(t *testing.T) {
 
 		v.SetFile("file.cfg")
 		v.Enter("ctx %d", 123)
-		v.Error("blah %s", "zzz")
+		v.Errorf("blah %s", "zzz")
 		err := v.Finalize()
 		So(err, ShouldHaveSameTypeAs, &Error{})
 		So(err.Error(), ShouldEqual, `in "file.cfg" (ctx 123): blah zzz`)
@@ -61,24 +61,24 @@ func TestValidation(t *testing.T) {
 	Convey("Regular usage", t, func() {
 		v := Context{}
 
-		v.Error("top %d", 1)
-		v.Error("top %d", 2)
+		v.Errorf("top %d", 1)
+		v.Errorf("top %d", 2)
 
 		v.SetFile("file_1.cfg")
-		v.Error("f1")
-		v.Error("f2")
+		v.Errorf("f1")
+		v.Errorf("f2")
 
 		v.Enter("p %d", 1)
-		v.Error("zzz 1")
+		v.Errorf("zzz 1")
 
 		v.Enter("p %d", 2)
-		v.Error("zzz 2")
+		v.Errorf("zzz 2")
 		v.Exit()
 
-		v.Error("zzz 3")
+		v.Errorf("zzz 3")
 
 		v.SetFile("file_2.cfg")
-		v.Error("zzz 4")
+		v.Errorf("zzz 4")
 
 		err := v.Finalize()
 		So(err, ShouldHaveSameTypeAs, &Error{})

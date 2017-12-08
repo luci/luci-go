@@ -104,10 +104,10 @@ func validateDatacentersConfig(c *validation.Context, datacentersConfig *config.
 	c.SetFile("datacenters.cfg")
 	for _, file := range datacentersConfig.Datacenter {
 		if file == "" {
-			c.Error("datacenter filenames are required and must be non-empty")
+			c.Errorf("datacenter filenames are required and must be non-empty")
 		}
 		if files.Has(file) {
-			c.Error("duplicate filename: %s", file)
+			c.Errorf("duplicate filename: %s", file)
 		}
 		files.Add(file)
 	}
@@ -125,39 +125,39 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 	for datacenter, datacenterConfig := range datacenterConfigs {
 		c.SetFile(datacenter)
 		if datacenterConfig.Name == "" {
-			c.Error("datacenter names are required and must be non-empty")
+			c.Errorf("datacenter names are required and must be non-empty")
 		}
 		if datacenters.Has(datacenterConfig.Name) {
-			c.Error("duplicate datacenter: %s", datacenterConfig.Name)
+			c.Errorf("duplicate datacenter: %s", datacenterConfig.Name)
 		}
 		datacenters.Add(datacenterConfig.Name)
 
 		c.Enter("datacenter: %q", datacenterConfig.Name)
 		for _, rackConfig := range datacenterConfig.Rack {
 			if rackConfig.Name == "" {
-				c.Error("rack names are required and must be non-empty")
+				c.Errorf("rack names are required and must be non-empty")
 			}
 			if racks.Has(rackConfig.Name) {
-				c.Error("duplicate rack: %s", rackConfig.Name)
+				c.Errorf("duplicate rack: %s", rackConfig.Name)
 			}
 			racks.Add(rackConfig.Name)
 
 			c.Enter("rack: %q", rackConfig.Name)
 			for _, switchConfig := range rackConfig.Switch {
 				if switchConfig.Name == "" {
-					c.Error("switch names are required and must be non-empty")
+					c.Errorf("switch names are required and must be non-empty")
 				}
 				if switches.Has(switchConfig.Name) {
-					c.Error("duplicate switch: %s", switchConfig.Name)
+					c.Errorf("duplicate switch: %s", switchConfig.Name)
 				}
 				switches.Add(switchConfig.Name)
 
 				c.Enter("switch: %q", switchConfig.Name)
 				if switchConfig.Ports < 1 {
-					c.Error("switch must have at least one port: %s", switchConfig.Name)
+					c.Errorf("switch must have at least one port: %s", switchConfig.Name)
 				}
 				if switchConfig.Ports > switchMaxPorts {
-					c.Error("switch must have at most %d ports: %s", switchMaxPorts, switchConfig.Name)
+					c.Errorf("switch must have at most %d ports: %s", switchMaxPorts, switchConfig.Name)
 				}
 				c.Exit()
 			}
