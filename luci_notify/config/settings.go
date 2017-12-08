@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
@@ -114,7 +115,9 @@ func updateSettings(c context.Context) error {
 		if err := proto.UnmarshalText(cfg.Content, &newSettings.Settings); err != nil {
 			return errors.Annotate(err, "unmarshalling proto").Err()
 		}
-		if err := validateSettings(&newSettings.Settings); err != nil {
+		ctx := &validation.Context{Context: c}
+		ctx.SetFile("settings.cfg")
+		if err := validateSettings(ctx, &newSettings.Settings); err != nil {
 			return errors.Annotate(err, "validating settings").Err()
 		}
 		return datastore.Put(c, &newSettings)

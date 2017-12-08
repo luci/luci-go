@@ -34,8 +34,12 @@ import (
 func TestIsAuthorizedRequestor(t *testing.T) {
 	t.Parallel()
 
+	ctx := auth.WithState(context.Background(), &authtest.FakeState{
+		Identity: "user:some-user@example.com",
+	})
+
 	Convey("IsAuthorizedRequestor works", t, func() {
-		cfg, err := loadConfig(`
+		cfg, err := loadConfig(ctx, `
 			rules {
 				name: "rule 1"
 				requestor: "user:some-user@example.com"
@@ -60,9 +64,6 @@ func TestIsAuthorizedRequestor(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
-		ctx := auth.WithState(context.Background(), &authtest.FakeState{
-			Identity: "user:some-user@example.com",
-		})
 		res, err := cfg.IsAuthorizedRequestor(ctx, identity.Identity("user:some-user@example.com"))
 		So(err, ShouldBeNil)
 		So(res, ShouldBeTrue)
@@ -94,8 +95,17 @@ func TestIsAuthorizedRequestor(t *testing.T) {
 func TestFindMatchingRule(t *testing.T) {
 	t.Parallel()
 
+	ctx := auth.WithState(context.Background(), &authtest.FakeState{
+		Identity: "user:requestor@example.com",
+		FakeDB: authtest.FakeDB{
+			"user:requestor-group-member@example.com":  []string{"requestor-group"},
+			"user:delegators-group-member@example.com": []string{"delegators-group"},
+			"user:audience-group-member@example.com":   []string{"audience-group"},
+		},
+	})
+
 	Convey("with example config", t, func() {
-		cfg, err := loadConfig(`
+		cfg, err := loadConfig(ctx, `
 			rules {
 				name: "rule 1"
 				requestor: "user:requestor@example.com"
@@ -144,15 +154,6 @@ func TestFindMatchingRule(t *testing.T) {
 		`)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
-
-		ctx := auth.WithState(context.Background(), &authtest.FakeState{
-			Identity: "user:requestor@example.com",
-			FakeDB: authtest.FakeDB{
-				"user:requestor-group-member@example.com":  []string{"requestor-group"},
-				"user:delegators-group-member@example.com": []string{"delegators-group"},
-				"user:audience-group-member@example.com":   []string{"audience-group"},
-			},
-		})
 
 		Convey("Direct matches and misses", func() {
 			// Match.
@@ -266,13 +267,13 @@ func TestFindMatchingRule(t *testing.T) {
 	})
 }
 
-func loadConfig(text string) (*Rules, error) {
+func loadConfig(ctx context.Context, text string) (*Rules, error) {
 	cfg := &admin.DelegationPermissions{}
 	err := proto.UnmarshalText(text, cfg)
 	if err != nil {
 		return nil, err
 	}
-	rules, err := prepareRules(policy.ConfigBundle{delegationCfg: cfg}, "fake-revision")
+	rules, err := prepareRules(ctx, policy.ConfigBundle{delegationCfg: cfg}, "fake-revision")
 	if err != nil {
 		return nil, err
 	}
