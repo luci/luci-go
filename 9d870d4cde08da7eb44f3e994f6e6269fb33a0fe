@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "892f248e_dbb7109f",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T03:30:16Z",
+      "side": 1,
+      "message": "Actually, I realized the Stat isn\u0027t necessary. Under the hood, MkdirAll calls Stat and returns nil if any part of the path already exists (and it double checks!), so it turns out serialization isn\u0027t actually necessary for MkdirAll. Reference: https://golang.org/src/os/path.go?s\u003d488:535#L9. This is also assuming that a filesystem won\u0027t let it\u0027s state get corrupted, of course. :P\n\nHowever, the cache is indeed necessary to prevent the Stat() in MkdirAll, and I just went ahead and implemented it with a RWMutex. I figured it was better to do it now than later, only because if there\u0027s a concurrency bug we\u0027ll catch it in our usage, haha.",
+      "parentUuid": "d924652a_4235735e",
+      "revId": "9d870d4cde08da7eb44f3e994f6e6269fb33a0fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "211fe109_4e292321",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "9d870d4cde08da7eb44f3e994f6e6269fb33a0fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "378c3f1d_a3428cf5",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T03:30:16Z",
+      "side": 1,
+      "message": "this is gone now",
+      "parentUuid": "211fe109_4e292321",
+      "range": {
+        "startLine": 129,
+        "startChar": 9,
+        "endLine": 129,
+        "endChar": 22
+      },
+      "revId": "9d870d4cde08da7eb44f3e994f6e6269fb33a0fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
