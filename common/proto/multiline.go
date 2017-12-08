@@ -140,7 +140,7 @@ func ParseMultilineStrings(text string) (string, error) {
 	needNL := false
 	findLead := true
 	leadingSpace := ""
-	mlineBuf := []string{}
+	var mlineBuf []string
 	outBuf := bytes.Buffer{}
 	outBuf.Grow(len(text))
 
