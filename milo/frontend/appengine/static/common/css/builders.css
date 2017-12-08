@@ -66,8 +66,6 @@
 .finished-builds {
   display: flex;
   flex-grow: 1;
-  align-items: flex-start;
-  height: 2em;
 }
 
 .finished-builds > * {
