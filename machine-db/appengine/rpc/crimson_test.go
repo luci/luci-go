@@ -41,7 +41,7 @@ func TestGetDatacenters(t *testing.T) {
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
-			names := stringset.NewFromSlice([]string{"datacenter"}...)
+			names := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
 			dcs, err := getDatacenters(c, names)
 			So(dcs, ShouldHaveLength, 0)
@@ -50,7 +50,7 @@ func TestGetDatacenters(t *testing.T) {
 		})
 
 		Convey("empty", func() {
-			names := stringset.NewFromSlice([]string{"datacenter"}...)
+			names := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			dcs, err := getDatacenters(c, names)
 			So(dcs, ShouldHaveLength, 0)
@@ -59,7 +59,7 @@ func TestGetDatacenters(t *testing.T) {
 		})
 
 		Convey("no matches", func() {
-			names := stringset.NewFromSlice([]string{"datacenter"}...)
+			names := stringset.NewFromSlice("datacenter")
 			rows.AddRow("datacenter 1", "description 1")
 			rows.AddRow("datacenter 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -69,7 +69,7 @@ func TestGetDatacenters(t *testing.T) {
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 		Convey("matches", func() {
-			names := stringset.NewFromSlice([]string{"datacenter 2", "datacenter 3"}...)
+			names := stringset.NewFromSlice("datacenter 2", "datacenter 3")
 			rows.AddRow("datacenter 1", "description 1")
 			rows.AddRow("datacenter 2", "description 2")
 			rows.AddRow("datacenter 3", "description 3")
@@ -90,7 +90,7 @@ func TestGetDatacenters(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			names := stringset.NewFromSlice([]string{}...)
+			names := stringset.New(0)
 			rows.AddRow("datacenter 1", "description 1")
 			rows.AddRow("datacenter 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
