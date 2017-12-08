@@ -45,6 +45,86 @@
       "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e24f8a9_c9dace13",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T00:14:59Z",
+      "side": 1,
+      "message": "either in this or another CL, we better accept validation context so that it can reuse an existing validation context that the caller has. Then we don\u0027t need configName param",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 44
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2996b10_d9aead6b",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T00:14:59Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77fe3d66_8523a1c1",
+        "filename": "machine-db/appengine/config/config_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T00:14:59Z",
+      "side": 1,
+      "message": "please declare a top-level convey with context variable and that contains these 4\nthen you don\u0027t have to repeat same code many times",
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c700d25b_32ae1efd",
+        "filename": "tokenserver/appengine/impl/delegation/config_validation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T00:14:59Z",
+      "side": 1,
+      "message": "make ctx variable a pointer instead. same in other files",
+      "range": {
+        "startLine": 222,
+        "startChar": 19,
+        "endLine": 222,
+        "endChar": 20
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
