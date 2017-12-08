@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "31d8ed59_e55b02dc",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:42:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22b79412_812994bb",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed1b1e39_0e943d76",
         "filename": "machine-db/appengine/model/racks.go",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2017-12-07T08:05:06Z",
       "side": 1,
       "message": "most of the code of this function can be generalized, see my another comment for an exact example how this could be done",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2540710_b1f6cad9",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:42:06Z",
+      "side": 1,
+      "message": "I think it\u0027s early to make generalizations, we don\u0027t know what will work for other types of objects (e.g. IP addresses will need to be transformed).",
+      "parentUuid": "ed1b1e39_0e943d76",
       "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -50,6 +86,24 @@
       "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a33ea7e8_8da53930",
+        "filename": "machine-db/appengine/model/racks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:42:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1869348b_e076264b",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +171,24 @@
     },
     {
       "key": {
+        "uuid": "e3043af3_da1f6b9f",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:42:06Z",
+      "side": 1,
+      "message": "I\u0027d prefer to wait until we have more types of objects to see what works and what doesn\u0027t. In particular, IP addresses will not scan directly into the return struct type. I\u0027m not too worried about the duplication here, because it\u0027s not really the kind of duplication where if you want to make a change you need to make it in n different places.\n\nI\u0027m also not worried about optimization right now. Yes it\u0027s slower to fetch everything from the database and filter it on our side, but I\u0027m only working with a subset of the real data on the dev server right now.",
+      "parentUuid": "243473f4_a629ff00",
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c42cfad9_61944c0f",
         "filename": "machine-db/appengine/rpc/utils.go",
         "patchSetId": 3
@@ -137,6 +209,30 @@
       "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "031359c4_cbf5296c",
+        "filename": "machine-db/appengine/rpc/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:42:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c42cfad9_61944c0f",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 7
+      },
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -183,6 +279,54 @@
       "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3e6e0d0_4fb40a0b",
+        "filename": "machine-db/appengine/rpc/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:42:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5e0daf2_08fef90d",
+      "range": {
+        "startLine": 27,
+        "startChar": 5,
+        "endLine": 27,
+        "endChar": 6
+      },
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b60b8a5b_4c731418",
+        "filename": "machine-db/appengine/rpc/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:42:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8448f769_c0bdc8b9",
+      "range": {
+        "startLine": 27,
+        "startChar": 13,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "4ea52789888975cbe249f5e94d578557a3d0dccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
