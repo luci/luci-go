@@ -16,6 +16,24 @@
       "revId": "14cedf97311eef49eb9c4aa0fc4c2784fbb8edf5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98d66b10_24bdb2b2",
+        "filename": "client/cmd/isolate/batch_archive_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T18:55:09Z",
+      "side": 1,
+      "message": "i agree with both concerns. I\u0027ve replaced `[]string{}` with `[]string(nil)` here and in similar places. It is only 3 chars more.\n\ni didn\u0027t update callsites in some other files that pass nil to other []notASttring args in the same function call",
+      "parentUuid": "445b762a_5ed42210",
+      "revId": "14cedf97311eef49eb9c4aa0fc4c2784fbb8edf5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
