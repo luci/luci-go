@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1614323_b68bbb61",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1128909
+      },
+      "writtenOn": "2017-12-08T17:27:13Z",
+      "side": 1,
+      "message": "The return error value can be safely ignored here. The only potential error is a PathError, indicating that a file at the given path doesn\u0027t exist, indicating the drain file has already been cleaned up.",
+      "revId": "f6dfb23ebc93fa5dfe70b141d5b5f8a4f66c1f66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
