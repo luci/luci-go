@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "24d8ffdc_4c3ee9e7",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-08T19:52:23Z",
+      "side": 1,
+      "message": "I passed this in since within validateProjectConfig, validation context is initialized :/\nBut per Nodir\u0027s comment, I\u0027ll just pass in an initialized validation.Context instead.",
+      "parentUuid": "7453476f_4cad1ebf",
+      "range": {
+        "startLine": 152,
+        "startChar": 33,
+        "endLine": 152,
+        "endChar": 51
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2034f7a_16b3723e",
         "filename": "luci_notify/config/validate.go",
         "patchSetId": 3
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "ed5379d1_5ddf0461",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-08T19:52:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2034f7a_16b3723e",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 46
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "342867af_c9225da3",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-08T19:52:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7e24f8a9_c9dace13",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 44
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d2996b10_d9aead6b",
         "filename": "luci_notify/config/validate.go",
         "patchSetId": 3
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "feba0053_e928fe92",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-08T19:52:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2996b10_d9aead6b",
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77fe3d66_8523a1c1",
         "filename": "machine-db/appengine/config/config_test.go",
         "patchSetId": 3
@@ -102,6 +192,24 @@
       "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "596a4107_7fc78683",
+        "filename": "machine-db/appengine/config/config_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-08T19:52:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77fe3d66_8523a1c1",
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -125,6 +233,30 @@
       "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be0f89da_990e6a63",
+        "filename": "tokenserver/appengine/impl/delegation/config_validation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-08T19:52:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c700d25b_32ae1efd",
+      "range": {
+        "startLine": 222,
+        "startChar": 19,
+        "endLine": 222,
+        "endChar": 20
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -172,6 +304,30 @@
       "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9dd71e9_c40d8322",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-08T19:52:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "71fbd3a9_0ccdc834",
+      "range": {
+        "startLine": 208,
+        "startChar": 5,
+        "endLine": 208,
+        "endChar": 28
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
