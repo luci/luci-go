@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "769ab960_fd2c1965",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-08T14:45:02Z",
+      "side": 1,
+      "message": "nit: \"a valid nonce\"\nnit: add \"(non-transactional)\" to message.",
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ff215804_d863749d",
         "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
         "patchSetId": 3
@@ -25,6 +42,98 @@
     },
     {
       "key": {
+        "uuid": "1e416cbd_752b275c",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-08T14:45:02Z",
+      "side": 1,
+      "message": "nit: add \"(transactional)\"",
+      "range": {
+        "startLine": 165,
+        "startChar": 72,
+        "endLine": 165,
+        "endChar": 74
+      },
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04630181_782a943e",
+        "filename": "logdog/appengine/coordinator/logPrefix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-08T14:45:02Z",
+      "side": 1,
+      "message": "nit: there is no logging/feedback when the client has an invalid length. Consider adding logging statements for each of these failure conditionals, including \"client did not supply a nonce\", so we can audit whether clients still do not supply a nonce.",
+      "range": {
+        "startLine": 127,
+        "startChar": 4,
+        "endLine": 127,
+        "endChar": 74
+      },
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db1ce173_1298899a",
+        "filename": "logdog/appengine/coordinator/logPrefix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-08T14:45:02Z",
+      "side": 1,
+      "message": "Yeah, sure, trusted clients are going to brute-force the registration nonce of a prefix 😋",
+      "range": {
+        "startLine": 131,
+        "startChar": 16,
+        "endLine": 131,
+        "endChar": 35
+      },
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10b1f46b_17df4a7c",
+        "filename": "logdog/appengine/coordinator/logPrefix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-08T14:45:02Z",
+      "side": 1,
+      "message": "nit, consider \"(%d)\", since we use \":\" as a nested error delimiter.",
+      "range": {
+        "startLine": 177,
+        "startChar": 54,
+        "endLine": 177,
+        "endChar": 55
+      },
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "24cd82d2_f6dfef4b",
         "filename": "logdog/client/butler/output/logdog/output.go",
         "patchSetId": 3
@@ -36,6 +145,30 @@
       "writtenOn": "2017-12-08T00:31:11Z",
       "side": 1,
       "message": "You make this a constant in \"registerPrefix.go\", but redefine it here. I\u0027d put this in \"logdog/common\"?",
+      "range": {
+        "startLine": 147,
+        "startChar": 23,
+        "endLine": 147,
+        "endChar": 25
+      },
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97ae63b4_66c91b55",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-08T14:45:02Z",
+      "side": 1,
+      "message": "Actually similar thing already exists, maybe just reuse this? https://chromium.googlesource.com/infra/luci/luci-go/+/master/logdog/common/types/streamsecret.go",
+      "parentUuid": "24cd82d2_f6dfef4b",
       "range": {
         "startLine": 147,
         "startChar": 23,
