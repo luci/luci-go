@@ -100,7 +100,7 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	versionFile := ""
 	for i, chunk := range out.Data {
 		// Make sure 'dir' and 'file' etc. aren't used together.
-		has := []string{}
+		has := make([]string, 0, 3)
 		if chunk.File != "" {
 			has = append(has, "file")
 		}
@@ -315,7 +315,7 @@ func (def *PackageChunkDef) strings() []*string {
 // subVars replaces "${key}" in strings with values from 'vars' map. Returns
 // error if some keys weren't found in 'vars' map.
 func subVars(s string, vars map[string]string) (string, error) {
-	badKeys := []string{}
+	var badKeys []string
 	res := subVarsRe.ReplaceAllStringFunc(s, func(match string) string {
 		// Strip '${' and '}'.
 		key := match[2 : len(match)-1]
