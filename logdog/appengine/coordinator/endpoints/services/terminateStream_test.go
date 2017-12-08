@@ -114,7 +114,7 @@ func TestTerminateStream(t *testing.T) {
 						// the optimistic period and confirming the published archival
 						// request.
 						env.IterateTumbleAll(c)
-						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
+						So(env.ArchivalPublisher.Hashes(), ShouldBeEmpty)
 
 						// Add our settle delay, confirm that archival is scheduled.
 						env.Clock.Add(10 * time.Second)
@@ -126,7 +126,7 @@ func TestTerminateStream(t *testing.T) {
 						env.ArchivalPublisher.Clear()
 						env.Clock.Add(time.Hour)
 						env.IterateTumbleAll(c)
-						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
+						So(env.ArchivalPublisher.Hashes(), ShouldBeEmpty)
 					})
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {

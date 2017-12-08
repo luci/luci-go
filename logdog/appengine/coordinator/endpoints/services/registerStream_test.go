@@ -125,7 +125,7 @@ func TestRegisterStream(t *testing.T) {
 					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
 
 					// No archival request yet.
-					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
+					So(env.ArchivalPublisher.Hashes(), ShouldBeEmpty)
 
 					Convey(`Can register the stream again (idempotent).`, func() {
 						env.Clock.Set(created.Add(10 * time.Minute))
@@ -189,7 +189,7 @@ func TestRegisterStream(t *testing.T) {
 
 					// No pending archival requests.
 					env.IterateTumbleAll(c)
-					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
+					So(env.ArchivalPublisher.Hashes(), ShouldBeEmpty)
 
 					// When we advance to our settle delay, an archival task is scheduled.
 					env.Clock.Add(10 * time.Minute)

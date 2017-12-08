@@ -36,7 +36,7 @@ func putMulti(c *Collection, vs ...string) {
 }
 
 func visitAll(c *Collection, pivot string) []string {
-	res := []string{}
+	var res []string
 	c.VisitAscend(pivot, func(v gtreap.Item) bool {
 		res = append(res, v.(string))
 		return true

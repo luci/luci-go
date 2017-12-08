@@ -120,7 +120,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 
 		Convey("add one, replace with another", func() {
 			// Nothing there.
-			So(listCAs(), ShouldResemble, []string{})
+			So(listCAs(), ShouldBeEmpty)
 
 			// Import fake.ca first.
 			_, err := callImport(`
