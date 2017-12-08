@@ -99,7 +99,7 @@ func TestNullExported(t *testing.T) {
 
 	Convey("SetInCmd, no LUCI_CONTEXT", t, func() {
 		cmd := exec.Cmd{
-			Env: append([]string{}, someEnv...),
+			Env: append([]string(nil), someEnv...),
 		}
 		n.SetInCmd(&cmd)
 		So(cmd.Env, ShouldResemble, someEnv)

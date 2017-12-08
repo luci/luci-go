@@ -836,7 +836,7 @@ func TestRemoteImpl(t *testing.T) {
 			"pkgpath/fake1",
 			"pkgpath/fake2",
 		})
-		So(dirs, ShouldResemble, []string{})
+		So(dirs, ShouldBeEmpty)
 	})
 
 	Convey("listPackages ERROR", t, func(c C) {

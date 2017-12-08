@@ -530,7 +530,7 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs
 		updated[def.JobID] = def.Revision
 	}
 	// List of job ids to disable.
-	toDisable := []string{}
+	var toDisable []string
 	for id := range existing {
 		if updated[id] == "" {
 			toDisable = append(toDisable, id)
