@@ -19,6 +19,21 @@ message RegisterPrefixRequest {
   // Optional information about the registering agent.
   repeated string source_info = 3;
 
+  // Optional nonce to allow retries of this RPC. ALL CLIENTS SHOULD PROVIDE
+  // THIS. The client should generate the nonce once while preparing the request
+  // message, and then re-use the same nonce for retries of the request.
+  //
+  // The nonce should be 32 bytes of random data.
+  // The nonce must not be reused between different requests (only for retries
+  //   of the same request).
+  //
+  // NOTE: This is currently optional, but once all clients have upgraded to
+  // this scheme, it will become mandatory. During the transition if this is
+  // omitted, then NO RETRIES will be allowed for this request, if the server
+  // processes it correctly but the client fails to get the response from the
+  // server.
+  bytes op_nonce = 4;
+
   // The prefix expiration time. If <= 0, the project's default prefix
   // expiration period will be applied.
   //

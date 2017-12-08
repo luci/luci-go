@@ -52,6 +52,10 @@ func TestRegisterPrefix(t *testing.T) {
 			171, 156, 248, 206, 191, 66, 226, 94, 139, 20, 234, 252,
 			129, 234, 224, 208, 15, 44, 173, 228, 193, 124, 22, 209,
 		}
+		nonce := []byte{
+			20, 57, 74, 77, 46, 8, 108, 144, 0, 31, 138, 106, 154, 46, 215, 125, 142,
+			23, 246, 192, 81, 14, 187, 119, 241, 171, 82, 85, 182, 233, 7, 119,
+		}
 
 		svr := New()
 
@@ -60,6 +64,7 @@ func TestRegisterPrefix(t *testing.T) {
 			Project:    string(project),
 			Prefix:     "testing/prefix",
 			SourceInfo: []string{"unit test"},
+			OpNonce:    nonce,
 		}
 		pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(types.StreamName(req.Prefix))}
 
@@ -107,12 +112,29 @@ func TestRegisterPrefix(t *testing.T) {
 				Created: ds.RoundTime(clock.Now(c)),
 				Source:  []string{"unit test"},
 				Secret:  randSecret,
+				OpNonce: nonce,
 
 				// 24 hours is default service prefix expiration.
 				Expiration: ds.RoundTime(clock.Now(c).Add(24 * time.Hour)),
 			})
 
-			Convey(`Will refuse to register it again.`, func() {
+			Convey(`Will refuse to register it again without nonce.`, func() {
+				req.OpNonce = nil
+				_, err := svr.RegisterPrefix(c, &req)
+				So(err, ShouldBeRPCAlreadyExists)
+			})
+
+			Convey(`Is happy to return the same data if the nonce matches.`, func() {
+				resp, err := svr.RegisterPrefix(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, ShouldResemble, &logdog.RegisterPrefixResponse{
+					LogBundleTopic: "projects/app/topics/test-topic",
+					Secret:         randSecret,
+				})
+			})
+
+			Convey(`Expires the nonce after 15 minutes.`, func() {
+				env.Clock.Add(coordinator.RegistrationNonceTimeout + time.Second)
 				_, err := svr.RegisterPrefix(c, &req)
 				So(err, ShouldBeRPCAlreadyExists)
 			})

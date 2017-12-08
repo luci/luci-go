@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 package registration
 
 import (
+	"time"
+
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
@@ -32,6 +34,47 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest) (pubsub.Topic, time.Duration, error) {
+	// Load our service and project configurations.
+	svcs := endpoints.GetServices(c)
+	cfg, err := svcs.Config(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load service configuration.")
+		return "", 0, grpcutil.Internal
+	}
+
+	pcfg, err := coordinator.CurrentProjectConfig(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load project configuration.")
+		return "", 0, grpcutil.Internal
+	}
+
+	// Determine our Pub/Sub topic.
+	cfgTransport := cfg.Transport
+	if cfgTransport == nil {
+		log.Errorf(c, "Missing transport configuration.")
+		return "", 0, grpcutil.Internal
+	}
+
+	cfgTransportPubSub := cfgTransport.GetPubsub()
+	if cfgTransportPubSub == nil {
+		log.Errorf(c, "Missing transport Pub/Sub configuration.")
+		return "", 0, grpcutil.Internal
+	}
+
+	pubsubTopic := pubsub.NewTopic(cfgTransportPubSub.Project, cfgTransportPubSub.Topic)
+	if err := pubsubTopic.Validate(); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"topic":      pubsubTopic,
+		}.Errorf(c, "Invalid transport Pub/Sub topic.")
+		return "", 0, grpcutil.Internal
+	}
+
+	expiration := endpoints.MinDuration(req.Expiration, cfg.Coordinator.PrefixExpiration, pcfg.PrefixExpiration)
+	return pubsubTopic, expiration, nil
+}
+
 func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixRequest) (*logdog.RegisterPrefixResponse, error) {
 	log.Fields{
 		"project":    req.Project,
@@ -47,32 +90,10 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid prefix")
 	}
 
-	// Has the prefix already been registered?
-	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
-
-	// Check for existing prefix registration (non-transactional).
-	switch exists, err := ds.Exists(c, ds.KeyForObj(c, pfx)); {
-	case err != nil:
-		log.WithError(err).Errorf(c, "Failed to check for existing prefix (non-transactional).")
-		return nil, grpcutil.Internal
-
-	case exists.All():
-		log.Errorf(c, "The prefix is already registered (non-transactional).")
-		return nil, grpcutil.AlreadyExists
-	}
-
-	// Load our service and project configurations.
-	svcs := endpoints.GetServices(c)
-	cfg, err := svcs.Config(c)
+	pubsubTopic, expiration, err := getTopicAndExpiration(c, req)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to load service configuration.")
-		return nil, grpcutil.Internal
-	}
-
-	pcfg, err := coordinator.CurrentProjectConfig(c)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to load project configuration.")
-		return nil, grpcutil.Internal
+		log.WithError(err).Errorf(c, "Cannot get pubsubTopic")
+		return nil, grpcutil.Errf(codes.Internal, "unable to get pubsubTopic")
 	}
 
 	// Determine our prefix expiration. This must be > 0, else there will be no
@@ -80,68 +101,77 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	//
 	// We will choose the shortest expiration window defined by our request and
 	// our project and service configurations.
-	expiration := endpoints.MinDuration(req.Expiration, cfg.Coordinator.PrefixExpiration, pcfg.PrefixExpiration)
 	if expiration <= 0 {
 		log.Errorf(c, "Refusing to register prefix in expired state.")
 		return nil, grpcutil.Errf(codes.InvalidArgument, "no prefix expiration defined")
 	}
 
-	// Determine our Pub/Sub topic.
-	cfgTransport := cfg.Transport
-	if cfgTransport == nil {
-		log.Errorf(c, "Missing transport configuration.")
-		return nil, grpcutil.Internal
+	// prep our response with the pubsubTopic
+	resp := &logdog.RegisterPrefixResponse{
+		LogBundleTopic: string(pubsubTopic),
 	}
 
-	cfgTransportPubSub := cfgTransport.GetPubsub()
-	if cfgTransportPubSub == nil {
-		log.Errorf(c, "Missing transport Pub/Sub configuration.")
-		return nil, grpcutil.Internal
-	}
+	// Has the prefix already been registered?
+	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
 
-	pubsubTopic := pubsub.NewTopic(cfgTransportPubSub.Project, cfgTransportPubSub.Topic)
-	if err := pubsubTopic.Validate(); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"topic":      pubsubTopic,
-		}.Errorf(c, "Invalid transport Pub/Sub topic.")
+	// Check for existing prefix registration (non-transactional).
+	switch err := ds.Get(c, pfx); err {
+	case ds.ErrNoSuchEntity:
+		// we'll register it shortly
+
+	case nil:
+		if pfx.IsRetry(c, req.OpNonce) {
+			log.Infof(c, "The prefix is registered, but we have valid retry (non-transactional).")
+			resp.Secret = pfx.Secret
+			return resp, nil
+		}
+		log.Errorf(c, "The prefix is already registered (non-transactional).")
+		return nil, grpcutil.AlreadyExists
+
+	default:
+		log.WithError(err).Errorf(c, "Failed to check for existing prefix (non-transactional).")
 		return nil, grpcutil.Internal
 	}
 
 	// The prefix doesn't appear to be registered. Prepare to transactionally
 	// register it.
-	now := clock.Now(c).UTC()
-
-	// Generate a prefix secret.
 	secret := make(types.PrefixSecret, types.PrefixSecretLength)
 	if _, err := cryptorand.Read(c, []byte(secret)); err != nil {
 		log.WithError(err).Errorf(c, "Failed to generate prefix secret.")
 		return nil, grpcutil.Internal
 	}
-	if err := secret.Validate(); err != nil {
-		log.WithError(err).Errorf(c, "Generated invalid prefix secret.")
-		return nil, grpcutil.Internal
+
+	pfx.Created = clock.Now(c).UTC()
+	pfx.Prefix = string(prefix)
+	pfx.Source = req.SourceInfo
+	pfx.Secret = []byte(secret)
+	pfx.Expiration = pfx.Created.Add(expiration)
+	pfx.OpNonce = req.OpNonce
+	if err := pfx.Validate(); err != nil {
+		log.WithError(err).Errorf(c, "Invalid LogPrefix.")
+		return nil, grpcutil.Errf(codes.InvalidArgument, "LogPrefix definition invalid")
 	}
+	resp.Secret = pfx.Secret
 
 	// Transactionally register the prefix.
 	err = ds.RunInTransaction(c, func(c context.Context) error {
-		// Check if this Prefix exists (transactional).
-		switch exists, err := ds.Exists(c, ds.KeyForObj(c, pfx)); {
-		case err != nil:
-			log.WithError(err).Errorf(c, "Failed to check for existing prefix (transactional).")
-			return grpcutil.Internal
+		// Get the prefix (if it exists)
+		switch err := ds.Get(c, pfx); err {
+		case ds.ErrNoSuchEntity:
+			// we need to put it
 
-		case exists.All():
+		case nil:
+			if pfx.IsRetry(c, req.OpNonce) {
+				log.Infof(c, "The prefix is registered, but we have valid retry (transactional).")
+				return nil
+			}
 			log.Errorf(c, "The prefix is already registered (transactional).")
 			return grpcutil.AlreadyExists
-		}
 
-		// The Prefix is not registered, so let's register it.
-		pfx.Created = now
-		pfx.Prefix = string(prefix)
-		pfx.Source = req.SourceInfo
-		pfx.Secret = []byte(secret)
-		pfx.Expiration = now.Add(expiration)
+		default:
+			log.WithError(err).Errorf(c, "Failed to check for existing prefix (transactional).")
+			return grpcutil.Internal
+		}
 
 		if err := ds.Put(c, pfx); err != nil {
 			log.WithError(err).Errorf(c, "Failed to register prefix.")
@@ -156,8 +186,5 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		return nil, err
 	}
 
-	return &logdog.RegisterPrefixResponse{
-		Secret:         []byte(secret),
-		LogBundleTopic: string(pubsubTopic),
-	}, nil
+	return resp, nil
 }
