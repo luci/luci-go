@@ -145,7 +145,7 @@ func renderDotFile(gdata *dm.GraphData) string {
 		indent += strings.Count(format, "{")
 	}
 
-	edges := []string{}
+	var edges []string
 
 	p("digraph {")
 

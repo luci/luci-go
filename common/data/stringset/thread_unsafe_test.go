@@ -53,7 +53,7 @@ func TestThreadUnsafeSet(t *testing.T) {
 			})
 
 			Convey("Can pop them", func() {
-				newList := []string{}
+				var newList []string
 				str, found := s.Pop()
 				So(found, ShouldBeTrue)
 				newList = append(newList, str)
@@ -121,13 +121,13 @@ func TestThreadUnsafeSet(t *testing.T) {
 			Convey("empty", func() {
 				sl := s.Intersect(New(0)).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{})
+				So(sl, ShouldBeEmpty)
 			})
 
 			Convey("no overlap", func() {
 				sl := s.Intersect(NewFromSlice("beef")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{})
+				So(sl, ShouldBeEmpty)
 			})
 
 			Convey("some overlap", func() {
@@ -165,7 +165,7 @@ func TestThreadUnsafeSet(t *testing.T) {
 			Convey("total overlap", func() {
 				sl := s.Difference(NewFromSlice("a", "b", "c", "d", "e", "f", "z")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{})
+				So(sl, ShouldBeEmpty)
 			})
 		})
 	})

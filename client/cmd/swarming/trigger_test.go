@@ -129,7 +129,7 @@ func TestTriggerParse_NoArgs(t *testing.T) {
 		c := triggerRun{}
 		c.Init(auth.Options{})
 
-		err := c.Parse([]string{})
+		err := c.Parse([]string(nil))
 		So(err, ShouldResemble, errors.New("must provide -server"))
 	})
 }
@@ -141,7 +141,7 @@ func TestTriggerParse_NoDimension(t *testing.T) {
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
-		err = c.Parse([]string{})
+		err = c.Parse([]string(nil))
 		So(err, ShouldResemble, errors.New("please at least specify one dimension"))
 	})
 }
@@ -156,7 +156,7 @@ func TestTriggerParse_NoIsolated(t *testing.T) {
 			"-dimension", "os=Ubuntu",
 		})
 
-		err = c.Parse([]string{})
+		err = c.Parse([]string(nil))
 		So(err, ShouldResemble, errors.New("please use -isolated to specify hash or -raw-cmd"))
 	})
 }
@@ -173,7 +173,7 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 			"-raw-cmd",
 		})
 
-		err = c.Parse([]string{})
+		err = c.Parse([]string(nil))
 		So(err, ShouldResemble, errors.New("arguments with -raw-cmd should be passed after -- as command delimiter"))
 	})
 }
@@ -238,7 +238,7 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 		c.cipdPackage = map[string]string{
 			"path:name": "version",
 		}
-		result, err := c.processTriggerOptions([]string{}, nil)
+		result, err := c.processTriggerOptions([]string(nil), nil)
 		So(err, ShouldBeNil)
 		So(result.Properties.CipdInput, ShouldResemble, &swarming.SwarmingRpcsCipdInput{
 			Packages: []*swarming.SwarmingRpcsCipdPackage{{

@@ -239,7 +239,7 @@ func isAssetFile(path string) bool {
 
 // generate executes the template, runs output through gofmt and dumps it to disk.
 func generate(t *template.Template, pkg *build.Package, assets assetMap, path string) error {
-	keys := []string{}
+	keys := make([]string, 0, len(assets))
 	for k := range assets {
 		keys = append(keys, k)
 	}

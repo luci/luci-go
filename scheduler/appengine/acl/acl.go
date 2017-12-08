@@ -170,7 +170,7 @@ func mergeGrants(grantsLists ...[]*messages.Acl) *GrantsByRole {
 // hasGrant is current user is covered by any given grants.
 func hasGrant(c context.Context, grantsList ...[]string) (bool, error) {
 	currentIdentity := auth.CurrentIdentity(c)
-	groups := []string{}
+	var groups []string
 	for _, grants := range grantsList {
 		for _, grant := range grants {
 			if strings.HasPrefix(grant, "group:") {

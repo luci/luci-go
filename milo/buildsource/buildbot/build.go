@@ -290,7 +290,7 @@ func properties(b *buildbot.Build) (result []*ui.PropertyGroup) {
 	// Insert the groups into a list in alphabetical order.
 	// You have to make a separate sorting data structure because Go doesn't like
 	// sorting things for you.
-	groupNames := []string{}
+	groupNames := make([]string, 0, len(groups))
 	for n := range groups {
 		groupNames = append(groupNames, n)
 	}

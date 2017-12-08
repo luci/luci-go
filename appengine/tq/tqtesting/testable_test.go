@@ -67,7 +67,7 @@ func TestTestable(t *testing.T) {
 		Convey("CreateQueues works", func() {
 			tst.CreateQueues()
 
-			queue := []string{}
+			var queue []string
 			for q := range tqt.GetScheduledTasks() {
 				queue = append(queue, q)
 			}

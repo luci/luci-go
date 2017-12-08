@@ -55,7 +55,7 @@ func TestGetDatastoreNamespaces(t *testing.T) {
 		Convey(`A datastore with no namespaces returns {}.`, func() {
 			namespaces, err := getDatastoreNamespaces(ctx)
 			So(err, ShouldBeNil)
-			So(namespaces, ShouldResemble, []string{})
+			So(namespaces, ShouldBeEmpty)
 		})
 
 		Convey(`A datastore with namespaces {"foo", "bar"} will return {"bar", "foo"}.`, func() {

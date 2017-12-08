@@ -30,7 +30,7 @@ func TestValidatesBlacklist(t *testing.T) {
 	testCases := []testCase{
 		{
 			desc:      "no patterns",
-			blacklist: []string{},
+			blacklist: nil,
 			wantErr:   false,
 		},
 		{
@@ -152,7 +152,7 @@ func TestAppliesBlacklist(t *testing.T) {
 		{
 			desc:        "no blacklist",
 			root:        "/a",
-			blacklist:   []string{},
+			blacklist:   nil,
 			absPath:     "/a/x/y",
 			wantRelPath: "x/y",
 		},

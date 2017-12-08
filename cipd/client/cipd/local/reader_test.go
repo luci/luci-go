@@ -199,9 +199,9 @@ func TestPackageReading(t *testing.T) {
 		So(dest.endCalls, ShouldEqual, 1)
 
 		// Verify file list, file data and flags are correct.
-		names := []string{}
-		for _, f := range dest.files {
-			names = append(names, f.name)
+		names := make([]string, len(dest.files))
+		for i, f := range dest.files {
+			names[i] = f.name
 		}
 		if runtime.GOOS != "windows" {
 			So(names, ShouldResemble, []string{

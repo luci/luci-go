@@ -151,7 +151,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 			// command is not related to the one in the top-most .isolate, since the
 			// configuration is flattened.
 			for _, pair := range included.byConfig {
-				pair.value.Command = []string{}
+				pair.value.Command = nil
 			}
 		}
 		if out, err = out.union(included); err != nil {
@@ -176,7 +176,7 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 		return nil, nil, NotSet, "", err
 	}
 	configName := configName{}
-	missingVars := []string{}
+	var missingVars []string
 	for _, variable := range isolate.ConfigVariables {
 		if value, ok := configVariables[variable]; ok {
 			configName = append(configName, makeVariableValue(value))
@@ -956,7 +956,7 @@ func pythonToGoCondition(pyCond string) (string, error) {
 	left := []rune(pyCond)
 	var err error
 	goChunk := ""
-	out := []string{}
+	var out []string
 	for len(left) > 0 {
 		// Process non-string tokens till next string token.
 		goChunk, left = pythonToGoNonString(left)

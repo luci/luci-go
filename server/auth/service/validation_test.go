@@ -131,7 +131,7 @@ func TestFindGroupCycle(t *testing.T) {
 	}
 
 	Convey("Empty", t, func() {
-		So(call(groupGraph{"start": nil}), ShouldResemble, []string{})
+		So(call(groupGraph{"start": nil}), ShouldBeEmpty)
 	})
 
 	Convey("No cycles", t, func() {
@@ -139,7 +139,7 @@ func TestFindGroupCycle(t *testing.T) {
 			"start": []string{"A"},
 			"A":     []string{"B"},
 			"B":     []string{"C"},
-		}), ShouldResemble, []string{})
+		}), ShouldBeEmpty)
 	})
 
 	Convey("Self reference", t, func() {
@@ -170,7 +170,7 @@ func TestFindGroupCycle(t *testing.T) {
 			"A1":    []string{"B"},
 			"A2":    []string{"B"},
 			"B":     nil,
-		}), ShouldResemble, []string{})
+		}), ShouldBeEmpty)
 	})
 
 	Convey("Diamond with cycles", t, func() {

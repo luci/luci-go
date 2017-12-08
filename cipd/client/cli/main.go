@@ -166,9 +166,9 @@ func (c *cipdSubcommand) checkArgs(args []string, minPosCount, maxPosCount int) 
 		}
 	})
 	if len(unset) != 0 {
-		missing := []string{}
-		for _, f := range unset {
-			missing = append(missing, f.Name)
+		missing := make([]string, len(unset))
+		for i, f := range unset {
+			missing[i] = f.Name
 		}
 		c.printError(makeCLIError("missing required flags: %v", missing))
 		return false
@@ -492,7 +492,6 @@ type refsOptions struct {
 }
 
 func (opts *refsOptions) registerFlags(f *flag.FlagSet) {
-	opts.refs = []string{}
 	f.Var(&opts.refs, "ref", "A ref to point to the package instance (can be used multiple times).")
 }
 
@@ -527,7 +526,6 @@ type tagsOptions struct {
 }
 
 func (opts *tagsOptions) registerFlags(f *flag.FlagSet) {
-	opts.tags = []string{}
 	f.Var(&opts.tags, "tag", "A tag to attach to the package instance (can be used multiple times).")
 }
 
@@ -568,7 +566,7 @@ func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]s
 		return nil, err
 	}
 	// Skip directories.
-	out := []string{}
+	var out []string
 	for _, p := range pkgs {
 		if !strings.HasSuffix(p, "/") {
 			out = append(out, p)
@@ -1254,10 +1252,10 @@ func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) 
 	}
 
 	// Prepare for the next batch call.
-	packages := []string{}
-	pinsToUse := map[string]common.Pin{}
-	for _, p := range pins {
-		packages = append(packages, p.Pkg)
+	packages := make([]string, len(pins))
+	pinsToUse := make(map[string]common.Pin, len(pins))
+	for i, p := range pins {
+		packages[i] = p.Pkg
 		pinsToUse[p.Pkg] = *p.Pin
 	}
 
@@ -1874,7 +1872,7 @@ func inspectInstance(ctx context.Context, inst local.PackageInstance, listFiles 
 					fmt.Printf(" S %s -> %s\n", f.Name(), target)
 				}
 			} else {
-				flags := []string{}
+				flags := make([]string, 0, 3)
 				if f.Executable() {
 					flags = append(flags, "+x")
 				}
@@ -2321,7 +2319,7 @@ func fixFlagsPosition(args []string) []string {
 	// "set-ref package/name -ref=abc -version=def". Reshuffle arguments to put
 	// all positional args at the end of the command line.
 	cmd, flags, positional := splitCmdLine(args)
-	newArgs := []string{}
+	var newArgs []string
 	if cmd != "" {
 		newArgs = append(newArgs, cmd)
 	}

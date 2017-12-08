@@ -33,7 +33,7 @@ func TestFromStrings(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(s, ShouldResemble, &Set{})
 		So(s.IsEmpty(), ShouldBeTrue)
-		So(s.ToStrings(), ShouldResemble, []string{})
+		So(s.ToStrings(), ShouldBeEmpty)
 	})
 
 	Convey("Universal", t, func() {

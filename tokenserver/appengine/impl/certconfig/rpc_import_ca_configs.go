@@ -116,7 +116,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 	}
 
 	// Find CAs that were removed from the config.
-	toRemove := []string{}
+	var toRemove []string
 	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
 	err = ds.Run(c, q, func(k *ds.Key) {
 		if !seenCAs.Has(k.StringID()) {

@@ -256,7 +256,7 @@ var rLineBreak = regexp.MustCompile("<br */?>")
 
 // TextBR returns Text, but also splits each line by <br>
 func (bc *BuildComponent) TextBR() []string {
-	result := []string{}
+	var result []string
 	for _, t := range bc.Text {
 		result = append(result, rLineBreak.Split(t, -1)...)
 	}

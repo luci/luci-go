@@ -205,7 +205,7 @@ func TestSet(t *testing.T) {
 		wakeups := make(chan string)
 
 		lock := sync.Mutex{}
-		consumed := []string{}
+		var consumed []string
 
 		for i := 0; i < producers; i++ {
 			go func() {
@@ -228,9 +228,9 @@ func TestSet(t *testing.T) {
 				return
 			}
 
-			keys := []string{}
-			for _, itm := range listing.Items {
-				keys = append(keys, itm.ID)
+			keys := make([]string, len(listing.Items))
+			for i, itm := range listing.Items {
+				keys[i] = itm.ID
 			}
 
 			// Try to pop all.

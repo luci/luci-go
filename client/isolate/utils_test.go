@@ -28,7 +28,7 @@ func TestUniqueMergeSortedStrings(t *testing.T) {
 	t.Parallel()
 	Convey(`Tests the unique merge of sorted of strings.`, t, func() {
 		SS := func(s string) []string {
-			out := []string{}
+			out := make([]string, 0, len(s))
 			for _, c := range s {
 				out = append(out, string(c))
 			}

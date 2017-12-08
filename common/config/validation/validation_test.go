@@ -84,7 +84,7 @@ func TestValidation(t *testing.T) {
 		So(err, ShouldHaveSameTypeAs, &Error{})
 		So(err.Error(), ShouldEqual, `in <unspecified file>: top 1 (and 7 other errors)`)
 
-		errs := []string{}
+		var errs []string
 		for _, e := range err.(*Error).Errors {
 			errs = append(errs, e.Error())
 		}

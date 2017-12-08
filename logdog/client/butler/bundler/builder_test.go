@@ -101,7 +101,7 @@ func logEntryName(le *logpb.LogEntry) string {
 func shouldHaveBundleEntries(actual interface{}, expected ...interface{}) string {
 	bundle := actual.(*logpb.ButlerLogBundle)
 
-	errors := []string{}
+	var errors []string
 	fail := func(f string, args ...interface{}) {
 		errors = append(errors, fmt.Sprintf(f, args...))
 	}
