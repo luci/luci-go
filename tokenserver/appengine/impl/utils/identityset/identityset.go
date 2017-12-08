@@ -167,7 +167,7 @@ func (s *Set) IsSuperset(subset *Set) bool {
 // See 'FromStrings' for the format of this list.
 func (s *Set) ToStrings() []string {
 	if s.IsEmpty() {
-		return []string{}
+		return nil
 	}
 	if s.All {
 		return []string{"*"}

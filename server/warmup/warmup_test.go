@@ -25,7 +25,7 @@ import (
 
 func TestWorks(t *testing.T) {
 	Convey("Works", t, func() {
-		called := []string{}
+		var called []string
 
 		Register("1", func(context.Context) error {
 			called = append(called, "1")

@@ -462,7 +462,7 @@ func TestLoadIsolateForConfig(t *testing.T) {
 		So(dir, ShouldResemble, root)
 		So(ro, ShouldResemble, DirsReadOnly) // second condition has read_only 2.
 		So(cmd, ShouldResemble, []string{"python", "32orMac64"})
-		So(deps, ShouldResemble, []string{})
+		So(deps, ShouldBeEmpty)
 
 		// Case win32, both first and second condition match.
 		vars = map[string]string{"bit": "32", "OS": "win"}
@@ -611,11 +611,11 @@ func vvToStr2D(vs [][]variableValue) [][]string {
 }
 
 func vvSort(vss [][]variableValue) [][]variableValue {
-	tmpMap := map[string][]variableValue{}
-	keys := []string{}
-	for _, vs := range vss {
+	tmpMap := make(map[string][]variableValue, len(vss))
+	keys := make([]string, len(vss))
+	for i, vs := range vss {
 		key := configName(vs).key()
-		keys = append(keys, key)
+		keys[i] = key
 		tmpMap[key] = vs
 	}
 	sort.Strings(keys)
