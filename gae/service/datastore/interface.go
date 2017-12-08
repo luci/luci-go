@@ -541,6 +541,11 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 // If a dst argument is a slice, its error type will be a MultiError. Note
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
+//
+// If there was an issue retrieving the entity, the input `dst` objects will
+// not be affected. This means that you can populate an object for dst with some
+// values, do a Get, and on an ErrNoSuchEntity, do a Put (inside a transaction,
+// of course :)).
 func Get(c context.Context, dst ...interface{}) error {
 	if len(dst) == 0 {
 		return nil
@@ -595,8 +600,9 @@ func Get(c context.Context, dst ...interface{}) error {
 //	  be non-nil, and its underlying type must be either *S or *P.
 //
 // A *Key will be extracted from src via KeyForObj. If
-// extractedKey.IsIncomplete() is true, then Put will write the resolved
-// (datastore-generated) *Key back to src.
+// extractedKey.IsIncomplete() is true, and the object is put to the datastore
+// successfully, then Put will write the resolved (datastore-generated) *Key
+// back to src.
 //
 // NOTE: The datastore only autogenerates *Keys with integer IDs. Only models
 // which use a raw `$key` or integer-typed `$id` field are elegible for this.
