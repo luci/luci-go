@@ -125,6 +125,29 @@
       "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "240e4522_1f58a3d9",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-08T00:22:12Z",
+      "side": 1,
+      "message": "nit: make it loadConfig(ctx context.Context, text string) and pass existing \u0027ctx\u0027 (see line 63). It\u0027s is nicer to always have only root context.Background(), even in tests.",
+      "range": {
+        "startLine": 208,
+        "startChar": 5,
+        "endLine": 208,
+        "endChar": 28
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
