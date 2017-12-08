@@ -40,24 +40,26 @@
   {{ end }}
   </div>
 
-  <div class="builders-list-column build-results-column">
-  {{ range .Builders }}
-    {{ $builder := .BuilderID }}
-    <div class="builders-list-cell finished-builds">
-    {{ range $i, $build := .RecentBuilds }}
-      <a class="build-status"
-         href="{{ $build.SelfLink }}"
-         title="{{ $build.BuildID }}"
-         aria-label="builder {{ $builder }} got status {{ $build.Summary.Status }} on recent build {{ $build.BuildID }}">
-        <div class="builder-state-bubble finished-build status-{{ $build.Summary.Status }}">
-          {{ if eq $i 0 }}
-            newest
-          {{ end }}
-        </div>
-      </a>
+  <div class="build-results-column">
+    <div class="builders-list-column">
+    {{ range .Builders }}
+      {{ $builder := .BuilderID }}
+      <div class="builders-list-cell finished-builds">
+      {{ range $i, $build := .RecentBuilds }}
+        <a class="build-status"
+           href="{{ $build.SelfLink }}"
+           title="{{ $build.BuildID }}"
+           aria-label="builder {{ $builder }} got status {{ $build.Summary.Status }} on recent build {{ $build.BuildID }}">
+          <div class="builder-state-bubble finished-build status-{{ $build.Summary.Status }}">
+            {{ if eq $i 0 }}
+              newest
+            {{ end }}
+          </div>
+        </a>
+      {{ end }}
+      </div>
     {{ end }}
     </div>
-  {{ end }}
   </div>
 </div>
 
