@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "9a4063a3_38239a26",
+        "filename": "milo/buildsource/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "common.FilterCosnoleBuilders does not read as \"we are filtering based on access control\". Please choose a name that emphasizes access control aspect, as opposed to filtering aspect\n\nhowever, i believe this is not the right place to check access. In general, ideally we check access control as soon as possible, without even loading any data if the requester is not authorized to see it. In this particular, case we know bucket in the beginning of this function, and moreover view_builder.go\u0027s BuilderHandler knows it. That\u0027s where access control should happen",
+      "range": {
+        "startLine": 86,
+        "startChar": 54,
+        "endLine": 86,
+        "endChar": 84
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "65c0777f_4811132c",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 1
@@ -18,6 +41,69 @@
         "startChar": 1,
         "endLine": 122,
         "endChar": 32
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f5808b9_a19a98ed",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "we should filter an entire console if we\u0027ve filtered all of its builders. console name may include internal names",
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2edc0958_f7d010cb",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "i think this has nothing to do with acls (this file is acl.go)",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 1
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2473268e_a02a2f17",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "given buckets",
+      "range": {
+        "startLine": 86,
+        "startChar": 45,
+        "endLine": 86,
+        "endChar": 59
       },
       "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -48,6 +134,53 @@
     },
     {
       "key": {
+        "uuid": "521770b4_c161e871",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "227a0a0e_b5593921",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 27
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6699bdad_01015788",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "let\u0027s cache this using https://godoc.org/go.chromium.org/luci/server/caching/layered\nand expiration returned by the server. BTW, looks like we forgot to include the expiration access.Permissions",
+      "range": {
+        "startLine": 97,
+        "startChar": 8,
+        "endLine": 97,
+        "endChar": 59
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "df9ee81e_82b41809",
         "filename": "milo/common/config.go",
         "patchSetId": 1
@@ -64,6 +197,53 @@
         "startChar": 57,
         "endLine": 476,
         "endChar": 84
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "833e8154_b5922228",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "all call sites pass the same thing. Did you consider doing access check unconditionally in this function? With layered cache for bucket permissions, it\u0027s fine\n\nhowever, i am not sure this is the best place to access control. It should be done as close to the API/HTTP boundary as possible, see other comments",
+      "parentUuid": "df9ee81e_82b41809",
+      "range": {
+        "startLine": 476,
+        "startChar": 57,
+        "endLine": 476,
+        "endChar": 84
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec1e00e6_47eeadcd",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 482,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "this allocates a useless empty slice\n\nvar cons []*Console",
+      "range": {
+        "startLine": 482,
+        "startChar": 1,
+        "endLine": 482,
+        "endChar": 21
       },
       "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -88,6 +268,80 @@
         "endLine": 496,
         "endChar": 2
       },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c1f0296_1d2ada3b",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 497,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "same here, we should exclude consoles that no longer have builders",
+      "range": {
+        "startLine": 497,
+        "startChar": 8,
+        "endLine": 497,
+        "endChar": 12
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbe3e598_166f0ff1",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 526,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfb49c48_fd798d3d",
+        "filename": "milo/frontend/view_config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "this handler is already restricted admins, so access control is not required. If remove it, it might simplify GetAllConsoles",
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63ccc6f2_008183f9",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 557,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T22:36:12Z",
+      "side": 1,
+      "message": "please move getConsoleDef from console() to here and do access control here",
       "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
