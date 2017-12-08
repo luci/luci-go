@@ -22,6 +22,29 @@
       "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24cd82d2_f6dfef4b",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-08T00:31:11Z",
+      "side": 1,
+      "message": "You make this a constant in \"registerPrefix.go\", but redefine it here. I\u0027d put this in \"logdog/common\"?",
+      "range": {
+        "startLine": 147,
+        "startChar": 23,
+        "endLine": 147,
+        "endChar": 25
+      },
+      "revId": "75c151d7556b08d7edb199f0785e6d22d9a34329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
