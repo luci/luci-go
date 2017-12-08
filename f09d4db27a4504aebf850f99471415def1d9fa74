@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7453476f_4cad1ebf",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-08T00:05:54Z",
+      "side": 1,
+      "message": "this seems like rebase artifact.",
+      "range": {
+        "startLine": 152,
+        "startChar": 33,
+        "endLine": 152,
+        "endChar": 51
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2034f7a_16b3723e",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-08T00:05:54Z",
+      "side": 1,
+      "message": "definitely something went wrong during your rebase.",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 46
+      },
+      "revId": "f09d4db27a4504aebf850f99471415def1d9fa74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
