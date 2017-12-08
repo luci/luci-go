@@ -166,13 +166,23 @@ func (b *Build) Status() model.Status {
 	return result
 }
 
+// PropertyNotFound is returned by (*Build).PropertyValue if a property is no
+// found.
+var PropertyNotFound = fmt.Errorf("property not found")
+
+// PropertyValue returns the named property value.
+// If such property does not exist, returns PropertyNotFound.
 func (b *Build) PropertyValue(name string) interface{} {
 	for _, prop := range b.Properties {
 		if prop.Name == name {
 			return prop.Value
 		}
 	}
-	return ""
+
+	// Not returning (nil, false) here because it would complicate all
+	// practical usage of this function, which simply try to cast the
+	// returned value.
+	return PropertyNotFound
 }
 
 type Pending struct {
