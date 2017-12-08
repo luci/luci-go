@@ -241,7 +241,7 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 			logging.Warningf(c, "wrong revision size %d v %d: %q", len(revision), sha1.Size, commit.Revision)
 
 		default:
-			consoles, err := common.GetAllConsoles(c, bs.BuilderID)
+			consoles, err := common.GetAllConsoles(c, bs.BuilderID, common.FilterConsoleBuilders)
 			if err != nil {
 				return err
 			}

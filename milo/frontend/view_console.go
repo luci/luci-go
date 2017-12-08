@@ -55,14 +55,11 @@ func logTimer(c context.Context, message string) func() {
 
 // getConsoleDef finds the console definition as defined by any project.
 // If the user is not a reader of the project, this will return a 404.
-// TODO(hinoka): If the user is not a reader of any of of the builders returned,
-// that builder will be removed from list of results.
 func getConsoleDef(c context.Context, project, name string) (*config.Console, error) {
-	cs, err := common.GetConsole(c, project, name)
+	cs, err := common.GetConsole(c, project, name, common.FilterConsoleBuilders)
 	if err != nil {
 		return nil, err
 	}
-	// TODO(hinoka): Remove builders that the user does not have access to.
 	return &cs.Def, nil
 }
 
@@ -577,7 +574,7 @@ func ConsoleHandler(c *router.Context) {
 // ConsolesHandler is responsible for taking a project name and rendering the
 // console list page (defined in ./appengine/templates/pages/builder_groups.html).
 func ConsolesHandler(c *router.Context, projectName string) {
-	cons, err := common.GetProjectConsoles(c.Context, projectName)
+	cons, err := common.GetProjectConsoles(c.Context, projectName, common.FilterConsoleBuilders)
 	if err != nil {
 		ErrorHandler(c, err)
 		return

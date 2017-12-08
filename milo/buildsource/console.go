@@ -119,7 +119,7 @@ func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID
 	map[common.ConsoleID]ui.ConsoleSummary, error) {
 
 	// Get the console definitions and builders, then rearrange them into console summaries.
-	defs, err := common.GetConsoles(c, consoleIDs)
+	defs, err := common.GetConsoles(c, consoleIDs, common.FilterConsoleBuilders)
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ import (
 
 // ConfigsHandler renders the page showing the currently loaded set of luci-configs.
 func ConfigsHandler(c *router.Context) {
-	consoles, err := common.GetAllConsoles(c.Context, "")
+	consoles, err := common.GetAllConsoles(c.Context, "", common.FilterConsoleBuilders)
 	if err != nil {
 		ErrorHandler(c, errors.Annotate(err, "Error while getting projects").Err())
 		return

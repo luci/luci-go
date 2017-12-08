@@ -15,8 +15,13 @@
 package common
 
 import (
+	"net/http"
+
 	"golang.org/x/net/context"
 
+	bbAccess "go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient/access"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
@@ -52,4 +57,42 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 func IsAdmin(c context.Context) (bool, error) {
 	// TODO(nodir): unhardcode group name to config file if there is a need
 	return auth.IsMember(c, "administrators")
+}
+
+// ConsoleBuilderFilter is a function that filters a set of Consoles' builders in-place.
+type ConsoleBuilderFilter func(context.Context, []*Console) error
+
+// FilterConsoleBuilders filters Console's builders by checking access with buildbucket.
+func FilterConsoleBuilders(c context.Context, cons []*Console) error {
+	buckets := stringset.New(0)
+	for _, con := range cons {
+		buckets = buckets.Union(con.Buckets())
+	}
+	perms, err := bucketPermissions(c, buckets.ToSlice())
+	if err != nil {
+		return err
+	}
+	for _, con := range cons {
+		con.FilterBuilders(perms)
+	}
+	return nil
+}
+
+// noopFilter is a ConsoleBuilderFilter that does nothing.
+func noopFilter(_ context.Context, _ []*Console) error {
+	return nil
+}
+
+// bucketPermissions gets permissions for all buckets given.
+func bucketPermissions(c context.Context, buckets []string) (bbAccess.Permissions, error) {
+	settings := GetSettings(c)
+	if settings.Buildbucket == nil {
+		return nil, errors.Reason("no buildbucket config found").Err()
+	}
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting RPC Transport").Err()
+	}
+	permsClient := bbAccess.NewClient(settings.Buildbucket.Host, &http.Client{Transport: t})
+	return bbAccess.BucketPermissions(c, permsClient, buckets)
 }

@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/buildbucket/access"
 	configInterface "go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -84,6 +85,41 @@ func (c *Console) ProjectID() string {
 		return ""
 	}
 	return c.Parent.StringID()
+}
+
+// FilterBuilders uses an access.Permissions to filter out builders which are not
+// allowed by the permissions.
+func (c *Console) FilterBuilders(perms access.Permissions) {
+	okBuilders := make([]string, 0, len(c.Builders))
+	for _, id := range c.Builders {
+		if !strings.HasPrefix(id, "buildbucket/") {
+			continue
+		}
+		toks := strings.SplitN(id, "/", 3)
+		if len(toks) != 3 {
+			continue
+		}
+		if perms.Can(toks[1], access.AccessBucket) {
+			okBuilders = append(okBuilders, id)
+		}
+	}
+	c.Builders = okBuilders
+}
+
+// Buckets returns all buckets referenced by this Console's Builders.
+func (c *Console) Buckets() stringset.Set {
+	buckets := stringset.New(0)
+	for _, id := range c.Builders {
+		if !strings.HasPrefix(id, "buildbucket/") {
+			continue
+		}
+		toks := strings.SplitN(id, "/", 3)
+		if len(toks) != 3 {
+			continue
+		}
+		buckets.Add(toks[1])
+	}
+	return buckets
 }
 
 // ConsoleID is a reference to a console.
@@ -315,7 +351,7 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 				pc.Header = header
 			}
 			knownConsoles.Add(pc.Id)
-			con, err := GetConsole(c, projectID, pc.Id)
+			con, err := GetConsole(c, projectID, pc.Id, noopFilter)
 			switch {
 			case err == ErrConsoleNotFound:
 				// continue
@@ -437,22 +473,28 @@ type consolesCacheKey string
 // builder ID. If builderID is empty, then this retrieves all Consoles.
 //
 // TODO-perf(iannucci): Maybe memcache this too.
-func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
+func GetAllConsoles(c context.Context, builderID string, filter ConsoleBuilderFilter) ([]*Console, error) {
 	itm, err := caching.RequestCache(c).GetOrCreate(c, consolesCacheKey(builderID), func() (interface{}, time.Duration, error) {
 		q := datastore.NewQuery("Console")
 		if builderID != "" {
 			q = q.Eq("Builders", builderID)
 		}
-		con := []*Console{}
-		err := datastore.GetAll(c, q, &con)
+		cons := []*Console{}
+		err := datastore.GetAll(c, q, &cons)
 
-		return con, 0, errors.
+		return cons, 0, errors.
 			Annotate(err, "getting consoles for %q", builderID).
 			Tag(transient.Tag).
 			Err()
 	})
-	con, _ := itm.([]*Console)
-	return con, err
+	if err != nil {
+		return nil, err
+	}
+	cons, _ := itm.([]*Console)
+	if err := filter(c, cons); err != nil {
+		return nil, err
+	}
+	return cons, nil
 }
 
 // GetAllProjects returns all projects the current user has access to.
@@ -476,21 +518,26 @@ func GetAllProjects(c context.Context) ([]Project, error) {
 }
 
 // GetProjectConsoles returns all consoles for the given project ordered as in config.
-func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error) {
+func GetProjectConsoles(c context.Context, projectID string, filter ConsoleBuilderFilter) ([]*Console, error) {
 	// Query datastore for consoles related to the project.
 	q := datastore.NewQuery("Console")
 	parentKey := datastore.MakeKey(c, "Project", projectID)
 	q = q.Ancestor(parentKey)
-	con := []*Console{}
-	err := datastore.GetAll(c, q, &con)
-	sort.Slice(con, func(i, j int) bool { return con[i].Ordinal < con[j].Ordinal })
-	return con, err
+	cons := []*Console{}
+	if err := datastore.GetAll(c, q, &cons); err != nil {
+		return nil, err
+	}
+	sort.Slice(cons, func(i, j int) bool { return cons[i].Ordinal < cons[j].Ordinal })
+	if err := filter(c, cons); err != nil {
+		return nil, err
+	}
+	return cons, nil
 }
 
 // GetConsole returns the requested console.
 //
 // TODO-perf(iannucci,hinoka): Memcache this.
-func GetConsole(c context.Context, proj, id string) (*Console, error) {
+func GetConsole(c context.Context, proj, id string, filter ConsoleBuilderFilter) (*Console, error) {
 	con := Console{
 		Parent: datastore.MakeKey(c, "Project", proj),
 		ID:     id,
@@ -499,6 +546,9 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 	case datastore.ErrNoSuchEntity:
 		return nil, ErrConsoleNotFound
 	case nil:
+		if err := filter(c, []*Console{&con}); err != nil {
+			return nil, err
+		}
 		return &con, nil
 	default:
 		return nil, err
@@ -508,7 +558,7 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 // GetConsoles returns the requested consoles.
 //
 // TODO-perf(iannucci,hinoka): Memcache this.
-func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
+func GetConsoles(c context.Context, consoles []ConsoleID, filter ConsoleBuilderFilter) ([]*Console, error) {
 	result := make([]*Console, len(consoles))
 	for i, con := range consoles {
 		result[i] = con.SetID(c, nil)
@@ -516,12 +566,8 @@ func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
 	if err := datastore.Get(c, result); err != nil {
 		return result, ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
 	}
+	if err := filter(c, result); err != nil {
+		return nil, err
+	}
 	return result, nil
-}
-
-// GetConsolesByBuilderID returns all consoles that reference a builder.
-func GetConsolesByBuilderID(c context.Context, builderID string) ([]*Console, error) {
-	q := datastore.NewQuery("Console").Eq("Builders", builderID)
-	var consoles []*Console
-	return consoles, datastore.GetAll(c, q, &consoles)
 }

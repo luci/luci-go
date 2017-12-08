@@ -63,7 +63,7 @@ func TestConfig(t *testing.T) {
 			So(UpdateConsoles(c), ShouldBeNil)
 
 			Convey("Check Console config updated", func() {
-				cs, err := GetConsole(c, "foo", "default")
+				cs, err := GetConsole(c, "foo", "default", noopFilter)
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "default")
 				So(cs.Ordinal, ShouldEqual, 0)
@@ -71,7 +71,7 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("Check Console config updated with header", func() {
-				cs, err := GetConsole(c, "foo", "default_header")
+				cs, err := GetConsole(c, "foo", "default_header", noopFilter)
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "default_header")
 				So(cs.Ordinal, ShouldEqual, 1)
@@ -90,25 +90,25 @@ func TestConfig(t *testing.T) {
 				So(UpdateConsoles(c), ShouldBeNil)
 
 				Convey("Check Console config removed", func() {
-					cs, err := GetConsole(c, "foo", "default")
+					cs, err := GetConsole(c, "foo", "default", noopFilter)
 					So(err, ShouldNotBeNil)
 					So(cs, ShouldEqual, nil)
 				})
 
 				Convey("Check builder group configs in correct order", func() {
-					cs, err := GetConsole(c, "foo", "default_header")
+					cs, err := GetConsole(c, "foo", "default_header", noopFilter)
 					So(err, ShouldBeNil)
 					So(cs.ID, ShouldEqual, "default_header")
 					So(cs.Ordinal, ShouldEqual, 0)
 					So(cs.Def.Header.Id, ShouldEqual, "main_header")
 					So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
-					cs, err = GetConsole(c, "foo", "console.bar")
+					cs, err = GetConsole(c, "foo", "console.bar", noopFilter)
 					So(err, ShouldBeNil)
 					So(cs.ID, ShouldEqual, "console.bar")
 					So(cs.Ordinal, ShouldEqual, 1)
 					So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.something/bar"})
 
-					cs, err = GetConsole(c, "foo", "console.baz")
+					cs, err = GetConsole(c, "foo", "console.baz", noopFilter)
 					So(err, ShouldBeNil)
 					So(cs.ID, ShouldEqual, "console.baz")
 					So(cs.Ordinal, ShouldEqual, 2)
@@ -116,7 +116,7 @@ func TestConfig(t *testing.T) {
 				})
 
 				Convey("Check getting project builder groups in correct order", func() {
-					cs, err := GetProjectConsoles(c, "foo")
+					cs, err := GetProjectConsoles(c, "foo", noopFilter)
 					So(err, ShouldBeNil)
 
 					ids := make([]string, 0, len(cs))

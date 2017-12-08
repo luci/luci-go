@@ -83,7 +83,7 @@ func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder
 			return
 		}
 		work <- func() (err error) {
-			consoles, err = common.GetConsolesByBuilderID(c, string(b))
+			consoles, err = common.GetAllConsoles(c, string(b), common.FilterConsoleBuilders)
 			return
 		}
 	})
@@ -107,6 +107,10 @@ func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder
 // SelfLink returns LUCI URL of the builder.
 func (b BuilderID) SelfLink(project string) string {
 	return model.BuilderIDLink(string(b), project)
+}
+
+func (b BuilderID) Buildbucket() bool {
+	return strings.HasPrefix(string(b), "buildbucket/")
 }
 
 func (b BuilderID) Buildbot() bool {
