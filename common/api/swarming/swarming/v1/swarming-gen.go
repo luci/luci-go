@@ -2282,7 +2282,7 @@ func (c *BotsCountCall) Cursor(cursor string) *BotsCountCall {
 
 // Dimensions sets the optional parameter "dimensions":
 func (c *BotsCountCall) Dimensions(dimensions ...string) *BotsCountCall {
-	c.urlParams_.SetMulti("dimensions", append([]string{}, dimensions...))
+	c.urlParams_.SetMulti("dimensions", append([]string(nil), dimensions...))
 	return c
 }
 

@@ -30,7 +30,7 @@ func TestValidateTags(t *testing.T) {
 	})
 
 	Convey("ValidateTags errors", t, func() {
-		many := []string{}
+		var many []string
 		for i := 0; i < maxTagCount+1; i++ {
 			many = append(many, "k:v")
 		}

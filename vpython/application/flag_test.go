@@ -36,8 +36,8 @@ func TestExtractFlagsForSet(t *testing.T) {
 			self  []string
 			extra []string
 		}{
-			{[]string{}, nil, nil},
-			{[]string{"-i"}, []string{}, []string{"-i"}},
+			{nil, nil, nil},
+			{[]string{"-i"}, nil, []string{"-i"}},
 			{[]string{"script", "-log-level", "debug"}, nil, []string{"script", "-log-level", "debug"}},
 			{[]string{"-log-level", "--", "-foo", "-bar"}, []string{"-log-level"}, []string{"--", "-foo", "-bar"}},
 
@@ -49,7 +49,7 @@ func TestExtractFlagsForSet(t *testing.T) {
 
 			{
 				[]string{"-i", "-log-level", "debug"},
-				[]string{},
+				nil,
 				[]string{"-i", "-log-level", "debug"},
 			},
 

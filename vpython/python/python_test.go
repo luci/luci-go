@@ -54,14 +54,14 @@ func TestParsePythonCommandLine(t *testing.T) {
 			CommandLine{
 				Target: NoTarget{},
 				Flags:  []string{"-a", "-b", "-Q'foo.bar.baz'", "-Wbar"},
-				Args:   []string{},
+				Args:   nil,
 			},
 		},
 
 		{[]string{"path.py", "--", "foo", "bar"},
 			CommandLine{
 				Target: ScriptTarget{"path.py"},
-				Flags:  []string{},
+				Flags:  nil,
 				Args:   []string{"--", "foo", "bar"},
 			},
 		},

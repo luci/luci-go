@@ -66,7 +66,7 @@ func TestParsing(t *testing.T) {
 		of := &testMultiFlag{}
 
 		Convey("Its option list should be empty", func() {
-			So(of.OptionNames(), ShouldResemble, []string{})
+			So(of.OptionNames(), ShouldBeEmpty)
 		})
 
 		Convey(`Parsing an option spec with an empty option value should fail.`, func() {

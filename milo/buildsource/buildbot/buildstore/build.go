@@ -330,7 +330,7 @@ func (b *buildEntity) getID() string {
 
 // setID is the inverse of getID().
 func (b *buildEntity) setID(id string) error {
-	s := []string{}
+	var s []string
 	err := json.Unmarshal([]byte(id), &s)
 	if err != nil {
 		return err
