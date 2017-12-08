@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65c0777f_4811132c",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T21:39:52Z",
+      "side": 1,
+      "message": "This should probably be batched with the original console definition fetch, because now we\u0027re also making a pRPC call to buildbucket...",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 32
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "227a0a0e_b5593921",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T21:39:52Z",
+      "side": 1,
+      "message": "I figured this was OK because GetSettings is cached. Though, I don\u0027t really know what the relative latency of that cache is, so maybe doing this here is wasteful, and the host should be passed as an argument. This would complicate the Get*Console* interfaces, but maybe that\u0027s OK.",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 27
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df9ee81e_82b41809",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T21:39:52Z",
+      "side": 1,
+      "message": "This is perhaps not the best way to inject this dependency... the other option I was considering is via the context, though sometimes we don\u0027t want to filter (see ParseConsoleID).",
+      "range": {
+        "startLine": 476,
+        "startChar": 57,
+        "endLine": 476,
+        "endChar": 84
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48086366_9c0a1f1d",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 496,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T21:39:52Z",
+      "side": 1,
+      "message": "I implemented the filter at the Get*Console* level because it seemed to have the most impact with the fewest lines of code. The filter is fairly heavy-weight, so I still need to go over each call of Get*Console* in order to see if it\u0027s not doing some work twice.",
+      "range": {
+        "startLine": 494,
+        "startChar": 1,
+        "endLine": 496,
+        "endChar": 2
+      },
+      "revId": "6c8366f38fa864d9bb1b12b360552537abb60623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
