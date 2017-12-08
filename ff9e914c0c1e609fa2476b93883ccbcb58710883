@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fec00221_581f361f",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-08T08:21:29Z",
+      "side": 1,
+      "message": "Reason(format, args...)\n\nand then it line is so short, err can be inlined",
+      "range": {
+        "startLine": 91,
+        "startChar": 15,
+        "endLine": 91,
+        "endChar": 51
+      },
+      "revId": "ff9e914c0c1e609fa2476b93883ccbcb58710883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
