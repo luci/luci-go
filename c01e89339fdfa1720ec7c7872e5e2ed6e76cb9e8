@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ff9d3e2_5e77de6f",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-08T00:43:28Z",
+      "side": 1,
+      "message": "Doesn\u0027t really matter, but this should be datacenter, not datecenter.",
+      "range": {
+        "startLine": 62,
+        "startChar": 39,
+        "endLine": 62,
+        "endChar": 40
+      },
+      "revId": "c01e89339fdfa1720ec7c7872e5e2ed6e76cb9e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
