@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "445b762a_5ed42210",
+        "filename": "client/cmd/isolate/batch_archive_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-12-08T16:15:43Z",
+      "side": 1,
+      "message": "In cases like this the code is less readable since it\u0027s less clear what the arguments mean just from looking at the call site.\n\nYou also lose type checking so if you think an argument takes an array but it takes something else the compiler won\u0027t complain. Typed nil might be better but it\u0027s pretty verbose for a minor optimization.\n\nWDYT?",
+      "revId": "14cedf97311eef49eb9c4aa0fc4c2784fbb8edf5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
