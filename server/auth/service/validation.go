@@ -79,7 +79,7 @@ func findGroupCycle(name string, groups map[string]*protocol.AuthGroup) []string
 
 	// Stack of groups that are being explored now. In case a cycle is detected
 	// it would contain that cycle.
-	visiting := []string{}
+	var visiting []string
 
 	// Recursively explores `group` subtree, returns true if finds a cycle.
 	var visit func(string) bool

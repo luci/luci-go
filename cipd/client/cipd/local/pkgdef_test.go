@@ -257,10 +257,10 @@ func TestFindFiles(t *testing.T) {
 			assertFiles := func(pkgDef PackageDef, cwd string) {
 				files, err := pkgDef.FindFiles(cwd)
 				So(err, ShouldBeNil)
-				names := []string{}
+				names := make([]string, len(files))
 				byName := make(map[string]File, len(files))
-				for _, f := range files {
-					names = append(names, f.Name())
+				for i, f := range files {
+					names[i] = f.Name()
 					byName[f.Name()] = f
 				}
 

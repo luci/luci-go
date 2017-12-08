@@ -112,7 +112,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 func convertPyToGoArchiveCMDArgs(args []string) []string {
 	kvars := map[string]bool{
 		"--path-variable": true, "--config-variable": true, "--extra-variable": true}
-	newArgs := []string{}
+	var newArgs []string
 	for i := 0; i < len(args); {
 		newArgs = append(newArgs, args[i])
 		kvar := args[i]

@@ -67,9 +67,9 @@ func TestScanFileSystem(t *testing.T) {
 			writeFile(tempDir, "1/2/a", "", 0666)
 			files, err := ScanFileSystem(tempDir, tempDir, nil)
 			So(err, ShouldBeNil)
-			names := []string{}
-			for _, f := range files {
-				names = append(names, f.Name())
+			names := make([]string, len(files))
+			for i, f := range files {
+				names[i] = f.Name()
 			}
 			// Order matters. Slashes matters.
 			So(names, ShouldResemble, []string{
@@ -100,9 +100,9 @@ func TestScanFileSystem(t *testing.T) {
 			writeFile(tempDir, "1/2/a", "", 0666)
 			files, err := ScanFileSystem(filepath.Join(tempDir, "1"), tempDir, nil)
 			So(err, ShouldBeNil)
-			names := []string{}
-			for _, f := range files {
-				names = append(names, f.Name())
+			names := make([]string, len(files))
+			for i, f := range files {
+				names[i] = f.Name()
 			}
 			// Order matters. Slashes matters.
 			So(names, ShouldResemble, []string{
@@ -125,7 +125,7 @@ func TestScanFileSystem(t *testing.T) {
 			writeFile(tempDir, "1/2/a", "", 0666)
 
 			// Exclude "a" and entire "1/" directory.
-			excluderCalls := []string{}
+			var excluderCalls []string
 			excluder := func(abs string) bool {
 				excluderCalls = append(excluderCalls, abs)
 				if abs == filepath.Join(tempDir, "a") {
@@ -434,10 +434,10 @@ func TestFileSystemDestination(t *testing.T) {
 			// Ensure everything is there.
 			files, err := ScanFileSystem(destDir, destDir, nil)
 			So(err, ShouldBeNil)
-			names := []string{}
-			mapping := map[string]File{}
-			for _, f := range files {
-				names = append(names, f.Name())
+			names := make([]string, len(files))
+			mapping := make(map[string]File, len(files))
+			for i, f := range files {
+				names[i] = f.Name()
 				mapping[f.Name()] = f
 			}
 

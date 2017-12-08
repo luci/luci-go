@@ -1367,7 +1367,7 @@ func (c *DeleteManyBuildsCall) CreatedBy(createdBy string) *DeleteManyBuildsCall
 
 // Tag sets the optional parameter "tag":
 func (c *DeleteManyBuildsCall) Tag(tag ...string) *DeleteManyBuildsCall {
-	c.urlParams_.SetMulti("tag", append([]string{}, tag...))
+	c.urlParams_.SetMulti("tag", append([]string(nil), tag...))
 	return c
 }
 
@@ -2581,7 +2581,7 @@ func (s *Service) Peek() *PeekCall {
 
 // Bucket sets the optional parameter "bucket":
 func (c *PeekCall) Bucket(bucket ...string) *PeekCall {
-	c.urlParams_.SetMulti("bucket", append([]string{}, bucket...))
+	c.urlParams_.SetMulti("bucket", append([]string(nil), bucket...))
 	return c
 }
 
@@ -3229,7 +3229,7 @@ func (s *Service) Search() *SearchCall {
 
 // Bucket sets the optional parameter "bucket":
 func (c *SearchCall) Bucket(bucket ...string) *SearchCall {
-	c.urlParams_.SetMulti("bucket", append([]string{}, bucket...))
+	c.urlParams_.SetMulti("bucket", append([]string(nil), bucket...))
 	return c
 }
 
@@ -3329,7 +3329,7 @@ func (c *SearchCall) Status(status string) *SearchCall {
 
 // Tag sets the optional parameter "tag":
 func (c *SearchCall) Tag(tag ...string) *SearchCall {
-	c.urlParams_.SetMulti("tag", append([]string{}, tag...))
+	c.urlParams_.SetMulti("tag", append([]string(nil), tag...))
 	return c
 }
 

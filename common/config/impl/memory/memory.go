@@ -141,7 +141,7 @@ func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly 
 		return nil, err
 	}
 
-	sets := []string{}
+	var sets []string
 	for configSet := range m.sets {
 		chunks := strings.Split(configSet, "/")
 		if len(chunks) > 3 && chunks[0] == "projects" && chunks[2] == "refs" {
@@ -164,7 +164,7 @@ func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, e
 	}
 
 	prefix := "projects/" + projectID + "/"
-	out := []string{}
+	var out []string
 	for configSet := range m.sets {
 		if strings.HasPrefix(configSet, prefix) {
 			ref := configSet[len(prefix):]
