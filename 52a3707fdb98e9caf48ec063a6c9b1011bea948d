@@ -16,6 +16,24 @@
       "revId": "52a3707fdb98e9caf48ec063a6c9b1011bea948d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2d0a6dc_22dfcc45",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-08T17:31:00Z",
+      "side": 1,
+      "message": "dir should never be \"\" since if Clean ever has a result \"\", it maps it to \".\". Though, I might not be totally understanding what you\u0027re getting at.\n\nOverall, I think its OK too, since if this is something you want you have to be explicit about it.",
+      "parentUuid": "06bcb995_eb50a5fc",
+      "revId": "52a3707fdb98e9caf48ec063a6c9b1011bea948d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
