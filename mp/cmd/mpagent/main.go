@@ -263,9 +263,10 @@ func (agent *Agent) poll(ctx context.Context) error {
 		if err != nil {
 			// Log error but don't return. Keep polling.
 			logging.Errorf(ctx, "%s", err.Error())
-		}
-		if err = agent.handle(ctx, instruction); err != nil {
-			return err
+		} else {
+			if err = agent.handle(ctx, instruction); err != nil {
+				return err
+			}
 		}
 		time.Sleep(time.Minute)
 	}
