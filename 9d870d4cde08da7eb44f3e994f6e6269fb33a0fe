@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d924652a_4235735e",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-08T01:22:26Z",
+      "side": 1,
+      "message": "Add a TODO to:\n- keep a cache of which directories were created to not do redundant stat()\n- serialize the creation as concurrent goroutines could simultaneously create the same directory, causing a failure in one of the two.",
+      "revId": "9d870d4cde08da7eb44f3e994f6e6269fb33a0fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "211fe109_4e292321",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-08T01:22:26Z",
+      "side": 1,
+      "message": "this part is unnecessary",
+      "range": {
+        "startLine": 129,
+        "startChar": 9,
+        "endLine": 129,
+        "endChar": 22
+      },
+      "revId": "9d870d4cde08da7eb44f3e994f6e6269fb33a0fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
