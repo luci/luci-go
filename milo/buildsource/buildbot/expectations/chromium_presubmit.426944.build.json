@@ -135,8 +135,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "update_scripts",
-        "git - 7f1967a10defc60c719bb24cd27f9631d3d71849"
+        "update_scripts\u003cbr\u003egit - 7f1967a10defc60c719bb24cd27f9631d3d71849"
       ]
     },
     {
@@ -205,8 +204,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "setup_build",
-        "running recipe: \"run_presubmit\""
+        "setup_build\u003cbr\u003erunning recipe: \"run_presubmit\""
       ]
     },
     {
@@ -235,8 +233,7 @@
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
-        "bot_update",
-        "[291GB/492GB used (59%)]"
+        "bot_update\u003cbr\u003e[291GB/492GB used (59%)]"
       ]
     },
     {
