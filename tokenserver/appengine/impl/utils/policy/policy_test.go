@@ -112,7 +112,7 @@ func TestImportConfigs(t *testing.T) {
 			Validate: func(v *validation.Context, cfg ConfigBundle) {
 				So(cfg["config.cfg"], ShouldNotBeNil)
 				v.SetFile("config.cfg")
-				v.Error("validation error")
+				v.Errorf("validation error")
 			},
 			Prepare: func(cfg ConfigBundle, revision string) (Queryable, error) {
 				panic("must not be called")
