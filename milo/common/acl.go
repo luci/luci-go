@@ -15,8 +15,13 @@
 package common
 
 import (
+	"net/http"
+
 	"golang.org/x/net/context"
 
+	bbAccess "go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient/access"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
@@ -52,4 +57,18 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 func IsAdmin(c context.Context) (bool, error) {
 	// TODO(nodir): unhardcode group name to config file if there is a need
 	return auth.IsMember(c, "administrators")
+}
+
+// BucketPermissions gets permissions for all buckets given.
+func BucketPermissions(c context.Context, buckets []string) (bbAccess.Permissions, error) {
+	settings := GetSettings(c)
+	if settings.Buildbucket == nil {
+		return nil, errors.Reason("no buildbucket config found").Err()
+	}
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting RPC Transport").Err()
+	}
+	permsClient := bbAccess.NewClient(settings.Buildbucket.Host, &http.Client{Transport: t})
+	return bbAccess.BucketPermissions(c, permsClient, buckets)
 }
