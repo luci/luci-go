@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/spec"
+	"go.chromium.org/luci/vpython/venv/assets"
 	"go.chromium.org/luci/vpython/wheel"
 
 	"go.chromium.org/luci/common/clock"
@@ -43,7 +44,7 @@ import (
 
 // EnvironmentVersion is an environment version string. It must advance each
 // time the layout of a VirtualEnv environment changes.
-const EnvironmentVersion = "v1"
+const EnvironmentVersion = "v2"
 
 // ErrNotComplete is a sentinel error returned by AssertCompleteAndLoad to
 // indicate that the Environment is missing its completion flag.
@@ -508,6 +509,11 @@ func (e *Env) createLocked(c context.Context) error {
 				return errors.Annotate(err, "failed to install wheels").Err()
 			}
 		}
+
+		// Inject our site customization
+		if err := e.injectSiteCustomization(c, setupEnvSorted); err != nil {
+			return errors.Annotate(err, "failed to inject site customize").Err()
+		}
 		return nil
 	})
 	if err != nil {
@@ -584,6 +590,34 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 	}
 
 	return nil
+}
+
+// getLibPath figures out the location of the 'lib/python2.7' type folder for
+// the current interpreter.
+func (e *Env) getLibPath(c context.Context, env []string) (string, error) {
+	// This script will return the `site` is found.
+	const script = `import site, sys;sys.stdout.write(site.__file__)`
+
+	cmd := e.Interpreter().IsolatedCommand(c, "-c", script)
+	cmd.Env = env
+
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
+	if err := cmd.Run(); err != nil {
+		dumpOutput(c, logging.Error)
+		return "", errors.Annotate(err, "failed to get site module path").Err()
+	}
+
+	path := stdout.String()
+	if !filepath.HasPrefix(path, e.Root) {
+		dumpOutput(c, logging.Error)
+		return "", errors.Reason("site module is outside root: %q v %q",
+			e.Root, path).Err()
+	}
+
+	return filepath.Dir(path), nil
 }
 
 // getPEP425Tags calls Python's pip.pep425tags package to retrieve the tags.
@@ -672,6 +706,26 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env 
 		dumpOutput(c, logging.Error)
 		return errors.Annotate(err, "failed to install wheels").Err()
 	}
+	return nil
+}
+
+func (e *Env) injectSiteCustomization(c context.Context, env []string) error {
+	basePath, err := e.getLibPath(c, env)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(filepath.Join(basePath, "sitecustomize.py"))
+	if err != nil {
+		return errors.Annotate(err, "cannot create sitecustomize.py").Err()
+	}
+	if _, err := f.Write(assets.GetAsset("sitecustomize.tmpl")); err != nil {
+		return errors.Annotate(err, "cannot write sitecustomize.py").Err()
+	}
+	if err := f.Close(); err != nil {
+		return errors.Annotate(err, "cannot close sitecustomize.py").Err()
+	}
+
 	return nil
 }
 
