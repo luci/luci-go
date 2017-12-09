@@ -79,7 +79,7 @@ func TestProtoValidation(t *testing.T) {
 		So(call(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
 		So(call(&messages.Job{Id: "bad'id"}), ShouldErrLike, "not valid value for 'id' field")
 		So(call(&messages.Job{
-			Id:   "good id can have spaces and . and -",
+			Id:   "good id can have spaces and . and - and even ()",
 			Noop: &messages.NoopTask{},
 		}), ShouldBeNil)
 		So(call(&messages.Job{
