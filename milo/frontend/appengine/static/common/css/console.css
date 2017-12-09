@@ -373,6 +373,7 @@
   border: 1px solid silver;
   min-width: 2em;
   min-height: 2em;
+  text-decoration: none;
   align-items: center;
   justify-content: center;
   background-color: #fff;
