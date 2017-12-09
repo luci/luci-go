@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bce928f7_66774f84",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T18:10:47Z",
+      "side": 1,
+      "message": "this function now has two channels to return error: via context and via return value. There should be only one, and since we\u0027ve established that we report errors via context, we don\u0027t need to return value.",
+      "revId": "8907b5677c854473bf894e7c42e35b07c4961fd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3368a9c0_bb2b9fa4",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T18:10:47Z",
+      "side": 1,
+      "message": "declare the variable as a pointer intstead\n\nsame in other places",
+      "range": {
+        "startLine": 165,
+        "startChar": 18,
+        "endLine": 165,
+        "endChar": 19
+      },
+      "revId": "8907b5677c854473bf894e7c42e35b07c4961fd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
