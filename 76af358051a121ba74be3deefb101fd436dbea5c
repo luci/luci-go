@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12c22eb3_ae19c2ee",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T01:58:41Z",
+      "side": 1,
+      "message": "let\u0027s remove this. This simplifies L56-58, requires less allocation.\nthe cost is very minor: copying in L80, but that might be an improvement actually: right now, if someone calls computeChanges, then modifies configs, then calls update/add, then modifications propagate to db (not obvious). Applies to L96 too\n\nsame in racks.go",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 2
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9808c63f_5d931ba5",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T01:58:41Z",
+      "side": 1,
+      "message": "remove\n\nsame in racks.go",
+      "range": {
+        "startLine": 68,
+        "startChar": 42,
+        "endLine": 68,
+        "endChar": 61
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc0ded3c_44b2d380",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T01:58:41Z",
+      "side": 1,
+      "message": "consider a more general version of this for the same price:\n\n  func (d *DatacentersTable) byName() map[string]*Datacenter\n\nbtw we don\u0027t need context here. No need to pass it to simple functions",
+      "range": {
+        "startLine": 215,
+        "startChar": 27,
+        "endLine": 215,
+        "endChar": 66
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79e9af68_3802b7f3",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T01:58:41Z",
+      "side": 1,
+      "message": "gofmt",
+      "range": {
+        "startLine": 40,
+        "startChar": 8,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

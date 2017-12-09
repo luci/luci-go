@@ -179,6 +179,54 @@
     },
     {
       "key": {
+        "uuid": "4370a2d7_3f74bd57",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T01:58:41Z",
+      "side": 1,
+      "message": "additions do not need a map. they can stay they way they are. Same for removals.\nhow determinism for updates important?",
+      "parentUuid": "e41e22bb_e80ca989",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc6f2ef6_4208517f",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T01:58:41Z",
+      "side": 1,
+      "message": "alright, i believe the best solution for this problem is what already have, so let\u0027s leave it as is. And since consistency is important too, let\u0027s leave datacenters as is too even though strictly speaking we could get away with maps",
+      "parentUuid": "f6920420_32d26d11",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "551239a9_084f1b10",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 5
