@@ -155,6 +155,30 @@
     },
     {
       "key": {
+        "uuid": "f6920420_32d26d11",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-09T01:02:01Z",
+      "side": 1,
+      "message": "In person we agreed that we should simplify so long there are no cases that require this struct. However, I just realized there already is one. In racks.go, the Rack struct contains RackConfig, Id, and DatacenterId. We can\u0027t convert RacksTable.current to map[int64]*config.RackConfig because then we lose DatacenterId.\n\nRacksTable.fetch() needs somewhere to scan the current datacenter ID associated with a rack into. Keep in mind that this is different than what the datacenter ID should be (they are compared later in RacksTable.computeChanges()).",
+      "parentUuid": "e41e22bb_e80ca989",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "25d04572234dd3648bb1438f0754e6791298ca80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "551239a9_084f1b10",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 5
