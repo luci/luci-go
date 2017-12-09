@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d57cbb4_f0be57e7",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T00:14:57Z",
+      "side": 1,
+      "message": "%q\nbuilders often have spaces",
+      "range": {
+        "startLine": 35,
+        "startChar": 34,
+        "endLine": 35,
+        "endChar": 36
+      },
+      "revId": "6c974af27b082a54102338551883c777f5ca6eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd648de6_1c311cdf",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T00:14:57Z",
+      "side": 1,
+      "message": "file",
+      "revId": "6c974af27b082a54102338551883c777f5ca6eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82dead61_4f0dfc66",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T00:14:57Z",
+      "side": 1,
+      "message": "it would be at least len(projectCfg.Notifiers)",
+      "range": {
+        "startLine": 94,
+        "startChar": 31,
+        "endLine": 94,
+        "endChar": 32
+      },
+      "revId": "6c974af27b082a54102338551883c777f5ca6eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
