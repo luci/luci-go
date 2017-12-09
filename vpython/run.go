@@ -16,7 +16,7 @@ package vpython
 
 import (
 	"os"
-	"strings"
+	"path/filepath"
 
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
@@ -29,12 +29,12 @@ import (
 )
 
 const (
-	// EnvironmentStampPathENV is the exported environment variable for the
-	// environment stamp path.
-	//
-	// This is added to the bootstrap environment used by Run to allow subprocess
-	// "vpython" invocations to automatically inherit the same environment.
-	EnvironmentStampPathENV = "VPYTHON_VENV_ENV_STAMP_PATH"
+	// VPythonExeEnv is the exported environment variable for the vpython
+	// executable itself. This is used by the virtualenv's sitecustomize.py to
+	// replace sys.executable with an absolute path to the vpython binary. This
+	// means that python scripts running inside a vpython virtualenv will
+	// automatically use vpython when they run things via sys.executable.
+	VPythonExeEnv = "_VPYTHON_EXE"
 )
 
 type runCommand struct {
@@ -74,12 +74,20 @@ func Run(c context.Context, opts Options) error {
 		python.IsolateEnvironment(&e)
 
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
-		if ve.EnvironmentStampPath != "" {
-			e.Set(EnvironmentStampPathENV, ve.EnvironmentStampPath)
-		}
 
-		// Prefix PATH with the VirtualEnv "bin" directory.
-		prefixPATH(e, ve.BinDir)
+		// Set _VPYTHON_EXE envvar so that the virtualenv's injected
+		// sitecustomize.py can replace sys.executable with this.
+		executable, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		if executable, err = filepath.EvalSymlinks(executable); err != nil {
+			return err
+		}
+		if executable, err = filepath.Abs(executable); err != nil {
+			return err
+		}
+		e.Set(VPythonExeEnv, executable)
 
 		// Run our bootstrapped Python command.
 		logging.Debugf(c, "Python environment:\nWorkDir: %s\nEnv: %s", opts.WorkDir, e)
@@ -119,21 +127,4 @@ func Exec(c context.Context, interp *python.Interpreter, args []string, env envi
 	argv := interp.IsolatedCommandParams(args...)
 	logging.Debugf(c, "Exec Python command: %v", argv)
 	return execImpl(c, argv, env, dir, nil)
-}
-
-func prefixPATH(env environ.Env, components ...string) {
-	if len(components) == 0 {
-		return
-	}
-
-	// Clone "components" so we don't mutate our caller's array.
-	components = append([]string(nil), components...)
-
-	// If there is a current PATH (likely), add that to the end.
-	cur, _ := env.Get("PATH")
-	if len(cur) > 0 {
-		components = append(components, cur)
-	}
-
-	env.Set("PATH", strings.Join(components, string(os.PathListSeparator)))
 }

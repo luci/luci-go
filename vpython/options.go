@@ -91,18 +91,6 @@ func (o *Options) resolve(c context.Context) error {
 		o.EnvConfig.Spec.Wheel = append(o.EnvConfig.Spec.Wheel, o.BaseWheels...)
 	}
 
-	// If no environment base directory was supplied, create one under the current
-	// working directory.
-	if o.EnvConfig.BaseDir == "" {
-		// Is one specified in our environment?
-		if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
-			var err error
-			if o.EnvConfig.BaseDir, err = venv.EnvRootFromStampPath(v); err != nil {
-				return errors.Annotate(err, "failed to get env root from environment: %s", v).Err()
-			}
-			logging.Debugf(c, "Loaded environment root from environment variable: %s", o.EnvConfig.BaseDir)
-		}
-	}
 	return nil
 }
 
@@ -155,19 +143,6 @@ func (o *Options) ResolveSpec(c context.Context) error {
 			o.EnvConfig.Spec = spec
 			return nil
 		}
-	}
-
-	// Do we have a spec file in the environment?
-	if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
-		var environment vpython.Environment
-		if err := spec.LoadEnvironment(v, &environment); err != nil {
-			return errors.Annotate(err,
-				"failed to load %q from: %s", EnvironmentStampPathENV, v).Err()
-		}
-
-		logging.Infof(c, "Loaded environment from %q: %s", EnvironmentStampPathENV, v)
-		o.EnvConfig.Spec = environment.Spec
-		return nil
 	}
 
 	// If standard resolution doesn't yield a spec, fall back on our default spec.
