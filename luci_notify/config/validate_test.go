@@ -94,6 +94,58 @@ func TestValidation(t *testing.T) {
 				}
 			}`,
 			badEmailError, "@@@@@")
+
+		testValidation(`duplicate builders in notifier`, `
+			notifiers {
+				name: "good-name"
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket"
+				}
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket"
+				}
+			}`,
+			duplicateBuilderError, "test.bucket/i-am-a-builder")
+
+		testValidation(`duplicate builders in project`, `
+			notifiers {
+				name: "good-name"
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket"
+				}
+			}
+			notifiers {
+				name: "good-name-again"
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket"
+				}
+			}`,
+			duplicateBuilderError, "test.bucket/i-am-a-builder")
+
+		testValidation(`different bucketname same builders OK`, `
+			notifiers {
+				name: "good-name"
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket"
+				}
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket3"
+				}
+			}
+			notifiers {
+				name: "good-name-again"
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket2"
+				}
+			}`,
+			"", "")
 	})
 
 	Convey(`Test Environment for validateSettings`, t, func() {
