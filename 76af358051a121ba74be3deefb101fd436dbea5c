@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3cdd5963_76854303",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-09T02:54:43Z",
+      "side": 1,
+      "message": "Good point about modifying the configs. I changed line 80 to set only relevant fields (otherwise it will copy a giant tree of all rack nodes, which copies each rack\u0027s switch nodes).",
+      "parentUuid": "12c22eb3_ae19c2ee",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 2
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9808c63f_5d931ba5",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 7
@@ -36,6 +60,30 @@
       "writtenOn": "2017-12-09T01:58:41Z",
       "side": 1,
       "message": "remove\n\nsame in racks.go",
+      "range": {
+        "startLine": 68,
+        "startChar": 42,
+        "endLine": 68,
+        "endChar": 61
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "007aa3cc_34f08dad",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-09T02:54:43Z",
+      "side": 1,
+      "message": "I like it for consistency. All other methods take context. No good?",
+      "parentUuid": "9808c63f_5d931ba5",
       "range": {
         "startLine": 68,
         "startChar": 42,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "cdb4468c_fb3a8ec5",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-09T02:54:43Z",
+      "side": 1,
+      "message": "I\u0027m not sure, because the objects could be updated. Suppose:\n.fetch()\n.computeChanges()\n.byName()\n.add()\n.remove()\n.update()\n\nNow what you got from byName() has changed. This is the same problem you mentioned as rationale for changing *config.DatacenterConfig to be a value instead of a pointer.\n\nWe could do map[string]Datacenter here, but then it\u0027s just copying a bunch of unnecessary stuff for each Datacenter when we only use the int64 from this. How about we keep it this way as long as it suffices?",
+      "parentUuid": "dc0ded3c_44b2d380",
+      "range": {
+        "startLine": 215,
+        "startChar": 27,
+        "endLine": 215,
+        "endChar": 66
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "79e9af68_3802b7f3",
         "filename": "machine-db/appengine/model/racks.go",
         "patchSetId": 7
@@ -91,6 +163,30 @@
       "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12622b52_8e795b1c",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-09T02:54:43Z",
+      "side": 1,
+      "message": "I ran gofmt -w -s racks.go and nothing changed.",
+      "parentUuid": "79e9af68_3802b7f3",
+      "range": {
+        "startLine": 40,
+        "startChar": 8,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
