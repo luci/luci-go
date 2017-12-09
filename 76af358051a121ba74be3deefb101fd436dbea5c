@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "13f53937_589278b7",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T03:21:17Z",
+      "side": 1,
+      "message": "in luci-go code base, and I believe elsewhere too, if a function does not need a context, it does not ask for one. Hypothetically, there may be a function that does not have a context and needs to call this one, making a new context would be weird.\n\nL126 in \nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/770495/1/server/auth/internal/layeredcache/layeredcache.go#126\n\nis an example where I convinced Vadim to remove context because it is simpler.\n\n--\n\ni remember discussions with iannucci where he said that ideally a function declares what it expects from the passed context. e.g. all functions in this file expect db to be there, but you don\u0027t know it until you catch a panic or read implementation. This is a general flaw of context in Golang. But if you don\u0027t have context, you don\u0027t have the flaw :)",
+      "parentUuid": "007aa3cc_34f08dad",
+      "range": {
+        "startLine": 68,
+        "startChar": 42,
+        "endLine": 68,
+        "endChar": 61
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dc0ded3c_44b2d380",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 7
@@ -140,6 +164,30 @@
       "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41d9d5c1_531f860e",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-09T03:21:17Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "cdb4468c_fb3a8ec5",
+      "range": {
+        "startLine": 215,
+        "startChar": 27,
+        "endLine": 215,
+        "endChar": 66
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
