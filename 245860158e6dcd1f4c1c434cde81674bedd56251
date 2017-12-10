@@ -22,6 +22,30 @@
       "revId": "245860158e6dcd1f4c1c434cde81674bedd56251",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17bc627b_a1224dfa",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-10T20:28:51Z",
+      "side": 0,
+      "message": "So I don\u0027t think that it makes sense to put the venv on PATH. The reason is that we want vpython behavior to be a pure function of the script that we\u0027re running. Putting the venv on $PATH means that if something ever relies on that, then the python script is now a function of whatever context it happened to be invoked by. I really really don\u0027t like that. What\u0027s worse is that this effect can be cumulative if the sub-script invokes vpython, etc., meaning that $PATH could grow unbounded.\n\nThe solution to this is to put vpython-as-python on PATH. This will make it so that any invocation of \u0027python\u0027 now gets the environment of the script referenced (or via the special \u0027default venv\u0027 environment variable, or via an explicit command line argument... I\u0027d like to eventually get rid of both of those, however).\n\nOn developer machines they can either `pip install` whatever they want, or (better), they can get used to invoking things via vpython and/or have the repo scripts themselves deal explicitly with vpython.",
+      "parentUuid": "7caf7c3f_6af00634",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 124,
+        "endChar": 15
+      },
+      "revId": "245860158e6dcd1f4c1c434cde81674bedd56251",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

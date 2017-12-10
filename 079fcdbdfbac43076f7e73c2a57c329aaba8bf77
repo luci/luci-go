@@ -117,6 +117,30 @@
     },
     {
       "key": {
+        "uuid": "a0157bbe_b0ad23f5",
+        "filename": "vpython/venv/assets/sitecustomize.tmpl",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-10T20:28:51Z",
+      "side": 1,
+      "message": "assets only looks for certain file extensions. This was the least wrong extension.",
+      "parentUuid": "3b52f9c9_52cc9605",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 34
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7c55b14f_a5d07f77",
         "filename": "vpython/venv/assets/sitecustomize.tmpl",
         "patchSetId": 2
