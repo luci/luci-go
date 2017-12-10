@@ -1,0 +1,257 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3011e75e_04a593a2",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: \"path of the vpython executable ...\"",
+      "range": {
+        "startLine": 32,
+        "startChar": 63,
+        "endLine": 32,
+        "endChar": 70
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae9c2e2e_832c5b4c",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit, \"Python\"",
+      "range": {
+        "startLine": 35,
+        "startChar": 15,
+        "endLine": 35,
+        "endChar": 21
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e2fab8b_b58474e8",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: all other environment constants are caps \"ENV\".",
+      "range": {
+        "startLine": 37,
+        "startChar": 11,
+        "endLine": 37,
+        "endChar": 14
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94972cf1_90e5437e",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: \"VirtualEnv\"",
+      "range": {
+        "startLine": 46,
+        "startChar": 44,
+        "endLine": 46,
+        "endChar": 56
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b52f9c9_52cc9605",
+        "filename": "vpython/venv/assets/sitecustomize.tmpl",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: end filename in \".py\". But this isn\u0027t a template, right? It\u0027s verbatim copied, so I\u0027d just name \".py\".",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 34
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c55b14f_a5d07f77",
+        "filename": "vpython/venv/assets/sitecustomize.tmpl",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: \"added to `vpython`-generated VirtualEnvs",
+      "range": {
+        "startLine": 15,
+        "startChar": 15,
+        "endLine": 15,
+        "endChar": 23
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "754a7781_e237af7d",
+        "filename": "vpython/venv/assets/sitecustomize.tmpl",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "I think we should just do:\n\nvpython_exe \u003d os.environ.pop(\u0027_VPYTHON_EXE\u0027, None)\nif vpython_exe:\n  sys.real_executable \u003d sys.executable\n  sys.executable \u003d vpython_exe",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 22
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "434c46cd_77ea070b",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 515,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: customizations",
+      "range": {
+        "startLine": 515,
+        "startChar": 54,
+        "endLine": 515,
+        "endChar": 63
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32a66c76_c514387d",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 599,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "Let\u0027s just have this emit the dirname?",
+      "range": {
+        "startLine": 599,
+        "startChar": 51,
+        "endLine": 599,
+        "endChar": 64
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a36e9dc4_b9e75618",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 617,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: I think this fits on one line?",
+      "range": {
+        "startLine": 617,
+        "startChar": 0,
+        "endLine": 617,
+        "endChar": 22
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c080f85_3cb22257",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 718,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-10T00:42:36Z",
+      "side": 1,
+      "message": "nit: use ioutil.WriteFile: https://golang.org/pkg/io/ioutil/#WriteFile",
+      "range": {
+        "startLine": 718,
+        "startChar": 0,
+        "endLine": 718,
+        "endChar": 65
+      },
+      "revId": "079fcdbdfbac43076f7e73c2a57c329aaba8bf77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
