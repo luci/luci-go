@@ -46,6 +46,30 @@
       "revId": "245860158e6dcd1f4c1c434cde81674bedd56251",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "856573ff_9721eb93",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-11T14:15:49Z",
+      "side": 0,
+      "message": "Yeah I see your points and have considered most of them before. They\u0027re good points for sure.\n\nI think one advantage of adding \"vpython\" to PATH is that it subscribes you to the \"vpython\" world: once you enter \"vpython\", you are no longer reliant on system packages at all, and behavior becomes system-agnostic. This makes \"vpython\" pretty easy entry point into this controlled world, even though it carries with it some implicit dependencies. That\u0027s a huge value IMO, given the state of the fleet, since ATM this is one of the toggle switches that we fully control.\n\nThe impact of implicitly subscribing \"vpython\"-launched scripts to that VirtualEnv is also probably relatively small, as most scripts that cross-invoke will invoke scripts in the same repository, which will pull in the same common configuration. Cross-repo scripts can get around this by explicitly using \"vpython\" or \"os.executable\". This is just a safety net for those that haven\u0027t adapted yet.\n\nOn the other hand, there are some other competitors for that value that are superior, including:\n\n- Bundled Python, which removes system Python altogether.\n- vpython-as-Python (in PATH), as you mentioned.\n\nMy preference would be to leave VirtualEnv in PATH in place for now until (at least) one of those other things is ubiquitously deployed in all environments (LUCI, BuildBot/annotated_run, BuildBot/remote_run). If that deployment is in place, or is happening soon, then go ahead and cut this; otherwise, I think the one-stop control point is worthwhile until we have a better one in place.\n\nJust my two cents. I think the CL is fine either way, and I\u0027m not managing deployments, so I\u0027ll just state my case :)",
+      "parentUuid": "17bc627b_a1224dfa",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 124,
+        "endChar": 15
+      },
+      "revId": "245860158e6dcd1f4c1c434cde81674bedd56251",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
