@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -220,27 +221,39 @@ func TestValidateConfig(t *testing.T) {
 	c := context.Background()
 
 	Convey("refNamespace works", t, func() {
+		ctx := &validation.Context{Context: c}
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
 			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
 		}
 		m := TaskManager{}
-		So(m.ValidateProtoMessage(c, cfg), ShouldBeNil)
-
-		cfg.Refs = []string{"wtf/not/a/ref"}
-		So(m.ValidateProtoMessage(c, cfg), ShouldNotBeNil)
+		Convey("proper refs", func() {
+			m.ValidateProtoMessage(ctx, cfg)
+			So(ctx.Finalize(), ShouldBeNil)
+		})
+		Convey("invalid ref", func() {
+			cfg.Refs = []string{"wtf/not/a/ref"}
+			m.ValidateProtoMessage(ctx, cfg)
+			So(ctx.Finalize(), ShouldNotBeNil)
+		})
 	})
 
 	Convey("trailing refGlobs work", t, func() {
+		ctx := &validation.Context{Context: c}
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
 			Refs: []string{"refs/*", "refs/heads/*", "refs/other/something"},
 		}
 		m := TaskManager{}
-		So(m.ValidateProtoMessage(c, cfg), ShouldBeNil)
-
-		cfg.Refs = []string{"refs/*/*"}
-		So(m.ValidateProtoMessage(c, cfg), ShouldNotBeNil)
+		Convey("valid refGlobs", func() {
+			m.ValidateProtoMessage(ctx, cfg)
+			So(ctx.Finalize(), ShouldBeNil)
+		})
+		Convey("invalid refGlob", func() {
+			cfg.Refs = []string{"refs/*/*"}
+			m.ValidateProtoMessage(ctx, cfg)
+			So(ctx.Finalize(), ShouldNotBeNil)
+		})
 	})
 }
 

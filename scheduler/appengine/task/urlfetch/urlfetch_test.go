@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/config/validation"
 
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -40,56 +41,67 @@ func TestValidateProtoMessage(t *testing.T) {
 	t.Parallel()
 
 	tm := TaskManager{}
-	c := context.Background()
+	Convey("Initialize validation context", t, func() {
+		c := &validation.Context{Context: context.Background()}
 
-	Convey("ValidateProtoMessage passes good msg", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
-			Url: "https://blah.com",
-		}), ShouldBeNil)
-	})
+		Convey("ValidateProtoMessage passes good msg", func() {
+			tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
+				Url: "https://blah.com",
+			})
+			So(c.Finalize(), ShouldBeNil)
+		})
 
-	Convey("ValidateProtoMessage wrong type", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.NoopTask{}), ShouldErrLike, "wrong type")
-	})
+		Convey("ValidateProtoMessage wrong type", func() {
+			tm.ValidateProtoMessage(c, &messages.NoopTask{})
+			So(c.Finalize(), ShouldErrLike, "wrong type")
+		})
 
-	Convey("ValidateProtoMessage empty", t, func() {
-		So(tm.ValidateProtoMessage(c, tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty UrlFetchTask")
-	})
+		Convey("ValidateProtoMessage empty", func() {
+			tm.ValidateProtoMessage(c, tm.ProtoMessageType())
+			So(c.Finalize(), ShouldErrLike, "expecting a non-empty UrlFetchTask")
+		})
 
-	Convey("ValidateProtoMessage bad method", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
-			Method: "BLAH",
-		}), ShouldErrLike, "unsupported HTTP method")
-	})
+		Convey("ValidateProtoMessage bad method", func() {
+			tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
+				Method: "BLAH",
+			})
+			So(c.Finalize(), ShouldErrLike, "unsupported HTTP method")
+		})
 
-	Convey("ValidateProtoMessage no URL", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{}), ShouldErrLike, "field 'url' is required")
-	})
+		Convey("ValidateProtoMessage no URL", func() {
+			tm.ValidateProtoMessage(c, &messages.UrlFetchTask{})
+			So(c.Finalize(), ShouldErrLike, "field 'url' is required")
+		})
 
-	Convey("ValidateProtoMessage bad URL", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
-			Url: "%%%%",
-		}), ShouldErrLike, "invalid URL")
-	})
+		Convey("ValidateProtoMessage bad URL", func() {
+			tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
+				Url: "%%%%",
+			})
+			So(c.Finalize(), ShouldErrLike, "invalid URL")
+		})
 
-	Convey("ValidateProtoMessage non-absolute URL", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
-			Url: "/abc",
-		}), ShouldErrLike, "not an absolute url")
-	})
+		Convey("ValidateProtoMessage non-absolute URL", func() {
+			tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
+				Url: "/abc",
+			})
+			So(c.Finalize(), ShouldErrLike, "not an absolute url")
+		})
 
-	Convey("ValidateProtoMessage bad timeout", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
-			Url:        "https://blah.com",
-			TimeoutSec: -1,
-		}), ShouldErrLike, "minimum allowed 'timeout_sec' is 1 sec")
-	})
+		Convey("ValidateProtoMessage bad timeout", func() {
+			tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
+				Url:        "https://blah.com",
+				TimeoutSec: -1,
+			})
+			So(c.Finalize(), ShouldErrLike, "minimum allowed 'timeout_sec' is 1 sec")
+		})
 
-	Convey("ValidateProtoMessage large timeout", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
-			Url:        "https://blah.com",
-			TimeoutSec: 10000,
-		}), ShouldErrLike, "maximum allowed 'timeout_sec' is 480 sec")
+		Convey("ValidateProtoMessage large timeout", func() {
+			tm.ValidateProtoMessage(c, &messages.UrlFetchTask{
+				Url:        "https://blah.com",
+				TimeoutSec: 10000,
+			})
+			So(c.Finalize(), ShouldErrLike, "maximum allowed 'timeout_sec' is 480 sec")
+		})
 	})
 }
 

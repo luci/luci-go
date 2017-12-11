@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -71,8 +72,9 @@ func TestProtoValidation(t *testing.T) {
 		c := New("scheduler.cfg").(*catalog)
 
 		call := func(j *messages.Job) error {
-			_, err := c.validateJobProto(context.Background(), j)
-			return err
+			valCtx := &validation.Context{Context: ctx}
+			c.validateJobProto(valCtx, j)
+			return valCtx.Finalize()
 		}
 
 		c.RegisterTaskManager(fakeTaskManager{})
@@ -104,49 +106,67 @@ func TestProtoValidation(t *testing.T) {
 		})
 
 		Convey("with TaskDefWrapper", func() {
-			msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
-				Noop: &messages.NoopTask{},
+			valCtx := &validation.Context{Context: ctx}
+
+			Convey("extractTaskProto ok", func() {
+				msg := c.extractTaskProto(valCtx, &messages.TaskDefWrapper{
+					Noop: &messages.NoopTask{},
+				})
+				So(valCtx.Finalize(), ShouldBeNil)
+				So(msg.(*messages.NoopTask), ShouldNotBeNil)
 			})
-			So(err, ShouldBeNil)
-			So(msg.(*messages.NoopTask), ShouldNotBeNil)
 
-			msg, err = c.extractTaskProto(ctx, nil)
-			So(err, ShouldErrLike, "expecting a pointer to proto message")
-			So(msg, ShouldBeNil)
-
-			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{})
-			So(err, ShouldErrLike, "can't find a recognized task definition")
-			So(msg, ShouldBeNil)
-
-			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{
-				Noop:     &messages.NoopTask{},
-				UrlFetch: &messages.UrlFetchTask{},
+			Convey("extractTaskProto pointer error", func() {
+				msg := c.extractTaskProto(valCtx, nil)
+				So(valCtx.Finalize(), ShouldErrLike, "expecting a pointer to proto message")
+				So(msg, ShouldBeNil)
 			})
-			So(err, ShouldErrLike, "only one field with task definition must be set")
-			So(msg, ShouldBeNil)
+
+			Convey("extractTaskProto no recognized task definition", func() {
+				msg := c.extractTaskProto(valCtx, &messages.TaskDefWrapper{})
+				So(valCtx.Finalize(), ShouldErrLike, "can't find a recognized task definition")
+				So(msg, ShouldBeNil)
+			})
+
+			Convey("extractTaskProto multiple task definition", func() {
+				msg := c.extractTaskProto(valCtx, &messages.TaskDefWrapper{
+					Noop:     &messages.NoopTask{},
+					UrlFetch: &messages.UrlFetchTask{},
+				})
+				So(valCtx.Finalize(), ShouldErrLike, "only one field with task definition must be set")
+				So(msg, ShouldBeNil)
+			})
 		})
 
 		Convey("with Job", func() {
-			msg, err := c.extractTaskProto(ctx, &messages.Job{
-				Id:   "blah",
-				Noop: &messages.NoopTask{},
-			})
-			So(err, ShouldBeNil)
-			So(msg.(*messages.NoopTask), ShouldNotBeNil)
+			valCtx := &validation.Context{Context: ctx}
 
-			msg, err = c.extractTaskProto(ctx, &messages.Job{
-				Id: "blah",
+			Convey("extractTaskProto ok", func() {
+				msg := c.extractTaskProto(valCtx, &messages.Job{
+					Id:   "blah",
+					Noop: &messages.NoopTask{},
+				})
+				So(valCtx.Finalize(), ShouldBeNil)
+				So(msg.(*messages.NoopTask), ShouldNotBeNil)
 			})
-			So(err, ShouldErrLike, "can't find a recognized task definition")
-			So(msg, ShouldBeNil)
 
-			msg, err = c.extractTaskProto(ctx, &messages.Job{
-				Id:       "blah",
-				Noop:     &messages.NoopTask{},
-				UrlFetch: &messages.UrlFetchTask{},
+			Convey("extractTaskProto no recognized task definition", func() {
+				msg := c.extractTaskProto(valCtx, &messages.Job{
+					Id: "blah",
+				})
+				So(valCtx.Finalize(), ShouldErrLike, "can't find a recognized task definition")
+				So(msg, ShouldBeNil)
 			})
-			So(err, ShouldErrLike, "only one field with task definition must be set")
-			So(msg, ShouldBeNil)
+
+			Convey("extractTaskProto multiple task definition", func() {
+				msg := c.extractTaskProto(valCtx, &messages.Job{
+					Id:       "blah",
+					Noop:     &messages.NoopTask{},
+					UrlFetch: &messages.UrlFetchTask{},
+				})
+				So(valCtx.Finalize(), ShouldErrLike, "only one field with task definition must be set")
+				So(msg, ShouldBeNil)
+			})
 		})
 	})
 
@@ -156,10 +176,11 @@ func TestProtoValidation(t *testing.T) {
 			name:          "broken noop",
 			validationErr: errors.New("boo"),
 		})
-		msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
+		valCtx := &validation.Context{Context: ctx}
+		msg := c.extractTaskProto(valCtx, &messages.TaskDefWrapper{
 			Noop: &messages.NoopTask{},
 		})
-		So(err, ShouldErrLike, "boo")
+		So(valCtx.Finalize(), ShouldErrLike, "boo")
 		So(msg, ShouldBeNil)
 	})
 }
@@ -283,6 +304,30 @@ func TestConfigReading(t *testing.T) {
 	})
 }
 
+func TestValidateConfig(t *testing.T) {
+	t.Parallel()
+	catalog := New("luci-scheduler.cfg")
+	catalog.RegisterTaskManager(fakeTaskManager{
+		name: "noop",
+		task: &messages.NoopTask{},
+	})
+	catalog.RegisterTaskManager(fakeTaskManager{
+		name: "url_fetch",
+		task: &messages.UrlFetchTask{},
+	})
+
+	ctx := &validation.Context{Context: testContext()}
+	Convey("Validation on correct config file content", t, func() {
+		catalog.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg))
+		So(ctx.Finalize(), ShouldBeNil)
+	})
+
+	Convey("Validation on unmarshallable config file content", t, func() {
+		catalog.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef"))
+		So(ctx.Finalize(), ShouldNotBeNil)
+	})
+}
+
 ////
 
 type fakeTaskManager struct {
@@ -310,9 +355,11 @@ func (m fakeTaskManager) Traits() task.Traits {
 	return task.Traits{}
 }
 
-func (m fakeTaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
+func (m fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
 	So(msg, ShouldNotBeNil)
-	return m.validationErr
+	if m.validationErr != nil {
+		c.Error(m.validationErr)
+	}
 }
 
 func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
@@ -434,6 +481,40 @@ job {
   id: "noop-job-1"
   schedule: "*/10 * * * * * *"
   noop: {}
+}
+`
+
+const project3Cfg = `
+acl_sets {
+  name: "default"
+  acls {
+    role: READER
+    granted_to: "group:all"
+  }
+  acls {
+    role: OWNER
+    granted_to: "group:all"
+  }
+}
+
+job {
+  id: "noop-job-v2"
+  acl_sets: "default"
+  noop: {
+    sleep_ms: 1000
+  }
+}
+
+trigger {
+  id: "noop-trigger-v2"
+  acl_sets: "default"
+
+  noop: {
+    sleep_ms: 1000
+    triggers_count: 2
+  }
+
+  triggers: "noop-job-v2"
 }
 `
 
