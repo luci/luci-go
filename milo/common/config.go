@@ -25,6 +25,8 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
+
+	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -90,11 +92,35 @@ func (c *Console) ProjectID() string {
 	return c.Parent.StringID()
 }
 
+// FilterBuilders uses an access.Permissions to filter out builder IDs and builders
+// from the definition, and builders in the definition's header, which are not
+// allowed by the permissions.
+func (c *Console) FilterBuilders(perms access.Permissions) {
+	okBuilderIDs := make([]string, 0, len(c.Builders))
+	for _, id := range c.Builders {
+		if bucket := extractBucket(id); bucket != "" && !perms.Can(bucket, access.AccessBucket) {
+			continue
+		}
+		okBuilderIDs = append(okBuilderIDs, id)
+	}
+	c.Builders = okBuilderIDs
+	okBuilders := make([]*config.Builder, 0, len(c.Def.Builders))
+	for _, b := range c.Def.Builders {
+		for _, name := range b.Name {
+			if bucket := extractBucket(name); bucket != "" && !perms.Can(bucket, access.AccessBucket) {
+				continue
+			}
+			okBuilders = append(okBuilders, b)
+		}
+	}
+	c.Def.Builders = okBuilders
+}
+
 // Buckets returns all buckets referenced by this Console's Builders.
 func (c *Console) Buckets() stringset.Set {
 	buckets := stringset.New(1)
 	for _, id := range c.Builders {
-		if bucket, err := extractBucket(id); err == nil {
+		if bucket := extractBucket(id); bucket != "" {
 			buckets.Add(bucket)
 		}
 	}
@@ -106,15 +132,15 @@ func (c *Console) Buckets() stringset.Set {
 // TODO(mknyszek): Get rid of this by either moving the logic above
 // or somehow getting access to BuilderID otherwise without an import
 // cycle.
-func extractBucket(id string) (string, error) {
+func extractBucket(id string) string {
 	if !strings.HasPrefix(id, "buildbucket/") {
-		return "", errors.New("not a buildbucket builder")
+		return ""
 	}
 	toks := strings.SplitN(id, "/", 3)
 	if len(toks) != 3 {
-		return "", errors.New("malformed builder ID")
+		return ""
 	}
-	return toks[1], nil
+	return toks[1]
 }
 
 // ConsoleID is a reference to a console.
@@ -546,13 +572,6 @@ func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
 		return result, ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
 	}
 	return result, nil
-}
-
-// GetConsolesByBuilderID returns all consoles that reference a builder.
-func GetConsolesByBuilderID(c context.Context, builderID string) ([]*Console, error) {
-	q := datastore.NewQuery("Console").Eq("Builders", builderID)
-	var consoles []*Console
-	return consoles, datastore.GetAll(c, q, &consoles)
 }
 
 // Config validation rules go here.
