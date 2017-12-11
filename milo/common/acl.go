@@ -59,6 +59,19 @@ func IsAdmin(c context.Context) (bool, error) {
 	return auth.IsMember(c, "administrators")
 }
 
+// GetPermissionsFromConsoles returns bucket permissions for consoles in cons.
+func GetPermissionsFromConsoles(c context.Context, cons []*Console) (bbAccess.Permissions, error) {
+	buckets := stringset.New(0)
+	for _, con := range cons {
+		buckets = buckets.Union(con.Buckets())
+	}
+	perms, err := BucketPermissions(c, buckets.ToSlice())
+	if err != nil {
+		return nil, err
+	}
+	return perms, nil
+}
+
 // BucketPermissions gets permissions for all buckets given.
 func BucketPermissions(c context.Context, buckets []string) (bbAccess.Permissions, error) {
 	settings := GetSettings(c)

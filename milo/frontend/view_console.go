@@ -89,21 +89,6 @@ func getFaviconURL(c context.Context, def *config.Console) string {
 	return faviconURL
 }
 
-// validateConsoleID checks to see whether a console ID has both a project and
-// name, and that the project is the same as the current project being checked.
-func validateConsoleID(consoleID, project string) (cid common.ConsoleID, err error) {
-	cid, err = common.ParseConsoleID(consoleID)
-	if err != nil {
-		err = errors.Annotate(err, "console ID must have format <project>/<name>: %s", consoleID).Err()
-		return
-	}
-	if cid.Project != project {
-		// TODO(hinoka): Support cross-project consoles.
-		err = errors.Reason("console ID is from a different project").Err()
-	}
-	return
-}
-
 type builderRefFactory func(name, shortname string) *ui.BuilderRef
 
 func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Category, int) {
@@ -210,28 +195,8 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	return rows, commits, nil
 }
 
-// summaries fetches all of the console summaries in the header, in addition
-// to the ones for the current console.
-func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header) (
-	map[common.ConsoleID]ui.ConsoleSummary, error) {
-
-	var ids []common.ConsoleID
-	var err error
-	if def != nil {
-		if ids, err = consoleHeaderGroupIDs(consoleID.Project, def.GetConsoleGroups()); err != nil {
-			return nil, err
-		}
-	}
-	ids = append(ids, consoleID)
-	return buildsource.GetConsoleSummariesFromIDs(c, ids)
-}
-
-func console(c context.Context, project, id string, limit int) (*ui.Console, error) {
-	def, err := getConsoleDef(c, project, id)
-	if err != nil {
-		return nil, err
-	}
-
+func console(c context.Context, project, id string, limit int, con *common.Console, headerCons []*common.Console) (*ui.Console, error) {
+	def := &con.Def
 	consoleID := common.ConsoleID{Project: project, ID: id}
 	var header *ui.ConsoleHeader
 	var rows []*buildsource.ConsoleRow
@@ -251,7 +216,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 		}
 		ch <- func() (err error) {
 			defer logTimer(c, "summaries")()
-			consoleSummaries, err = summaries(c, consoleID, def.Header)
+			consoleSummaries, err = buildsource.GetConsoleSummariesFromDefs(c, append(headerCons, con))
 			return
 		}
 		ch <- func() (err error) {
@@ -418,27 +383,6 @@ func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]ui.Oncal
 	return oncalls, err
 }
 
-// consoleHeaderGroupIDs extracts the console group IDs out of the header config.
-func consoleHeaderGroupIDs(project string, config []*config.ConsoleSummaryGroup) ([]common.ConsoleID, error) {
-	consoleIDSet := map[common.ConsoleID]bool{}
-	for _, group := range config {
-		for _, id := range group.ConsoleIds {
-			// TODO(hinoka): Implement proper ACL checking, which will allow cross-project
-			// console headers.  The following will be swapped out for an ACL check.
-			if cid, err := validateConsoleID(id, project); err != nil {
-				return nil, err
-			} else {
-				consoleIDSet[cid] = true
-			}
-		}
-	}
-	consoleIDs := make([]common.ConsoleID, 0, len(consoleIDSet))
-	for cid := range consoleIDSet {
-		consoleIDs = append(consoleIDs, cid)
-	}
-	return consoleIDs, nil
-}
-
 func consoleHeader(c context.Context, project string, header *config.Header) (*ui.ConsoleHeader, error) {
 	// Return nil if the header is empty.
 	switch {
@@ -532,6 +476,42 @@ func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*ui.Link, error) {
 	return ui.NewLink(builderName, "/"+bs.BuilderID, fmt.Sprintf("builder %s", builderName)), nil
 }
 
+// consoleHeaderGroupIDs extracts the console group IDs out of the header config.
+func consoleHeaderGroupIDs(project string, config []*config.ConsoleSummaryGroup) ([]common.ConsoleID, error) {
+	consoleIDSet := map[common.ConsoleID]struct{}{}
+	for _, group := range config {
+		for _, id := range group.ConsoleIds {
+			if cid, err = common.ParseConsoleID(consoleID); err != nil {
+				return nil, err
+			} else {
+				consoleIDSet[cid] = struct{}{}
+			}
+		}
+	}
+	consoleIDs := make([]common.ConsoleID, 0, len(consoleIDSet))
+	for cid := range consoleIDSet {
+		consoleIDs = append(consoleIDs, cid)
+	}
+	return consoleIDs, nil
+}
+
+// headerConsoles fetches all of the consoles defined as summaries in the header.
+func headerConsoles(c context.Context, def *config.Header) ([]*common.Console, error) {
+	var ids []common.ConsoleID
+	var err error
+	if def != nil {
+		if ids, err = consoleHeaderGroupIDs(consoleID.Project, def.GetConsoleGroups()); err != nil {
+			return nil, err
+		}
+	}
+	// Get the console definitions and builders, then rearrange them into console summaries.
+	defs, err := common.GetConsoles(c, consoleIDs)
+	if err != nil {
+		return nil, err
+	}
+	return defs
+}
+
 // ConsoleHandler renders the console page.
 func ConsoleHandler(c *router.Context) {
 	project := c.Params.ByName("project")
@@ -557,7 +537,32 @@ func ConsoleHandler(c *router.Context) {
 		limit = maxLimit
 	}
 
-	result, err := console(c.Context, project, group, limit)
+	// Get console from datastore and filter out builders from the definition.
+	con, err := common.GetConsole(c, project, group)
+	if err != nil {
+		ErrorHandler(c, errors.New("Error getting console"))
+		return
+	}
+	var headerCons []*common.Console
+	if con.Def.Header != nil {
+		headerCons, err = headerConsoles(c, &con.Def)
+		if err != nil {
+			ErrorHandler(c, errors.New("Error getting header consoles"))
+			return
+		}
+	}
+	perms, err := common.GetPermissionsFromConsoles(c, append(headerCons, con))
+	if err != nil {
+		ErrorHandler(c, errors.New("Error authorizing user"))
+		return
+	}
+	con.FilterBuilders(perms)
+	for _, hcon := range headerCons {
+		hcon.FilterBuilders(perms)
+	}
+
+	// Process the request and generate a renderable structure.
+	result, err := console(c.Context, project, group, limit, con, headerCons)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
@@ -577,11 +582,21 @@ func ConsoleHandler(c *router.Context) {
 // ConsolesHandler is responsible for taking a project name and rendering the
 // console list page (defined in ./appengine/templates/pages/builder_groups.html).
 func ConsolesHandler(c *router.Context, projectName string) {
+	// Get consoles related to this project and filter out all builders.
 	cons, err := common.GetProjectConsoles(c.Context, projectName)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
 	}
+	perms, err := common.GetPermissionsFromConsoles(c, cons)
+	if err != nil {
+		ErrorHandler(c, errors.New("Error authorizing user"))
+		return
+	}
+	for _, con := range cons {
+		con.FilterBuilders(perms)
+	}
+
 	type fullConsole struct {
 		ProjectID string
 		Def       *config.Console
