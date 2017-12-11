@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -42,7 +43,7 @@ type swarmingService interface {
 	// TODO: Add support for trigger-related mocks.
 	GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	GetTaskOutputs(c context.Context, ref *swarming.SwarmingRpcsFilesRef, outputDir string) error
+	GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) error
 }
 
 type swarmingServiceImpl struct {
@@ -58,11 +59,16 @@ func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (*
 	return s.Service.Task.Stdout(taskID).Context(c).Do()
 }
 
-func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, ref *swarming.SwarmingRpcsFilesRef, outputDir string) error {
+func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) error {
+	// Create a task-id-based subdirectory to house the outputs.
+	dir := filepath.Join(filepath.Clean(outputDir), taskID)
+	if err := os.Mkdir(dir, os.ModePerm); err != nil {
+		return err
+	}
 	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
 	dl := downloader.New(c, isolatedClient, 8)
 	common.CancelOnCtrlC(dl)
-	return dl.FetchIsolated(isolated.HexDigest(ref.Isolated), outputDir)
+	return dl.FetchIsolated(isolated.HexDigest(ref.Isolated), dir)
 }
 
 type taskState int32
