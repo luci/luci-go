@@ -83,7 +83,7 @@ func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder
 			return
 		}
 		work <- func() (err error) {
-			consoles, err = common.GetConsolesByBuilderID(c, string(b))
+			consoles, err = common.GetAllConsoles(c, string(b))
 			return
 		}
 	})
