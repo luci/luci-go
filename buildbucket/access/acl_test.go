@@ -17,6 +17,7 @@ package access
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -66,8 +67,9 @@ func TestBucketPermissions(t *testing.T) {
 						},
 					},
 				},
+				ValidityDuration: &duration.Duration{Seconds: 1},
 			}
-			perms, err := BucketPermissions(c, &client, []string{"buck", "et"})
+			perms, duration, err := BucketPermissions(c, &client, []string{"buck", "et"})
 			So(err, ShouldBeNil)
 			So(perms.Can("buck", AccessBucket), ShouldBeTrue)
 			So(perms.Can("buck", ViewBuild), ShouldBeTrue)
@@ -77,6 +79,7 @@ func TestBucketPermissions(t *testing.T) {
 			So(perms.Can("et", SearchBuilds), ShouldBeTrue)
 			So(perms.Can("et", AddBuild), ShouldBeTrue)
 			So(perms.Can("et", CancelBuild), ShouldBeTrue)
+			So(duration, ShouldEqual, 1e9)
 		})
 
 		Convey(`Can get unknown bucket permissions.`, func() {
@@ -89,13 +92,13 @@ func TestBucketPermissions(t *testing.T) {
 					},
 				},
 			}
-			_, err := BucketPermissions(c, &client, []string{"bucket"})
+			_, _, err := BucketPermissions(c, &client, []string{"bucket"})
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey(`Can deal with error from .`, func() {
 			client.err = errors.Reason("haha! you got an error").Err()
-			_, err := BucketPermissions(c, &client, []string{"bucket"})
+			_, _, err := BucketPermissions(c, &client, []string{"bucket"})
 			So(err, ShouldNotBeNil)
 		})
 	})

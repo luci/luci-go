@@ -16,6 +16,9 @@ package access
 
 import (
 	"net/http"
+	"time"
+
+	"github.com/golang/protobuf/ptypes"
 
 	"golang.org/x/net/context"
 
@@ -44,8 +47,9 @@ func NewClient(host string, client *http.Client) access.AccessClient {
 }
 
 // BucketPermissions retrieves permitted actions for a set of buckets, for the
-// identity specified in the client.
-func BucketPermissions(c context.Context, client access.AccessClient, buckets []string) (Permissions, error) {
+// identity specified in the client. It also returns the duration for which the
+// client is allowed to cache the permissions.
+func BucketPermissions(c context.Context, client access.AccessClient, buckets []string) (Permissions, time.Duration, error) {
 	// Make permitted actions call.
 	req := access.PermittedActionsRequest{
 		ResourceKind: "bucket",
@@ -53,7 +57,7 @@ func BucketPermissions(c context.Context, client access.AccessClient, buckets []
 	}
 	resp, err := client.PermittedActions(c, &req)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Parse proto into a convenient format.
@@ -63,11 +67,15 @@ func BucketPermissions(c context.Context, client access.AccessClient, buckets []
 		for _, action := range actions.Actions {
 			newAction, err := ParseAction(action)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			newActions |= newAction
 		}
 		perms[bucket] = newActions
 	}
-	return perms, nil
+	dur, err := ptypes.Duration(resp.ValidityDuration)
+	if err != nil {
+		return nil, 0, err
+	}
+	return perms, dur, nil
 }
