@@ -132,7 +132,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			getTaskOutputs: func(c context.Context, ref *swarming.SwarmingRpcsFilesRef, output string) error {
+			getTaskOutputs: func(c context.Context, _, output string, ref *swarming.SwarmingRpcsFilesRef) error {
 				written_to = output
 				written_isolated = ref.Isolated
 				return nil

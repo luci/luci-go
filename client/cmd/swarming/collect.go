@@ -21,7 +21,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"time"
 
@@ -225,8 +224,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 
 	// Download the result isolated if available and if we have a place to put it.
 	if len(c.outputDir) > 0 && result.OutputsRef != nil {
-		dir := filepath.Clean(c.outputDir)
-		if err := service.GetTaskOutputs(ctx, result.OutputsRef, dir); err != nil {
+		if err := service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef); err != nil {
 			return taskResult{taskID: taskID, err: err}
 		}
 	}
@@ -288,19 +286,19 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 
 // summarizeResults generate a marshalled JSON summary of the task results.
 func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
-	jsonResults := []interface{}{}
+	jsonResults := map[string]interface{}{}
 	for _, result := range results {
 		if result.err != nil {
-			jsonResults = append(jsonResults, result.err)
+			jsonResults[result.taskID] = map[string]interface{}{"error": result.err.Error()}
 		} else {
 			jsonResult := map[string]interface{}{"results": *result.result}
 			if c.taskOutput.includesJSON() {
 				jsonResult["output"] = result.output
 			}
-			jsonResults = append(jsonResults, jsonResult)
+			jsonResults[result.taskID] = jsonResult
 		}
 	}
-	return json.MarshalIndent(map[string]interface{}{"tasks": jsonResults}, "", "  ")
+	return json.MarshalIndent(jsonResults, "", "  ")
 }
 
 func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
