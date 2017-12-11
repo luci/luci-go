@@ -5,9 +5,13 @@
 package frontend
 
 import (
-	"go.chromium.org/luci/milo/buildsource"
+	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+
+	"go.chromium.org/luci/milo/buildsource"
+	"go.chromium.org/luci/milo/common"
 )
 
 // BuilderHandler is responsible for taking a universal builder ID and rendering
@@ -16,6 +20,26 @@ func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) {
 	limit := 25
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
+	}
+	_, bucket, _, err := builderID.Split()
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	client, err := common.NewAccessClient(c.Context)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	c.Context = common.WithAccessClient(c.Context, client)
+	perms, err := common.BucketPermissions(c.Context, bucket)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	if !perms.Can(bucket, access.AccessBucket) {
+		ErrorHandler(c, errors.Reason("builder %q not found", builderID).Tag(common.CodeNotFound).Err())
+		return
 	}
 	builder, err := builderID.Get(c.Context, limit, c.Request.FormValue("cursor"))
 	// TODO(iannucci, hinoka): make MiloBuild refer to annotation stream by
