@@ -225,7 +225,11 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 
 	// Download the result isolated if available and if we have a place to put it.
 	if len(c.outputDir) > 0 && result.OutputsRef != nil {
-		dir := filepath.Clean(c.outputDir)
+		// Create a task-id-based subdirectory to house the outputs.
+		dir := filepath.Join(filepath.Clean(c.outputDir), taskID)
+		if err := os.Mkdir(dir, os.ModePerm); err != nil {
+			return taskResult{taskID: taskID, err: err}
+		}
 		if err := service.GetTaskOutputs(ctx, result.OutputsRef, dir); err != nil {
 			return taskResult{taskID: taskID, err: err}
 		}
@@ -288,19 +292,19 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 
 // summarizeResults generate a marshalled JSON summary of the task results.
 func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
-	jsonResults := []interface{}{}
+	jsonResults := map[string]interface{}{}
 	for _, result := range results {
 		if result.err != nil {
-			jsonResults = append(jsonResults, result.err)
+			jsonResults[result.taskID] = result.err
 		} else {
 			jsonResult := map[string]interface{}{"results": *result.result}
 			if c.taskOutput.includesJSON() {
 				jsonResult["output"] = result.output
 			}
-			jsonResults = append(jsonResults, jsonResult)
+			jsonResults[result.taskID] = jsonResult
 		}
 	}
-	return json.MarshalIndent(map[string]interface{}{"tasks": jsonResults}, "", "  ")
+	return json.MarshalIndent(jsonResults, "", "  ")
 }
 
 func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
