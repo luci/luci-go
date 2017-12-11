@@ -103,30 +103,6 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 	return ret, err
 }
 
-// ConsolePreview is mapping of builder IDs to each builder's latest build.
-//
-// This reflects a console preview, which is a console table except rendered
-// with only the builder's latest build.
-type ConsolePreview map[BuilderID]*model.BuildSummary
-
-// GetBuilderSummaryGroups returns a list of console summaries from the datastore
-// using a slice of console IDs as input.
-//
-// This list of console summaries directly corresponds to the input list of
-// console IDs.
-//
-// projectID is the project being served in the current request.
-func GetBuilderSummaryGroups(c context.Context, consoleIDs []common.ConsoleID, projectID string) (
-	map[common.ConsoleID]*ui.BuilderSummaryGroup, error) {
-
-	// Get the console definitions and builders, then rearrange them into console summaries.
-	defs, err := common.GetConsoles(c, consoleIDs)
-	if err != nil {
-		return nil, err
-	}
-	return GetConsoleSummariesFromDefs(c, defs, projectID)
-}
-
 // GetConsoleSummariesFromDefs returns a map of consoleID -> summary from the
 // datastore using a slice of console definitions as input.
 //
