@@ -388,6 +388,8 @@ func (b *buildEntity) Save(withMeta bool) (datastore.PropertyMap, error) {
 		ps = datastore.PropertyMap{}
 	}
 
+	build := (*buildbot.Build)(b)
+
 	data, err := encode(b)
 	if err != nil {
 		return nil, err
@@ -402,6 +404,12 @@ func (b *buildEntity) Save(withMeta bool) (datastore.PropertyMap, error) {
 	ps["builder"] = datastore.MkProperty(b.Buildername)
 	ps["number"] = datastore.MkProperty(b.Number)
 	ps["finished"] = datastore.MkProperty(b.Finished)
+
+	experimental := false
+	if runtime, ok := build.PropertyValue("$recipe_engine/runtime").(map[string]interface{}); ok {
+		experimental = runtime["is_experimental"] == true
+	}
+	ps["is_experimental"] = datastore.MkProperty(experimental)
 	return ps, nil
 }
 
