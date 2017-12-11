@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef5725d2_ea718b13",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 614,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-11T20:50:55Z",
+      "side": 1,
+      "message": "Just a thought: let\u0027s at least assert that whatever directory it gives us *exists* :)",
+      "revId": "4488812e7ddcd7857497ee7e419fd087ba9145f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18ca03ad_118303d4",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 718,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-11T20:50:55Z",
+      "side": 1,
+      "message": "nit: document what this does a little bit.\n\n\"This is read by the VirtualEnv\u0027s generated \u0027site.py\u0027, instructing it not to import global site packages.\"",
+      "range": {
+        "startLine": 718,
+        "startChar": 0,
+        "endLine": 718,
+        "endChar": 116
+      },
+      "revId": "4488812e7ddcd7857497ee7e419fd087ba9145f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
