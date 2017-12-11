@@ -136,7 +136,7 @@ func Run(templatePath string) {
 	// Buildbucket
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
-	r.GET("/p/:project/builders/:bucket/:builder", projectMW, func(c *router.Context) {
+	r.GET("/p/:project/builders/:bucket/:builder", buildersMW, func(c *router.Context) {
 		// TODO(nodir): use project parameter.
 		// Besides implementation, requires deleting the redirect for
 		// /buildbucket/:bucket/:builder
