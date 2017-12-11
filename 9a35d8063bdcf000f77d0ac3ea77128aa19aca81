@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "54e75acd_c16c58fc",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 599,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-11T20:01:57Z",
+      "side": 1,
+      "message": "nit: \"the directory where the \u0027site\u0027 Python module, which is always created by VirtualEnv, is found.\"",
+      "range": {
+        "startLine": 599,
+        "startChar": 28,
+        "endLine": 599,
+        "endChar": 47
+      },
+      "revId": "9a35d8063bdcf000f77d0ac3ea77128aa19aca81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cd4d53e_575e82cb",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 615,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-11T20:01:57Z",
+      "side": 1,
+      "message": "Yikes, looks like this function is broken/deprecated: https://golang.org/pkg/path/filepath/#HasPrefix\n\nDiscussion and potential replacements: https://github.com/golang/go/issues/18358\n\nA real cross-platform encoding-respecting implementation might be tricky, as is evident from that bug\u0027s discussion. This could actually be more complicated than simple strings.HasPrefix-followed-by-slash-assertion because we\u0027re consuming a Python value here in Go-land, so the value passes through potential filesystem and encoding layers that may mangle case (on case-insensitive filesystems) and encoding (Python vs. Go etc.). I recommend either getting rid of this check altogether or implementing a real function in the \"filesystem\" package: https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/system/filesystem\n\nIf you want to actually implement this, maybe something like:\n\nfunc IsInDirectory(dir, path string) (bool, error) {\n  dirSt, err :\u003d os.Stat(dir)\n  if err !\u003d nil {\n    if os.IsNotExist(err) {\n      err \u003d nil\n    }\n    return false, err\n  }\n\n  prev :\u003d \"\"\n  for path !\u003d prev {\n    pathSt, err :\u003d os.Stat(path)\n    if err !\u003d nil {\n      if os.IsNotExist(err) {\n        err \u003d nil\n      }\n      return false, err\n    }\n    if os.SameFile(dirSt, pathSt) {\n      return true, nil\n    }\n    path, prev \u003d filepath.Dir(path), path\n  }\n  return false, nil\n}",
+      "range": {
+        "startLine": 615,
+        "startChar": 5,
+        "endLine": 615,
+        "endChar": 23
+      },
+      "revId": "9a35d8063bdcf000f77d0ac3ea77128aa19aca81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b00d01a_33176ab7",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 719,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-11T20:01:57Z",
+      "side": 1,
+      "message": "nit: Might as well save the make-everything-read-only function a system call and make this 0444.",
+      "range": {
+        "startLine": 719,
+        "startChar": 79,
+        "endLine": 719,
+        "endChar": 83
+      },
+      "revId": "9a35d8063bdcf000f77d0ac3ea77128aa19aca81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
