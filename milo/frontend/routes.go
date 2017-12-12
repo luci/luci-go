@@ -53,7 +53,7 @@ func Run(templatePath string) {
 	standard.InstallHandlers(r)
 
 	baseMW := standard.Base().Extend(withRouterContextMiddleware, withGitilesMiddleware)
-	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute))
+	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute), withAccessClientMiddleware)
 	htmlMW := frontendMW.Extend(
 		auth.Authenticate(server.CookieAuth),
 		templates.WithTemplates(getTemplateBundle(templatePath)),

@@ -21,8 +21,10 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -45,7 +47,23 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 		limit = tLimit
 	}
 
-	hists, err := getBuilderHistories(c.Context, projectID, group, limit)
+	// Get project builders.
+	builders, err := getBuildersForProject(c.Context, projectID, group)
+	if err != nil {
+		return err
+	}
+
+	// Filter them out based on auth.
+	builders, err = filterAuthorizedBuilders(c.Context, builders)
+	if err != nil {
+		return err
+	}
+	if len(builders) == 0 {
+		return errors.New("No such project or group.", common.CodeNotFound)
+	}
+
+	// Get the histories.
+	hists, err := getBuilderHistories(c.Context, builders, projectID, limit)
 	if err != nil {
 		return err
 	}
@@ -54,6 +72,38 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 		"Builders": hists,
 	})
 	return nil
+}
+
+// filterAuthorizedBuilders filters out builders that the user does not have access to.
+func filterAuthorizedBuilders(c context.Context, builders []string) ([]string, error) {
+	buckets := stringset.New(0)
+	for _, b := range builders {
+		id := buildsource.BuilderID(b)
+		buildType, bucket, _, err := id.Split()
+		if err != nil {
+			logging.Warningf(c, "found malformed builder ID %q", id)
+			continue
+		}
+		if buildType == "buildbucket" {
+			buckets.Add(bucket)
+		}
+	}
+	perms, err := common.BucketPermissions(c, buckets.ToSlice()...)
+	if err != nil {
+		return nil, err
+	}
+	okBuilders := make([]string, 0, len(builders))
+	for _, b := range builders {
+		id := buildsource.BuilderID(b)
+		buildType, bucket, _, err := id.Split()
+		if err != nil {
+			continue
+		}
+		if buildType != "buildbucket" || perms.Can(bucket, access.AccessBucket) {
+			okBuilders = append(okBuilders, b)
+		}
+	}
+	return okBuilders, nil
 }
 
 // builderHistory stores the recent history of a builder.
@@ -75,15 +125,10 @@ type builderHistory struct {
 }
 
 // getBuilderHistories gets the recent histories for the builders in the given project.
-func getBuilderHistories(c context.Context, project, console string, limit int) ([]*builderHistory, error) {
-	builders, err := getBuildersForProject(c, project, console)
-	if err != nil {
-		return nil, err
-	}
-
+func getBuilderHistories(c context.Context, builders []string, project string, limit int) ([]*builderHistory, error) {
 	// Populate the recent histories.
 	hists := make([]*builderHistory, len(builders))
-	err = parallel.WorkPool(16, func(ch chan<- func() error) {
+	err := parallel.WorkPool(16, func(ch chan<- func() error) {
 		for i, builder := range builders {
 			i := i
 			builder := builder

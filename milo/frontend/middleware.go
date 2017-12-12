@@ -315,6 +315,21 @@ func withGitilesMiddleware(c *router.Context, next router.Handler) {
 	next(c)
 }
 
+// withAccessClientMiddleware is a middleware that installs a prod buildbucket
+// access API client into the context.
+//
+// This middleware depends on auth middleware in order to generate the access
+// client.
+func withAccessClientMiddleware(c *router.Context, next router.Handler) {
+	client, err := common.NewAccessClient(c.Context)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	c.Context = common.WithAccessClient(c.Context, client)
+	next(c)
+}
+
 func getRouterContext(c context.Context) *router.Context {
 	if rc, ok := c.Value(&routerContextKey).(*router.Context); ok {
 		return rc
