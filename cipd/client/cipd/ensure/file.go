@@ -127,7 +127,6 @@ type ResolvedFile struct {
 	ServiceURL string
 
 	PackagesBySubdir common.PinSliceBySubdir
-	VerifyPlatforms  []common.TemplatePlatform
 }
 
 // Resolve takes the current unresolved File and expands all package templates
@@ -170,7 +169,6 @@ func (f *File) ResolveWith(rslv VersionResolver, expander common.TemplateExpande
 			}
 			plats = plats[:pos+1]
 		}
-		ret.VerifyPlatforms = plats
 	}
 
 	// subdir -> pkg -> orig_lineno
