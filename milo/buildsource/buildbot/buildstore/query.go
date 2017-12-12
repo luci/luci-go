@@ -243,7 +243,8 @@ func getDatastoreBuilds(c context.Context, q Query) (*QueryResult, error) {
 	reverse := false
 	hasCursor := false
 	if q.Cursor != "" {
-		if cursorNumber, err := strconv.Atoi(q.Cursor); err == nil {
+		var err error
+		if cursorNumber, err = strconv.Atoi(q.Cursor); err == nil {
 			hasCursor = true
 			if cursorNumber >= 0 {
 				dsq = dsq.Gte("number", cursorNumber)
