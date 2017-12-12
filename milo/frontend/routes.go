@@ -58,6 +58,7 @@ func Run(templatePath string) {
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	projectMW := htmlMW.Extend(projectACLMiddleware)
+	buildersMW := projectMW.Extend(withAccessClientMiddleware)
 	backendMW := baseMW.Extend(middleware.WithContextTimeout(10 * time.Minute))
 	cronMW := backendMW.Extend(gaemiddleware.RequireCron)
 
@@ -102,10 +103,10 @@ func Run(templatePath string) {
 	r.GET("/p/:project/g/:group/", frontendMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
-	r.GET("/p/:project/builders", projectMW, func(c *router.Context) {
+	r.GET("/p/:project/builders", buildersMW, func(c *router.Context) {
 		BuildersRelativeHandler(c, c.Params.ByName("project"), "")
 	})
-	r.GET("/p/:project/g/:group/builders", projectMW, func(c *router.Context) {
+	r.GET("/p/:project/g/:group/builders", buildersMW, func(c *router.Context) {
 		BuildersRelativeHandler(c, c.Params.ByName("project"), c.Params.ByName("group"))
 	})
 
