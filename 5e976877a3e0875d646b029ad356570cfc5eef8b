@@ -1,0 +1,393 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "35ab436b_ed9af9f2",
+        "filename": "common/data/text/pattern/pattern.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "not useful :)",
+      "range": {
+        "startLine": 79,
+        "startChar": 13,
+        "endLine": 79,
+        "endChar": 19
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd35fcfb_771a04c8",
+        "filename": "common/data/text/pattern/pattern.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 80,
+        "startChar": 26,
+        "endLine": 80,
+        "endChar": 29
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28b489ad_2e7fe513",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "please use https://godoc.org/go.chromium.org/luci/common/data/stringset",
+      "range": {
+        "startLine": 68,
+        "startChar": 9,
+        "endLine": 68,
+        "endChar": 41
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6fe59af_fb7bd094",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "this assumes that \"sets\" here is value of \"acl_sets\" field on the caller. This belongs to the callsite",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfe3d64e_d22a51db",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "if seen is a stringset:\n\n  if !seen.Add(s.Name) {",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eea245ab_80f4a3b3",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "case len(s.GetAcls()) \u003d\u003d 0:",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 84,
+        "endChar": 29
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c337d8b_f31a2f5b",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "%q",
+      "range": {
+        "startLine": 105,
+        "startChar": 34,
+        "endLine": 105,
+        "endChar": 38
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47e6279e_e04b81e2",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "same here, belongs to the caller",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f56ee33b_fd9bb1c7",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "please use :\u003d like in L288\n\nsame in other places",
+      "range": {
+        "startLine": 309,
+        "startChar": 5,
+        "endLine": 309,
+        "endChar": 10
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31dbdd67_6a877a0d",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "using pattern.MustParse would make sense if we reused variables used when constructing validation.Validator. Since we don\u0027t, please simplify this code by using strings.HasPrefix for config set and direct string comparison for config path",
+      "range": {
+        "startLine": 396,
+        "startChar": 18,
+        "endLine": 396,
+        "endChar": 55
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c231a71_a71bff50",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "we should not hardcode app id. please use https://godoc.org/go.chromium.org/gae/service/info#AppID",
+      "range": {
+        "startLine": 397,
+        "startChar": 41,
+        "endLine": 397,
+        "endChar": 55
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97957e46_d7fe55eb",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "please move enter/exit into the if statement",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "021faada_e8addad3",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2f4447a_dc5572d9",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "this is not a validation function, so it should not have changed. please undo these changes. Then L491 would check if extractTaskProto\u0027s returned err !\u003d nil, and if so, call ctx.Error",
+      "range": {
+        "startLine": 508,
+        "startChar": 37,
+        "endLine": 508,
+        "endChar": 62
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38f938b7_2d049235",
+        "filename": "scheduler/appengine/frontend/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "we must use info.AppID here, but looks like our lib design requires the user to provide patterns before we have a chance to call AppID (it requires context). Looks like we will have to change this a bit (separate CL). Please make ConfigPatterns a function that receives context and returns patterns",
+      "range": {
+        "startLine": 188,
+        "startChar": 39,
+        "endLine": 188,
+        "endChar": 53
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af4642be_4502c5a3",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "belongs to callsite",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83a64a60_5ff14fb6",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "how will user distinguish errors in properties and tags? please use Enter/Exit",
+      "range": {
+        "startLine": 110,
+        "startChar": 2,
+        "endLine": 113,
+        "endChar": 14
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f78f4c8_ff978a9a",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "belongs to callsite",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a80c402_3642d119",
+        "filename": "scheduler/appengine/task/urlfetch/urlfetch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-12T00:04:03Z",
+      "side": 1,
+      "message": "belongs to callsite",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
