@@ -70,6 +70,30 @@
       "revId": "0a610726170b37f094e9b33d7a840fdce7e82ddf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9663dd0_801b8462",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-12T23:01:50Z",
+      "side": 1,
+      "message": "Racks aren\u0027t supposed to be in the Datacenter struct, they\u0027re only supposed to be in the Datacenter proto. The proto doesn\u0027t represent a row, it\u0027s represents the topology of the lab. The struct only embeds a proto for convenience, in theory it would specify all row-related fields separately and not embed the proto at all.",
+      "parentUuid": "04e6fba9_62463bd2",
+      "range": {
+        "startLine": 78,
+        "startChar": 23,
+        "endLine": 81,
+        "endChar": 6
+      },
+      "revId": "0a610726170b37f094e9b33d7a840fdce7e82ddf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
