@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91c333df_9a11eaef",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-12T23:25:45Z",
+      "side": 1,
+      "message": "All this strange logic is really working around GetOrCreate. Ideally I\u0027d Get every bucket that\u0027s cached, do the RPC for what\u0027s not cached, and then Create. Ultimately, this should achieve the same \"high-level\" performance (i.e. still only 1 RPC, and only Creates when necessary).\n\nShould I just bite the bullet and make a new CL for a Get and a Create?",
+      "range": {
+        "startLine": 87,
+        "startChar": 35,
+        "endLine": 87,
+        "endChar": 46
+      },
+      "revId": "83b63339c06ace95f42e16101a1b3a9626139b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff67a434_16c2ed14",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-12T23:25:45Z",
+      "side": 1,
+      "message": "I started to separate this out into a new function (NewBuildbucketClient or something) so that I could test BucketPermissions, however that then no longer tests the actual auth part. Maybe that\u0027s OK? I\u0027d still be testing the caching logic here (which is somewhat non-trivial to work around GetOrCreate...).",
+      "range": {
+        "startLine": 93,
+        "startChar": 3,
+        "endLine": 102,
+        "endChar": 91
+      },
+      "revId": "83b63339c06ace95f42e16101a1b3a9626139b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
