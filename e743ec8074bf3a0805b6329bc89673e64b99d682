@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a79794a_9e691e86",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-12T00:27:08Z",
+      "side": 1,
+      "message": "I changed it to outputDir, since I thought maybe you meant it was a bad name. I\u0027m not sure what you mean here though?",
+      "parentUuid": "5214ad3b_c94f4a05",
+      "revId": "e743ec8074bf3a0805b6329bc89673e64b99d682",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "def0af6c_9c7c422c",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "e743ec8074bf3a0805b6329bc89673e64b99d682",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cceca14_b3fd6911",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-12T00:27:08Z",
+      "side": 1,
+      "message": "good point... it could be anything. I\u0027ll fix that.",
+      "parentUuid": "def0af6c_9c7c422c",
+      "revId": "e743ec8074bf3a0805b6329bc89673e64b99d682",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
