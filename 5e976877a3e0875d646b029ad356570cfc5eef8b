@@ -48,6 +48,23 @@
     },
     {
       "key": {
+        "uuid": "0f7c915b_1d2ba093",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "I think adding below copy-pasta to such validation functions is useful for future readers because of unconventional error propagation.\nNodir, WDYT?\n\n//\n// Errors are passed through validation.Context.",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28b489ad_2e7fe513",
         "filename": "scheduler/appengine/acl/acl.go",
         "patchSetId": 2
@@ -168,6 +185,29 @@
     },
     {
       "key": {
+        "uuid": "197ce6d9_b7a8211a",
+        "filename": "scheduler/appengine/acl/acl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "can you remove this boilerplate from all tests? it\u0027s not particularly relevant to what is being tested anyway. Perhaps,\n\nSo(..., ShouldContainSubstring, \"(acls): invalid role...\")\nor actually even better/shorter is ShouldErrLike \nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/testing/assertions/error_tests.go?q\u003dShouldErrLike\u0026sq\u003dpackage:chromium\u0026l\u003d25\n\nSo(call(...), ShouldErrLike, \"(acls): invalid role...\")",
+      "range": {
+        "startLine": 44,
+        "startChar": 60,
+        "endLine": 44,
+        "endChar": 82
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f56ee33b_fd9bb1c7",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 2
@@ -237,6 +277,47 @@
     },
     {
       "key": {
+        "uuid": "1c8374d9_5e2c9e37",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "+1 \nsee also catalog.configFile(c) below",
+      "parentUuid": "0c231a71_a71bff50",
+      "range": {
+        "startLine": 397,
+        "startChar": 41,
+        "endLine": 397,
+        "endChar": 55
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bf218c4_807167b8",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "FYI: this is what should be used for config file name, once you follow nodir@ comments. You may make this method public if necessary.",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "97957e46_d7fe55eb",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 2
@@ -282,6 +363,30 @@
       "writtenOn": "2017-12-12T00:04:03Z",
       "side": 1,
       "message": "this is not a validation function, so it should not have changed. please undo these changes. Then L491 would check if extractTaskProto\u0027s returned err !\u003d nil, and if so, call ctx.Error",
+      "range": {
+        "startLine": 508,
+        "startChar": 37,
+        "endLine": 508,
+        "endChar": 62
+      },
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cccd0e8_613d195c",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "Hm, yes, but I think it\u0027s reasonable to have \n\nfunc (cat *catalog) validateTaskProto(ctx *validation.Context, t proto.Message) proto.Message{\n  ...\n}\n\nand new \nfunc (cat *catalog) extractTaskProto(c context.Context, t proto.Message) (proto.Message, error) {\n  ctx :\u003d validation.Context{c}\n  return validateTaskProto(ctx, t), ctx.Finalize()\n}\n\nand L491 would be \nreturn cat.validateTaskproto(ctx, t)",
+      "parentUuid": "c2f4447a_dc5572d9",
       "range": {
         "startLine": 508,
         "startChar": 37,
@@ -385,6 +490,29 @@
       "writtenOn": "2017-12-12T00:04:03Z",
       "side": 1,
       "message": "belongs to callsite",
+      "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ee3b0cc_67812334",
+        "filename": "scheduler/appengine/task/urlfetch/urlfetch_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "difine helper to have less boilerplate (here and perhaps some other similar tests of task managers)\n\nvalidate :\u003d func(proto) error {\n  tm.ValidateProtoMessage(c, proto)\n  return c.Finalize()\n}",
+      "range": {
+        "startLine": 51,
+        "startChar": 3,
+        "endLine": 51,
+        "endChar": 18
+      },
       "revId": "5e976877a3e0875d646b029ad356570cfc5eef8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

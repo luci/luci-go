@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "c0d8913b_867762aa",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "nit: records all",
+      "range": {
+        "startLine": 111,
+        "startChar": 54,
+        "endLine": 111,
+        "endChar": 64
+      },
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fad5c74d_b855731e",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "validation of passed config\n\n(ie hypothetical config, vs current prod config used by other methods of this interface)",
+      "range": {
+        "startLine": 111,
+        "startChar": 28,
+        "endLine": 111,
+        "endChar": 49
+      },
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88b004da_137a3be3",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-12T01:46:09Z",
+      "side": 1,
+      "message": "This is can be used by config validation endpoint, which may validate proposed and not yet committed configs.",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 116,
+        "endChar": 71
+      },
+      "revId": "ef0b68a41c8351e25cbfc567cfe669b0180690c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9bbf5691_3b8b7d8f",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 1
