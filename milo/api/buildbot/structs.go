@@ -185,6 +185,12 @@ func (b *Build) PropertyValue(name string) interface{} {
 	return PropertyNotFound
 }
 
+// Experimental returns true if b is experimental.
+func (b *Build) Experimental() bool {
+	v, _ := b.PropertyValue("$recipe_engine/runtime").(map[string]interface{})
+	return v["is_experimental"] == true
+}
+
 type Pending struct {
 	Source      SourceStamp `json:"source"`
 	Reason      string      `json:"reason"`

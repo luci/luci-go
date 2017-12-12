@@ -53,14 +53,35 @@ func GetBuild(c context.Context, master, builder string, number int) (*buildbot.
 }
 
 func getBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
-	emOptions, err := GetEmulationOptions(c, master, builder)
+	if !EmulationEnabled(c) {
+		return getDatastoreBuild(c, master, builder, number)
+	}
+
+	bucket, err := BucketOf(c, master, builder)
 	if err != nil {
 		return nil, err
 	}
-	if emOptions.IsEmulated(number) {
-		return getEmulatedBuild(c, master, emOptions.Bucket, builder, number, fetchAnnotations, fetchChanges)
+
+	// Is it a LUCI build?
+	build, err := getEmulatedBuild(c, master, bucket, builder, number, fetchAnnotations, fetchChanges)
+	switch {
+	case err != nil:
+		return nil, err
+	case build != nil:
+		// does not exist or experimental.
+		return build, nil
 	}
-	return getDatastoreBuild(c, master, builder, number)
+
+	// Is it a Buildbot build?
+	build, err = getDatastoreBuild(c, master, builder, number)
+	switch {
+	case err != nil:
+		return nil, err
+	case build.Experimental():
+		return nil, nil
+	default:
+		return build, nil
+	}
 }
 
 // getEmulatedBuild returns a buildbot build derived from a LUCI build.
@@ -220,8 +241,7 @@ func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, 
 		BuildID:   fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 	}
 
-	v, _ := b.PropertyValue("$recipe_engine/runtime").(map[string]interface{})
-	bs.Experimental, _ = v["is_experimental"].(bool)
+	bs.Experimental = b.Experimental()
 
 	bs.ContextURI = []string{
 		fmt.Sprintf("buildbot://%s/build/%s/%d", b.Master, b.Buildername, b.Number),
@@ -404,12 +424,7 @@ func (b *buildEntity) Save(withMeta bool) (datastore.PropertyMap, error) {
 	ps["builder"] = datastore.MkProperty(b.Buildername)
 	ps["number"] = datastore.MkProperty(b.Number)
 	ps["finished"] = datastore.MkProperty(b.Finished)
-
-	experimental := false
-	if runtime, ok := build.PropertyValue("$recipe_engine/runtime").(map[string]interface{}); ok {
-		experimental = runtime["is_experimental"] == true
-	}
-	ps["is_experimental"] = datastore.MkProperty(experimental)
+	ps["is_experimental"] = datastore.MkProperty(build.Experimental())
 	return ps, nil
 }
 

@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/milo/api/buildbot"
-	api "go.chromium.org/luci/milo/api/proto"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -112,17 +111,64 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 		return nil, errors.New("builder is required")
 	}
 
-	emOptions, err := GetEmulationOptions(c, q.Master, q.Builder)
+	if !EmulationEnabled(c) {
+		return getDatastoreBuilds(c, q, true)
+	}
+
+	var res *QueryResult
+	var emulatedBuilds []*buildbot.Build
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (err error) {
+			res, err = getDatastoreBuilds(c, q, false)
+			return
+		}
+		work <- func() (err error) {
+			emulatedBuilds, err = getEmulatedBuilds(c, q)
+			return
+		}
+	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "could not load builds").Err()
 	}
-	if emOptions != nil {
-		return getEmulatedBuilds(c, q, *emOptions)
+
+	mergedBuilds := mergeBuilds(emulatedBuilds, res.Builds)
+	if q.Limit > 0 {
+		res.Builds = res.Builds[:q.Limit]
 	}
-	return getDatastoreBuilds(c, q)
+	return &QueryResult{Builds: mergedBuilds}, nil
 }
 
-func getEmulatedBuilds(c context.Context, q Query, emOptions api.EmulationOptions) (*QueryResult, error) {
+// mergeBuilds merges builds from a and b to one slice.
+// The returned builds are ordered by build numbers, descending.
+//
+// If a build number is present in both a and b, b's build is ignored.
+func mergeBuilds(a, b []*buildbot.Build) []*buildbot.Build {
+	ret := make([]*buildbot.Build, 0, len(a)+len(b))
+	for len(a) > 0 || len(b) > 0 {
+		var src *[]*buildbot.Build
+		switch {
+		case len(a) == 0:
+			src = &b
+		case len(b) == 0:
+			src = &a
+		case a[0].Number >= b[0].Number:
+			src = &a
+		default:
+			src = &b
+		}
+
+		// The build we are adding must have lower number than what we already
+		// have in ret.
+		toAdd := (*src)[0]
+		if len(ret) == 0 || toAdd.Number < ret[len(ret)-1].Number {
+			ret = append(ret, toAdd)
+		}
+		*src = (*src)[1:]
+	}
+	return ret
+}
+
+func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	if q.Cursor != "" {
 		// build query emulation does not support cursors
 		logging.Warningf(c, "ignoring cursor %q", q.Cursor)
@@ -134,8 +180,13 @@ func getEmulatedBuilds(c context.Context, q Query, emOptions api.EmulationOption
 		return nil, err
 	}
 
+	bucket, err := BucketOf(c, q.Master, q.Builder)
+	if err != nil {
+		return nil, errors.Annotate(err, "could not get bucket of %q:%q", q.Master, q.Builder).Err()
+	}
+
 	search := bb.Search().
-		Bucket(emOptions.Bucket).
+		Bucket(bucket).
 		Tag(strpair.Format(buildbucket.TagBuilder, q.Builder)).
 		Context(c)
 	switch q.Finished {
@@ -164,9 +215,7 @@ func getEmulatedBuilds(c context.Context, q Query, emOptions api.EmulationOption
 				if err != nil {
 					return err
 				}
-				if b.Number >= int(emOptions.StartFrom) {
-					builds[i] = b
-				}
+				builds[i] = b
 				return nil
 			}
 		}
@@ -204,32 +253,20 @@ func getEmulatedBuilds(c context.Context, q Query, emOptions api.EmulationOption
 		}
 		logging.Infof(c, "blamelist computation took %s", clock.Since(c, start))
 	}
-
-	// Still need to load builds from datastore?
-	if q.Limit <= 0 || len(builds) < q.Limit {
-		// get builds up to emOptions.StartFrom.
-		q.Cursor = strconv.Itoa(int(-emOptions.StartFrom))
-		if q.Limit > 0 {
-			// don't fetch more than we need
-			q.Limit -= len(builds)
-		}
-		dsRes, err := getDatastoreBuilds(c, q)
-		if err != nil {
-			return nil, errors.Annotate(err, "running datastore query %#v", q).Err()
-		}
-		builds = append(builds, dsRes.Builds...)
-	}
-
-	return &QueryResult{Builds: builds}, nil
+	return builds, nil
 }
 
-func getDatastoreBuilds(c context.Context, q Query) (*QueryResult, error) {
+func getDatastoreBuilds(c context.Context, q Query, includeExperimental bool) (*QueryResult, error) {
 	var builds []*buildEntity
 	if q.Limit > 0 {
 		builds = make([]*buildEntity, 0, q.Limit)
 	}
 
 	dsq := q.dsQuery()
+
+	if !includeExperimental {
+		dsq = dsq.Eq("is_experimental", true)
+	}
 
 	// CUSTOM CURSOR.
 	// This function uses a custom cursor based on build numbers.
