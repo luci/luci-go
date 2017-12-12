@@ -65,17 +65,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 		return m, nil
 	}
 
-	emulation := false
-	for builder := range m.Builders {
-		opt, err := GetEmulationOptions(c, name, builder)
-		if err != nil {
-			return nil, err
-		}
-		if opt != nil {
-			emulation = true
-			break
-		}
-	}
+	emulation := EmulationEnabled(c)
 	if emulation {
 		// Emulation does not support this Slaves field.
 		m.Slaves = nil
@@ -121,23 +111,11 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 					builder.CachedBuilds[i] = b.Number
 				}
 
-				opt, err := GetEmulationOptions(c, name, builderName)
-				if err != nil {
-					return err
-				}
-				if opt != nil {
-					// Pending buildbot builds do not have a number yet
-					// so it is hard to tell whether they WILL be before
-					// or after opt.StartFrom. Just ignore them.
-					builder.PendingBuilds = 0
-					// But keep current ones because they have numbers
-					// and it is easier to decide whether should be included in the
-					// response or not.
-					buildbotCurrent := builder.CurrentBuilds
-					builder.CurrentBuilds = nil
+				if emulation {
+					// builder.PendingBuilds and builder.CurrentBuilds
+					// contain only buildbot data. Add LUCI data.
 
-					// Load all incomplete builds and add only those after
-					// opt.StartFrom.
+					// This will load both Buildbot and LUCI builds, merged.
 					q := Query{
 						Master:   name,
 						Builder:  builderName,
@@ -151,21 +129,20 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 					if err != nil {
 						return err
 					}
+
+					// Pending buildbot builds are "build requests".
+					// They did not turn into builds yet and we don't know if
+					// they will be come experimental or not. The moment one
+					// turns into a build, it will excluded from
+					// builder.PendingBuilds and will possibly not included
+					// in CurrentBuilds in case it is experimental.
+					// Thus, not zeroing builder.PendingBuilds.
+					builder.CurrentBuilds = nil
 					for _, b := range res.Builds {
-						if !opt.IsEmulated(b.Number) {
-							// the rest of res.Builds are buildbot builds
-							// ignore them.
-							break
-						}
 						if b.Times.Start.IsZero() {
 							builder.PendingBuilds++
 						} else {
 							builder.CurrentBuilds = append(builder.CurrentBuilds, b.Number)
-						}
-					}
-					for _, num := range buildbotCurrent {
-						if !opt.IsEmulated(num) {
-							builder.CurrentBuilds = append(builder.CurrentBuilds, num)
 						}
 					}
 				}

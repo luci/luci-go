@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -199,14 +198,9 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 
 	// TODO(nodir,hinoka): move all link generation to a separate package
 	var linkParams url.Values
-	if opt, err := buildstore.GetEmulationOptions(c, masterName, builderName); err != nil {
-		return nil, errors.Annotate(err, "failed to get emulation options").Err()
-	} else if opt != nil {
+	if buildstore.EmulationEnabled(c) {
 		linkParams = url.Values{}
-		linkParams.Set("em-bucket", opt.Bucket)
-		if opt.StartFrom >= 0 {
-			linkParams.Set("em-start", strconv.Itoa(int(opt.StartFrom)))
-		}
+		linkParams.Set("emulation", "1")
 	}
 
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
