@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "f237801f_9e080f51",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-12T01:24:28Z",
+      "side": 1,
+      "message": "I agree it\u0027d be better if we could somehow declare that the context must have a DB pointer in it.\n\nI think that any time you\u0027re calling this method from a call site without a context, you actually should have to create a new context because context is going to be required by the other methods anyway. It doesn\u0027t make sense to call computeChanges without first calling fetch, and fetch requires a context. The fact that this particular method of DatacentersTable happens to not use the context doesn\u0027t imply that you should create and use this struct when no context is available.",
+      "parentUuid": "13f53937_589278b7",
+      "range": {
+        "startLine": 68,
+        "startChar": 42,
+        "endLine": 68,
+        "endChar": 61
+      },
+      "revId": "76af358051a121ba74be3deefb101fd436dbea5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dc0ded3c_44b2d380",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 7

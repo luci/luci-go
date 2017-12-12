@@ -22,6 +22,30 @@
       "revId": "0a610726170b37f094e9b33d7a840fdce7e82ddf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4556b54c_1cb6a2db",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-12T01:24:28Z",
+      "side": 1,
+      "message": "But it will copy the pointer to the first element of the slice won\u0027t it? I don\u0027t think I want that because then if you call computeChanges() and then change the config, then d.current will reflect the changes in each DC\u0027s racks but won\u0027t reflect the changes in each DC. Seems confusing? Therefore I\u0027m only copying the values I care about, values pertaining directly to the DC.",
+      "parentUuid": "80e353a1_01084f75",
+      "range": {
+        "startLine": 78,
+        "startChar": 23,
+        "endLine": 81,
+        "endChar": 6
+      },
+      "revId": "0a610726170b37f094e9b33d7a840fdce7e82ddf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
