@@ -19,7 +19,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -63,10 +62,6 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 	if req.Builder == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
 	}
-	if req.Emulation != nil {
-		c = buildstore.WithEmulationOptions(c, req.Master, req.Builder, *req.Emulation)
-	}
-
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is requesting %s/%s/%d",
 		cu.Identity, req.Master, req.Builder, req.BuildNum)
@@ -107,10 +102,6 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	}
 	if req.Builder == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
-	}
-
-	if req.Emulation != nil {
-		c = buildstore.WithEmulationOptions(c, req.Master, req.Builder, *req.Emulation)
 	}
 
 	limit := int(req.Limit)
@@ -164,15 +155,6 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
 	}
 
-	if len(req.Emulation) > 0 {
-		c = buildstore.WithEmulationOptionsProvider(c, func(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
-			if master != req.Name {
-				return nil, nil
-			}
-			return req.Emulation[builder], nil
-		})
-	}
-
 	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "", req.ExcludeDeprecated)
 
 	cu := auth.CurrentUser(c)
@@ -219,23 +201,6 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		Modified: google.NewTimestamp(master.Modified),
 		Data:     gzbs.Bytes(),
 	}, nil
-}
-
-// GetEmulationOptions returns default emulation options from buildstore.
-func (s *Service) GetEmulationOptions(c context.Context, req *milo.GetEmulationOptionsRequest) (*milo.GetEmulationOptionsResponse, error) {
-	if err := grpcCheckAdmin(c); err != nil {
-		return nil, err
-	}
-	opt, err := buildstore.GetDefaultEmulationOptions(c, req.Master, req.Builder)
-	return &milo.GetEmulationOptionsResponse{Options: opt}, err
-}
-
-// SetEmulationOptions sets default emulation options in buildstore.
-func (s *Service) SetEmulationOptions(c context.Context, req *milo.SetEmulationOptionsRequest) (*empty.Empty, error) {
-	if err := grpcCheckAdmin(c); err != nil {
-		return nil, err
-	}
-	return &empty.Empty{}, buildstore.SetDefaultEmulationOptions(c, req.Master, req.Builder, req.Options)
 }
 
 func excludeDeprecatedFromMaster(m *buildbot.Master) {
