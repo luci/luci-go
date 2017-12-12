@@ -110,7 +110,9 @@ func TestGetBuilderHistories(t *testing.T) {
 		Convey("Getting recent history for existing project", func() {
 			Convey("across all consoles", func() {
 				Convey("with limit less than number of finished builds works", func() {
-					hists, err := getBuilderHistories(c, p, "", 2)
+					builders, err := getBuildersForProject(c, p, "")
+					So(err, ShouldBeNil)
+					hists, err := getBuilderHistories(c, builders, p, 2)
 					So(err, ShouldBeNil)
 					So(hists, ShouldHaveLength, 3)
 
@@ -139,7 +141,9 @@ func TestGetBuilderHistories(t *testing.T) {
 				})
 
 				Convey("with limit greater than number of finished builds works", func() {
-					hists, err := getBuilderHistories(c, p, "", 5)
+					builders, err := getBuildersForProject(c, p, "")
+					So(err, ShouldBeNil)
+					hists, err := getBuilderHistories(c, builders, p, 5)
 					So(err, ShouldBeNil)
 					So(hists, ShouldHaveLength, 3)
 
@@ -171,7 +175,9 @@ func TestGetBuilderHistories(t *testing.T) {
 
 			Convey("across a specific console", func() {
 				Convey("for a valid console works", func() {
-					hists, err := getBuilderHistories(c, p, "console2", 2)
+					builders, err := getBuildersForProject(c, p, "console2")
+					So(err, ShouldBeNil)
+					hists, err := getBuilderHistories(c, builders, p, 2)
 					So(err, ShouldBeNil)
 					So(hists, ShouldHaveLength, 1)
 
@@ -182,14 +188,17 @@ func TestGetBuilderHistories(t *testing.T) {
 				})
 
 				Convey("for an invalid console works", func() {
-					_, err := getBuilderHistories(c, p, "bad_console", 2)
+					_, err := getBuildersForProject(c, p, "bad_console")
 					So(err, ShouldNotBeNil)
 				})
 			})
 		})
 
 		Convey("Getting recent history for nonexisting project", func() {
-			hists, err := getBuilderHistories(c, "no_proj", "", 3)
+			builders, err := getBuildersForProject(c, "no_proj", "")
+			So(err, ShouldBeNil)
+			So(builders, ShouldHaveLength, 0)
+			hists, err := getBuilderHistories(c, builders, "no_proj", 3)
 			So(err, ShouldBeNil)
 			So(hists, ShouldHaveLength, 0)
 		})
