@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-type Action int
+type Action uint32
 
 const (
 	// AddBuild: Schedule a build.
@@ -87,7 +87,7 @@ func ParseAction(action string) (Action, error) {
 	if action, ok := nameToAction[action]; ok {
 		return action, nil
 	}
-	return -1, fmt.Errorf("unexpected action %q", action)
+	return 0, fmt.Errorf("unexpected action %q", action)
 }
 
 // String returns the action name as a string.
