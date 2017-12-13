@@ -68,6 +68,12 @@ func NewServer() crimson.CrimsonServer {
 type Service struct {
 }
 
+// Returns whether the given string matches the given set.
+// An empty set matches all strings.
+func matches(s string, set stringset.Set) bool {
+	return set.Has(s) || set.Len() == 0
+}
+
 // GetDatacenters handles a request to retrieve datacenters.
 func (*Service) GetDatacenters(c context.Context, req *crimson.DatacentersRequest) (*crimson.DatacentersResponse, error) {
 	datacenters, err := getDatacenters(c, stringset.NewFromSlice(req.Names...))
@@ -82,7 +88,10 @@ func (*Service) GetDatacenters(c context.Context, req *crimson.DatacentersReques
 // getDatacenters returns a slice of datacenters in the database.
 func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
 	db := database.Get(c)
-	rows, err := db.QueryContext(c, "SELECT name, description FROM datacenters")
+	rows, err := db.QueryContext(c, `
+		SELECT d.name, d.description
+		FROM datacenters d
+	`)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch datacenters").Err()
 	}
@@ -94,7 +103,7 @@ func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacent
 		if err = rows.Scan(&dc.Name, &dc.Description); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch datacenter").Err()
 		}
-		if names.Has(dc.Name) || names.Len() == 0 {
+		if matches(dc.Name, names) {
 			datacenters = append(datacenters, dc)
 		}
 	}
@@ -115,7 +124,11 @@ func (*Service) GetRacks(c context.Context, req *crimson.RacksRequest) (*crimson
 // getRacks returns a slice of racks in the database.
 func getRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.Rack, error) {
 	db := database.Get(c)
-	rows, err := db.QueryContext(c, "SELECT racks.name, racks.description, datacenters.name FROM racks, datacenters WHERE racks.datacenter_id = datacenters.id")
+	rows, err := db.QueryContext(c, `
+		SELECT r.name, r.description, d.name
+		FROM racks r, datacenters d
+		WHERE r.datacenter_id = d.id
+	`)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch racks").Err()
 	}
@@ -127,9 +140,47 @@ func getRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.R
 		if err = rows.Scan(&rack.Name, &rack.Description, &rack.Datacenter); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch rack").Err()
 		}
-		if (names.Has(rack.Name) || names.Len() == 0) && (datacenters.Has(rack.Datacenter) || datacenters.Len() == 0) {
+		if matches(rack.Name, names) && matches(rack.Datacenter, datacenters) {
 			racks = append(racks, rack)
 		}
 	}
 	return racks, nil
+}
+
+// GetSwitches handles a request to retrieve switches.
+func (*Service) GetSwitches(c context.Context, req *crimson.SwitchesRequest) (*crimson.SwitchesResponse, error) {
+	switches, err := getSwitches(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Racks...), stringset.NewFromSlice(req.Datacenters...))
+	if err != nil {
+		return nil, internalError(c, err)
+	}
+	return &crimson.SwitchesResponse{
+		Switches: switches,
+	}, nil
+}
+
+// getSwitches returns a slice of switches in the database.
+func getSwitches(c context.Context, names, racks, datacenters stringset.Set) ([]*crimson.Switch, error) {
+	db := database.Get(c)
+	rows, err := db.QueryContext(c, `
+		SELECT s.name, s.description, s.ports, r.name, d.name
+		FROM switches s, racks r, datacenters d
+		WHERE s.rack_id = r.id
+			AND r.datacenter_id = d.id
+	`)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch switches").Err()
+	}
+	defer rows.Close()
+
+	var switches []*crimson.Switch
+	for rows.Next() {
+		s := &crimson.Switch{}
+		if err = rows.Scan(&s.Name, &s.Description, &s.Ports, &s.Rack, &s.Datacenter); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch switch").Err()
+		}
+		if matches(s.Name, names) && matches(s.Rack, racks) && matches(s.Datacenter, datacenters) {
+			switches = append(switches, s)
+		}
+	}
+	return switches, nil
 }
