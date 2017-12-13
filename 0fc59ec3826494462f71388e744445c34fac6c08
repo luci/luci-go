@@ -16,6 +16,24 @@
       "revId": "0fc59ec3826494462f71388e744445c34fac6c08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef33fbdd_bfde0515",
+        "filename": "client/cmd/isolate/checker.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1174915
+      },
+      "writtenOn": "2017-12-13T23:46:28Z",
+      "side": 1,
+      "message": "I\u0027ve tried to keep the Checker unaware of the behaviour of the uploader (if I allowed it to assume that the uploader would upload any files that were reported to not yet exist on the server, I could have just updated the existingDigests map directing in BundlingChecker.check for every item which is checked, regardless of the result, but I didn\u0027t want to do that. Naming this method \"WillExistInFuture\" would give the checker more information than it needs about the use of the uploader; it doesn\u0027t need to know whether an item (a) will exist or whether it (b) already exists -- it just needs to know that it should report that the item exists.)\n\nNote also that method is used to update the cache for items that are found by the BundlingChecker to already exist on the server, so \"WillExistInFuture\" would not be appropriate for that case either.\n\nI think PresumeExists is appropriate for this method\u0027s purpose.",
+      "parentUuid": "378fcf28_2d9cf14c",
+      "revId": "0fc59ec3826494462f71388e744445c34fac6c08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
