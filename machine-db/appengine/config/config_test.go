@@ -53,7 +53,7 @@ func TestValidateDatacentersConfig(t *testing.T) {
 			},
 		}
 		validateDatacentersConfig(context, datacentersConfig)
-		So(context.Finalize(), ShouldErrLike, "duplicate filename: duplicate.cfg")
+		So(context.Finalize(), ShouldErrLike, "duplicate filename")
 	})
 
 	Convey("validateDatacentersConfig: ok", t, func() {
@@ -102,7 +102,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "duplicate datacenter: duplicate")
+		So(context.Finalize(), ShouldErrLike, "duplicate datacenter")
 	})
 
 	Convey("validateDatacenters: unnamed rack", t, func() {
@@ -138,7 +138,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "duplicate rack: duplicate")
+		So(context.Finalize(), ShouldErrLike, "duplicate rack")
 	})
 
 	Convey("validateDatacenters: duplicate racks in different datacenters", t, func() {
@@ -165,7 +165,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "duplicate rack: duplicate")
+		So(context.Finalize(), ShouldErrLike, "duplicate rack")
 	})
 
 	Convey("validateDatacenters: unnamed switch", t, func() {
@@ -214,7 +214,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "duplicate switch: duplicate")
+		So(context.Finalize(), ShouldErrLike, "duplicate switch")
 	})
 
 	Convey("validateDatacenters: duplicate switches in different racks", t, func() {
@@ -254,7 +254,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "duplicate switch: duplicate")
+		So(context.Finalize(), ShouldErrLike, "duplicate switch")
 	})
 
 	Convey("validateDatacenters: missing switch ports", t, func() {
@@ -275,7 +275,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "switch must have at least one port: switch")
+		So(context.Finalize(), ShouldErrLike, "must have at least one port")
 	})
 
 	Convey("validateDatacenters: negative switch ports", t, func() {
@@ -297,7 +297,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "switch must have at least one port: switch")
+		So(context.Finalize(), ShouldErrLike, "must have at least one port")
 	})
 
 	Convey("validateDatacenters: zero switch ports", t, func() {
@@ -319,7 +319,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "switch must have at least one port: switch")
+		So(context.Finalize(), ShouldErrLike, "must have at least one port")
 	})
 
 	Convey("validateDatacenters: excessive switch ports", t, func() {
@@ -341,7 +341,7 @@ func TestValidateDatacenters(t *testing.T) {
 			},
 		}
 		validateDatacenters(context, datacenterConfigs)
-		So(context.Finalize(), ShouldErrLike, "switch must have at most 65535 ports: switch")
+		So(context.Finalize(), ShouldErrLike, "must have at most 65535 ports")
 	})
 
 	Convey("validateDatacenters: ok", t, func() {
