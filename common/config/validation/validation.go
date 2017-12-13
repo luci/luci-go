@@ -50,7 +50,6 @@ func (v *Error) Error() string {
 // inside this structure is captured through Enter and Exit calls.
 type Context struct {
 	Context context.Context
-	Logger  logging.Logger // logs errors as they appear
 
 	errors  errors.MultiError // all accumulated errors
 	file    string            // the currently validated file
@@ -106,9 +105,7 @@ func (v *Context) Error(err error) {
 	err = errors.Annotate(err, "%s", ctx).Tag(fileTag.With(v.file), elementTag.With(v.element)).Err()
 	v.errors = append(v.errors, err)
 
-	if v.Logger != nil {
-		v.Logger.Errorf("%s", err)
-	}
+	logging.WithError(err).Errorf(v.Context, "Validation error")
 }
 
 // SetFile records that what follows is errors for this particular file.

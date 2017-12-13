@@ -130,7 +130,7 @@ func fetchConfigs(c context.Context, f policy.ConfigFetcher) (policy.ConfigBundl
 // prepareRules converts validated configs into *Rules.
 //
 // Returns them as policy.Queryable object to satisfy policy.Policy API.
-func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, error) {
+func prepareRules(c context.Context, cfg policy.ConfigBundle, revision string) (policy.Queryable, error) {
 	parsed, ok := cfg[delegationCfg].(*admin.DelegationPermissions)
 	if !ok {
 		return nil, fmt.Errorf("wrong type of delegation.cfg - %T", cfg[delegationCfg])
@@ -140,7 +140,7 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 	requestors := make([]*identityset.Set, len(parsed.Rules))
 
 	for i, msg := range parsed.Rules {
-		rule, err := makeDelegationRule(msg)
+		rule, err := makeDelegationRule(c, msg)
 		if err != nil {
 			return nil, err
 		}
@@ -159,10 +159,10 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 //
 // It also double checks that the rule is passing validation. The check may
 // fail if new code uses old configs, still stored in the datastore.
-func makeDelegationRule(rule *admin.DelegationRule) (*delegationRule, error) {
-	v := validation.Context{}
-	validateRule(&v, rule.Name, rule)
-	if err := v.Finalize(); err != nil {
+func makeDelegationRule(c context.Context, rule *admin.DelegationRule) (*delegationRule, error) {
+	ctx := &validation.Context{Context: c}
+	validateRule(ctx, rule.Name, rule)
+	if err := ctx.Finalize(); err != nil {
 		return nil, err
 	}
 
