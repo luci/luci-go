@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef17d7cf_c0fb9122",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-13T19:54:52Z",
+      "side": 1,
+      "message": "fancy",
+      "range": {
+        "startLine": 272,
+        "startChar": 20,
+        "endLine": 272,
+        "endChar": 27
+      },
+      "revId": "eab4d14a117d098436048014cb44f3b293216ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b565af09_f71ddba0",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 843,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-13T19:54:52Z",
+      "side": 1,
+      "message": "0666, there\u0027s nothing special about this file. umask will do necessary adjustments.",
+      "range": {
+        "startLine": 843,
+        "startChar": 54,
+        "endLine": 843,
+        "endChar": 58
+      },
+      "revId": "eab4d14a117d098436048014cb44f3b293216ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
