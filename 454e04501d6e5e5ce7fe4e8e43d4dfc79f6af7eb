@@ -196,6 +196,30 @@
     },
     {
       "key": {
+        "uuid": "003c0858_27ba8212",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:59:05Z",
+      "side": 1,
+      "message": "ah! got it. I\u0027ve cleaned up all the places I do this in this file.",
+      "parentUuid": "7e64e90b_8e122464",
+      "range": {
+        "startLine": 340,
+        "startChar": 10,
+        "endLine": 340,
+        "endChar": 25
+      },
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "42bc5eed_bb843c86",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 3

@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "99141800_2d57e33c",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:59:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f54d5bc_c5cea9a0",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4654da3d_8114bef2",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -33,6 +51,24 @@
       "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bb7399a_43ee7d52",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:59:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4654da3d_8114bef2",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "128f0257_1aac6174",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:59:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a97bd8c5_117d0f26",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43e71811_b7dac938",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -64,6 +118,24 @@
       "writtenOn": "2017-12-13T19:45:54Z",
       "side": 1,
       "message": "you forgot to lock before swapping it.",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce1f1315_6f4abb1e",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:59:05Z",
+      "side": 1,
+      "message": "This shouldn\u0027t be necessary. This method is denoted as \"not thread-safe\" and the only race for the files would be from the work pool which is no longer running by this point.\n\nIf you think I should still lock just-in-case though, I can do that.",
+      "parentUuid": "43e71811_b7dac938",
       "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
