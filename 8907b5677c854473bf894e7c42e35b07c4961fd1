@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "78533ac4_9aef45b6",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-13T16:30:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bce928f7_66774f84",
+      "revId": "8907b5677c854473bf894e7c42e35b07c4961fd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3368a9c0_bb2b9fa4",
         "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "8907b5677c854473bf894e7c42e35b07c4961fd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54334759_e5dfa0ef",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-13T16:30:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3368a9c0_bb2b9fa4",
+      "range": {
+        "startLine": 165,
+        "startChar": 18,
+        "endLine": 165,
+        "endChar": 19
+      },
+      "revId": "8907b5677c854473bf894e7c42e35b07c4961fd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
