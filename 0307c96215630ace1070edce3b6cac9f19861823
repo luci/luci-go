@@ -277,6 +277,30 @@
     },
     {
       "key": {
+        "uuid": "ec8fd8e0_446806b8",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:16:13Z",
+      "side": 1,
+      "message": "err map[*Switch]*Switch wouldn\u0027t work. I meant map[int]*Switch",
+      "parentUuid": "14d77208_a75e8e9d",
+      "range": {
+        "startLine": 225,
+        "startChar": 10,
+        "endLine": 225,
+        "endChar": 16
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "16138b13_00972a1f",
         "filename": "machine-db/appengine/model/switches.go",
         "patchSetId": 2
