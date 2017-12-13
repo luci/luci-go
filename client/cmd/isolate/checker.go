@@ -37,6 +37,7 @@ type isolateService interface {
 // It has a single implementation, *BundlingChecker. See BundlingChecker for method documentation.
 type Checker interface {
 	AddItem(item *Item, isolated bool, callback CheckerCallback)
+	PresumeExists(item *Item)
 	Close() error
 }
 
@@ -61,6 +62,8 @@ type BundlingChecker struct {
 	bundler *bundler.Bundler
 	err     error
 
+	existingDigests map[string]struct{} // set of digests of items that we presume to exist.
+
 	Hit, Miss CountBytes
 }
 
@@ -83,8 +86,9 @@ func NewChecker(ctx context.Context, client *isolatedclient.Client) *BundlingChe
 
 func newChecker(ctx context.Context, svc isolateService) *BundlingChecker {
 	c := &BundlingChecker{
-		svc: svc,
-		ctx: ctx,
+		svc:             svc,
+		ctx:             ctx,
+		existingDigests: make(map[string]struct{}),
 	}
 	c.bundler = bundler.NewBundler(checkerItem{}, func(bundle interface{}) {
 		items := bundle.([]checkerItem)
@@ -114,6 +118,16 @@ func (c *BundlingChecker) AddItem(item *Item, isolated bool, callback CheckerCal
 	}
 }
 
+// PresumeExists causes the Checker to report that item exists on the server.
+func (c *BundlingChecker) PresumeExists(item *Item) {
+	c.existingDigests[string(item.Digest)] = struct{}{}
+}
+
+func (c *BundlingChecker) exists(item *Item) bool {
+	_, ok := c.existingDigests[string(item.Digest)]
+	return ok
+}
+
 // Close shuts down the checker, blocking until all pending items have been
 // checked with the server. Close returns the first error encountered during
 // the checking process, if any.
@@ -129,6 +143,34 @@ func (c *BundlingChecker) Close() error {
 // check is invoked from the bundler's handler. As such, it is only ever run
 // one invocation at a time.
 func (c *BundlingChecker) check(items []checkerItem) error {
+	// We skip checking items on the server if we already know they exist.
+	existingItems, toCheck := c.partitionByExistence(items)
+
+	for i, pushState := range c.contains(toCheck) {
+		c.handleCheckResult(toCheck[i], pushState)
+	}
+
+	for _, item := range existingItems {
+		c.handleCheckResult(item, nil)
+	}
+	return nil
+}
+
+// partitionByExistence partitions items into two slices: one containing items that
+// are known to already exist on the server, and the other containing the remaining items.
+func (c *BundlingChecker) partitionByExistence(items []checkerItem) (existing, notExisting []checkerItem) {
+	for _, item := range items {
+		if c.exists(item.item) {
+			existing = append(existing, item)
+		} else {
+			notExisting = append(notExisting, item)
+		}
+	}
+	return existing, notExisting
+}
+
+// contains calls isolateService.Contains on the supplied checkerItems.
+func (c *BundlingChecker) contains(items []checkerItem) []*isolatedclient.PushState {
 	var digests []*service.HandlersEndpointsV1Digest
 	for _, item := range items {
 		digests = append(digests, &service.HandlersEndpointsV1Digest{
@@ -137,22 +179,34 @@ func (c *BundlingChecker) check(items []checkerItem) error {
 			IsIsolated: item.isolated,
 		})
 	}
-	out, err := c.svc.Contains(c.ctx, digests)
+	pushStates, err := c.svc.Contains(c.ctx, digests)
 	if err != nil {
 		// TODO(djd): propogate this more cleanly. At the moment, dropping
 		// callbacks may cause the TAR archiver to hang.
 		log.Printf("ERROR: isolate Contains call failed: %v", err)
 		os.Exit(infraFailExit)
-		return err
 	}
-	for i, item := range items {
-		if size := item.item.Size; out[i] == nil {
-			c.Hit.addFile(size)
-		} else {
-			c.Miss.addFile(size)
-		}
+	return pushStates
+}
 
-		item.callback(item.item, out[i])
+func (c *BundlingChecker) handleCheckResult(item checkerItem, pushState *isolatedclient.PushState) {
+	// We recheck whether we have cached knowledge that the item exists,
+	// since the cache may be more up to date than the server response.
+	// e.g. if the first time an item is checked, it is checked multiple
+	// times in the same Contains call, we may update the cache when
+	// handling the response for the first item, before handling the
+	// response for the second item.
+	if c.exists(item.item) {
+		pushState = nil
 	}
-	return nil
+
+	if pushState == nil {
+		c.Hit.addFile(item.item.Size)
+		// Don't bother asking the server about this item again.
+		c.PresumeExists(item.item)
+	} else {
+		c.Miss.addFile(item.item.Size)
+	}
+
+	item.callback(item.item, pushState)
 }
