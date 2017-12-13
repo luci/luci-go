@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6251bf2_c712a1a5",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T23:08:13Z",
+      "side": 1,
+      "message": "!this",
+      "range": {
+        "startLine": 80,
+        "startChar": 6,
+        "endLine": 80,
+        "endChar": 22
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "863bc128_d054fc96",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T23:08:13Z",
+      "side": 1,
+      "message": "actually this and prev code did not check this if name was invalid, but those are two separate checks and should happen independently from each other",
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "813d1990_6e9b5fbb",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T23:08:13Z",
+      "side": 1,
+      "message": "comment should start with symbol name",
+      "range": {
+        "startLine": 134,
+        "startChar": 3,
+        "endLine": 134,
+        "endChar": 9
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8761bb9_8ff02a97",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 509,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T23:08:13Z",
+      "side": 1,
+      "message": "this reads as errors are passed by the caller to this function via ctx. Note that strictly speaking this is possible: ctx contains errors and validateTaskProto can retrieve them. So, i find this confusing. I think \"returned\" would be close to what you mean.\n\napplies to other comments too",
+      "range": {
+        "startLine": 509,
+        "startChar": 14,
+        "endLine": 509,
+        "endChar": 20
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
