@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -293,13 +294,14 @@ type clientOptions struct {
 }
 
 func (opts *clientOptions) resolvedServiceURL() string {
-	switch {
-	case opts.serviceURL != "": // command line
-		return opts.serviceURL
-	case opts.ensureFileServiceURL != "": // ensure file
-		return opts.ensureFileServiceURL
+	ret := opts.serviceURL
+	if ret == "" {
+		ret = opts.ensureFileServiceURL
 	}
-	return opts.defaultServiceURL // compiled-in default set at registerFlags-time
+	if ret == "" {
+		ret = opts.defaultServiceURL
+	}
+	return ret
 }
 
 func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters) {
@@ -780,6 +782,10 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 				(`An "ensure" file. See syntax described here: ` +
 					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.` +
 					` Providing '-' will read from stdin.`))
+			c.Flags.StringVar(&c.ensureFileOut, "ensure-file-output", "<path>",
+				(`A path to write an "ensure" file which is the fully-resolved version ` +
+					`of the input ensure file. This output will not contain any ${params} ` +
+					`or $Settings other than $ServiceURL.`))
 			return c
 		},
 	}
@@ -789,7 +795,8 @@ type ensureRun struct {
 	cipdSubcommand
 	clientOptions
 
-	ensureFile string
+	ensureFile    string
+	ensureFileOut string
 }
 
 func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -797,11 +804,11 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	currentPins, _, err := ensurePackages(ctx, c.ensureFile, false, c.clientOptions)
+	currentPins, _, err := ensurePackages(ctx, c.ensureFile, c.ensureFileOut, false, c.clientOptions)
 	return c.done(currentPins, err)
 }
 
-func ensurePackages(ctx context.Context, ensureFile string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
+func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
 
 	parsedFile, err := loadAndValidateEnsureFile(ctx, ensureFile, &clientOpts)
 	if err != nil {
@@ -829,7 +836,16 @@ func ensurePackages(ctx context.Context, ensureFile string, dryRun bool, clientO
 		return nil, actions, err
 	}
 
-	return resolved.PackagesBySubdir, actions, nil
+	if ensureFileOut != "" {
+		buf := bytes.Buffer{}
+		resolved.ServiceURL = clientOpts.resolvedServiceURL()
+		_, err = resolved.Serialize(&buf)
+		if err == nil {
+			err = ioutil.WriteFile(ensureFileOut, buf.Bytes(), 0666)
+		}
+	}
+
+	return resolved.PackagesBySubdir, actions, err
 }
 
 func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
@@ -1001,7 +1017,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	_, actions, err := ensurePackages(ctx, c.ensureFile, true, c.clientOptions)
+	_, actions, err := ensurePackages(ctx, c.ensureFile, "", true, c.clientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if transient.Tag.In(err) {
