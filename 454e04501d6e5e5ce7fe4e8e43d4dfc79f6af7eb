@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ffac98c2_e63b8907",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:29:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "366ec8fa_f8b37209",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8efacf01_464e6b74",
         "filename": "client/cmd/isolated/download.go",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "5523364e_69c18b34",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:29:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8efacf01_464e6b74",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0ef444fb_008b8cbb",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 3
@@ -47,6 +83,24 @@
       "writtenOn": "2017-12-13T13:47:04Z",
       "side": 1,
       "message": "there\u0027s no concept of task here.\n\n// outputs is the list of files downloaded from the current isolated.",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c767e22c_33105f3d",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:29:31Z",
+      "side": 1,
+      "message": "this is in the swarming client though? there is a concept of task. I feel like maybe the commit message was a bit confusing. I\u0027ll update it.",
+      "parentUuid": "0ef444fb_008b8cbb",
       "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -76,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "3043036a_85fa99fd",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:29:31Z",
+      "side": 1,
+      "message": "same as above, in the swarming client there is a concept of task.",
+      "parentUuid": "3f1c1318_c6b78421",
+      "range": {
+        "startLine": 340,
+        "startChar": 10,
+        "endLine": 340,
+        "endChar": 25
+      },
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "42bc5eed_bb843c86",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 3
@@ -90,6 +168,24 @@
       "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8987a6fd_afb42289",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-13T19:29:31Z",
+      "side": 1,
+      "message": "Yeah, you\u0027re right it\u0027s not a big performance implication. Just better to not waste cycles on bots, I guess? haha.\n\nI\u0027ll go with a locked slice then, since it ends up as a lot less code and is simpler overall. I can just implement it like I did err.\n\nHowever, re: sync chans, that\u0027s a really cool optimization that I didn\u0027t realize was there, thanks for sharing. :) For some reason I forgot the usage of the lock under the hood anyway, so the contention on the channel would be the same as a locked slice.",
+      "parentUuid": "42bc5eed_bb843c86",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
