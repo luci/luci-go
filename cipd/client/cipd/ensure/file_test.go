@@ -39,7 +39,7 @@ var fileSerializationTests = []struct {
 	{
 		"empty",
 		&File{},
-		f(""),
+		"",
 	},
 
 	{
@@ -59,8 +59,8 @@ var fileSerializationTests = []struct {
 			},
 		}, nil},
 		f(
-			"some/other_thing@latest",
-			"some/thing@version",
+			"some/other_thing  latest",
+			"some/thing        version",
 		),
 	},
 
@@ -84,11 +84,11 @@ var fileSerializationTests = []struct {
 			"$VerifiedPlatform zoops-ohai",
 			"$VerifiedPlatform foos-barch",
 			"",
-			"some/other_thing@latest",
-			"some/thing@version",
+			"some/other_thing  latest",
+			"some/thing        version",
 			"",
 			"@Subdir path/to dir/with/spaces",
-			"different/package@some_tag:thingy",
+			"different/package  some_tag:thingy",
 		),
 	},
 }
