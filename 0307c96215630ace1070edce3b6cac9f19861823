@@ -1,0 +1,365 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28544f65_ed379b00",
+        "filename": "machine-db/api/crimson/v1/switches.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 0
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe9c7f89_17e9b1c5",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "validateDatacenters reads like it validates only datacenter, but in fact it validates switches and racks too. This could be less confusing. Not for this CL",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef3d9ea9_7f7dafcd",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "i wish this CL was stacked on top of the CL that does the renaming",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d89af18b_08261917",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "maybe document what it returns",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b050c7f5_bd868fa8",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "rack",
+      "range": {
+        "startLine": 37,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 28
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6277e3c8_6a6955b8",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "q",
+      "range": {
+        "startLine": 76,
+        "startChar": 86,
+        "endLine": 76,
+        "endChar": 87
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee8995a9_df7da386",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "`for switch %q` would look readable for empty name or name having colon. also it is typical in go to use %q for user-defined strings, then you don\u0027t need : before %s",
+      "range": {
+        "startLine": 76,
+        "startChar": 55,
+        "endLine": 76,
+        "endChar": 69
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff331186_f03b0776",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "WDYT about adding Equal function to Switch, Rack and Datacenter? then the copy-pasted code becomes more uniform",
+      "range": {
+        "startLine": 93,
+        "startChar": 6,
+        "endLine": 93,
+        "endChar": 88
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c67a4ad5_48bfd35e",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "nit: this makes the reader to think \"it won\u0027t work if cfg is a struct (not pointer)\"\nplease move this line before appending\n\ni\u0027ve written this before in another CL, but perhaps it was lost",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c990ca3c_bcb94edf",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "slices",
+      "range": {
+        "startLine": 107,
+        "startChar": 39,
+        "endLine": 107,
+        "endChar": 44
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "197a67d7_a4631af9",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "see comment below\n\ncan we delete by ID? i believe it would be more effective in the database too. FWIU nothing prevents us from adding id instead of name in L102\n\nusing map[int] would be more effective also because we wouldn\u0027t need to hash strings, and still as simple",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 170,
+        "endChar": 42
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55675a04_b2278903",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "this is the _ that we\u0027ve just discarded in L213. Same below and in other files",
+      "range": {
+        "startLine": 214,
+        "startChar": 20,
+        "endLine": 214,
+        "endChar": 35
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14d77208_a75e8e9d",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "it is somewhat bothers me that we are using name and id interchangeably: we update in the database using id but update t.current using name. It is inconsistent. Let\u0027s use id everywhere (it is more efficient too). Can we make it map[int]*Switch?\n\nthinking about this more, it would be simpler and more effective to make it\n\n  map[*Switch]*Switch\n\nthat is current -\u003e config. Then we don\u0027t have to iterate t.current in L212 at all\n\napplies to other files too",
+      "range": {
+        "startLine": 225,
+        "startChar": 10,
+        "endLine": 225,
+        "endChar": 16
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16138b13_00972a1f",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "maybe t? the receiver is t in SwitchesTable functions, it would be consistent with racks.go and datacenters.go",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 2
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1daf1a54_8b082dc4",
+        "filename": "machine-db/appengine/model/switches_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "this is unnecessary. nil is valid map for reading (not writing, but we don\u0027t write)",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7b0f0aa_4bc910e6",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "use aliases to make this statement shorter:\n\n  SELECT s.name, s.description, s.ports, r.name, dc.name\n  FROM switches s, racks r, datacenters dc\n  WHERE s.rack_id \u003d r.id\n    AND r.datacenter_id \u003d dc.id\n\nBTW a nicer formatting would make it readable too. Consider using `. It can take line breaks\n\n--\n\napplies to other files too",
+      "range": {
+        "startLine": 151,
+        "startChar": 41,
+        "endLine": 151,
+        "endChar": 49
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2445ab7f_320e69f5",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-13T22:08:28Z",
+      "side": 1,
+      "message": "this pattern is repeated ~6 times already. I think it is time to generalize. Consider:\n\n  type StringFilter stringset.Set\n  func (s StringFilter) Matches(s string) bool { ... }",
+      "range": {
+        "startLine": 163,
+        "startChar": 5,
+        "endLine": 163,
+        "endChar": 44
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
