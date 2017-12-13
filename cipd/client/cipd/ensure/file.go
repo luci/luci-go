@@ -129,6 +129,23 @@ type ResolvedFile struct {
 	PackagesBySubdir common.PinSliceBySubdir
 }
 
+// Serialize writes the ResolvedFile to an io.Writer in canonical order.
+func (f *ResolvedFile) Serialize(w io.Writer) (int, error) {
+	// piggyback on top of File.Serialize.
+	packagesBySubdir := make(map[string]PackageSlice, len(f.PackagesBySubdir))
+	for k, v := range f.PackagesBySubdir {
+		slc := make(PackageSlice, len(v))
+		for i, pkg := range v {
+			slc[i] = PackageDef{
+				PackageTemplate:   pkg.PackageName,
+				UnresolvedVersion: pkg.InstanceID,
+			}
+		}
+		packagesBySubdir[k] = slc
+	}
+	return (&File{f.ServiceURL, packagesBySubdir, nil}).Serialize(w)
+}
+
 // Resolve takes the current unresolved File and expands all package templates
 // using common.DefaultPackageNameExpander(), and also resolves all versions
 // with the provided VersionResolver.
@@ -235,22 +252,34 @@ func (f *File) Serialize(w io.Writer) (int, error) {
 		for _, k := range keys {
 			maybeAddNL()
 			if k != "" {
-				fmt.Fprintf(w, "\n@Subdir %s", k)
+				fmt.Fprintf(w, "@Subdir %s", k)
 				needsNLs = 1
 			}
 
 			pkgs := f.PackagesBySubdir[k]
 			pkgsSort := make(PackageSlice, len(pkgs))
-			copy(pkgsSort, pkgs)
+			maxLength := 0
+			for i, pkg := range pkgs {
+				pkgsSort[i] = pkg
+				if l := len(pkg.PackageTemplate); l > maxLength {
+					maxLength = l
+				}
+			}
 			sort.Sort(pkgsSort)
 
 			for _, p := range pkgsSort {
 				maybeAddNL()
-				fmt.Fprintf(w, "%s", &p)
+				fmt.Fprintf(w, "%-*s %s", maxLength+1, p.PackageTemplate, p.UnresolvedVersion)
 				needsNLs = 1
 			}
+			needsNLs++
 		}
 
+		// We only ever want to end the file with 1 newline.
+		if needsNLs > 0 {
+			needsNLs = 1
+		}
+		maybeAddNL()
 		return nil
 	})
 }
