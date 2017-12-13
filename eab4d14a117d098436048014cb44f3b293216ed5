@@ -45,6 +45,30 @@
       "revId": "eab4d14a117d098436048014cb44f3b293216ed5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "454d06e2_c58c42e6",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 843,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-13T20:01:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b565af09_f71ddba0",
+      "range": {
+        "startLine": 843,
+        "startChar": 54,
+        "endLine": 843,
+        "endChar": 58
+      },
+      "revId": "eab4d14a117d098436048014cb44f3b293216ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
