@@ -145,7 +145,8 @@ def CommonChecks(input_api, output_api):
     input_api.canned_checks.CheckLicense(
       input_api, output_api, header(input_api),
       source_file_filter=source_file_filter(input_api)))
-  results.extend(WebChecks(input_api, output_api))
+  # currently broken: crbug.com/794670
+  #results.extend(WebChecks(input_api, output_api))
   return results
 
 
