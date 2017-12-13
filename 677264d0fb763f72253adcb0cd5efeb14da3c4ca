@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "430a663f_cd13264b",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-13T19:48:33Z",
+      "side": 1,
+      "message": "err...\n\nswitch {\n  case opts.serviceURL !\u003d \"\":\n    return opts.serviceURL\n  case opts.ensureFileServiceURL !\u003d \"\":\n    return opts.ensureFileServiceURL\n}\nreturn opts.defaultServiceURL\n\n(or you take \"single return\" principle extra seriously?)",
+      "range": {
+        "startLine": 296,
+        "startChar": 1,
+        "endLine": 303,
+        "endChar": 11
+      },
+      "revId": "677264d0fb763f72253adcb0cd5efeb14da3c4ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
