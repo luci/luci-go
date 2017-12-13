@@ -17,6 +17,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -41,6 +43,7 @@ Files are referenced by their hash`,
 			c.commonFlags.Init(authOpts)
 			// TODO(mknyszek): Add support for downloading individual files.
 			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
+			c.Flags.StringVar(&c.outputFiles, "output-files", ".", "File into which the full list of downloaded files is written to.")
 			c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of a .isolated tree to download.")
 			return &c
 		},
@@ -49,8 +52,9 @@ Files are referenced by their hash`,
 
 type downloadRun struct {
 	commonFlags
-	outputDir string
-	isolated  string
+	outputDir   string
+	outputFiles string
+	isolated    string
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
@@ -60,7 +64,7 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 	if len(args) != 0 {
 		return errors.New("position arguments not expected")
 	}
-	if len(c.isolated) == 0 {
+	if c.isolated == "" {
 		return errors.New("isolated is required")
 	}
 	return nil
@@ -76,7 +80,18 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	ctx := context.Background()
 	dl := downloader.New(ctx, client, 8)
 	common.CancelOnCtrlC(dl)
-	return dl.FetchIsolated(isolated.HexDigest(c.isolated), c.outputDir)
+	files, err := dl.FetchIsolated(isolated.HexDigest(c.isolated), c.outputDir)
+	if err != nil {
+		return err
+	}
+	if c.outputFiles != "" {
+		filesData := strings.Join(files, "\n")
+		if len(files) > 0 {
+			filesData += "\n"
+		}
+		return ioutil.WriteFile(c.outputFiles, []byte(filesData), 0664)
+	}
+	return nil
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {

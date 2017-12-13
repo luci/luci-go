@@ -37,19 +37,29 @@ type Downloader struct {
 	common.Canceler
 
 	// Immutable variables.
-	ctx context.Context
-	c   *isolatedclient.Client
+	ctx     context.Context
+	c       *isolatedclient.Client
+	maxJobs int
 
 	// Mutable variables.
 
 	// err is the accumulation of all errors encountered when attemping
 	// any of the jobs that have been scheduled.
-	mu  sync.Mutex
-	err errors.MultiError
-
 	//
+	// files is the accumulation of all files encountered when attempting
+	// an isolated job.
+	//
+	// Both fields are protected by mu.
+	mu    sync.Mutex
+	err   errors.MultiError
+	files []string
+
+	// dirCache is a cache of known existing directories which is extended
+	// and read from by ensureDir.
 	muCache  sync.RWMutex
 	dirCache stringset.Set
+
+	muFiles sync.Mutex
 
 	// pool is a goroutine priority pool which manages jobs to download
 	// isolated trees and files.
@@ -67,33 +77,45 @@ func New(ctx context.Context, c *isolatedclient.Client, maxConcurrentJobs int) *
 		ctx:      ctx,
 		c:        c,
 		pool:     pool,
+		maxJobs:  maxConcurrentJobs,
 		dirCache: stringset.New(0),
 	}
 }
 
 // FetchIsolated downloads an entire isolated tree into a specified output directory.
 //
+// Returns a list of paths relative to outputDir for all downloaded files.
+//
 // Note that this method is not thread-safe and it does not flush the Downloader's directory cache.
-func (d *Downloader) FetchIsolated(hash isolated.HexDigest, outputDir string) error {
+func (d *Downloader) FetchIsolated(hash isolated.HexDigest, outputDir string) ([]string, error) {
 	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-		return err
+		return nil, err
 	}
 	d.dirCache.Add(outputDir)
+	d.files = make([]string, 0, 1024)
+
+	// Start downloading the isolated tree in the work pool.
 	d.pool.Schedule(isolatedType.Priority(), func() {
 		d.doIsolatedJob(hash, outputDir)
 	}, func() {
 		d.addError(isolatedType, string(hash), d.CancelationReason())
 	})
+
+	// First wait for the work in the pool to finish, then wait for
+	// the work in the files goroutine to finish.
 	_ = d.pool.Wait()
 	_ = d.Canceler.Close()
 
 	// If any error occurred, return it and reset the err.
 	if len(d.err) > 0 {
-		tmp := d.err
+		err := d.err
 		d.err = nil
-		return tmp
+		return nil, err
 	}
-	return nil
+	result := make([]string, len(d.files))
+	copy(result, d.files)
+	d.files = nil
+	return result, nil
 }
 
 type downloadType int8
@@ -118,7 +140,7 @@ func (d downloadType) String() string {
 	}
 }
 
-// ensureDir ensures that the directory d exists.
+// ensureDir ensures that the directory dir exists.
 func (d *Downloader) ensureDir(dir string) error {
 	// Fast path: if the cache has the directory, we're done.
 	d.muCache.RLock()
@@ -152,6 +174,12 @@ func (d *Downloader) addError(ty downloadType, name string, err error) {
 	d.mu.Unlock()
 }
 
+func (d *Downloader) addFile(name string) {
+	d.mu.Lock()
+	d.files = append(d.files, name)
+	d.mu.Unlock()
+}
+
 func (d *Downloader) doFileJob(name string, details *isolated.File, outputDir string) {
 	// Get full local path for file.
 	name = filepath.Clean(name)
@@ -168,7 +196,9 @@ func (d *Downloader) doFileJob(name string, details *isolated.File, outputDir st
 		linkTarget := filepath.Join(outputDir, *details.Link)
 		if err := os.Symlink(linkTarget, filename); err != nil {
 			d.addError(fileType, name, err)
+			return
 		}
+		d.addFile(name)
 		return
 	}
 
@@ -181,7 +211,9 @@ func (d *Downloader) doFileJob(name string, details *isolated.File, outputDir st
 	defer f.Close()
 	if err := d.c.Fetch(d.ctx, details.Digest, f); err != nil {
 		d.addError(fileType, name, err)
+		return
 	}
+	d.addFile(name)
 }
 
 func (d *Downloader) doIsolatedJob(hash isolated.HexDigest, outputDir string) {

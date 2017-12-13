@@ -132,10 +132,10 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			getTaskOutputs: func(c context.Context, _, output string, ref *swarming.SwarmingRpcsFilesRef) error {
+			getTaskOutputs: func(c context.Context, _, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 				written_to = output
 				written_isolated = ref.Isolated
-				return nil
+				return []string{"hello"}, nil
 			},
 		}
 		runner := &collectRun{
@@ -147,6 +147,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.result, ShouldNotBeNil)
 		So(result.result.State, ShouldResemble, "COMPLETED")
 		So(result.output, ShouldResemble, "yipeeee")
+		So(result.outputs, ShouldResemble, []string{"hello"})
 		So(written_to, ShouldResemble, "bah")
 		So(written_isolated, ShouldResemble, "aaaaaaaaa")
 	})

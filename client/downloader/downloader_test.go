@@ -25,6 +25,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
@@ -46,22 +47,35 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	data1hash := server.Inject(data1)
 	data2hash := server.Inject(data2)
 
+	onePath := filepath.Join("foo", "one.txt")
+	twoPath := filepath.Join("foo", "two.txt")
 	isolated1 := isolated.New()
 	isolated1.Files = map[string]isolated.File{
-		"foo/one.txt": isolated.BasicFile(data1hash, 0664, int64(len(data1))),
-		"foo/two.txt": isolated.BasicFile(data2hash, 0664, int64(len(data2))),
+		onePath: isolated.BasicFile(data1hash, 0664, int64(len(data1))),
+		twoPath: isolated.BasicFile(data2hash, 0664, int64(len(data2))),
 	}
 	isolated1bytes, _ := json.Marshal(&isolated1)
 	isolated1hash := server.Inject(isolated1bytes)
 
+	lolPath := filepath.Join("bar", "lol.txt")
+	oloPath := filepath.Join("foo", "boz", "olo.txt")
 	isolated2 := isolated.New()
 	isolated2.Files = map[string]isolated.File{
-		"bar/lol.txt":     isolated.BasicFile(data1hash, 0664, int64(len(data1))),
-		"foo/boz/olo.txt": isolated.BasicFile(data2hash, 0664, int64(len(data2))),
+		lolPath: isolated.BasicFile(data1hash, 0664, int64(len(data1))),
+		oloPath: isolated.BasicFile(data2hash, 0664, int64(len(data2))),
 	}
+	isolatedFiles := stringset.NewFromSlice([]string{
+		onePath,
+		twoPath,
+		lolPath,
+		oloPath,
+	}...)
+	blahPath := "blah.txt"
+
 	// Symlinks not supported on Windows.
 	if runtime.GOOS != "windows" {
-		isolated2.Files["blah.txt"] = isolated.SymLink("foo/boz/olo.txt")
+		isolated2.Files[blahPath] = isolated.SymLink(oloPath)
+		isolatedFiles.Add(blahPath)
 	}
 	isolated2.Includes = isolated.HexDigests{isolated1hash}
 	isolated2bytes, _ := json.Marshal(&isolated2)
@@ -76,29 +90,30 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		d := New(ctx, client, 8)
-		err = d.FetchIsolated(isolated2hash, tmpDir)
+		files, err := d.FetchIsolated(isolated2hash, tmpDir)
 		So(err, ShouldBeNil)
+		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
-		oneBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, "foo/one.txt"))
+		oneBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
 		So(err, ShouldBeNil)
 		So(oneBytes, ShouldResemble, data1)
 
-		twoBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, "foo/two.txt"))
+		twoBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, twoPath))
 		So(err, ShouldBeNil)
 		So(twoBytes, ShouldResemble, data2)
 
-		lolBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, "bar/lol.txt"))
+		lolBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, lolPath))
 		So(err, ShouldBeNil)
 		So(lolBytes, ShouldResemble, data1)
 
-		oloBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, "foo/boz/olo.txt"))
+		oloBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, oloPath))
 		So(err, ShouldBeNil)
 		So(oloBytes, ShouldResemble, data2)
 
 		if runtime.GOOS != "windows" {
-			l, err := os.Readlink(filepath.Join(tmpDir, "blah.txt"))
+			l, err := os.Readlink(filepath.Join(tmpDir, blahPath))
 			So(err, ShouldBeNil)
-			So(l, ShouldResemble, filepath.Join(tmpDir, "foo/boz/olo.txt"))
+			So(l, ShouldResemble, filepath.Join(tmpDir, oloPath))
 		}
 	})
 }
