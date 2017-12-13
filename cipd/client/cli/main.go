@@ -782,7 +782,7 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 				(`An "ensure" file. See syntax described here: ` +
 					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.` +
 					` Providing '-' will read from stdin.`))
-			c.Flags.StringVar(&c.ensureFileOut, "ensure-file-output", "<path>",
+			c.Flags.StringVar(&c.ensureFileOut, "ensure-file-output", "",
 				(`A path to write an "ensure" file which is the fully-resolved version ` +
 					`of the input ensure file. This output will not contain any ${params} ` +
 					`or $Settings other than $ServiceURL.`))
