@@ -25,6 +25,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
@@ -59,9 +60,16 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		"bar/lol.txt":     isolated.BasicFile(data1hash, 0664, int64(len(data1))),
 		"foo/boz/olo.txt": isolated.BasicFile(data2hash, 0664, int64(len(data2))),
 	}
+	isolatedFiles := stringset.NewFromSlice([]string{
+		"foo/one.txt",
+		"foo/two.txt",
+		"bar/lol.txt",
+		"foo/boz/olo.txt",
+	}...)
 	// Symlinks not supported on Windows.
 	if runtime.GOOS != "windows" {
 		isolated2.Files["blah.txt"] = isolated.SymLink("foo/boz/olo.txt")
+		isolatedFiles.Add("blah.txt")
 	}
 	isolated2.Includes = isolated.HexDigests{isolated1hash}
 	isolated2bytes, _ := json.Marshal(&isolated2)
@@ -76,8 +84,9 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		d := New(ctx, client, 8)
-		err = d.FetchIsolated(isolated2hash, tmpDir)
+		files, err := d.FetchIsolated(isolated2hash, tmpDir)
 		So(err, ShouldBeNil)
+		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
 		oneBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, "foo/one.txt"))
 		So(err, ShouldBeNil)
