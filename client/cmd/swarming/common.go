@@ -43,7 +43,7 @@ type swarmingService interface {
 	// TODO: Add support for trigger-related mocks.
 	GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) error
+	GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
 }
 
 type swarmingServiceImpl struct {
@@ -59,11 +59,11 @@ func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (*
 	return s.Service.Task.Stdout(taskID).Context(c).Do()
 }
 
-func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) error {
+func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
 	if err := os.Mkdir(dir, os.ModePerm); err != nil {
-		return err
+		return nil, err
 	}
 	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
 	dl := downloader.New(c, isolatedClient, 8)
