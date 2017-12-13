@@ -97,6 +97,9 @@ type taskResult struct {
 	// output will only be populated if requested.
 	output string
 
+	// outputs are file outputs from a task downloaded from an isolate server.
+	outputs []string
+
 	// err is set if an operational error occurred while doing RPCs to gather the
 	// task result, which includes errors recieved from the server.
 	err error
@@ -223,16 +226,19 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 	}
 
 	// Download the result isolated if available and if we have a place to put it.
+	var outputs []string
 	if len(c.outputDir) > 0 && result.OutputsRef != nil {
-		if err := service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef); err != nil {
+		outputs, err = service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef)
+		if err != nil {
 			return taskResult{taskID: taskID, err: err}
 		}
 	}
 
 	return taskResult{
-		taskID: taskID,
-		result: result,
-		output: output,
+		taskID:  taskID,
+		result:  result,
+		output:  output,
+		outputs: outputs,
 	}
 }
 
@@ -295,6 +301,7 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 			if c.taskOutput.includesJSON() {
 				jsonResult["output"] = result.output
 			}
+			jsonResult["outputs"] = result.outputs
 			jsonResults[result.taskID] = jsonResult
 		}
 	}
@@ -329,14 +336,12 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 		results[i] = <-aggregator
 	}
 
-	// Summarize results to JSON.
-	jsonSummary, err := c.summarizeResults(results)
-	if err != nil {
-		return err
-	}
-
-	// Write any relevant files.
+	// Summarize and write summary json if applicable.
 	if len(c.taskSummaryJSON) > 0 {
+		jsonSummary, err := c.summarizeResults(results)
+		if err != nil {
+			return err
+		}
 		if err := ioutil.WriteFile(c.taskSummaryJSON, jsonSummary, 0664); err != nil {
 			return err
 		}

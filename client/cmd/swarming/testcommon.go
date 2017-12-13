@@ -25,7 +25,7 @@ import (
 type testService struct {
 	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
 	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
-	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) error
+	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
 }
 
 func (s testService) Client() *http.Client {
@@ -40,6 +40,6 @@ func (s testService) GetTaskOutput(c context.Context, taskID string) (*swarming.
 	return s.getTaskOutput(c, taskID)
 }
 
-func (s testService) GetTaskOutputs(c context.Context, taskID, output string, ref *swarming.SwarmingRpcsFilesRef) error {
+func (s testService) GetTaskOutputs(c context.Context, taskID, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 	return s.getTaskOutputs(c, taskID, output, ref)
 }
