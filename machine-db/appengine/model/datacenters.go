@@ -17,7 +17,6 @@ package model
 import (
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -37,17 +36,20 @@ type DatacentersTable struct {
 	current []*Datacenter
 
 	// additions is a slice of datacenters pending addition to the database.
-	additions []*config.DatacenterConfig
-	// removals is a slice of names of datacenters pending removal from the database.
-	removals []string
+	additions []*Datacenter
+	// removals is a slice of datacenters pending removal from the database.
+	removals []*Datacenter
 	// updates is a slice of datacenters pending update in the database.
 	updates []*Datacenter
 }
 
 // fetch fetches the datacenters from the database.
-func (d *DatacentersTable) fetch(c context.Context) error {
+func (t *DatacentersTable) fetch(c context.Context) error {
 	db := database.Get(c)
-	rows, err := db.QueryContext(c, "SELECT id, name, description FROM datacenters")
+	rows, err := db.QueryContext(c, `
+		SELECT id, name, description
+		FROM datacenters
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to select datacenters").Err()
 	}
@@ -57,82 +59,84 @@ func (d *DatacentersTable) fetch(c context.Context) error {
 		if err := rows.Scan(&dc.Id, &dc.Name, &dc.Description); err != nil {
 			return errors.Annotate(err, "failed to scan datacenter").Err()
 		}
-		d.current = append(d.current, dc)
+		t.current = append(t.current, dc)
 	}
 	return nil
 }
 
+// needsUpdate returns true if the given row needs to be updated to match the given config.
+func (*DatacentersTable) needsUpdate(row, cfg *Datacenter) bool {
+	return row.Description != cfg.Description
+}
+
 // computeChanges computes the changes that need to be made to the datacenters in the database.
-func (d *DatacentersTable) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) {
-	cfgs := make(map[string]*config.DatacenterConfig, len(datacenters))
+func (t *DatacentersTable) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) {
+	cfgs := make(map[string]*Datacenter, len(datacenters))
 	for _, cfg := range datacenters {
-		cfgs[cfg.Name] = cfg
+		cfgs[cfg.Name] = &Datacenter{
+			DatacenterConfig: config.DatacenterConfig{
+				Name:        cfg.Name,
+				Description: cfg.Description,
+			},
+		}
 	}
 
-	for _, dc := range d.current {
+	for _, dc := range t.current {
 		if cfg, ok := cfgs[dc.Name]; ok {
 			// Datacenter found in the config.
-			if dc.Description != cfg.Description {
+			if t.needsUpdate(dc, cfg) {
 				// Datacenter doesn't match the config.
-				d.updates = append(d.updates, &Datacenter{
-					DatacenterConfig: config.DatacenterConfig{
-						Name:        cfg.Name,
-						Description: cfg.Description,
-					},
-					Id: dc.Id,
-				})
+				cfg.Id = dc.Id
+				t.updates = append(t.updates, cfg)
 			}
 			// Record that the datacenter config has been seen.
 			delete(cfgs, cfg.Name)
 		} else {
 			// Datacenter not found in the config.
-			d.removals = append(d.removals, dc.Name)
+			t.removals = append(t.removals, dc)
 		}
 	}
 
 	// Datacenters remaining in the map are present in the config but not the database.
 	// Iterate deterministically over the slice to determine which datacenters need to be added.
 	for _, cfg := range datacenters {
-		if _, ok := cfgs[cfg.Name]; ok {
-			d.additions = append(d.additions, cfg)
+		if dc, ok := cfgs[cfg.Name]; ok {
+			t.additions = append(t.additions, dc)
 		}
 	}
 }
 
 // add adds all datacenters pending addition to the database, clearing pending additions.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
-func (d *DatacentersTable) add(c context.Context) error {
+func (t *DatacentersTable) add(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(d.additions) == 0 {
+	if len(t.additions) == 0 {
 		return nil
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, "INSERT INTO datacenters (name, description) VALUES (?, ?)")
+	stmt, err := db.PrepareContext(c, `
+		INSERT INTO datacenters (name, description)
+		VALUES (?, ?)
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
 	defer stmt.Close()
 
 	// Add each datacenter to the database, and update the slice of datacenters with each addition.
-	for len(d.additions) > 0 {
-		cfg := d.additions[0]
-		result, err := stmt.ExecContext(c, cfg.Name, cfg.Description)
+	for len(t.additions) > 0 {
+		dc := t.additions[0]
+		result, err := stmt.ExecContext(c, dc.Name, dc.Description)
 		if err != nil {
-			return errors.Annotate(err, "failed to add datacenter: %s", cfg.Name).Err()
+			return errors.Annotate(err, "failed to add datacenter %q", dc.Name).Err()
 		}
-		dc := &Datacenter{
-			DatacenterConfig: config.DatacenterConfig{
-				Name:        cfg.Name,
-				Description: cfg.Description,
-			},
-		}
-		d.current = append(d.current, dc)
-		d.additions = d.additions[1:]
-		logging.Infof(c, "Added datacenter: %s", dc.Name)
+		t.current = append(t.current, dc)
+		t.additions = t.additions[1:]
+		logging.Infof(c, "Added datacenter %q", dc.Name)
 		dc.Id, err = result.LastInsertId()
 		if err != nil {
-			return errors.Annotate(err, "failed to get datacenter ID: %s", cfg.Name).Err()
+			return errors.Annotate(err, "failed to get datacenter ID %q", dc.Name).Err()
 		}
 	}
 	return nil
@@ -140,14 +144,17 @@ func (d *DatacentersTable) add(c context.Context) error {
 
 // remove removes all datacenters pending removal from the database, clearing pending removals.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
-func (d *DatacentersTable) remove(c context.Context) error {
+func (t *DatacentersTable) remove(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(d.removals) == 0 {
+	if len(t.removals) == 0 {
 		return nil
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, "DELETE FROM datacenters WHERE name = ?")
+	stmt, err := db.PrepareContext(c, `
+		DELETE FROM datacenters
+		WHERE id = ?
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
@@ -155,39 +162,43 @@ func (d *DatacentersTable) remove(c context.Context) error {
 
 	// Remove each datacenter from the database. It's more efficient to update the slice of
 	// datacenters once at the end rather than for each removal, so use a defer.
-	removed := stringset.New(len(d.removals))
+	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
 		var dcs []*Datacenter
-		for _, dc := range d.current {
-			if !removed.Has(dc.Name) {
+		for _, dc := range t.current {
+			if _, ok := removed[dc.Id]; !ok {
 				dcs = append(dcs, dc)
 			}
 		}
-		d.current = dcs
+		t.current = dcs
 	}()
-	for len(d.removals) > 0 {
-		dc := d.removals[0]
-		if _, err := stmt.ExecContext(c, dc); err != nil {
+	for len(t.removals) > 0 {
+		dc := t.removals[0]
+		if _, err := stmt.ExecContext(c, dc.Id); err != nil {
 			// Defer ensures the slice of datacenters is updated even if we exit early.
-			return errors.Annotate(err, "failed to remove datacenter: %s", dc).Err()
+			return errors.Annotate(err, "failed to remove datacenter %q", dc.Name).Err()
 		}
-		removed.Add(dc)
-		d.removals = d.removals[1:]
-		logging.Infof(c, "Removed datacenter: %s", dc)
+		removed[dc.Id] = struct{}{}
+		t.removals = t.removals[1:]
+		logging.Infof(c, "Removed datacenter %q", dc.Name)
 	}
 	return nil
 }
 
 // update updates all datacenters pending update in the database, clearing pending updates.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
-func (d *DatacentersTable) update(c context.Context) error {
+func (t *DatacentersTable) update(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(d.updates) == 0 {
+	if len(t.updates) == 0 {
 		return nil
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, "UPDATE datacenters SET description = ? WHERE id = ?")
+	stmt, err := db.PrepareContext(c, `
+		UPDATE datacenters
+		SET description = ?
+		WHERE id = ?
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
@@ -195,30 +206,30 @@ func (d *DatacentersTable) update(c context.Context) error {
 
 	// Update each datacenter in the database. It's more efficient to update the slice of
 	// datacenters once at the end rather than for each update, so use a defer.
-	updated := make(map[string]*Datacenter, len(d.updates))
+	updated := make(map[int64]*Datacenter, len(t.updates))
 	defer func() {
-		for _, dc := range d.current {
-			if _, ok := updated[dc.Name]; ok {
-				dc.Description = updated[dc.Name].Description
+		for _, dc := range t.current {
+			if u, ok := updated[dc.Id]; ok {
+				dc.Description = u.Description
 			}
 		}
 	}()
-	for len(d.updates) > 0 {
-		dc := d.updates[0]
+	for len(t.updates) > 0 {
+		dc := t.updates[0]
 		if _, err := stmt.ExecContext(c, dc.Description, dc.Id); err != nil {
-			return errors.Annotate(err, "failed to update datacenter: %s", dc.Name).Err()
+			return errors.Annotate(err, "failed to update datacenter %q", dc.Name).Err()
 		}
-		updated[dc.Name] = dc
-		d.updates = d.updates[1:]
-		logging.Infof(c, "Updated datacenter: %s", dc.Name)
+		updated[dc.Id] = dc
+		t.updates = t.updates[1:]
+		logging.Infof(c, "Updated datacenter %q", dc.Name)
 	}
 	return nil
 }
 
 // ids returns a map of datacenter names to IDs.
-func (d *DatacentersTable) ids(c context.Context) map[string]int64 {
-	dcs := make(map[string]int64, len(d.current))
-	for _, dc := range d.current {
+func (t *DatacentersTable) ids(c context.Context) map[string]int64 {
+	dcs := make(map[string]int64, len(t.current))
+	for _, dc := range t.current {
 		dcs[dc.Name] = dc.Id
 	}
 	return dcs
@@ -227,19 +238,19 @@ func (d *DatacentersTable) ids(c context.Context) map[string]int64 {
 // EnsureDatacenters ensures the database contains exactly the given datacenters.
 // Returns a map of datacenter names to IDs in the database.
 func EnsureDatacenters(c context.Context, cfgs []*config.DatacenterConfig) (map[string]int64, error) {
-	d := &DatacentersTable{}
-	if err := d.fetch(c); err != nil {
+	t := &DatacentersTable{}
+	if err := t.fetch(c); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch datacenters").Err()
 	}
-	d.computeChanges(c, cfgs)
-	if err := d.add(c); err != nil {
+	t.computeChanges(c, cfgs)
+	if err := t.add(c); err != nil {
 		return nil, errors.Annotate(err, "failed to add datacenters").Err()
 	}
-	if err := d.remove(c); err != nil {
+	if err := t.remove(c); err != nil {
 		return nil, errors.Annotate(err, "failed to remove datacenters").Err()
 	}
-	if err := d.update(c); err != nil {
+	if err := t.update(c); err != nil {
 		return nil, errors.Annotate(err, "failed to update datacenters").Err()
 	}
-	return d.ids(c), nil
+	return t.ids(c), nil
 }

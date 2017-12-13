@@ -51,3 +51,18 @@ func (s *DecoratedCrimson) GetRacks(c context.Context, req *RacksRequest) (rsp *
 	}
 	return
 }
+
+func (s *DecoratedCrimson) GetSwitches(c context.Context, req *SwitchesRequest) (rsp *SwitchesResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetSwitches", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetSwitches(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetSwitches", rsp, err)
+	}
+	return
+}

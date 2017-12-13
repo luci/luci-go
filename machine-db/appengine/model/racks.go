@@ -17,7 +17,6 @@ package model
 import (
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -42,15 +41,18 @@ type RacksTable struct {
 	// additions is a slice of racks pending addition to the database.
 	additions []*Rack
 	// removals is a slice of racks pending removal from the database.
-	removals []string
+	removals []*Rack
 	// updates is a slice of racks pending update in the database.
 	updates []*Rack
 }
 
 // fetch fetches the racks from the database.
-func (r *RacksTable) fetch(c context.Context) error {
+func (t *RacksTable) fetch(c context.Context) error {
 	db := database.Get(c)
-	rows, err := db.QueryContext(c, "SELECT id, name, description, datacenter_id FROM racks")
+	rows, err := db.QueryContext(c, `
+		SELECT id, name, description, datacenter_id
+		FROM racks
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to select racks").Err()
 	}
@@ -60,19 +62,24 @@ func (r *RacksTable) fetch(c context.Context) error {
 		if err := rows.Scan(&rack.Id, &rack.Name, &rack.Description, &rack.DatacenterId); err != nil {
 			return errors.Annotate(err, "failed to scan rack").Err()
 		}
-		r.current = append(r.current, rack)
+		t.current = append(t.current, rack)
 	}
 	return nil
 }
 
+// needsUpdate returns true if the given row needs to be updated to match the given config.
+func (*RacksTable) needsUpdate(row, cfg *Rack) bool {
+	return row.Description != cfg.Description || row.DatacenterId != cfg.DatacenterId
+}
+
 // computeChanges computes the changes that need to be made to the racks in the database.
-func (r *RacksTable) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) error {
+func (t *RacksTable) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) error {
 	cfgs := make(map[string]*Rack, len(datacenters))
 	for _, dc := range datacenters {
 		for _, cfg := range dc.Rack {
-			id, ok := r.datacenters[dc.Name]
+			id, ok := t.datacenters[dc.Name]
 			if !ok {
-				return errors.Reason("failed to determine datacenter ID for rack: %s: unknown datacenter: %s", cfg.Name, dc.Name).Err()
+				return errors.Reason("failed to determine datacenter ID for rack %q: unknown datacenter %q", cfg.Name, dc.Name).Err()
 			}
 			cfgs[cfg.Name] = &Rack{
 				RackConfig: config.RackConfig{
@@ -84,28 +91,28 @@ func (r *RacksTable) computeChanges(c context.Context, datacenters []*config.Dat
 		}
 	}
 
-	for _, rack := range r.current {
+	for _, rack := range t.current {
 		if cfg, ok := cfgs[rack.Name]; ok {
 			// Rack found in the config.
-			if rack.Description != cfg.Description || rack.DatacenterId != cfg.DatacenterId {
+			if t.needsUpdate(rack, cfg) {
 				// Rack doesn't match the config.
-				r.updates = append(r.updates, cfg)
 				cfg.Id = rack.Id
+				t.updates = append(t.updates, cfg)
 			}
 			// Record that the rack config has been seen.
 			delete(cfgs, cfg.Name)
 		} else {
 			// Rack not found in the config.
-			r.removals = append(r.removals, rack.Name)
+			t.removals = append(t.removals, rack)
 		}
 	}
 
 	// Racks remaining in the map are present in the config but not the database.
-	// Iterate deterministically over the slice to determine which racks need to be added.
+	// Iterate deterministically over the slices to determine which racks need to be added.
 	for _, dc := range datacenters {
 		for _, cfg := range dc.Rack {
 			if rack, ok := cfgs[cfg.Name]; ok {
-				r.additions = append(r.additions, rack)
+				t.additions = append(t.additions, rack)
 			}
 		}
 	}
@@ -114,32 +121,35 @@ func (r *RacksTable) computeChanges(c context.Context, datacenters []*config.Dat
 
 // add adds all racks pending addition to the database, clearing pending additions.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
-func (r *RacksTable) add(c context.Context) error {
+func (t *RacksTable) add(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(r.additions) == 0 {
+	if len(t.additions) == 0 {
 		return nil
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, "INSERT INTO racks (name, description, datacenter_id) VALUES (?, ?, ?)")
+	stmt, err := db.PrepareContext(c, `
+		INSERT INTO racks (name, description, datacenter_id)
+		VALUES (?, ?, ?)
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
 	defer stmt.Close()
 
 	// Add each rack to the database, and update the slice of racks with each addition.
-	for len(r.additions) > 0 {
-		rack := r.additions[0]
+	for len(t.additions) > 0 {
+		rack := t.additions[0]
 		result, err := stmt.ExecContext(c, rack.Name, rack.Description, rack.DatacenterId)
 		if err != nil {
-			return errors.Annotate(err, "failed to add rack: %s", rack.Name).Err()
+			return errors.Annotate(err, "failed to add rack %q", rack.Name).Err()
 		}
-		r.current = append(r.current, rack)
-		r.additions = r.additions[1:]
-		logging.Infof(c, "Added rack: %s", rack.Name)
+		t.current = append(t.current, rack)
+		t.additions = t.additions[1:]
+		logging.Infof(c, "Added rack %q", rack.Name)
 		rack.Id, err = result.LastInsertId()
 		if err != nil {
-			return errors.Annotate(err, "failed to get rack ID: %s", rack.Name).Err()
+			return errors.Annotate(err, "failed to get rack ID %q", rack.Name).Err()
 		}
 	}
 	return nil
@@ -147,14 +157,17 @@ func (r *RacksTable) add(c context.Context) error {
 
 // remove removes all racks pending removal from the database, clearing pending removals.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
-func (r *RacksTable) remove(c context.Context) error {
+func (t *RacksTable) remove(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(r.removals) == 0 {
+	if len(t.removals) == 0 {
 		return nil
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, "DELETE FROM racks WHERE name = ?")
+	stmt, err := db.PrepareContext(c, `
+		DELETE FROM racks
+		WHERE id = ?
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
@@ -162,39 +175,43 @@ func (r *RacksTable) remove(c context.Context) error {
 
 	// Remove each rack from the database. It's more efficient to update the slice of
 	// racks once at the end rather than for each removal, so use a defer.
-	removed := stringset.New(len(r.removals))
+	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
 		var racks []*Rack
-		for _, rack := range r.current {
-			if !removed.Has(rack.Name) {
+		for _, rack := range t.current {
+			if _, ok := removed[rack.Id]; !ok {
 				racks = append(racks, rack)
 			}
 		}
-		r.current = racks
+		t.current = racks
 	}()
-	for len(r.removals) > 0 {
-		rack := r.removals[0]
-		if _, err := stmt.ExecContext(c, rack); err != nil {
+	for len(t.removals) > 0 {
+		rack := t.removals[0]
+		if _, err := stmt.ExecContext(c, rack.Id); err != nil {
 			// Defer ensures the slice of racks is updated even if we exit early.
-			return errors.Annotate(err, "failed to remove rack: %s", rack).Err()
+			return errors.Annotate(err, "failed to remove rack %q", rack.Name).Err()
 		}
-		removed.Add(rack)
-		r.removals = r.removals[1:]
-		logging.Infof(c, "Removed rack: %s", rack)
+		removed[rack.Id] = struct{}{}
+		t.removals = t.removals[1:]
+		logging.Infof(c, "Removed rack %q", rack.Name)
 	}
 	return nil
 }
 
 // update updates all racks pending update in the database, clearing pending updates.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
-func (r *RacksTable) update(c context.Context) error {
+func (t *RacksTable) update(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
-	if len(r.updates) == 0 {
+	if len(t.updates) == 0 {
 		return nil
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, "UPDATE racks SET description = ?, datacenter_id = ? WHERE id = ?")
+	stmt, err := db.PrepareContext(c, `
+		UPDATE racks
+		SET description = ?, datacenter_id = ?
+		WHERE id = ?
+	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
 	}
@@ -202,54 +219,55 @@ func (r *RacksTable) update(c context.Context) error {
 
 	// Update each rack in the database. It's more efficient to update the slice of
 	// racks once at the end rather than for each update, so use a defer.
-	updated := make(map[string]*Rack, len(r.updates))
+	updated := make(map[int64]*Rack, len(t.updates))
 	defer func() {
-		for _, rack := range r.current {
-			if _, ok := updated[rack.Name]; ok {
-				rack.Description = updated[rack.Name].Description
-				rack.DatacenterId = updated[rack.Name].DatacenterId
+		for _, rack := range t.current {
+			if u, ok := updated[rack.Id]; ok {
+				rack.Description = u.Description
+				rack.DatacenterId = u.DatacenterId
 			}
 		}
 	}()
-	for len(r.updates) > 0 {
-		rack := r.updates[0]
+	for len(t.updates) > 0 {
+		rack := t.updates[0]
 		if _, err := stmt.ExecContext(c, rack.Description, rack.DatacenterId, rack.Id); err != nil {
-			return errors.Annotate(err, "failed to update rack: %s", rack.Name).Err()
+			return errors.Annotate(err, "failed to update rack %q", rack.Name).Err()
 		}
-		updated[rack.Name] = rack
-		r.updates = r.updates[1:]
-		logging.Infof(c, "Updated rack: %s", rack.Name)
+		updated[rack.Id] = rack
+		t.updates = t.updates[1:]
+		logging.Infof(c, "Updated rack %q", rack.Name)
 	}
 	return nil
 }
 
 // ids returns a map of rack names to IDs.
-func (r *RacksTable) ids(c context.Context) map[string]int64 {
-	racks := make(map[string]int64, len(r.current))
-	for _, rack := range r.current {
+func (t *RacksTable) ids(c context.Context) map[string]int64 {
+	racks := make(map[string]int64, len(t.current))
+	for _, rack := range t.current {
 		racks[rack.Name] = rack.Id
 	}
 	return racks
 }
 
 // EnsureRacks ensures the database contains exactly the given racks.
-func EnsureRacks(c context.Context, cfgs []*config.DatacenterConfig, datacenterIds map[string]int64) error {
-	r := &RacksTable{}
-	r.datacenters = datacenterIds
-	if err := r.fetch(c); err != nil {
-		return errors.Annotate(err, "failed to fetch racks").Err()
+// Returns a map of rack names to IDs in the database.
+func EnsureRacks(c context.Context, cfgs []*config.DatacenterConfig, datacenterIds map[string]int64) (map[string]int64, error) {
+	t := &RacksTable{}
+	t.datacenters = datacenterIds
+	if err := t.fetch(c); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch racks").Err()
 	}
-	if err := r.computeChanges(c, cfgs); err != nil {
-		return errors.Annotate(err, "failed to compute changes").Err()
+	if err := t.computeChanges(c, cfgs); err != nil {
+		return nil, errors.Annotate(err, "failed to compute changes").Err()
 	}
-	if err := r.add(c); err != nil {
-		return errors.Annotate(err, "failed to add racks").Err()
+	if err := t.add(c); err != nil {
+		return nil, errors.Annotate(err, "failed to add racks").Err()
 	}
-	if err := r.remove(c); err != nil {
-		return errors.Annotate(err, "failed to remove racks").Err()
+	if err := t.remove(c); err != nil {
+		return nil, errors.Annotate(err, "failed to remove racks").Err()
 	}
-	if err := r.update(c); err != nil {
-		return errors.Annotate(err, "failed to update racks").Err()
+	if err := t.update(c); err != nil {
+		return nil, errors.Annotate(err, "failed to update racks").Err()
 	}
-	return nil
+	return t.ids(c), nil
 }

@@ -29,19 +29,19 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestRacks(t *testing.T) {
+func TestSwitches(t *testing.T) {
 	Convey("fetch", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `^SELECT id, name, description, datacenter_id FROM racks$`
-		columns := []string{"id", "name", "description", "datacenter_id"}
+		selectStmt := `^SELECT id, name, description, ports, rack_id FROM switches$`
+		columns := []string{"id", "name", "description", "ports", "rack_id"}
 		rows := sqlmock.NewRows(columns)
-		table := &RacksTable{}
+		table := &SwitchesTable{}
 
 		Convey("query failed", func() {
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			So(table.fetch(c), ShouldErrLike, "failed to select racks")
+			So(table.fetch(c), ShouldErrLike, "failed to select switches")
 			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
@@ -54,26 +54,28 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			rows.AddRow(1, "rack 1", "description 1", 1)
-			rows.AddRow(2, "rack 2", "description 2", 2)
+			rows.AddRow(1, "switch 1", "description 1", 10, 1)
+			rows.AddRow(2, "switch 2", "description 2", 20, 2)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			So(table.fetch(c), ShouldBeNil)
-			So(table.current, ShouldResemble, []*Rack{
+			So(table.current, ShouldResemble, []*Switch{
 				{
-					RackConfig: config.RackConfig{
-						Name:        "rack 1",
+					SwitchConfig: config.SwitchConfig{
+						Name:        "switch 1",
 						Description: "description 1",
+						Ports:       10,
 					},
-					Id:           1,
-					DatacenterId: 1,
+					Id:     1,
+					RackId: 1,
 				},
 				{
-					RackConfig: config.RackConfig{
-						Name:        "rack 2",
+					SwitchConfig: config.SwitchConfig{
+						Name:        "switch 2",
 						Description: "description 2",
+						Ports:       20,
 					},
-					Id:           2,
-					DatacenterId: 2,
+					Id:     2,
+					RackId: 2,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -82,8 +84,8 @@ func TestRacks(t *testing.T) {
 
 	Convey("computeChanges", t, func() {
 		c := context.Background()
-		table := &RacksTable{
-			datacenters: make(map[string]int64, 0),
+		table := &SwitchesTable{
+			racks: make(map[string]int64, 0),
 		}
 
 		Convey("empty", func() {
@@ -100,11 +102,16 @@ func TestRacks(t *testing.T) {
 					Rack: []*config.RackConfig{
 						{
 							Name: "rack",
+							Switch: []*config.SwitchConfig{
+								{
+									Name: "switch",
+								},
+							},
 						},
 					},
 				},
 			}
-			So(table.computeChanges(c, dcs), ShouldErrLike, "failed to determine datacenter ID")
+			So(table.computeChanges(c, dcs), ShouldErrLike, "failed to determine rack ID")
 			So(table.additions, ShouldBeEmpty)
 			So(table.updates, ShouldBeEmpty)
 			So(table.removals, ShouldBeEmpty)
@@ -116,8 +123,29 @@ func TestRacks(t *testing.T) {
 					Name: "datacenter 1",
 					Rack: []*config.RackConfig{
 						{
-							Name:        "rack 1",
-							Description: "description 1",
+							Name: "rack 1",
+							Switch: []*config.SwitchConfig{
+								{
+									Name:        "switch 1",
+									Description: "description 1",
+									Ports:       10,
+								},
+								{
+									Name:        "switch 2",
+									Description: "description 2",
+									Ports:       20,
+								},
+							},
+						},
+						{
+							Name: "rack 2",
+							Switch: []*config.SwitchConfig{
+								{
+									Name:        "switch 3",
+									Description: "description 3",
+									Ports:       30,
+								},
+							},
 						},
 					},
 				},
@@ -125,29 +153,54 @@ func TestRacks(t *testing.T) {
 					Name: "datacenter 2",
 					Rack: []*config.RackConfig{
 						{
-							Name:        "rack 2",
-							Description: "description 2",
+							Name: "rack 3",
+							Switch: []*config.SwitchConfig{
+								{
+									Name:        "switch 4",
+									Description: "description 4",
+									Ports:       40,
+								},
+							},
 						},
 					},
 				},
 			}
-			table.datacenters[dcs[0].Name] = 1
-			table.datacenters[dcs[1].Name] = 2
+			table.racks[dcs[0].Rack[0].Name] = 1
+			table.racks[dcs[0].Rack[1].Name] = 2
+			table.racks[dcs[1].Rack[0].Name] = 3
 			table.computeChanges(c, dcs)
-			So(table.additions, ShouldResemble, []*Rack{
+			So(table.additions, ShouldResemble, []*Switch{
 				{
-					RackConfig: config.RackConfig{
-						Name:        "rack 1",
+					SwitchConfig: config.SwitchConfig{
+						Name:        "switch 1",
 						Description: "description 1",
+						Ports:       10,
 					},
-					DatacenterId: table.datacenters[dcs[0].Name],
+					RackId: table.racks[dcs[0].Rack[0].Name],
 				},
 				{
-					RackConfig: config.RackConfig{
-						Name:        "rack 2",
+					SwitchConfig: config.SwitchConfig{
+						Name:        "switch 2",
 						Description: "description 2",
+						Ports:       20,
 					},
-					DatacenterId: table.datacenters[dcs[1].Name],
+					RackId: table.racks[dcs[0].Rack[0].Name],
+				},
+				{
+					SwitchConfig: config.SwitchConfig{
+						Name:        "switch 3",
+						Description: "description 3",
+						Ports:       30,
+					},
+					RackId: table.racks[dcs[0].Rack[1].Name],
+				},
+				{
+					SwitchConfig: config.SwitchConfig{
+						Name:        "switch 4",
+						Description: "description 4",
+						Ports:       40,
+					},
+					RackId: table.racks[dcs[1].Rack[0].Name],
 				},
 			})
 			So(table.updates, ShouldBeEmpty)
@@ -155,83 +208,92 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("update", func() {
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
-					Name:        "rack 1",
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name:        "switch 1",
 					Description: "old description",
+					Ports:       10,
 				},
-				Id:           1,
-				DatacenterId: 1,
+				Id:     1,
+				RackId: 1,
 			})
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack 2",
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch 2",
 				},
-				Id:           1,
-				DatacenterId: 1,
+				Id:     1,
+				RackId: 1,
 			})
 			dcs := []*config.DatacenterConfig{
 				{
-					Name: "datacenter 1",
+					Name: "datacenter",
 					Rack: []*config.RackConfig{
 						{
-							Name:        "rack 1",
-							Description: "new description",
+							Name: "rack 1",
+							Switch: []*config.SwitchConfig{
+								{
+									Name:        table.current[0].Name,
+									Description: "new description",
+									Ports:       20,
+								},
+							},
 						},
-					},
-				},
-				{
-					Name: "datacenter 2",
-					Rack: []*config.RackConfig{
 						{
 							Name: "rack 2",
+							Switch: []*config.SwitchConfig{
+								{
+									Name: table.current[1].Name,
+								},
+							},
 						},
 					},
 				},
 			}
-			table.datacenters[dcs[0].Name] = 1
-			table.datacenters[dcs[1].Name] = 2
+			table.racks[dcs[0].Rack[0].Name] = 1
+			table.racks[dcs[0].Rack[1].Name] = 2
 			table.computeChanges(c, dcs)
 			So(table.additions, ShouldBeEmpty)
-			So(table.updates, ShouldResemble, []*Rack{
+			So(table.updates, ShouldResemble, []*Switch{
 				{
-					RackConfig: config.RackConfig{
-						Name:        dcs[0].Rack[0].Name,
-						Description: dcs[0].Rack[0].Description,
+					SwitchConfig: config.SwitchConfig{
+						Name:        dcs[0].Rack[0].Switch[0].Name,
+						Description: dcs[0].Rack[0].Switch[0].Description,
+						Ports:       dcs[0].Rack[0].Switch[0].Ports,
 					},
-					Id:           table.current[0].Id,
-					DatacenterId: table.datacenters[dcs[0].Name],
+					Id:     table.current[0].Id,
+					RackId: table.racks[dcs[0].Rack[0].Name],
 				},
 				{
-					RackConfig: config.RackConfig{
-						Name:        dcs[1].Rack[0].Name,
-						Description: dcs[1].Rack[0].Description,
+					SwitchConfig: config.SwitchConfig{
+						Name:        dcs[0].Rack[1].Switch[0].Name,
+						Description: dcs[0].Rack[1].Switch[0].Description,
+						Ports:       dcs[0].Rack[1].Switch[0].Ports,
 					},
-					Id:           table.current[1].Id,
-					DatacenterId: table.datacenters[dcs[1].Name],
+					Id:     table.current[0].Id,
+					RackId: table.racks[dcs[0].Rack[1].Name],
 				},
 			})
 			So(table.removals, ShouldBeEmpty)
 		})
 
 		Convey("removal", func() {
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack",
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch",
 				},
-				Id:           1,
-				DatacenterId: 1,
+				Id:     1,
+				RackId: 1,
 			})
 			table.computeChanges(c, nil)
 			So(table.additions, ShouldBeEmpty)
 			So(table.updates, ShouldBeEmpty)
-			So(table.removals, ShouldResemble, []*Rack{
+			So(table.removals, ShouldResemble, []*Switch{
 				{
-					RackConfig: config.RackConfig{
+					SwitchConfig: config.SwitchConfig{
 						Name: table.current[0].Name,
 					},
-					Id:           table.current[0].Id,
-					DatacenterId: table.current[0].DatacenterId,
+					Id:     table.current[0].Id,
+					RackId: table.current[0].RackId,
 				},
 			})
 		})
@@ -241,8 +303,8 @@ func TestRacks(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `^INSERT INTO racks \(name, description, datacenter_id\) VALUES \(\?, \?, \?\)$`
-		table := &RacksTable{}
+		insertStmt := `^INSERT INTO switches \(name, description, ports, rack_id\) VALUES \(\?, \?, \?, \?\)$`
+		table := &SwitchesTable{}
 
 		Convey("empty", func() {
 			So(table.add(c), ShouldBeNil)
@@ -252,11 +314,11 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("prepare failed", func() {
-			table.additions = append(table.additions, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack",
+			table.additions = append(table.additions, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch",
 				},
-				DatacenterId: 1,
+				RackId: 1,
 			})
 			m.ExpectPrepare(insertStmt).WillReturnError(fmt.Errorf("error"))
 			So(table.add(c), ShouldErrLike, "failed to prepare statement")
@@ -266,26 +328,26 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("exec failed", func() {
-			table.additions = append(table.additions, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack",
+			table.additions = append(table.additions, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch",
 				},
-				DatacenterId: 1,
+				RackId: 1,
 			})
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WillReturnError(fmt.Errorf("error"))
-			So(table.add(c), ShouldErrLike, "failed to add rack")
+			So(table.add(c), ShouldErrLike, "failed to add switch")
 			So(table.additions, ShouldHaveLength, 1)
 			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			table.additions = append(table.additions, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack",
+			table.additions = append(table.additions, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch",
 				},
-				DatacenterId: 1,
+				RackId: 1,
 			})
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -301,8 +363,8 @@ func TestRacks(t *testing.T) {
 		defer func() { So(m.ExpectationsWereMet(), ShouldBeNil) }()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		deleteStmt := `^DELETE FROM racks WHERE id = \?$`
-		table := &RacksTable{}
+		deleteStmt := `^DELETE FROM switches WHERE id = \?$`
+		table := &SwitchesTable{}
 
 		Convey("empty", func() {
 			So(table.remove(c), ShouldBeNil)
@@ -312,14 +374,14 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("prepare failed", func() {
-			table.removals = append(table.removals, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack",
+			table.removals = append(table.removals, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch",
 				},
 				Id: 1,
 			})
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -332,35 +394,35 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("exec failed", func() {
-			table.removals = append(table.removals, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack",
+			table.removals = append(table.removals, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch",
 				},
 				Id: 1,
 			})
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
 			})
 			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WillReturnError(fmt.Errorf("error"))
-			So(table.remove(c), ShouldErrLike, "failed to remove rack")
+			So(table.remove(c), ShouldErrLike, "failed to remove switch")
 			So(table.removals, ShouldHaveLength, 1)
 			So(table.current, ShouldHaveLength, 1)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			table.removals = append(table.removals, &Rack{
-				RackConfig: config.RackConfig{
-					Name: "rack",
+			table.removals = append(table.removals, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name: "switch",
 				},
 				Id: 1,
 			})
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -378,8 +440,8 @@ func TestRacks(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		updateStmt := `^UPDATE racks SET description = \?, datacenter_id = \? WHERE id = \?$`
-		table := &RacksTable{}
+		updateStmt := `^UPDATE switches SET description = \?, ports = \?, rack_id = \? WHERE id = \?$`
+		table := &SwitchesTable{}
 
 		Convey("empty", func() {
 			So(table.update(c), ShouldBeNil)
@@ -389,21 +451,23 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("prepare failed", func() {
-			table.updates = append(table.updates, &Rack{
-				RackConfig: config.RackConfig{
-					Name:        "rack",
+			table.updates = append(table.updates, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name:        "switch",
 					Description: "new description",
+					Ports:       20,
 				},
-				Id:           1,
-				DatacenterId: 2,
+				Id:     1,
+				RackId: 2,
 			})
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					Ports:       10,
 				},
-				Id:           table.updates[0].Id,
-				DatacenterId: 1,
+				Id:     table.updates[0].Id,
+				RackId: 1,
 			})
 			m.ExpectPrepare(updateStmt).WillReturnError(fmt.Errorf("error"))
 			So(table.update(c), ShouldErrLike, "failed to prepare statement")
@@ -413,46 +477,50 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("exec failed", func() {
-			table.updates = append(table.updates, &Rack{
-				RackConfig: config.RackConfig{
-					Name:        "rack",
+			table.updates = append(table.updates, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name:        "switch",
 					Description: "new description",
+					Ports:       20,
 				},
-				Id:           1,
-				DatacenterId: 2,
+				Id:     1,
+				RackId: 2,
 			})
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					Ports:       10,
 				},
-				Id:           table.updates[0].Id,
-				DatacenterId: 1,
+				Id:     table.updates[0].Id,
+				RackId: 1,
 			})
 			m.ExpectPrepare(updateStmt)
 			m.ExpectExec(updateStmt).WillReturnError(fmt.Errorf("error"))
-			So(table.update(c), ShouldErrLike, "failed to update rack")
+			So(table.update(c), ShouldErrLike, "failed to update switch")
 			So(table.updates, ShouldHaveLength, 1)
 			So(table.current, ShouldHaveLength, 1)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			table.updates = append(table.updates, &Rack{
-				RackConfig: config.RackConfig{
-					Name:        "rack",
+			table.updates = append(table.updates, &Switch{
+				SwitchConfig: config.SwitchConfig{
+					Name:        "switch",
 					Description: "new description",
+					Ports:       20,
 				},
-				Id:           1,
-				DatacenterId: 2,
+				Id:     1,
+				RackId: 2,
 			})
-			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+			table.current = append(table.current, &Switch{
+				SwitchConfig: config.SwitchConfig{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					Ports:       10,
 				},
-				Id:           table.updates[0].Id,
-				DatacenterId: 1,
+				Id:     table.updates[0].Id,
+				RackId: 1,
 			})
 			m.ExpectPrepare(updateStmt)
 			m.ExpectExec(updateStmt).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -460,7 +528,8 @@ func TestRacks(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.current, ShouldHaveLength, 1)
 			So(table.current[0].Description, ShouldEqual, "new description")
-			So(table.current[0].DatacenterId, ShouldEqual, 2)
+			So(table.current[0].Ports, ShouldEqual, 20)
+			So(table.current[0].RackId, ShouldEqual, 2)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})

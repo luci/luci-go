@@ -74,11 +74,11 @@ func importConfigs(c context.Context) error {
 	for _, datacenterFile := range datacenterFiles.Datacenter {
 		datacenter := &config.DatacenterConfig{}
 		if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacenterFile, textproto.Message(datacenter), nil); err != nil {
-			return errors.Annotate(err, "failed to load datacenter config: %s", datacenterFile).Err()
+			return errors.Annotate(err, "failed to load datacenter config %q", datacenterFile).Err()
 		}
 		datacenterConfigFiles[datacenterFile] = datacenter
 		datacenterConfigs = append(datacenterConfigs, datacenter)
-		logging.Infof(c, "Found configured datacenter: %s", datacenter.Name)
+		logging.Infof(c, "Found configured datacenter %q", datacenter.Name)
 	}
 
 	validateDatacenters(validationContext, datacenterConfigFiles)
@@ -90,9 +90,13 @@ func importConfigs(c context.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure datacenters").Err()
 	}
-	err = model.EnsureRacks(c, datacenterConfigs, datacenterIds)
+	rackIds, err := model.EnsureRacks(c, datacenterConfigs, datacenterIds)
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure racks").Err()
+	}
+	err = model.EnsureSwitches(c, datacenterConfigs, rackIds)
+	if err != nil {
+		return errors.Annotate(err, "failed to ensure switches").Err()
 	}
 
 	return nil
@@ -110,7 +114,7 @@ func validateDatacentersConfig(c *validation.Context, datacentersConfig *config.
 			c.Errorf("datacenter filenames are required and must be non-empty")
 		}
 		if files.Has(file) {
-			c.Errorf("duplicate filename: %s", file)
+			c.Errorf("duplicate filename %q", file)
 		}
 		files.Add(file)
 	}
@@ -131,7 +135,7 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 			c.Errorf("datacenter names are required and must be non-empty")
 		}
 		if datacenters.Has(datacenterConfig.Name) {
-			c.Errorf("duplicate datacenter: %s", datacenterConfig.Name)
+			c.Errorf("duplicate datacenter %q", datacenterConfig.Name)
 		}
 		datacenters.Add(datacenterConfig.Name)
 
@@ -141,7 +145,7 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 				c.Errorf("rack names are required and must be non-empty")
 			}
 			if racks.Has(rackConfig.Name) {
-				c.Errorf("duplicate rack: %s", rackConfig.Name)
+				c.Errorf("duplicate rack %q", rackConfig.Name)
 			}
 			racks.Add(rackConfig.Name)
 
@@ -151,16 +155,16 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 					c.Errorf("switch names are required and must be non-empty")
 				}
 				if switches.Has(switchConfig.Name) {
-					c.Errorf("duplicate switch: %s", switchConfig.Name)
+					c.Errorf("duplicate switch %q", switchConfig.Name)
 				}
 				switches.Add(switchConfig.Name)
 
 				c.Enter("switch: %q", switchConfig.Name)
 				if switchConfig.Ports < 1 {
-					c.Errorf("switch must have at least one port: %s", switchConfig.Name)
+					c.Errorf("switch %q must have at least one port", switchConfig.Name)
 				}
 				if switchConfig.Ports > switchMaxPorts {
-					c.Errorf("switch must have at most %d ports: %s", switchMaxPorts, switchConfig.Name)
+					c.Errorf("switch %q must have at most %d ports", switchConfig.Name, switchMaxPorts)
 				}
 				c.Exit()
 			}

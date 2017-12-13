@@ -8,6 +8,7 @@ package crimson;
 
 import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto";
 
 // Crimson implements the Crimson service.
 service Crimson {
@@ -15,4 +16,6 @@ service Crimson {
   rpc GetDatacenters(DatacentersRequest) returns (DatacentersResponse);
   // GetRacks retrieves racks.
   rpc GetRacks(RacksRequest) returns (RacksResponse);
+  // GetSwitches retrieves switches.
+  rpc GetSwitches(SwitchesRequest) returns (SwitchesResponse);
 }

@@ -37,19 +37,19 @@ func TestDatacenters(t *testing.T) {
 		selectStmt := `^SELECT id, name, description FROM datacenters$`
 		columns := []string{"id", "name", "description"}
 		rows := sqlmock.NewRows(columns)
-		d := &DatacentersTable{}
+		table := &DatacentersTable{}
 
 		Convey("query failed", func() {
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			So(d.fetch(c), ShouldErrLike, "failed to select datacenters")
-			So(d.current, ShouldBeEmpty)
+			So(table.fetch(c), ShouldErrLike, "failed to select datacenters")
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("empty", func() {
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			So(d.fetch(c), ShouldBeNil)
-			So(d.current, ShouldBeEmpty)
+			So(table.fetch(c), ShouldBeNil)
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
@@ -57,8 +57,8 @@ func TestDatacenters(t *testing.T) {
 			rows.AddRow(1, "datacenter 1", "description 1")
 			rows.AddRow(2, "datacenter 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			So(d.fetch(c), ShouldBeNil)
-			So(d.current, ShouldResemble, []*Datacenter{
+			So(table.fetch(c), ShouldBeNil)
+			So(table.current, ShouldResemble, []*Datacenter{
 				{
 					DatacenterConfig: config.DatacenterConfig{
 						Name:        "datacenter 1",
@@ -79,14 +79,14 @@ func TestDatacenters(t *testing.T) {
 	})
 
 	Convey("computeChanges", t, func() {
-		d := &DatacentersTable{}
+		table := &DatacentersTable{}
 		c := context.Background()
 
 		Convey("empty", func() {
-			d.computeChanges(c, nil)
-			So(d.additions, ShouldBeEmpty)
-			So(d.updates, ShouldBeEmpty)
-			So(d.removals, ShouldBeEmpty)
+			table.computeChanges(c, nil)
+			So(table.additions, ShouldBeEmpty)
+			So(table.updates, ShouldBeEmpty)
+			So(table.removals, ShouldBeEmpty)
 		})
 
 		Convey("addition", func() {
@@ -100,23 +100,27 @@ func TestDatacenters(t *testing.T) {
 					Description: "description 2",
 				},
 			}
-			d.computeChanges(c, dcs)
-			So(d.additions, ShouldResemble, []*config.DatacenterConfig{
+			table.computeChanges(c, dcs)
+			So(table.additions, ShouldResemble, []*Datacenter{
 				{
-					Name:        "datacenter 1",
-					Description: "description 1",
+					DatacenterConfig: config.DatacenterConfig{
+						Name:        "datacenter 1",
+						Description: "description 1",
+					},
 				},
 				{
-					Name:        "datacenter 2",
-					Description: "description 2",
+					DatacenterConfig: config.DatacenterConfig{
+						Name:        "datacenter 2",
+						Description: "description 2",
+					},
 				},
 			})
-			So(d.updates, ShouldBeEmpty)
-			So(d.removals, ShouldBeEmpty)
+			So(table.updates, ShouldBeEmpty)
+			So(table.removals, ShouldBeEmpty)
 		})
 
 		Convey("update", func() {
-			d.current = append(d.current, &Datacenter{
+			table.current = append(table.current, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
 					Name:        "datacenter",
 					Description: "old description",
@@ -125,37 +129,42 @@ func TestDatacenters(t *testing.T) {
 			})
 			dcs := []*config.DatacenterConfig{
 				{
-					Name:        d.current[0].Name,
+					Name:        table.current[0].Name,
 					Description: "new description",
 				},
 			}
-			d.computeChanges(c, dcs)
-			So(d.additions, ShouldBeEmpty)
-			So(d.updates, ShouldHaveLength, 1)
-			So(d.updates, ShouldResemble, []*Datacenter{
+			table.computeChanges(c, dcs)
+			So(table.additions, ShouldBeEmpty)
+			So(table.updates, ShouldHaveLength, 1)
+			So(table.updates, ShouldResemble, []*Datacenter{
 				{
 					DatacenterConfig: config.DatacenterConfig{
-						Name:        d.current[0].Name,
+						Name:        table.current[0].Name,
 						Description: dcs[0].Description,
 					},
-					Id: d.current[0].Id,
+					Id: table.current[0].Id,
 				},
 			})
-			So(d.removals, ShouldBeEmpty)
+			So(table.removals, ShouldBeEmpty)
 		})
 
 		Convey("removal", func() {
-			d.current = append(d.current, &Datacenter{
+			table.current = append(table.current, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
 					Name: "datacenter",
 				},
 				Id: 1,
 			})
-			d.computeChanges(c, nil)
-			So(d.additions, ShouldBeEmpty)
-			So(d.updates, ShouldBeEmpty)
-			So(d.removals, ShouldResemble, []string{
-				d.current[0].Name,
+			table.computeChanges(c, nil)
+			So(table.additions, ShouldBeEmpty)
+			So(table.updates, ShouldBeEmpty)
+			So(table.removals, ShouldResemble, []*Datacenter{
+				{
+					DatacenterConfig: config.DatacenterConfig{
+						Name: table.current[0].Name,
+					},
+					Id: 1,
+				},
 			})
 		})
 	})
@@ -165,47 +174,53 @@ func TestDatacenters(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		insertStmt := `^INSERT INTO datacenters \(name, description\) VALUES \(\?, \?\)$`
-		d := &DatacentersTable{}
+		table := &DatacentersTable{}
 
 		Convey("empty", func() {
-			So(d.add(c), ShouldBeNil)
-			So(d.additions, ShouldBeEmpty)
-			So(d.current, ShouldBeEmpty)
+			So(table.add(c), ShouldBeNil)
+			So(table.additions, ShouldBeEmpty)
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("prepare failed", func() {
-			d.additions = append(d.additions, &config.DatacenterConfig{
-				Name: "datacenter",
+			table.additions = append(table.additions, &Datacenter{
+				DatacenterConfig: config.DatacenterConfig{
+					Name: "datacenter",
+				},
 			})
 			m.ExpectPrepare(insertStmt).WillReturnError(fmt.Errorf("error"))
-			So(d.add(c), ShouldErrLike, "failed to prepare statement")
-			So(d.additions, ShouldHaveLength, 1)
-			So(d.current, ShouldBeEmpty)
+			So(table.add(c), ShouldErrLike, "failed to prepare statement")
+			So(table.additions, ShouldHaveLength, 1)
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("exec failed", func() {
-			d.additions = append(d.additions, &config.DatacenterConfig{
-				Name: "datacenter",
+			table.additions = append(table.additions, &Datacenter{
+				DatacenterConfig: config.DatacenterConfig{
+					Name: "datacenter",
+				},
 			})
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WillReturnError(fmt.Errorf("error"))
-			So(d.add(c), ShouldErrLike, "failed to add datacenter")
-			So(d.additions, ShouldHaveLength, 1)
-			So(d.current, ShouldBeEmpty)
+			So(table.add(c), ShouldErrLike, "failed to add datacenter")
+			So(table.additions, ShouldHaveLength, 1)
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			d.additions = append(d.additions, &config.DatacenterConfig{
-				Name: "datacenter",
+			table.additions = append(table.additions, &Datacenter{
+				DatacenterConfig: config.DatacenterConfig{
+					Name: "datacenter",
+				},
 			})
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WillReturnResult(sqlmock.NewResult(1, 1))
-			So(d.add(c), ShouldBeNil)
-			So(d.additions, ShouldBeEmpty)
-			So(d.current, ShouldHaveLength, 1)
+			So(table.add(c), ShouldBeNil)
+			So(table.additions, ShouldBeEmpty)
+			So(table.current, ShouldHaveLength, 1)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})
@@ -214,60 +229,75 @@ func TestDatacenters(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		deleteStmt := `^DELETE FROM datacenters WHERE name = \?$`
-		d := &DatacentersTable{}
+		deleteStmt := `^DELETE FROM datacenters WHERE id = \?$`
+		table := &DatacentersTable{}
 
 		Convey("empty", func() {
-			So(d.remove(c), ShouldBeNil)
-			So(d.removals, ShouldBeEmpty)
-			So(d.current, ShouldBeEmpty)
+			So(table.remove(c), ShouldBeNil)
+			So(table.removals, ShouldBeEmpty)
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("prepare failed", func() {
-			d.removals = append(d.removals, "datacenter")
-			d.current = append(d.current, &Datacenter{
+			table.removals = append(table.removals, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
-					Name: d.removals[0],
+					Name: "datacenter",
 				},
 				Id: 1,
 			})
+			table.current = append(table.current, &Datacenter{
+				DatacenterConfig: config.DatacenterConfig{
+					Name: table.removals[0].Name,
+				},
+				Id: table.removals[0].Id,
+			})
 			m.ExpectPrepare(deleteStmt).WillReturnError(fmt.Errorf("error"))
-			So(d.remove(c), ShouldErrLike, "failed to prepare statement")
-			So(d.removals, ShouldHaveLength, 1)
-			So(d.current, ShouldHaveLength, 1)
+			So(table.remove(c), ShouldErrLike, "failed to prepare statement")
+			So(table.removals, ShouldHaveLength, 1)
+			So(table.current, ShouldHaveLength, 1)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("exec failed", func() {
-			d.removals = append(d.removals, "datacenter")
-			d.current = append(d.current, &Datacenter{
+			table.removals = append(table.removals, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
-					Name: d.removals[0],
+					Name: "datacenter",
 				},
 				Id: 1,
 			})
+			table.current = append(table.current, &Datacenter{
+				DatacenterConfig: config.DatacenterConfig{
+					Name: table.removals[0].Name,
+				},
+				Id: table.removals[0].Id,
+			})
 			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WillReturnError(fmt.Errorf("error"))
-			So(d.remove(c), ShouldErrLike, "failed to remove datacenter")
-			So(d.removals, ShouldHaveLength, 1)
-			So(d.current, ShouldHaveLength, 1)
+			So(table.remove(c), ShouldErrLike, "failed to remove datacenter")
+			So(table.removals, ShouldHaveLength, 1)
+			So(table.current, ShouldHaveLength, 1)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			d.removals = append(d.removals, "datacenter")
-			d.current = append(d.current, &Datacenter{
+			table.removals = append(table.removals, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
-					Name: d.removals[0],
+					Name: "datacenter",
 				},
 				Id: 1,
 			})
+			table.current = append(table.current, &Datacenter{
+				DatacenterConfig: config.DatacenterConfig{
+					Name: table.removals[0].Name,
+				},
+				Id: table.removals[0].Id,
+			})
 			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WillReturnResult(sqlmock.NewResult(1, 1))
-			So(d.remove(c), ShouldBeNil)
-			So(d.removals, ShouldBeEmpty)
-			So(d.current, ShouldBeEmpty)
+			So(table.remove(c), ShouldBeNil)
+			So(table.removals, ShouldBeEmpty)
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})
@@ -277,81 +307,81 @@ func TestDatacenters(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		updateStmt := `^UPDATE datacenters SET description = \? WHERE id = \?$`
-		d := &DatacentersTable{}
+		table := &DatacentersTable{}
 
 		Convey("empty", func() {
-			So(d.update(c), ShouldBeNil)
-			So(d.updates, ShouldBeEmpty)
-			So(d.current, ShouldBeEmpty)
+			So(table.update(c), ShouldBeNil)
+			So(table.updates, ShouldBeEmpty)
+			So(table.current, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("prepare failed", func() {
-			d.updates = append(d.updates, &Datacenter{
+			table.updates = append(table.updates, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
 					Name:        "datacenter",
 					Description: "new description",
 				},
 				Id: 1,
 			})
-			d.current = append(d.current, &Datacenter{
+			table.current = append(table.current, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
-					Name:        d.updates[0].Name,
+					Name:        table.updates[0].Name,
 					Description: "old description",
 				},
-				Id: d.updates[0].Id,
+				Id: table.updates[0].Id,
 			})
 			m.ExpectPrepare(updateStmt).WillReturnError(fmt.Errorf("error"))
-			So(d.update(c), ShouldErrLike, "failed to prepare statement")
-			So(d.updates, ShouldHaveLength, 1)
-			So(d.current, ShouldHaveLength, 1)
+			So(table.update(c), ShouldErrLike, "failed to prepare statement")
+			So(table.updates, ShouldHaveLength, 1)
+			So(table.current, ShouldHaveLength, 1)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("exec failed", func() {
-			d.updates = append(d.updates, &Datacenter{
+			table.updates = append(table.updates, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
 					Name:        "datacenter",
 					Description: "new description",
 				},
 				Id: 1,
 			})
-			d.current = append(d.current, &Datacenter{
+			table.current = append(table.current, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
-					Name:        d.updates[0].Name,
+					Name:        table.updates[0].Name,
 					Description: "old description",
 				},
-				Id: d.updates[0].Id,
+				Id: table.updates[0].Id,
 			})
 			m.ExpectPrepare(updateStmt)
 			m.ExpectExec(updateStmt).WillReturnError(fmt.Errorf("error"))
-			So(d.update(c), ShouldErrLike, "failed to update datacenter")
-			So(d.updates, ShouldHaveLength, 1)
-			So(d.current, ShouldHaveLength, 1)
+			So(table.update(c), ShouldErrLike, "failed to update datacenter")
+			So(table.updates, ShouldHaveLength, 1)
+			So(table.current, ShouldHaveLength, 1)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			d.updates = append(d.updates, &Datacenter{
+			table.updates = append(table.updates, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
 					Name:        "datacenter",
 					Description: "new description",
 				},
 				Id: 1,
 			})
-			d.current = append(d.current, &Datacenter{
+			table.current = append(table.current, &Datacenter{
 				DatacenterConfig: config.DatacenterConfig{
-					Name:        d.updates[0].Name,
+					Name:        table.updates[0].Name,
 					Description: "old description",
 				},
-				Id: d.updates[0].Id,
+				Id: table.updates[0].Id,
 			})
 			m.ExpectPrepare(updateStmt)
 			m.ExpectExec(updateStmt).WillReturnResult(sqlmock.NewResult(1, 1))
-			So(d.update(c), ShouldBeNil)
-			So(d.updates, ShouldBeEmpty)
-			So(d.current, ShouldHaveLength, 1)
-			So(d.current[0].Description, ShouldEqual, "new description")
+			So(table.update(c), ShouldBeNil)
+			So(table.updates, ShouldBeEmpty)
+			So(table.current, ShouldHaveLength, 1)
+			So(table.current[0].Description, ShouldEqual, "new description")
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})
