@@ -107,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "4848d422_4ede7096",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T19:45:54Z",
+      "side": 1,
+      "message": "Oh right yes here there is. :)",
+      "parentUuid": "c767e22c_33105f3d",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3f1c1318_c6b78421",
         "filename": "client/cmd/swarming/collect.go",
         "patchSetId": 3
@@ -142,6 +160,30 @@
       "side": 1,
       "message": "same as above, in the swarming client there is a concept of task.",
       "parentUuid": "3f1c1318_c6b78421",
+      "range": {
+        "startLine": 340,
+        "startChar": 10,
+        "endLine": 340,
+        "endChar": 25
+      },
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e64e90b_8e122464",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T19:45:54Z",
+      "side": 1,
+      "message": "same meant about !\u003d \"\", sorry for the ambiguity.",
+      "parentUuid": "3043036a_85fa99fd",
       "range": {
         "startLine": 340,
         "startChar": 10,

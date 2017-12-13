@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f54d5bc_c5cea9a0",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T19:45:54Z",
+      "side": 1,
+      "message": "personally, I\u0027d use a single mu, the one from line 48, so I\u0027d move files just under. It\u0027s not going to be under contention enough to warrant two separate locks.",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4654da3d_8114bef2",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T19:45:54Z",
+      "side": 1,
+      "message": "you may want to preallocate files to 1024, so that the first 100 files are not causing unnecessary heap reallocation, e.g.\n\nd.files \u003d make([]string, 0, 1024)\nthen you can \"repack\" at the end of the function with:\n\nresult :\u003d make([]string, len(d.files))\ncopy(result, d.files)\nd.files \u003d nil\nreturn result",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a97bd8c5_117d0f26",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T19:45:54Z",
+      "side": 1,
+      "message": "s/tmp/err/ ?",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43e71811_b7dac938",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T19:45:54Z",
+      "side": 1,
+      "message": "you forgot to lock before swapping it.",
+      "revId": "feb092f97d9f55342f39ffe31805bc3ff74af3ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
