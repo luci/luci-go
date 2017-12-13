@@ -90,9 +90,13 @@ func importConfigs(c context.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure datacenters").Err()
 	}
-	err = model.EnsureRacks(c, datacenterConfigs, datacenterIds)
+	rackIds, err := model.EnsureRacks(c, datacenterConfigs, datacenterIds)
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure racks").Err()
+	}
+	err = model.EnsureSwitches(c, datacenterConfigs, rackIds)
+	if err != nil {
+		return errors.Annotate(err, "failed to ensure switches").Err()
 	}
 
 	return nil

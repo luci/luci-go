@@ -133,3 +133,36 @@ func getRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.R
 	}
 	return racks, nil
 }
+
+// GetSwitches handles a request to retrieve switches.
+func (*Service) GetSwitches(c context.Context, req *crimson.SwitchesRequest) (*crimson.SwitchesResponse, error) {
+	switches, err := getSwitches(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Racks...), stringset.NewFromSlice(req.Datacenters...))
+	if err != nil {
+		return nil, internalError(c, err)
+	}
+	return &crimson.SwitchesResponse{
+		Switches: switches,
+	}, nil
+}
+
+// getSwitches returns a slice of switches in the database.
+func getSwitches(c context.Context, names, racks, datacenters stringset.Set) ([]*crimson.Switch, error) {
+	db := database.Get(c)
+	rows, err := db.QueryContext(c, "SELECT switches.name, switches.description, switches.ports, racks.name, datacenters.name FROM switches, racks, datacenters WHERE switches.rack_id = racks.id AND racks.datacenter_id = datacenters.id")
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch switches").Err()
+	}
+	defer rows.Close()
+
+	var switches []*crimson.Switch
+	for rows.Next() {
+		s := &crimson.Switch{}
+		if err = rows.Scan(&s.Name, &s.Description, &s.Ports, &s.Rack, &s.Datacenter); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch switch").Err()
+		}
+		if (names.Has(s.Name) || names.Len() == 0) && (racks.Has(s.Rack) || racks.Len() == 0) && (datacenters.Has(s.Datacenter) || datacenters.Len() == 0) {
+			switches = append(switches, s)
+		}
+	}
+	return switches, nil
+}
