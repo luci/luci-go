@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "378fcf28_2d9cf14c",
+        "filename": "client/cmd/isolate/checker.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1146751
+      },
+      "writtenOn": "2017-12-13T20:33:07Z",
+      "side": 1,
+      "message": "NIT: Maybe the name \"WillExistInFuture\" or something might be slightly better?",
+      "revId": "0fc59ec3826494462f71388e744445c34fac6c08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
