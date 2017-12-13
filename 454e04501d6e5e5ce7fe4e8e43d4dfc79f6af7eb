@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "366ec8fa_f8b37209",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T13:47:04Z",
+      "side": 1,
+      "message": "\"File into which the full list of downloaded files is written to\"\n?",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8efacf01_464e6b74",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T13:47:04Z",
+      "side": 1,
+      "message": "if c.outputFiles !\u003d \"\" {\n\nis more self-describing and cannot be confused with a slice for example.\n\nThere used to be a performance bug in the very old Go version where len() was significantly faster than equality with \"\" but this was fixed a while ago.",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ef444fb_008b8cbb",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T13:47:04Z",
+      "side": 1,
+      "message": "there\u0027s no concept of task here.\n\n// outputs is the list of files downloaded from the current isolated.",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f1c1318_c6b78421",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T13:47:04Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 340,
+        "startChar": 10,
+        "endLine": 340,
+        "endChar": 25
+      },
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42bc5eed_bb843c86",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-13T13:47:04Z",
+      "side": 1,
+      "message": "I\u0027m not sure it\u0027s a good idea. Either:\n- Use a sync chan, so that Go\u0027s native \"write-to-destination\" can be used\n- Use a locked slice, which is more risky\n\nhttps://www.youtube.com/watch?v\u003dKBZlN0izeiY is a good overview of the performance trade offs.\n\nEither way, I don\u0027t think it is a significant performance implication, since this code is not CPU bound, so whatever. :)",
+      "revId": "454e04501d6e5e5ce7fe4e8e43d4dfc79f6af7eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
