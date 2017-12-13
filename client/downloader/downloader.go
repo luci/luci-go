@@ -37,8 +37,9 @@ type Downloader struct {
 	common.Canceler
 
 	// Immutable variables.
-	ctx context.Context
-	c   *isolatedclient.Client
+	ctx     context.Context
+	c       *isolatedclient.Client
+	maxJobs int
 
 	// Mutable variables.
 
@@ -47,9 +48,14 @@ type Downloader struct {
 	mu  sync.Mutex
 	err errors.MultiError
 
-	//
+	// dirCache is a cache of known existing directories which is extended
+	// and read from by ensureDir.
 	muCache  sync.RWMutex
 	dirCache stringset.Set
+
+	// filesChan is used to accumulate the names of all files successfully downloaded
+	// when downloading an isolated tree.
+	filesChan chan<- string
 
 	// pool is a goroutine priority pool which manages jobs to download
 	// isolated trees and files.
@@ -67,33 +73,65 @@ func New(ctx context.Context, c *isolatedclient.Client, maxConcurrentJobs int) *
 		ctx:      ctx,
 		c:        c,
 		pool:     pool,
+		maxJobs:  maxConcurrentJobs,
 		dirCache: stringset.New(0),
 	}
 }
 
 // FetchIsolated downloads an entire isolated tree into a specified output directory.
 //
+// Returns a list of paths relative to outputDir for all downloaded files.
+//
 // Note that this method is not thread-safe and it does not flush the Downloader's directory cache.
-func (d *Downloader) FetchIsolated(hash isolated.HexDigest, outputDir string) error {
+func (d *Downloader) FetchIsolated(hash isolated.HexDigest, outputDir string) ([]string, error) {
 	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-		return err
+		return nil, err
 	}
 	d.dirCache.Add(outputDir)
+
+	// Set up a goroutine and channel which serializes the insertion of
+	// filenames into files. Make the channel of size maxJobs to minimize
+	// blocking on this channel.
+	filesChan := make(chan string, d.maxJobs)
+	filesDone := make(chan bool)
+	var files []string
+	go func() {
+		defer func() { filesDone <- true }()
+		for {
+			select {
+			case f, more := <-filesChan:
+				if !more {
+					return
+				}
+				files = append(files, f)
+			case <-d.Channel():
+				return
+			}
+		}
+	}()
+	d.filesChan = filesChan
+
+	// Start downloading the isolated tree in the work pool.
 	d.pool.Schedule(isolatedType.Priority(), func() {
 		d.doIsolatedJob(hash, outputDir)
 	}, func() {
 		d.addError(isolatedType, string(hash), d.CancelationReason())
 	})
+
+	// First wait for the work in the pool to finish, then wait for
+	// the work in the files goroutine to finish.
 	_ = d.pool.Wait()
 	_ = d.Canceler.Close()
+	close(filesChan)
+	<-filesDone
 
 	// If any error occurred, return it and reset the err.
 	if len(d.err) > 0 {
 		tmp := d.err
 		d.err = nil
-		return tmp
+		return nil, tmp
 	}
-	return nil
+	return files, nil
 }
 
 type downloadType int8
@@ -118,7 +156,7 @@ func (d downloadType) String() string {
 	}
 }
 
-// ensureDir ensures that the directory d exists.
+// ensureDir ensures that the directory dir exists.
 func (d *Downloader) ensureDir(dir string) error {
 	// Fast path: if the cache has the directory, we're done.
 	d.muCache.RLock()
@@ -169,6 +207,7 @@ func (d *Downloader) doFileJob(name string, details *isolated.File, outputDir st
 		if err := os.Symlink(linkTarget, filename); err != nil {
 			d.addError(fileType, name, err)
 		}
+		d.filesChan <- name
 		return
 	}
 
@@ -181,7 +220,9 @@ func (d *Downloader) doFileJob(name string, details *isolated.File, outputDir st
 	defer f.Close()
 	if err := d.c.Fetch(d.ctx, details.Digest, f); err != nil {
 		d.addError(fileType, name, err)
+		return
 	}
+	d.filesChan <- name
 }
 
 func (d *Downloader) doIsolatedJob(hash isolated.HexDigest, outputDir string) {
