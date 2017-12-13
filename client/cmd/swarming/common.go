@@ -17,9 +17,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -68,7 +70,14 @@ func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDi
 	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
 	dl := downloader.New(c, isolatedClient, 8)
 	common.CancelOnCtrlC(dl)
-	return dl.FetchIsolated(isolated.HexDigest(ref.Isolated), dir)
+	files, err := dl.FetchIsolated(isolated.HexDigest(ref.Isolated), dir)
+	if err != nil {
+		return err
+	}
+	// TODO(mknyszek): Make this optional.
+	filesPath := filepath.Join(outputDir, taskID + ".files")
+	filesData := strings.Join(files, "\n")
+	return ioutil.WriteFile(filesPath, []byte(filesData), 0664)
 }
 
 type taskState int32
