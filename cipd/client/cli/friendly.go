@@ -226,8 +226,9 @@ func (site *installationSite) initClient(ctx context.Context, authFlags authcli.
 		authFlags:  authFlags,
 		serviceURL: site.cfg.ServiceURL,
 		cacheDir:   site.cfg.CacheDir,
+		rootDir:    site.siteRoot,
 	}
-	site.client, err = clientOpts.makeCipdClient(ctx, site.siteRoot)
+	site.client, err = clientOpts.makeCipdClient(ctx)
 	return err
 }
 

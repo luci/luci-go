@@ -281,17 +281,37 @@ type clientOptions struct {
 	authFlags  authcli.Flags
 	serviceURL string
 	cacheDir   string
+
+	// Set by some commands which require a "root" directory.
+	rootDir string
+
+	// Set by commands which parse ensure files.
+	ensureFileServiceURL string
+
+	// Keep this separate so that ensure files can specify this.
+	defaultServiceURL string
+}
+
+func (opts *clientOptions) resolvedServiceURL() string {
+	switch {
+	case opts.serviceURL != "": // command line
+		return opts.serviceURL
+	case opts.ensureFileServiceURL != "": // ensure file
+		return opts.ensureFileServiceURL
+	}
+	return opts.defaultServiceURL // compiled-in default set at registerFlags-time
 }
 
 func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters) {
-	f.StringVar(&opts.serviceURL, "service-url", params.ServiceURL,
+	opts.defaultServiceURL = params.ServiceURL
+	f.StringVar(&opts.serviceURL, "service-url", "",
 		"Backend URL. If provided via an 'ensure file', the URL in the file takes precedence.")
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
 		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", cipd.EnvCacheDir))
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
 }
 
-func (opts *clientOptions) makeCipdClient(ctx context.Context, root string) (cipd.Client, error) {
+func (opts *clientOptions) makeCipdClient(ctx context.Context) (cipd.Client, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
 		return nil, err
@@ -302,8 +322,8 @@ func (opts *clientOptions) makeCipdClient(ctx context.Context, root string) (cip
 	}
 
 	realOpts := cipd.ClientOptions{
-		ServiceURL:          opts.serviceURL,
-		Root:                root,
+		ServiceURL:          opts.resolvedServiceURL(),
+		Root:                opts.rootDir,
 		CacheDir:            opts.cacheDir,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
@@ -769,7 +789,6 @@ type ensureRun struct {
 	cipdSubcommand
 	clientOptions
 
-	rootDir    string
 	ensureFile string
 }
 
@@ -778,18 +797,19 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	currentPins, _, err := ensurePackages(ctx, c.rootDir, c.ensureFile, false, c.clientOptions)
+	currentPins, _, err := ensurePackages(ctx, c.ensureFile, false, c.clientOptions)
 	return c.done(currentPins, err)
 }
 
-func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
+func ensurePackages(ctx context.Context, ensureFile string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
 
-	ensureFile, err := loadAndValidateEnsureFile(ctx, desiredStateFile, &clientOpts)
+	parsedFile, err := loadAndValidateEnsureFile(ctx, ensureFile, &clientOpts)
 	if err != nil {
 		return nil, nil, err
 	}
+	clientOpts.ensureFileServiceURL = parsedFile.ServiceURL
 
-	client, err := clientOpts.makeCipdClient(ctx, root)
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -797,7 +817,7 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
 
-	resolved, err := ensureFile.Resolve(func(pkg, vers string) (common.Pin, error) {
+	resolved, err := parsedFile.Resolve(func(pkg, vers string) (common.Pin, error) {
 		return client.ResolveVersion(ctx, pkg, vers)
 	})
 	if err != nil {
@@ -849,12 +869,13 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 	return c.done(nil, err)
 }
 
-func verifyEnsureFile(ctx context.Context, desiredStateFile string, clientOpts clientOptions) error {
+func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientOptions) error {
 
-	ensureFile, err := loadAndValidateEnsureFile(ctx, desiredStateFile, &clientOpts)
+	parsedFile, err := loadAndValidateEnsureFile(ctx, ensureFile, &clientOpts)
 	if err != nil {
 		return err
 	}
+	clientOpts.ensureFileServiceURL = parsedFile.ServiceURL
 
 	// Ignore any configured CIPD cache directory. This ensures that we are
 	// hitting the live service instead of using (potentially invalid) cache
@@ -864,28 +885,28 @@ func verifyEnsureFile(ctx context.Context, desiredStateFile string, clientOpts c
 		clientOpts.cacheDir = ""
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return err
 	}
 
-	if len(ensureFile.VerifyPlatforms) == 0 {
+	if len(parsedFile.VerifyPlatforms) == 0 {
 		logging.Errorf(ctx,
 			"Verification platforms must be specified in the ensure file using one or more $VerifiedPlatform directives.")
 		return errors.New("no verification platforms configured")
 	}
-	logging.Debugf(ctx, "Verifying against %d platform(s) in the ensure file.", len(ensureFile.VerifyPlatforms))
+	logging.Debugf(ctx, "Verifying against %d platform(s) in the ensure file.", len(parsedFile.VerifyPlatforms))
 
 	// Verify all of our platforms in parallel.
 	verify := cipd.Verifier{
 		Client: client,
 	}
 	_ = parallel.FanOutIn(func(workC chan<- func() error) {
-		for _, plat := range ensureFile.VerifyPlatforms {
+		for _, plat := range parsedFile.VerifyPlatforms {
 			plat := plat
 
 			workC <- func() error {
-				return verify.VerifyEnsureFile(ctx, ensureFile, plat.Expander())
+				return verify.VerifyEnsureFile(ctx, parsedFile, plat.Expander())
 			}
 		}
 	})
@@ -921,22 +942,22 @@ func loadAndValidateEnsureFile(ctx context.Context, path string, clientOpts *cli
 	}
 	defer f.Close()
 
-	ensureFile, err := ensure.ParseFile(f)
+	parsedFile, err := ensure.ParseFile(f)
 	if err != nil {
 		return nil, err
 	}
 
 	// Prefer the ServiceURL from the file (if set), and log a warning if the user
 	// provided one on the commandline that doesn't match the one in the file.
-	if ensureFile.ServiceURL != "" {
-		if clientOpts.serviceURL != "" && clientOpts.serviceURL != ensureFile.ServiceURL {
+	if parsedFile.ServiceURL != "" {
+		if clientOpts.serviceURL != "" && clientOpts.serviceURL != parsedFile.ServiceURL {
 			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
-				ensureFile.ServiceURL, clientOpts.serviceURL, ensureFile.ServiceURL)
+				parsedFile.ServiceURL, clientOpts.serviceURL, parsedFile.ServiceURL)
 		}
-		clientOpts.serviceURL = ensureFile.ServiceURL
+		clientOpts.serviceURL = parsedFile.ServiceURL
 	}
 
-	return ensureFile, nil
+	return parsedFile, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -972,7 +993,6 @@ type checkUpdatesRun struct {
 	cipdSubcommand
 	clientOptions
 
-	rootDir    string
 	ensureFile string
 }
 
@@ -981,7 +1001,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	_, actions, err := ensurePackages(ctx, c.rootDir, c.ensureFile, true, c.clientOptions)
+	_, actions, err := ensurePackages(ctx, c.ensureFile, true, c.clientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if transient.Tag.In(err) {
@@ -1035,7 +1055,7 @@ func resolveVersion(ctx context.Context, packagePrefix, version string, clientOp
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1088,7 +1108,7 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts clien
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1229,7 +1249,7 @@ type setRefOrTagArgs struct {
 }
 
 func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) {
-	client, err := args.clientOptions.makeCipdClient(ctx, "")
+	client, err := args.clientOptions.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1368,7 +1388,7 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string, env subc
 }
 
 func listPackages(ctx context.Context, path string, recursive, showHidden bool, clientOpts clientOptions) ([]string, error) {
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1430,7 +1450,7 @@ func (c *searchRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func searchInstances(ctx context.Context, packageName, tag string, clientOpts clientOptions) ([]common.Pin, error) {
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1486,7 +1506,7 @@ func (c *listACLRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func listACL(ctx context.Context, packagePath string, clientOpts clientOptions) (map[string][]cipd.PackageACL, error) {
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1616,7 +1636,7 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 		return nil
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return err
 	}
@@ -1780,7 +1800,7 @@ func (c *fetchRun) Run(a subcommands.Application, args []string, env subcommands
 }
 
 func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile string, clientOpts clientOptions) (common.Pin, error) {
-	client, err := clientOpts.makeCipdClient(ctx, "")
+	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -1940,7 +1960,7 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 		return common.Pin{}, err
 	}
 	defer closer()
-	client, err := opts.clientOptions.makeCipdClient(ctx, "")
+	client, err := opts.clientOptions.makeCipdClient(ctx)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -2000,7 +2020,7 @@ func (c *deleteRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func deletePackage(ctx context.Context, packageName string, opts *clientOptions) error {
-	client, err := opts.makeCipdClient(ctx, "")
+	client, err := opts.makeCipdClient(ctx)
 	if err != nil {
 		return err
 	}
@@ -2080,7 +2100,7 @@ func (c *counterWriteRun) Run(a subcommands.Application, args []string, env subc
 }
 
 func writeCounter(ctx context.Context, pkg, version, counter string, delta int, opts *clientOptions) error {
-	client, err := opts.makeCipdClient(ctx, "")
+	client, err := opts.makeCipdClient(ctx)
 	if err != nil {
 		return err
 	}
@@ -2140,7 +2160,7 @@ type counterReadResult struct {
 }
 
 func readCounters(ctx context.Context, pkg, version string, counters []string, opts *clientOptions) ([]counterReadResult, error) {
-	client, err := opts.makeCipdClient(ctx, "")
+	client, err := opts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -2275,7 +2295,8 @@ func (s *selfupdateRun) doSelfUpdate(ctx context.Context, exePath string, fs loc
 		return 1
 	}
 
-	client, err := s.clientOptions.makeCipdClient(ctx, filepath.Dir(exePath))
+	s.clientOptions.rootDir = filepath.Dir(exePath)
+	client, err := s.clientOptions.makeCipdClient(ctx)
 	if err != nil {
 		s.printError(err)
 		return 1
