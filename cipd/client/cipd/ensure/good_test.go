@@ -25,7 +25,7 @@ import (
 )
 
 func f(lines ...string) string {
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "\n") + "\n"
 }
 
 func p(pkg, ver string) common.Pin {
