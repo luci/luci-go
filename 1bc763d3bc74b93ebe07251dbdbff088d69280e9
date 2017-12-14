@@ -16,6 +16,24 @@
       "revId": "1bc763d3bc74b93ebe07251dbdbff088d69280e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fada9fea_833796ee",
+        "filename": "client/cmd/isolate/exp_archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1174915
+      },
+      "writtenOn": "2017-12-14T22:27:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4fdcbc69_ec5b7347",
+      "revId": "1bc763d3bc74b93ebe07251dbdbff088d69280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
