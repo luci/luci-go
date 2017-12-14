@@ -16,6 +16,24 @@
       "revId": "c8b82ed5973644f06538b86128367b4589f5403d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3545c7c_07f711ac",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T19:24:39Z",
+      "side": 1,
+      "message": "i suspect that you assume that if dir does not exist, L192 will execute, but this is not how switch in Go works. i\u0027ve added blank lines to make it more clear",
+      "parentUuid": "8c1c02a3_91efee71",
+      "revId": "c8b82ed5973644f06538b86128367b4589f5403d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
