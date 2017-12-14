@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "c852d86c_236a7102",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:18:53Z",
+      "side": 1,
+      "message": "an, i see! You do this because in this func our goal is to find all valid job \u0026 trigger configs, and hence we start with clean sheet for every job.\nSo, please update comment:\n// Create a new validation context for each job/trigger since errors persist in context but we want to find all valid jobs/trigger.\n\nand also please add a todo for me:\n\n// TODO(tandrii): consider switching to validateProjectConfig because configs provided by luci-config are known to be valid and so there is little value in finding all valid jobs/triggers vs complexity of this function.",
+      "parentUuid": "69f83e3e_6c306c5f",
+      "range": {
+        "startLine": 304,
+        "startChar": 2,
+        "endLine": 304,
+        "endChar": 61
+      },
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3745d274_c8235da8",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 4
