@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/proto/google/descutil"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -67,6 +68,7 @@ type flags struct {
 	protoDir    string
 	messageName string
 	dryRun      bool
+	importPaths stringlistflag.Flag
 }
 
 func parseFlags() (*flags, error) {
@@ -77,7 +79,10 @@ func parseFlags() (*flags, error) {
 	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table")
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned")
 	flag.DurationVar(&f.PartitioningExpiration, "partition-expiration", 0, "Expiration for partitions. 0 for no expiration.")
-	flag.StringVar(&f.protoDir, "proto-dir", ".", "path to directory with the .proto file")
+	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message")
+	// -I matches protoc's flag and its error message suggesting to pass -I.
+	flag.Var(&f.importPaths, "I", "path to directory with the imported .proto file; can be specified multiple times")
+
 	flag.StringVar(&f.messageName,
 		"message",
 		"",
@@ -101,6 +106,12 @@ func parseFlags() (*flags, error) {
 		return nil, fmt.Errorf("expected exactly 2 dots in table name %q", *table)
 	}
 
+	var err error
+	f.protoDir, err = filepath.Abs(f.protoDir)
+	if err != nil {
+		return nil, errors.Annotate(err, "could not make path %q absolute", f.protoDir).Err()
+	}
+
 	return &f, nil
 }
 
@@ -112,7 +123,7 @@ func run(ctx context.Context) error {
 
 	td := flags.tableDef
 
-	desc, err := loadProtoDescription(flags.protoDir)
+	desc, err := loadProtoDescription(flags.protoDir, flags.importPaths)
 	if err != nil {
 		return errors.Annotate(err, "failed to load proto descriptor").Err()
 	}
@@ -170,30 +181,13 @@ func schemaFromMessage(desc *descriptor.FileDescriptorSet, messageName string) (
 	return conv.schema(messageName)
 }
 
-// loadProtoDescription compiles .proto files in the dir
-// and returns their descriptor.
-func loadProtoDescription(dir string) (*descriptor.FileDescriptorSet, error) {
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, errors.Annotate(err, "could make path %q absolute", dir).Err()
-	}
-
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return nil, err
-	}
-	defer os.RemoveAll(tempDir)
-	descFile := filepath.Join(tempDir, "desc")
-	args := []string{
-		"--descriptor_set_out=" + descFile,
-		"--include_imports",
-		"--include_source_info",
-	}
-
-	// Include all $GOPATH/src directories because we like
+func protoImportPaths(dir string, userDefinedProtoPaths []string) ([]string, error) {
+	// In Go mode, import paths are  all $GOPATH/src directories because we like
 	// go-style absolute import paths,
 	// e.g. "go.chromium.org/luci/logdog/api/logpb/log.proto"
-	for _, p := range strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator)) {
+	var goSources []string
+	inGopath := false
+	for _, p := range goPaths() {
 		src := filepath.Join(p, "src")
 		switch info, err := os.Stat(src); {
 		case os.IsNotExist(err):
@@ -203,9 +197,77 @@ func loadProtoDescription(dir string) (*descriptor.FileDescriptorSet, error) {
 		case !info.IsDir():
 			continue
 		}
-		args = append(args, "--proto_path="+src)
+		goSources = append(goSources, src)
+
+		// note: does not respect case insensitive file systems (e.g. on windows)
+		inGopath = inGopath || strings.HasPrefix(dir, src)
 	}
 
+	switch {
+	case !inGopath:
+		// Python mode.
+
+		// Below we pass absolute paths to .proto files, so unless
+		// we pass -I with a directory containing them, protoc
+		// will complain. Do that for the user.
+		return append([]string{dir}, userDefinedProtoPaths...), nil
+
+	case len(userDefinedProtoPaths) > 0:
+		return nil, fmt.Errorf(
+			"%q is in $GOPATH. "+
+				"Please do not use -I flag. "+
+				"Use go-style absolute paths to imported .proto files, "+
+				"e.g. github.com/user/repo/path/to/file.proto", dir)
+	default:
+		return goSources, nil
+	}
+}
+
+// loadProtoDescription compiles .proto files in the dir
+// and returns their descriptor.
+// Assumes dir is absolute.
+func loadProtoDescription(dir string, importPaths []string) (*descriptor.FileDescriptorSet, error) {
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tempDir)
+	descFile := filepath.Join(tempDir, "desc")
+
+	// In Go mode, include all $GOPATH/src directories because we like
+	// go-style absolute import paths,
+	// e.g. "go.chromium.org/luci/logdog/api/logpb/log.proto"
+	var goSources []string
+	inGopath := false
+	for _, p := range goPaths() {
+		src := filepath.Join(p, "src")
+		switch info, err := os.Stat(src); {
+		case os.IsNotExist(err):
+			continue
+		case err != nil:
+			return nil, err
+		case !info.IsDir():
+			continue
+		}
+		goSources = append(goSources, src)
+
+		// note: does not respect case insensitive file systems (e.g. on windows)
+		inGopath = inGopath || strings.HasPrefix(dir, src)
+	}
+
+	importPaths, err = protoImportPaths(dir, importPaths)
+	if err != nil {
+		return nil, err
+	}
+
+	args := []string{
+		"--descriptor_set_out=" + descFile,
+		"--include_imports",
+		"--include_source_info",
+	}
+	for _, p := range importPaths {
+		args = append(args, "-I=" + p)
+	}
 	protoFiles, err := filepath.Glob(filepath.Join(dir, "*.proto"))
 	if err != nil {
 		return nil, err
@@ -228,4 +290,12 @@ func loadProtoDescription(dir string) (*descriptor.FileDescriptorSet, error) {
 	var desc descriptor.FileDescriptorSet
 	err = proto.Unmarshal(descBytes, &desc)
 	return &desc, err
+}
+
+func goPaths() []string {
+	gopath := strings.TrimSpace(os.Getenv("GOPATH"))
+	if gopath == "" {
+		return nil
+	}
+	return strings.Split(gopath, string(filepath.ListSeparator))
 }
