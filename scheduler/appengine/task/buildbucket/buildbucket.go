@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -68,55 +69,60 @@ func (m TaskManager) Traits() task.Traits {
 }
 
 // ValidateProtoMessage is part of Manager interface.
-func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
+func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
 	cfg, ok := msg.(*messages.BuildbucketTask)
 	if !ok {
-		return fmt.Errorf("wrong type %T, expecting *messages.BuildbucketTask", msg)
+		c.Errorf("wrong type %T, expecting *messages.BuildbucketTask", msg)
+		return
 	}
 	if cfg == nil {
-		return fmt.Errorf("expecting a non-empty BuildbucketTask")
+		c.Errorf("expecting a non-empty BuildbucketTask")
+		return
 	}
 
 	// Validate 'server' field.
-	if cfg.Server == "" {
-		return fmt.Errorf("field 'server' is required")
-	}
-	if strings.HasPrefix(cfg.Server, "https://") || strings.HasPrefix(cfg.Server, "http://") {
-		return fmt.Errorf("field 'server' should be just a host, not a URL: %q", cfg.Server)
-	}
-	u, err := url.Parse("https://" + cfg.Server)
-	if err != nil {
-		return fmt.Errorf("field 'server' is not a valid hostname %q: %s", cfg.Server, err)
-	}
-	if !u.IsAbs() || u.Path != "" {
-		return fmt.Errorf("field 'server' is not a valid hostname %q", cfg.Server)
+	switch {
+	case cfg.Server == "":
+		c.Errorf("field 'server' is required")
+	case strings.HasPrefix(cfg.Server, "https://") || strings.HasPrefix(cfg.Server, "http://"):
+		c.Errorf("field 'server' should be just a host, not a URL: %q", cfg.Server)
+	default:
+		u, err := url.Parse("https://" + cfg.Server)
+		switch {
+		case err != nil:
+			c.Errorf("field 'server' is not a valid hostname %q: %s", cfg.Server, err)
+		case !u.IsAbs() || u.Path != "":
+			c.Errorf("field 'server' is not a valid hostname %q", cfg.Server)
+		}
 	}
 
 	// Bucket and builder fields are required.
 	if cfg.Bucket == "" {
-		return fmt.Errorf("'bucket' field is required")
+		c.Errorf("'bucket' field is required")
 	}
 	if cfg.Builder == "" {
-		return fmt.Errorf("'builder' field is required")
+		c.Errorf("'builder' field is required")
 	}
 
 	// Validate 'properties' and 'tags'.
-	if err = utils.ValidateKVList("property", cfg.Properties, ':'); err != nil {
-		return err
+	if err := utils.ValidateKVList("property", cfg.Properties, ':'); err != nil {
+		c.Enter("properties")
+		c.Error(err)
+		c.Exit()
 	}
-	if err = utils.ValidateKVList("tag", cfg.Tags, ':'); err != nil {
-		return err
+	if err := utils.ValidateKVList("tag", cfg.Tags, ':'); err != nil {
+		c.Enter("tags")
+		c.Error(err)
+		c.Exit()
+		return
 	}
-
 	// Default tags can not be overridden.
 	defTags := defaultTags(nil, nil, nil)
 	for _, kv := range utils.UnpackKVList(cfg.Tags, ':') {
 		if _, ok := defTags[kv.Key]; ok {
-			return fmt.Errorf("tag %q is reserved", kv.Key)
+			c.Errorf("tag %q is reserved", kv.Key)
 		}
 	}
-
-	return nil
 }
 
 // defaultTags returns map with default set of tags.
