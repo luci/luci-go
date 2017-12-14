@@ -48,6 +48,12 @@ const (
 	// LogDogDevHost is the default host of the development LogDog service in
 	// Chrome Operations.
 	LogDogDevHost = "luci-logdog-dev.appspot.com"
+
+	// MachineDatabaseURL is the URL of the Machine Database.
+	MachineDatabaseURL = "machine-db.appspot.com"
+
+	// MachineDatabaseDevURL is the URL of the Machine Database dev instance.
+	MachineDatabaseDevURL = "machine-db-dev.appspot.com"
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
