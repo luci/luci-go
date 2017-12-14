@@ -15,7 +15,6 @@
 package acl
 
 import (
-	"fmt"
 	"regexp"
 	"sort"
 	"strings"
@@ -23,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -62,52 +62,68 @@ func (g *GrantsByRole) Equal(o *GrantsByRole) bool {
 // AclSets are parsed and indexed `AclSet` of a project.
 type AclSets map[string][]*messages.Acl
 
-// ValidateAclSets validates list of AclSet of a project and returns AclSets.
-func ValidateAclSets(sets []*messages.AclSet) (AclSets, error) {
+// ValidateACLSets validates list of AclSet of a project and returns AclSets.
+//
+// Errors are returned via validation.Context.
+func ValidateACLSets(ctx *validation.Context, sets []*messages.AclSet) AclSets {
 	as := make(AclSets, len(sets))
+	reportedDups := stringset.New(len(sets))
 	for _, s := range sets {
-		if s.Name == "" {
-			return nil, fmt.Errorf("missing 'name' field'")
+		_, isDup := as[s.Name]
+		validName := false
+		switch {
+		case s.Name == "":
+			ctx.Errorf("missing 'name' field'")
+		case !aclSetNameRe.MatchString(s.Name):
+			ctx.Errorf("%q is not valid value for 'name' field", s.Name)
+		case isDup:
+			if reportedDups.Add(s.Name) {
+				// Report only first dup.
+				ctx.Errorf("aclSet name %q is not unique", s.Name)
+			}
+		default:
+			validName = true
 		}
-		if !aclSetNameRe.MatchString(s.Name) {
-			return nil, fmt.Errorf("%q is not valid value for 'name' field", s.Name)
-		}
-		if _, isDup := as[s.Name]; isDup {
-			return nil, fmt.Errorf("aclSet name %q is not unique", s.Name)
-		}
+		// record this error regardless of whether name is valid or not
 		if len(s.GetAcls()) == 0 {
-			return nil, fmt.Errorf("aclSet %q has no entries", s.Name)
+			ctx.Errorf("aclSet %q has no entries", s.Name)
+		} else if validName {
+			// add if and only if it is valid
+			as[s.Name] = s.GetAcls()
 		}
-		as[s.Name] = s.GetAcls()
 	}
-	return as, nil
+	return as
 }
 
-// ValidateTaskAcls validates task's ACLs and returns TaskAcls.
-func ValidateTaskAcls(pSets AclSets, tSets []string, tAcls []*messages.Acl) (*GrantsByRole, error) {
+// ValidateTaskACLs validates task's ACLs and returns TaskAcls.
+//
+// Errors are returned via validation.Context.
+func ValidateTaskACLs(ctx *validation.Context, pSets AclSets, tSets []string, tAcls []*messages.Acl) *GrantsByRole {
 	grantsLists := make([][]*messages.Acl, 0, 1+len(tSets))
-	if err := validateGrants(tAcls); err != nil {
-		return nil, err
-	}
+	ctx.Enter("acls")
+	validateGrants(ctx, tAcls)
+	ctx.Exit()
 	grantsLists = append(grantsLists, tAcls)
+	ctx.Enter("acl_sets")
 	for _, set := range tSets {
-		grantsList, exists := pSets[set]
-		if !exists {
-			return nil, fmt.Errorf("referencing AclSet '%s' which doesn't exist", set)
+		if grantsList, exists := pSets[set]; exists {
+			grantsLists = append(grantsLists, grantsList)
+		} else {
+			ctx.Errorf("referencing AclSet %q which doesn't exist", set)
 		}
-		grantsLists = append(grantsLists, grantsList)
 	}
+	ctx.Exit()
 	mg := mergeGrants(grantsLists...)
 	if n := len(mg.Owners) + len(mg.Readers); n > maxGrantsPerJob {
-		return nil, fmt.Errorf("Job or Trigger can have at most %d acls, but %d given", maxGrantsPerJob, n)
+		ctx.Errorf("Job or Trigger can have at most %d acls, but %d given", maxGrantsPerJob, n)
 	}
 	if len(mg.Owners) == 0 {
-		return nil, fmt.Errorf("Job or Trigger must have OWNER acl set")
+		ctx.Errorf("Job or Trigger must have OWNER acl set")
 	}
 	if len(mg.Readers) == 0 {
-		return nil, fmt.Errorf("Job or Trigger must have READER acl set")
+		ctx.Errorf("Job or Trigger must have READER acl set")
 	}
-	return mg, nil
+	return mg
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -121,16 +137,19 @@ var (
 	groupsAdministrators = []string{"group:administrators"}
 )
 
-func validateGrants(gs []*messages.Acl) error {
+// validateGrants validates the fields of the provided grants.
+//
+// Errors are returned via validation.Context.
+func validateGrants(ctx *validation.Context, gs []*messages.Acl) {
 	for _, g := range gs {
 		switch {
 		case g.GetRole() != messages.Acl_OWNER && g.GetRole() != messages.Acl_READER:
-			return fmt.Errorf("invalid role %q", g.GetRole())
+			ctx.Errorf("invalid role %q", g.GetRole())
 		case g.GetGrantedTo() == "":
-			return fmt.Errorf("missing granted_to for role %s", g.GetRole())
+			ctx.Errorf("missing granted_to for role %s", g.GetRole())
 		case strings.HasPrefix(g.GetGrantedTo(), "group:"):
 			if g.GetGrantedTo()[len("group:"):] == "" {
-				return fmt.Errorf("invalid granted_to %q for role %s: needs a group name", g.GetGrantedTo(), g.GetRole())
+				ctx.Errorf("invalid granted_to %q for role %s: needs a group name", g.GetGrantedTo(), g.GetRole())
 			}
 		default:
 			id := g.GetGrantedTo()
@@ -138,11 +157,10 @@ func validateGrants(gs []*messages.Acl) error {
 				id = "user:" + g.GetGrantedTo()
 			}
 			if _, err := identity.MakeIdentity(id); err != nil {
-				return errors.Annotate(err, "invalid granted_to %q for role %s", g.GetGrantedTo(), g.GetRole()).Err()
+				ctx.Error(errors.Annotate(err, "invalid granted_to %q for role %s", g.GetGrantedTo(), g.GetRole()).Err())
 			}
 		}
 	}
-	return nil
 }
 
 // mergeGrants merges valid grants into GrantsByRole, removing and sorting duplicates.

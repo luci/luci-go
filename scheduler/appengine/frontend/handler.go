@@ -44,7 +44,9 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -176,6 +178,12 @@ func init() {
 		Engine:        globalEngine.PublicAPI(),
 		Catalog:       globalCatalog,
 		TemplatesPath: "templates",
+	})
+
+	// Initialize config validation endpoints.
+	gaeconfig.InstallValidationHandlers(r, base, &validation.Validator{
+		ConfigPatterns: globalCatalog.ConfigPatterns,
+		Func:           globalCatalog.ValidateConfig,
 	})
 
 	r.POST("/pubsub", base, pubsubPushHandler) // auth is via custom tokens

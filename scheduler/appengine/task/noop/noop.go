@@ -26,6 +26,7 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -47,9 +48,7 @@ func (m TaskManager) ProtoMessageType() proto.Message {
 }
 
 // ValidateProtoMessage is part of Manager interface.
-func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
-	return nil
-}
+func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {}
 
 // Traits is part of Manager interface.
 func (m TaskManager) Traits() task.Traits {

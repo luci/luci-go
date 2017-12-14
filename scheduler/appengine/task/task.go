@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/server/auth"
 
 	"github.com/golang/protobuf/proto"
@@ -124,7 +125,9 @@ type Manager interface {
 
 	// ValidateProtoMessage verifies task definition proto message makes sense.
 	// msg must have same underlying type as ProtoMessageType() return value.
-	ValidateProtoMessage(c context.Context, msg proto.Message) error
+	//
+	// Errors are returned via validation.Context.
+	ValidateProtoMessage(c *validation.Context, msg proto.Message)
 
 	// LaunchTask starts (or starts and finishes in one go) the task.
 	//

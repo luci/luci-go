@@ -22,12 +22,16 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/text/pattern"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -35,7 +39,6 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
@@ -106,6 +109,22 @@ type Catalog interface {
 	// It assumes there's cfgclient implementation installed in
 	// the context, will panic if it's not there.
 	GetProjectJobs(c context.Context, projectID string) ([]Definition, error)
+
+	// ValidateConfig performs the config validation and stores any errors in
+	// the validation.Context.
+	//
+	// This is part of the components needed to install validation endpoints
+	// on the service. When a config validation request is received by the
+	// service from luci-config, this is called to perform the validation.
+	ValidateConfig(ctx *validation.Context, configSet, path string, content []byte)
+
+	// ConfigPatterns returns the patterns of configSets and paths that the
+	// service is responsible for validating.
+	//
+	// This is part of the components needed to install validation endpoints
+	// on the service. When request for metadata is received by the service
+	// from luci-config, this is called to return the patterns.
+	ConfigPatterns(c context.Context) []*validation.ConfigPattern
 }
 
 // JobFlavor describes a category of jobs.
@@ -272,10 +291,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if revisionURL != "" {
 		logging.Infof(c, "Importing %s", revisionURL)
 	}
-	// TODO(tandrii): make use of https://godoc.org/go.chromium.org/luci/common/config/validation
-	knownACLSets, err := acl.ValidateAclSets(cfg.GetAclSets())
-	if err != nil {
-		logging.Errorf(c, "Invalid aclsets definition %s", err)
+	ctx := &validation.Context{Context: c}
+	knownACLSets := acl.ValidateACLSets(ctx, cfg.GetAclSets())
+	if err := ctx.Finalize(); err != nil {
 		return nil, errors.Annotate(err, "invalid aclsets in a project %s", projectID).Err()
 	}
 
@@ -283,6 +301,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	disabledCount := 0
 
 	// Regular jobs, triggered jobs.
+	// TODO(tandrii): consider switching to validateProjectConfig because configs
+	// provided by luci-config are known to be valid and so there is little value
+	// in finding all valid jobs/triggers vs complexity of this function.
 	for _, job := range cfg.Job {
 		if job.Disabled {
 			disabledCount++
@@ -292,8 +313,11 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if job.Id != "" {
 			id = job.Id
 		}
-		var task proto.Message
-		if task, err = cat.validateJobProto(c, job); err != nil {
+		// Create a new validation context for each job/trigger since errors
+		// persist in context but we want to find all valid jobs/trigger.
+		ctx = &validation.Context{Context: c}
+		task := cat.validateJobProto(ctx, job)
+		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Invalid job definition %s: %s", id, err)
 			continue
 		}
@@ -310,8 +334,8 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if schedule != "triggered" {
 			flavor = JobFlavorPeriodic
 		}
-		acls, err := acl.ValidateTaskAcls(knownACLSets, job.GetAclSets(), job.GetAcls())
-		if err != nil {
+		acls := acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
+		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
@@ -336,8 +360,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if trigger.Id != "" {
 			id = trigger.Id
 		}
-		var task proto.Message
-		if task, err = cat.validateTriggerProto(c, trigger); err != nil {
+		ctx = &validation.Context{Context: c}
+		task := cat.validateTriggerProto(ctx, trigger)
+		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Invalid trigger definition %s: %s", id, err)
 			continue
 		}
@@ -350,8 +375,8 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if schedule == "" {
 			schedule = defaultTriggerSchedule
 		}
-		acls, err := acl.ValidateTaskAcls(knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
-		if err != nil {
+		acls := acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
+		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
@@ -377,6 +402,66 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	return out, nil
 }
 
+func (cat *catalog) ConfigPatterns(c context.Context) []*validation.ConfigPattern {
+	return []*validation.ConfigPattern{
+		{
+			pattern.MustParse("regex:^projects/"),
+			pattern.MustParse(cat.configFile(c)),
+		},
+	}
+}
+
+func (cat *catalog) ValidateConfig(ctx *validation.Context, configSet, path string, content []byte) {
+	if strings.HasPrefix(configSet, "projects/") && path == cat.configFile(ctx.Context) {
+		cat.validateProjectConfig(ctx, content)
+	}
+}
+
+// validateProjectConfig validates the content of a project config file.
+//
+// Errors are returned via validation.Context.
+func (cat *catalog) validateProjectConfig(ctx *validation.Context, content []byte) {
+	var cfg messages.ProjectConfig
+	err := proto.UnmarshalText(string(content), &cfg)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	// AclSets
+	ctx.Enter("acl_sets")
+	knownACLSets := acl.ValidateACLSets(ctx, cfg.GetAclSets())
+	ctx.Exit()
+
+	// Jobs
+	ctx.Enter("job")
+	for _, job := range cfg.Job {
+		id := "(empty)"
+		if job.Id != "" {
+			id = job.Id
+		}
+		ctx.Enter(id)
+		cat.validateJobProto(ctx, job)
+		acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
+		ctx.Exit()
+	}
+	ctx.Exit()
+
+	// Triggers
+	ctx.Enter("trigger")
+	for _, trigger := range cfg.Trigger {
+		id := "(empty)"
+		if trigger.Id != "" {
+			id = trigger.Id
+		}
+		ctx.Enter(id)
+		cat.validateTriggerProto(ctx, trigger)
+		acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
+		ctx.Exit()
+	}
+	ctx.Exit()
+}
+
 // configFile returns a name of *.cfg file (inside project's config set) with
 // all scheduler job definitions for a project. This file contains text-encoded
 // ProjectConfig message.
@@ -390,37 +475,41 @@ func (cat *catalog) configFile(c context.Context) string {
 // validateJobProto validates messages.Job protobuf message.
 //
 // It also extracts a task definition from it (e.g. SwarmingTask proto).
-func (cat *catalog) validateJobProto(c context.Context, j *messages.Job) (proto.Message, error) {
+// Errors are returned via validation.Context.
+func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job) proto.Message {
 	if j.Id == "" {
-		return nil, fmt.Errorf("missing 'id' field'")
-	}
-	if !jobIDRe.MatchString(j.Id) {
-		return nil, fmt.Errorf("%q is not valid value for 'id' field", j.Id)
+		ctx.Errorf("missing 'id' field'")
+	} else if !jobIDRe.MatchString(j.Id) {
+		ctx.Errorf("%q is not valid value for 'id' field", j.Id)
 	}
 	if j.Schedule != "" {
+		ctx.Enter("schedule")
 		if _, err := schedule.Parse(j.Schedule, 0); err != nil {
-			return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
+			ctx.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
 		}
+		ctx.Exit()
 	}
-	return cat.extractTaskProto(c, j)
+	return cat.validateTaskProto(ctx, j)
 }
 
 // validateTriggerProto validates messages.Trigger protobuf message.
 //
 // It also extracts a task definition from it.
-func (cat *catalog) validateTriggerProto(c context.Context, t *messages.Trigger) (proto.Message, error) {
+// Errors are returned via validation.Context.
+func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Trigger) proto.Message {
 	if t.Id == "" {
-		return nil, fmt.Errorf("missing 'id' field'")
-	}
-	if !jobIDRe.MatchString(t.Id) {
-		return nil, fmt.Errorf("%q is not valid value for 'id' field", t.Id)
+		ctx.Errorf("missing 'id' field'")
+	} else if !jobIDRe.MatchString(t.Id) {
+		ctx.Errorf("%q is not valid value for 'id' field", t.Id)
 	}
 	if t.Schedule != "" {
+		ctx.Enter("schedule")
 		if _, err := schedule.Parse(t.Schedule, 0); err != nil {
-			return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", t.Schedule, err)
+			ctx.Errorf("%s is not valid value for 'schedule' field - %s", t.Schedule, err)
 		}
+		ctx.Exit()
 	}
-	return cat.extractTaskProto(c, t)
+	return cat.validateTaskProto(ctx, t)
 }
 
 // normalizeTriggeredJobIDs returns sorted list without duplicates.
@@ -434,15 +523,18 @@ func (cat *catalog) normalizeTriggeredJobIDs(projectID string, t *messages.Trigg
 	return out
 }
 
-// extractTaskProto visits all fields of a proto and sniffs ones that correspond
+// validateTaskProto visits all fields of a proto and sniffs ones that correspond
 // to task definitions (as registered via RegisterTaskManager). It ensures
 // there's one and only one such field, validates it, and returns it.
-func (cat *catalog) extractTaskProto(c context.Context, t proto.Message) (proto.Message, error) {
+//
+// Errors are returned via validation.Context.
+func (cat *catalog) validateTaskProto(ctx *validation.Context, t proto.Message) proto.Message {
 	var taskMsg proto.Message
 
 	v := reflect.ValueOf(t)
 	if v.Kind() != reflect.Ptr {
-		return nil, fmt.Errorf("expecting a pointer to proto message, got %T", t)
+		ctx.Errorf("expecting a pointer to proto message, got %T", t)
+		return nil
 	}
 	v = v.Elem()
 
@@ -456,23 +548,34 @@ func (cat *catalog) extractTaskProto(c context.Context, t proto.Message) (proto.
 		fieldVal, _ := field.Interface().(proto.Message)
 		if fieldVal != nil && cat.GetTaskManager(fieldVal) != nil {
 			if taskMsg != nil {
-				return nil, fmt.Errorf(
-					"only one field with task definition must be set, at least two are given (%T and %T)", taskMsg, fieldVal)
+				ctx.Errorf("only one field with task definition must be set, at least two are given (%T and %T)", taskMsg, fieldVal)
+				return nil
 			}
 			taskMsg = fieldVal
 		}
 	}
 
 	if taskMsg == nil {
-		return nil, fmt.Errorf("can't find a recognized task definition inside %T", t)
+		ctx.Errorf("can't find a recognized task definition inside %T", t)
+		return nil
 	}
 
 	taskMan := cat.GetTaskManager(taskMsg)
-	if err := taskMan.ValidateProtoMessage(c, taskMsg); err != nil {
-		return nil, err
+	ctx.Enter("task")
+	taskMan.ValidateProtoMessage(ctx, taskMsg)
+	ctx.Exit()
+	if ctx.Finalize() != nil {
+		return nil
 	}
+	return taskMsg
+}
 
-	return taskMsg, nil
+// extractTaskProto visits all fields of a proto and sniffs ones that correspond
+// to task definitions (as registered via RegisterTaskManager). It ensures
+// there's one and only one such field, validates it, and returns it.
+func (cat *catalog) extractTaskProto(c context.Context, t proto.Message) (proto.Message, error) {
+	ctx := &validation.Context{Context: c}
+	return cat.validateTaskProto(ctx, t), ctx.Finalize()
 }
 
 // marshalTask takes a concrete task definition proto (e.g. SwarmingTask), wraps

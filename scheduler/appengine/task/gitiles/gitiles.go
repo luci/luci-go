@@ -27,6 +27,7 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -65,33 +66,38 @@ func (m TaskManager) Traits() task.Traits {
 }
 
 // ValidateProtoMessage is part of Manager interface.
-func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
+func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
 	cfg, ok := msg.(*messages.GitilesTask)
 	if !ok {
-		return fmt.Errorf("wrong type %T, expecting *messages.GitilesTask", msg)
+		c.Errorf("wrong type %T, expecting *messages.GitilesTask", msg)
+		return
 	}
 
 	// Validate 'repo' field.
+	c.Enter("repo")
 	if cfg.Repo == "" {
-		return fmt.Errorf("field 'repository' is required")
+		c.Errorf("field 'repository' is required")
+	} else {
+		u, err := url.Parse(cfg.Repo)
+		if err != nil {
+			c.Errorf("invalid URL %q: %s", cfg.Repo, err)
+		} else if !u.IsAbs() {
+			c.Errorf("not an absolute url: %q", cfg.Repo)
+		}
 	}
-	u, err := url.Parse(cfg.Repo)
-	if err != nil {
-		return fmt.Errorf("invalid URL %q: %s", cfg.Repo, err)
-	}
-	if !u.IsAbs() {
-		return fmt.Errorf("not an absolute url: %q", cfg.Repo)
-	}
+	c.Exit()
+
+	c.Enter("refs")
 	for _, ref := range cfg.Refs {
 		if !strings.HasPrefix(ref, "refs/") {
-			return fmt.Errorf("ref must start with 'refs/' not %q", ref)
+			c.Errorf("ref must start with 'refs/' not %q", ref)
 		}
 		cnt := strings.Count(ref, "*")
 		if cnt > 1 || (cnt == 1 && !strings.HasSuffix(ref, "/*")) {
-			return fmt.Errorf("only trailing (e.g. refs/blah/*) globs are supported, not %q", ref)
+			c.Errorf("only trailing (e.g. refs/blah/*) globs are supported, not %q", ref)
 		}
 	}
-	return nil
+	c.Exit()
 }
 
 // LaunchTask is part of Manager interface.

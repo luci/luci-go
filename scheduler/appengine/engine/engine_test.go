@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -1359,7 +1360,7 @@ func getSentDistrValue(c context.Context, m types.Metric, fieldVals ...interface
 	case !ok:
 		panic(errors.New("not a distribuition"))
 	case d.Count() != 1:
-		panic(fmt.Errorf("expected 1 value, but %d values were sent with sum of %f", d.Count(), d.Sum))
+		panic(fmt.Errorf("expected 1 value, but %d values were sent with sum of %f", d.Count(), d.Sum()))
 	default:
 		return d.Sum()
 	}
@@ -1401,9 +1402,7 @@ func (m *fakeTaskManager) Traits() task.Traits {
 	return task.Traits{}
 }
 
-func (m *fakeTaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
-	return nil
-}
+func (m *fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {}
 
 func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 	return m.launchTask(c, ctl, triggers)
