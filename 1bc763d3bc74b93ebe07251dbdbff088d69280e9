@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4fdcbc69_ec5b7347",
+        "filename": "client/cmd/isolate/exp_archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-14T16:54:30Z",
+      "side": 1,
+      "message": "The optimal value is likely between 6 and 8",
+      "revId": "1bc763d3bc74b93ebe07251dbdbff088d69280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
