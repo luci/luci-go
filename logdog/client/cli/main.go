@@ -199,7 +199,7 @@ func Main(ctx context.Context, params Parameters) int {
 
 	// Signal handler will cancel our context when interrupted.
 	ctx, cancelFunc := context.WithCancel(ctx)
-	signalC := make(chan os.Signal)
+	signalC := make(chan os.Signal, 1)
 	signal.Notify(signalC, os.Interrupt, os.Kill)
 	go func() {
 		triggered := false
