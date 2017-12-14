@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "af605e6d_17832a51",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-14T16:16:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8948cf47_626bc379",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 4
+      },
+      "revId": "a61d1fe70a217365754804a8fc1a3699079cccc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7de69fed_65252f3f",
         "filename": "common/config/validation/handler_test.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "231b228b_68d41461",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-14T16:16:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7de69fed_65252f3f",
+      "range": {
+        "startLine": 43,
+        "startChar": 11,
+        "endLine": 43,
+        "endChar": 29
+      },
+      "revId": "a61d1fe70a217365754804a8fc1a3699079cccc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "572811e0_c05dd065",
         "filename": "common/config/validation/handler_test.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "a61d1fe70a217365754804a8fc1a3699079cccc1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "738cee7e_8115fccb",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-14T16:16:13Z",
+      "side": 1,
+      "message": "Here I am actually checking if the right patterns are returned by the handler.",
+      "parentUuid": "572811e0_c05dd065",
+      "revId": "a61d1fe70a217365754804a8fc1a3699079cccc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
