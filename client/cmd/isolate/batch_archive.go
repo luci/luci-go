@@ -61,6 +61,7 @@ isolate. Format of files is:
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
 			c.Flags.BoolVar(&c.expArchive, "exparchive", false, "Whether to use the new exparchive implementation, which tars small files before uploading them.")
+			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 1, "The maxiumum number of in-flight uploads.")
 			return &c
 		},
 	}
@@ -68,9 +69,10 @@ isolate. Format of files is:
 
 type batchArchiveRun struct {
 	commonServerFlags
-	loggingFlags loggingFlags
-	dumpJSON     string
-	expArchive   bool
+	loggingFlags         loggingFlags
+	dumpJSON             string
+	expArchive           bool
+	maxConcurrentUploads int
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
@@ -153,7 +155,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		operation: logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum(),
 	}
 	if c.expArchive {
-		return doBatchExpArchive(ctx, client, al, c.dumpJSON, args)
+		return doBatchExpArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentUploads, args)
 	}
 	return doBatchArchive(ctx, client, al, c.dumpJSON, args)
 }
@@ -214,13 +216,13 @@ func doBatchArchive(ctx context.Context, client *isolatedclient.Client, al archi
 }
 
 // doBatchExpArchive archives a series of isolates specified by genJSONPaths, using the new exparchive codepath.
-func doBatchExpArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, genJSONPaths []string) error {
+func doBatchExpArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentUploads int, genJSONPaths []string) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
 	// disk at once.
 	checker := NewChecker(ctx, client)
-	uploader := NewUploader(ctx, client, 1)
+	uploader := NewUploader(ctx, client, concurrentUploads)
 	archiver := NewTarringArchiver(checker, uploader)
 
 	var errArchive error
