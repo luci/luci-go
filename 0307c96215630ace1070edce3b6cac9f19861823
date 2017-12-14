@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "c8a8e734_b92f8f2d",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "I was thinking a name that talks about _config_ might be better, but then i discovered that we already have one: validateDatacentersConfig, except it does not validate contents of the config. Any reason not to inline validateDatacenters there?",
+      "parentUuid": "732688d1_46f7413e",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef3d9ea9_7f7dafcd",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 2
@@ -450,6 +468,30 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f09c9352_8adfff0e",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "not sure i understood this. i am not suggesting to remove map, but use map[int]struct{} (set of ids) instead of stringset.Set (set of names). Nothing changes in terms of order.",
+      "parentUuid": "33d6111b_f74610a8",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 170,
+        "endChar": 42
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {

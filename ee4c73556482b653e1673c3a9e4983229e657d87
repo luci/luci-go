@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0c166f2_6a55f4dc",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "this is better, thanks",
+      "range": {
+        "startLine": 164,
+        "startChar": 14,
+        "endLine": 164,
+        "endChar": 29
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e7a9ba2c_eb8e0c51",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "this is much better, thanks!",
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c2897b79_43f36f79",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "i\u0027ve noticed that we use config type here while in other files we use row type. This is somewhat inconsistent. If we use row type here, the amount of code will be ~same (L85-91 will move to L77) and needsUpdate will be able to take two row types, instead of a row type and a config type, like in other files.",
+      "range": {
+        "startLine": 75,
+        "startChar": 25,
+        "endLine": 75,
+        "endChar": 49
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd3f74c2_65dfdc6a",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "optional / just saying: in case the length of this line bothers you, or if we have more conditions in future, using switch might make this code more readable:\n\nswitch {\ncase matches(s.Name, names):\ncase matches(s.Rack, racks):\ncase matches(s.Datacenter, datacenters):\ndefault:\n  switches \u003d append(switches, s)\n}",
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdfd64dd_a7de7123",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "i assume you do this for consistency? using alias here makes this code more verbose",
+      "range": {
+        "startLine": 39,
+        "startChar": 25,
+        "endLine": 39,
+        "endChar": 27
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e69b8a54_ea574c98",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T16:43:40Z",
+      "side": 1,
+      "message": "please use `nicely\n  formatted SQL\n  statements` here too. I\u0027ve verified locally that tests would still pass",
+      "range": {
+        "startLine": 210,
+        "startChar": 16,
+        "endLine": 210,
+        "endChar": 17
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
