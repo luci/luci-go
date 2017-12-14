@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "abd09efe_1dd7fcce",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2017-12-14T00:54:22Z",
+      "side": 1,
+      "message": "small pedantic, mind adding a trailing \\n, but only when the list is not empty? I dislike when there\u0027s no trailing \\n.",
+      "revId": "70cb87ccfee9f03cdebc1a25b4951d1b08e8dac4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
