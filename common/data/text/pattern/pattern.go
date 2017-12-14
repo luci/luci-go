@@ -75,3 +75,16 @@ func Parse(s string) (Pattern, error) {
 		return nil, fmt.Errorf("unknown pattern kind: %q", kind)
 	}
 }
+
+// MustParse parses the pattern according to the specification
+// of Parse. In addition, it panics if there is an error in parsing the
+// given string as a pattern.
+//
+// See Parse for more details.
+func MustParse(s string) Pattern {
+	pattern, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return pattern
+}

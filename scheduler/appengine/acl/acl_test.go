@@ -17,49 +17,56 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestAclsValidation(t *testing.T) {
+func TestACLsValidation(t *testing.T) {
 	t.Parallel()
 
 	validGrant := &messages.Acl{Role: messages.Acl_READER, GrantedTo: "group:all"}
 	validGrants := []*messages.Acl{validGrant}
+	c := gaetesting.TestingContext()
 
 	Convey("grant validation", t, func() {
-		So(validateGrants(validGrants), ShouldBeNil)
-
 		call := func(acls ...*messages.Acl) error {
-			return validateGrants(acls)
+			ctx := &validation.Context{Context: c}
+			validateGrants(ctx, acls)
+			return ctx.Finalize()
 		}
+		So(call(validGrant), ShouldBeNil)
 		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: "e@example.com"}), ShouldBeNil)
 
-		So(call(&messages.Acl{Role: 3}).Error(), ShouldResemble, "invalid role \"3\"")
-		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: ""}).Error(),
-			ShouldResemble, "missing granted_to for role OWNER")
-		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: "group:"}).Error(),
-			ShouldResemble, "invalid granted_to \"group:\" for role OWNER: needs a group name")
-		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: "not-email"}).Error(),
-			ShouldStartWith, "invalid granted_to \"not-email\" for role OWNER: ")
-		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: "bot:"}).Error(),
-			ShouldStartWith, "invalid granted_to \"bot:\" for role OWNER: ")
+		So(call(&messages.Acl{Role: 3}), ShouldErrLike, "invalid role \"3\"")
+		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: ""}),
+			ShouldErrLike, "missing granted_to for role OWNER")
+		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: "group:"}),
+			ShouldErrLike, "invalid granted_to \"group:\" for role OWNER: needs a group name")
+		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: "not-email"}),
+			ShouldErrLike, "invalid granted_to \"not-email\" for role OWNER: ")
+		So(call(&messages.Acl{Role: messages.Acl_OWNER, GrantedTo: "bot:"}),
+			ShouldErrLike, "invalid granted_to \"bot:\" for role OWNER: ")
 	})
 
 	validAclSet := &messages.AclSet{Name: "public", Acls: validGrants}
 
 	Convey("Validate AclSets", t, func() {
-		as, err := ValidateAclSets([]*messages.AclSet{validAclSet})
-		So(err, ShouldBeNil)
+		ctx := &validation.Context{Context: c}
+		as := ValidateACLSets(ctx, []*messages.AclSet{validAclSet})
+		So(ctx.Finalize(), ShouldBeNil)
 		So(len(as), ShouldEqual, 1)
 		So(as["public"], ShouldResemble, validGrants)
 
 		shouldError := func(sets ...*messages.AclSet) {
-			_, err := ValidateAclSets(sets)
-			So(err, ShouldNotBeNil)
+			valCtx := &validation.Context{Context: c}
+			ValidateACLSets(valCtx, sets)
+			So(valCtx.Finalize(), ShouldNotBeNil)
 		}
 
 		shouldError(&messages.AclSet{Name: "one"})
@@ -69,19 +76,26 @@ func TestAclsValidation(t *testing.T) {
 
 	Convey("Task Acls", t, func() {
 		Convey("READER and OWNER ACLs are required", func() {
-			_, err := ValidateTaskAcls(nil, nil,
-				[]*messages.Acl{{Role: messages.Acl_READER, GrantedTo: "group:readers"}})
-			So(err.Error(), ShouldResemble, "Job or Trigger must have OWNER acl set")
-
-			_, err = ValidateTaskAcls(nil, nil,
-				[]*messages.Acl{{Role: messages.Acl_OWNER, GrantedTo: "group:owners"}})
-			So(err.Error(), ShouldResemble, "Job or Trigger must have READER acl set")
+			ctx := &validation.Context{Context: c}
+			Convey("No OWNER acl set", func() {
+				ValidateTaskACLs(ctx, nil, []string{},
+					[]*messages.Acl{{Role: messages.Acl_READER, GrantedTo: "group:readers"}})
+				So(ctx.Finalize(), ShouldErrLike,
+					"Job or Trigger must have OWNER acl set")
+			})
+			Convey("No READER acl set", func() {
+				ValidateTaskACLs(ctx, nil, []string{},
+					[]*messages.Acl{{Role: messages.Acl_OWNER, GrantedTo: "group:owners"}})
+				So(ctx.Finalize(), ShouldErrLike,
+					"Job or Trigger must have READER acl set")
+			})
 		})
 
 		Convey("Without AclSets but with bad ACLs", func() {
-			_, err := ValidateTaskAcls(nil, nil, []*messages.Acl{
+			ctx := &validation.Context{Context: c}
+			ValidateTaskACLs(ctx, nil, []string{}, []*messages.Acl{
 				{Role: messages.Acl_OWNER, GrantedTo: ""}})
-			So(err, ShouldNotBeNil)
+			So(ctx.Finalize(), ShouldNotBeNil)
 		})
 
 		Convey("Many ACLs", func() {
@@ -91,9 +105,10 @@ func TestAclsValidation(t *testing.T) {
 				taskGrants[i] = &messages.Acl{Role: messages.Acl_OWNER, GrantedTo: fmt.Sprintf("group:%d", i)}
 			}
 			So(len(taskGrants), ShouldEqual, maxGrantsPerJob)
+			ctx := &validation.Context{Context: c}
 			Convey("Hitting max is OK", func() {
-				r, err := ValidateTaskAcls(nil, nil, taskGrants)
-				So(err, ShouldBeNil)
+				r := ValidateTaskACLs(ctx, nil, []string{}, taskGrants)
+				So(ctx.Finalize(), ShouldBeNil)
 				So(len(r.Readers), ShouldEqual, 1)
 				So(len(r.Owners), ShouldEqual, maxGrantsPerJob-1)
 			})
@@ -101,11 +116,12 @@ func TestAclsValidation(t *testing.T) {
 				aclSets := map[string][]*messages.Acl{
 					"public": {{Role: messages.Acl_READER, GrantedTo: "group:all"}},
 				}
-				_, err := ValidateTaskAcls(aclSets, []string{"public"}, taskGrants)
-				So(err.Error(), ShouldResemble, "Job or Trigger can have at most 32 acls, but 33 given")
+				ValidateTaskACLs(ctx, aclSets, []string{"public"}, taskGrants)
+				So(ctx.Finalize(), ShouldErrLike, "Job or Trigger can have at most 32 acls, but 33 given")
 			})
 		})
 
+		ctx := &validation.Context{Context: c}
 		protoAclSets := []*messages.AclSet{
 			{Name: "public", Acls: []*messages.Acl{
 				{Role: messages.Acl_READER, GrantedTo: "group:all"},
@@ -118,34 +134,39 @@ func TestAclsValidation(t *testing.T) {
 				{Role: messages.Acl_READER, GrantedTo: "group:internal"},
 			}},
 		}
-		aclSets, err := ValidateAclSets(protoAclSets)
-		So(err, ShouldBeNil)
+		aclSets := ValidateACLSets(ctx, protoAclSets)
+		So(ctx.Finalize(), ShouldBeNil)
 		So(len(aclSets), ShouldEqual, 3)
 
 		Convey("Bad acl_set reference in a task definition", func() {
-			_, err := ValidateTaskAcls(aclSets, []string{"typo"}, validGrants)
-			So(err.Error(), ShouldResemble, "referencing AclSet 'typo' which doesn't exist")
+			valCtx := &validation.Context{Context: c}
+			ValidateTaskACLs(valCtx, aclSets, []string{"typo"}, validGrants)
+			So(valCtx.Finalize(), ShouldErrLike, "(acl_sets): referencing AclSet \"typo\" which doesn't exist")
 		})
 
 		Convey("Merging", func() {
-			jobAcls, err := ValidateTaskAcls(
-				aclSets, []string{"public", "power-owners"},
-				[]*messages.Acl{
-					{Role: messages.Acl_OWNER, GrantedTo: "me@example.com"},
-					{Role: messages.Acl_READER, GrantedTo: "you@example.com"},
-				})
-			So(err, ShouldBeNil)
-			So(jobAcls.Owners, ShouldResemble, []string{"group:owners", "group:power", "me@example.com"})
-			So(jobAcls.Readers, ShouldResemble, []string{"group:all", "you@example.com"})
-
-			jobAcls, err = ValidateTaskAcls(
-				aclSets, []string{"private"},
-				[]*messages.Acl{
-					{Role: messages.Acl_OWNER, GrantedTo: "me@example.com"},
-				})
-			So(err, ShouldBeNil)
-			So(jobAcls.Owners, ShouldResemble, []string{"me@example.com"})
-			So(jobAcls.Readers, ShouldResemble, []string{"group:internal"})
+			valCtx := &validation.Context{Context: c}
+			Convey("ok1", func() {
+				jobAcls := ValidateTaskACLs(valCtx,
+					aclSets, []string{"public", "power-owners"},
+					[]*messages.Acl{
+						{Role: messages.Acl_OWNER, GrantedTo: "me@example.com"},
+						{Role: messages.Acl_READER, GrantedTo: "you@example.com"},
+					})
+				So(valCtx.Finalize(), ShouldBeNil)
+				So(jobAcls.Owners, ShouldResemble, []string{"group:owners", "group:power", "me@example.com"})
+				So(jobAcls.Readers, ShouldResemble, []string{"group:all", "you@example.com"})
+			})
+			Convey("ok2", func() {
+				jobAcls := ValidateTaskACLs(valCtx,
+					aclSets, []string{"private"},
+					[]*messages.Acl{
+						{Role: messages.Acl_OWNER, GrantedTo: "me@example.com"},
+					})
+				So(valCtx.Finalize(), ShouldBeNil)
+				So(jobAcls.Owners, ShouldResemble, []string{"me@example.com"})
+				So(jobAcls.Readers, ShouldResemble, []string{"group:internal"})
+			})
 		})
 	})
 }
