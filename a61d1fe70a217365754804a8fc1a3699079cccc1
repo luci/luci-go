@@ -128,6 +128,24 @@
       "revId": "a61d1fe70a217365754804a8fc1a3699079cccc1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "76199955_b8f40b12",
+        "filename": "common/config/validation/handler_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T18:40:03Z",
+      "side": 1,
+      "message": "oops, sorry, not sure how could i miss actual slice element 🤦",
+      "parentUuid": "738cee7e_8115fccb",
+      "revId": "a61d1fe70a217365754804a8fc1a3699079cccc1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
