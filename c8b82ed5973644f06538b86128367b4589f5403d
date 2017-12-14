@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c1c02a3_91efee71",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2017-12-14T19:13:37Z",
+      "side": 1,
+      "message": "Why is this case specified?",
+      "revId": "c8b82ed5973644f06538b86128367b4589f5403d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
