@@ -34,6 +34,24 @@
       "revId": "c8b82ed5973644f06538b86128367b4589f5403d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e015f6ef_685dd635",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2017-12-14T19:27:26Z",
+      "side": 1,
+      "message": "Correct. Thanks for the reminder!",
+      "parentUuid": "d3545c7c_07f711ac",
+      "revId": "c8b82ed5973644f06538b86128367b4589f5403d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
