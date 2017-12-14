@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9c089c56_396ae97a",
+        "filename": "machine-db/api/crimson/v1/switches.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28544f65_ed379b00",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 0
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe9c7f89_17e9b1c5",
         "filename": "machine-db/appengine/config/config.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "732688d1_46f7413e",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Ack, but I\u0027m not sure what to call it. It\u0027s called validateDatacenters because it validates the DatacenterConfig proto, which contains RackConfig and SwitchConfig as fields, and since it validates all fields of the DatacenterConfig protos that would imply it validates RackConfigs and SwitchConfigs as well.",
+      "parentUuid": "fe9c7f89_17e9b1c5",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +118,24 @@
     },
     {
       "key": {
+        "uuid": "48fed49a_487170cd",
+        "filename": "machine-db/appengine/model/racks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d89af18b_08261917",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b050c7f5_bd868fa8",
         "filename": "machine-db/appengine/model/switches.go",
         "patchSetId": 2
@@ -96,6 +156,30 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f13c3eca_e6de462b",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b050c7f5_bd868fa8",
+      "range": {
+        "startLine": 37,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 28
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -145,6 +229,54 @@
     },
     {
       "key": {
+        "uuid": "f04b7fce_fc6168f8",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6277e3c8_6a6955b8",
+      "range": {
+        "startLine": 76,
+        "startChar": 86,
+        "endLine": 76,
+        "endChar": 87
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4577d49_20b36ee0",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Empty name is rejected by config.go. Done, though.",
+      "parentUuid": "ee8995a9_df7da386",
+      "range": {
+        "startLine": 76,
+        "startChar": 55,
+        "endLine": 76,
+        "endChar": 69
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff331186_f03b0776",
         "filename": "machine-db/appengine/model/switches.go",
         "patchSetId": 2
@@ -168,6 +300,30 @@
     },
     {
       "key": {
+        "uuid": "ec5d95de_3598bc28",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff331186_f03b0776",
+      "range": {
+        "startLine": 93,
+        "startChar": 6,
+        "endLine": 93,
+        "endChar": 88
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c67a4ad5_48bfd35e",
         "filename": "machine-db/appengine/model/switches.go",
         "patchSetId": 2
@@ -182,6 +338,24 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb8a545e_63b9b134",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Sorry, done.",
+      "parentUuid": "c67a4ad5_48bfd35e",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -208,6 +382,30 @@
     },
     {
       "key": {
+        "uuid": "c7a0db05_0547cfb7",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c990ca3c_bcb94edf",
+      "range": {
+        "startLine": 107,
+        "startChar": 39,
+        "endLine": 107,
+        "endChar": 44
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "197a67d7_a4631af9",
         "filename": "machine-db/appengine/model/switches.go",
         "patchSetId": 2
@@ -231,6 +429,30 @@
     },
     {
       "key": {
+        "uuid": "33d6111b_f74610a8",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done, but without maps because expectations unfortunately require deterministic order.",
+      "parentUuid": "197a67d7_a4631af9",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 170,
+        "endChar": 42
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "55675a04_b2278903",
         "filename": "machine-db/appengine/model/switches.go",
         "patchSetId": 2
@@ -251,6 +473,30 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cae07b56_4f6db4b2",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55675a04_b2278903",
+      "range": {
+        "startLine": 214,
+        "startChar": 20,
+        "endLine": 214,
+        "endChar": 35
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -301,6 +547,30 @@
     },
     {
       "key": {
+        "uuid": "df0c0387_c23c5fac",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec8fd8e0_446806b8",
+      "range": {
+        "startLine": 225,
+        "startChar": 10,
+        "endLine": 225,
+        "endChar": 16
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16138b13_00972a1f",
         "filename": "machine-db/appengine/model/switches.go",
         "patchSetId": 2
@@ -324,6 +594,30 @@
     },
     {
       "key": {
+        "uuid": "776ab8c0_054ccb2c",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16138b13_00972a1f",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 2
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1daf1a54_8b082dc4",
         "filename": "machine-db/appengine/model/switches_test.go",
         "patchSetId": 2
@@ -338,6 +632,24 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2744a8d5_3a0fff7d",
+        "filename": "machine-db/appengine/model/switches_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "This map is written to on lines 168, 252.",
+      "parentUuid": "1daf1a54_8b082dc4",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -364,6 +676,30 @@
     },
     {
       "key": {
+        "uuid": "29b7dc9e_a315ac7d",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7b0f0aa_4bc910e6",
+      "range": {
+        "startLine": 151,
+        "startChar": 41,
+        "endLine": 151,
+        "endChar": 49
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2445ab7f_320e69f5",
         "filename": "machine-db/appengine/rpc/crimson.go",
         "patchSetId": 2
@@ -384,6 +720,30 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dead9a3_fa6d81f3",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T00:04:52Z",
+      "side": 1,
+      "message": "Done, but slightly differently. stringset.Set is an interface and I don\u0027t want to create my own type that implements every method of the interface.",
+      "parentUuid": "2445ab7f_320e69f5",
+      "range": {
+        "startLine": 163,
+        "startChar": 5,
+        "endLine": 163,
+        "endChar": 44
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
