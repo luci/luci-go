@@ -56,6 +56,7 @@ func cmdExpArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 				"Write isolated digests of archived trees to this file as JSON")
+			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 1, "The maxiumum number of in-flight uploads.")
 			return c
 		},
 	}
@@ -64,10 +65,11 @@ func cmdExpArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 // expArchiveRun contains the logic for the experimental archive subcommand.
 // It implements subcommand.CommandRun
 type expArchiveRun struct {
-	commonServerFlags // Provides the GetFlags method.
-	isolateFlags      isolateFlags
-	loggingFlags      loggingFlags
-	dumpJSON          string
+	commonServerFlags    // Provides the GetFlags method.
+	isolateFlags         isolateFlags
+	loggingFlags         loggingFlags
+	dumpJSON             string
+	maxConcurrentUploads int
 }
 
 // main contains the core logic for experimental archive.
@@ -93,18 +95,18 @@ func (c *expArchiveRun) main() error {
 		quiet:     c.commonServerFlags.commonFlags.defaultFlags.Quiet,
 	}
 
-	return doExpArchive(ctx, client, archiveOpts, c.dumpJSON, al)
+	return doExpArchive(ctx, client, archiveOpts, c.dumpJSON, c.maxConcurrentUploads, al)
 }
 
 // doExparchive performs the exparchive operation for an isolate specified by archiveOpts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func doExpArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, al archiveLogger) error {
+func doExpArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, concurrentUploads int, al archiveLogger) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
 	// disk at once.
 	checker := NewChecker(ctx, client)
-	uploader := NewUploader(ctx, client, 1)
+	uploader := NewUploader(ctx, client, concurrentUploads)
 	archiver := NewTarringArchiver(checker, uploader)
 
 	isolSummary, err := archiver.Archive(archiveOpts)
