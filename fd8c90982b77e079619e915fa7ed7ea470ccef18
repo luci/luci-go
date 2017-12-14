@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d431e08e_3baefc6b",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-14T00:19:46Z",
+      "side": 1,
+      "message": "I am still somewhat confused XD.\nLet\u0027s say that we have AclSets such as\n  AclSet {\n  name: \"hello\"\n  }\n  AclSet {\n  name: \"hello\"\n  }\n  AclSet {\n  name: \"hello\" \n  }\nIf this is the case then, initially, seen will be ().\nFor the first,\nisDup will now contain the key \"hello\" and seen will still be ().\nFor the second,\nisDup stays the same and seen now contains (\"hello\"). And because it was successfully added to the set, the ctx.Errorf is called, which is what we want since we want to call it on a duplicate name.\nFor the third,\nisDup stays the same and no new element was added to seen, thus\n  seen.Add(s.Name)\nwill return false and ctx.Errorf will note be called.\nThus, seen here acts as a set of all the multiple names already recorded.",
+      "parentUuid": "a6251bf2_c712a1a5",
+      "range": {
+        "startLine": 80,
+        "startChar": 6,
+        "endLine": 80,
+        "endChar": 22
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "863bc128_d054fc96",
         "filename": "scheduler/appengine/acl/acl.go",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acfe20af_a1283b4b",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-14T00:19:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "863bc128_d054fc96",
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "11dfab72_a026a844",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-14T00:19:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "813d1990_6e9b5fbb",
+      "range": {
+        "startLine": 134,
+        "startChar": 3,
+        "endLine": 134,
+        "endChar": 9
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8761bb9_8ff02a97",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 3
@@ -85,6 +151,30 @@
       "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8156125_2be81f6b",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 509,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-14T00:19:46Z",
+      "side": 1,
+      "message": "Coming to think about it, this is confusing. I\u0027ll change it!",
+      "parentUuid": "f8761bb9_8ff02a97",
+      "range": {
+        "startLine": 509,
+        "startChar": 14,
+        "endLine": 509,
+        "endChar": 20
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
