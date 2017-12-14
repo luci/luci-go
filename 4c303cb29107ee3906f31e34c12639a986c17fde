@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bf95f859_eca1d765",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T02:19:57Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "0632eb75_2e911632",
+      "range": {
+        "startLine": 164,
+        "startChar": 1,
+        "endLine": 164,
+        "endChar": 11
+      },
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "69f83e3e_6c306c5f",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 4
@@ -83,6 +107,30 @@
       "writtenOn": "2017-12-14T01:14:02Z",
       "side": 1,
       "message": "why not just \nif ... {\n  ..\n}",
+      "range": {
+        "startLine": 393,
+        "startChar": 1,
+        "endLine": 394,
+        "endChar": 6
+      },
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5252d66_eaac0861",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T02:19:57Z",
+      "side": 1,
+      "message": "yeah i guess this is because i suggested to use switch, but my suggestion wasn\u0027t good. switch makes sense where there are multiple configs, but scheduler service has only one",
+      "parentUuid": "3745d274_c8235da8",
       "range": {
         "startLine": 393,
         "startChar": 1,
