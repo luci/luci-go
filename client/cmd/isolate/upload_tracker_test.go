@@ -112,6 +112,8 @@ func (checker *fakeChecker) AddItem(item *Item, isolated bool, callback CheckerC
 	callback(item, checker.ps)
 }
 
+func (checker *fakeChecker) PresumeExists(item *Item) {}
+
 func (checker *fakeChecker) Close() error { return nil }
 
 // fakeChecker implements Uploader while recording method arguments.

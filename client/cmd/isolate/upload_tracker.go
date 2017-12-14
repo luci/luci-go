@@ -147,6 +147,12 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 			if ps == nil {
 				return
 			}
+
+			// We are about to upload item. If we fail, the entire isolate operation will fail.
+			// If we succeed, then item will be on the server by the time that the isolate operation
+			// completes. So it is safe for subsequent checks to assume that the item exists.
+			ut.checker.PresumeExists(item)
+
 			log.Printf("QUEUED %q for upload", item.RelPath)
 			ut.uploader.Upload(item.RelPath, bundle.Contents, ps, func() {
 				log.Printf("UPLOADED %q", item.RelPath)
@@ -170,6 +176,12 @@ func (ut *UploadTracker) uploadFiles(files []*Item) error {
 			if ps == nil {
 				return
 			}
+
+			// We are about to upload item. If we fail, the entire isolate operation will fail.
+			// If we succeed, then item will be on the server by the time that the isolate operation
+			// completes. So it is safe for subsequent checks to assume that the item exists.
+			ut.checker.PresumeExists(item)
+
 			log.Printf("QUEUED %q for upload", item.RelPath)
 			ut.uploader.UploadFile(item, ps, func() {
 				log.Printf("UPLOADED %q", item.RelPath)
