@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39cec19a_707d19fa",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T19:37:34Z",
+      "side": 1,
+      "message": "this shouldn\u0027t be part of catalog interface, but let\u0027s keep it to have this CL landed. I\u0027ll refactor it later.",
+      "range": {
+        "startLine": 120,
+        "startChar": 0,
+        "endLine": 127,
+        "endChar": 62
+      },
+      "revId": "06feab523595aef899aa5615c596683754e186fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "725029db_95c28509",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T19:37:34Z",
+      "side": 1,
+      "message": "this convey block encompasses 3 blocks inside, and it\u0027s shown as such in goconvey UI. So, this name doesn\u0027t make sense. Instead, this should be a top-level description of all tests that are inside. Say,\n\n\"Config validation\" or as Vadim likes to write it \"Config validation works\" :)",
+      "range": {
+        "startLine": 300,
+        "startChar": 10,
+        "endLine": 300,
+        "endChar": 38
+      },
+      "revId": "06feab523595aef899aa5615c596683754e186fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10b86cd3_8209c56c",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T19:37:34Z",
+      "side": 1,
+      "message": "and once you adopt my suggestion above, this bit is redundant and can be removed.",
+      "range": {
+        "startLine": 302,
+        "startChar": 10,
+        "endLine": 302,
+        "endChar": 24
+      },
+      "revId": "06feab523595aef899aa5615c596683754e186fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e931466e_69d398ad",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T19:37:34Z",
+      "side": 1,
+      "message": "ditto, and also this is actually \"unmarshallNOTable\" because proto.Unmarshal is what fails, so to avoid confusion:\n\"Config that can\u0027t be deserialized\"",
+      "range": {
+        "startLine": 307,
+        "startChar": 10,
+        "endLine": 307,
+        "endChar": 24
+      },
+      "revId": "06feab523595aef899aa5615c596683754e186fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5af33686_23e77f90",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T19:37:34Z",
+      "side": 1,
+      "message": "ditto \u0026\u0026 perhaps just \"semantic errors\"",
+      "range": {
+        "startLine": 312,
+        "startChar": 10,
+        "endLine": 312,
+        "endChar": 69
+      },
+      "revId": "06feab523595aef899aa5615c596683754e186fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
