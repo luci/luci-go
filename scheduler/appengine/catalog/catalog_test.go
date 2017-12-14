@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -71,8 +72,9 @@ func TestProtoValidation(t *testing.T) {
 		c := New("scheduler.cfg").(*catalog)
 
 		call := func(j *messages.Job) error {
-			_, err := c.validateJobProto(context.Background(), j)
-			return err
+			valCtx := &validation.Context{Context: ctx}
+			c.validateJobProto(valCtx, j)
+			return valCtx.Finalize()
 		}
 
 		c.RegisterTaskManager(fakeTaskManager{})
@@ -283,6 +285,47 @@ func TestConfigReading(t *testing.T) {
 	})
 }
 
+func TestValidateConfig(t *testing.T) {
+	t.Parallel()
+	catalog := New("luci-scheduler.cfg")
+	catalog.RegisterTaskManager(fakeTaskManager{
+		name: "noop",
+		task: &messages.NoopTask{},
+	})
+	catalog.RegisterTaskManager(fakeTaskManager{
+		name: "url_fetch",
+		task: &messages.UrlFetchTask{},
+	})
+
+	Convey("Config validation works", t, func() {
+		ctx := &validation.Context{Context: testContext()}
+		Convey("correct config file content", func() {
+			catalog.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg))
+			So(ctx.Finalize(), ShouldBeNil)
+		})
+
+		Convey("Config that can't be deserialized", func() {
+			catalog.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef"))
+			So(ctx.Finalize(), ShouldNotBeNil)
+		})
+
+		Convey("semantic errors", func() {
+			catalog.ValidateConfig(ctx, "projects/validation-error", "luci-scheduler.cfg", []byte(project4Cfg))
+			So(ctx.Finalize(), ShouldErrLike, "referencing AclSet \"standard\" which doesn't exist")
+		})
+	})
+}
+
+func TestConfigPatterns(t *testing.T) {
+	Convey("Should return patterns", t, func() {
+		catalog := New("luci-scheduler.cfg")
+		patterns := catalog.ConfigPatterns(testContext())
+		So(len(patterns), ShouldEqual, 1)
+		So(patterns[0].ConfigSet.String(), ShouldEqual, "regex:^projects/")
+		So(patterns[0].Path.String(), ShouldEqual, "exact:luci-scheduler.cfg")
+	})
+}
+
 ////
 
 type fakeTaskManager struct {
@@ -310,9 +353,11 @@ func (m fakeTaskManager) Traits() task.Traits {
 	return task.Traits{}
 }
 
-func (m fakeTaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
+func (m fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
 	So(msg, ShouldNotBeNil)
-	return m.validationErr
+	if m.validationErr != nil {
+		c.Error(m.validationErr)
+	}
 }
 
 func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
@@ -434,6 +479,77 @@ job {
   id: "noop-job-1"
   schedule: "*/10 * * * * * *"
   noop: {}
+}
+`
+
+const project3Cfg = `
+acl_sets {
+  name: "default"
+  acls {
+    role: READER
+    granted_to: "group:all"
+  }
+  acls {
+    role: OWNER
+    granted_to: "group:all"
+  }
+}
+
+job {
+  id: "noop-job-v2"
+  acl_sets: "default"
+  noop: {
+    sleep_ms: 1000
+  }
+}
+
+trigger {
+  id: "noop-trigger-v2"
+  acl_sets: "default"
+
+  noop: {
+    sleep_ms: 1000
+    triggers_count: 2
+  }
+
+  triggers: "noop-job-v2"
+}
+`
+
+// project4cfg should contain validation errors related to only "standard"
+// acl_set (referencing AclSet "standard" that does not exist, no OWNER
+// AclSet and no READER AclSet).
+const project4Cfg = `
+acl_sets {
+  name: "default"
+  acls {
+    role: READER
+    granted_to: "group:all"
+  }
+  acls {
+    role: OWNER
+    granted_to: "group:all"
+  }
+}
+
+job {
+  id: "noop-job-v2"
+  acl_sets: "default"
+  noop: {
+    sleep_ms: 1000
+  }
+}
+
+trigger {
+  id: "noop-trigger-v2"
+  acl_sets: "standard"
+
+  noop: {
+    sleep_ms: 1000
+    triggers_count: 2
+  }
+
+  triggers: "noop-job-v2"
 }
 `
 

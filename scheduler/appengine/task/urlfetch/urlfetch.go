@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -60,46 +61,46 @@ func (m TaskManager) Traits() task.Traits {
 }
 
 // ValidateProtoMessage is part of Manager interface.
-func (m TaskManager) ValidateProtoMessage(c context.Context, msg proto.Message) error {
+func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
 	cfg, ok := msg.(*messages.UrlFetchTask)
 	if !ok {
-		return fmt.Errorf("wrong type %T, expecting *messages.UrlFetchTask", msg)
+		c.Errorf("wrong type %T, expecting *messages.UrlFetchTask", msg)
+		return
 	}
 	if cfg == nil {
-		return fmt.Errorf("expecting a non-empty UrlFetchTask")
+		c.Errorf("expecting a non-empty UrlFetchTask")
+		return
 	}
 
 	// Validate 'method' field.
 	// TODO(vadimsh): Add more methods (POST, PUT) when 'Body' is added.
 	goodMethods := map[string]bool{"GET": true}
 	if cfg.Method != "" && !goodMethods[cfg.Method] {
-		return fmt.Errorf("unsupported HTTP method: %q", cfg.Method)
+		c.Errorf("unsupported HTTP method: %q", cfg.Method)
 	}
 
 	// Validate 'url' field.
 	if cfg.Url == "" {
-		return fmt.Errorf("field 'url' is required")
-	}
-	u, err := url.Parse(cfg.Url)
-	if err != nil {
-		return fmt.Errorf("invalid URL %q: %s", cfg.Url, err)
-	}
-	if !u.IsAbs() {
-		return fmt.Errorf("not an absolute url: %q", cfg.Url)
+		c.Errorf("field 'url' is required")
+	} else {
+		u, err := url.Parse(cfg.Url)
+		if err != nil {
+			c.Errorf("invalid URL %q: %s", cfg.Url, err)
+		} else if !u.IsAbs() {
+			c.Errorf("not an absolute url: %q", cfg.Url)
+		}
 	}
 
 	// Validate 'timeout_sec' field. GAE task queue request deadline is 10 min, so
 	// limit URL fetch call duration to 8 min (giving 2 min to spare).
 	if cfg.TimeoutSec != 0 {
 		if cfg.TimeoutSec < 1 {
-			return fmt.Errorf("minimum allowed 'timeout_sec' is 1 sec, got %d", cfg.TimeoutSec)
+			c.Errorf("minimum allowed 'timeout_sec' is 1 sec, got %d", cfg.TimeoutSec)
 		}
 		if cfg.TimeoutSec > 480 {
-			return fmt.Errorf("maximum allowed 'timeout_sec' is 480 sec, got %d", cfg.TimeoutSec)
+			c.Errorf("maximum allowed 'timeout_sec' is 480 sec, got %d", cfg.TimeoutSec)
 		}
 	}
-
-	return nil
 }
 
 // LaunchTask is part of Manager interface.

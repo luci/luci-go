@@ -19,10 +19,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -40,85 +42,95 @@ func TestValidateProtoMessage(t *testing.T) {
 	tm := TaskManager{}
 	c := context.Background()
 
-	Convey("ValidateProtoMessage passes good msg", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:     "blah.com",
-			Bucket:     "bucket",
-			Builder:    "builder",
-			Tags:       []string{"a:b", "c:d"},
-			Properties: []string{"a:b", "c:d"},
-		}), ShouldBeNil)
-	})
+	Convey("ValidateProtoMessage works", t, func() {
+		ctx := &validation.Context{Context: c}
+		validate := func(msg proto.Message) error {
+			tm.ValidateProtoMessage(ctx, msg)
+			return ctx.Finalize()
+		}
 
-	Convey("ValidateProtoMessage passes good minimal msg", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:  "blah.com",
-			Bucket:  "bucket",
-			Builder: "builder",
-		}), ShouldBeNil)
-	})
+		Convey("ValidateProtoMessage passes good msg", func() {
+			So(validate(&messages.BuildbucketTask{
+				Server:     "blah.com",
+				Bucket:     "bucket",
+				Builder:    "builder",
+				Tags:       []string{"a:b", "c:d"},
+				Properties: []string{"a:b", "c:d"},
+			}), ShouldBeNil)
+		})
 
-	Convey("ValidateProtoMessage wrong type", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.NoopTask{}), ShouldErrLike, "wrong type")
-	})
-
-	Convey("ValidateProtoMessage empty", t, func() {
-		So(tm.ValidateProtoMessage(c, tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty BuildbucketTask")
-	})
-
-	Convey("ValidateProtoMessage validates URL", t, func() {
-		call := func(url string) error {
-			return tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-				Server:  url,
+		Convey("ValidateProtoMessage passes good minimal msg", func() {
+			So(validate(&messages.BuildbucketTask{
+				Server:  "blah.com",
 				Bucket:  "bucket",
 				Builder: "builder",
-			})
-		}
-		So(call(""), ShouldErrLike, "field 'server' is required")
-		So(call("https://host/not-root"), ShouldErrLike, "field 'server' should be just a host, not a URL")
-		So(call("%%%%"), ShouldErrLike, "field 'server' is not a valid hostname")
-		So(call("blah.com/abc"), ShouldErrLike, "field 'server' is not a valid hostname")
-	})
+			}), ShouldBeNil)
+		})
 
-	Convey("ValidateProtoMessage needs bucket", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:  "blah.com",
-			Builder: "builder",
-		}), ShouldErrLike, "'bucket' field is required")
-	})
+		Convey("ValidateProtoMessage wrong type", func() {
+			So(validate(&messages.NoopTask{}), ShouldErrLike, "wrong type")
+		})
 
-	Convey("ValidateProtoMessage needs builder", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server: "blah.com",
-			Bucket: "bucket",
-		}), ShouldErrLike, "'builder' field is required")
-	})
+		Convey("ValidateProtoMessage empty", func() {
+			So(validate(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty BuildbucketTask")
+		})
 
-	Convey("ValidateProtoMessage validates properties", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:     "blah.com",
-			Bucket:     "bucket",
-			Builder:    "builder",
-			Properties: []string{"not_kv_pair"},
-		}), ShouldErrLike, "bad property, not a 'key:value' pair")
-	})
+		Convey("ValidateProtoMessage validates URL", func() {
+			call := func(url string) error {
+				ctx = &validation.Context{Context: c}
+				tm.ValidateProtoMessage(ctx, &messages.BuildbucketTask{
+					Server:  url,
+					Bucket:  "bucket",
+					Builder: "builder",
+				})
+				return ctx.Finalize()
+			}
+			So(call(""), ShouldErrLike, "field 'server' is required")
+			So(call("https://host/not-root"), ShouldErrLike, "field 'server' should be just a host, not a URL")
+			So(call("%%%%"), ShouldErrLike, "field 'server' is not a valid hostname")
+			So(call("blah.com/abc"), ShouldErrLike, "field 'server' is not a valid hostname")
+		})
 
-	Convey("ValidateProtoMessage validates tags", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:  "blah.com",
-			Bucket:  "bucket",
-			Builder: "builder",
-			Tags:    []string{"not_kv_pair"},
-		}), ShouldErrLike, "bad tag, not a 'key:value' pair")
-	})
+		Convey("ValidateProtoMessage needs bucket", func() {
+			So(validate(&messages.BuildbucketTask{
+				Server:  "blah.com",
+				Builder: "builder",
+			}), ShouldErrLike, "'bucket' field is required")
+		})
 
-	Convey("ValidateProtoMessage forbids default tags overwrite", t, func() {
-		So(tm.ValidateProtoMessage(c, &messages.BuildbucketTask{
-			Server:  "blah.com",
-			Bucket:  "bucket",
-			Builder: "builder",
-			Tags:    []string{"scheduler_job_id:blah"},
-		}), ShouldErrLike, "tag \"scheduler_job_id\" is reserved")
+		Convey("ValidateProtoMessage needs builder", func() {
+			So(validate(&messages.BuildbucketTask{
+				Server: "blah.com",
+				Bucket: "bucket",
+			}), ShouldErrLike, "'builder' field is required")
+		})
+
+		Convey("ValidateProtoMessage validates properties", func() {
+			So(validate(&messages.BuildbucketTask{
+				Server:     "blah.com",
+				Bucket:     "bucket",
+				Builder:    "builder",
+				Properties: []string{"not_kv_pair"},
+			}), ShouldErrLike, "bad property, not a 'key:value' pair")
+		})
+
+		Convey("ValidateProtoMessage validates tags", func() {
+			So(validate(&messages.BuildbucketTask{
+				Server:  "blah.com",
+				Bucket:  "bucket",
+				Builder: "builder",
+				Tags:    []string{"not_kv_pair"},
+			}), ShouldErrLike, "bad tag, not a 'key:value' pair")
+		})
+
+		Convey("ValidateProtoMessage forbids default tags overwrite", func() {
+			So(validate(&messages.BuildbucketTask{
+				Server:  "blah.com",
+				Bucket:  "bucket",
+				Builder: "builder",
+				Tags:    []string{"scheduler_job_id:blah"},
+			}), ShouldErrLike, "tag \"scheduler_job_id\" is reserved")
+		})
 	})
 }
 

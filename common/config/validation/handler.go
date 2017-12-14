@@ -100,6 +100,7 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 		return
 	}
 	vc := &Context{Context: c}
+	vc.SetFile(reqBody.GetPath())
 	validator.Func(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
 	w.Header().Set("Content-Type", "application/json")
 	var msgList []*config.ValidationResponseMessage_Message

@@ -20,9 +20,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -219,28 +221,40 @@ func TestValidateConfig(t *testing.T) {
 	t.Parallel()
 	c := context.Background()
 
-	Convey("refNamespace works", t, func() {
-		cfg := &messages.GitilesTask{
-			Repo: "https://a.googlesource.com/b.git",
-			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
-		}
+	Convey("ValidateProtoMessage works", t, func() {
+		ctx := &validation.Context{Context: c}
 		m := TaskManager{}
-		So(m.ValidateProtoMessage(c, cfg), ShouldBeNil)
-
-		cfg.Refs = []string{"wtf/not/a/ref"}
-		So(m.ValidateProtoMessage(c, cfg), ShouldNotBeNil)
-	})
-
-	Convey("trailing refGlobs work", t, func() {
-		cfg := &messages.GitilesTask{
-			Repo: "https://a.googlesource.com/b.git",
-			Refs: []string{"refs/*", "refs/heads/*", "refs/other/something"},
+		validate := func(msg proto.Message) error {
+			m.ValidateProtoMessage(ctx, msg)
+			return ctx.Finalize()
 		}
-		m := TaskManager{}
-		So(m.ValidateProtoMessage(c, cfg), ShouldBeNil)
+		Convey("refNamespace works", func() {
+			cfg := &messages.GitilesTask{
+				Repo: "https://a.googlesource.com/b.git",
+				Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
+			}
+			Convey("proper refs", func() {
+				So(validate(cfg), ShouldBeNil)
+			})
+			Convey("invalid ref", func() {
+				cfg.Refs = []string{"wtf/not/a/ref"}
+				So(validate(cfg), ShouldNotBeNil)
+			})
+		})
 
-		cfg.Refs = []string{"refs/*/*"}
-		So(m.ValidateProtoMessage(c, cfg), ShouldNotBeNil)
+		Convey("trailing refGlobs work", func() {
+			cfg := &messages.GitilesTask{
+				Repo: "https://a.googlesource.com/b.git",
+				Refs: []string{"refs/*", "refs/heads/*", "refs/other/something"},
+			}
+			Convey("valid refGlobs", func() {
+				So(validate(cfg), ShouldBeNil)
+			})
+			Convey("invalid refGlob", func() {
+				cfg.Refs = []string{"refs/*/*"}
+				So(validate(cfg), ShouldNotBeNil)
+			})
+		})
 	})
 }
 
