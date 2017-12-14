@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "154b43c0_299a4391",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T18:38:30Z",
+      "side": 1,
+      "message": "FWIW this is potentially flaky too",
+      "revId": "f169f5a827d1505f3a255789b7f84859723aa8c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aca31625_31af7517",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T18:38:30Z",
+      "side": 1,
+      "message": "since we don\u0027t really care about type, please use struct{}\nit takes zero space and channels are optimized for this case",
+      "range": {
+        "startLine": 113,
+        "startChar": 31,
+        "endLine": 113,
+        "endChar": 35
+      },
+      "revId": "f169f5a827d1505f3a255789b7f84859723aa8c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55204218_bf0dbdd2",
+        "filename": "mmutex/lib/exclusive_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T18:38:30Z",
+      "side": 1,
+      "message": "since we don\u0027t read this value, closing channel might be simpler. it will unblock receiving in L129",
+      "range": {
+        "startLine": 118,
+        "startChar": 5,
+        "endLine": 118,
+        "endChar": 27
+      },
+      "revId": "f169f5a827d1505f3a255789b7f84859723aa8c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
