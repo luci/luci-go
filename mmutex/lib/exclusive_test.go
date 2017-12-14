@@ -110,20 +110,23 @@ func TestExclusive(t *testing.T) {
 		})
 
 		Convey("removes drain file immediately after acquiring the lock", func() {
+			commandStarted := make(chan struct{})
 			commandResult := make(chan error)
 			runExclusiveErr := make(chan error)
 			go func() {
 				runExclusiveErr <- RunExclusive(ctx, env, func(ctx context.Context) error {
+					close(commandStarted)
+
 					// Block RunExclusive() immediately after it starts executing the command.
 					// The drain file should have been cleaned up immediately before this point.
 					return <-commandResult
 				})
 			}()
 
-			// Sleep to allow time for RunExclusive to acquire the lock and block on our
-			// channel.
-			clock.Sleep(ctx, 3*time.Millisecond)
-
+			// At the time when the command starts but has not yet finished executing
+			// (because it's blocked on the commandResult channel), the drain file
+			// should be removed.
+			<-commandStarted
 			_, err = os.Stat(drainFilePath)
 			So(os.IsNotExist(err), ShouldBeTrue)
 
