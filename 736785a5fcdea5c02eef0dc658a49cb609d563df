@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "682b7ba1_5646c2c7",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T03:33:36Z",
+      "side": 1,
+      "message": "as I wrote before, I\u0027d just go with all of them in json input since I don\u0027t see value in cmd flags.",
+      "parentUuid": "6729da66_37bd934d",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 2
+      },
+      "revId": "736785a5fcdea5c02eef0dc658a49cb609d563df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f54c12c_fc2a1477",
         "filename": "client/cmd/gerrit/change.go",
         "patchSetId": 8

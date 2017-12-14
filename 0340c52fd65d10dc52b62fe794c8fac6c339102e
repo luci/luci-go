@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45b7d5ad_96b51d01",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T03:33:36Z",
+      "side": 1,
+      "message": "nit: add extra empty line.",
+      "revId": "0340c52fd65d10dc52b62fe794c8fac6c339102e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c5fcb40_bb8744d3",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T03:33:36Z",
+      "side": 1,
+      "message": "update this, perhaps referring to ChangeQueryParams",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 177,
+        "endChar": 38
+      },
+      "revId": "0340c52fd65d10dc52b62fe794c8fac6c339102e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61b9ac6d_4372e97b",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T03:33:36Z",
+      "side": 1,
+      "message": "update",
+      "range": {
+        "startLine": 214,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 16
+      },
+      "revId": "0340c52fd65d10dc52b62fe794c8fac6c339102e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
