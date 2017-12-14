@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c17dbe91_c6cffe90",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-14T01:03:06Z",
+      "side": 1,
+      "message": "nit: use \u0027-\u0027 to specify stdout",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 84
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f3dce02_4737833e",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-14T01:03:06Z",
+      "side": 1,
+      "message": "what name?.. is it cryptoKey path?",
+      "range": {
+        "startLine": 32,
+        "startChar": 32,
+        "endLine": 32,
+        "endChar": 38
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2bd929a_cdc82288",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-14T01:03:06Z",
+      "side": 1,
+      "message": "nit: use \u0027-\u0027 to indicate stdin\n\nAlso clarify that this is a path to a file. Also it would be nice to mention right here that only smallish files are supported (I forgot the exact size, 64K?)",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 40,
+        "endChar": 74
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e6b191e_39d9a545",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-14T01:03:06Z",
+      "side": 1,
+      "message": "nit: keyPath",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 5
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34d587c0_eeb45218",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-14T01:03:06Z",
+      "side": 1,
+      "message": "add it here: https://chromium.googlesource.com/infra/infra/+/master/go/deps.yaml#97 and then run \"deps.py update\" to generate deps.lock.",
+      "range": {
+        "startLine": 27,
+        "startChar": 11,
+        "endLine": 27,
+        "endChar": 41
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "804b9f6e_fdc6ebfa",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-14T01:03:06Z",
+      "side": 1,
+      "message": "please use https://godoc.org/go.chromium.org/luci/common/cli#Application\nit has nicer integration with context (in particular for logging)\n\nSee e.g. https://cs.chromium.org/chromium/infra/go/src/infra/tools/cloudsqlhelper/main.go?type\u003dcs\u0026q\u003d%26cli.Application\u0026sq\u003dpackage:chromium\u0026l\u003d221 for example.",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 39
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b3eab0d_7aa75272",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-14T01:03:06Z",
+      "side": 1,
+      "message": "This is not needed. Only \u0027isolate\u0027 part of luci-go is using \u0027log\u0027 (because it predates everything else and no one bothered to update it).",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 32
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
