@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "2c179c1a_1020f612",
+        "filename": "machine-db/appengine/model/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T23:11:07Z",
+      "side": 1,
+      "message": "Yes it\u0027s because we don\u0027t need any extra information here. Done for consistency.",
+      "parentUuid": "c2897b79_43f36f79",
+      "range": {
+        "startLine": 75,
+        "startChar": 25,
+        "endLine": 75,
+        "endChar": 49
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd3f74c2_65dfdc6a",
         "filename": "machine-db/appengine/rpc/crimson.go",
         "patchSetId": 3
@@ -82,6 +106,24 @@
     },
     {
       "key": {
+        "uuid": "1dfb5bee_ab41db8d",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T23:11:07Z",
+      "side": 1,
+      "message": "Isn\u0027t the default case in your example !matches(s.Name, names) \u0026\u0026 !matches(s.Rack, racks) \u0026\u0026 !matches(s.Datacenter, datacenters)? The default would only be reached if the three matches cases all failed. I think I would need:\n\nswitch {\ncase !matches(s.Name, names):\n  // Doesn\u0027t match names filter.\ncase !matches(s.Rack, racks):\n  // Doesn\u0027t match racks filter.\ncase !matches(s.Datacenter, datacenters):\n  // Doesn\u0027t match datacenters filter.\ndefault:\n  // Doesn\u0027t match any of the above cases (meaning it matches all filters).\n  switches \u003d append(switches, s)\n}\n\nIs that wrong?\n\nAt any rate I\u0027m okay with the line length for the time being.",
+      "parentUuid": "bd3f74c2_65dfdc6a",
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cdfd64dd_a7de7123",
         "filename": "machine-db/appengine/rpc/crimson_test.go",
         "patchSetId": 3
@@ -93,6 +135,30 @@
       "writtenOn": "2017-12-14T16:43:40Z",
       "side": 1,
       "message": "i assume you do this for consistency? using alias here makes this code more verbose",
+      "range": {
+        "startLine": 39,
+        "startChar": 25,
+        "endLine": 39,
+        "endChar": 27
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2989bf5b_2f9f16ea",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T23:11:07Z",
+      "side": 1,
+      "message": "Yes, I wanted it consistent. Actually with the `` multi-line formatting I don\u0027t personally think we even needs aliases (even in the longest queries).",
+      "parentUuid": "cdfd64dd_a7de7123",
       "range": {
         "startLine": 39,
         "startChar": 25,
@@ -125,6 +191,30 @@
       "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15e12daa_d6367c61",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T23:11:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e69b8a54_ea574c98",
+      "range": {
+        "startLine": 210,
+        "startChar": 16,
+        "endLine": 210,
+        "endChar": 17
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "51a1bede_2be7c39f",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T23:11:07Z",
+      "side": 1,
+      "message": "They are separate files. First you need to validate the file called datacenters.cfg which contains the names of other datacenter files. Once it\u0027s validated you can fetch each specific datacenter file and validate it. If it\u0027s inlined then validateDatacentersConfig would need to fetch additional configs from the config service, which seems odd to me.",
+      "parentUuid": "c8a8e734_b92f8f2d",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef3d9ea9_7f7dafcd",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 2
@@ -492,6 +510,30 @@
       "revId": "0307c96215630ace1070edce3b6cac9f19861823",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab68e3c1_1264300b",
+        "filename": "machine-db/appengine/model/switches.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-14T23:11:07Z",
+      "side": 1,
+      "message": "Got it, done.",
+      "parentUuid": "f09c9352_8adfff0e",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 170,
+        "endChar": 42
+      },
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
