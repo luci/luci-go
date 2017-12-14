@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0632eb75_2e911632",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:14:02Z",
+      "side": 1,
+      "message": "this isn\u0027t right. enter() and exit() should be in the same func.\nupdate: yep, delete this, you already call it correctly on L105",
+      "range": {
+        "startLine": 164,
+        "startChar": 1,
+        "endLine": 164,
+        "endChar": 11
+      },
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69f83e3e_6c306c5f",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:14:02Z",
+      "side": 1,
+      "message": "sorry, i still don\u0027t get why is this necessary (genuinely so, i\u0027m not just complaining about insufficient comment)",
+      "range": {
+        "startLine": 304,
+        "startChar": 2,
+        "endLine": 304,
+        "endChar": 61
+      },
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3745d274_c8235da8",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:14:02Z",
+      "side": 1,
+      "message": "why not just \nif ... {\n  ..\n}",
+      "range": {
+        "startLine": 393,
+        "startChar": 1,
+        "endLine": 394,
+        "endChar": 6
+      },
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e6792ee_61d9ccbc",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:14:02Z",
+      "side": 1,
+      "message": "how about another test (either in addition to, or in place of this one) for marshallable, yet still invalid config?",
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7132919_2c711319",
+        "filename": "scheduler/appengine/frontend/handler.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:14:02Z",
+      "side": 1,
+      "message": "wait, so how will this work for luci-scheduler-dev?",
+      "range": {
+        "startLine": 188,
+        "startChar": 3,
+        "endLine": 188,
+        "endChar": 60
+      },
+      "revId": "4c303cb29107ee3906f31e34c12639a986c17fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

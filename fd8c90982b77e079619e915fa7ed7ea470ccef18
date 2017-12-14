@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "acedbefd_c7c7b261",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:14:02Z",
+      "side": 1,
+      "message": "I think current code is correct as is.\n\nsuggestion: s/seen/reportedDups\nthen it\u0027s easier to read \u0026 reason:\n\ncase isDup:\n  if reportedDups.Add(s.Name){ \n    // Report only first dup.\n    ctx.Errorf(...)\n  }\n\np.s. IMO, there is no problem with reporting \"not unique\" error 2 times instead of 1. I could even imagine it be helpful in certain situations with lazy config modifies like myself.",
+      "parentUuid": "d431e08e_3baefc6b",
+      "range": {
+        "startLine": 80,
+        "startChar": 6,
+        "endLine": 80,
+        "endChar": 22
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "863bc128_d054fc96",
         "filename": "scheduler/appengine/acl/acl.go",
         "patchSetId": 3
@@ -166,6 +190,30 @@
       "side": 1,
       "message": "Coming to think about it, this is confusing. I\u0027ll change it!",
       "parentUuid": "f8761bb9_8ff02a97",
+      "range": {
+        "startLine": 509,
+        "startChar": 14,
+        "endLine": 509,
+        "endChar": 20
+      },
+      "revId": "fd8c90982b77e079619e915fa7ed7ea470ccef18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ef1a8f97_def5a7f8",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 509,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-14T01:14:02Z",
+      "side": 1,
+      "message": "sorry, forgot to send my reply before for original nodir@ suggestion. +1 for returned.",
+      "parentUuid": "b8156125_2be81f6b",
       "range": {
         "startLine": 509,
         "startChar": 14,
