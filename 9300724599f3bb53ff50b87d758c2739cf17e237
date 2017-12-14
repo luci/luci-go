@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03f37307_765ca6f0",
+        "filename": "hardcoded/chromeinfra/chromeinfra.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "the value is host, not URL. See also above. Host is better because we don\u0027t really want protocol to be customizable. In practice there is only one we support: HTTPS",
+      "range": {
+        "startLine": 53,
+        "startChar": 16,
+        "endLine": 53,
+        "endChar": 19
+      },
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1873d966_089e7184",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/flag/stringlistflag",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 1
+      },
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1349e626_36d8ca1f",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "Host",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 4
+      },
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "082e3382_32299e94",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "normally functions that create objects either do not have verb prefix (https://godoc.org/os/exec#Command), or, if that name is already used by the type they are creating, use \"New\" prefix (https://godoc.org/bytes#NewReader)",
+      "range": {
+        "startLine": 91,
+        "startChar": 5,
+        "endLine": 91,
+        "endChar": 11
+      },
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64dd89ac_da72293e",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "what\u0027s the thinking behind Client here? Did you mean GetDatacentersCmd, or SubcommandGetDatacenters?",
+      "range": {
+        "startLine": 28,
+        "startChar": 19,
+        "endLine": 28,
+        "endChar": 25
+      },
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94cdabf9_63f26480",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "consider using https://godoc.org/github.com/golang/protobuf/proto#MarshalTextString for now\nit is the same thing, but with line breaks",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 37
+      },
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e540cab4_6dadc36c",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "i think we should use more direct fmt.Printf here because it is the primary output of the program (as opposed to logging) and because normally logging goes to stderr, while this should go to stdout",
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72dbaf1f_91c6e49b",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T17:32:45Z",
+      "side": 1,
+      "message": "Names of datacenters to retrieve. Can be specified multiple times",
+      "range": {
+        "startLine": 58,
+        "startChar": 38,
+        "endLine": 58,
+        "endChar": 61
+      },
+      "revId": "9300724599f3bb53ff50b87d758c2739cf17e237",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
