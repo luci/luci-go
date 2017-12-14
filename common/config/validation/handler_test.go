@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
@@ -34,9 +35,15 @@ import (
 
 func TestInstallHandlers(t *testing.T) {
 	Convey("Initialization of validator, validation routes and handlers", t, func() {
-		v := &Validator{Func: func(ctx *Context, configSet, path string, content []byte) {
-			ctx.errors = append(ctx.errors, errors.New("deadbeef"))
-		}}
+		v := &Validator{
+			Func: func(ctx *Context, configSet, path string, content []byte) {
+				ctx.errors = append(ctx.errors, errors.New("deadbeef"))
+			},
+			ConfigPatterns: func(c context.Context) []*ConfigPattern {
+				return nil
+			},
+		}
+
 		r := router.New()
 		rr := httptest.NewRecorder()
 		host := "example.com"
@@ -88,7 +95,9 @@ func TestInstallHandlers(t *testing.T) {
 			So(err, ShouldBeNil)
 			pp, err := pattern.Parse("path")
 			So(err, ShouldBeNil)
-			v.ConfigPatterns = append(v.ConfigPatterns, ConfigPattern{ConfigSet: cp, Path: pp})
+			v.ConfigPatterns = func(c context.Context) []*ConfigPattern {
+				return []*ConfigPattern{{cp, pp}}
+			}
 			meta := metaCall()
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(meta, ShouldResemble, &config.ServiceDynamicMetadata{

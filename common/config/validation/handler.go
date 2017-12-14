@@ -48,9 +48,10 @@ type ConfigPattern struct {
 // Validator defines the components needed to install handlers to
 // implement config validation protocol.
 type Validator struct {
-	// ConfigPatterns is the list of patterns of configSets and paths that the
-	// service is responsible for validating.
-	ConfigPatterns []ConfigPattern
+	// GetConfigPatterns takes in context.Context and returns the list of
+	// ConfigPatterns that the implementing service is responsible
+	// for validating.
+	ConfigPatterns func(c context.Context) []*ConfigPattern
 
 	// Func performs the actual config validation and stores the
 	// associated results in the validation.Context.
@@ -118,7 +119,7 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 func (validator *Validator) metadataRequestHandler(ctx *router.Context) {
 	c, w := ctx.Context, ctx.Writer
 	var patterns []*config.ConfigPattern
-	for _, p := range validator.ConfigPatterns {
+	for _, p := range validator.ConfigPatterns(c) {
 		patterns = append(patterns,
 			&config.ConfigPattern{
 				ConfigSet: proto.String(p.ConfigSet.String()),
