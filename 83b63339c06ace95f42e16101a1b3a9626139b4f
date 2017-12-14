@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "3e777309_d25ee40b",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T19:08:30Z",
+      "side": 1,
+      "message": "yeah, maybe just use memcache directly then?\n\nthinking about this, there is a benefit in not using process memory here: with process memory, same user can see HTTP 403 or HTTP 200 for the same bucket depending on the VM they hit. \n\nlet\u0027s simplify to use memcache if layered is not easy to use for this. We can use batch memcache RPC to load permissions for all buckets, update stale ones and make another batch memcache RPC to update entries",
+      "parentUuid": "91c333df_9a11eaef",
+      "range": {
+        "startLine": 87,
+        "startChar": 35,
+        "endLine": 87,
+        "endChar": 46
+      },
+      "revId": "83b63339c06ace95f42e16101a1b3a9626139b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b22f7f6_dacea18c",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T19:08:30Z",
+      "side": 1,
+      "message": "the cache key must include the current identity",
+      "range": {
+        "startLine": 87,
+        "startChar": 50,
+        "endLine": 87,
+        "endChar": 56
+      },
+      "revId": "83b63339c06ace95f42e16101a1b3a9626139b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ff67a434_16c2ed14",
         "filename": "milo/common/acl.go",
         "patchSetId": 2
@@ -41,6 +88,53 @@
         "startChar": 3,
         "endLine": 102,
         "endChar": 91
+      },
+      "revId": "83b63339c06ace95f42e16101a1b3a9626139b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00ceb125_a614190d",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T19:08:30Z",
+      "side": 1,
+      "message": "IMO i think it is OK. the primary responsibility of BucketPermissions is making requests + caching, I think",
+      "parentUuid": "ff67a434_16c2ed14",
+      "range": {
+        "startLine": 93,
+        "startChar": 3,
+        "endLine": 102,
+        "endChar": 91
+      },
+      "revId": "83b63339c06ace95f42e16101a1b3a9626139b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41480679_d5bf1980",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-14T19:08:30Z",
+      "side": 1,
+      "message": "typically projects have one CI bucket \"luci.\u003cproject\u003e.ci\", so let\u0027s use 1 here",
+      "range": {
+        "startLine": 91,
+        "startChar": 26,
+        "endLine": 91,
+        "endChar": 27
       },
       "revId": "83b63339c06ace95f42e16101a1b3a9626139b4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
