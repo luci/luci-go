@@ -16,6 +16,24 @@
       "revId": "bf1eb5d3954796b064977663684f33b97498b34f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5158ee32_06dc5721",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-15T00:56:32Z",
+      "side": 1,
+      "message": "I checked that, it\u0027s not necessary. If you don\u0027t use proto.MarshalTextString then it is necessary.",
+      "parentUuid": "6ffc10ff_4a68d430",
+      "revId": "bf1eb5d3954796b064977663684f33b97498b34f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
