@@ -16,6 +16,24 @@
       "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95d00161_f1ff6666",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-15T00:36:01Z",
+      "side": 1,
+      "message": "CQ \u0026 `git cl try` always set all 3 properties. So, we may get -1 in URL, but even with -1, Gerrit works, at least today:\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/825522/-1",
+      "parentUuid": "247d3096_c600838d",
+      "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
