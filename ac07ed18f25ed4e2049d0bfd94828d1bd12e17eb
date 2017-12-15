@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b9df861e_ad346141",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-15T02:29:54Z",
+      "side": 1,
+      "message": "\\o/!!",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 0
+      },
+      "revId": "ac07ed18f25ed4e2049d0bfd94828d1bd12e17eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d13df26_3ccfc2d8",
+        "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-15T02:29:54Z",
+      "side": 1,
+      "message": "fyi, there is https://godoc.org/go.chromium.org/luci/common/retry#LogCallback",
+      "range": {
+        "startLine": 93,
+        "startChar": 5,
+        "endLine": 95,
+        "endChar": 3
+      },
+      "revId": "ac07ed18f25ed4e2049d0bfd94828d1bd12e17eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "556b4b22_3f8462f6",
+        "filename": "milo/buildsource/buildbot/buildstore/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-15T02:29:54Z",
+      "side": 1,
+      "message": "hm... couldn\u0027t you just put the filtered (e.g. non-experimentals) builds in a slice and use sort.Slice with the sortby package to implement this?",
+      "range": {
+        "startLine": 147,
+        "startChar": 5,
+        "endLine": 147,
+        "endChar": 16
+      },
+      "revId": "ac07ed18f25ed4e2049d0bfd94828d1bd12e17eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
