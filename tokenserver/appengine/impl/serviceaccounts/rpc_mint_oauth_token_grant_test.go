@@ -68,7 +68,7 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 	ctx := testingContext("user:requestor@example.com")
 
 	Convey("with mocked config and state", t, func() {
-		cfg, err := loadConfig(`rules {
+		cfg, err := loadConfig(ctx, `rules {
 			name: "rule 1"
 			service_account: "account@robots.com"
 			proxy: "user:requestor@example.com"
