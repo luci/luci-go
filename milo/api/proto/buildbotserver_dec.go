@@ -5,8 +5,6 @@ package milo
 import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
-
-	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedBuildbot struct {
@@ -65,36 +63,6 @@ func (s *DecoratedBuildbot) GetBuildbotBuildsJSON(c context.Context, req *Buildb
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(c, "GetBuildbotBuildsJSON", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedBuildbot) GetEmulationOptions(c context.Context, req *GetEmulationOptionsRequest) (rsp *GetEmulationOptionsResponse, err error) {
-	var newCtx context.Context
-	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetEmulationOptions", req)
-	}
-	if err == nil {
-		c = newCtx
-		rsp, err = s.Service.GetEmulationOptions(c, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(c, "GetEmulationOptions", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedBuildbot) SetEmulationOptions(c context.Context, req *SetEmulationOptionsRequest) (rsp *google_protobuf.Empty, err error) {
-	var newCtx context.Context
-	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "SetEmulationOptions", req)
-	}
-	if err == nil {
-		c = newCtx
-		rsp, err = s.Service.SetEmulationOptions(c, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(c, "SetEmulationOptions", rsp, err)
 	}
 	return
 }

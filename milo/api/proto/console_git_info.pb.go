@@ -6,7 +6,7 @@ package milo
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/timestamp"
+import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -40,7 +40,7 @@ type ConsoleGitInfo_Commit struct {
 	// The author email (e.g. "rey_cool@example.com")
 	AuthorEmail string `protobuf:"bytes,3,opt,name=author_email,json=authorEmail" json:"author_email,omitempty"`
 	// The commit timestamp (~= when the commit landed... not always true!).
-	CommitTime *google_protobuf1.Timestamp `protobuf:"bytes,4,opt,name=commit_time,json=commitTime" json:"commit_time,omitempty"`
+	CommitTime *google_protobuf.Timestamp `protobuf:"bytes,4,opt,name=commit_time,json=commitTime" json:"commit_time,omitempty"`
 	// The raw commit message as text.
 	Msg string `protobuf:"bytes,5,opt,name=msg" json:"msg,omitempty"`
 }
@@ -71,7 +71,7 @@ func (m *ConsoleGitInfo_Commit) GetAuthorEmail() string {
 	return ""
 }
 
-func (m *ConsoleGitInfo_Commit) GetCommitTime() *google_protobuf1.Timestamp {
+func (m *ConsoleGitInfo_Commit) GetCommitTime() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.CommitTime
 	}
