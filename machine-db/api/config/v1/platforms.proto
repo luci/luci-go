@@ -1,0 +1,21 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+// PlatformConfig describes a platform.
+message PlatformConfig {
+  // The name of this platform.
+  string name = 1;
+  // A description of this platform.
+  string description = 2;
+}
+
+// PlatformsConfig enumerates platforms.
+message PlatformsConfig {
+  // A list of platforms.
+  repeated PlatformConfig platform = 1;
+}

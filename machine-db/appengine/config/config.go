@@ -47,6 +47,9 @@ func importConfigs(c context.Context) error {
 	if err := importOSConfigs(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import operating systems").Err()
 	}
+	if err := importPlatformConfigs(c, configSet); err != nil {
+		return errors.Annotate(err, "failed to import platforms").Err()
+	}
 	// TODO(smut): Import the rest of the configs.
 	return nil
 }

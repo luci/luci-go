@@ -7,6 +7,7 @@ Package config is a generated protocol buffer package.
 It is generated from these files:
 	go.chromium.org/luci/machine-db/api/config/v1/datacenters.proto
 	go.chromium.org/luci/machine-db/api/config/v1/oses.proto
+	go.chromium.org/luci/machine-db/api/config/v1/platforms.proto
 
 It has these top-level messages:
 	SwitchConfig
@@ -15,6 +16,8 @@ It has these top-level messages:
 	DatacentersConfig
 	OSConfig
 	OSesConfig
+	PlatformConfig
+	PlatformsConfig
 */
 package config
 
