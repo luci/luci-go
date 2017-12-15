@@ -16,6 +16,24 @@
       "revId": "77c36389ad19d91db2e1da312c0360162b6005f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f19b780_99f79c56",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-15T19:47:21Z",
+      "side": 1,
+      "message": "Talked offline.\nI\u0027ll get rid of this line and make another CL so that the handler logs the validation errors instead!",
+      "parentUuid": "ebe7585f_c685e028",
+      "revId": "77c36389ad19d91db2e1da312c0360162b6005f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
