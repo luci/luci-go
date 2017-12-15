@@ -15,107 +15,89 @@
 package buildstore
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
 
-	"go.chromium.org/gae/service/datastore"
-	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 )
 
-var emulationOptionsProviderKey = "emulation options provider"
+var emulationEnabledKey = "emulation enabled"
 
-// WithEmulationOptions overrides the current emulation options for a builder.
-func WithEmulationOptions(c context.Context, master, builder string, opt milo.EmulationOptions) context.Context {
-	return WithEmulationOptionsProvider(c, func(c context.Context, m, b string) (*milo.EmulationOptions, error) {
-		if m == master && b == builder {
-			return &opt, nil
-		}
-		return nil, nil
-	})
+// WithEmulation enables or disables emulation.
+func WithEmulation(c context.Context, enabled bool) context.Context {
+	return context.WithValue(c, &emulationEnabledKey, enabled)
 }
 
-// EmulationOptionsProvider returns the emulation options for a Buildbot
-// builder.
-type EmulationOptionsProvider func(c context.Context, master, builder string) (*milo.EmulationOptions, error)
-
-// WithEmulationOptionsProvider overrides the current emulation options.
-func WithEmulationOptionsProvider(c context.Context, provider EmulationOptionsProvider) context.Context {
-	prev := c.Value(&emulationOptionsProviderKey)
-	if prev != nil {
-		this := provider
-		provider = func(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
-			if opt, err := this(c, master, builder); opt != nil || err != nil {
-				return opt, err
-			}
-			return prev.(EmulationOptionsProvider)(c, master, builder)
-		}
-	}
-	return context.WithValue(c, &emulationOptionsProviderKey, provider)
+// EmulationEnabled returns true if emulation is enabled in c.
+func EmulationEnabled(c context.Context) bool {
+	enabled, _ := c.Value(&emulationEnabledKey).(bool)
+	return enabled
 }
 
-// GetEmulationOptions returns the Buildbot emulation options for a Buildbot
-// builder.
-func GetEmulationOptions(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
-	if p := c.Value(&emulationOptionsProviderKey); p != nil {
-		return p.(EmulationOptionsProvider)(c, master, builder)
-	}
-	return nil, nil
+var bucketCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(1024),
+	GlobalNamespace: "bucket_of_builder",
+	Marshal: func(item interface{}) ([]byte, error) {
+		return []byte(item.(string)), nil
+	},
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		return string(blob), nil
+	},
 }
 
-// builderEmulationOptions stores default emulation options
-// of a builder.
-//
-// It does not implement MetaGetSetter because it would be way more code.
-// Not worth it.
-type builderEmulationOptions struct {
-	ID      string `gae:"$id"` // <master>:<builder>
-	Options milo.EmulationOptions
-}
-
-func builderID(master, builder string) string {
-	return fmt.Sprintf("%s:%s", master, builder)
-}
-
-// GetDefaultEmulationOptions returns default emulation options for a builder.
-func GetDefaultEmulationOptions(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
-	entity := &builderEmulationOptions{
-		ID: builderID(master, builder),
-	}
-	switch err := datastore.Get(c, entity); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, nil
-	case err != nil:
-		return nil, err
-	default:
-		return &entity.Options, nil
-	}
-}
-
-// SetDefaultEmulationOptions sets default emulation options for a builder.
-func SetDefaultEmulationOptions(c context.Context, master, builder string, opt *milo.EmulationOptions) error {
-	return datastore.Put(c, &builderEmulationOptions{
-		ID:      builderID(master, builder),
-		Options: *opt,
-	})
-}
-
-// WithDefaultEmulationOptions provides default emulation options.
-func WithDefaultEmulationOptions(c context.Context) context.Context {
-	return WithEmulationOptionsProvider(c, func(c context.Context, master, builder string) (*milo.EmulationOptions, error) {
-		cache := caching.RequestCache(c)
-		cacheKey := &struct{ Master, Builder string }{Master: master, Builder: builder}
-		if opt, ok := cache.Get(c, cacheKey); ok {
-			return opt.(*milo.EmulationOptions), nil
-		}
-
-		opt, err := GetDefaultEmulationOptions(c, master, builder)
+// BucketOf returns LUCI bucket that the given buildbot builder is migrating to.
+// Returns "" bucket if it is unknown.
+func BucketOf(c context.Context, master, builder string) (string, error) {
+	key := fmt.Sprintf("%s/%s", master, builder)
+	v, err := bucketCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
+		transport, err := auth.GetRPCTransport(c, auth.AsSelf)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+		u := fmt.Sprintf("https://luci-migration.appspot.com/masters/%s/builders/%s?format=json",
+			url.PathEscape(master), url.PathEscape(builder))
+		var bucket string
+		err = retry.Retry(c, retry.Default, func() error {
+			res, err := ctxhttp.Get(c, &http.Client{Transport: transport}, u)
+			if err != nil {
+				return err
+			}
+			defer res.Body.Close()
+			switch {
+			case res.StatusCode == http.StatusNotFound:
+				return nil
+			case res.StatusCode != http.StatusOK:
+				return errors.Reason("migration app returned HTTP %d", res.StatusCode).Err()
+			}
 
-		cache.Put(c, cacheKey, opt, 0)
-		return opt, nil
+			var body struct {
+				Bucket string
+			}
+			if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+				return errors.Reason("could not decode migration app's response body", err).Err()
+			}
+
+			bucket = body.Bucket
+			return nil
+		}, retry.LogCallback(c, "luci-migration-get-builder"))
+
+		if err != nil {
+			return nil, 0, err
+		}
+		// cache the result for 10min in process memory and memcache.
+		return bucket, 10 * time.Minute, nil
 	})
+
+	bucket, _ := v.(string)
+	return bucket, err
 }

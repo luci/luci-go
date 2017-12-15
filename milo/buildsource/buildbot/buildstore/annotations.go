@@ -41,7 +41,7 @@ import (
 // This file implements conversion of annotations to buildbot steps and
 // properties.
 
-var reLineBreak = regexp.MustCompile(`<br/?>`)
+var reLineBreak = regexp.MustCompile(`<br */?>`)
 
 var errAnnotationNotFound = errors.New("annotation not found")
 
