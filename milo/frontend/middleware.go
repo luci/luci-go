@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -328,26 +327,10 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 	}
 }
 
-// emulationMiddleware adds emulation options to the context.
-// Expects c.Params to have master and builder parameters.
+// emulationMiddleware enables buildstore emulation if "emulation" query
+// string parameter is not empty.
 func emulationMiddleware(c *router.Context, next router.Handler) {
-	opts := milo.EmulationOptions{Bucket: c.Request.FormValue("em-bucket")}
-	if opts.Bucket != "" {
-		if s := c.Request.FormValue("em-start"); s != "" {
-			start, err := strconv.Atoi(s)
-			if err != nil {
-				ErrorHandler(c, errors.Annotate(err, "invalid emulation-start").Tag(common.CodeParameterError).Err())
-				return
-			}
-			opts.StartFrom = int32(start)
-		}
-		c.Context = buildstore.WithEmulationOptions(
-			c.Context,
-			c.Params.ByName("master"),
-			c.Params.ByName("builder"),
-			opts)
-	}
-
+	c.Context = buildstore.WithEmulation(c.Context, c.Request.FormValue("emulation") != "")
 	next(c)
 }
 
