@@ -43,6 +43,11 @@
             "patch_issue",
             12345,
             "somewhere"
+        ],
+        [
+            "patch_set",
+            7,
+            "somewhere"
         ]
     ],
     "text": [
