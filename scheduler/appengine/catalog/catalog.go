@@ -405,7 +405,8 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 func (cat *catalog) ConfigPatterns(c context.Context) []*validation.ConfigPattern {
 	return []*validation.ConfigPattern{
 		{
-			pattern.MustParse("regex:^projects/"),
+			// Pattern automatically adds ^ and $ to regex strings.
+			pattern.MustParse("regex:projects/.*"),
 			pattern.MustParse(cat.configFile(c)),
 		},
 	}
