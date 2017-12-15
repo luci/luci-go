@@ -72,6 +72,8 @@ func getBuild(c context.Context, master, builder string, number int, fetchAnnota
 	switch {
 	case err != nil:
 		return nil, err
+	case build == nil:
+		return nil, nil
 	case build.Experimental():
 		return nil, nil
 	default:
