@@ -25,6 +25,23 @@
     },
     {
       "key": {
+        "uuid": "a6f89950_a6a790c8",
+        "filename": "milo/api/buildbot/structs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-12-15T02:36:20Z",
+      "side": 1,
+      "message": "Should we have more error handling here? For example, these keys might not be set on older builds, right?",
+      "revId": "ac07ed18f25ed4e2049d0bfd94828d1bd12e17eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d13df26_3ccfc2d8",
         "filename": "milo/buildsource/buildbot/buildstore/emulation.go",
         "patchSetId": 2
