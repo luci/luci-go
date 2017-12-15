@@ -141,7 +141,7 @@ func fetchConfigs(c context.Context, f policy.ConfigFetcher) (policy.ConfigBundl
 // prepareRules converts validated configs into *Rules.
 //
 // Returns them as policy.Queryable object to satisfy policy.Policy API.
-func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, error) {
+func prepareRules(c context.Context, cfg policy.ConfigBundle, revision string) (policy.Queryable, error) {
 	parsed, ok := cfg[serviceAccountsCfg].(*admin.ServiceAccountsPermissions)
 	if !ok {
 		return nil, fmt.Errorf("wrong type of %s - %T", serviceAccountsCfg, cfg[serviceAccountsCfg])
@@ -161,16 +161,16 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 	// fail if new code (with some new validation rules) uses old configs stored
 	// in the datastore (which were validated by old code). In practice this most
 	// certainly never happens.
-	v := validation.Context{}
-	validateDefaults(&v, "defaults", &defaults)
-	if err := v.Finalize(); err != nil {
+	ctx := &validation.Context{Context: c}
+	validateDefaults(ctx, "defaults", &defaults)
+	if err := ctx.Finalize(); err != nil {
 		return nil, err
 	}
 
 	rulesPerAcc := map[string]*Rule{}
 	rulesPerGroup := map[string]*Rule{}
 	for _, ruleProto := range parsed.Rules {
-		r, err := makeRule(ruleProto, &defaults, revision)
+		r, err := makeRule(c, ruleProto, &defaults, revision)
 		if err != nil {
 			return nil, err
 		}
@@ -329,10 +329,10 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 // makeRule converts ServiceAccountRule into queriable Rule.
 //
 // Mutates 'ruleProto' in-place filling in defaults.
-func makeRule(ruleProto *admin.ServiceAccountRule, defaults *admin.ServiceAccountRuleDefaults, rev string) (*Rule, error) {
-	v := validation.Context{}
-	validateRule(&v, ruleProto.Name, ruleProto)
-	if err := v.Finalize(); err != nil {
+func makeRule(c context.Context, ruleProto *admin.ServiceAccountRule, defaults *admin.ServiceAccountRuleDefaults, rev string) (*Rule, error) {
+	ctx := &validation.Context{Context: c}
+	validateRule(ctx, ruleProto.Name, ruleProto)
+	if err := ctx.Finalize(); err != nil {
 		return nil, err
 	}
 

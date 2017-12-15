@@ -40,7 +40,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 	rpc := InspectOAuthTokenGrantRPC{
 		Signer: signingtest.NewSigner(0, nil),
 		Rules: func(context.Context) (*Rules, error) {
-			return loadConfig(`rules {
+			return loadConfig(ctx, `rules {
 				name: "rule 1"
 				service_account: "serviceaccount@robots.com"
 				proxy: "user:proxy@example.com"

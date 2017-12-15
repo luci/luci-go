@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	configInterface "go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -149,7 +150,10 @@ func updateProjects(c context.Context) error {
 			merr = append(merr, errors.Annotate(err, "unmarshalling proto").Err())
 			continue
 		}
-		if err := validateProjectConfig(cfg.ConfigSet, &project); err != nil {
+		ctx := &validation.Context{Context: c}
+		ctx.SetFile(cfg.ConfigSet)
+		validateProjectConfig(ctx, &project)
+		if err := ctx.Finalize(); err != nil {
 			merr = append(merr, errors.Annotate(err, "validating config").Err())
 			continue
 		}

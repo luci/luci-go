@@ -212,7 +212,7 @@ func TestMintDelegationToken(t *testing.T) {
 	ctx := testingContext()
 
 	Convey("with mocked config and state", t, func() {
-		cfg, err := loadConfig(`
+		cfg, err := loadConfig(ctx, `
 			rules {
 				name: "requstor for itself"
 				requestor: "user:requestor@example.com"

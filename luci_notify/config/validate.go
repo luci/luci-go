@@ -87,29 +87,23 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier,
 
 // validateProjectConfig returns an error if the configuration violates any of the
 // requirements in the proto definition.
-func validateProjectConfig(configName string, projectCfg *notifyConfig.ProjectConfig) error {
-	c := &validation.Context{}
-	c.SetFile(configName)
+func validateProjectConfig(ctx *validation.Context, projectCfg *notifyConfig.ProjectConfig) {
 	notifierNames := stringset.New(len(projectCfg.Notifiers))
 	builderNames := stringset.New(len(projectCfg.Notifiers)) // At least one builder per notifier
 	for i, cfgNotifier := range projectCfg.Notifiers {
-		c.Enter("notifier #%d", i+1)
-		validateNotifier(c, cfgNotifier, notifierNames, builderNames)
-		c.Exit()
+		ctx.Enter("notifier #%d", i+1)
+		validateNotifier(ctx, cfgNotifier, notifierNames, builderNames)
+		ctx.Exit()
 	}
-	return c.Finalize()
 }
 
 // validateSettings returns an error if the service configuration violates any
 // of the requirements in the proto definition.
-func validateSettings(settings *notifyConfig.Settings) error {
-	c := &validation.Context{}
-	c.SetFile("settings.cfg")
+func validateSettings(ctx *validation.Context, settings *notifyConfig.Settings) {
 	switch {
 	case settings.MiloHost == "":
-		c.Errorf(requiredFieldError, "milo_host")
+		ctx.Errorf(requiredFieldError, "milo_host")
 	case validation.ValidateHostname(settings.MiloHost) != nil:
-		c.Errorf(invalidFieldError, "milo_host")
+		ctx.Errorf(invalidFieldError, "milo_host")
 	}
-	return c.Finalize()
 }

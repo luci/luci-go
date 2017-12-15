@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
@@ -217,8 +218,8 @@ func TestValidation(t *testing.T) {
 			err := proto.UnmarshalText(cs.Cfg, cfg)
 			So(err, ShouldBeNil)
 
-			ctx := validation.Context{}
-			validateConfigs(&ctx, policy.ConfigBundle{delegationCfg: cfg})
+			ctx := &validation.Context{Context: context.Background()}
+			validateConfigs(ctx, policy.ConfigBundle{delegationCfg: cfg})
 			verr := ctx.Finalize()
 
 			if len(cs.Errors) == 0 { // no errors expected

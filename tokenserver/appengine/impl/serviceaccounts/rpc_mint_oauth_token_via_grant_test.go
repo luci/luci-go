@@ -40,7 +40,7 @@ import (
 func TestMintOAuthTokenViaGrant(t *testing.T) {
 	ctx := testingContext("user:proxy@example.com")
 
-	rules, _ := loadConfig(`rules {
+	rules, _ := loadConfig(ctx, `rules {
 		name: "rule 1"
 		service_account: "serviceaccount@robots.com"
 		proxy: "user:proxy@example.com"
@@ -191,7 +191,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 	Convey("Doesn't pass rules anymore", t, func() {
 		rpc := rpc
 		rpc.Rules = func(context.Context) (*Rules, error) {
-			return loadConfig("")
+			return loadConfig(ctx, "")
 		}
 		_, err := rpc.MintOAuthTokenViaGrant(ctx, &minter.MintOAuthTokenViaGrantRequest{
 			GrantToken: grant,
