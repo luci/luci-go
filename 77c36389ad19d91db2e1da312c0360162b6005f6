@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ebe7585f_c685e028",
+        "filename": "common/config/validation/validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T00:19:59Z",
+      "side": 1,
+      "message": "i\u0027ve realized that this writes to the global log, although this validation may be local. Let\u0027s do it conditionally",
+      "revId": "77c36389ad19d91db2e1da312c0360162b6005f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
