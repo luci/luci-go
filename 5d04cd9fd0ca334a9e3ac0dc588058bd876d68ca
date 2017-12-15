@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4cb9b7a9_ff614a4e",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T20:13:08Z",
+      "side": 1,
+      "message": "Warningf",
+      "range": {
+        "startLine": 112,
+        "startChar": 10,
+        "endLine": 112,
+        "endChar": 15
+      },
+      "revId": "5d04cd9fd0ca334a9e3ac0dc588058bd876d68ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f351ddcd_f942a740",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T20:13:08Z",
+      "side": 1,
+      "message": "this will result in log\n\n  Validation error: foo\n  Validation error: foo\n  Validation error: foo\n  Validation error: foo\n  Validation error: foo\n  Validation error: foo\n  Validation error: foo\n  Validation error: foo\n  Validation error: foo\n\nlet\u0027s make it \n\nValidation errors:\n  foo\n  foo\n  foo\n  foo\n  foo\n  foo\n  foo\n  foo\n\nor \n  \n  No validation errors\n\nas info (not warning)",
+      "range": {
+        "startLine": 112,
+        "startChar": 20,
+        "endLine": 112,
+        "endChar": 38
+      },
+      "revId": "5d04cd9fd0ca334a9e3ac0dc588058bd876d68ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
