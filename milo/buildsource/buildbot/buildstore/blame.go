@@ -107,7 +107,7 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 		return nil
 	}
 
-	prevRev, err := getPrevRev(c, b)
+	prevRev, err := getPrevRev(c, b, 100)
 	switch {
 	case err != nil:
 		return errors.Annotate(err, "failed to get prev revision for build %q", b).Err()
@@ -115,6 +115,11 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 		logging.Warningf(c, "prev rev of build %q is unknown. Skipping blamelist computation", b.ID())
 		return nil
 	}
+
+	// Note that prev build may be coming from buildbot and having commit different
+	// from the true previous _LUCI_ build, which may cause blamelist to have
+	// extra or missing commits. This matters only for the first build after
+	// next build number bump.
 
 	client := gitiles.Client{Client: &http.Client{}}
 	rpcAuth := auth.NoAuth
@@ -167,10 +172,20 @@ func changeFromGitiles(repoURL, branch string, commit gitiles.Commit) buildbot.C
 // getPrevRev returns revision of the closest previous build with a commit
 // hash, or "" if not found.
 // Memcaches results.
-func getPrevRev(c context.Context, b *buildbot.Build) (string, error) {
-	if b.Number == 0 {
+func getPrevRev(c context.Context, b *buildbot.Build, maxRecursionDepth int) (string, error) {
+	// note: we cannot use exponential scan here because there may be build
+	// number gaps anywhere, for example given build numbers 10 20 30 40,
+	// if we check 25 while scanning [20, 40), we don't know if we should continue
+	// scanning in [20, 25) or (25, 40).
+
+	switch {
+	case b.Number == 0:
+		return "", nil
+	case maxRecursionDepth <= 0:
+		logging.Warningf(c, "reached maximum recursion depth; giving up")
 		return "", nil
 	}
+
 	prev := &buildbot.Build{
 		Master:      b.Master,
 		Buildername: b.Buildername,
@@ -204,7 +219,7 @@ func getPrevRev(c context.Context, b *buildbot.Build) (string, error) {
 
 		// This is a recursive call of itself.
 		// The results are memcached along the stack though.
-		if prevRev, err = getPrevRev(c, b); err != nil {
+		if prevRev, err = getPrevRev(c, b, maxRecursionDepth-1); err != nil {
 			return "", err
 		}
 	}
