@@ -86,13 +86,13 @@ func importDatacenterConfigs(c context.Context, configSet cfgtypes.ConfigSet) er
 }
 
 // validateDatacentersConfig validates datacenters.cfg.
-func validateDatacentersConfig(c *validation.Context, datacentersConfig *config.DatacentersConfig) error {
+func validateDatacentersConfig(c *validation.Context, cfg *config.DatacentersConfig) error {
 	// Datacenter filenames must be unique.
 	// Keep records of which ones we've already seen.
-	files := stringset.New(len(datacentersConfig.Datacenter))
+	files := stringset.New(len(cfg.Datacenter))
 
-	c.SetFile("datacenters.cfg")
-	for _, file := range datacentersConfig.Datacenter {
+	c.SetFile(datacentersConfig)
+	for _, file := range cfg.Datacenter {
 		if file == "" {
 			c.Errorf("datacenter filenames are required and must be non-empty")
 		}
