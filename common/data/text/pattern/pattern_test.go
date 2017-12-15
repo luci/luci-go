@@ -67,6 +67,12 @@ func TestPattern(t *testing.T) {
 				}
 			})
 
+			Convey("Without '^' and '$'", func() {
+				p, err := Parse("regex:deadbeef")
+				So(err, ShouldBeNil)
+				So(p.String(), ShouldEqual, "regex:^deadbeef$")
+			})
+
 			Convey("Bad", func() {
 				bad := []string{
 					":",
