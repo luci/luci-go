@@ -124,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "3ce9c78d_d1b01e2b",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T00:49:34Z",
+      "side": 1,
+      "message": "err yeah, `case !match(...)` is what I meant. Sorry for the confusion",
+      "parentUuid": "1dfb5bee_ab41db8d",
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cdfd64dd_a7de7123",
         "filename": "machine-db/appengine/rpc/crimson_test.go",
         "patchSetId": 3
@@ -168,6 +186,30 @@
       "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fc00751_c92d5a22",
+        "filename": "machine-db/appengine/rpc/crimson_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T00:49:34Z",
+      "side": 1,
+      "message": "up to you",
+      "parentUuid": "2989bf5b_2f9f16ea",
+      "range": {
+        "startLine": 39,
+        "startChar": 25,
+        "endLine": 39,
+        "endChar": 27
+      },
+      "revId": "ee4c73556482b653e1673c3a9e4983229e657d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

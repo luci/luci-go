@@ -120,6 +120,24 @@
     },
     {
       "key": {
+        "uuid": "7dc6d238_45ceca21",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T00:49:34Z",
+      "side": 1,
+      "message": "ah, right. ok, let\u0027s leave it for now. maybe we will come up with a better name in the future.\nto be clear: the problem was that when I was reading this function, i thought \"wait a sec, we forgot to validate switches and racks, we validate only datacenters\"",
+      "parentUuid": "51a1bede_2be7c39f",
+      "revId": "0307c96215630ace1070edce3b6cac9f19861823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef3d9ea9_7f7dafcd",
         "filename": "machine-db/appengine/model/datacenters.go",
         "patchSetId": 2
