@@ -7,17 +7,14 @@ Package config is a generated protocol buffer package.
 It is generated from these files:
 	go.chromium.org/luci/machine-db/api/config/v1/datacenters.proto
 	go.chromium.org/luci/machine-db/api/config/v1/oses.proto
-	go.chromium.org/luci/machine-db/api/config/v1/platforms.proto
-	go.chromium.org/luci/machine-db/api/config/v1/vlans.proto
 
 It has these top-level messages:
 	SwitchConfig
 	RackConfig
 	DatacenterConfig
 	DatacentersConfig
-	OperatingSystemConfig
-	PlatformConfig
-	VLANConfig
+	OSConfig
+	OSesConfig
 */
 package config
 

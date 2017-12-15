@@ -44,6 +44,9 @@ func importConfigs(c context.Context) error {
 	if err := importDatacenterConfigs(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import datacenters").Err()
 	}
+	if err := importOSConfigs(c, configSet); err != nil {
+		return errors.Annotate(err, "failed to import operating systems").Err()
+	}
 	// TODO(smut): Import the rest of the configs.
 	return nil
 }

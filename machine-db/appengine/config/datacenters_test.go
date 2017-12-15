@@ -29,16 +29,16 @@ import (
 func TestValidateDatacentersConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Initialize validation context", t, func() {
+	Convey("validateDatacentersConfig", t, func() {
 		context := &validation.Context{Context: context.Background()}
 
-		Convey("validateDatacentersConfig: empty config", func() {
+		Convey("empty config", func() {
 			datacentersConfig := &config.DatacentersConfig{}
 			validateDatacentersConfig(context, datacentersConfig)
 			So(context.Finalize(), ShouldBeNil)
 		})
 
-		Convey("validateDatacentersConfig: unnamed file", func() {
+		Convey("unnamed file", func() {
 			datacentersConfig := &config.DatacentersConfig{
 				Datacenter: []string{""},
 			}
@@ -46,7 +46,7 @@ func TestValidateDatacentersConfig(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "datacenter filenames are required and must be non-empty")
 		})
 
-		Convey("validateDatacentersConfig: ok1", func() {
+		Convey("duplicate", func() {
 			datacentersConfig := &config.DatacentersConfig{
 				Datacenter: []string{
 					"duplicate.cfg",
@@ -58,7 +58,7 @@ func TestValidateDatacentersConfig(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate filename")
 		})
 
-		Convey("validateDatacentersConfig: ok2", func() {
+		Convey("ok", func() {
 			datacentersConfig := &config.DatacentersConfig{
 				Datacenter: []string{
 					"datacenter1.cfg",
@@ -74,16 +74,16 @@ func TestValidateDatacentersConfig(t *testing.T) {
 func TestValidateDatacenters(t *testing.T) {
 	t.Parallel()
 
-	Convey("Initialize validation context", t, func() {
+	Convey("validateDatacenters", t, func() {
 		context := &validation.Context{Context: context.Background()}
 
-		Convey("validateDatacenters: empty datacenters config", func() {
+		Convey("empty datacenters config", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{}
 			validateDatacenters(context, datacenterConfigs)
 			So(context.Finalize(), ShouldBeNil)
 		})
 
-		Convey("validateDatacenters: unnamed datacenter", func() {
+		Convey("unnamed datacenter", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"unnamed.cfg": {},
 			}
@@ -91,7 +91,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "datacenter names are required and must be non-empty")
 		})
 
-		Convey("validateDatacenters: duplicate datacenters", func() {
+		Convey("duplicate datacenters", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter1.cfg": {
 					Name: "duplicate",
@@ -107,7 +107,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate datacenter")
 		})
 
-		Convey("validateDatacenters: unnamed rack", func() {
+		Convey("unnamed rack", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -120,7 +120,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "rack names are required and must be non-empty")
 		})
 
-		Convey("validateDatacenters: duplicate racks in the same datacenter", func() {
+		Convey("duplicate racks in the same datacenter", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -141,7 +141,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate rack")
 		})
 
-		Convey("validateDatacenters: duplicate racks in different datacenters", func() {
+		Convey("duplicate racks in different datacenters", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter1.cfg": {
 					Name: "datacenter 1",
@@ -167,7 +167,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate rack")
 		})
 
-		Convey("validateDatacenters: unnamed switch", func() {
+		Convey("unnamed switch", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -185,7 +185,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "switch names are required and must be non-empty")
 		})
 
-		Convey("validateDatacenters: duplicate switches in the same rack", func() {
+		Convey("duplicate switches in the same rack", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -214,7 +214,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate switch")
 		})
 
-		Convey("validateDatacenters: duplicate switches in different racks", func() {
+		Convey("duplicate switches in different racks", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter1.cfg": {
 					Name: "datacenter 1",
@@ -253,7 +253,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate switch")
 		})
 
-		Convey("validateDatacenters: missing switch ports", func() {
+		Convey("missing switch ports", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -273,7 +273,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "must have at least one port")
 		})
 
-		Convey("validateDatacenters: negative switch ports", func() {
+		Convey("negative switch ports", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -294,7 +294,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "must have at least one port")
 		})
 
-		Convey("validateDatacenters: zero switch ports", func() {
+		Convey("zero switch ports", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -315,7 +315,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "must have at least one port")
 		})
 
-		Convey("validateDatacenters: excessive switch ports", func() {
+		Convey("excessive switch ports", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -336,7 +336,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "must have at most 65535 ports")
 		})
 
-		Convey("validateDatacenters: ok", func() {
+		Convey("ok", func() {
 			datacenterConfigs := map[string]*config.DatacenterConfig{
 				"datacenter1.cfg": {
 					Name:        "datacenter 1",
