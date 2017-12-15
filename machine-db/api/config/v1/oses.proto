@@ -1,0 +1,21 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+// OSConfig describes an operating system.
+message OSConfig {
+  // The name of this operating system.
+  string name = 1;
+  // A description of this operating system.
+  string description = 2;
+}
+
+// OSesConfig enumerates operating systems.
+message OSesConfig {
+  // A list of operating systems.
+  repeated OSConfig operating_system = 1;
+}

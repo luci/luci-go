@@ -40,14 +40,15 @@ func importDatacenterConfigs(c context.Context, configSet cfgtypes.ConfigSet) er
 	datacenterFiles := &config.DatacentersConfig{}
 	metadata := &cfgclient.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacentersConfig, textproto.Message(datacenterFiles), metadata); err != nil {
-		return errors.Annotate(err, "failed to load config: %s", datacentersConfig).Err()
+		return errors.Annotate(err, "failed to load %s", datacentersConfig).Err()
 	}
-	logging.Infof(c, "Found config revision: %s", metadata.Revision)
+	logging.Infof(c, "Found %s revision %q", datacentersConfig, metadata.Revision)
 
 	validationContext := &validation.Context{Context: c}
+	validationContext.SetFile(datacentersConfig)
 	validateDatacentersConfig(validationContext, datacenterFiles)
 	if err := validationContext.Finalize(); err != nil {
-		return errors.Annotate(err, "failed to validate config").Err()
+		return errors.Annotate(err, "invalid config").Err()
 	}
 
 	// datacenterConfigFiles will be a map of datacenter config filename to DatacenterConfig.
@@ -66,7 +67,7 @@ func importDatacenterConfigs(c context.Context, configSet cfgtypes.ConfigSet) er
 
 	validateDatacenters(validationContext, datacenterConfigFiles)
 	if err := validationContext.Finalize(); err != nil {
-		return errors.Annotate(err, "failed to validate config").Err()
+		return errors.Annotate(err, "invalid config").Err()
 	}
 
 	datacenterIds, err := model.EnsureDatacenters(c, datacenterConfigs)
@@ -86,26 +87,22 @@ func importDatacenterConfigs(c context.Context, configSet cfgtypes.ConfigSet) er
 }
 
 // validateDatacentersConfig validates datacenters.cfg.
-func validateDatacentersConfig(c *validation.Context, datacentersConfig *config.DatacentersConfig) error {
+func validateDatacentersConfig(c *validation.Context, cfg *config.DatacentersConfig) {
 	// Datacenter filenames must be unique.
 	// Keep records of which ones we've already seen.
-	files := stringset.New(len(datacentersConfig.Datacenter))
-
-	c.SetFile("datacenters.cfg")
-	for _, file := range datacentersConfig.Datacenter {
-		if file == "" {
+	files := stringset.New(len(cfg.Datacenter))
+	for _, file := range cfg.Datacenter {
+		switch {
+		case file == "":
 			c.Errorf("datacenter filenames are required and must be non-empty")
-		}
-		if files.Has(file) {
+		case !files.Add(file):
 			c.Errorf("duplicate filename %q", file)
 		}
-		files.Add(file)
 	}
-	return nil
 }
 
 // validateDatacenters validates the individual datacenter.cfg files referenced in datacenters.cfg.
-func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*config.DatacenterConfig) error {
+func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*config.DatacenterConfig) {
 	// Datacenter, rack, and switch names must be unique.
 	// Keep records of ones we've already seen.
 	datacenters := stringset.New(len(datacenterConfigs))
@@ -155,5 +152,4 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 		}
 		c.Exit()
 	}
-	return nil
 }
