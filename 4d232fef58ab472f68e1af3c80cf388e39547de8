@@ -34,6 +34,24 @@
       "revId": "4d232fef58ab472f68e1af3c80cf388e39547de8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d38555d_f663a975",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T20:19:02Z",
+      "side": 1,
+      "message": "iannucci: generated docs have the same problem: they are in the recipe dir that we don\u0027t know (see CL description). If we knew, i\u0027d just point to the recipe itself\n\nestaab: added TODO. Before uploading this CL, I\u0027ve verified that cs.corp.google.com was already surfaced on the Internet.",
+      "parentUuid": "74a348d4_0379eef0",
+      "revId": "4d232fef58ab472f68e1af3c80cf388e39547de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
