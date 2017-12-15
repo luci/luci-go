@@ -15,6 +15,7 @@
 package validation
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -103,12 +104,20 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 	vc.SetFile(reqBody.GetPath())
 	validator.Func(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
 	w.Header().Set("Content-Type", "application/json")
+	var errorBuffer bytes.Buffer
 	var msgList []*config.ValidationResponseMessage_Message
 	for _, error := range vc.errors {
 		// validation.Context currently only supports ERROR severity
+		err := error.Error()
 		msgList = append(msgList, &config.ValidationResponseMessage_Message{
 			Severity: config.ValidationResponseMessage_ERROR.Enum(),
-			Text:     proto.String(error.Error())})
+			Text:     proto.String(err)})
+		errorBuffer.WriteString("\n  " + err)
+	}
+	if len(vc.errors) == 0 {
+		logging.Infof(c, "No Validation Errors")
+	} else {
+		logging.Warningf(c, "Validation Errors %s", errorBuffer.String())
 	}
 	if err := json.NewEncoder(w).Encode(config.ValidationResponseMessage{Messages: msgList}); err != nil {
 		internalErrStatus(c, w, "Validation: failed to JSON encode output", err)
