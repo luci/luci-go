@@ -16,6 +16,24 @@
       "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33fe300b_576f98db",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T19:50:00Z",
+      "side": 1,
+      "message": "i tried to implement exponential scan, and either i am dumb or it cannot be implemented. I\u0027ve added a comment explaining why. Am I holding it wrong?\n\nThe limitation here is that the first build after bump (right after switch to luci) will have no blamelist and it matters only if that build fails.",
+      "parentUuid": "7ae84daf_754f5044",
+      "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
