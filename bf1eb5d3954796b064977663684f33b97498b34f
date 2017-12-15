@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ffc10ff_4a68d430",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T00:52:05Z",
+      "side": 1,
+      "message": "there should be \\n in the end, otherwise terminal command line prompt will continue on the last line of the text proto. using fmt.Println would be simpler",
+      "revId": "bf1eb5d3954796b064977663684f33b97498b34f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
