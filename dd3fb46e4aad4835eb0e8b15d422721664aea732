@@ -70,6 +70,24 @@
       "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0116fd43_fdad3ff5",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-15T02:08:54Z",
+      "side": 1,
+      "message": "i gated the whole if on patchset and issue. Both patchset + issue are always specified by CQ/git cl try for both Rietveld and Gerrit.",
+      "parentUuid": "0856b6ab_fb067156",
+      "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
