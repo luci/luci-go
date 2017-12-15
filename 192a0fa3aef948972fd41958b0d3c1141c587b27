@@ -60,6 +60,48 @@
     },
     {
       "key": {
+        "uuid": "a55c1e0a_b2e7f513",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-15T19:46:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a8e01ec_8307e03e",
+      "range": {
+        "startLine": 408,
+        "startChar": 28,
+        "endLine": 408,
+        "endChar": 29
+      },
+      "revId": "192a0fa3aef948972fd41958b0d3c1141c587b27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c4cdba81_cef4ab91",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-15T19:46:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4663e5ea_dac91d2b",
+      "revId": "192a0fa3aef948972fd41958b0d3c1141c587b27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2188dae4_223994c6",
         "filename": "scheduler/appengine/catalog/catalog_test.go",
         "patchSetId": 1
@@ -104,6 +146,30 @@
       "revId": "192a0fa3aef948972fd41958b0d3c1141c587b27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "719e9d34_d7bacca4",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1246322
+      },
+      "writtenOn": "2017-12-15T19:46:59Z",
+      "side": 1,
+      "message": "I was a bit unsure about this test when I added it as well.\nMy initial thoughts when adding this test was that someone could simply put a typo in the regex string itself, such as \"regx:hello\" (though unlikely).\nAnd this would panic in the tests if that specific code path was tested.\nBut if I do test if the configSet pattern matches with something like \"projects/xyz\", then I guess it achieves the same things as before (whether the pattern string given is valid or not) and is more than a simple checksum as it is here in this patchset.",
+      "parentUuid": "f86875f5_8d62bcf6",
+      "range": {
+        "startLine": 324,
+        "startChar": 2,
+        "endLine": 325,
+        "endChar": 72
+      },
+      "revId": "192a0fa3aef948972fd41958b0d3c1141c587b27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
