@@ -16,6 +16,24 @@
       "revId": "4d232fef58ab472f68e1af3c80cf388e39547de8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74a348d4_0379eef0",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-15T20:01:20Z",
+      "side": 1,
+      "message": "Could we link to the generated docs somehow? e.g. the ones linked from go/recipe-docs?",
+      "parentUuid": "8045292a_120da6d8",
+      "revId": "4d232fef58ab472f68e1af3c80cf388e39547de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
