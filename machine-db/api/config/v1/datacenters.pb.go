@@ -16,6 +16,7 @@ It has these top-level messages:
 	DatacenterConfig
 	DatacentersConfig
 	OperatingSystemConfig
+	OperatingSystemsConfig
 	PlatformConfig
 	VLANConfig
 */
