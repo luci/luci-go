@@ -321,7 +321,7 @@ func TestConfigPatterns(t *testing.T) {
 		catalog := New("luci-scheduler.cfg")
 		patterns := catalog.ConfigPatterns(testContext())
 		So(len(patterns), ShouldEqual, 1)
-		So(patterns[0].ConfigSet.String(), ShouldEqual, "regex:^projects/")
+		So(patterns[0].ConfigSet.String(), ShouldEqual, "regex:^projects/.*")
 		So(patterns[0].Path.String(), ShouldEqual, "exact:luci-scheduler.cfg")
 	})
 }
