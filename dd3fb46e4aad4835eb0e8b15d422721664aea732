@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "247d3096_c600838d",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-15T00:09:34Z",
+      "side": 1,
+      "message": "Will patch_set/patchset property ever not be set, in which case patchset might still be -1 at this point, and we\u0027d get an invalid link?",
+      "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
