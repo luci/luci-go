@@ -34,6 +34,24 @@
       "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daa44dcc_e31281d6",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-12-15T19:55:01Z",
+      "side": 1,
+      "message": "Oh yeah, that\u0027s definitely right. You would need to check for the existence of any build between the range anyway so that wouldn\u0027t save anything.\n\nAnd I think one missing blamelist is fine. Alternatively we could make it policy to increment the build number by 100 instead of 1000 when switching to LUCI so this can be done without timing out but I don\u0027t feel strongly.",
+      "parentUuid": "33fe300b_576f98db",
+      "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
