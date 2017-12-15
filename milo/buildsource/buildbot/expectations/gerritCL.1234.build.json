@@ -37,8 +37,8 @@
     "Revision": null,
     "Description": "",
     "Changelist": {
-      "Label": "Gerrit CL 12345",
-      "URL": "https://example.com/c/12345"
+      "Label": "Gerrit CL 12345 (ps#7)",
+      "URL": "https://example.com/c/12345/7"
     },
     "CommitURL": "",
     "File": null,
@@ -80,6 +80,10 @@
         {
           "Key": "patch_issue",
           "Value": "12345"
+        },
+        {
+          "Key": "patch_set",
+          "Value": "7"
         }
       ]
     }

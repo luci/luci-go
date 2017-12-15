@@ -51,8 +51,9 @@ func shouldMatchExpectationsFor(actualContents interface{}, expectedFilename ...
 	if err != nil {
 		return fmt.Sprintf("Could not load %s: %s", expectedFilename[0], err.Error())
 	}
+	refBuildStr := strings.TrimSpace(string(refBuild))
 	actualBuild, err := json.MarshalIndent(actualContents, "", "  ")
-	return ShouldEqual(string(actualBuild), string(refBuild))
+	return ShouldEqual(string(actualBuild), refBuildStr)
 
 }
 

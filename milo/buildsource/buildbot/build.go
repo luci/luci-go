@@ -332,23 +332,17 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 	gotRevision := ""
 	repository := ""
 	issue := int64(-1)
+	patchset := int64(-1)
+
 	for _, prop := range b.Properties {
-		switch prop.Name {
-		case "rietveld":
-			if v, ok := prop.Value.(string); ok {
-				rietveld = v
-			} else {
-				logging.Warningf(c, "Field rietveld is not a string: %#v", prop.Value)
-			}
-		case "issue", "patch_issue":
-			// Sometime this is a number (float), sometime it is a string.
+		setIfIntOrStr := func(dst *int64) {
 			switch v := prop.Value.(type) {
 			case float64:
-				issue = int64(v)
+				*dst = int64(v)
 			case string:
 				if v != "" {
 					if vi, err := strconv.ParseInt(v, 10, 64); err == nil {
-						issue = int64(vi)
+						*dst = int64(vi)
 					} else {
 						logging.Warningf(c, "Could not decode field %s: %q - %s", prop.Name, v, err)
 					}
@@ -356,28 +350,31 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 			default:
 				logging.Warningf(c, "Field %s is not a string or float64: %#v", prop.Name, v)
 			}
-
-		case "got_revision":
+		}
+		setIfStr := func(dst *string) {
 			if v, ok := prop.Value.(string); ok {
-				gotRevision = v
+				*dst = v
 			} else {
-				logging.Warningf(c, "Field got_revision is not a string: %#v", prop.Value)
-			}
-
-		case "patch_gerrit_url":
-			if v, ok := prop.Value.(string); ok {
-				gerrit = v
-			} else {
-				logging.Warningf(c, "Field gerrit is not a string: %#v", prop.Value)
-			}
-
-		case "repository":
-			if v, ok := prop.Value.(string); ok {
-				repository = v
+				logging.Warningf(c, "Field %s is not a string: %#v", prop.Name, prop.Value)
 			}
 		}
+
+		switch prop.Name {
+		case "rietveld":
+			setIfStr(&rietveld)
+		case "issue", "patch_issue":
+			setIfIntOrStr(&issue)
+		case "got_revision":
+			setIfStr(&gotRevision)
+		case "patch_gerrit_url":
+			setIfStr(&gerrit)
+		case "patch_set", "patchset":
+			setIfIntOrStr(&patchset)
+		case "repository":
+			setIfStr(&repository)
+		}
 	}
-	if issue != -1 {
+	if issue != -1 && patchset != -1 {
 		switch {
 		case rietveld != "":
 			rietveld = strings.TrimRight(rietveld, "/")
@@ -387,8 +384,8 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 		case gerrit != "":
 			gerrit = strings.TrimRight(gerrit, "/")
 			ss.Changelist = ui.NewLink(
-				fmt.Sprintf("Gerrit CL %d", issue),
-				fmt.Sprintf("%s/c/%d", gerrit, issue), "")
+				fmt.Sprintf("Gerrit CL %d (ps#%d)", issue, patchset),
+				fmt.Sprintf("%s/c/%d/%d", gerrit, issue, patchset), "")
 		}
 	}
 
