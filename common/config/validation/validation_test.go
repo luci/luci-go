@@ -17,7 +17,7 @@ package validation
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/logging"
+	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -26,24 +26,22 @@ func TestValidation(t *testing.T) {
 	t.Parallel()
 
 	Convey("No errors", t, func() {
-		v := Context{}
+		c := Context{Context: context.Background()}
 
-		v.SetFile("zz")
-		v.Enter("zzz")
-		v.Exit()
+		c.SetFile("zz")
+		c.Enter("zzz")
+		c.Exit()
 
-		So(v.Finalize(), ShouldBeNil)
+		So(c.Finalize(), ShouldBeNil)
 	})
 
 	Convey("One simple error", t, func() {
-		v := Context{
-			Logger: logging.Null, // for code coverage
-		}
+		c := Context{Context: context.Background()}
 
-		v.SetFile("file.cfg")
-		v.Enter("ctx %d", 123)
-		v.Errorf("blah %s", "zzz")
-		err := v.Finalize()
+		c.SetFile("file.cfg")
+		c.Enter("ctx %d", 123)
+		c.Errorf("blah %s", "zzz")
+		err := c.Finalize()
 		So(err, ShouldHaveSameTypeAs, &Error{})
 		So(err.Error(), ShouldEqual, `in "file.cfg" (ctx 123): blah zzz`)
 
@@ -59,28 +57,28 @@ func TestValidation(t *testing.T) {
 	})
 
 	Convey("Regular usage", t, func() {
-		v := Context{}
+		c := Context{Context: context.Background()}
 
-		v.Errorf("top %d", 1)
-		v.Errorf("top %d", 2)
+		c.Errorf("top %d", 1)
+		c.Errorf("top %d", 2)
 
-		v.SetFile("file_1.cfg")
-		v.Errorf("f1")
-		v.Errorf("f2")
+		c.SetFile("file_1.cfg")
+		c.Errorf("f1")
+		c.Errorf("f2")
 
-		v.Enter("p %d", 1)
-		v.Errorf("zzz 1")
+		c.Enter("p %d", 1)
+		c.Errorf("zzz 1")
 
-		v.Enter("p %d", 2)
-		v.Errorf("zzz 2")
-		v.Exit()
+		c.Enter("p %d", 2)
+		c.Errorf("zzz 2")
+		c.Exit()
 
-		v.Errorf("zzz 3")
+		c.Errorf("zzz 3")
 
-		v.SetFile("file_2.cfg")
-		v.Errorf("zzz 4")
+		c.SetFile("file_2.cfg")
+		c.Errorf("zzz 4")
 
-		err := v.Finalize()
+		err := c.Finalize()
 		So(err, ShouldHaveSameTypeAs, &Error{})
 		So(err.Error(), ShouldEqual, `in <unspecified file>: top 1 (and 7 other errors)`)
 

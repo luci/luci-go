@@ -78,7 +78,7 @@ type Policy struct {
 	// over it.
 	//
 	// Users of Policy should type-cast it to an appropriate type.
-	Prepare func(cfg ConfigBundle, revision string) (Queryable, error)
+	Prepare func(c context.Context, cfg ConfigBundle, revision string) (Queryable, error)
 
 	cache lazyslot.Slot // holds and updates in-memory cache of Queryable
 }
@@ -164,16 +164,16 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 	logging.Infof(c, "Policy config changed: %s -> %s", existingRev, rev)
 
 	if p.Validate != nil {
-		v := validation.Context{Logger: logging.Get(c)}
-		p.Validate(&v, bundle)
-		if err := v.Finalize(); err != nil {
+		ctx := &validation.Context{Context: c}
+		p.Validate(ctx, bundle)
+		if err := ctx.Finalize(); err != nil {
 			return "", errors.Annotate(err, "configs at rev %s are invalid", rev).Err()
 		}
 	}
 
 	// Double check that they actually can be parsed into a queryable form. If
 	// not, the Policy callbacks are buggy.
-	queriable, err := p.Prepare(bundle, rev)
+	queriable, err := p.Prepare(c, bundle, rev)
 	if err == nil && queriable.ConfigRevision() != rev {
 		err = errors.New("wrong revision in result of Prepare callback")
 	}
@@ -258,7 +258,7 @@ func (p *Policy) grabQueryable(c context.Context, prevQ Queryable) (Queryable, e
 		}
 		return nil, errors.New("failed to deserialize some cached configs")
 	}
-	queryable, err := p.Prepare(configs, body.Revision)
+	queryable, err := p.Prepare(c, configs, body.Revision)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to process cached configs").Err()
 	}

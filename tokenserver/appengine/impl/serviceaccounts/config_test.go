@@ -72,7 +72,7 @@ func TestRules(t *testing.T) {
 	})
 
 	Convey("Loads", t, func() {
-		cfg, err := loadConfig(fakeConfig)
+		cfg, err := loadConfig(ctx, fakeConfig)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
@@ -111,7 +111,7 @@ func TestRules(t *testing.T) {
 	})
 
 	Convey("Rule picker works", t, func() {
-		cfg, err := loadConfig(fakeConfig)
+		cfg, err := loadConfig(ctx, fakeConfig)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
@@ -151,7 +151,7 @@ func TestRules(t *testing.T) {
 	})
 
 	Convey("Check works", t, func() {
-		cfg, err := loadConfig(fakeConfig)
+		cfg, err := loadConfig(ctx, fakeConfig)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
@@ -205,13 +205,13 @@ func TestRules(t *testing.T) {
 	})
 }
 
-func loadConfig(text string) (*Rules, error) {
+func loadConfig(ctx context.Context, text string) (*Rules, error) {
 	cfg := &admin.ServiceAccountsPermissions{}
 	err := proto.UnmarshalText(text, cfg)
 	if err != nil {
 		return nil, err
 	}
-	rules, err := prepareRules(policy.ConfigBundle{serviceAccountsCfg: cfg}, "fake-revision")
+	rules, err := prepareRules(ctx, policy.ConfigBundle{serviceAccountsCfg: cfg}, "fake-revision")
 	if err != nil {
 		return nil, err
 	}

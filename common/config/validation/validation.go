@@ -22,7 +22,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 )
 
 // Error is an error with details of failed validation.
@@ -50,7 +49,6 @@ func (v *Error) Error() string {
 // inside this structure is captured through Enter and Exit calls.
 type Context struct {
 	Context context.Context
-	Logger  logging.Logger // logs errors as they appear
 
 	errors  errors.MultiError // all accumulated errors
 	file    string            // the currently validated file
@@ -105,10 +103,6 @@ func (v *Context) Error(err error) {
 	// Make the file and the logical path also usable through error inspection.
 	err = errors.Annotate(err, "%s", ctx).Tag(fileTag.With(v.file), elementTag.With(v.element)).Err()
 	v.errors = append(v.errors, err)
-
-	if v.Logger != nil {
-		v.Logger.Errorf("%s", err)
-	}
 }
 
 // SetFile records that what follows is errors for this particular file.

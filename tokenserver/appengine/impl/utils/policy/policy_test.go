@@ -64,7 +64,7 @@ func TestImportConfigs(t *testing.T) {
 				So(f.FetchTextProto(c, "config_2.cfg", &ts2), ShouldBeNil)
 				return ConfigBundle{"config_1.cfg": &ts1, "config_2.cfg": &ts2}, nil
 			},
-			Prepare: func(cfg ConfigBundle, revision string) (Queryable, error) {
+			Prepare: func(c context.Context, cfg ConfigBundle, revision string) (Queryable, error) {
 				prepareCalls++
 				return &queryableForm{revision, cfg}, nil
 			},
@@ -114,7 +114,7 @@ func TestImportConfigs(t *testing.T) {
 				v.SetFile("config.cfg")
 				v.Errorf("validation error")
 			},
-			Prepare: func(cfg ConfigBundle, revision string) (Queryable, error) {
+			Prepare: func(c context.Context, cfg ConfigBundle, revision string) (Queryable, error) {
 				panic("must not be called")
 			},
 		}
@@ -139,7 +139,7 @@ func TestQueryable(t *testing.T) {
 				So(f.FetchTextProto(c, "config.cfg", &ts), ShouldBeNil)
 				return ConfigBundle{"config.cfg": &ts}, nil
 			},
-			Prepare: func(cfg ConfigBundle, revision string) (Queryable, error) {
+			Prepare: func(c context.Context, cfg ConfigBundle, revision string) (Queryable, error) {
 				return &queryableForm{revision, cfg}, nil
 			},
 		}
