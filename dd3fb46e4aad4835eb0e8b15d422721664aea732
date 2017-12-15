@@ -106,6 +106,24 @@
       "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "42967dfd_65d43652",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-15T04:29:29Z",
+      "side": 1,
+      "message": "lazy me thinks it\u0027s not necessary.",
+      "parentUuid": "ec3c42b0_8402758a",
+      "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
