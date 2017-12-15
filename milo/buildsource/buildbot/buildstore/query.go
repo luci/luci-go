@@ -136,7 +136,7 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 	}
 
 	mergedBuilds := mergeBuilds(emulatedBuilds, buildbotBuilds)
-	if q.Limit > 0 {
+	if q.Limit > 0 && len(mergedBuilds) > q.Limit {
 		mergedBuilds = mergedBuilds[:q.Limit]
 	}
 	return &QueryResult{Builds: mergedBuilds}, nil
