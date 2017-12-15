@@ -34,6 +34,24 @@
       "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b4bc5a9_3a0b0e2b",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-12-15T00:41:07Z",
+      "side": 1,
+      "message": "Not displaying any of the patches (https://screenshot.googleplex.com/XGqzgrRe35M.png) is arguably not working/undefined behavior, but if you think the likelihood of it being a problem is small enough to offset the extra check, that\u0027s fine.",
+      "parentUuid": "95d00161_f1ff6666",
+      "revId": "dd3fb46e4aad4835eb0e8b15d422721664aea732",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
