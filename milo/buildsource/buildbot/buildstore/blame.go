@@ -107,7 +107,7 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 		return nil
 	}
 
-	prevRev, err := getPrevRev(c, b)
+	prevRev, err := getPrevRev(c, b, 100)
 	switch {
 	case err != nil:
 		return errors.Annotate(err, "failed to get prev revision for build %q", b).Err()
@@ -167,10 +167,15 @@ func changeFromGitiles(repoURL, branch string, commit gitiles.Commit) buildbot.C
 // getPrevRev returns revision of the closest previous build with a commit
 // hash, or "" if not found.
 // Memcaches results.
-func getPrevRev(c context.Context, b *buildbot.Build) (string, error) {
-	if b.Number == 0 {
+func getPrevRev(c context.Context, b *buildbot.Build, maxRecursionDepth int) (string, error) {
+	switch {
+	case b.Number == 0:
+		return "", nil
+	case maxRecursionDepth <= 0:
+		logging.Warningf(c, "reached maximum recursion depth; giving up")
 		return "", nil
 	}
+
 	prev := &buildbot.Build{
 		Master:      b.Master,
 		Buildername: b.Buildername,
@@ -204,7 +209,7 @@ func getPrevRev(c context.Context, b *buildbot.Build) (string, error) {
 
 		// This is a recursive call of itself.
 		// The results are memcached along the stack though.
-		if prevRev, err = getPrevRev(c, b); err != nil {
+		if prevRev, err = getPrevRev(c, b, maxRecursionDepth-1); err != nil {
 			return "", err
 		}
 	}
