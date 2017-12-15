@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5c20d21_73030d27",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-15T01:18:34Z",
+      "side": 1,
+      "message": "The only change is:\n\n - // importConfigs fetches and validates configs from the config service.\n - func importConfigs(c context.Context) error {\n - configSet :\u003d cfgclient.CurrentServiceConfigSet(c)\n + // importDatacenterConfigs fetches, validates, and applies datacenter configs.\n + func importDatacenterConfigs(c context.Context, configSet cfgtypes.ConfigSet) error {\n\nNo other changes to any of these functions.",
+      "revId": "5b7aad58333e0034c744b09a303906deffe96b3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
