@@ -58,7 +58,7 @@ func getDatacentersCmd() *subcommands.Command {
 		LongDesc:  "Retrieves datacenters matching the given names, or all datacenters if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDatacentersCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a datacenter to retrieve. Can be specified multiple times.")
+			cmd.Flags.Var(&cmd.names, "name", "Name of a datacenter to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}
