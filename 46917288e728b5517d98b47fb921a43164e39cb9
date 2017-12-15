@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "a3c98e7b_a6905bb9",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T19:58:11Z",
+      "side": 1,
+      "message": "$ is added to the beginning though. maybe just omit this part",
+      "range": {
+        "startLine": 408,
+        "startChar": 41,
+        "endLine": 408,
+        "endChar": 52
+      },
+      "revId": "46917288e728b5517d98b47fb921a43164e39cb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96ed08c3_3f3d0738",
         "filename": "scheduler/appengine/catalog/catalog_test.go",
         "patchSetId": 3
