@@ -27,22 +27,24 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
-// GetRacksCmd is the command to get racks.
-type GetRacksCmd struct {
+// GetSwitchesCmd is the command to get switches.
+type GetSwitchesCmd struct {
 	subcommands.CommandRunBase
 	names       stringlistflag.Flag
+	racks       stringlistflag.Flag
 	datacenters stringlistflag.Flag
 }
 
-// Run runs the command to get racks.
-func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+// Run runs the command to get switches.
+func (c *GetSwitchesCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.RacksRequest{
+	req := &crimson.SwitchesRequest{
 		Names:       c.names,
+		Racks:       c.racks,
 		Datacenters: c.datacenters,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetRacks(ctx, req)
+	resp, err := client.GetSwitches(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -52,15 +54,16 @@ func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcom
 	return 0
 }
 
-// getRacksCmd returns a command to get racks.
-func getRacksCmd() *subcommands.Command {
+// getSwitchesCmd returns a command to get switches.
+func getSwitchesCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-racks [-name <name>]... [-dc <datacenter>]...",
-		ShortDesc: "retrieves racks",
-		LongDesc:  "Retrieves racks matching the given names and dcs, or all racks if names and dcs are omitted.",
+		UsageLine: "get-switches [-name <name>]... [-rack <rack>]... [-dc <datacenter>]...",
+		ShortDesc: "retrieves switches",
+		LongDesc:  "Retrieves switches matching the given names, racks and dcs, or all switches if names, racks, and dcs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
-			cmd := &GetRacksCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a rack to filter by. Can be specified multiple times.")
+			cmd := &GetSwitchesCmd{}
+			cmd.Flags.Var(&cmd.names, "name", "Name of a switch to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(&cmd.racks, "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(&cmd.datacenters, "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
 			return cmd
 		},
