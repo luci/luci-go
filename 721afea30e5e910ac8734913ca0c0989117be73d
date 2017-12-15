@@ -52,6 +52,24 @@
       "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2ca98345_aa8ccc0f",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T20:07:00Z",
+      "side": 1,
+      "message": "yep, tandrii wrote nextNum+\u003d1000 initially because of a misunderstanding, but then we changed it to +\u003d10,\nsee this comment thread (takes a few sec to load) in  https://docs.google.com/a/google.com/document/d/121dSdjBu4jjxC9vq5SGeEoaPlmmGWHl-LECXBjHfmQ4/edit?disco\u003dAAAABkFfoYY\n\ni\u0027ve realized another edge sub-case in this case, see new comment in the ps4",
+      "parentUuid": "daa44dcc_e31281d6",
+      "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
