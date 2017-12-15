@@ -34,6 +34,24 @@
       "revId": "bf1eb5d3954796b064977663684f33b97498b34f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e9ebe439_812779f9",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T00:59:18Z",
+      "side": 1,
+      "message": "i see. then fmt.Print would be sufficient and simpler",
+      "parentUuid": "5158ee32_06dc5721",
+      "revId": "bf1eb5d3954796b064977663684f33b97498b34f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
