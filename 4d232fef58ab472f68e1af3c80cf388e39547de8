@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8045292a_120da6d8",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-12-15T18:43:03Z",
+      "side": 1,
+      "message": "I\u0027m not excited about having to include this but it seems like it would be pretty hard to fix. Any ideas how we would do it that we could include here as a TODO?",
+      "revId": "4d232fef58ab472f68e1af3c80cf388e39547de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
