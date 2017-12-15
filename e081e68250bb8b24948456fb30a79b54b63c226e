@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d7b2f1d5_84853b47",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T22:03:30Z",
+      "side": 1,
+      "message": "in L117 we check if we have errors, so it does not make sense to run this loop if there are no errors. please move this for loop and errorBuffer into else block in L120.",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 34
+      },
+      "revId": "e081e68250bb8b24948456fb30a79b54b63c226e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "615ce8b9_8a7080de",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T22:03:30Z",
+      "side": 1,
+      "message": "now that we have a variable, we can use \u0026err",
+      "range": {
+        "startLine": 114,
+        "startChar": 13,
+        "endLine": 114,
+        "endChar": 30
+      },
+      "revId": "e081e68250bb8b24948456fb30a79b54b63c226e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d007a939_c73621a2",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T22:03:30Z",
+      "side": 1,
+      "message": "i actually meant that we can do logging.Warninf(c, \"  %s\", err) but this is better",
+      "revId": "e081e68250bb8b24948456fb30a79b54b63c226e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ef92953_019a5dc7",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T22:03:30Z",
+      "side": 1,
+      "message": "v",
+      "range": {
+        "startLine": 118,
+        "startChar": 23,
+        "endLine": 118,
+        "endChar": 24
+      },
+      "revId": "e081e68250bb8b24948456fb30a79b54b63c226e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24256b54_55c3d5d2",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T22:03:30Z",
+      "side": 1,
+      "message": "e",
+      "range": {
+        "startLine": 118,
+        "startChar": 34,
+        "endLine": 118,
+        "endChar": 35
+      },
+      "revId": "e081e68250bb8b24948456fb30a79b54b63c226e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc942847_42f31ff4",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T22:03:30Z",
+      "side": 1,
+      "message": "e",
+      "range": {
+        "startLine": 120,
+        "startChar": 34,
+        "endLine": 120,
+        "endChar": 35
+      },
+      "revId": "e081e68250bb8b24948456fb30a79b54b63c226e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6030cf10_56d872e7",
+        "filename": "common/config/validation/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-15T22:03:30Z",
+      "side": 1,
+      "message": "errorBuffer always starts with \\n, so this space is unnecessary",
+      "range": {
+        "startLine": 120,
+        "startChar": 40,
+        "endLine": 120,
+        "endChar": 41
+      },
+      "revId": "e081e68250bb8b24948456fb30a79b54b63c226e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
