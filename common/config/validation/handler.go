@@ -109,6 +109,7 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 		msgList = append(msgList, &config.ValidationResponseMessage_Message{
 			Severity: config.ValidationResponseMessage_ERROR.Enum(),
 			Text:     proto.String(error.Error())})
+		logging.Infof(c, "Validation error: %s", error)
 	}
 	if err := json.NewEncoder(w).Encode(config.ValidationResponseMessage{Messages: msgList}); err != nil {
 		internalErrStatus(c, w, "Validation: failed to JSON encode output", err)
