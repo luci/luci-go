@@ -27,20 +27,22 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
-// GetDatacentersCmd is the command to get datacenters.
-type GetDatacentersCmd struct {
+// GetRacksCmd is the command to get racks.
+type GetRacksCmd struct {
 	subcommands.CommandRunBase
-	names stringlistflag.Flag
+	names       stringlistflag.Flag
+	datacenters stringlistflag.Flag
 }
 
-// Run runs the command to get datacenters.
-func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+// Run runs the command to get racks.
+func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.DatacentersRequest{
-		Names: c.names,
+	req := &crimson.RacksRequest{
+		Names:       c.names,
+		Datacenters: c.datacenters,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetDatacenters(ctx, req)
+	resp, err := client.GetRacks(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -50,15 +52,16 @@ func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env 
 	return 0
 }
 
-// getDatacentersCmd returns a command to get datacenters.
-func getDatacentersCmd() *subcommands.Command {
+// getRacksCmd returns a command to get racks.
+func getRacksCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-dcs [-name <name>]...",
-		ShortDesc: "retrieves datacenters",
-		LongDesc:  "Retrieves datacenters matching the given names, or all datacenters if names are omitted.",
+		UsageLine: "get-racks [-name <name>]... [-dc <datacenter>]...",
+		ShortDesc: "retrieves racks",
+		LongDesc:  "Retrieves racks matching the given names and dcs, or all racks if names and dcs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
-			cmd := &GetDatacentersCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a datacenter to retrieve. Can be specified multiple times.")
+			cmd := &GetRacksCmd{}
+			cmd.Flags.Var(&cmd.names, "name", "Name of a rack to retrieve. Can be specified multiple times.")
+			cmd.Flags.Var(&cmd.datacenters, "dc", "Name of a datacenter to retrieve. Can be specified multiple times.")
 			return cmd
 		},
 	}
