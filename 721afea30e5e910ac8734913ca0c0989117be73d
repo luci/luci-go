@@ -70,6 +70,24 @@
       "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "439f7270_62957890",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-12-15T20:16:30Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2ca98345_aa8ccc0f",
+      "revId": "721afea30e5e910ac8734913ca0c0989117be73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
