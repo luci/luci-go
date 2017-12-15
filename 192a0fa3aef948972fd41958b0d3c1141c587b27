@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2668af1_209ac98b",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-15T03:41:36Z",
+      "side": 1,
+      "message": "can you add comment about \u0027$\u0027 (what you wrote in commit message) to here, and paste a URL ref to a doc which confirms what you are saying if it exists.",
+      "revId": "192a0fa3aef948972fd41958b0d3c1141c587b27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2188dae4_223994c6",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-15T03:41:36Z",
+      "side": 1,
+      "message": "come to think about it, this whole test isn\u0027t useful - it just tests two constant values.\nThis is what \"learning on the toilet\" warned against.\nIs the \u0027$\u0027 append documented in luci-config API spec? If so, then perhaps test that with \u0027$\u0027 appended, the regex matches \"projects/xyz\" string.\nIf not, i\u0027d just remove this test completely.",
+      "range": {
+        "startLine": 324,
+        "startChar": 2,
+        "endLine": 325,
+        "endChar": 72
+      },
+      "revId": "192a0fa3aef948972fd41958b0d3c1141c587b27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
