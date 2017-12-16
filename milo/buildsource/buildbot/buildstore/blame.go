@@ -81,9 +81,13 @@ func fetchChangesCached(c context.Context, b *buildbot.Build) error {
 	if err != nil {
 		return err
 	}
-	cache.SetValue(marshaled)
-	if err := memcache.Set(c, cache); err != nil {
-		report(err, "failed to save")
+	if len(marshaled) > 1<<20 {
+		report(nil, "cannot save > 1MB")
+	} else {
+		cache.SetValue(marshaled)
+		if err := memcache.Set(c, cache); err != nil {
+			report(err, "failed to save")
+		}
 	}
 	return nil
 }
