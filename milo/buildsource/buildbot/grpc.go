@@ -72,6 +72,8 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 
 	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum))
 	switch {
+	case common.ErrorTag.In(err) == common.CodeNoAccess:
+		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
 	case b == nil:
@@ -126,7 +128,10 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		q.Finished = buildstore.Yes
 	}
 	res, err := buildstore.GetBuilds(c, q)
-	if err != nil {
+	switch {
+	case common.ErrorTag.In(err) == common.CodeNoAccess:
+		return nil, errNotFoundGRPC
+	case err != nil:
 		return nil, err
 	}
 
@@ -165,8 +170,9 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	}
 
 	master, err := buildstore.GetMaster(c, req.Name, true)
-	switch {
-	case common.ErrorTag.In(err) == common.CodeNotFound:
+
+	switch code := common.ErrorTag.In(err); {
+	case code == common.CodeNotFound, code == common.CodeNoAccess:
 		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
@@ -225,21 +231,10 @@ func grpcCanAccessMaster(c context.Context, master string) error {
 	err := buildstore.CanAccessMaster(c, master)
 	switch common.ErrorTag.In(err) {
 	case common.CodeNotFound:
-		return grpc.Errorf(codes.NotFound, "Not found")
+		return errNotFoundGRPC
 	case common.CodeUnauthorized:
 		return grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
 	default:
 		return err
-	}
-}
-
-func grpcCheckAdmin(c context.Context) error {
-	switch isAdmin, err := common.IsAdmin(c); {
-	case err != nil:
-		return err
-	case !isAdmin:
-		return grpc.Errorf(codes.PermissionDenied, "permission denied")
-	default:
-		return nil
 	}
 }
