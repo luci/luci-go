@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10b7f863_88c131af",
+        "filename": "machine-db/api/config/v1/oses.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:38:06Z",
+      "side": 1,
+      "message": "maybe just OSConfig? os is a standard abbreviation: godoc.org/os.\nlet\u0027s leave verbosity for comments, but keep symbols concise. It is especially relevant in golang where you cannot reference a symbol from another package without prefixing the package name (hence \"Reader\" is an OK name in package \"bytes\")",
+      "range": {
+        "startLine": 10,
+        "startChar": 8,
+        "endLine": 10,
+        "endChar": 29
+      },
+      "revId": "bc54868dda738dcfdab0468a44de6966e8fb7e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d67d84a3_a1b2c5b1",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:38:06Z",
+      "side": 1,
+      "message": "if datacenters config is broken, a valid OS config will not be imported. Consider using parallel.FanOutIn here. It will give you concurrent importing as a bonus",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "bc54868dda738dcfdab0468a44de6966e8fb7e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
