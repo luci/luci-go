@@ -16,9 +16,12 @@ package common
 
 import (
 	"testing"
+	"time"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
@@ -28,6 +31,16 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+type testAccessClient struct {
+	perms access.Permissions
+	dur time.Duration
+	err error
+}
+
+func (a *testAccessClient) bucketPermissions(c context.Context, buckets []string) (access.Permissions, time.Duration, error) {
+	return a.perms, a.dur, a.err
+}
 
 func TestACL(t *testing.T) {
 	t.Parallel()
@@ -85,6 +98,102 @@ func TestACL(t *testing.T) {
 					So(ok, ShouldEqual, false)
 					So(err, ShouldBeNil)
 				})
+			})
+		})
+
+		Convey("Set up buildbucket client", func() {
+			client := testAccessClient{}
+			Convey("With anonymous identity", func() {
+				c = auth.WithState(c, &authtest.FakeState{
+					Identity:       identity.AnonymousIdentity,
+					IdentityGroups: []string{"all"},
+				})
+
+				Convey("Get bucket permissions uncached", func() {
+					// Uncached call.
+					client.perms = access.Permissions{
+						"hello": access.AccessBucket,
+					}
+					perms, err := BucketPermissions(c, &client, []string{"hello"})
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.AccessBucket)
+
+					// Cached call. Since perms is nil and we haven't advanced the clock,
+					// this would error if the value isn't cached.
+					client.perms = access.Permissions{}
+					perms, err = BucketPermissions(c, &client, []string{"hello"})
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.AccessBucket)
+				})
+
+				Convey("Get bucket permissions cache duration", func() {
+					c, clk := testclock.UseTime(c, testclock.TestRecentTimeLocal)
+					// Uncached call.
+					client.perms = access.Permissions{
+						"hello": access.AccessBucket,
+					}
+					client.dur = time.Second
+					perms, err := BucketPermissions(c, &client, []string{"hello"})
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.AccessBucket)
+
+					// Move time forward.
+					clk.Add(2 * time.Second)
+
+					// Also uncached call.
+					client.perms = access.Permissions{
+						"hello": access.ViewBuild,
+					}
+					perms, err = BucketPermissions(c, &client, []string{"hello"})
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.ViewBuild)
+				})
+
+				Convey("Get bucket permissions for cached and uncached buckets", func() {
+					// Uncached call.
+					client.perms = access.Permissions{
+						"hello": access.AccessBucket,
+					}
+					perms, err := BucketPermissions(c, &client, []string{"hello"})
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.AccessBucket)
+
+					// Cached call for hello, but uncached call for goodbye.
+					// Since perms is nil and we haven't advanced the clock,
+					// this should fail if there's no caching happening.
+					client.perms = access.Permissions{
+						"goodbye": access.AccessBucket,
+					}
+					perms, err = BucketPermissions(c, &client, []string{"hello", "goodbye"})
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.AccessBucket)
+					So(perms["goodbye"], ShouldEqual, access.AccessBucket)
+				})
+			})
+
+			Convey("Make sure cache doesn't share identity", func() {
+				cAnon := auth.WithState(c, &authtest.FakeState{
+					Identity:       identity.AnonymousIdentity,
+					IdentityGroups: []string{"all"},
+				})
+				cEve := auth.WithState(c, &authtest.FakeState{
+					Identity:       "user:eve@notgoogle.com",
+					IdentityGroups: []string{"all"},
+				})
+				// Uncached call.
+				client.perms = access.Permissions{
+					"hello": access.AccessBucket,
+				}
+				perms, err := BucketPermissions(cEve, &client, []string{"hello"})
+				So(err, ShouldBeNil)
+				So(perms["hello"], ShouldEqual, access.AccessBucket)
+
+				// Eve's result should now be cached, but anon should make an RPC
+				// for themselves, and Eve's result should not be used.
+				client.perms = access.Permissions{}
+				perms, err = BucketPermissions(cAnon, &client, []string{"hello"})
+				So(err, ShouldBeNil)
+				So(len(perms), ShouldEqual, 0)
 			})
 		})
 	})
