@@ -1,0 +1,285 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7785ba10_0716e672",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "why can\u0027t we put accessProto.AccessClient to the context and use bbAccess.BucketPermissions in L134? it requires writing a stub for the client in the test code (like https://cs.chromium.org/chromium/infra/go/src/infra/monorail/monorailtest/server.go except for client, not server), but generation of such code can be automated (like svcdec) and it would simplify prod code",
+      "range": {
+        "startLine": 70,
+        "startChar": 5,
+        "endLine": 70,
+        "endChar": 17
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29b973b6_ac698db7",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "current identity",
+      "range": {
+        "startLine": 98,
+        "startChar": 46,
+        "endLine": 98,
+        "endChar": 50
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "897f23c3_54f52ec2",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "i think the map is unnecessary. isn\u0027t the slice sufficient? see below too",
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72fd3595_2274a82f",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "Email is not necessarily available. identity.Identity is actually a string, so let\u0027s just use that",
+      "range": {
+        "startLine": 106,
+        "startChar": 53,
+        "endLine": 106,
+        "endChar": 61
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "774b5f8f_64832f0e",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "let\u0027s call it once",
+      "range": {
+        "startLine": 106,
+        "startChar": 30,
+        "endLine": 106,
+        "endChar": 53
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3db6345_15fc2d7c",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "entrySlice[i] \u003d item, since we have the index (but currently ignore it)",
+      "range": {
+        "startLine": 108,
+        "startChar": 12,
+        "endLine": 108,
+        "endChar": 34
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a46981e5_33d7ed60",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "memcache.Get may return memcache.ErrCacheMiss or errors.MultiError of them. We shouldn\u0027t be warning about it",
+      "range": {
+        "startLine": 112,
+        "startChar": 43,
+        "endLine": 112,
+        "endChar": 54
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff3dd9a7_bb226925",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "just `action` doesn\u0027t work?",
+      "range": {
+        "startLine": 120,
+        "startChar": 9,
+        "endLine": 120,
+        "endChar": 18
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31f4014e_4d05123b",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "RPC stands for \"Remote Procedure Call\" so this is redundant",
+      "range": {
+        "startLine": 133,
+        "startChar": 16,
+        "endLine": 133,
+        "endChar": 20
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcd955bd_3db60a6b",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "we could populate updatedItems in prev loop, where we populate uncachedBuckets. Then we iterate uncachedBuckets and use i to retrieve cache item. Then we don\u0027t need entry map.",
+      "range": {
+        "startLine": 141,
+        "startChar": 5,
+        "endLine": 141,
+        "endChar": 37
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5439e120_d311c227",
+        "filename": "milo/common/acl_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "ah, you have a stub anyway. This works too. What I suggest in another comment (struct with functions) is not required",
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55c0245e_8aeda75a",
+        "filename": "milo/common/acl_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "let\u0027s make it ...string parameter",
+      "range": {
+        "startLine": 117,
+        "startChar": 49,
+        "endLine": 117,
+        "endChar": 66
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9af21dd_9fb3c3d2",
+        "filename": "milo/common/acl_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T08:13:58Z",
+      "side": 1,
+      "message": "FWIU\n\n  So(perms, ShouldResemble, client.perms)\n\nwould cover more and would be shorter\n\nsame below",
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
