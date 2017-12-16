@@ -20,7 +20,7 @@
     },
     "Recipe": {
       "Label": "infra_repo_trybot",
-      "URL": "https://chromium.googlesource.com/infra/infra/+/master/",
+      "URL": "https://cs.chromium.org/search/?q=file:recipes/infra_repo_trybot.py",
       "AriaLabel": "recipe infra_repo_trybot"
     },
     "Source": {

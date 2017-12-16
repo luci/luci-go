@@ -25,7 +25,7 @@
     },
     "Recipe": {
       "Label": "infra/infra_continuous",
-      "URL": "https://chromium.googlesource.com/chromium/tools/build/+/master/",
+      "URL": "https://cs.chromium.org/search/?q=file:recipes/infra/infra_continuous.py",
       "AriaLabel": "recipe infra/infra_continuous"
     },
     "Source": {
