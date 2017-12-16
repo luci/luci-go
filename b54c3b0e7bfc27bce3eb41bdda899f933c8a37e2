@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb89a374_efb45a82",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T01:55:37Z",
+      "side": 1,
+      "message": "please make it a method of Action. Moreover, there is an existing interface for this kind of stuff https://golang.org/pkg/encoding/#BinaryMarshaler\n\nhttps://golang.org/pkg/encoding/#BinaryUnmarshaler for UnmarshalAction",
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95704cbe_ac945efb",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T01:55:37Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 6
+      },
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05656ed3_1331afcf",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T01:55:37Z",
+      "side": 1,
+      "message": "we don\u0027t know that here",
+      "range": {
+        "startLine": 122,
+        "startChar": 40,
+        "endLine": 122,
+        "endChar": 46
+      },
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8398e6e5_2f9cce00",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T01:55:37Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 122,
+        "startChar": 24,
+        "endLine": 122,
+        "endChar": 30
+      },
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
