@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a93fed07_bf324b05",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-16T02:07:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb89a374_efb45a82",
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95704cbe_ac945efb",
         "filename": "buildbucket/access/action.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb6ac8db_a0531f61",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-16T02:07:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95704cbe_ac945efb",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 6
+      },
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +127,54 @@
       "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3034585c_e8bc2011",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-16T02:07:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8398e6e5_2f9cce00",
+      "range": {
+        "startLine": 122,
+        "startChar": 24,
+        "endLine": 122,
+        "endChar": 30
+      },
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e47081ac_5ffa2cb6",
+        "filename": "buildbucket/access/action.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-16T02:07:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05656ed3_1331afcf",
+      "range": {
+        "startLine": 122,
+        "startChar": 40,
+        "endLine": 122,
+        "endChar": 46
+      },
+      "revId": "b54c3b0e7bfc27bce3eb41bdda899f933c8a37e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
