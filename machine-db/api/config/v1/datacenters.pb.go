@@ -8,6 +8,7 @@ It is generated from these files:
 	go.chromium.org/luci/machine-db/api/config/v1/datacenters.proto
 	go.chromium.org/luci/machine-db/api/config/v1/oses.proto
 	go.chromium.org/luci/machine-db/api/config/v1/platforms.proto
+	go.chromium.org/luci/machine-db/api/config/v1/vlans.proto
 
 It has these top-level messages:
 	Switch
@@ -18,6 +19,8 @@ It has these top-level messages:
 	OSes
 	Platform
 	Platforms
+	VLAN
+	VLANs
 */
 package config
 

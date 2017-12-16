@@ -50,7 +50,9 @@ func Import(c context.Context) error {
 	if err := importPlatforms(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import platforms").Err()
 	}
-	// TODO(smut): Import the rest of the configs.
+	if err := importVLANs(c, configSet); err != nil {
+		return errors.Annotate(err, "failed to import vlans").Err()
+	}
 	return nil
 }
 

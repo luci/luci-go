@@ -118,7 +118,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*config.D
 			c.Errorf("duplicate datacenter %q", dc.Name)
 		}
 
-		c.Enter("datacenter: %q", dc.Name)
+		c.Enter("datacenter %q", dc.Name)
 		for _, rack := range dc.Rack {
 			switch {
 			case rack.Name == "":
@@ -127,7 +127,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*config.D
 				c.Errorf("duplicate rack %q", rack.Name)
 			}
 
-			c.Enter("rack: %q", rack.Name)
+			c.Enter("rack %q", rack.Name)
 			for _, s := range rack.Switch {
 				switch {
 				case s.Name == "":
@@ -136,7 +136,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*config.D
 					c.Errorf("duplicate switch %q", s.Name)
 				}
 
-				c.Enter("switch: %q", s.Name)
+				c.Enter("switch %q", s.Name)
 				switch {
 				case s.Ports < 1:
 					c.Errorf("switches must have at least one port")
