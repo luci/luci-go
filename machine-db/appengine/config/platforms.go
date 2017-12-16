@@ -54,7 +54,6 @@ func validatePlatformsConfig(c *validation.Context, cfg *config.PlatformsConfig)
 	// Platform names must be unique.
 	// Keep records of ones we've already seen.
 	names := stringset.New(len(cfg.Platform))
-
 	for _, p := range cfg.Platform {
 		switch {
 		case p.Name == "":

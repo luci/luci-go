@@ -119,7 +119,7 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 		}
 		datacenters.Add(datacenterConfig.Name)
 
-		c.Enter("datacenter: %q", datacenterConfig.Name)
+		c.Enter("datacenter %q", datacenterConfig.Name)
 		for _, rackConfig := range datacenterConfig.Rack {
 			if rackConfig.Name == "" {
 				c.Errorf("rack names are required and must be non-empty")
@@ -129,7 +129,7 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 			}
 			racks.Add(rackConfig.Name)
 
-			c.Enter("rack: %q", rackConfig.Name)
+			c.Enter("rack %q", rackConfig.Name)
 			for _, switchConfig := range rackConfig.Switch {
 				if switchConfig.Name == "" {
 					c.Errorf("switch names are required and must be non-empty")
@@ -139,7 +139,7 @@ func validateDatacenters(c *validation.Context, datacenterConfigs map[string]*co
 				}
 				switches.Add(switchConfig.Name)
 
-				c.Enter("switch: %q", switchConfig.Name)
+				c.Enter("switch %q", switchConfig.Name)
 				if switchConfig.Ports < 1 {
 					c.Errorf("switch %q must have at least one port", switchConfig.Name)
 				}
