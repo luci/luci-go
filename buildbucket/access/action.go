@@ -15,11 +15,14 @@
 package access
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strings"
+
+	"go.chromium.org/luci/common/errors"
 )
 
-type Action int
+type Action uint32
 
 const (
 	// AddBuild: Schedule a build.
@@ -87,7 +90,7 @@ func ParseAction(action string) (Action, error) {
 	if action, ok := nameToAction[action]; ok {
 		return action, nil
 	}
-	return -1, fmt.Errorf("unexpected action %q", action)
+	return 0, fmt.Errorf("unexpected action %q", action)
 }
 
 // String returns the action name as a string.
@@ -104,4 +107,19 @@ func (a Action) String() string {
 		}
 	}
 	return strings.Join(values, ", ")
+}
+
+// MarshalAction encodes the Action as bytes.
+func MarshalAction(a Action) []byte {
+	bytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bytes, uint32(a))
+	return bytes
+}
+
+// Un,arshalAction decodes an Action from bytes.
+func UnmarshalAction(blob []byte) (Action, error) {
+	if len(blob) != 4 {
+		return 0, errors.New("found malformed cache entry")
+	}
+	return Action(binary.LittleEndian.Uint32(blob)), nil
 }
