@@ -15,10 +15,12 @@
 package buildstore
 
 import (
+	"net/http"
 	"sort"
 	"strconv"
 
 	"golang.org/x/net/context"
+	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/memcache"
@@ -29,8 +31,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/common"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -199,9 +203,17 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 
 	start := clock.Now(c)
 	msgs, err := search.Fetch(q.Limit, nil)
-	if err != nil {
+	switch apiErr, _ := err.(*googleapi.Error); {
+	case apiErr != nil && apiErr.Code == http.StatusForbidden:
+		return nil, errors.Annotate(
+			err,
+			"%q does not have access to bucket %q",
+			auth.CurrentIdentity(c),
+			bucket).Tag(common.CodeNoAccess).Err()
+	case err != nil:
 		return nil, errors.Annotate(err, "searching on buildbucket").Err()
 	}
+
 	logging.Infof(c, "buildbucket search took %s", clock.Since(c, start))
 
 	builds := make([]*buildbot.Build, len(msgs))
