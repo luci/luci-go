@@ -15,15 +15,18 @@
 package access
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strings"
+
+	"go.chromium.org/luci/common/errors"
 )
 
-type Action int
+type Action uint32
 
 const (
 	// AddBuild: Schedule a build.
-	AddBuild = 1 << iota
+	AddBuild Action = 1 << iota
 
 	// ViewBuild: Get information about a build.
 	ViewBuild
@@ -87,7 +90,7 @@ func ParseAction(action string) (Action, error) {
 	if action, ok := nameToAction[action]; ok {
 		return action, nil
 	}
-	return -1, fmt.Errorf("unexpected action %q", action)
+	return 0, fmt.Errorf("unexpected action %q", action)
 }
 
 // String returns the action name as a string.
@@ -104,4 +107,20 @@ func (a Action) String() string {
 		}
 	}
 	return strings.Join(values, ", ")
+}
+
+// MarshalBinary encodes the Action as bytes.
+func (a *Action) MarshalBinary() ([]byte, error) {
+	bytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bytes, uint32(*a))
+	return bytes, nil
+}
+
+// UnmarshalBinary decodes an Action from bytes.
+func (a *Action) UnmarshalBinary(blob []byte) error {
+	if len(blob) != 4 {
+		return errors.New("expected length of 4")
+	}
+	*a = Action(binary.LittleEndian.Uint32(blob))
+	return nil
 }
