@@ -1,0 +1,308 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9f4e4a9e_b8e9129c",
+        "filename": "machine-db/api/config/v1/platforms.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "it is not a name though",
+      "range": {
+        "startLine": 19,
+        "startChar": 9,
+        "endLine": 19,
+        "endChar": 13
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61bd1fb3_e43f0046",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "please move to a separate import block, before other luci ones",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c342ff00_f0ceae2b",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "i am pretty sure this call goes through 1) process cache 2) memcache cache 3) datastore cache and there is a separate cron job (/admin/config/cache/manager) that updates datastore. This increases config change propagation delay by ~10min (process cache and memcache). Caching here is not needed at all, because it is a cron job, so I recommend using config interface directly\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/common/config.go?q\u003dfile:milo+config\u0026sq\u003dpackage:chromium\u0026l\u003d358\u0026rcl\u003de137a647b374734bcd0a6904b23389de95126d12\nand removing the cron job if you have one (I don\u0027t have permissions to the cloud project).\n\nin another CL",
+      "range": {
+        "startLine": 37,
+        "startChar": 11,
+        "endLine": 37,
+        "endChar": 129
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bebe066_27f78803",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "why this is needed? platform is empty at this point",
+      "range": {
+        "startLine": 38,
+        "startChar": 52,
+        "endLine": 38,
+        "endChar": 67
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c20915c_0a523678",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "nit: \" %q\"",
+      "range": {
+        "startLine": 40,
+        "startChar": 40,
+        "endLine": 40,
+        "endChar": 44
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34891581_c9c4f526",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "one may interpret this as \"we tried to validate a config, but we failed due to some reason so we cannot really tell if the config is valid or not\", whereas this error really means that config is invalid",
+      "range": {
+        "startLine": 45,
+        "startChar": 31,
+        "endLine": 45,
+        "endChar": 56
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69d117f7_9e78b41b",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "this function never returns an error. also it should not, because we already have a channel to return errors, i.e. validation context. Other validation functions that accept validation.Context do not return errors either. The returned error is ignored in L32 anyway",
+      "range": {
+        "startLine": 51,
+        "startChar": 81,
+        "endLine": 51,
+        "endChar": 86
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ed26f7d_657326d8",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "nit: names",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 10
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04034040_e52d7c2c",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "this line assumes that cfg is coming from a file. please move it to L43",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92bfea41_8b29836c",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "nit: cfg",
+      "range": {
+        "startLine": 57,
+        "startChar": 8,
+        "endLine": 57,
+        "endChar": 22
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24346188_4e576426",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "!platforms.Add",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 18
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ac98112_dc853e9e",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "please define a restricted alphabet for platform names (also dcs, racks, switches, in another CL), so that in future you don\u0027t have to encode them when passing as a part of another string (e.g. cache key, datastore id, URL path, etc). How about\n\n  ^[a-z0-9\\-]+$\n\n?",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b67a2697_c6e07fc3",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "else if \n\nno need to check uniqueness of an empty string\nand then maybe use switch, so we clearly handle distinct cases",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 4
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a411f1a_b97dbfa5",
+        "filename": "machine-db/appengine/config/platforms_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-16T07:24:49Z",
+      "side": 1,
+      "message": "nit: consider\n\n  { Name: \"\" }\n\nhere and below",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 7
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
