@@ -405,24 +405,21 @@ func addBuildsetInfo(build *ui.MiloBuild, tags map[string]string) {
 func addRecipeLink(build *ui.MiloBuild, tags map[string]string) {
 	name := tags["recipe_name"]
 	repoURL := tags["recipe_repository"]
-	revision := tags["recipe_revision"]
-	if name != "" && repoURL != "" {
-		if revision == "" {
-			revision = "master"
-		}
-		// Link directly to the revision if it is a gerrit URL, otherwise just
-		// display it in the name.
-		if repoParse, err := url.Parse(repoURL); err == nil && strings.HasSuffix(
-			repoParse.Host, ".googlesource.com") {
-			repoURL += "/+/" + revision + "/"
-		} else {
-			if len(revision) > 8 {
-				revision = revision[:8]
-			}
-			name += " @ " + revision
-		}
-		build.Summary.Recipe = ui.NewLink(name, repoURL, fmt.Sprintf("recipe %s", name))
+	if name == "" || repoURL == "" {
+		return
 	}
+
+	// We don't know location of recipes within the repo and getting that
+	// information is not trivial, so use code search, which is precise enough.
+	// TODO(nodir): load location from infra/config/recipes.cfg of the
+	// recipe_repository.
+	csHost := "cs.chromium.org"
+	repoURLParsed, _ := url.Parse(repoURL)
+	if repoURLParsed != nil && strings.Contains(repoURLParsed.Host, "internal") {
+		csHost = "cs.corp.google.com"
+	}
+	recipeURL := fmt.Sprintf("https://%s/search/?q=file:recipes/%s.py", csHost, name)
+	build.Summary.Recipe = ui.NewLink(name, recipeURL, fmt.Sprintf("recipe %s", name))
 }
 
 // addProjectInfo adds the luci_project swarming tag to the build.
