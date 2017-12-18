@@ -86,6 +86,33 @@ func (c *Console) ProjectID() string {
 	return c.Parent.StringID()
 }
 
+// Buckets returns all buckets referenced by this Console's Builders.
+func (c *Console) Buckets() stringset.Set {
+	buckets := stringset.New(1)
+	for _, id := range c.Builders {
+		if bucket, err := extractBucket(id); err == nil {
+			buckets.Add(bucket)
+		}
+	}
+	return buckets
+}
+
+// extractBucket extracts bucket from a builder ID if possible.
+//
+// TODO(mknyszek): Get rid of this by either moving the logic above
+// or somehow getting access to BuilderID otherwise without an import
+// cycle.
+func extractBucket(id string) (string, error) {
+	if !strings.HasPrefix(id, "buildbucket/") {
+		return "", errors.New("not a buildbucket builder")
+	}
+	toks := strings.SplitN(id, "/", 3)
+	if len(toks) != 3 {
+		return "", errors.New("malformed builder ID")
+	}
+	return toks[1], nil
+}
+
 // ConsoleID is a reference to a console.
 type ConsoleID struct {
 	Project string
