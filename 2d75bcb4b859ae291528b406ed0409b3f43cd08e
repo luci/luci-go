@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0395283c_41c3651b",
+        "filename": "buildbucket/access/testutil.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-18T22:10:03Z",
+      "side": 1,
+      "message": "let\u0027s s sort actions, otherwise we will get non-deterministic order in the returned protos",
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71572236_35b1cbe3",
+        "filename": "buildbucket/access/testutil.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-18T22:10:03Z",
+      "side": 1,
+      "message": "this is not useful for a user. let\u0027s either not set it, or better yet accept duration as a parameter in this function",
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "866157cc_c6d046c7",
+        "filename": "buildbucket/access/testutil.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-18T22:10:03Z",
+      "side": 1,
+      "message": "we have the counterpart code in acl.go:64-75. Having them both available or both not available as a part of this package would be more consistent. How about two methods\n\n  (*Permissions) FromProto(m *access.PermittedActionsResponse)\n  (*Permissions) ToProto() *access.PermittedActionsResponse",
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f217b44a_fce669c8",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-18T22:10:03Z",
+      "side": 1,
+      "message": "NewAccessClient",
+      "range": {
+        "startLine": 65,
+        "startChar": 3,
+        "endLine": 65,
+        "endChar": 20
+      },
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5be6457_cc519ce6",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-18T22:10:03Z",
+      "side": 1,
+      "message": "Buildbucket being non-nil still does not guarantee that its host is initialized\n\nlet\u0027s use settings.Buildbucket.GetHost() here\n\nnote that GetHost works for nil buildbucket message",
+      "range": {
+        "startLine": 69,
+        "startChar": 13,
+        "endLine": 69,
+        "endChar": 24
+      },
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2bbe971_eaa52103",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-18T22:10:03Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 6
+      },
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3518aaa_ff8b5703",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-18T22:10:03Z",
+      "side": 1,
+      "message": "errors.Annotate(err, ...",
+      "range": {
+        "startLine": 138,
+        "startChar": 15,
+        "endLine": 138,
+        "endChar": 53
+      },
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
