@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63ce2f51_57c6d5fd",
+        "filename": "tools/cmd/assets/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-18T23:43:10Z",
+      "side": 1,
+      "message": "Returns",
+      "range": {
+        "startLine": 82,
+        "startChar": 57,
+        "endLine": 82,
+        "endChar": 64
+      },
+      "revId": "30d92ec5182c08c7c133424083885acd128c8773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2645bd33_9f26fd0c",
+        "filename": "tools/cmd/assets/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-18T23:43:10Z",
+      "side": 1,
+      "message": "SHA256\n\nwhy be cryptic about its nature? :)",
+      "range": {
+        "startLine": 84,
+        "startChar": 13,
+        "endLine": 84,
+        "endChar": 21
+      },
+      "revId": "30d92ec5182c08c7c133424083885acd128c8773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6023f2c6_dca44655",
+        "filename": "tools/cmd/assets/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-18T23:43:10Z",
+      "side": 1,
+      "message": "return append([]byte(nil), data...)",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 11
+      },
+      "revId": "30d92ec5182c08c7c133424083885acd128c8773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
