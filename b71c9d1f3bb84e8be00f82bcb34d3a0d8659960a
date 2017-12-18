@@ -16,6 +16,24 @@
       "revId": "b71c9d1f3bb84e8be00f82bcb34d3a0d8659960a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d94adfa9_aa3e55da",
+        "filename": "buildbucket/access/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T23:52:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2543bab8_d29e76db",
+      "revId": "b71c9d1f3bb84e8be00f82bcb34d3a0d8659960a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
