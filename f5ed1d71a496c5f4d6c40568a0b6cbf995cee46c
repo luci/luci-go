@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6d2eddf8_cd08d11a",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7785ba10_0716e672",
+      "range": {
+        "startLine": 70,
+        "startChar": 5,
+        "endLine": 70,
+        "endChar": 17
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29b973b6_ac698db7",
         "filename": "milo/common/acl.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "8c23fc30_4c9ad8a0",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29b973b6_ac698db7",
+      "range": {
+        "startLine": 98,
+        "startChar": 46,
+        "endLine": 98,
+        "endChar": 50
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "897f23c3_54f52ec2",
         "filename": "milo/common/acl.go",
         "patchSetId": 7
@@ -62,6 +110,24 @@
       "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c13577a_87c4d392",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "897f23c3_54f52ec2",
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +177,54 @@
     },
     {
       "key": {
+        "uuid": "1fe22455_6fe0aafd",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72fd3595_2274a82f",
+      "range": {
+        "startLine": 106,
+        "startChar": 53,
+        "endLine": 106,
+        "endChar": 61
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "44ab3fa5_ddcf269e",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "774b5f8f_64832f0e",
+      "range": {
+        "startLine": 106,
+        "startChar": 30,
+        "endLine": 106,
+        "endChar": 53
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3db6345_15fc2d7c",
         "filename": "milo/common/acl.go",
         "patchSetId": 7
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "80745db4_54bb71b5",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3db6345_15fc2d7c",
+      "range": {
+        "startLine": 108,
+        "startChar": 12,
+        "endLine": 108,
+        "endChar": 34
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a46981e5_33d7ed60",
         "filename": "milo/common/acl.go",
         "patchSetId": 7
@@ -145,6 +283,30 @@
       "writtenOn": "2017-12-16T08:13:58Z",
       "side": 1,
       "message": "memcache.Get may return memcache.ErrCacheMiss or errors.MultiError of them. We shouldn\u0027t be warning about it",
+      "range": {
+        "startLine": 112,
+        "startChar": 43,
+        "endLine": 112,
+        "endChar": 54
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94f6ec7c_41590b3a",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "I resolved this by checking if the err is an errors.MultiError, and if so, I iterate over it. This seems like overkill, but I feel like we should be reporting cache errors somehow.",
+      "parentUuid": "a46981e5_33d7ed60",
       "range": {
         "startLine": 112,
         "startChar": 43,
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "2ce07947_15b43506",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff3dd9a7_bb226925",
+      "range": {
+        "startLine": 120,
+        "startChar": 9,
+        "endLine": 120,
+        "endChar": 18
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "31f4014e_4d05123b",
         "filename": "milo/common/acl.go",
         "patchSetId": 7
@@ -200,6 +386,30 @@
       "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e8c52b1_948670cd",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31f4014e_4d05123b",
+      "range": {
+        "startLine": 133,
+        "startChar": 16,
+        "endLine": 133,
+        "endChar": 20
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -226,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "ed2b4ce2_9bcd46e3",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fcd955bd_3db60a6b",
+      "range": {
+        "startLine": 141,
+        "startChar": 5,
+        "endLine": 141,
+        "endChar": 37
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5439e120_d311c227",
         "filename": "milo/common/acl_test.go",
         "patchSetId": 7
@@ -240,6 +474,24 @@
       "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9454e19d_dc0d1b10",
+        "filename": "milo/common/acl_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "5439e120_d311c227",
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -266,6 +518,30 @@
     },
     {
       "key": {
+        "uuid": "fb37be06_7c4a1e9a",
+        "filename": "milo/common/acl_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55c0245e_8aeda75a",
+      "range": {
+        "startLine": 117,
+        "startChar": 49,
+        "endLine": 117,
+        "endChar": 66
+      },
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9af21dd_9fb3c3d2",
         "filename": "milo/common/acl_test.go",
         "patchSetId": 7
@@ -280,6 +556,24 @@
       "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3d17f16_f7112164",
+        "filename": "milo/common/acl_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-18T18:58:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9af21dd_9fb3c3d2",
+      "revId": "f5ed1d71a496c5f4d6c40568a0b6cbf995cee46c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
