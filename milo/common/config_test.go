@@ -215,6 +215,12 @@ var settingsCfg = `
 buildbot: {
 	internal_reader: "googlers"
 }
+
+buildbucket: {
+	name: "my instance"
+	host: "buildbucket.example.com"
+	project: "buildbucket"
+}
 `
 
 var mockedConfigs = map[string]memcfg.ConfigSet{
