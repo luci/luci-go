@@ -16,9 +16,14 @@ package common
 
 import (
 	"testing"
+	"time"
+
+	"github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
@@ -85,6 +90,102 @@ func TestACL(t *testing.T) {
 					So(ok, ShouldEqual, false)
 					So(err, ShouldBeNil)
 				})
+			})
+		})
+
+		Convey("Set up buildbucket client", func() {
+			client := access.TestClient{}
+			helloPermissions := access.Permissions{
+				"hello": access.AccessBucket,
+			}
+			helloResponse := access.PermissionsToPermittedActions(helloPermissions)
+			emptyResponse := access.PermissionsToPermittedActions(access.Permissions{})
+			Convey("With anonymous identity", func() {
+				c = auth.WithState(c, &authtest.FakeState{
+					Identity:       identity.AnonymousIdentity,
+					IdentityGroups: []string{"all"},
+				})
+
+				Convey("Get bucket permissions uncached", func() {
+					// Uncached call.
+					client.PermittedActionsResponse = helloResponse
+					perms, err := BucketPermissions(c, &client, "hello")
+					So(err, ShouldBeNil)
+					So(perms, ShouldResemble, helloPermissions)
+
+					// Cached call. Since perms is nil and we haven't advanced the clock,
+					// this would error if the value isn't cached.
+					client.PermittedActionsResponse = emptyResponse
+					perms, err = BucketPermissions(c, &client, "hello")
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.AccessBucket)
+				})
+
+				Convey("Get bucket permissions cache duration", func() {
+					c, clk := testclock.UseTime(c, testclock.TestRecentTimeLocal)
+					// Uncached call.
+					client.PermittedActionsResponse = helloResponse
+					client.PermittedActionsResponse.ValidityDuration = &duration.Duration{Seconds: 1}
+					perms, err := BucketPermissions(c, &client, "hello")
+					So(err, ShouldBeNil)
+					So(perms, ShouldResemble, helloPermissions)
+
+					// Move time forward.
+					clk.Add(2 * time.Second)
+
+					// Also uncached call.
+					expectPermissions := access.Permissions{
+						"hello": access.ViewBuild,
+					}
+					client.PermittedActionsResponse = access.PermissionsToPermittedActions(expectPermissions)
+					perms, err = BucketPermissions(c, &client, "hello")
+					So(err, ShouldBeNil)
+					So(perms, ShouldResemble, expectPermissions)
+				})
+
+				Convey("Get bucket permissions for cached and uncached buckets", func() {
+					// Uncached call.
+					client.PermittedActionsResponse = helloResponse
+					perms, err := BucketPermissions(c, &client, "hello")
+					So(err, ShouldBeNil)
+					So(perms, ShouldResemble, helloPermissions)
+
+					// Cached call for hello, but uncached call for goodbye.
+					// Since perms is nil and we haven't advanced the clock,
+					// this should fail if there's no caching happening.
+					client.PermittedActionsResponse = access.PermissionsToPermittedActions(
+						access.Permissions{
+							"goodbye": access.AccessBucket,
+						},
+					)
+					perms, err = BucketPermissions(c, &client, "hello", "goodbye")
+					So(err, ShouldBeNil)
+					So(perms["hello"], ShouldEqual, access.AccessBucket)
+					So(perms["goodbye"], ShouldEqual, access.AccessBucket)
+				})
+			})
+
+			Convey("Make sure cache doesn't share identity", func() {
+				cABob := auth.WithState(c, &authtest.FakeState{
+					Identity:       "user:alicebob@google.com",
+					IdentityGroups: []string{"googlers", "all"},
+				})
+				cEve := auth.WithState(c, &authtest.FakeState{
+					Identity:       "user:eve@notgoogle.com",
+					IdentityGroups: []string{"all"},
+				})
+				// Uncached call.
+				client.PermittedActionsResponse = helloResponse
+				perms, err := BucketPermissions(cEve, &client, "hello")
+				So(err, ShouldBeNil)
+				So(perms, ShouldResemble, helloPermissions)
+
+				// Eve's result should now be cached, but anon should make an RPC
+				// for themselves, and Eve's result should not be used.
+				client.PermittedActionsResponse = emptyResponse
+				perms, err = BucketPermissions(cABob, &client, "hello")
+				So(err, ShouldBeNil)
+				So(len(perms), ShouldEqual, 0)
 			})
 		})
 	})
