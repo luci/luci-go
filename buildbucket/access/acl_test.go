@@ -18,9 +18,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/access"
@@ -28,27 +26,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type client struct {
-	R   *access.PermittedActionsResponse
-	err error
-}
-
-// PermittedActions implements the AccessClient interface.
-func (c *client) PermittedActions(_ context.Context, req *access.PermittedActionsRequest, _ ...grpc.CallOption) (*access.PermittedActionsResponse, error) {
-	return c.R, c.err
-}
-
-// Description implements the AccessClient interface.
-func (c *client) Description(_ context.Context, _ *empty.Empty, _ ...grpc.CallOption) (*access.DescriptionResponse, error) {
-	panic("not implemented")
-}
-
 func TestBucketPermissions(t *testing.T) {
 	Convey(`A client/server for the Access service`, t, func() {
 		c := context.Background()
-		client := client{}
+		client := TestClient{}
 		Convey(`Can get sane bucket permissions.`, func() {
-			client.R = &access.PermittedActionsResponse{
+			client.PermittedActionsResponse = &access.PermittedActionsResponse{
 				Permitted: map[string]*access.PermittedActionsResponse_ResourcePermissions{
 					"buck": {
 						Actions: []string{
@@ -83,7 +66,7 @@ func TestBucketPermissions(t *testing.T) {
 		})
 
 		Convey(`Can get unknown bucket permissions.`, func() {
-			client.R = &access.PermittedActionsResponse{
+			client.PermittedActionsResponse = &access.PermittedActionsResponse{
 				Permitted: map[string]*access.PermittedActionsResponse_ResourcePermissions{
 					"bucket": {
 						Actions: []string{
@@ -97,7 +80,7 @@ func TestBucketPermissions(t *testing.T) {
 		})
 
 		Convey(`Can deal with error from .`, func() {
-			client.err = errors.Reason("haha! you got an error").Err()
+			client.Error = errors.Reason("haha! you got an error").Err()
 			_, _, err := BucketPermissions(c, &client, []string{"bucket"})
 			So(err, ShouldNotBeNil)
 		})
