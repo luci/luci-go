@@ -61,11 +61,20 @@ func (sos standardOS) OpenFile(name string, flag int, perm os.FileMode) (io.Writ
 	return os.OpenFile(name, flag, perm)
 }
 
+// hashResult stores the result of an isolated.Hash call.
+type hashResult struct {
+	digest isolated.HexDigest
+	err    error
+}
+
 // UploadTracker uploads and keeps track of files.
 type UploadTracker struct {
 	checker  Checker
 	uploader Uploader
 	isol     *isolated.Isolated
+
+	// A cache of file hashes, to speed up future requests for a hash of the same file.
+	fileHashCache map[string]hashResult
 
 	// Override for testing.
 	lOS limitedOS
@@ -73,14 +82,13 @@ type UploadTracker struct {
 
 // NewUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
 func NewUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated) *UploadTracker {
-	// TODO: share a Checker and Uploader with other UploadTrackers
-	// when batch uploading.
 	isol.Files = make(map[string]isolated.File)
 	return &UploadTracker{
-		checker:  checker,
-		uploader: uploader,
-		isol:     isol,
-		lOS:      standardOS{},
+		checker:       checker,
+		uploader:      uploader,
+		isol:          isol,
+		fileHashCache: make(map[string]hashResult),
+		lOS:           standardOS{},
 	}
 }
 
@@ -250,7 +258,20 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 	}, nil
 }
 
+// hashFile returns the hash of the contents of path, memoizing its results.
 func (ut *UploadTracker) hashFile(path string) (isolated.HexDigest, error) {
+	if result, ok := ut.fileHashCache[path]; ok {
+		return result.digest, result.err
+	}
+
+	digest, err := ut.doHashFile(path)
+	ut.fileHashCache[path] = hashResult{digest, err}
+	return digest, err
+}
+
+// doHashFile returns the hash of the contents of path. This should not be
+// called directly; call hashFile instead.
+func (ut *UploadTracker) doHashFile(path string) (isolated.HexDigest, error) {
 	f, err := ut.lOS.Open(path)
 	if err != nil {
 		return "", err
