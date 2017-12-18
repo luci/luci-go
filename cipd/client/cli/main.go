@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
@@ -2326,46 +2327,6 @@ func (s *selfupdateRun) doSelfUpdate(ctx context.Context, exePath string, fs loc
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Flag hacks, see 'Main' doc.
-
-func splitCmdLine(args []string) (cmd string, flags []string, pos []string) {
-	// No subcomand, just flags.
-	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
-		return "", args, nil
-	}
-	// Pick subcommand, than collect all positional args up to a first flag.
-	cmd = args[0]
-	firstFlagIdx := -1
-	for i := 1; i < len(args); i++ {
-		if strings.HasPrefix(args[i], "-") {
-			firstFlagIdx = i
-			break
-		}
-	}
-	// No flags at all.
-	if firstFlagIdx == -1 {
-		return cmd, nil, args[1:]
-	}
-	return cmd, args[firstFlagIdx:], args[1:firstFlagIdx]
-}
-
-func fixFlagsPosition(args []string) []string {
-	// 'flags' package requires positional arguments to be after flags. This is
-	// very inconvenient choice, it makes commands like "set-ref" look awkward:
-	// Compare "set-ref -ref=abc -version=def package/name" to more natural
-	// "set-ref package/name -ref=abc -version=def". Reshuffle arguments to put
-	// all positional args at the end of the command line.
-	cmd, flags, positional := splitCmdLine(args)
-	var newArgs []string
-	if cmd != "" {
-		newArgs = append(newArgs, cmd)
-	}
-	newArgs = append(newArgs, flags...)
-	newArgs = append(newArgs, positional...)
-	return newArgs
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // Main.
 
 // GetApplication returns cli.Application.
@@ -2462,15 +2423,8 @@ func GetApplication(params Parameters) *cli.Application {
 
 // Main runs the CIPD CLI.
 //
-// It's like subcommands.Run(GetApplication(...), args) except it allows
-// flag arguments and positional arguments to be mixed, which makes some CIPD
-// subcommand invocations look more natural.
-//
-// Compare:
-//   * Default: cipd set-ref -ref=abc -version=def package/name
-//   * Improved: cipd set-ref package/name -ref=abc -version=def
-//
-// Much better.
 func Main(params Parameters, args []string) int {
-	return subcommands.Run(GetApplication(params), fixFlagsPosition(args))
+	a := GetApplication(params)
+	return subcommands.Run(
+		a, fixflagpos.FixSubcommands(args, fixflagpos.MaruelSubcommandsFn(a)))
 }
