@@ -68,6 +68,29 @@
       "revId": "30d92ec5182c08c7c133424083885acd128c8773",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "430c579f_fad967ef",
+        "filename": "tools/cmd/assets/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-18T23:51:00Z",
+      "side": 1,
+      "message": "sort",
+      "range": {
+        "startLine": 300,
+        "startChar": 15,
+        "endLine": 300,
+        "endChar": 34
+      },
+      "revId": "30d92ec5182c08c7c133424083885acd128c8773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
