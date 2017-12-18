@@ -15,8 +15,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -60,46 +61,71 @@ type BundlingChecker struct {
 	ctx     context.Context
 	svc     isolateService
 	bundler *bundler.Bundler
-	err     error
 
+	errMu sync.Mutex
+	err   error // The first error encountered, if any.
+
+	mu              sync.Mutex
 	existingDigests map[string]struct{} // set of digests of items that we presume to exist.
+
+	waitc chan struct{} // Used to cap concurrent check requests.
+	wg    sync.WaitGroup
 
 	Hit, Miss CountBytes
 }
 
 // CountBytes aggregates a count of files and the number of bytes in them.
 type CountBytes struct {
-	Count int
-	Bytes int64
+	mu    sync.Mutex
+	count int
+	bytes int64
 }
 
 func (cb *CountBytes) addFile(size int64) {
-	cb.Count++
-	cb.Bytes += size
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+	cb.count++
+	cb.bytes += size
+}
+
+// Count returns the file count.
+func (cb *CountBytes) Count() int {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+	return cb.count
+}
+
+// Bytes returns total byte count.
+func (cb *CountBytes) Bytes() int64 {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+	return cb.bytes
 }
 
 // NewChecker creates a new Checker with the given isolated client.
+// maxConcurrent controls maximum number of check requests to be in-flight at once.
 // The provided context is used to make all requests to the isolate server.
-func NewChecker(ctx context.Context, client *isolatedclient.Client) *BundlingChecker {
-	return newChecker(ctx, client)
+func NewChecker(ctx context.Context, client *isolatedclient.Client, maxConcurrent int) *BundlingChecker {
+	return newChecker(ctx, client, maxConcurrent)
 }
 
-func newChecker(ctx context.Context, svc isolateService) *BundlingChecker {
+func newChecker(ctx context.Context, svc isolateService, maxConcurrent int) *BundlingChecker {
 	c := &BundlingChecker{
 		svc:             svc,
 		ctx:             ctx,
 		existingDigests: make(map[string]struct{}),
+		waitc:           make(chan struct{}, maxConcurrent),
 	}
 	c.bundler = bundler.NewBundler(checkerItem{}, func(bundle interface{}) {
 		items := bundle.([]checkerItem)
-		if c.err != nil {
+		if c.getErr() != nil {
 			for _, item := range items {
 				// Drop any more incoming items.
 				log.Printf("WARNING dropped %q from Checker", item.item.Path)
 			}
 			return
 		}
-		c.err = c.check(items)
+		c.check(items)
 	})
 	c.bundler.DelayThreshold = 50 * time.Millisecond
 	c.bundler.BundleCountThreshold = 50
@@ -120,10 +146,14 @@ func (c *BundlingChecker) AddItem(item *Item, isolated bool, callback CheckerCal
 
 // PresumeExists causes the Checker to report that item exists on the server.
 func (c *BundlingChecker) PresumeExists(item *Item) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.existingDigests[string(item.Digest)] = struct{}{}
 }
 
 func (c *BundlingChecker) exists(item *Item) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	_, ok := c.existingDigests[string(item.Digest)]
 	return ok
 }
@@ -135,25 +165,44 @@ func (c *BundlingChecker) exists(item *Item) bool {
 // previously-provided callback.
 func (c *BundlingChecker) Close() error {
 	c.bundler.Flush()
+	c.wg.Wait()
+	close(c.waitc) // Sanity check that we don't do any more checks.
+
 	// After Close has returned, we know there are no outstanding running
 	// checks.
 	return c.err
 }
 
-// check is invoked from the bundler's handler. As such, it is only ever run
-// one invocation at a time.
-func (c *BundlingChecker) check(items []checkerItem) error {
+// check is invoked from the bundler's handler.
+// It launches a check in a new goroutine. Any error is communicated via c.err
+func (c *BundlingChecker) check(items []checkerItem) {
+	c.waitc <- struct{}{}
+	c.wg.Add(1)
+	go func() {
+		c.doCheck(items)
+		c.wg.Done()
+		<-c.waitc
+	}()
+
+}
+
+func (c *BundlingChecker) doCheck(items []checkerItem) {
 	// We skip checking items on the server if we already know they exist.
 	existingItems, toCheck := c.partitionByExistence(items)
 
-	for i, pushState := range c.contains(toCheck) {
+	result, err := c.contains(toCheck)
+	if err != nil {
+		c.setErr(err)
+		return
+	}
+
+	for i, pushState := range result {
 		c.handleCheckResult(toCheck[i], pushState)
 	}
 
 	for _, item := range existingItems {
 		c.handleCheckResult(item, nil)
 	}
-	return nil
 }
 
 // partitionByExistence partitions items into two slices: one containing items that
@@ -170,7 +219,7 @@ func (c *BundlingChecker) partitionByExistence(items []checkerItem) (existing, n
 }
 
 // contains calls isolateService.Contains on the supplied checkerItems.
-func (c *BundlingChecker) contains(items []checkerItem) []*isolatedclient.PushState {
+func (c *BundlingChecker) contains(items []checkerItem) ([]*isolatedclient.PushState, error) {
 	var digests []*service.HandlersEndpointsV1Digest
 	for _, item := range items {
 		digests = append(digests, &service.HandlersEndpointsV1Digest{
@@ -181,12 +230,9 @@ func (c *BundlingChecker) contains(items []checkerItem) []*isolatedclient.PushSt
 	}
 	pushStates, err := c.svc.Contains(c.ctx, digests)
 	if err != nil {
-		// TODO(djd): propogate this more cleanly. At the moment, dropping
-		// callbacks may cause the TAR archiver to hang.
-		log.Printf("ERROR: isolate Contains call failed: %v", err)
-		os.Exit(infraFailExit)
+		return nil, fmt.Errorf("isolate Contains call failed: %v", err)
 	}
-	return pushStates
+	return pushStates, nil
 }
 
 func (c *BundlingChecker) handleCheckResult(item checkerItem, pushState *isolatedclient.PushState) {
@@ -209,4 +255,18 @@ func (c *BundlingChecker) handleCheckResult(item checkerItem, pushState *isolate
 	}
 
 	item.callback(item.item, pushState)
+}
+
+func (c *BundlingChecker) getErr() error {
+	c.errMu.Lock()
+	defer c.errMu.Unlock()
+	return c.err
+}
+
+func (c *BundlingChecker) setErr(err error) {
+	c.errMu.Lock()
+	defer c.errMu.Unlock()
+	if c.err == nil {
+		c.err = err
+	}
 }

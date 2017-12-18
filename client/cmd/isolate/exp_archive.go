@@ -56,6 +56,7 @@ func cmdExpArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 				"Write isolated digests of archived trees to this file as JSON")
+			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maxiumum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 1, "The maxiumum number of in-flight uploads.")
 			return c
 		},
@@ -69,6 +70,7 @@ type expArchiveRun struct {
 	isolateFlags         isolateFlags
 	loggingFlags         loggingFlags
 	dumpJSON             string
+	maxConcurrentChecks  int
 	maxConcurrentUploads int
 }
 
@@ -95,17 +97,17 @@ func (c *expArchiveRun) main() error {
 		quiet:     c.commonServerFlags.commonFlags.defaultFlags.Quiet,
 	}
 
-	return doExpArchive(ctx, client, archiveOpts, c.dumpJSON, c.maxConcurrentUploads, al)
+	return doExpArchive(ctx, client, archiveOpts, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, al)
 }
 
 // doExparchive performs the exparchive operation for an isolate specified by archiveOpts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func doExpArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, concurrentUploads int, al archiveLogger) error {
+func doExpArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, concurrentChecks, concurrentUploads int, al archiveLogger) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
 	// disk at once.
-	checker := NewChecker(ctx, client)
+	checker := NewChecker(ctx, client, concurrentChecks)
 	uploader := NewUploader(ctx, client, concurrentUploads)
 	archiver := NewTarringArchiver(checker, uploader)
 
@@ -129,7 +131,7 @@ func doExpArchive(ctx context.Context, client *isolatedclient.Client, archiveOpt
 		return err
 	}
 
-	al.LogSummary(ctx, int64(checker.Hit.Count), int64(checker.Miss.Count), units.Size(checker.Hit.Bytes), units.Size(checker.Miss.Bytes), []string{string(isolSummary.Digest)})
+	al.LogSummary(ctx, int64(checker.Hit.Count()), int64(checker.Miss.Count()), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()), []string{string(isolSummary.Digest)})
 	return nil
 }
 

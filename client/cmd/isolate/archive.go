@@ -47,6 +47,7 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.isolateFlags.Init(&c.Flags)
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.BoolVar(&c.expArchive, "exparchive", false, "Whether to use the new exparchive implementation, which tars small files before uploading them.")
+			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maxiumum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 1, "The maxiumum number of in-flight uploads.")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 				"Write isolated digests of archived trees to this file as JSON")
@@ -60,6 +61,7 @@ type archiveRun struct {
 	isolateFlags
 	loggingFlags         loggingFlags
 	expArchive           bool
+	maxConcurrentChecks  int
 	maxConcurrentUploads int
 	dumpJSON             string
 }
@@ -98,7 +100,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 
 	if c.expArchive {
 		al.operation = logpb.IsolateClientEvent_ARCHIVE.Enum()
-		return doExpArchive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentUploads, al)
+		return doExpArchive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, al)
 	}
 	al.operation = logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
 	return doArchive(ctx, client, &c.ArchiveOptions, c.dumpJSON, al)
