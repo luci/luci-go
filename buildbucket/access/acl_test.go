@@ -16,6 +16,7 @@ package access
 
 import (
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"golang.org/x/net/context"
@@ -26,32 +27,49 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var permittedActionsTestData = &access.PermittedActionsResponse{
+	Permitted: map[string]*access.PermittedActionsResponse_ResourcePermissions{
+		"buck": {
+			Actions: []string{
+				"ACCESS_BUCKET",
+				"SEARCH_BUILDS",
+				"VIEW_BUILD",
+			},
+		},
+		"et": {
+			Actions: []string{
+				"ACCESS_BUCKET",
+				"ADD_BUILD",
+				"CANCEL_BUILD",
+				"SEARCH_BUILDS",
+				"VIEW_BUILD",
+			},
+		},
+	},
+	ValidityDuration: &duration.Duration{Seconds: 1},
+}
+
+func TestPermissions(t *testing.T) {
+	Convey(`Ensure ToProto and FromProto can convert between each other.`, t, func() {
+		perms := make(Permissions, 2)
+		So(perms.FromProto(permittedActionsTestData), ShouldBeNil)
+		So(perms.ToProto(1*time.Second), ShouldResemble, permittedActionsTestData)
+	})
+
+	Convey(`Ensure FromProto cleans up Permissions`, t, func() {
+		perms := make(Permissions, 2)
+		perms["test"] = SearchBuilds
+		So(perms.FromProto(permittedActionsTestData), ShouldBeNil)
+		So(perms.ToProto(1*time.Second), ShouldResemble, permittedActionsTestData)
+	})
+}
+
 func TestBucketPermissions(t *testing.T) {
 	Convey(`A client/server for the Access service`, t, func() {
 		c := context.Background()
 		client := TestClient{}
 		Convey(`Can get sane bucket permissions.`, func() {
-			client.PermittedActionsResponse = &access.PermittedActionsResponse{
-				Permitted: map[string]*access.PermittedActionsResponse_ResourcePermissions{
-					"buck": {
-						Actions: []string{
-							"ACCESS_BUCKET",
-							"VIEW_BUILD",
-							"SEARCH_BUILDS",
-						},
-					},
-					"et": {
-						Actions: []string{
-							"ACCESS_BUCKET",
-							"VIEW_BUILD",
-							"SEARCH_BUILDS",
-							"ADD_BUILD",
-							"CANCEL_BUILD",
-						},
-					},
-				},
-				ValidityDuration: &duration.Duration{Seconds: 1},
-			}
+			client.PermittedActionsResponse = permittedActionsTestData
 			perms, duration, err := BucketPermissions(c, &client, []string{"buck", "et"})
 			So(err, ShouldBeNil)
 			So(perms.Can("buck", AccessBucket), ShouldBeTrue)
