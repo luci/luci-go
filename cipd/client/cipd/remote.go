@@ -45,6 +45,26 @@ type packageInstanceMsg struct {
 	RegisteredTs string `json:"registered_ts"`
 }
 
+type refMsg struct {
+	Ref        string `json:"ref"`
+	InstanceID string `json:"instance_id"`
+	ModifiedBy string `json:"modified_by"`
+	ModifiedTs string `json:"modified_ts"`
+}
+
+func (ref *refMsg) toRefInfo() (RefInfo, error) {
+	ts, err := convertTimestamp(ref.ModifiedTs)
+	if err != nil {
+		return RefInfo{}, err
+	}
+	return RefInfo{
+		Ref:        ref.Ref,
+		InstanceID: ref.InstanceID,
+		ModifiedBy: ref.ModifiedBy,
+		ModifiedTs: UnixTime(ts),
+	}, nil
+}
+
 // roleChangeMsg corresponds to RoleChange proto message on backend.
 type roleChangeMsg struct {
 	Action    string `json:"action"`
@@ -298,8 +318,52 @@ func (r *remoteImpl) registerInstance(ctx context.Context, pin common.Pin) (*reg
 	return nil, fmt.Errorf("unexpected register package status: %s", reply.Status)
 }
 
+func (r *remoteImpl) fetchPackage(ctx context.Context, packageName string, withRefs bool) (*fetchPackageResponse, error) {
+	endpoint, err := packageEndpoint(packageName, withRefs)
+	if err != nil {
+		return nil, err
+	}
+	var reply struct {
+		Status       string `json:"status"`
+		ErrorMessage string `json:"error_message"`
+		Package      struct {
+			RegisteredBy string `json:"registered_by"`
+			RegisteredTs string `json:"registered_ts"`
+			Hidden       bool   `json:"hidden"`
+		} `json:"package"`
+		Refs []refMsg `json:"refs"`
+	}
+	if err = r.makeRequest(ctx, endpoint, "GET", nil, &reply); err != nil {
+		return nil, err
+	}
+	switch reply.Status {
+	case "SUCCESS":
+		var registeredTs time.Time
+		if registeredTs, err = convertTimestamp(reply.Package.RegisteredTs); err != nil {
+			return nil, err
+		}
+		out := &fetchPackageResponse{
+			registeredBy: reply.Package.RegisteredBy,
+			registeredTs: registeredTs,
+			hidden:       reply.Package.Hidden,
+			refs:         make([]RefInfo, len(reply.Refs)),
+		}
+		for i, ref := range reply.Refs {
+			if out.refs[i], err = ref.toRefInfo(); err != nil {
+				return nil, err
+			}
+		}
+		return out, nil
+	case "PACKAGE_NOT_FOUND":
+		return nil, ErrPackageNotFound
+	case "ERROR":
+		return nil, errors.New(reply.ErrorMessage)
+	}
+	return nil, fmt.Errorf("unexpected fetchPackage status: %s", reply.Status)
+}
+
 func (r *remoteImpl) deletePackage(ctx context.Context, packageName string) error {
-	endpoint, err := packageEndpoint(packageName)
+	endpoint, err := packageEndpoint(packageName, false)
 	if err != nil {
 		return err
 	}
@@ -417,7 +481,7 @@ func (r *remoteImpl) fetchTags(ctx context.Context, pin common.Pin, tags []strin
 		for i, tag := range reply.Tags {
 			ts, err := convertTimestamp(tag.RegisteredTs)
 			if err != nil {
-				logging.Warningf(ctx, "cipd: failed to parse timestamp %q: %s", tag.RegisteredTs, err)
+				return nil, err
 			}
 			out[i] = TagInfo{
 				Tag:          tag.Tag,
@@ -442,13 +506,9 @@ func (r *remoteImpl) fetchRefs(ctx context.Context, pin common.Pin, refs []strin
 		return nil, err
 	}
 	var reply struct {
-		Status       string `json:"status"`
-		ErrorMessage string `json:"error_message"`
-		Refs         []struct {
-			Ref        string `json:"ref"`
-			ModifiedBy string `json:"modified_by"`
-			ModifiedTs string `json:"modified_ts"`
-		} `json:"refs"`
+		Status       string   `json:"status"`
+		ErrorMessage string   `json:"error_message"`
+		Refs         []refMsg `json:"refs"`
 	}
 	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
 	if err != nil {
@@ -458,14 +518,8 @@ func (r *remoteImpl) fetchRefs(ctx context.Context, pin common.Pin, refs []strin
 	case "SUCCESS":
 		out := make([]RefInfo, len(reply.Refs))
 		for i, ref := range reply.Refs {
-			ts, err := convertTimestamp(ref.ModifiedTs)
-			if err != nil {
-				logging.Warningf(ctx, "cipd: failed to parse timestamp %q: %s", ref.ModifiedTs, err)
-			}
-			out[i] = RefInfo{
-				Ref:        ref.Ref,
-				ModifiedBy: ref.ModifiedBy,
-				ModifiedTs: UnixTime(ts),
+			if out[i], err = ref.toRefInfo(); err != nil {
+				return nil, err
 			}
 		}
 		return out, nil
@@ -686,6 +740,58 @@ func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName strin
 	return nil, fmt.Errorf("unexpected searchInstances status: %s", reply.Status)
 }
 
+func (r *remoteImpl) listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error) {
+	if err := common.ValidatePackageName(packageName); err != nil {
+		return nil, err
+	}
+
+	params := url.Values{}
+	params.Add("package_name", packageName)
+	params.Add("limit", fmt.Sprintf("%d", limit))
+	if cursor != "" {
+		params.Add("cursor", cursor)
+	}
+	endpoint := "repo/v1/instances?" + params.Encode()
+
+	var reply struct {
+		Status       string               `json:"status"`
+		ErrorMessage string               `json:"error_message"`
+		Instances    []packageInstanceMsg `json:"instances"`
+		Cursor       string               `json:"cursor"`
+	}
+	if err := r.makeRequest(ctx, endpoint, "GET", nil, &reply); err != nil {
+		return nil, err
+	}
+
+	switch reply.Status {
+	case "SUCCESS":
+		out := &listInstancesResponse{
+			instances: make([]InstanceInfo, len(reply.Instances)),
+			cursor:    reply.Cursor,
+		}
+		for i, msg := range reply.Instances {
+			if msg.PackageName != packageName {
+				return nil, fmt.Errorf(
+					"unexpected package name %q in listInstances response, expecting %q",
+					msg.PackageName, packageName)
+			}
+			ts, err := convertTimestamp(msg.RegisteredTs)
+			if err != nil {
+				return nil, err
+			}
+			out.instances[i] = InstanceInfo{
+				Pin:          common.Pin{msg.PackageName, msg.InstanceID},
+				RegisteredBy: msg.RegisteredBy,
+				RegisteredTs: UnixTime(ts),
+			}
+		}
+		return out, nil
+	case "ERROR":
+		return nil, errors.New(reply.ErrorMessage)
+	}
+	return nil, fmt.Errorf("unexpected listInstances status: %s", reply.Status)
+}
+
 func (r *remoteImpl) incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error {
 	endpoint, err := counterEndpoint(pin, counter)
 	if err != nil {
@@ -761,12 +867,15 @@ func (r *remoteImpl) readCounter(ctx context.Context, pin common.Pin, counter st
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func packageEndpoint(packageName string) (string, error) {
+func packageEndpoint(packageName string, withRefs bool) (string, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return "", err
 	}
 	params := url.Values{}
 	params.Add("package_name", packageName)
+	if withRefs {
+		params.Add("with_refs", "true")
+	}
 	return "repo/v1/package?" + params.Encode(), nil
 }
 
