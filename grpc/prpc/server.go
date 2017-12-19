@@ -21,12 +21,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -83,6 +84,11 @@ type Server struct {
 	services map[string]*service
 }
 
+type service struct {
+	methods map[string]grpc.MethodDesc
+	impl    interface{}
+}
+
 // RegisterService registers a service implementation.
 // Called from the generated code.
 //
@@ -92,16 +98,11 @@ type Server struct {
 // Panics if a service of the same name is already registered.
 func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 	serv := &service{
-		desc:    desc,
 		impl:    impl,
-		methods: make(map[string]*method, len(desc.Methods)),
+		methods: make(map[string]grpc.MethodDesc, len(desc.Methods)),
 	}
-
-	for _, grpcDesc := range desc.Methods {
-		serv.methods[grpcDesc.MethodName] = &method{
-			service: serv,
-			desc:    grpcDesc,
-		}
+	for _, m := range desc.Methods {
+		serv.methods[m.MethodName] = m
 	}
 
 	s.mu.Lock()
@@ -168,10 +169,6 @@ func (s *Server) handlePOST(c *router.Context) {
 	methodName := c.Params.ByName("method")
 	res := s.respond(c.Context, c.Writer, c.Request, serviceName, methodName)
 
-	c.Context = logging.SetFields(c.Context, logging.Fields{
-		"service": serviceName,
-		"method":  methodName,
-	})
 	s.setAccessControlHeaders(c.Context, c.Request, c.Writer, false)
 	res.write(c.Context, c.Writer)
 }
@@ -191,8 +188,8 @@ func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Reque
 			serviceName)
 	}
 
-	method := service.methods[methodName]
-	if method == nil {
+	method, ok := service.methods[methodName]
+	if !ok {
 		return errResponse(
 			codes.Unimplemented,
 			http.StatusNotImplemented,
@@ -201,7 +198,37 @@ func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Reque
 			serviceName)
 	}
 
-	return method.handle(c, w, r, s.UnaryServerInterceptor)
+	format, perr := responseFormat(r.Header.Get(headerAccept))
+	if perr != nil {
+		return respondProtocolError(perr)
+	}
+
+	c, err := parseHeader(c, r.Header)
+	if err != nil {
+		return respondProtocolError(withStatus(err, http.StatusBadRequest))
+	}
+
+	out, err := method.Handler(service.impl, c, func(in interface{}) error {
+		if in == nil {
+			return grpcutil.Errf(codes.Internal, "input message is nil")
+		}
+		// Do not collapse it to one line. There is implicit err type conversion.
+		if perr := readMessage(r, in.(proto.Message)); perr != nil {
+			return perr
+		}
+		return nil
+	}, s.UnaryServerInterceptor)
+	if err != nil {
+		if perr, ok := err.(*protocolError); ok {
+			return respondProtocolError(perr)
+		}
+		return errResponse(errorCode(err), 0, escapeFmt(grpc.ErrorDesc(err)))
+	}
+
+	if out == nil {
+		return errResponse(codes.Internal, 0, "service returned nil message")
+	}
+	return respondMessage(out.(proto.Message), format)
 }
 
 func (s *Server) setAccessControlHeaders(c context.Context, r *http.Request, w http.ResponseWriter, preflight bool) {
