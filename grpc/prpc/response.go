@@ -47,13 +47,6 @@ func errResponse(code codes.Code, status int, format string, a ...interface{}) *
 	}
 }
 
-// escapeFmt escapes format characters in a string destined for a format
-// parameter. This is used to sanitize externally-supplied strings that are
-// passed verbatim into errResponse.
-func escapeFmt(s string) string {
-	return strings.Replace(s, "%", "%%", -1)
-}
-
 // write writes r to w.
 func (r *response) write(c context.Context, w http.ResponseWriter) {
 	body := r.body
