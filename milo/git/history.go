@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -33,9 +34,22 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/auth"
 
 	milo "go.chromium.org/luci/milo/api/proto"
+)
+
+var (
+	// Metrics
+	getHistoryCounter = metric.NewCounter(
+		"luci/milo/git/GetHistory/cache",
+		"The number of hits we get in git.GetHistory",
+		nil,
+		field.Bool("hit"),
+		field.String("repo"),
+		field.String("ref"))
 )
 
 var gitHash = regexp.MustCompile("[0-9a-fA-F]{40}")
@@ -66,11 +80,11 @@ func Resolve(c context.Context, url, commitish string) (commit string, resolved 
 // proto.Message.
 //
 // Args:
-//   - enabled: if false, bypass the cache and return get() directly.
 //   - key: the memcache key to read/write
 //   - out: the proto.Message which should be populated from the cache. This is
 //     always a pointer-to-a-proto-struct.
-//   - get: populates `out` 'the slow way' returning an error if encountered.
+//   - get: populates `out` 'the slow way' returning a duration to cache the
+//     result (<=0 means "infinite") or error if encountered.
 //
 // Example:
 //   useCache := cachingEnabled()
@@ -78,11 +92,7 @@ func Resolve(c context.Context, url, commitish string) (commit string, resolved 
 //   return obj, protoCache(c, useCache, "memcache_key", func() error {
 //     return PopulateFromNetwork(obj)
 //   })
-func protoCache(c context.Context, enabled bool, key string, out proto.Message, get func() error) error {
-	if !enabled {
-		return get()
-	}
-
+func protoCache(c context.Context, key string, out proto.Message, get func() (time.Duration, error)) error {
 	cacheEntry := memcache.NewItem(c, key+"|gz")
 	// try reading from cache
 	ok := func() bool {
@@ -116,7 +126,8 @@ func protoCache(c context.Context, enabled bool, key string, out proto.Message, 
 		return nil
 	}
 
-	if err := get(); err != nil {
+	expiration, err := get()
+	if err != nil {
 		return err
 	}
 
@@ -135,6 +146,9 @@ func protoCache(c context.Context, enabled bool, key string, out proto.Message, 
 	}
 
 	cacheEntry.SetValue(buf.Bytes())
+	if expiration >= 0 {
+		cacheEntry.SetExpiration(expiration)
+	}
 	if err := memcache.Set(c, cacheEntry); err != nil {
 		logging.WithError(err).Warningf(c, "memcache set")
 	}
@@ -145,22 +159,34 @@ func protoCache(c context.Context, enabled bool, key string, out proto.Message, 
 // GetHistory makes a (cached) call to gitiles to obtain the ConsoleGitInfo for
 // the given url, commitish and limit.
 func GetHistory(c context.Context, url, commitish string, limit int) (*milo.ConsoleGitInfo, error) {
-	commitish, useCache, err := Resolve(c, url, commitish)
+	commitish, resolved, err := Resolve(c, url, commitish)
 	if err != nil {
 		return nil, errors.Annotate(err, "resolving %q", commitish).Err()
+	}
+	var expiration time.Duration
+	if resolved {
+		// The commitish was resolved to a commit id, so we can cache this for
+		// a long time.
+		expiration = 12 * time.Hour
+	} else {
+		// If the commitish wasn't resolved, we still want to cache, but not for
+		// as long.
+		expiration = 30 * time.Second
 	}
 
 	ret := &milo.ConsoleGitInfo{}
 	cacheKey := fmt.Sprintf("GetHistory|%s|%s|%d", url, commitish, limit)
-	err = protoCache(c, useCache, cacheKey, ret, func() error {
+	cacheHit := true
+	err = protoCache(c, cacheKey, ret, func() (time.Duration, error) {
+		cacheHit = false
 		t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 		if err != nil {
-			return errors.Annotate(err, "getting RPC Transport").Err()
+			return 0, errors.Annotate(err, "getting RPC Transport").Err()
 		}
 		g := &gitiles.Client{Client: &http.Client{Transport: t}, Auth: true}
 		rawEntries, err := g.Log(c, url, commitish, gitiles.Limit(limit))
 		if err != nil {
-			return errors.Annotate(err, "GetHistory").Err()
+			return 0, errors.Annotate(err, "GetHistory").Err()
 		}
 
 		ret.Commits = make([]*milo.ConsoleGitInfo_Commit, len(rawEntries))
@@ -168,7 +194,7 @@ func GetHistory(c context.Context, url, commitish string, limit int) (*milo.Cons
 		for i, e := range rawEntries {
 			commit := &milo.ConsoleGitInfo_Commit{}
 			if commit.Hash, err = hex.DecodeString(e.Commit); err != nil {
-				return errors.Annotate(err, "commit is not hex (%q)", e.Commit).Err()
+				return 0, errors.Annotate(err, "commit is not hex (%q)", e.Commit).Err()
 			}
 
 			commit.AuthorName = e.Author.Name
@@ -179,7 +205,13 @@ func GetHistory(c context.Context, url, commitish string, limit int) (*milo.Cons
 
 			ret.Commits[i] = commit
 		}
-		return nil
+		return expiration, nil
 	})
+
+	ref := commitish
+	if resolved {
+		ref = "PINNED"
+	}
+	getHistoryCounter.Add(c, 1, cacheHit, url, ref)
 	return ret, err
 }
