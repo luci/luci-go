@@ -146,6 +146,30 @@
     },
     {
       "key": {
+        "uuid": "8b06cbad_02aceeeb",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T17:49:11Z",
+      "side": 1,
+      "message": "It\u0027s ignoring it in PATH for the purposes of searching; however, I\u0027m proposing something bigger: \"vpython\" *never* wants to scan or use an VirtualEnv directory in PATH.\n\n- Implement \"bin\" directory probing function (see comment below).\n- Implement a function that strips \"bin\" directories from PATH (recommend having it log this fact at debug level).\n- Call this function immediately to modify a.opts.Environ and remove all base subdirectories from PATH: https://chromium.googlesource.com/infra/luci/luci-go/+/b05a9b2d66045edd38f248f72ab47fae2dc1542a/vpython/application/application.go#174\n\nThis will eliminate the need to do anything in this file (since PATH will be pure) and in \"run.go\" (same reason).",
+      "parentUuid": "f4940a3b_36f0a101",
+      "range": {
+        "startLine": 112,
+        "startChar": 20,
+        "endLine": 112,
+        "endChar": 32
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bb9cdd84_7ab4eadb",
         "filename": "vpython/application/probe.go",
         "patchSetId": 5
@@ -242,6 +266,30 @@
     },
     {
       "key": {
+        "uuid": "17e12ad0_f2b1c048",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T17:49:11Z",
+      "side": 1,
+      "message": "The rationale would be that this:\na) presupposes the contents of the VirtualEnv, which is in the domain of the \"venv\" sub-package.\nb) presupposes the behavior of \"virtualenv.py\", which is actually fairly arbitrary.\n\nTBH, we should make this solid by having \"venv.go\" drop its own flag (e.g., \".is_virtualenv_bin\") into the \"bin\" directory that it can then search for, decoupling this check from the actual VirtualEnv implementation details. I don\u0027t think scattering this level of awareness into \"application\" package is healthy.",
+      "parentUuid": "3d269795_02be890f",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 115,
+        "endChar": 71
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ed2505e4_1037e206",
         "filename": "vpython/run.go",
         "patchSetId": 5
@@ -287,6 +335,30 @@
       "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "389530c0_b75fb185",
+        "filename": "vpython/run.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T17:49:11Z",
+      "side": 1,
+      "message": "I suppose it\u0027s not possible given the inputs. See other comment, though - I think that approach is better and would remove the need to do any of this processing. Let run handle prefixing, and let application handle offering a sane, sanitized PATH.\n\nThe rest of this problem is still needed in the \"!strings.HasPrefix\" below (#133), since PATH is not controlled input and could hit that aforementioned scenario.",
+      "parentUuid": "b6431e8e_8d173afb",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 128,
+        "endChar": 2
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
