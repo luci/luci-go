@@ -409,6 +409,30 @@
       "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e128803e_a362c9bf",
+        "filename": "vpython/run.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-19T18:43:11Z",
+      "side": 1,
+      "message": "yep this is gone now!",
+      "parentUuid": "389530c0_b75fb185",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 128,
+        "endChar": 2
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
