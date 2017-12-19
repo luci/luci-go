@@ -326,6 +326,94 @@ func TestIsPureRevert(t *testing.T) {
 	})
 }
 
+func TestSetReview(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("SetReview", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var ri ReviewInput
+			err := json.NewDecoder(r.Body).Decode(&ri)
+			c.So(err, ShouldBeNil)
+
+			var rr ReviewResult
+			rr.Labels = ri.Labels
+			rr.Reviewers = make(map[string]AddReviewerResult, len(ri.Reviewers))
+			for _, reviewer := range ri.Reviewers {
+				result := AddReviewerResult{
+					Input: reviewer.Reviewer,
+				}
+				info := ReviewerInfo{AccountInfo: AccountInfo{AccountID: 12345}}
+				switch reviewer.State {
+				case "REVIEWER":
+					result.Reviewers = []ReviewerInfo{info}
+				case "CC":
+					result.CCs = []ReviewerInfo{info}
+				}
+				rr.Reviewers[reviewer.Reviewer] = result
+			}
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+
+			var buffer bytes.Buffer
+			err = json.NewEncoder(&buffer).Encode(&rr)
+			c.So(err, ShouldBeNil)
+			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
+		})
+		defer srv.Close()
+
+		Convey("Set review", func() {
+			_, err := client.SetReview(ctx, "629279", "current", &ReviewInput{})
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Set label", func() {
+			ri := ReviewInput{Labels: map[string]int{"Code-Review": 1}}
+			result, err := client.SetReview(ctx, "629279", "current", &ri)
+			So(err, ShouldBeNil)
+			So(result.Labels, ShouldResemble, ri.Labels)
+		})
+
+		Convey("Set reviewers", func() {
+			ri := ReviewInput{
+				Reviewers: []ReviewerInput{
+					{
+						Reviewer: "test@example.com",
+						State:    "REVIEWER",
+					},
+					{
+						Reviewer: "test2@example.com",
+						State:    "CC",
+					},
+				},
+			}
+			result, err := client.SetReview(ctx, "629279", "current", &ri)
+			So(err, ShouldBeNil)
+			So(len(result.Reviewers), ShouldEqual, 2)
+			So(len(result.Reviewers["test@example.com"].Reviewers), ShouldEqual, 1)
+			So(len(result.Reviewers["test2@example.com"].CCs), ShouldEqual, 1)
+		})
+	})
+
+	Convey("SetReview but change non-existent", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(404)
+			w.Header().Set("Content-Type", "text/plain")
+			fmt.Fprintf(w, "No such change: 629279")
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			_, err := c.SetReview(ctx, "629279", "current", &ReviewInput{})
+			So(err, ShouldNotBeNil)
+		})
+
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
