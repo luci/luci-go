@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e1c405e9_3c52258b",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1485,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T21:27:17Z",
+      "side": 1,
+      "message": "there are no proto-generated ones\n\nthis will be fixed with the switch to pRPC",
+      "parentUuid": "125fa050_544a4773",
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bc2b8174_f34869ed",
         "filename": "cipd/client/cipd/client.go",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c5896d7_7eb15ea2",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1620,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T21:27:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc2b8174_f34869ed",
+      "range": {
+        "startLine": 1620,
+        "startChar": 22,
+        "endLine": 1620,
+        "endChar": 23
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "21054b5a_90b45ea0",
+        "filename": "cipd/client/cipd/remote.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T21:27:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d358fa2_882f40a6",
+      "range": {
+        "startLine": 336,
+        "startChar": 8,
+        "endLine": 336,
+        "endChar": 9
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4337b4b_054f1078",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 6
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "3be0a500_26c4e37c",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1275,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T21:27:17Z",
+      "side": 1,
+      "message": "done, though this is completely unimportant, since goroutine on L1282 doesn\u0027t do anything after sending the value to the channel",
+      "parentUuid": "a4337b4b_054f1078",
+      "range": {
+        "startLine": 1275,
+        "startChar": 32,
+        "endLine": 1275,
+        "endChar": 33
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4727c3f6_e666c805",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 6
@@ -102,6 +192,24 @@
       "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cfb7172_422252df",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1277,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T21:27:17Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "4727c3f6_e666c805",
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -125,6 +233,30 @@
       "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5de1376_5f0b4012",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1332,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T21:27:17Z",
+      "side": 1,
+      "message": "I don\u0027t think moving it out of the loop will simplify the code.\n\n\u003e L1317 on _first page will result in no tables rendered, so perhaps we should print something like \"no instances found\"\n\nDone. Though per backend API it is not directly possible to create a package without instances.\n\n\u003e L1302-1310 are not needed for the first page\n\nThis is not true. If \u0027limit\u0027 is smaller than \u0027pageSize\u0027, \u0027pageSize\u0027 will be set to \u0027limit\u0027. This is happens even on the first page.",
+      "parentUuid": "c356f770_b69e3e5d",
+      "range": {
+        "startLine": 1321,
+        "startChar": 0,
+        "endLine": 1332,
+        "endChar": 45
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -22,6 +22,30 @@
       "revId": "4744b7cd5930321cfedfb7a09c49c95eea0e3845",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed782490_88a8c4c1",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 467,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T21:27:17Z",
+      "side": 1,
+      "message": "Doc comments here are structured as \n\n\u003cMain purpose of the function as succinct as possible\u003e\n\\n\n\u003cRelevant statement 1\u003e. \u003cRelevant statement 2\u003e. \u003cRelevant statement 3\u003e.\n\nIf some single individual \u003crelevant statement\u003e is big, it takes its own paragraph.",
+      "parentUuid": "df0be513_cfd97683",
+      "range": {
+        "startLine": 464,
+        "startChar": 1,
+        "endLine": 467,
+        "endChar": 44
+      },
+      "revId": "4744b7cd5930321cfedfb7a09c49c95eea0e3845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
