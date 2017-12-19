@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "46568116_ec00cc38",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T20:26:26Z",
+      "side": 1,
+      "message": "is it possible you may need errors.Unwrap(err) here to get to the DeadlineExceeded?",
+      "range": {
+        "startLine": 123,
+        "startChar": 8,
+        "endLine": 123,
+        "endChar": 11
+      },
+      "revId": "d26201748755b667900d9745fe61e6ada640391d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
