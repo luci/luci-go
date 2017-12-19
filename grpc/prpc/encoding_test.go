@@ -16,11 +16,17 @@ package prpc
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -83,17 +89,18 @@ func TestEncoding(t *testing.T) {
 		test("x//y", 0, "pRPC: Accept header: expected token after slash")
 	})
 
-	Convey("respondMessage", t, func() {
+	Convey("writeMessage", t, func() {
 		msg := &HelloReply{Message: "Hi"}
+		c := context.Background()
 
 		test := func(f Format, body []byte, contentType string) {
 			Convey(contentType, func() {
-				res := respondMessage(msg, f)
-				So(res.code, ShouldEqual, codes.OK)
-				So(res.header, ShouldResemble, http.Header{
-					headerContentType: []string{contentType},
-				})
-				So(res.body, ShouldResemble, body)
+				rec := httptest.NewRecorder()
+				writeMessage(c, rec, msg, f)
+				So(rec.Code, ShouldEqual, http.StatusOK)
+				So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
+				So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
+				So(rec.Body.Bytes(), ShouldResemble, body)
 			})
 		}
 
@@ -103,5 +110,43 @@ func TestEncoding(t *testing.T) {
 		test(FormatBinary, msgBytes, mtPRPCBinary)
 		test(FormatJSONPB, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
 		test(FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
+	})
+
+	Convey("writeError", t, func() {
+		c := context.Background()
+		c = memlogger.Use(c)
+		log := logging.Get(c).(*memlogger.MemLogger)
+
+		rec := httptest.NewRecorder()
+
+		Convey("client error", func() {
+			writeError(c, rec, status.Error(codes.NotFound, "not found"))
+			So(rec.Code, ShouldEqual, http.StatusNotFound)
+			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "5")
+			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
+			So(rec.Body.String(), ShouldEqual, "not found\n")
+		})
+
+		Convey("internal error", func() {
+			writeError(c, rec, status.Error(codes.Internal, "errmsg"))
+			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
+			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "13")
+			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
+			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
+			So(log, memlogger.ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
+				"code": codes.Internal,
+			})
+		})
+
+		Convey("unknown error", func() {
+			writeError(c, rec, status.Error(codes.Unknown, "errmsg"))
+			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
+			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "2")
+			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
+			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
+			So(log, memlogger.ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
+				"code": codes.Unknown,
+			})
+		})
 	})
 }
