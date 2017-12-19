@@ -16,6 +16,24 @@
       "revId": "9aa9c70b3a4267e4cc20c946591a638a47b50448",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "805e7ef1_88e3f71a",
+        "filename": "client/cmd/isolate/upload_tracker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1174915
+      },
+      "writtenOn": "2017-12-19T00:24:46Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "c343ac82_89f64049",
+      "revId": "9aa9c70b3a4267e4cc20c946591a638a47b50448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
