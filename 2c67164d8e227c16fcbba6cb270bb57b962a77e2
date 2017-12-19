@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "414a1e85_1d341c24",
+        "filename": "client/cmd/isolate/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1146751
+      },
+      "writtenOn": "2017-12-19T22:53:38Z",
+      "side": 1,
+      "message": "go-fmt really does no spaces around the \u0026 here?",
+      "range": {
+        "startLine": 88,
+        "startChar": 55,
+        "endLine": 88,
+        "endChar": 56
+      },
+      "revId": "2c67164d8e227c16fcbba6cb270bb57b962a77e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
