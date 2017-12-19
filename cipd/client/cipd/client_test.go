@@ -34,11 +34,11 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
 
-	. "go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/cipd/client/cipd/common"
 )
 
 func underlyingFile(i local.InstanceFile) *os.File {
@@ -501,6 +501,56 @@ func TestFetchInstanceRefs(t *testing.T) {
 	})
 }
 
+func TestPackageRefs(t *testing.T) {
+	ctx := makeTestContext()
+
+	Convey("FetchPackageRefs works", t, func(c C) {
+		client := mockClient(c, "", []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/package",
+				Query: url.Values{
+					"package_name": []string{"pkgname"},
+					"with_refs":    []string{"true"},
+				},
+				Reply: `{
+					"status": "SUCCESS",
+					"package": {
+						"registered_by": "user:a@example.com",
+						"registered_ts": "1420244414571500"
+					},
+					"refs": [
+						{
+							"ref": "ref1",
+							"modified_by": "user:a@example.com",
+							"modified_ts": "1420244414572500"
+						},
+						{
+							"ref": "ref2",
+							"modified_by": "user:a@example.com",
+							"modified_ts": "1420244414571500"
+						}
+					]
+				}`,
+			},
+		})
+		refs, err := client.FetchPackageRefs(ctx, "pkgname")
+		So(err, ShouldBeNil)
+		So(refs, ShouldResemble, []RefInfo{
+			{
+				Ref:        "ref1",
+				ModifiedBy: "user:a@example.com",
+				ModifiedTs: UnixTime(time.Unix(0, 1420244414572500000)),
+			},
+			{
+				Ref:        "ref2",
+				ModifiedBy: "user:a@example.com",
+				ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
+			},
+		})
+	})
+}
+
 func TestFetch(t *testing.T) {
 	ctx := makeTestContext()
 
@@ -704,6 +754,117 @@ func TestListPackages(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(out, ShouldResemble, []string{"dir/", "dir/pkg"})
+	})
+}
+
+func TestSearchInstances(t *testing.T) {
+	ctx := makeTestContext()
+
+	Convey("SearchInstances works", t, func(c C) {
+		client := mockClient(c, "", []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/instance/search",
+				Query: url.Values{
+					"tag": []string{"k:v"},
+				},
+				Reply: `{
+					"status": "SUCCESS",
+					"instances": [
+						{
+							"package_name": "pkg1",
+							"instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+						},
+						{
+							"package_name": "pkg2",
+							"instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+						}
+					]
+				}`,
+			},
+		})
+		pins, err := client.SearchInstances(ctx, "k:v", "")
+		So(err, ShouldBeNil)
+		So(pins, ShouldResemble, PinSlice{
+			{"pkg1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			{"pkg2", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+		})
+	})
+}
+
+func TestListInstances(t *testing.T) {
+	ctx := makeTestContext()
+
+	Convey("ListInstances works", t, func(c C) {
+		client := mockClient(c, "", []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/instances",
+				Query: url.Values{
+					"package_name": []string{"pkg"},
+					"limit":        []string{"1"},
+				},
+				Reply: `{
+					"status": "SUCCESS",
+					"instances": [
+						{
+							"instance_id": "0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+							"package_name": "pkg",
+							"registered_by": "user:a@example.com",
+							"registered_ts": "1420244414571500"
+						}
+					],
+					"cursor": "cursor1"
+				}`,
+			},
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/instances",
+				Query: url.Values{
+					"package_name": []string{"pkg"},
+					"limit":        []string{"1"},
+					"cursor":       []string{"cursor1"},
+				},
+				Reply: `{
+					"status": "SUCCESS",
+					"instances": [
+						{
+							"instance_id": "1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+							"package_name": "pkg",
+							"registered_by": "user:a@example.com",
+							"registered_ts": "1420244414571500"
+						}
+					]
+				}`,
+			},
+		})
+
+		enumerator, err := client.ListInstances(ctx, "pkg")
+		So(err, ShouldBeNil)
+
+		infos, err := enumerator.Next(ctx, 1)
+		So(err, ShouldBeNil)
+		So(infos, ShouldResemble, []InstanceInfo{
+			{
+				Pin:          Pin{"pkg", "0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+				RegisteredBy: "user:a@example.com",
+				RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
+			},
+		})
+
+		infos, err = enumerator.Next(ctx, 1)
+		So(err, ShouldBeNil)
+		So(infos, ShouldResemble, []InstanceInfo{
+			{
+				Pin:          Pin{"pkg", "1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+				RegisteredBy: "user:a@example.com",
+				RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
+			},
+		})
+
+		infos, err = enumerator.Next(ctx, 1)
+		So(err, ShouldBeNil)
+		So(infos, ShouldBeNil)
 	})
 }
 
