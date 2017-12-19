@@ -44,6 +44,7 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			cmdChangeCreate(defaultAuthOpts),
 			cmdChangeDetail(defaultAuthOpts),
 			cmdChangeQuery(defaultAuthOpts),
+			cmdSetReview(defaultAuthOpts),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
