@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c05962d8_b6aebad7",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T03:55:33Z",
+      "side": 1,
+      "message": "I think the variant without return values looks cleaner. In particular I don\u0027t want to return non-empty pin along with an error, so trying to \"clear\" it before retuning an error makes the code look ugly.",
+      "parentUuid": "cc7d2ecf_bf6309c9",
+      "range": {
+        "startLine": 216,
+        "startChar": 2,
+        "endLine": 216,
+        "endChar": 8
+      },
+      "revId": "14c6f535ac508a201bff611571766114f451928e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a27e94cd_c661940d",
         "filename": "cipd/client/cipd/local/deployer.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "c0a56665_ce389eea",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 942,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T03:55:33Z",
+      "side": 1,
+      "message": "done, but why? English makes no sense :(",
+      "parentUuid": "a27e94cd_c661940d",
+      "range": {
+        "startLine": 942,
+        "startChar": 75,
+        "endLine": 942,
+        "endChar": 1
+      },
+      "revId": "14c6f535ac508a201bff611571766114f451928e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "491db041_f6b3d751",
         "filename": "cipd/client/cipd/local/deployer.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "14c6f535ac508a201bff611571766114f451928e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17645c33_44a16cdd",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 955,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T03:55:33Z",
+      "side": 1,
+      "message": "Because we need it closed before doing os.Remove(path) below (on Windows os.Remove will fail if someone holds an open descriptor). Whatever, rewrote it to use \"defer with disarming\".",
+      "parentUuid": "491db041_f6b3d751",
+      "range": {
+        "startLine": 955,
+        "startChar": 1,
+        "endLine": 955,
+        "endChar": 3
+      },
+      "revId": "14c6f535ac508a201bff611571766114f451928e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
