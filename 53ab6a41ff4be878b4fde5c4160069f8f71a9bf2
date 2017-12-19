@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f7a0adc1_81f41f57",
+        "filename": "machine-db/api/config/v1/platforms.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f4e4a9e_b8e9129c",
+      "range": {
+        "startLine": 19,
+        "startChar": 9,
+        "endLine": 19,
+        "endChar": 13
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "61bd1fb3_e43f0046",
         "filename": "machine-db/appengine/config/platforms.go",
         "patchSetId": 2
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "507aecd4_ed302435",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61bd1fb3_e43f0046",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c342ff00_f0ceae2b",
         "filename": "machine-db/appengine/config/platforms.go",
         "patchSetId": 2
@@ -53,6 +95,30 @@
       "writtenOn": "2017-12-16T07:24:49Z",
       "side": 1,
       "message": "i am pretty sure this call goes through 1) process cache 2) memcache cache 3) datastore cache and there is a separate cron job (/admin/config/cache/manager) that updates datastore. This increases config change propagation delay by ~10min (process cache and memcache). Caching here is not needed at all, because it is a cron job, so I recommend using config interface directly\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/common/config.go?q\u003dfile:milo+config\u0026sq\u003dpackage:chromium\u0026l\u003d358\u0026rcl\u003de137a647b374734bcd0a6904b23389de95126d12\nand removing the cron job if you have one (I don\u0027t have permissions to the cloud project).\n\nin another CL",
+      "range": {
+        "startLine": 37,
+        "startChar": 11,
+        "endLine": 37,
+        "endChar": 129
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8f303fb_1554993e",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "We disabled caching on /admin/settings because Vadim and I couldn\u0027t figure out how to make this bypass the cache. When the config cache was enabled it was never updated and this call would never hit the config service directly.",
+      "parentUuid": "c342ff00_f0ceae2b",
       "range": {
         "startLine": 37,
         "startChar": 11,
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "39e4fa27_1ee0a285",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Sorry this should have been platformsConfig. Done.",
+      "parentUuid": "1bebe066_27f78803",
+      "range": {
+        "startLine": 38,
+        "startChar": 52,
+        "endLine": 38,
+        "endChar": 67
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c20915c_0a523678",
         "filename": "machine-db/appengine/config/platforms.go",
         "patchSetId": 2
@@ -108,6 +198,30 @@
       "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7040142_d7f86a63",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c20915c_0a523678",
+      "range": {
+        "startLine": 40,
+        "startChar": 40,
+        "endLine": 40,
+        "endChar": 44
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "a67f3574_90bcb8f1",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34891581_c9c4f526",
+      "range": {
+        "startLine": 45,
+        "startChar": 31,
+        "endLine": 45,
+        "endChar": 56
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69d117f7_9e78b41b",
         "filename": "machine-db/appengine/config/platforms.go",
         "patchSetId": 2
@@ -154,6 +292,30 @@
       "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e430095c_a81c5acc",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69d117f7_9e78b41b",
+      "range": {
+        "startLine": 51,
+        "startChar": 81,
+        "endLine": 51,
+        "endChar": 86
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "16cd821c_8c41a93b",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ed26f7d_657326d8",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 10
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04034040_e52d7c2c",
         "filename": "machine-db/appengine/config/platforms.go",
         "patchSetId": 2
@@ -194,6 +380,24 @@
       "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1571c35_b55c8b42",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04034040_e52d7c2c",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -217,6 +421,30 @@
       "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "683fb7a6_8340793b",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "cfg is taken above, used another short name.",
+      "parentUuid": "92bfea41_8b29836c",
+      "range": {
+        "startLine": 57,
+        "startChar": 8,
+        "endLine": 57,
+        "endChar": 22
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -283,6 +511,72 @@
     },
     {
       "key": {
+        "uuid": "cc35e276_1c16829c",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24346188_4e576426",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 18
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3fa87425_0803c813",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b67a2697_c6e07fc3",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 4
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "94386fc1_19d890f0",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "I can\u0027t guarantee it. In particular we don\u0027t control dc/rack/switch names at all.\n\nWill consider it more and create a CL in the future for better name validation.",
+      "parentUuid": "8ac98112_dc853e9e",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7a411f1a_b97dbfa5",
         "filename": "machine-db/appengine/config/platforms_test.go",
         "patchSetId": 2
@@ -303,6 +597,30 @@
       "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59c3ba28_6324e93a",
+        "filename": "machine-db/appengine/config/platforms_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T22:44:11Z",
+      "side": 1,
+      "message": "Prefer this because it makes adding/removing other fields very simple to do and simple to diff.",
+      "parentUuid": "7a411f1a_b97dbfa5",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 7
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
