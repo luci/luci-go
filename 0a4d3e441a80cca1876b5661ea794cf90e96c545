@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d86d715_88125072",
+        "filename": "tools/cmd/assets/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T00:47:13Z",
+      "side": 1,
+      "message": "returns",
+      "range": {
+        "startLine": 82,
+        "startChar": 46,
+        "endLine": 82,
+        "endChar": 53
+      },
+      "revId": "0a4d3e441a80cca1876b5661ea794cf90e96c545",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ed60f26_939e829c",
+        "filename": "tools/cmd/assets/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T00:47:13Z",
+      "side": 1,
+      "message": "Maybe SHA256Digests() (and GetAssetSHA256Digest() for consistency)? Because SHA256s() looks odd, and Checksums() is also odd.\n\nWhy do we even need this function? Assets() is useful because it allows to convert assets bundle into virtual \"file system\" than can given to static files HTTP server.",
+      "range": {
+        "startLine": 102,
+        "startChar": 5,
+        "endLine": 102,
+        "endChar": 14
+      },
+      "revId": "0a4d3e441a80cca1876b5661ea794cf90e96c545",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
