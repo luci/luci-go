@@ -22,6 +22,30 @@
       "revId": "2c67164d8e227c16fcbba6cb270bb57b962a77e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "940341fa_7831a4d0",
+        "filename": "client/cmd/isolate/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1174915
+      },
+      "writtenOn": "2017-12-19T23:00:57Z",
+      "side": 1,
+      "message": "That\u0027s right. Not sure why.",
+      "parentUuid": "414a1e85_1d341c24",
+      "range": {
+        "startLine": 88,
+        "startChar": 55,
+        "endLine": 88,
+        "endChar": 56
+      },
+      "revId": "2c67164d8e227c16fcbba6cb270bb57b962a77e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
