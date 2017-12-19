@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df0be513_cfd97683",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 467,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:38:34Z",
+      "side": 1,
+      "message": "2nd stmt is related to 1st, but in a separate paragraph. 3rd statement is unrelated to 2nd, but is in the same paragraph",
+      "range": {
+        "startLine": 464,
+        "startChar": 1,
+        "endLine": 467,
+        "endChar": 44
+      },
+      "revId": "4744b7cd5930321cfedfb7a09c49c95eea0e3845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

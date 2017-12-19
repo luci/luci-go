@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "125fa050_544a4773",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1485,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:38:34Z",
+      "side": 1,
+      "message": "not for this CL: all these response structs seem to wrap proto-generated ones without much value. WDYT?",
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc2b8174_f34869ed",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1620,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:38:34Z",
+      "side": 1,
+      "message": "strictly speaking, you can safely :\u003d use here, but it may confuse a less experienced Go developer",
+      "range": {
+        "startLine": 1620,
+        "startChar": 22,
+        "endLine": 1620,
+        "endChar": 23
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d358fa2_882f40a6",
+        "filename": "cipd/client/cipd/remote.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:38:34Z",
+      "side": 1,
+      "message": ":\u003d\nto be consistent with L762",
+      "range": {
+        "startLine": 336,
+        "startChar": 8,
+        "endLine": 336,
+        "endChar": 9
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4337b4b_054f1078",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1275,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:38:34Z",
+      "side": 1,
+      "message": "please make it buffered, cap 1, so that L1282 does not wait for L1323",
+      "range": {
+        "startLine": 1275,
+        "startChar": 32,
+        "endLine": 1275,
+        "endChar": 33
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4727c3f6_e666c805",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1277,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:38:34Z",
+      "side": 1,
+      "message": "i think we should defer close(refsChan) here in case this goroutine panics, otherwise the below goroutine will hang",
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c356f770_b69e3e5d",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1332,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:38:34Z",
+      "side": 1,
+      "message": "i think it would be better to move this out of the loop: \n- L1321-1332 only happen on first page\n- L1317 on _first page will result in no tables rendered, so perhaps we should print something like \"no instances found\"\n- L1302-1310 are not needed for the first page",
+      "range": {
+        "startLine": 1321,
+        "startChar": 0,
+        "endLine": 1332,
+        "endChar": 45
+      },
+      "revId": "e53438cf6086652fc33fc8ce6c7e48c1d4f3e9c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
