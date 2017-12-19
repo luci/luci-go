@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9786696c_d50b1040",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T01:27:33Z",
+      "side": 1,
+      "message": "please assert that venvRoot ends with os.PathSeparator, otherwise this check may have false positives",
+      "range": {
+        "startLine": 127,
+        "startChar": 33,
+        "endLine": 127,
+        "endChar": 41
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73478ed8_541b146e",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T01:27:33Z",
+      "side": 1,
+      "message": "nit:\n\nif !strings.HasPrefix(...) {\n  newPath \u003d append(...)\n}\n\n(one line shorter!)",
+      "range": {
+        "startLine": 127,
+        "startChar": 2,
+        "endLine": 130,
+        "endChar": 37
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd728938_505929f9",
+        "filename": "vpython/spec/spec.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T01:27:33Z",
+      "side": 1,
+      "message": "strictly speaking chunks of data here should be separated by a separator that is not allowed inside the chunks, e.g. \u0027\\n\u0027 or something. Or prefixed by length. Or something like that.\n\nOtherwise different data can result in same hash. E.g. \n\nextra \u003d [\"abc\", \"def\"]\nextra \u003d [\"abc:def\"]\n\nThough in practice it probably doesn\u0027t matter here (I hope).",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 30
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "069583d7_96dd3764",
+        "filename": "vpython/venv/assets/sitecustomize.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T01:27:33Z",
+      "side": 1,
+      "message": "so all the assets CL (all 2 of them!) were just for this? 😒",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 68
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc623793_d36b860b",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T01:27:33Z",
+      "side": 1,
+      "message": "need a rebase",
+      "range": {
+        "startLine": 215,
+        "startChar": 16,
+        "endLine": 215,
+        "endChar": 32
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a44b3778_9c43ebd8",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 709,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T01:27:33Z",
+      "side": 1,
+      "message": "I find it somewhat concerning that SiteCusomizePy is referenced from such \"different\" places. Can these customizations somehow be extracted into single function or at least single file? The idea that is someone wants to add some new file, they immediately see what they need to modify.",
+      "range": {
+        "startLine": 709,
+        "startChar": 1,
+        "endLine": 709,
+        "endChar": 41
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
