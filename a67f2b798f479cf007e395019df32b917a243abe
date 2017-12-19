@@ -140,6 +140,30 @@
       "revId": "a67f2b798f479cf007e395019df32b917a243abe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "94c9656b_db91478c",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T22:00:56Z",
+      "side": 1,
+      "message": "I derived it through GetSettings, let me know what you think.",
+      "parentUuid": "4966e825_0d080796",
+      "range": {
+        "startLine": 84,
+        "startChar": 29,
+        "endLine": 84,
+        "endChar": 34
+      },
+      "revId": "a67f2b798f479cf007e395019df32b917a243abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
