@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7d197a2_1102dfa8",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:14:08Z",
+      "side": 1,
+      "message": "\u003d\u003d",
+      "range": {
+        "startLine": 69,
+        "startChar": 35,
+        "endLine": 69,
+        "endChar": 37
+      },
+      "revId": "a67f2b798f479cf007e395019df32b917a243abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03002c67_86f0f625",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:14:08Z",
+      "side": 1,
+      "message": "host",
+      "range": {
+        "startLine": 70,
+        "startChar": 44,
+        "endLine": 70,
+        "endChar": 50
+      },
+      "revId": "a67f2b798f479cf007e395019df32b917a243abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f68d89e0_fdb57932",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T19:14:08Z",
+      "side": 1,
+      "message": "unnecessary. the namespace is already scoped to the current project, which is milo",
+      "range": {
+        "startLine": 84,
+        "startChar": 29,
+        "endLine": 84,
+        "endChar": 34
+      },
+      "revId": "a67f2b798f479cf007e395019df32b917a243abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
