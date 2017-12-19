@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f4978a4_87232157",
+        "filename": "milo/frontend/appengine/dispatch.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-19T23:23:01Z",
+      "side": 1,
+      "message": "I think this is necessary to remove the dispatch rules, I can delete the file entirely in a followup cl.",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 8
+      },
+      "revId": "b9e63c29e0061a93a3df6f0ce6f48141fa1b0c54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
