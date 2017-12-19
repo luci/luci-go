@@ -316,6 +316,30 @@
       "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6eef5929_8c9c33b6",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T01:02:33Z",
+      "side": 1,
+      "message": "wow, I definitely remember fixing all this... I wonder what happened... :( anyway, now it all should be done.",
+      "parentUuid": "b81d6ac9_762193d1",
+      "range": {
+        "startLine": 138,
+        "startChar": 15,
+        "endLine": 138,
+        "endChar": 53
+      },
+      "revId": "2d75bcb4b859ae291528b406ed0409b3f43cd08e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
