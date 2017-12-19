@@ -59,7 +59,7 @@ func TestNormalizeAndHash(t *testing.T) {
 					Wheel: []*vpython.Spec_Package{pkgBar, pkgBaz, pkgFoo},
 				})
 
-				So(Hash(env.Spec, &rt, ""), ShouldEqual, "1e32c02610b51f8c3807203fccd3e8d01d252868d52eb4ee9df135ef6533c5ae")
+				So(Hash(env.Spec, &rt), ShouldEqual, "1e32c02610b51f8c3807203fccd3e8d01d252868d52eb4ee9df135ef6533c5ae")
 				So(Hash(env.Spec, &rt, "extra"), ShouldEqual, "d047eb021f50534c050aaa10c70dc7b4a9b511fab00cf67a191b2b0805f24420")
 			})
 
