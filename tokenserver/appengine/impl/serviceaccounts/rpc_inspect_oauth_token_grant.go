@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
@@ -35,7 +36,7 @@ type InspectOAuthTokenGrantRPC struct {
 func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, req *admin.InspectOAuthTokenGrantRequest) (*admin.InspectOAuthTokenGrantResponse, error) {
 	inspection, err := InspectGrant(c, r.Signer, req.Token)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	resp := &admin.InspectOAuthTokenGrantResponse{
@@ -65,7 +66,7 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 	if resp.TokenBody != nil {
 		rules, err := r.Rules(c)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal, "failed to load service accounts rules")
+			return nil, status.Errorf(codes.Internal, "failed to load service accounts rules")
 		}
 
 		// Always return the rule that matches the service account, even if the
@@ -75,7 +76,7 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 		case err != nil:
 			// Note: InspectOAuthTokenGrant is admin API. It is fine to return the
 			// detailed error response.
-			return nil, grpc.Errorf(
+			return nil, status.Errorf(
 				codes.Internal, "failed to query rules for account %q using config rev %s - %s",
 				resp.TokenBody.ServiceAccount, rules.ConfigRevision(), err)
 		case rule == nil:
@@ -94,6 +95,8 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 		switch _, err = rules.Check(c, q); {
 		case err == nil:
 			resp.AllowedByRules = true
+
+		// TODO(nodir, vadimsh): use status.FromError
 		case grpc.Code(err) == codes.Internal:
 			return nil, err // a transient error when checking rules
 		default: // fatal gRPC error => the rules forbid the token

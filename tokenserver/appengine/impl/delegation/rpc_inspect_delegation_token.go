@@ -16,8 +16,8 @@ package delegation
 
 import (
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"
@@ -38,7 +38,7 @@ type InspectDelegationTokenRPC struct {
 func (r *InspectDelegationTokenRPC) InspectDelegationToken(c context.Context, req *admin.InspectDelegationTokenRequest) (*admin.InspectDelegationTokenResponse, error) {
 	inspection, err := InspectToken(c, r.Signer, req.Token)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	resp := &admin.InspectDelegationTokenResponse{
 		Valid:            inspection.Signed && inspection.NonExpired,

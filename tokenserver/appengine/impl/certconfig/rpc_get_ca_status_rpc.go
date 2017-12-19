@@ -16,8 +16,8 @@ package certconfig
 
 import (
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	ds "go.chromium.org/gae/service/datastore"
 
@@ -50,12 +50,12 @@ func (r *GetCAStatusRPC) GetCAStatus(c context.Context, req *admin.GetCAStatusRe
 	case err == ds.ErrNoSuchEntity:
 		return &admin.GetCAStatusResponse{}, nil
 	case err != nil:
-		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+		return nil, status.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
 	cfgMsg, err := ca.ParseConfig()
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "broken config in the datastore - %s", err)
+		return nil, status.Errorf(codes.Internal, "broken config in the datastore - %s", err)
 	}
 
 	return &admin.GetCAStatusResponse{

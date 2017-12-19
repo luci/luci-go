@@ -18,8 +18,8 @@ import (
 	"crypto/x509"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
@@ -35,11 +35,11 @@ func (r *CheckCertificateRPC) CheckCertificate(c context.Context, req *admin.Che
 	// Deserialize the cert.
 	der, err := utils.ParsePEM(req.CertPem, "CERTIFICATE")
 	if err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'cert_pem' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "can't parse 'cert_pem' - %s", err)
 	}
 	cert, err := x509.ParseCertificate(der)
 	if err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'cert-pem' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "can't parse 'cert-pem' - %s", err)
 	}
 
 	// Find a checker for the CA that signed the cert, check the certificate.
@@ -61,5 +61,5 @@ func (r *CheckCertificateRPC) CheckCertificate(c context.Context, req *admin.Che
 			InvalidReason: details.Error(),
 		}, nil
 	}
-	return nil, grpc.Errorf(codes.Internal, "failed to check the certificate - %s", err)
+	return nil, status.Errorf(codes.Internal, "failed to check the certificate - %s", err)
 }

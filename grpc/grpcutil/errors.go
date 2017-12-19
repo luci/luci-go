@@ -17,15 +17,16 @@ package grpcutil
 import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 )
 
 var (
-	// Errf falls through to grpc.Errorf, with the notable exception that it isn't
+	// Errf falls through to status.Errorf, with the notable exception that it isn't
 	// named "Errorf" and, consequently, won't trigger "go vet" misuse errors.
-	Errf = grpc.Errorf
+	Errf = status.Errorf
 
 	// OK is an empty grpc.OK status error.
 	OK = Errf(codes.OK, "")
@@ -123,6 +124,7 @@ func Code(err error) codes.Code {
 	if code, ok := Tag.In(err); ok {
 		return code
 	}
+	// TODO(nodir): use status.FromError
 	return grpc.Code(errors.Unwrap(err))
 }
 

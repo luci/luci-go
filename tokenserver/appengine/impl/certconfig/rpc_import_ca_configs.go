@@ -24,8 +24,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/stringset"
@@ -45,19 +45,19 @@ type ImportCAConfigsRPC struct {
 func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
 	content, meta, err := fetchConfigFile(c, "tokenserver.cfg")
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't read config file - %s", err)
 	}
 	logging.Infof(c, "Importing tokenserver.cfg at rev %s", meta.Revision)
 
 	// Read list of CAs.
 	msg := admin.TokenServerConfig{}
 	if err = proto.UnmarshalText(content, &msg); err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't parse config file - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't parse config file - %s", err)
 	}
 
 	seenIDs, err := LoadCAUniqueIDToCNMap(c)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't load unique_id map - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't load unique_id map - %s", err)
 	}
 	if seenIDs == nil {
 		seenIDs = map[int64]string{}
@@ -68,13 +68,13 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 	seenCAs := stringset.New(len(msg.GetCertificateAuthority()))
 	for _, ca := range msg.GetCertificateAuthority() {
 		if seenCAs.Has(ca.Cn) {
-			return nil, grpc.Errorf(codes.Internal, "duplicate entries in the config")
+			return nil, status.Errorf(codes.Internal, "duplicate entries in the config")
 		}
 		seenCAs.Add(ca.Cn)
 		// Check unique ID is not being reused.
 		if existing, seen := seenIDs[ca.UniqueId]; seen {
 			if existing != ca.Cn {
-				return nil, grpc.Errorf(
+				return nil, status.Errorf(
 					codes.Internal, "duplicate unique_id %d in the config: %q and %q",
 					ca.UniqueId, ca.Cn, existing)
 			}
@@ -89,7 +89,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 	// additive (all new CAs should have different IDs).
 	if seenIDsDirty {
 		if err := StoreCAUniqueIDToCNMap(c, seenIDs); err != nil {
-			return nil, grpc.Errorf(codes.Internal, "can't store unique_id map - %s", err)
+			return nil, status.Errorf(codes.Internal, "can't store unique_id map - %s", err)
 		}
 	}
 
@@ -112,7 +112,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 	}
 	wg.Wait()
 	if err = me.Get(); err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't import CA - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't import CA - %s", err)
 	}
 
 	// Find CAs that were removed from the config.
@@ -124,7 +124,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 		}
 	})
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+		return nil, status.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
 	// Mark them as inactive in the datastore.
@@ -142,7 +142,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 	}
 	wg.Wait()
 	if err = me.Get(); err != nil {
-		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+		return nil, status.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
 	return &admin.ImportedConfigs{Revision: meta.Revision}, nil

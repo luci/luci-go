@@ -17,8 +17,8 @@ package delegation
 import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -34,7 +34,7 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 	rev, err := r.RulesCache.ImportConfigs(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to fetch delegation configs")
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
 }
