@@ -22,6 +22,30 @@
       "revId": "a9d0995c652a7a9e1d946440cfc6110ec9ffb087",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90b10534_831a64d2",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T23:04:24Z",
+      "side": 1,
+      "message": "asdfkljsdf ok fixed.",
+      "parentUuid": "e8a27d10_e088fb78",
+      "range": {
+        "startLine": 41,
+        "startChar": 70,
+        "endLine": 41,
+        "endChar": 87
+      },
+      "revId": "a9d0995c652a7a9e1d946440cfc6110ec9ffb087",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
