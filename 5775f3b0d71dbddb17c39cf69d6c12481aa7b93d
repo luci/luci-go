@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb5744ed_74ef38b3",
+        "filename": "milo/git/history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T20:32:21Z",
+      "side": 1,
+      "message": "is it just naked repo URL?",
+      "range": {
+        "startLine": 215,
+        "startChar": 49,
+        "endLine": 215,
+        "endChar": 52
+      },
+      "revId": "5775f3b0d71dbddb17c39cf69d6c12481aa7b93d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6a77916_9bc29a79",
+        "filename": "milo/git/history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T20:32:21Z",
+      "side": 1,
+      "message": "nah, ignore it\nit is always nil :-/ (local memory operation can\u0027t fail)",
+      "range": {
+        "startLine": 216,
+        "startChar": 2,
+        "endLine": 216,
+        "endChar": 75
+      },
+      "revId": "5775f3b0d71dbddb17c39cf69d6c12481aa7b93d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
