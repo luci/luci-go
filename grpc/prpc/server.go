@@ -131,11 +131,9 @@ func (s *Server) authenticate() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		switch ctx, err := a.Authenticate(c.Context, c.Request); {
 		case transient.Tag.In(err):
-			res := errResponse(codes.Internal, http.StatusInternalServerError, "%s", err)
-			res.write(c.Context, c.Writer)
+			writeError(c.Context, c.Writer, codes.Internal, http.StatusInternalServerError, "%s", err)
 		case err != nil:
-			res := errResponse(codes.Unauthenticated, http.StatusUnauthorized, "%s", err)
-			res.write(c.Context, c.Writer)
+			writeError(c.Context, c.Writer, codes.Unauthenticated, http.StatusUnauthorized, "%s", err)
 		default:
 			c.Context = ctx
 			next(c)
@@ -168,8 +166,7 @@ func (s *Server) handlePOST(c *router.Context) {
 	serviceName := c.Params.ByName("service")
 	methodName := c.Params.ByName("method")
 	s.setAccessControlHeaders(c, false)
-	res := s.respond(c, serviceName, methodName)
-	res.write(c.Context, c.Writer)
+	s.serve(c, serviceName, methodName)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
@@ -177,34 +174,38 @@ func (s *Server) handleOPTIONS(c *router.Context) {
 	c.Writer.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) respond(c *router.Context, serviceName, methodName string) *response {
+func (s *Server) serve(c *router.Context, serviceName, methodName string) {
+	writeErr := func(code codes.Code, format string, a ...interface{}) {
+		writeError(c.Context, c.Writer, code, 0, format, a...)
+	}
+
+	// writeProtocolError writes a pRPC protocol error.
+	writeProtocolError := func(err *protocolError) {
+		writeError(c.Context, c.Writer, codes.InvalidArgument, err.status, "%s", err)
+	}
+
 	service := s.services[serviceName]
 	if service == nil {
-		return errResponse(
-			codes.Unimplemented,
-			http.StatusNotImplemented,
-			"service %q is not implemented",
-			serviceName)
+		writeErr(codes.Unimplemented, "service %q is not implemented", serviceName)
+		return
 	}
 
 	method, ok := service.methods[methodName]
 	if !ok {
-		return errResponse(
-			codes.Unimplemented,
-			http.StatusNotImplemented,
-			"method %q in service %q is not implemented",
-			methodName,
-			serviceName)
+		writeErr(codes.Unimplemented, "method %q in service %q is not implemented", methodName, serviceName)
+		return
 	}
 
 	format, perr := responseFormat(c.Request.Header.Get(headerAccept))
 	if perr != nil {
-		return respondProtocolError(perr)
+		writeProtocolError(perr)
+		return
 	}
 
 	methodCtx, err := parseHeader(c.Context, c.Request.Header)
 	if err != nil {
-		return respondProtocolError(withStatus(err, http.StatusBadRequest))
+		writeProtocolError(withStatus(err, http.StatusBadRequest))
+		return
 	}
 
 	out, err := method.Handler(service.impl, methodCtx, func(in interface{}) error {
@@ -219,15 +220,18 @@ func (s *Server) respond(c *router.Context, serviceName, methodName string) *res
 	}, s.UnaryServerInterceptor)
 	if err != nil {
 		if perr, ok := err.(*protocolError); ok {
-			return respondProtocolError(perr)
+			writeProtocolError(perr)
+			return
 		}
-		return errResponse(errorCode(err), 0, "%s", grpc.ErrorDesc(err))
+		writeErr(errorCode(err), "%s", grpc.ErrorDesc(err))
+		return
 	}
 
 	if out == nil {
-		return errResponse(codes.Internal, 0, "service returned nil message")
+		writeErr(codes.Internal, "service returned nil message")
+		return
 	}
-	return respondMessage(out.(proto.Message), format)
+	writeMessage(c.Context, c.Writer, out.(proto.Message), format)
 }
 
 func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
