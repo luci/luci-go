@@ -21,8 +21,8 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/auth/identity"
@@ -87,18 +87,18 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	callerID := state.User().Identity
 	if callerID != state.PeerIdentity() {
 		logging.Errorf(c, "Trying to use delegation, it's forbidden")
-		return nil, grpc.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
+		return nil, status.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
 	}
 	if callerID == identity.AnonymousIdentity {
 		logging.Errorf(c, "Unauthenticated request")
-		return nil, grpc.Errorf(codes.Unauthenticated, "authentication required")
+		return nil, status.Errorf(codes.Unauthenticated, "authentication required")
 	}
 
 	// Grab a string that identifies token server version. This almost always
 	// just hits local memory cache.
 	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
 	rules, err := r.Rules(c)
@@ -106,7 +106,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		// Don't put error details in the message, it may be returned to
 		// unauthorized callers.
 		logging.WithError(err).Errorf(c, "Failed to load delegation rules")
-		return nil, grpc.Errorf(codes.Internal, "failed to load delegation rules")
+		return nil, status.Errorf(codes.Internal, "failed to load delegation rules")
 	}
 
 	// Make sure the caller is mentioned in the config before doing anything else.
@@ -116,10 +116,10 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	switch ok, err := rules.IsAuthorizedRequestor(c, callerID); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "IsAuthorizedRequestor failed")
-		return nil, grpc.Errorf(codes.Internal, "failed to check authorization")
+		return nil, status.Errorf(codes.Internal, "failed to check authorization")
 	case !ok:
 		logging.Errorf(c, "Didn't pass initial authorization")
-		return nil, grpc.Errorf(codes.PermissionDenied, "not authorized")
+		return nil, status.Errorf(codes.PermissionDenied, "not authorized")
 	}
 
 	// Validate requested token lifetime. It's not part of the rules query.
@@ -129,14 +129,14 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	if req.ValidityDuration < 0 {
 		err = fmt.Errorf("invalid 'validity_duration' (%d)", req.ValidityDuration)
 		logging.WithError(err).Errorf(c, "Bad request")
-		return nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}
 
 	// Same for tags, they are transferred intact to the final token.
 	if err := utils.ValidateTags(req.Tags); err != nil {
 		err = fmt.Errorf("invalid 'tags': %s", err)
 		logging.WithError(err).Errorf(c, "Bad request")
-		return nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}
 
 	// Validate and normalize the request. This may do relatively expensive calls
@@ -145,10 +145,10 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	if err != nil {
 		if transient.Tag.In(err) {
 			logging.WithError(err).Errorf(c, "buildRulesQuery failed")
-			return nil, grpc.Errorf(codes.Internal, "failure when resolving target service ID - %s", err)
+			return nil, status.Errorf(codes.Internal, "failure when resolving target service ID - %s", err)
 		}
 		logging.WithError(err).Errorf(c, "Bad request")
-		return nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}
 
 	// Consult the config to find the rule that allows this operation (if any).
@@ -156,10 +156,10 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	if err != nil {
 		if transient.Tag.In(err) {
 			logging.WithError(err).Errorf(c, "FindMatchingRule failed")
-			return nil, grpc.Errorf(codes.Internal, "failure when checking rules - %s", err)
+			return nil, status.Errorf(codes.Internal, "failure when checking rules - %s", err)
 		}
 		logging.WithError(err).Errorf(c, "Didn't pass rules check")
-		return nil, grpc.Errorf(codes.PermissionDenied, "forbidden - %s", err)
+		return nil, status.Errorf(codes.PermissionDenied, "forbidden - %s", err)
 	}
 	logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Name, rules.ConfigRevision())
 
@@ -169,7 +169,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 			"the requested validity duration (%d sec) exceeds the maximum allowed one (%d sec)",
 			req.ValidityDuration, rule.MaxValidityDuration)
 		logging.WithError(err).Errorf(c, "Validity duration check didn't pass")
-		return nil, grpc.Errorf(codes.PermissionDenied, "forbidden - %s", err)
+		return nil, status.Errorf(codes.PermissionDenied, "forbidden - %s", err)
 	}
 
 	var resp *minter.MintDelegationTokenResponse
@@ -222,7 +222,7 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 	id, err := revocation.GenerateTokenID(c, tokenIDSequenceKind)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Error when generating token ID.")
-		return nil, grpc.Errorf(codes.Internal, "error when generating token ID - %s", err)
+		return nil, status.Errorf(codes.Internal, "error when generating token ID - %s", err)
 	}
 
 	// All the stuff here has already been validated in 'MintDelegationToken'.
@@ -241,7 +241,7 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 	signed, err := SignToken(c, r.Signer, subtok)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Error when signing the token.")
-		return nil, grpc.Errorf(codes.Internal, "error when signing the token - %s", err)
+		return nil, status.Errorf(codes.Internal, "error when signing the token - %s", err)
 	}
 
 	return &minter.MintDelegationTokenResponse{

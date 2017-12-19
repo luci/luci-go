@@ -16,8 +16,8 @@ package certconfig
 
 import (
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -32,7 +32,7 @@ type ListCAsRPC struct {
 func (r *ListCAsRPC) ListCAs(c context.Context, _ *empty.Empty) (*admin.ListCAsResponse, error) {
 	names, err := ListCAs(c)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "transient datastore error - %s", err)
+		return nil, status.Errorf(codes.Internal, "transient datastore error - %s", err)
 	}
 	return &admin.ListCAsResponse{Cn: names}, nil
 }

@@ -21,8 +21,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
@@ -64,11 +64,11 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 	// Parse serialized portion of the request and do minimal validation before
 	// checking the signature to reject obviously bad requests.
 	if len(req.SerializedTokenRequest) == 0 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "empty request")
+		return nil, status.Errorf(codes.InvalidArgument, "empty request")
 	}
 	tokenReq := minter.MachineTokenRequest{}
 	if err := proto.Unmarshal(req.SerializedTokenRequest, &tokenReq); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "failed to unmarshal TokenRequest - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "failed to unmarshal TokenRequest - %s", err)
 	}
 
 	switch tokenReq.TokenType {
@@ -136,7 +136,7 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 		if certchecker.IsCertInvalidError(err) {
 			return r.mintingErrorResponse(c, minter.ErrorCode_UNTRUSTED_CERTIFICATE, "%s", err)
 		}
-		return nil, grpc.Errorf(codes.Internal, "failed to check the certificate - %s", err)
+		return nil, status.Errorf(codes.Internal, "failed to check the certificate - %s", err)
 	}
 
 	// At this point we trust what's in MachineTokenRequest, proceed with
@@ -206,7 +206,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 
 	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
-		return nil, nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
+		return nil, nil, status.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
 	// Make the token.
@@ -226,7 +226,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 			},
 		}, body, nil
 	case transient.Tag.In(err):
-		return nil, nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
+		return nil, nil, status.Errorf(codes.Internal, "failed to generate machine token - %s", err)
 	default:
 		resp, err := r.mintingErrorResponse(c, minter.ErrorCode_MACHINE_TOKEN_MINTING_ERROR, "%s", err)
 		return resp, nil, err
@@ -236,7 +236,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 func (r *MintMachineTokenRPC) mintingErrorResponse(c context.Context, code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
 	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 	return &minter.MintMachineTokenResponse{
 		ErrorCode:      code,

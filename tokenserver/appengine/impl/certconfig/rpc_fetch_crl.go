@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
@@ -52,24 +52,24 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 	ca := &CA{CN: req.Cn}
 	switch err := ds.Get(c, ca); {
 	case err == ds.ErrNoSuchEntity:
-		return nil, grpc.Errorf(codes.NotFound, "no such CA %q", ca.CN)
+		return nil, status.Errorf(codes.NotFound, "no such CA %q", ca.CN)
 	case err != nil:
-		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+		return nil, status.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
 	// Grab CRL URL from the CA config.
 	cfg, err := ca.ParseConfig()
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "broken CA config in the datastore - %s", err)
+		return nil, status.Errorf(codes.Internal, "broken CA config in the datastore - %s", err)
 	}
 	if cfg.CrlUrl == "" {
-		return nil, grpc.Errorf(codes.NotFound, "CA %q doesn't have CRL defined", ca.CN)
+		return nil, status.Errorf(codes.NotFound, "CA %q doesn't have CRL defined", ca.CN)
 	}
 
 	// Grab info about last processed CRL, if any.
 	crl := &CRL{Parent: ds.KeyForObj(c, ca)}
 	if err = ds.Get(c, crl); err != nil && err != ds.ErrNoSuchEntity {
-		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+		return nil, status.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
 	// Fetch latest CRL blob.
@@ -82,9 +82,9 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 	crlDer, newEtag, err := fetchCRL(fetchCtx, cfg, knownETag)
 	switch {
 	case transient.Tag.In(err):
-		return nil, grpc.Errorf(codes.Internal, "transient error when fetching CRL - %s", err)
+		return nil, status.Errorf(codes.Internal, "transient error when fetching CRL - %s", err)
 	case err != nil:
-		return nil, grpc.Errorf(codes.Unknown, "can't fetch CRL - %s", err)
+		return nil, status.Errorf(codes.Unknown, "can't fetch CRL - %s", err)
 	}
 
 	// No changes?
@@ -95,9 +95,9 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 		crl, err = validateAndStoreCRL(c, crlDer, newEtag, ca, crl)
 		switch {
 		case transient.Tag.In(err):
-			return nil, grpc.Errorf(codes.Internal, "transient error when storing CRL - %s", err)
+			return nil, status.Errorf(codes.Internal, "transient error when storing CRL - %s", err)
 		case err != nil:
-			return nil, grpc.Errorf(codes.Unknown, "bad CRL - %s", err)
+			return nil, status.Errorf(codes.Unknown, "bad CRL - %s", err)
 		}
 	}
 

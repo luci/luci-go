@@ -18,8 +18,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // GetMessageProject implements ProjectBoundMessage.
@@ -70,7 +70,7 @@ func (e *Error) ToError() error {
 	}
 
 	code := codes.Code(e.GrpcCode)
-	err := grpc.Errorf(code, "%s", e.Msg)
+	err := status.Errorf(code, "%s", e.Msg)
 	if e.Transient || grpcutil.IsTransientCode(code) {
 		err = transient.Tag.Apply(err)
 	}

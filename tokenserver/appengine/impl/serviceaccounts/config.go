@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"golang.org/x/net/context"
 
@@ -280,10 +280,10 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 		switch rule, err = r.Rule(c, query.ServiceAccount); {
 		case err != nil:
 			logging.WithError(err).Errorf(c, "Failed to query rules for account %q using config rev %s", query.ServiceAccount, r.revision)
-			return nil, grpc.Errorf(codes.Internal, "internal error when querying rules, see logs")
+			return nil, status.Errorf(codes.Internal, "internal error when querying rules, see logs")
 		case rule == nil:
 			logging.Errorf(c, "No rule for service account %q in the config rev %s", query.ServiceAccount, r.revision)
-			return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+			return nil, status.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
 		}
 		logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Rule.Name, r.revision)
 	}
@@ -293,7 +293,7 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 	switch isTrustedProxy, err := rule.TrustedProxies.IsMember(c, query.Proxy); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to check membership of caller %q", query.Proxy)
-		return nil, grpc.Errorf(codes.Internal, "membership check failed")
+		return nil, status.Errorf(codes.Internal, "membership check failed")
 	case isTrustedProxy:
 		return rule, nil
 	}
@@ -301,13 +301,13 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 	switch isProxy, err := rule.Proxies.IsMember(c, query.Proxy); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to check membership of caller %q", query.Proxy)
-		return nil, grpc.Errorf(codes.Internal, "membership check failed")
+		return nil, status.Errorf(codes.Internal, "membership check failed")
 	case !isProxy:
 		// If the 'Proxy' is not in 'Proxies' and 'TrustedProxies' lists, we assume
 		// it's a total stranger and keep error messages not very detailed, to avoid
 		// leaking internal configuration.
 		logging.Errorf(c, "Caller %q is not authorized to use account %q", query.Proxy, query.ServiceAccount)
-		return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+		return nil, status.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
 	}
 
 	// Here the proxy is in 'Proxies' list, but in 'TrustedProxies' list. Check
@@ -315,10 +315,10 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 	switch known, err := rule.EndUsers.IsMember(c, query.EndUser); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to check membership of end user %q", query.EndUser)
-		return nil, grpc.Errorf(codes.Internal, "membership check failed")
+		return nil, status.Errorf(codes.Internal, "membership check failed")
 	case !known:
 		logging.Errorf(c, "End user %q is not authorized to use account %q", query.EndUser, query.ServiceAccount)
-		return nil, grpc.Errorf(
+		return nil, status.Errorf(
 			codes.PermissionDenied, "per rule %q the user %q is not authorized to use the service account %q",
 			rule.Rule.Name, query.EndUser, query.ServiceAccount)
 	}

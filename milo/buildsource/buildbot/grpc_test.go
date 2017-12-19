@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
@@ -105,16 +105,16 @@ func TestGRPC(t *testing.T) {
 
 			Convey(`Bad request`, func() {
 				_, err := svc.GetBuildbotBuildsJSON(c, &milo.BuildbotBuildsRequest{})
-				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
+				So(err, ShouldResemble, status.Errorf(codes.InvalidArgument, "No master specified"))
 				_, err = svc.GetBuildbotBuildsJSON(c, &milo.BuildbotBuildsRequest{Master: name})
-				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No builder specified"))
+				So(err, ShouldResemble, status.Errorf(codes.InvalidArgument, "No builder specified"))
 			})
 		})
 
 		Convey(`Get buildbotMasterEntry`, func() {
 			Convey(`Bad request`, func() {
 				_, err := svc.GetCompressedMasterJSON(c, &milo.MasterRequest{})
-				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
+				So(err, ShouldResemble, status.Errorf(codes.InvalidArgument, "No master specified"))
 			})
 			_, err := svc.GetCompressedMasterJSON(c, &milo.MasterRequest{Name: name})
 			So(err, ShouldBeNil)
@@ -123,11 +123,11 @@ func TestGRPC(t *testing.T) {
 		Convey(`Get Build`, func() {
 			Convey(`Invalid input`, func() {
 				_, err := svc.GetBuildbotBuildJSON(c, &milo.BuildbotBuildRequest{})
-				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
+				So(err, ShouldResemble, status.Errorf(codes.InvalidArgument, "No master specified"))
 				_, err = svc.GetBuildbotBuildJSON(c, &milo.BuildbotBuildRequest{
 					Master: "foo",
 				})
-				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No builder specified"))
+				So(err, ShouldResemble, status.Errorf(codes.InvalidArgument, "No builder specified"))
 			})
 			Convey(`Basic`, func() {
 				_, err := svc.GetBuildbotBuildJSON(c, &milo.BuildbotBuildRequest{
@@ -143,7 +143,7 @@ func TestGRPC(t *testing.T) {
 					Builder:  "fake",
 					BuildNum: 2,
 				})
-				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "Not found"))
+				So(err, ShouldResemble, status.Errorf(codes.NotFound, "Not found"))
 			})
 		})
 	})
