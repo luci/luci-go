@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8fc6e843_accec24a",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-19T01:44:14Z",
+      "side": 1,
+      "message": "nit: delete whitespace",
+      "range": {
+        "startLine": 210,
+        "startChar": 70,
+        "endLine": 210,
+        "endChar": 71
+      },
+      "revId": "2c48bbfbf632383d887427c9f64b45216bd0590a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22c63645_b065587c",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-19T01:44:14Z",
+      "side": 1,
+      "message": "as additional fields of the response.",
+      "range": {
+        "startLine": 207,
+        "startChar": 47,
+        "endLine": 208,
+        "endChar": 52
+      },
+      "revId": "2c48bbfbf632383d887427c9f64b45216bd0590a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3518de1_f8bdfbf8",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-19T01:44:14Z",
+      "side": 1,
+      "message": "del\n\nalso, thanks for better name.",
+      "range": {
+        "startLine": 226,
+        "startChar": 3,
+        "endLine": 226,
+        "endChar": 6
+      },
+      "revId": "2c48bbfbf632383d887427c9f64b45216bd0590a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
