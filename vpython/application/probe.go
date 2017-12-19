@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -93,8 +94,10 @@ func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResu
 	return &result, nil
 }
 
-// checkWrapper is a prober.CheckWrapperFunc that detects if a given path is a
-// "vpython" instance.
+// checkWrapper is a prober.CheckWrapperFunc that detects if a given path is
+// almost, but not quite, entirely unlike Python. Specifically it checks to see
+// if path is secretly the "vpython" interpreter, or if path is the Python
+// inside a VirtualEnv.
 //
 // It does this by running it "path --version" with CheckWrapperENV set. If
 // the target is a "vpython" wrapper, it will immediately exit with a non-zero
@@ -105,7 +108,19 @@ func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResu
 // As a side effect, the text output of the last version probe will be stored
 // in lp.lastOutput. The "look" function can pass this value on to
 // the LookPathResult.
+//
+// This also will detect and ignore Python interpreters which are part of
+// virtualenvs.
 func (lp *lookPath) checkWrapper(c context.Context, path string, env environ.Env) (isWrapper bool, err error) {
+	// First we check to see if this is a VirtualEnv interpreter by looking for
+	// the `activate_this.py` script which is adjacent to the Python binary.
+	activateScript := filepath.Join(filepath.Dir(path), "activate_this.py")
+	if _, err := os.Stat(activateScript); err == nil {
+		// if we statted something here, we'll consider this to be a 'wrapper', to
+		// have the path looker skip this.
+		return true, nil
+	}
+
 	env.Set(checkWrapperENV, "1")
 
 	cmd := exec.CommandContext(c, path, "--version")
