@@ -176,16 +176,14 @@ func writeError(c context.Context, w http.ResponseWriter, err error) {
 		httpStatus = codeStatus(code)
 	}
 
-	var body string
-	switch code {
-	case codes.Internal, codes.Unknown:
-		logging.Fields{
-			"code": code,
-		}.Errorf(c, "%s", msg)
-		body = "Internal Server Error"
-	default:
-		body = msg
+	body := msg
+	level := logging.Warning
+	if httpStatus >= 500 {
+		level = logging.Error
+		// Hide potential implementation details from the user.
+		body = http.StatusText(httpStatus)
 	}
+	logging.Logf(c, level, "prpc: responding with %s error: %s", code, msg)
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(code)))
 	w.Header().Set(headerContentType, "text/plain")
