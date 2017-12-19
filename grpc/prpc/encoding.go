@@ -102,7 +102,7 @@ func respondMessage(msg proto.Message, format Format) *response {
 
 	}
 	if err != nil {
-		return errResponse(codes.Internal, 0, escapeFmt(err.Error()))
+		return errResponse(codes.Internal, 0, "%s", err)
 	}
 
 	return &res
@@ -110,7 +110,7 @@ func respondMessage(msg proto.Message, format Format) *response {
 
 // respondProtocolError creates a response for a pRPC protocol error.
 func respondProtocolError(err *protocolError) *response {
-	return errResponse(codes.InvalidArgument, err.status, escapeFmt(err.err.Error()))
+	return errResponse(codes.InvalidArgument, err.status, "%s", err.err)
 }
 
 // errorCode returns a most appropriate gRPC code for an error
