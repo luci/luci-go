@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "bef105d7_7526812a",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T02:07:31Z",
+      "side": 1,
+      "message": "Should use \"const\" here.",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 36
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9786696c_d50b1040",
         "filename": "vpython/run.go",
         "patchSetId": 2
@@ -13,6 +36,30 @@
       "writtenOn": "2017-12-19T01:27:33Z",
       "side": 1,
       "message": "please assert that venvRoot ends with os.PathSeparator, otherwise this check may have false positives",
+      "range": {
+        "startLine": 127,
+        "startChar": 33,
+        "endLine": 127,
+        "endChar": 41
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfa49692_27621fc9",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T02:07:31Z",
+      "side": 1,
+      "message": "VWIW I don\u0027t think that it will have that separator necessarily, as it\u0027s user-input (but validated), so something like:\n\nif !strings.HasSuffix(venvRoot, os.PathSeparator) {\n  venvRoot +\u003d os.PathSeparator\n}",
+      "parentUuid": "9786696c_d50b1040",
       "range": {
         "startLine": 127,
         "startChar": 33,
@@ -48,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "dc1735a6_d3d288c0",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T02:07:31Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "73478ed8_541b146e",
+      "range": {
+        "startLine": 127,
+        "startChar": 2,
+        "endLine": 130,
+        "endChar": 37
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bd728938_505929f9",
         "filename": "vpython/spec/spec.go",
         "patchSetId": 2
@@ -59,6 +130,30 @@
       "writtenOn": "2017-12-19T01:27:33Z",
       "side": 1,
       "message": "strictly speaking chunks of data here should be separated by a separator that is not allowed inside the chunks, e.g. \u0027\\n\u0027 or something. Or prefixed by length. Or something like that.\n\nOtherwise different data can result in same hash. E.g. \n\nextra \u003d [\"abc\", \"def\"]\nextra \u003d [\"abc:def\"]\n\nThough in practice it probably doesn\u0027t matter here (I hope).",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 30
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09bb854b_bd9d0a67",
+        "filename": "vpython/spec/spec.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T02:07:31Z",
+      "side": 1,
+      "message": "A method I\u0027ve been favoring lately has been to populate a protobuf/JSON/whatever and just serialize that. Takes care of delimiter at the expense of a little bit of overhead.\n\nBut yeah, \"\\x00\" should be disallowed. Not sure if it\u0027s validated though, probably not too hard to make it validated if it isn\u0027t.",
+      "parentUuid": "bd728938_505929f9",
       "range": {
         "startLine": 115,
         "startChar": 1,
@@ -91,6 +186,52 @@
       "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff6b2ccf_85abe4fe",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T02:07:31Z",
+      "side": 1,
+      "message": "I don\u0027t think you need to update this. \"v2\" is fine, since the hash will change, as you\u0027re folding in the new asset hash. Maybe update the comment, \"... changes in a way that wouldn\u0027t also cause its hash to change\".",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 31
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1bbdfe36_fbcaea50",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T02:07:31Z",
+      "side": 1,
+      "message": "Why export this?",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 71
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -128,6 +269,30 @@
       "writtenOn": "2017-12-19T01:27:33Z",
       "side": 1,
       "message": "I find it somewhat concerning that SiteCusomizePy is referenced from such \"different\" places. Can these customizations somehow be extracted into single function or at least single file? The idea that is someone wants to add some new file, they immediately see what they need to modify.",
+      "range": {
+        "startLine": 709,
+        "startChar": 1,
+        "endLine": 709,
+        "endChar": 41
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "473e6aac_ea58fe8b",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 709,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T02:07:31Z",
+      "side": 1,
+      "message": "You thinking some sort of general-purpose \"installedAssets\" map?\n\nvar installedAssets \u003d []string{SiteCustomizePy}\n\nfor _, name :\u003d range installedAssets {\n  if err :\u003d ioutil.WriteFile(filepath.Join(basePath, name), assets.GetAsset(name), 0444) { ... }\n}\n\n---\n\nThen in \"config.go\":\n\nextra :\u003d make([]string, len(installedAssets))\nfor i, name :\u003d range installedAssets {\n  extra[i] \u003d fmt.Sprintf(\"%s\u003d%s\", name, string(assets.GetAssetChecksum(name)))\n}\n\n?",
+      "parentUuid": "a44b3778_9c43ebd8",
       "range": {
         "startLine": 709,
         "startChar": 1,
