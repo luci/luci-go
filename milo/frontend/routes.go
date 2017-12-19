@@ -207,7 +207,8 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 		logging.Warningf(c, "user agent %q might be using deprecated API!", getRouterContext(c).Request.UserAgent())
 	}
 
-	c = buildstore.WithEmulation(c, true)
+	// TODO(nodir): enable emulation after more aggresively caching gitiles responses.
+	// c = buildstore.WithEmulation(c, true)
 
 	return c, nil
 }
