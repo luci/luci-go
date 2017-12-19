@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -105,7 +106,19 @@ func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResu
 // As a side effect, the text output of the last version probe will be stored
 // in lp.lastOutput. The "look" function can pass this value on to
 // the LookPathResult.
+//
+// This also will detect and ignore python interpreters which are part of
+// virtualenvs.
 func (lp *lookPath) checkWrapper(c context.Context, path string, env environ.Env) (isWrapper bool, err error) {
+	// First we check to see if this is a virtualenv interpreter by looking for
+	// the `activate_this.py` script which is adjacent to the python binary.
+	activateScript := filepath.Join(filepath.Dir(path), "activate_this.py")
+	if _, err := os.Stat(activateScript); err == nil {
+		// if we statted something here, we'll consider this to be a 'wrapper', to
+		// have the path looker skip this.
+		return true, nil
+	}
+
 	env.Set(checkWrapperENV, "1")
 
 	cmd := exec.CommandContext(c, path, "--version")
