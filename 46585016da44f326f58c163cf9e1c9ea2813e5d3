@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "7a2c4ea9_b204bd04",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "nit: Please add a comment with a short explanation of why we\u0027re stripping these paths.",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 25
+      },
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2c45f31d_e15f0a86",
         "filename": "vpython/application/application.go",
         "patchSetId": 10
@@ -16,6 +39,156 @@
       "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13e1eb85_ac8e3d87",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "nit: capital \"P\"",
+      "range": {
+        "startLine": 218,
+        "startChar": 20,
+        "endLine": 218,
+        "endChar": 26
+      },
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ae95841_814d3cb7",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "heh fair",
+      "parentUuid": "2c45f31d_e15f0a86",
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa2d9a1c_7c190f01",
+        "filename": "vpython/run.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "nit: \"Prefix\".",
+      "range": {
+        "startLine": 68,
+        "startChar": 5,
+        "endLine": 68,
+        "endChar": 12
+      },
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aacc50b9_5b81b2e3",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 709,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "nit: please add a comment here noting that any installed assets must be added as extras to the hash input in \"config.go\".",
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9739b927_7dbec28d",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 882,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "nit: note that this is a VirtualEnv deployment\u0027s binary directory, containing \"python\" and other scripts.",
+      "range": {
+        "startLine": 882,
+        "startChar": 0,
+        "endLine": 882,
+        "endChar": 70
+      },
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f410b2f6_5b8c48c9",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 885,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "nit: \"\u003cbindir\u003e/activate_this.py\", installed by all known versions of \"virtualenv.py\".",
+      "range": {
+        "startLine": 885,
+        "startChar": 27,
+        "endLine": 885,
+        "endChar": 43
+      },
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "298dcc75_22695ca3",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 890,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T18:53:53Z",
+      "side": 1,
+      "message": "nice",
+      "range": {
+        "startLine": 890,
+        "startChar": 9,
+        "endLine": 890,
+        "endChar": 27
+      },
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
