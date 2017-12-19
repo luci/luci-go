@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "cefae3a2_7e90fa64",
+        "filename": "machine-db/api/config/v1/oses.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T23:04:11Z",
+      "side": 1,
+      "message": "great point! separate CL SGTM.",
+      "parentUuid": "9cac0e1a_51f23ed1",
+      "range": {
+        "startLine": 10,
+        "startChar": 8,
+        "endLine": 10,
+        "endChar": 29
+      },
+      "revId": "bc54868dda738dcfdab0468a44de6966e8fb7e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d67d84a3_a1b2c5b1",
         "filename": "machine-db/appengine/config/config.go",
         "patchSetId": 2
@@ -93,6 +117,30 @@
       "revId": "bc54868dda738dcfdab0468a44de6966e8fb7e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2732636a_01638bde",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T23:04:11Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "96839214_db54fa49",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "bc54868dda738dcfdab0468a44de6966e8fb7e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
