@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2ce4518a_1f8f7a8f",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T21:35:35Z",
+      "side": 1,
+      "message": "OOPS",
+      "parentUuid": "a7d197a2_1102dfa8",
+      "range": {
+        "startLine": 69,
+        "startChar": 35,
+        "endLine": 69,
+        "endChar": 37
+      },
+      "revId": "a67f2b798f479cf007e395019df32b917a243abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03002c67_86f0f625",
         "filename": "milo/common/acl.go",
         "patchSetId": 16
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "834f1277_d19de723",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T21:35:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "03002c67_86f0f625",
+      "range": {
+        "startLine": 70,
+        "startChar": 44,
+        "endLine": 70,
+        "endChar": 50
+      },
+      "revId": "a67f2b798f479cf007e395019df32b917a243abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f68d89e0_fdb57932",
         "filename": "milo/common/acl.go",
         "patchSetId": 16
@@ -68,6 +116,30 @@
       "revId": "a67f2b798f479cf007e395019df32b917a243abe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4966e825_0d080796",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T21:35:35Z",
+      "side": 1,
+      "message": "I realized this doesn\u0027t actually work. Although Host is exposed, it\u0027s not exposed through the interface. :( Also the namespace can\u0027t contain \"|\". This patchset was premature. I\u0027ve made this namespace static for now, I suppose this could be done with GetSettings again (though that\u0027s not great, since now we\u0027re making at least two calls to GetSettings for a BucketPermissions... while it\u0027s cached, it\u0027s still probably not the fastest thing in the world, though maybe worth it?).",
+      "parentUuid": "f68d89e0_fdb57932",
+      "range": {
+        "startLine": 84,
+        "startChar": 29,
+        "endLine": 84,
+        "endChar": 34
+      },
+      "revId": "a67f2b798f479cf007e395019df32b917a243abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
