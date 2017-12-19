@@ -5,6 +5,16 @@ service: default
 instance_class: F4_1G
 
 handlers:
+- url: /_ah/warmup
+  script: _go_app
+  secure: always
+  login: admin
+
+# PRPC API.
+- url: /prpc/.*
+  script: _go_app
+  secure: always
+
 # For static resources such as css and js files.
 - url: /static
   secure: always
@@ -22,9 +32,7 @@ handlers:
   secure: always
   login: admin
 
-# Pubsub Handler.  This is strictly necessary because the default module
-# contains a /.* routing rule, so if it was targetted directly, we still want
-# login:admin to apply.
+# Pubsub Handler.
 - url: /_ah/push-handlers/.*
   script: _go_app
   secure: always
