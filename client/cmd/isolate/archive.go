@@ -72,7 +72,7 @@ type archiveRun struct {
 	commonServerFlags
 	isolateFlags
 	loggingFlags         loggingFlags
-	expArchive           bool
+	expArchive           bool // deprecated
 	maxConcurrentUploads int
 	dumpJSON             string
 }
