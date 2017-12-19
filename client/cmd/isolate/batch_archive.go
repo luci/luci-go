@@ -23,12 +23,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
@@ -60,7 +58,7 @@ isolate. Format of files is:
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
-			c.Flags.BoolVar(&c.expArchive, "exparchive", false, "Whether to use the new exparchive implementation, which tars small files before uploading them.")
+			c.Flags.BoolVar(&c.expArchive, "exparchive", true, "IGNORED (deprecated) Whether to use the new exparchive implementation, which tars small files before uploading them.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 1, "The maxiumum number of in-flight uploads.")
 			return &c
 		},
@@ -71,7 +69,7 @@ type batchArchiveRun struct {
 	commonServerFlags
 	loggingFlags         loggingFlags
 	dumpJSON             string
-	expArchive           bool
+	expArchive           bool // deprecated
 	maxConcurrentUploads int
 }
 
@@ -154,69 +152,11 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		quiet:     c.defaultFlags.Quiet,
 		operation: logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum(),
 	}
-	if c.expArchive {
-		return doBatchExpArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentUploads, args)
-	}
-	return doBatchArchive(ctx, client, al, c.dumpJSON, args)
+	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentUploads, args)
 }
 
-// doBatchArchive archives a series of isolates specified by genJSONPaths, using an archiver.Archiver.
-func doBatchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, genJSONPaths []string) error {
-	arch := archiver.New(ctx, client, os.Stdout)
-	CancelOnCtrlC(arch)
-
-	type namedItem struct {
-		*archiver.Item
-		name string
-	}
-	items := make(chan *namedItem, len(genJSONPaths))
-	var wg sync.WaitGroup
-	for _, genJSONPath := range genJSONPaths {
-		wg.Add(1)
-		go func(genJSONPath string) {
-			defer wg.Done()
-			if opts, err := processGenJSON(genJSONPath); err != nil {
-				arch.Cancel(err)
-			} else {
-				items <- &namedItem{
-					isolate.Archive(arch, opts),
-					strippedIsolatedName(opts.Isolated),
-				}
-			}
-		}(genJSONPath)
-	}
-	go func() {
-		wg.Wait()
-		close(items)
-	}()
-
-	data := map[string]isolated.HexDigest{}
-	var digests []string
-	for item := range items {
-		item.WaitForHashed()
-		if item.Error() == nil {
-			d := item.Digest()
-			data[item.name] = d
-			digests = append(digests, string(d))
-			al.Printf("%s  %s\n", d, item.name)
-		} else {
-			al.Fprintf(os.Stderr, "%s  %s\n", item.name, item.Error())
-		}
-	}
-	err := arch.Close()
-	// Only write the file once upload is confirmed.
-	if err == nil && dumpJSONPath != "" {
-		err = writeJSONDigestFile(dumpJSONPath, data)
-	}
-
-	stats := arch.Stats()
-	al.LogSummary(ctx, int64(stats.TotalHits()), int64(stats.TotalMisses()), stats.TotalBytesHits(), stats.TotalBytesPushed(), digests)
-
-	return err
-}
-
-// doBatchExpArchive archives a series of isolates specified by genJSONPaths, using the new exparchive codepath.
-func doBatchExpArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentUploads int, genJSONPaths []string) error {
+// batchArchive archives a series of isolates specified by genJSONPaths.
+func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentUploads int, genJSONPaths []string) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
