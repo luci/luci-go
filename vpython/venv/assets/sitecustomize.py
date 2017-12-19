@@ -12,16 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file is added to `vpython`-generated VirtualEnvs in order for scripts run
-# in this VirtualEnv via vpython to circle back to the vpython binary which
-# invoked them. This allows python scripts invoked by vpython in some
-# environment "X" to invoke other scripts, using sys.executable, in environment
-# "Y", simply by using sys.executable.
-def _init():
-  import sys, os
-  vpython_exe = os.environ.pop('_VPYTHON_EXE', None)
-  if vpython_exe:
-    sys.real_executable = sys.executable
-    sys.executable = vpython_exe
-
-_init()
+# This file is added to `vpython`-generated VirtualEnvs. Currently it has no
+# functionality, but is left as a placeholder for future extensions.

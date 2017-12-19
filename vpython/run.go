@@ -16,7 +16,7 @@ package vpython
 
 import (
 	"os"
-	"path/filepath"
+	"strings"
 
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
@@ -28,41 +28,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-const (
-	// VPythonExeENV is the exported environment variable for the path of the
-	// vpython executable itself. This is used by the VirtualEnv's
-	// sitecustomize.py to replace sys.executable with an absolute path to the
-	// vpython binary. This means that Python scripts running inside a vpython
-	// virtualenv will automatically use vpython when they run things via
-	// sys.executable.
-	VPythonExeENV = "_VPYTHON_EXE"
-)
-
 type runCommand struct {
 	args    []string
 	env     environ.Env
 	workDir string
-}
-
-// Sets the _VPYTHON_EXE envvar so that the VirtualEnv's injected
-// sitecustomize.py can replace sys.executable with our executable. This is done
-// so that scripts invoking other scripts via sys.executable:
-//   1) Don't leak their env into the other script (creating accidental
-//      dependency from the other script onto our own environment)
-//   2) Allows the other script to specify its own environment.
-func setVPythonExeEnv(e *environ.Env) error {
-	executable, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	if executable, err = filepath.EvalSymlinks(executable); err != nil {
-		return err
-	}
-	if executable, err = filepath.Abs(executable); err != nil {
-		return err
-	}
-	e.Set(VPythonExeENV, executable)
-	return nil
 }
 
 // Run sets up a Python VirtualEnv and executes the supplied Options.
@@ -96,8 +65,9 @@ func Run(c context.Context, opts Options) error {
 		python.IsolateEnvironment(&e)
 
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
-
-		setVPythonExeEnv(&e)
+		// Prepend BinDir to $PATH
+		e.Set("PATH", strings.Join(
+			[]string{ve.BinDir, e.GetEmpty("PATH")}, string(os.PathListSeparator)))
 
 		// Run our bootstrapped Python command.
 		logging.Debugf(c, "Python environment:\nWorkDir: %s\nEnv: %s", opts.WorkDir, e)

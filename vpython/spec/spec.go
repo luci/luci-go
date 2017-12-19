@@ -95,7 +95,7 @@ func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 //
 // If not empty, the contents of extra are prefixed to hash string. This can
 // be used to factor additional influences into the spec hash.
-func Hash(spec *vpython.Spec, rt *vpython.Runtime, extra string) string {
+func Hash(spec *vpython.Spec, rt *vpython.Runtime, extra ...string) string {
 	mustMarshal := func(msg proto.Message) []byte {
 		data, err := proto.Marshal(msg)
 		if err != nil {
@@ -113,8 +113,8 @@ func Hash(spec *vpython.Spec, rt *vpython.Runtime, extra string) string {
 	}
 
 	hash := sha256.New()
-	if extra != "" {
-		mustWrite(fmt.Fprintf(hash, "%s:", extra))
+	for _, s := range extra {
+		mustWrite(fmt.Fprintf(hash, "%s:", s))
 	}
 	mustWrite(fmt.Fprintf(hash, "%s:", vpython.Version))
 	mustWrite(hash.Write(specData))

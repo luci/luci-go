@@ -171,6 +171,13 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 }
 
 func (a *application) mainImpl(c context.Context, argv0 string, args []string) error {
+	// First things first; We never want to see a VirtualEnv on $PATH. This can
+	// lead to identifying a VirtualEnv python as "our base python", or passing
+	// ever-accumulating $PATH values as vpython processes call vpython processes
+	// (since vpython puts a VirtualEnv at the front of $PATH on every usage).
+	var prunedPaths []string
+	a.opts.Environ, prunedPaths = venv.StripVirtualEnvPaths(a.opts.Environ)
+
 	// Identify the "self" executable. Use this to construct a "lookPath", which
 	// will be used to locate the base Python interpreter.
 	lp := lookPath{
@@ -210,6 +217,10 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	}
 
 	c = a.logConfig.Set(c)
+
+	for _, path := range prunedPaths {
+		logging.Infof(c, "Pruned VirtualEnv from $PATH: %q", path)
+	}
 
 	// If a spec path was manually specified, load and use it.
 	if a.specPath != "" {
