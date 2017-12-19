@@ -19,14 +19,20 @@ package prpc
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 const (
@@ -68,19 +74,19 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 	return formats[0].Format, nil
 }
 
-// respondMessage encodes msg to a response in the specified format.
-func respondMessage(msg proto.Message, format Format) *response {
+// writeMessage writes msg to w in the specified format.
+// c is used to log errors.
+// panics if msg is nil.
+func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, format Format) {
 	if msg == nil {
-		return errResponse(codes.Internal, 0, "pRPC: responseMessage: msg is nil")
+		panic("msg is nil")
 	}
 
-	res := response{header: http.Header{}}
-	res.header.Set(headerContentType, format.ContentType())
-
+	var body []byte
 	var err error
 	switch format {
 	case FormatBinary:
-		res.body, err = proto.Marshal(msg)
+		body, err = proto.Marshal(msg)
 
 	case FormatJSONPB:
 		var buf bytes.Buffer
@@ -90,32 +96,32 @@ func respondMessage(msg proto.Message, format Format) *response {
 		if err == nil {
 			_, err = buf.WriteRune('\n')
 		}
-		res.body = buf.Bytes()
+		body = buf.Bytes()
 
 	case FormatText:
 		var buf bytes.Buffer
 		err = proto.MarshalText(&buf, msg)
-		res.body = buf.Bytes()
+		body = buf.Bytes()
 
 	default:
 		panic(fmt.Errorf("impossible: invalid format %d", format))
 
 	}
 	if err != nil {
-		return errResponse(codes.Internal, 0, "%s", err)
+		writeError(c, w, withCode(err, codes.Internal))
+		return
 	}
 
-	return &res
-}
-
-// respondProtocolError creates a response for a pRPC protocol error.
-func respondProtocolError(err *protocolError) *response {
-	return errResponse(codes.InvalidArgument, err.status, "%s", err.err)
+	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
+	w.Header().Set(headerContentType, format.ContentType())
+	if _, err := w.Write(body); err != nil {
+		logging.WithError(err).Errorf(c, "failed to write response body")
+	}
 }
 
 // errorCode returns a most appropriate gRPC code for an error
 func errorCode(err error) codes.Code {
-	switch err {
+	switch errors.Unwrap(err) {
 	case context.DeadlineExceeded:
 		return codes.DeadlineExceeded
 
@@ -154,4 +160,45 @@ func codeStatus(code codes.Code) int {
 		return status
 	}
 	return http.StatusInternalServerError
+}
+
+// writeError writes err to w and logs it.
+func writeError(c context.Context, w http.ResponseWriter, err error) {
+	var code codes.Code
+	var httpStatus int
+	var msg string
+	if perr, ok := err.(*protocolError); ok {
+		code = codes.InvalidArgument
+		msg = perr.err.Error()
+		httpStatus = perr.status
+	} else {
+		code = errorCode(err)
+		msg = grpc.ErrorDesc(err)
+		httpStatus = codeStatus(code)
+	}
+
+	var body string
+	switch code {
+	case codes.Internal, codes.Unknown:
+		logging.Fields{
+			"code": code,
+		}.Errorf(c, "%s", msg)
+		body = "Internal Server Error"
+	default:
+		body = msg
+	}
+
+	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(code)))
+	w.Header().Set(headerContentType, "text/plain")
+	w.WriteHeader(httpStatus)
+	if _, err := io.WriteString(w, body); err != nil {
+		logging.WithError(err).Errorf(c, "failed to write response body")
+		// The header is already written. There is nothing more we can do.
+		return
+	}
+	io.WriteString(w, "\n")
+}
+
+func withCode(err error, c codes.Code) error {
+	return status.Error(c, err.Error())
 }
