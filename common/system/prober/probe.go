@@ -171,7 +171,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 		pathDirs = strings.Split(env.GetEmpty("PATH"), string(os.PathListSeparator))
 	}
 
-	// Build our list of directories to check for Git.
+	// Build our list of directories to check for Target.
 	checkDirs := make([]string, 0, len(pathDirs)+len(p.RelativePathOverride))
 	if selfDir != "" {
 		for _, rpo := range p.RelativePathOverride {
@@ -180,7 +180,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 	}
 	checkDirs = append(checkDirs, pathDirs...)
 
-	// Iterate through each check directory and look for a Git candidate within
+	// Iterate through each check directory and look for a Target candidate within
 	// it.
 	checked := make(map[string]struct{}, len(checkDirs))
 	for _, dir := range checkDirs {

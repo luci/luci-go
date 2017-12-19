@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/spec"
+	"go.chromium.org/luci/vpython/venv/assets"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -31,6 +32,12 @@ import (
 
 	"golang.org/x/net/context"
 )
+
+// EnvironmentVersion is an environment version string. It must advance each
+// time the layout of a VirtualEnv environment changes.
+const EnvironmentVersion = "v3"
+
+const siteCustomizePy = "sitecustomize.py"
 
 // Config is the configuration for a managed VirtualEnv.
 //
@@ -203,7 +210,8 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 // EnvName returns the VirtualEnv environment name for the environment that cfg
 // describes.
 func (cfg *Config) envNameForSpec(s *vpython.Spec, rt *vpython.Runtime) string {
-	name := spec.Hash(s, rt, EnvironmentVersion)
+	name := spec.Hash(s, rt, EnvironmentVersion,
+		string(assets.GetAssetSHA256(siteCustomizePy)))
 	if cfg.MaxHashLen > 0 && len(name) > cfg.MaxHashLen {
 		name = name[:cfg.MaxHashLen]
 	}
