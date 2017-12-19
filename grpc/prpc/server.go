@@ -131,10 +131,10 @@ func (s *Server) authenticate() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		switch ctx, err := a.Authenticate(c.Context, c.Request); {
 		case transient.Tag.In(err):
-			res := errResponse(codes.Internal, http.StatusInternalServerError, escapeFmt(err.Error()))
+			res := errResponse(codes.Internal, http.StatusInternalServerError, "%s", err)
 			res.write(c.Context, c.Writer)
 		case err != nil:
-			res := errResponse(codes.Unauthenticated, http.StatusUnauthorized, escapeFmt(err.Error()))
+			res := errResponse(codes.Unauthenticated, http.StatusUnauthorized, "%s", err)
 			res.write(c.Context, c.Writer)
 		default:
 			c.Context = ctx
@@ -222,7 +222,7 @@ func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Reque
 		if perr, ok := err.(*protocolError); ok {
 			return respondProtocolError(perr)
 		}
-		return errResponse(errorCode(err), 0, escapeFmt(grpc.ErrorDesc(err)))
+		return errResponse(errorCode(err), 0, "%s", grpc.ErrorDesc(err))
 	}
 
 	if out == nil {

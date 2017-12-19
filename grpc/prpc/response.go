@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -45,13 +44,6 @@ func errResponse(code codes.Code, status int, format string, a ...interface{}) *
 		},
 		body: []byte(fmt.Sprintf(format+"\n", a...)),
 	}
-}
-
-// escapeFmt escapes format characters in a string destined for a format
-// parameter. This is used to sanitize externally-supplied strings that are
-// passed verbatim into errResponse.
-func escapeFmt(s string) string {
-	return strings.Replace(s, "%", "%%", -1)
 }
 
 // write writes r to w.
