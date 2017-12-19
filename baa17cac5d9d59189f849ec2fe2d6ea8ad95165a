@@ -22,6 +22,30 @@
       "revId": "baa17cac5d9d59189f849ec2fe2d6ea8ad95165a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fbbf7a0_b34a896b",
+        "filename": "milo/Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-19T23:52:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afb6872b_fb0327b7",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 6
+      },
+      "revId": "baa17cac5d9d59189f849ec2fe2d6ea8ad95165a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
