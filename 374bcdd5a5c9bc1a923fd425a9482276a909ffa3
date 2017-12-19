@@ -362,6 +362,30 @@
     },
     {
       "key": {
+        "uuid": "ba205170_0f2cc9a4",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "Yeah, but this will necessarily cause the hashes themselves to be different and probably non-conflicting. Doesn\u0027t really matter, though, I guess.",
+      "parentUuid": "35ce9125_29e0d2a3",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 31
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1bbdfe36_fbcaea50",
         "filename": "vpython/venv/config.go",
         "patchSetId": 2
@@ -527,6 +551,30 @@
       "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "908bfd1d_ba43ae0f",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 709,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "Let\u0027s add a comment here, then, to note that all asset files referenced here must have their checksums incorporated into the hash in \"config.go\".",
+      "parentUuid": "39fb3e03_5b735fec",
+      "range": {
+        "startLine": 709,
+        "startChar": 1,
+        "endLine": 709,
+        "endChar": 41
+      },
+      "revId": "374bcdd5a5c9bc1a923fd425a9482276a909ffa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

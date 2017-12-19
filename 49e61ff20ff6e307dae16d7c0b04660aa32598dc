@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "847510d2_c0ed6373",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "nit: Update this description, since it checks more than this now.",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 22
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14a21ded_99bb08fc",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "nit: Python",
+      "range": {
+        "startLine": 110,
+        "startChar": 36,
+        "endLine": 110,
+        "endChar": 42
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15cb0eae_664bbbda",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "So other comments aside, I think it might be easier to provide the Prober with a modified version of PATH that excludes all VirtualEnv roots. Since you already have this function implemented in \"run.go\", you could just reuse it when calling the Prober and not have to worry about any of this junk. This is a simple and effective way of asserting that no Python paths within the \"vpython\" root will be probed, period.\n\nNow that I think about it, is there any reason not to just prune all \"vpython\" root paths from PATH near the beginning of main() (after Bypass)?",
+      "range": {
+        "startLine": 112,
+        "startChar": 20,
+        "endLine": 112,
+        "endChar": 32
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb9cdd84_7ab4eadb",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "nit: VirtualEnv",
+      "range": {
+        "startLine": 113,
+        "startChar": 39,
+        "endLine": 113,
+        "endChar": 49
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c867f46_da89cad5",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "WDYT about moving this to \"venv\" as a function: \"IsVirtualEnvBinDir(path)\"?",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 115,
+        "endChar": 71
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed2505e4_1037e206",
+        "filename": "vpython/run.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-12-19T14:18:28Z",
+      "side": 1,
+      "message": "Note that this is inadequate:\n\nvenvRoot \u003d \"/path/to/foobar\"\nbinDir \u003d \"/path/to/foo/qux\"\n\nIn this case, \"HasPrefix\" is true but the asserted case is not. Actually for a number of good reasons, consider:\nvenvRoot \u003d filepath.Clean(venvRoot) + os.PathSeparator\n\nAnd use \"filepath.Clean\" on each pathElem below. This should be pretty solid.",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 128,
+        "endChar": 2
+      },
+      "revId": "49e61ff20ff6e307dae16d7c0b04660aa32598dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
