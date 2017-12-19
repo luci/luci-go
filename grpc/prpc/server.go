@@ -167,18 +167,17 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 func (s *Server) handlePOST(c *router.Context) {
 	serviceName := c.Params.ByName("service")
 	methodName := c.Params.ByName("method")
-	res := s.respond(c.Context, c.Writer, c.Request, serviceName, methodName)
-
-	s.setAccessControlHeaders(c.Context, c.Request, c.Writer, false)
+	s.setAccessControlHeaders(c, false)
+	res := s.respond(c, serviceName, methodName)
 	res.write(c.Context, c.Writer)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
-	s.setAccessControlHeaders(c.Context, c.Request, c.Writer, true)
+	s.setAccessControlHeaders(c, true)
 	c.Writer.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Request, serviceName, methodName string) *response {
+func (s *Server) respond(c *router.Context, serviceName, methodName string) *response {
 	service := s.services[serviceName]
 	if service == nil {
 		return errResponse(
@@ -198,22 +197,22 @@ func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Reque
 			serviceName)
 	}
 
-	format, perr := responseFormat(r.Header.Get(headerAccept))
+	format, perr := responseFormat(c.Request.Header.Get(headerAccept))
 	if perr != nil {
 		return respondProtocolError(perr)
 	}
 
-	c, err := parseHeader(c, r.Header)
+	methodCtx, err := parseHeader(c.Context, c.Request.Header)
 	if err != nil {
 		return respondProtocolError(withStatus(err, http.StatusBadRequest))
 	}
 
-	out, err := method.Handler(service.impl, c, func(in interface{}) error {
+	out, err := method.Handler(service.impl, methodCtx, func(in interface{}) error {
 		if in == nil {
 			return grpcutil.Errf(codes.Internal, "input message is nil")
 		}
 		// Do not collapse it to one line. There is implicit err type conversion.
-		if perr := readMessage(r, in.(proto.Message)); perr != nil {
+		if perr := readMessage(c.Request, in.(proto.Message)); perr != nil {
 			return perr
 		}
 		return nil
@@ -231,24 +230,25 @@ func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Reque
 	return respondMessage(out.(proto.Message), format)
 }
 
-func (s *Server) setAccessControlHeaders(c context.Context, r *http.Request, w http.ResponseWriter, preflight bool) {
+func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
 	// Don't write out access control headers if the origin is unspecified.
 	const originHeader = "Origin"
-	origin := r.Header.Get(originHeader)
-	if origin == "" || s.AccessControl == nil || !s.AccessControl(c, origin) {
+	origin := c.Request.Header.Get(originHeader)
+	if origin == "" || s.AccessControl == nil || !s.AccessControl(c.Context, origin) {
 		return
 	}
 
-	w.Header().Add("Access-Control-Allow-Origin", origin)
-	w.Header().Add("Vary", originHeader)
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
+	h := c.Writer.Header()
+	h.Add("Access-Control-Allow-Origin", origin)
+	h.Add("Vary", originHeader)
+	h.Add("Access-Control-Allow-Credentials", "true")
 
 	if preflight {
-		w.Header().Add("Access-Control-Allow-Headers", allowHeaders)
-		w.Header().Add("Access-Control-Allow-Methods", allowMethods)
-		w.Header().Add("Access-Control-Max-Age", allowPreflightCacheAgeSecs)
+		h.Add("Access-Control-Allow-Headers", allowHeaders)
+		h.Add("Access-Control-Allow-Methods", allowMethods)
+		h.Add("Access-Control-Max-Age", allowPreflightCacheAgeSecs)
 	} else {
-		w.Header().Add("Access-Control-Expose-Headers", exposeHeaders)
+		h.Add("Access-Control-Expose-Headers", exposeHeaders)
 	}
 }
 
