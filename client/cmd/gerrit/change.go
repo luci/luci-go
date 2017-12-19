@@ -29,6 +29,7 @@ import (
 
 type apiCallInput struct {
 	ChangeID   string      `json:"change_id,omitempty"`
+	RevisionID string      `json:"revision_id,omitempty"`
 	JSONInput  interface{} `json:"input,omitempty"`
 	QueryInput interface{} `json:"params,omitempty"`
 }
@@ -37,6 +38,7 @@ type apiCall func(context.Context, *gerrit.Client, *apiCallInput) (interface{}, 
 
 type changeRunOptions struct {
 	changeID   bool
+	revisionID bool
 	jsonInput  interface{}
 	queryInput interface{}
 }
@@ -94,6 +96,11 @@ func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 	// Verify we have a change ID if the command requires one.
 	if c.changeID && len(c.input.ChangeID) == 0 {
 		return errors.New("change-id is required")
+	}
+
+	// Verify we have a revision ID if the command requires one.
+	if c.revisionID && len(c.input.RevisionID) == 0 {
+		return errors.New("revision-id is required")
 	}
 	return nil
 }
@@ -259,6 +266,45 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-
 			return newChangeRun(authOpts, changeRunOptions{
 				changeID:   true,
 				queryInput: &gerrit.ChangeDetailsParams{},
+			}, runner)
+		},
+	}
+}
+
+func cmdSetReview(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		ri, _ := input.JSONInput.(*gerrit.ReviewInput)
+		result, err := client.SetReview(ctx, input.ChangeID, input.RevisionID, ri)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "set-review <options>",
+		ShortDesc: "sets the review on a revision of a change",
+		LongDesc: `Sets the review on a revision of a change.
+
+Input should contain a change ID, a revision ID, and a JSON payload, e.g.
+{
+  "change-id": <change-id>,
+  "revision-id": <revision-id>,
+  "input": <JSON payload>
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+For more information on revision-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+
+More information on "set review" may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:   true,
+				revisionID: true,
+				jsonInput:  &gerrit.ReviewInput{},
 			}, runner)
 		},
 	}

@@ -470,7 +470,7 @@ type ReviewerInfo struct {
 	AccountInfo
 
 	// Approvals maps label names to the approval values given by this reviewer.
-	Approvals map[string]int `json:"approvals,omitempty"`
+	Approvals map[string]string `json:"approvals,omitempty"`
 }
 
 // AddReviewerResult describes the result of adding a reviewer to a change.
