@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f85ec30d_4f66af83",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T01:42:43Z",
+      "side": 1,
+      "message": "Done, though I\u0027m not sure what a reasonable namespace name would be. I\u0027m also still figuring out how to get the host here... I could just call GetSettings, but that needs a bunch of mocking work in acl_test. I\u0027ll get around to that tomorrow.",
+      "parentUuid": "62c74e2e_641fc3e1",
+      "range": {
+        "startLine": 87,
+        "startChar": 10,
+        "endLine": 87,
+        "endChar": 26
+      },
+      "revId": "1159f37cba99880ebede1de010196a508f5e7a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4385f227_ae65f33b",
         "filename": "milo/common/acl.go",
         "patchSetId": 14
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "3b2c90eb_716a7f12",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T01:42:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4385f227_ae65f33b",
+      "range": {
+        "startLine": 92,
+        "startChar": 54,
+        "endLine": 92,
+        "endChar": 82
+      },
+      "revId": "1159f37cba99880ebede1de010196a508f5e7a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e4eaaaae_d9b4509e",
         "filename": "milo/common/acl.go",
         "patchSetId": 14
@@ -59,6 +107,30 @@
       "writtenOn": "2017-12-19T01:12:19Z",
       "side": 1,
       "message": "might as well log the key (getting it from entries, I believe |merr| \u003d\u003d |entries|, though not 100% sure).",
+      "range": {
+        "startLine": 96,
+        "startChar": 27,
+        "endLine": 96,
+        "endChar": 55
+      },
+      "revId": "1159f37cba99880ebede1de010196a508f5e7a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "670dedf5_3a447ee5",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T01:42:43Z",
+      "side": 1,
+      "message": "it might not be, if some of the entries were found in the cache or something. also if the MultiError has a non-zero length then it\u0027s considered non-nil, correct? that\u0027s why I didn\u0027t log it, because I really had no idea how to get it without using a map.",
+      "parentUuid": "e4eaaaae_d9b4509e",
       "range": {
         "startLine": 96,
         "startChar": 27,
@@ -91,6 +163,30 @@
       "revId": "1159f37cba99880ebede1de010196a508f5e7a82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64e8597a_8abde125",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-19T01:42:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8185b37_694b0da1",
+      "range": {
+        "startLine": 97,
+        "startChar": 5,
+        "endLine": 97,
+        "endChar": 10
+      },
+      "revId": "1159f37cba99880ebede1de010196a508f5e7a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
