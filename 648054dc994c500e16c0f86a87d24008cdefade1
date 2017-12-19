@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee8939c4_77e59cbc",
+        "filename": "milo/git/history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T20:48:33Z",
+      "side": 1,
+      "message": "this name is confusing because it contains cache misses too\nmaybe omit \"_hit\"?",
+      "range": {
+        "startLine": 47,
+        "startChar": 33,
+        "endLine": 47,
+        "endChar": 37
+      },
+      "revId": "648054dc994c500e16c0f86a87d24008cdefade1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8c78791_8a94a50a",
+        "filename": "milo/git/history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T20:48:33Z",
+      "side": 1,
+      "message": "nit: i find \"12 * time.Hour\" more readable because humans usually say \"12 hours\" as opposed to \"hours 12\"\nsame below",
+      "range": {
+        "startLine": 170,
+        "startChar": 15,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "648054dc994c500e16c0f86a87d24008cdefade1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
