@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c11695cd_92e7e6ea",
+        "filename": "tools/cmd/assets/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-12-19T00:51:44Z",
+      "side": 1,
+      "message": "returns\n:)",
+      "range": {
+        "startLine": 82,
+        "startChar": 46,
+        "endLine": 82,
+        "endChar": 53
+      },
+      "revId": "3f1d0fa6d61b9029cb1f4bca011a2da8d143f5aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
