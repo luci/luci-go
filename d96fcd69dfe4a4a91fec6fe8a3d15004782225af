@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3c494dd8_f422dd73",
+        "filename": "machine-db/client/cli/switches.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T23:07:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec20cccf_39be8d0c",
+      "range": {
+        "startLine": 30,
+        "startChar": 40,
+        "endLine": 30,
+        "endChar": 45
+      },
+      "revId": "d96fcd69dfe4a4a91fec6fe8a3d15004782225af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f92053de_c540be59",
         "filename": "machine-db/client/cli/switches.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "d96fcd69dfe4a4a91fec6fe8a3d15004782225af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daa2d890_f27d703a",
+        "filename": "machine-db/client/cli/switches.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-19T23:07:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f92053de_c540be59",
+      "range": {
+        "startLine": 38,
+        "startChar": 31,
+        "endLine": 38,
+        "endChar": 36
+      },
+      "revId": "d96fcd69dfe4a4a91fec6fe8a3d15004782225af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
