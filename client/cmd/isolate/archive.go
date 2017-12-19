@@ -22,7 +22,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -36,17 +35,31 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
+const (
+	// archiveThreshold is the size (in bytes) used to determine whether to add
+	// files to a tar archive before uploading. Files smaller than this size will
+	// be combined into archives before being uploaded to the server.
+	archiveThreshold = 100e3 // 100kB
+
+	// archiveMaxSize is the maximum size of the created archives.
+	archiveMaxSize = 10e6
+
+	// infraFailExit is the exit code used when the exparchive fails due to
+	// infrastructure errors (for example, failed server requests).
+	infraFailExit = 2
+)
+
 func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options>",
-		ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
-		LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache",
+		ShortDesc: "parses a .isolate file to create a .isolated file, and uploads it and all referenced files to an isolate server",
+		LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache. Small files are combined together in a tar archive before uploading.",
 		CommandRun: func() subcommands.CommandRun {
 			c := archiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.isolateFlags.Init(&c.Flags)
 			c.loggingFlags.Init(&c.Flags)
-			c.Flags.BoolVar(&c.expArchive, "exparchive", false, "Whether to use the new exparchive implementation, which tars small files before uploading them.")
+			c.Flags.BoolVar(&c.expArchive, "exparchive", true, "IGNORED (deprecated) Whether to use the new exparchive implementation, which tars small files before uploading them.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 1, "The maxiumum number of in-flight uploads.")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 				"Write isolated digests of archived trees to this file as JSON")
@@ -72,7 +85,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := c.isolateFlags.Parse(cwd, RequireIsolatedFile); err != nil {
+	if err := c.isolateFlags.Parse(cwd, RequireIsolateFile&RequireIsolatedFile); err != nil {
 		return err
 	}
 	if len(args) != 0 {
@@ -91,17 +104,13 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	al := archiveLogger{
-		logger: NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
-		start:  start,
-		quiet:  c.defaultFlags.Quiet,
+		logger:    NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
+		operation: logpb.IsolateClientEvent_ARCHIVE.Enum(),
+		start:     start,
+		quiet:     c.defaultFlags.Quiet,
 	}
 
-	if c.expArchive {
-		al.operation = logpb.IsolateClientEvent_ARCHIVE.Enum()
-		return doExpArchive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentUploads, al)
-	}
-	al.operation = logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
-	return doArchive(ctx, client, &c.ArchiveOptions, c.dumpJSON, al)
+	return archive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentUploads, al)
 }
 
 // archiveLogger reports stats to eventlog and stderr.
@@ -151,40 +160,36 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 	return fmt.Printf("%s"+format, args...)
 }
 
-// doArchive performs the archive operation for an isolate specified by archiveOpts.
-func doArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, al archiveLogger) error {
-	arch := archiver.New(ctx, client, os.Stdout)
-	CancelOnCtrlC(arch)
-	item := isolate.Archive(arch, archiveOpts)
-	item.WaitForHashed()
-	var err error
-	if err = item.Error(); err != nil {
-		al.Printf("%s  %s\n", filepath.Base(archiveOpts.Isolate), err)
-	} else {
-		filename := filepath.Base(archiveOpts.Isolate)
-		name := filename[:len(filename)-len(filepath.Ext(filename))]
-		summary := IsolatedSummary{
-			Name:   name,
-			Digest: item.Digest(),
-		}
-		printSummary(al, summary)
-		if err := dumpSummaryJSON(dumpJSON, summary); err != nil {
-			al.Printf("failed to dump json: %v", err)
-		}
-	}
-	if err2 := arch.Close(); err == nil {
-		err = err2
+// archive performs the archive operation for an isolate specified by archiveOpts.
+// dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
+func archive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, concurrentUploads int, al archiveLogger) error {
+	// Set up a checker and uploader.
+	checker := NewChecker(ctx, client)
+	uploader := NewUploader(ctx, client, concurrentUploads)
+	archiver := NewTarringArchiver(checker, uploader)
+
+	isolSummary, err := archiver.Archive(archiveOpts)
+	if err != nil {
+		return err
 	}
 
-	stats := arch.Stats()
-
-	var digests []string
-	if item.Error() != nil {
-		digests = []string{string(item.Digest())}
+	// Make sure that all pending items have been checked.
+	if err := checker.Close(); err != nil {
+		return err
 	}
 
-	al.LogSummary(ctx, int64(stats.TotalHits()), int64(stats.TotalMisses()), stats.TotalBytesHits(), stats.TotalBytesPushed(), digests)
-	return err
+	// Make sure that all the uploads have completed successfully.
+	if err := uploader.Close(); err != nil {
+		return err
+	}
+
+	printSummary(al, isolSummary)
+	if err := dumpSummaryJSON(dumpJSON, isolSummary); err != nil {
+		return err
+	}
+
+	al.LogSummary(ctx, int64(checker.Hit.Count), int64(checker.Miss.Count), units.Size(checker.Hit.Bytes), units.Size(checker.Miss.Bytes), []string{string(isolSummary.Digest)})
+	return nil
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
