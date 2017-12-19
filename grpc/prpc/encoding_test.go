@@ -125,6 +125,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "5")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "not found\n")
+			So(log, memlogger.ShouldHaveLog, logging.Warning, "prpc: responding with NotFound error: not found")
 		})
 
 		Convey("internal error", func() {
@@ -133,9 +134,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "13")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
-			So(log, memlogger.ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
-				"code": codes.Internal,
-			})
+			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Internal error: errmsg")
 		})
 
 		Convey("unknown error", func() {
@@ -144,9 +143,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "2")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
-			So(log, memlogger.ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
-				"code": codes.Unknown,
-			})
+			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Unknown error: errmsg")
 		})
 	})
 }
