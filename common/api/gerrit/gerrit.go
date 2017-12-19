@@ -76,15 +76,27 @@ type Reviewers struct {
 	Removed  []AccountInfo `json:"REMOVED"`
 }
 
-// AccountInfo contains fields associated with a Gerrit account.
+// AccountInfo contains information about an account.
 type AccountInfo struct {
-	AccountID int64 `json:"_account_id"`
+	// AccountID is the numeric ID of the account managed by Gerrit, and is guaranteed to
+	// be unique.
+	AccountID int `json:"_account_id,omitempty"`
 
-	// The following fields will only be populated if the DETAILED_ACCOUNTS
-	// option is specified in the query.
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	UserName string `json:"username"`
+	// Name is the full name of the user.
+	Name string `json:"name,omitempty"`
+
+	// Email is the email address the user prefers to be contacted through.
+	Email string `json:"email,omitempty"`
+
+	// SecondaryEmails is a list of secondary email addresses of the user.
+	SecondaryEmails []string `json:"secondary_emails,omitempty"`
+
+	// Username is the username of the user.
+	Username string `json:"username,omitempty"`
+
+	// MoreAccounts represents whether the query would deliver more results if not limited.
+	// Only set on the last account that is returned.
+	MoreAccounts bool `json:"_more_accounts,omitempty"`
 }
 
 // ValidateGerritURL validates Gerrit URL for use in this package.
@@ -367,6 +379,164 @@ func (c *Client) IsChangePureRevert(ctx context.Context, changeID string) (bool,
 
 	}
 	return resp.IsPureRevert, nil
+}
+
+// ReviewerInput contians information for adding a reviewer to a change.
+//
+// TODO(mknyszek): Add support for notify_details.
+type ReviewerInput struct {
+	// Reviewer is an account-id that should be added as a reviewer, or a group-id for which
+	// all members should be added as reviewers. If Reviewer identifies both an account and a
+	// group, only the account is added as a reviewer to the change.
+	//
+	// More information on account-id may be found here:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+	//
+	// More information on group-id may be found here:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-groups.html#group-id
+	Reviewer string `json:"reviewer"`
+
+	// State is the state in which to add the reviewer. Possible reviewer states are REVIEWER
+	// and CC. If not given, defaults to REVIEWER.
+	State string `json:"state,omitempty"`
+
+	// Confirmed represents whether adding the reviewer is confirmed.
+	//
+	// The Gerrit server may be configured to require a confirmation when adding a group as
+	// a reviewer that has many members.
+	Confirmed bool `json:"confirmed"`
+
+	// Notify is an enum specifying whom to send notifications to.
+	//
+	// Valid values are NONE, OWNER, OWNER_REVIEWERS, and ALL.
+	//
+	// Optional. The default is ALL.
+	Notify string `json:"notify,omitempty"`
+}
+
+// ReviewInput contains information for adding a review to a revision.
+//
+// TODO(mknyszek): Add support for comments, robot_comments, drafts, notify, and
+// omit_duplicate_comments.
+type ReviewInput struct {
+	// Message is the message to be added as a review comment.
+	Message string `json:"message,omitempty"`
+
+	// Tag represents a tag to apply to review comment messages, votes, and inline comments.
+	//
+	// Tags may be used by CI or other automated systems to distinguish them from human
+	// reviews.
+	Tag string `json:"tag,omitempty"`
+
+	// Labels represents the votes that should be added to the revision as a map of label names
+	// to voting values.
+	Labels map[string]int `json:"labels,omitempty"`
+
+	// Notify is an enum specifying whom to send notifications to.
+	//
+	// Valid values are NONE, OWNER, OWNER_REVIEWERS, and ALL.
+	//
+	// Optional. The default is ALL.
+	Notify string `json:"notify,omitempty"`
+
+	// OnBehalfOf is an account-id which the review should be posted on behalf of.
+	//
+	// To use this option the caller must have granted labelAs-NAME permission for all keys
+	// of labels.
+	//
+	// More information on account-id may be found here:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+	OnBehalfOf string `json:"on_behalf_of,omitempty"`
+
+	// Reviewers is a list of ReviewerInput representing reviewers that should be added to the change. Optional.
+	Reviewers []ReviewerInput `json:"reviewers,omitempty"`
+
+	// Ready, if set to true, will move the change from WIP to ready to review if possible.
+	//
+	// It is an error for both Ready and WorkInProgress to be true.
+	Ready bool `json:"ready,omitempty"`
+
+	// WorkInProgress sets the work-in-progress bit for the change.
+	//
+	// It is an error for both Ready and WorkInProgress to be true.
+	WorkInProgress bool `json:"work_in_progress,omitempty"`
+}
+
+// ReviewerInfo contains information about a reviewer and their votes on a change.
+//
+// It has the same fields as AccountInfo, except the AccountID is optional if an unregistered reviewer
+// was added.
+type ReviewerInfo struct {
+	AccountInfo
+
+	// Approvals maps label names to the approval values given by this reviewer.
+	Approvals map[string]int `json:"approvals,omitempty"`
+}
+
+// AddReviewerResult describes the result of adding a reviewer to a change.
+type AddReviewerResult struct {
+	// Input is the value of the `reviewer` field from ReviewerInput set while adding the reviewer.
+	Input string `json:"input"`
+
+	// Reviewers is a list of newly added reviewers.
+	Reviewers []ReviewerInfo `json:"reviewers,omitempty"`
+
+	// CCs is a list of newly CCed accounts. This field will only appear if the requested `state`
+	// for the reviewer was CC and NoteDb is enabled on the server.
+	CCs []ReviewerInfo `json:"ccs,omitempty"`
+
+	// Error is a message explaining why the reviewer could not be added.
+	//
+	// If a group was specified in the input and an error is returned, that means none of the
+	// members were added as reviewer.
+	Error string `json:"error,omitempty"`
+
+	// Confirm represents whether adding the reviewer requires confirmation.
+	Confirm bool `json:"confirm,omitempty"`
+}
+
+// ReviewResult contains information regarding the updates that were made to a review.
+type ReviewResult struct {
+	// Labels is a map of labels to values after the review was posted.
+	//
+	// nil if any reviewer additions were rejected.
+	Labels map[string]int `json:"labels,omitempty"`
+
+	// Reviewers is a map of accounts or group identifiers to an AddReviewerResult representing
+	// the outcome of adding the reviewer.
+	//
+	// Absent if no reviewer additions were requested.
+	Reviewers map[string]AddReviewerResult `json:"reviewers,omitempty"`
+
+	// Ready marks if the change was moved from WIP to ready for review as a result of this action.
+	Ready bool `json:"ready,omitempty"`
+}
+
+// SetReview sets a review on a revision, optionally also publishing
+// draft comments, setting labels, adding reviewers or CCs, and modifying
+// the work in progress property.
+//
+// Returns a ReviewResult which describes the applied labels and any added reviewers.
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+//
+// The revisionID parameter may be in any of the forms supported by Gerrit:
+//   - "current"
+//   - a commit ID
+//   - "0" or the literal "edit" for a change edit
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+func (c *Client) SetReview(ctx context.Context, changeID string, revisionID string, ri *ReviewInput) (*ReviewResult, error) {
+	var resp ReviewResult
+	path := fmt.Sprintf("a/changes/%s/revisions/%s/review", url.PathEscape(changeID), url.PathEscape(revisionID))
+	if _, err := c.post(ctx, path, ri, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }
 
 func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) (int, error) {
