@@ -11,8 +11,8 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/info"
 
@@ -67,7 +67,7 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 	callerID := state.User().Identity
 	if callerID != state.PeerIdentity() {
 		logging.Errorf(c, "Trying to use delegation, it's forbidden")
-		return nil, grpc.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
+		return nil, status.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
 	}
 
 	// Check that the request is allowed by the rules, fill in defaults.
@@ -87,7 +87,7 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 	// just hits local memory cache.
 	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
 	// Generate and sign the token.
@@ -142,7 +142,7 @@ func (r *MintOAuthTokenGrantRPC) validateRequest(c context.Context, req *minter.
 	// Reject obviously bad requests.
 	if err := r.checkRequestFormat(req); err != nil {
 		logging.WithError(err).Errorf(c, "Bad request")
-		return nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}
 
 	// TODO(vadimsh): Verify that this user is present by requiring the end user's
@@ -190,7 +190,7 @@ func (r *MintOAuthTokenGrantRPC) checkRules(c context.Context, req *minter.MintO
 	rules, err := r.Rules(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to load service accounts rules")
-		return nil, grpc.Errorf(codes.Internal, "failed to load service accounts rules")
+		return nil, status.Errorf(codes.Internal, "failed to load service accounts rules")
 	}
 
 	rule, err := rules.Check(c, &RulesQuery{
@@ -205,7 +205,7 @@ func (r *MintOAuthTokenGrantRPC) checkRules(c context.Context, req *minter.MintO
 	// ValidityDuration check is specific to this RPC, it's not done by 'Check'.
 	if req.ValidityDuration > rule.Rule.MaxGrantValidityDuration {
 		logging.Errorf(c, "Requested validity is larger than max allowed: %d > %d", req.ValidityDuration, rule.Rule.MaxGrantValidityDuration)
-		return nil, grpc.Errorf(codes.InvalidArgument, "per rule %q the validity duration should be <= %d", rule.Rule.Name, rule.Rule.MaxGrantValidityDuration)
+		return nil, status.Errorf(codes.InvalidArgument, "per rule %q the validity duration should be <= %d", rule.Rule.Name, rule.Rule.MaxGrantValidityDuration)
 	}
 
 	// Note that AllowedScopes is checked later during MintOAuthTokenViaGrant.
@@ -229,7 +229,7 @@ func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter
 	id, err := revocation.GenerateTokenID(c, tokenIDSequenceKind)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Error when generating token ID")
-		return nil, nil, grpc.Errorf(codes.Internal, "error when generating token ID - %s", err)
+		return nil, nil, status.Errorf(codes.Internal, "error when generating token ID - %s", err)
 	}
 
 	now := clock.Now(c).UTC()
@@ -247,7 +247,7 @@ func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter
 	signed, err := SignGrant(c, r.Signer, body)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Error when signing the token")
-		return nil, nil, grpc.Errorf(codes.Internal, "error when signing the token - %s", err)
+		return nil, nil, status.Errorf(codes.Internal, "error when signing the token - %s", err)
 	}
 
 	return &minter.MintOAuthTokenGrantResponse{

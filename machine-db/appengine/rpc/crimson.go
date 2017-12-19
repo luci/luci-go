@@ -18,8 +18,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -32,7 +32,7 @@ import (
 // internalError logs and returns an internal gRPC error.
 func internalError(c context.Context, err error) error {
 	errors.Log(c, err)
-	return grpc.Errorf(codes.Internal, "Internal server error")
+	return status.Errorf(codes.Internal, "Internal server error")
 }
 
 // isAuthorized returns whether the current user is authorized to use the Crimson API.
@@ -51,7 +51,7 @@ func authPrelude(c context.Context, methodName string, req proto.Message) (conte
 	case err != nil:
 		return c, internalError(c, err)
 	case !authorized:
-		return c, grpc.Errorf(codes.PermissionDenied, "Unauthorized user")
+		return c, status.Errorf(codes.PermissionDenied, "Unauthorized user")
 	}
 	return c, nil
 }

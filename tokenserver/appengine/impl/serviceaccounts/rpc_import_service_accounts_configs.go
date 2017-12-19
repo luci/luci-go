@@ -6,8 +6,8 @@ package serviceaccounts
 
 import (
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -26,7 +26,7 @@ func (r *ImportServiceAccountsConfigsRPC) ImportServiceAccountsConfigs(c context
 	rev, err := r.RulesCache.ImportConfigs(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to fetch service accounts configs")
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
 }

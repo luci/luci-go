@@ -19,9 +19,9 @@ package svcmux
 
 import (
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // VersionMetadataKey is key in gRPC metadata that specifies requested
@@ -42,5 +42,5 @@ func GetServiceVersion(c context.Context, defaultVer string) string {
 // NoImplementation creates an error for a service version that does not have an
 // implementation.
 func NoImplementation(version string) error {
-	return grpc.Errorf(codes.Unimplemented, "version %s not implemented", version)
+	return status.Errorf(codes.Unimplemented, "version %s not implemented", version)
 }

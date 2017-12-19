@@ -15,15 +15,15 @@
 package apiservers
 
 import (
+	"github.com/golang/protobuf/ptypes/empty"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
 	"go.chromium.org/luci/scheduler/appengine/presentation"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
-	"github.com/golang/protobuf/ptypes/empty"
 )
 
 // SchedulerServer implements scheduler.Scheduler API.
@@ -49,14 +49,14 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 		ejobs, err = s.Engine.GetVisibleProjectJobs(ctx, in.GetProject())
 	}
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
+		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
 	}
 
 	jobs := make([]*scheduler.Job, len(ejobs))
 	for i, ej := range ejobs {
 		traits, err := presentation.GetJobTraits(ctx, s.Catalog, ej)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal, "failed to get traits: %s", err)
+			return nil, status.Errorf(codes.Internal, "failed to get traits: %s", err)
 		}
 		jobs[i] = &scheduler.Job{
 			JobRef: &scheduler.JobRef{
@@ -82,9 +82,9 @@ func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invoc
 	einvs, cursor, err := s.Engine.ListVisibleInvocations(ctx, getJobId(in.GetJobRef()), pageSize, in.GetCursor())
 	switch {
 	case err == engine.ErrNoSuchJob:
-		return nil, grpc.Errorf(codes.NotFound, "Job does not exist or no access")
+		return nil, status.Errorf(codes.NotFound, "Job does not exist or no access")
 	case err != nil:
-		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
+		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
 	}
 	invs := make([]*scheduler.Invocation, len(einvs))
 	for i, einv := range einvs {
@@ -144,13 +144,13 @@ func runAction(ctx context.Context, jobRef *scheduler.JobRef, action func() erro
 	case err == nil:
 		return &empty.Empty{}, nil
 	case err == engine.ErrNoSuchJob:
-		return nil, grpc.Errorf(codes.NotFound, "no such job or no READ permission")
+		return nil, status.Errorf(codes.NotFound, "no such job or no READ permission")
 	case err == engine.ErrNoOwnerPermission:
-		return nil, grpc.Errorf(codes.PermissionDenied, "no OWNER permission")
+		return nil, status.Errorf(codes.PermissionDenied, "no OWNER permission")
 	case err == engine.ErrNoSuchInvocation:
-		return nil, grpc.Errorf(codes.NotFound, "no such invocation")
+		return nil, status.Errorf(codes.NotFound, "no such invocation")
 	default:
-		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
+		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
 	}
 }
 

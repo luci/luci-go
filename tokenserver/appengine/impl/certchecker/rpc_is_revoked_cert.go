@@ -18,8 +18,8 @@ import (
 	"math/big"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
@@ -32,20 +32,20 @@ type IsRevokedCertRPC struct {
 func (r *IsRevokedCertRPC) IsRevokedCert(c context.Context, req *admin.IsRevokedCertRequest) (*admin.IsRevokedCertResponse, error) {
 	sn := big.Int{}
 	if _, ok := sn.SetString(req.Sn, 0); !ok {
-		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'sn'")
+		return nil, status.Errorf(codes.InvalidArgument, "can't parse 'sn'")
 	}
 
 	checker, err := GetCertChecker(c, req.Ca)
 	if err != nil {
 		if details, ok := err.(Error); ok && details.Reason == NoSuchCA {
-			return nil, grpc.Errorf(codes.NotFound, "no such CA: %q", req.Ca)
+			return nil, status.Errorf(codes.NotFound, "no such CA: %q", req.Ca)
 		}
-		return nil, grpc.Errorf(codes.Internal, "failed to check %q CRL - %s", req.Ca, err)
+		return nil, status.Errorf(codes.Internal, "failed to check %q CRL - %s", req.Ca, err)
 	}
 
 	revoked, err := checker.CRL.IsRevokedSN(c, &sn)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "failed to check %q CRL - %s", req.Ca, err)
+		return nil, status.Errorf(codes.Internal, "failed to check %q CRL - %s", req.Ca, err)
 	}
 
 	return &admin.IsRevokedCertResponse{Revoked: revoked}, nil

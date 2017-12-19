@@ -11,8 +11,8 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/info"
 
@@ -83,7 +83,7 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 	callerID := state.User().Identity
 	if callerID != state.PeerIdentity() {
 		logging.Errorf(c, "Trying to use delegation, it's forbidden")
-		return nil, grpc.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
+		return nil, status.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
 	}
 
 	grantBody, rule, err := r.validateRequest(c, req, callerID)
@@ -104,14 +104,14 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 	})
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to mint oauth token for %q", grantBody.ServiceAccount)
-		return nil, grpc.Errorf(codes.Internal, "failed to mint oauth token for %q - %s", grantBody.ServiceAccount, err)
+		return nil, status.Errorf(codes.Internal, "failed to mint oauth token for %q - %s", grantBody.ServiceAccount, err)
 	}
 
 	// Grab a string that identifies token server version. This almost always
 	// just hits local memory cache.
 	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
 	// The RPC response.
@@ -156,7 +156,7 @@ func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *mint
 	// Reject obviously bad requests.
 	if err := r.checkRequestFormat(req); err != nil {
 		logging.WithError(err).Errorf(c, "Bad request")
-		return nil, nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
+		return nil, nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}
 
 	// Grab the token body, if it is valid.
@@ -170,7 +170,7 @@ func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *mint
 		// Note: grantBody.Proxy is part of the token already, caller knows it, so
 		// we aren't exposing any new information by returning it in the message.
 		logging.Errorf(c, "Unauthorized caller (expecting %q)", grantBody.Proxy)
-		return nil, nil, grpc.Errorf(codes.PermissionDenied, "unauthorized caller (expecting %s)", grantBody.Proxy)
+		return nil, nil, status.Errorf(codes.PermissionDenied, "unauthorized caller (expecting %s)", grantBody.Proxy)
 	}
 
 	// Check that rules still allow this token (rules could have changed since
@@ -183,7 +183,7 @@ func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *mint
 	// OAuth scopes check is specific to this RPC, it's not done by recheckRules.
 	if err := rule.CheckScopes(req.OauthScope); err != nil {
 		logging.WithError(err).Errorf(c, "Bad scopes")
-		return nil, nil, grpc.Errorf(codes.PermissionDenied, "bad scopes - %s", err)
+		return nil, nil, status.Errorf(codes.PermissionDenied, "bad scopes - %s", err)
 	}
 
 	return grantBody, rule, nil
@@ -234,7 +234,7 @@ func (r *MintOAuthTokenViaGrantRPC) decodeAndValidateToken(c context.Context, gr
 	// with non-empty InvalidityReason.
 	inspection, err := InspectGrant(c, r.Signer, grantToken)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	// This is non-nil for tokens with a valid body, even if they aren't properly
@@ -243,7 +243,7 @@ func (r *MintOAuthTokenViaGrantRPC) decodeAndValidateToken(c context.Context, gr
 	grantBody, _ := inspection.Body.(*tokenserver.OAuthTokenGrantBody)
 	if grantBody == nil {
 		logging.Errorf(c, "Malformed grant token - %s", inspection.InvalidityReason)
-		return nil, grpc.Errorf(codes.InvalidArgument, "malformed grant token - %s", inspection.InvalidityReason)
+		return nil, status.Errorf(codes.InvalidArgument, "malformed grant token - %s", inspection.InvalidityReason)
 	}
 	if logging.IsLogging(c, logging.Debug) {
 		m := jsonpb.Marshaler{Indent: "  "}
@@ -253,7 +253,7 @@ func (r *MintOAuthTokenViaGrantRPC) decodeAndValidateToken(c context.Context, gr
 
 	if inspection.InvalidityReason != "" {
 		logging.Errorf(c, "Invalid grant token - %s", inspection.InvalidityReason)
-		return nil, grpc.Errorf(codes.InvalidArgument, "invalid grant token - %s", inspection.InvalidityReason)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid grant token - %s", inspection.InvalidityReason)
 	}
 
 	// At this point we've verified 'grantToken' was issued by us (it is signed)
@@ -274,7 +274,7 @@ func (r *MintOAuthTokenViaGrantRPC) recheckRules(c context.Context, grantBody *t
 	rules, err := r.Rules(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to load service accounts rules")
-		return nil, grpc.Errorf(codes.Internal, "failed to load service accounts rules")
+		return nil, status.Errorf(codes.Internal, "failed to load service accounts rules")
 	}
 	return rules.Check(c, &RulesQuery{
 		ServiceAccount: grantBody.ServiceAccount,

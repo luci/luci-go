@@ -19,8 +19,8 @@ import (
 	"math/big"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/signing"
@@ -54,13 +54,13 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	case tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN:
 		// supported
 	default:
-		return nil, grpc.Errorf(codes.InvalidArgument, "unsupported token type %s", req.TokenType)
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported token type %s", req.TokenType)
 	}
 
 	// Deserialize the token, check its signature.
 	inspection, err := InspectToken(c, r.Signer, req.Token)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	resp := &admin.InspectMachineTokenResponse{
 		Signed:           inspection.Signed,
@@ -95,7 +95,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	caName, err := certconfig.GetCAByUniqueID(c, body.CaId)
 	switch {
 	case err != nil:
-		return nil, grpc.Errorf(codes.Internal, "can't resolve ca_id to CA name - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't resolve ca_id to CA name - %s", err)
 	case caName == "":
 		addReason("no CA with given ID")
 		return resp, nil
@@ -106,7 +106,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	certChecker, err := certchecker.GetCertChecker(c, caName)
 	switch {
 	case transient.Tag.In(err):
-		return nil, grpc.Errorf(codes.Internal, "can't fetch CRL - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't fetch CRL - %s", err)
 	case err != nil:
 		addReason(fmt.Sprintf("can't fetch CRL - %s", err))
 		return resp, nil
@@ -116,7 +116,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	sn := big.NewInt(0).SetUint64(body.CertSn)
 	revoked, err := certChecker.CRL.IsRevokedSN(c, sn)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't check CRL - %s", err)
+		return nil, status.Errorf(codes.Internal, "can't check CRL - %s", err)
 	}
 	resp.NonRevoked = !revoked
 

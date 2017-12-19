@@ -20,8 +20,8 @@ import (
 	"encoding/json"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
@@ -48,7 +48,7 @@ var apiUsage = metric.NewCounter(
 // Service is a service implementation that displays BuildBot builds.
 type Service struct{}
 
-var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Not found")
+var errNotFoundGRPC = status.Errorf(codes.NotFound, "Not found")
 
 // GetBuildbotBuildJSON implements milo.BuildbotServer.
 func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuildRequest) (
@@ -57,10 +57,10 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 	apiUsage.Add(c, 1, "GetBuildbotBuildJSON", req.Master, req.Builder, req.ExcludeDeprecated)
 
 	if req.Master == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
+		return nil, status.Errorf(codes.InvalidArgument, "No master specified")
 	}
 	if req.Builder == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
+		return nil, status.Errorf(codes.InvalidArgument, "No builder specified")
 	}
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is requesting %s/%s/%d",
@@ -100,10 +100,10 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder, req.ExcludeDeprecated)
 
 	if req.Master == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
+		return nil, status.Errorf(codes.InvalidArgument, "No master specified")
 	}
 	if req.Builder == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
+		return nil, status.Errorf(codes.InvalidArgument, "No builder specified")
 	}
 
 	limit := int(req.Limit)
@@ -157,7 +157,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	*milo.CompressedMasterJSON, error) {
 
 	if req.Name == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
+		return nil, status.Errorf(codes.InvalidArgument, "No master specified")
 	}
 
 	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "", req.ExcludeDeprecated)
@@ -233,7 +233,7 @@ func grpcCanAccessMaster(c context.Context, master string) error {
 	case common.CodeNotFound:
 		return errNotFoundGRPC
 	case common.CodeUnauthorized:
-		return grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
+		return status.Errorf(codes.Unauthenticated, "Unauthenticated request")
 	default:
 		return err
 	}

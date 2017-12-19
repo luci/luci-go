@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/server/router"
 
@@ -34,7 +34,7 @@ type greeterService struct{}
 
 func (s *greeterService) SayHello(c context.Context, req *HelloRequest) (*HelloReply, error) {
 	if req.Name == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Name unspecified")
+		return nil, status.Errorf(codes.InvalidArgument, "Name unspecified")
 	}
 
 	return &HelloReply{

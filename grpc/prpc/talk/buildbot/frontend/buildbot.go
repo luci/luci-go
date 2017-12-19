@@ -16,8 +16,8 @@ package buildbot
 
 import (
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
 )
@@ -63,13 +63,13 @@ func (s *buildbotService) Search(c context.Context, req *buildbot.SearchRequest)
 
 func (s *buildbotService) Schedule(c context.Context, req *buildbot.ScheduleRequest) (*buildbot.ScheduleResponse, error) {
 	if req.Master == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Master not specified")
+		return nil, status.Errorf(codes.InvalidArgument, "Master not specified")
 	}
 
 	res := &buildbot.ScheduleResponse{}
 	for i, b := range req.GetBuilds() {
 		if b.Builder == "" {
-			return nil, grpc.Errorf(codes.InvalidArgument, "Builder not specified")
+			return nil, status.Errorf(codes.InvalidArgument, "Builder not specified")
 		}
 
 		res.Builds = append(res.Builds, &buildbot.Build{

@@ -21,8 +21,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
@@ -47,9 +47,9 @@ func adminPrelude(serviceName string) func(context.Context, string, proto.Messag
 		logging.Infof(c, "%s: %q is calling %q", serviceName, auth.CurrentIdentity(c), method)
 		switch admin, err := auth.IsMember(c, "administrators"); {
 		case err != nil:
-			return nil, grpc.Errorf(codes.Internal, "can't check ACL - %s", err)
+			return nil, status.Errorf(codes.Internal, "can't check ACL - %s", err)
 		case !admin:
-			return nil, grpc.Errorf(codes.PermissionDenied, "not an admin")
+			return nil, status.Errorf(codes.PermissionDenied, "not an admin")
 		}
 		return c, nil
 	}
