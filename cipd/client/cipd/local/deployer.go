@@ -16,6 +16,7 @@ package local
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -32,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/common/data/sortby"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -97,7 +99,7 @@ type Deployer interface {
 	// The file is open for reading and writing.
 	TempFile(ctx context.Context, prefix string) (*os.File, error)
 
-	// CleanupTrash attemps to remove stale files.
+	// CleanupTrash attempts to remove stale files.
 	//
 	// May return errors if some files are still locked, this is fine.
 	CleanupTrash(ctx context.Context) error
@@ -193,11 +195,27 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 		return false
 	}
 
+	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
 	if err := ExtractInstance(ctx, inst, NewFileSystemDestination(destPath, d.fs), filterCipd); err != nil {
 		return common.Pin{}, err
 	}
+
+	// We want to cleanup 'destPath' if something is not right with it.
+	deleteFailedInstall := true
+	defer func() {
+		if deleteFailedInstall {
+			logging.Warningf(ctx, "Deploy aborted, cleaning up %s", destPath)
+			d.fs.EnsureDirectoryGone(ctx, destPath)
+		}
+	}()
+
+	// Read and sanity check the manifest.
 	newManifest, err := d.readManifest(ctx, destPath)
+	if err != nil {
+		return common.Pin{}, err
+	}
+	installMode, err := checkInstallMode(newManifest.InstallMode)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -215,9 +233,8 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 
 	// Install all new files to the site root.
-	err = d.addToSiteRoot(ctx, subdir, newManifest.Files, newManifest.InstallMode, pkgPath, destPath)
+	err = d.addToSiteRoot(ctx, subdir, newManifest.Files, installMode, pkgPath, destPath)
 	if err != nil {
-		d.fs.EnsureDirectoryGone(ctx, destPath)
 		return common.Pin{}, err
 	}
 
@@ -225,13 +242,24 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	// considered installed and the function must not fail. All cleanup below is
 	// best effort.
 	if err = d.setCurrentInstanceID(ctx, pkgPath, pin.InstanceID); err != nil {
-		d.fs.EnsureDirectoryGone(ctx, destPath)
 		return common.Pin{}, err
 	}
+	deleteFailedInstall = false
 
 	// Wait for async cleanup to finish.
 	wg := sync.WaitGroup{}
 	defer wg.Wait()
+
+	// When using 'copy' install mode all files (except .cipdpkg/*) are moved away
+	// from 'destPath', leaving only an empty husk with directory structure.
+	// Remove it to save some inodes.
+	if installMode == InstallModeCopy {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			removeEmptyTree(destPath, func(string) bool { return true })
+		}()
+	}
 
 	// Remove old instance directory completely.
 	if prevInstanceID != "" && prevInstanceID != pin.InstanceID {
@@ -730,16 +758,6 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (Ma
 // addToSiteRoot moves or symlinks files into the site root directory (depending
 // on passed installMode).
 func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []FileInfo, installMode InstallMode, pkgDir, srcDir string) error {
-	// On Windows only InstallModeCopy is supported.
-	if runtime.GOOS == "windows" {
-		installMode = InstallModeCopy
-	} else if installMode == "" {
-		installMode = InstallModeSymlink // default on non-Windows
-	}
-	if err := ValidateInstallMode(installMode); err != nil {
-		return err
-	}
-
 	for _, f := range files {
 		// e.g. bin/tool
 		relPath := filepath.FromSlash(f.Name)
@@ -777,10 +795,6 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 			return fmt.Errorf("impossible state")
 		}
 	}
-	// Best effort cleanup of empty directories after all files have been moved.
-	if installMode == InstallModeCopy {
-		d.removeEmptyDirs(ctx, srcDir)
-	}
 	return nil
 }
 
@@ -788,6 +802,8 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 //
 // Best effort. Logs errors and carries on.
 func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []FileInfo) {
+	dirsToCleanup := stringset.New(0)
+
 	for _, f := range files {
 		absPath, err := d.fs.RootRelToAbs(filepath.Join(subdir, filepath.FromSlash(f.Name)))
 		if err != nil {
@@ -796,21 +812,38 @@ func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, fi
 		}
 		if err := d.fs.EnsureFileGone(ctx, absPath); err != nil {
 			logging.Warningf(ctx, "Failed to remove a file from the site root: %s", err)
+		} else {
+			dirsToCleanup.Add(filepath.Dir(absPath))
 		}
 	}
-	d.removeEmptyDirs(ctx, d.fs.Root())
-}
 
-// removeEmptyDirs recursive removes empty directory subtrees.
-//
-// The root directory itself will not be removed (even if it's empty). Best
-// effort, logs errors.
-func (d *deployerImpl) removeEmptyDirs(ctx context.Context, root string) {
-	// TODO(vadimsh): Implement.
+	if dirsToCleanup.Len() != 0 {
+		subdirAbs, err := d.fs.RootRelToAbs(subdir)
+		if err != nil {
+			logging.Warningf(ctx, "Can't resolve relative %q to absolute path: %s", subdir, err)
+		} else {
+			removeEmptyTrees(ctx, subdirAbs, dirsToCleanup)
+		}
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
+
+// checkInstallMode validates the install mode and picks the correct default
+// if no install mode is given.
+func checkInstallMode(im InstallMode) (InstallMode, error) {
+	switch {
+	case runtime.GOOS == "windows":
+		return InstallModeCopy, nil // Windows supports only 'copy' mode
+	case im == "":
+		return InstallModeSymlink, nil // default on other platforms
+	}
+	if err := ValidateInstallMode(im); err != nil {
+		return "", err
+	}
+	return im, nil
+}
 
 // scanPackageDir finds a set of regular files (and symlinks) in a package
 // instance directory and returns them as FileInfo structs (with slash-separated
@@ -852,4 +885,125 @@ func scanPackageDir(ctx context.Context, dir string) ([]FileInfo, error) {
 		return nil
 	})
 	return out, err
+}
+
+// removeEmptyTrees recursively removes empty directory subtrees after some
+// files have been removed.
+//
+// It tries to avoid enumerating entire directory tree and instead recurses
+// only into directories with potentially empty subtrees. They are indicated by
+// 'empty' set with absolute paths to directories that had files removed from
+// them (so they MAY be empty now, but not necessarily).
+//
+// All paths are absolute, using native separators.
+//
+// Best effort, logs errors.
+func removeEmptyTrees(ctx context.Context, root string, empty stringset.Set) {
+	// If directory 'A/B/C' has potentially empty subtree, then so do 'A/B' and
+	// 'A' and '.'. Expand 'empty' set according to these rules. Note that 'root'
+	// itself is always is this set.
+	verboseEmpty := stringset.New(empty.Len())
+	verboseEmpty.Add(root)
+	empty.Iter(func(dir string) bool {
+		rel, err := filepath.Rel(root, dir)
+		if err != nil {
+			// Note: this should never really happen, since there are checks outside
+			// of this function.
+			logging.Warningf(ctx, "Can't compute %q relative to %q - %s", dir, root, err)
+			return true
+		}
+
+		// Here 'rel' has form 'A/B/C' or is '.' (but this is already handled).
+		if rel != "." {
+			path := root
+			for _, chunk := range strings.Split(rel, string(filepath.Separator)) {
+				path = filepath.Join(path, chunk)
+				verboseEmpty.Add(path)
+			}
+		}
+
+		return true
+	})
+
+	// Now we recursively walk through the root subtree, skipping trees we know
+	// can't be empty.
+	_, err := removeEmptyTree(root, func(candidate string) (shouldCheck bool) {
+		return verboseEmpty.Has(candidate)
+	})
+	if err != nil {
+		logging.Warningf(ctx, "Failed to cleanup empty directories under %q - %s", root, err)
+	}
+}
+
+// removeEmptyTree recursively removes an empty directory tree.
+//
+// 'path' must point to a directory (not a regular file, not a symlink).
+//
+// Returns true if deleted 'path' along with its (empty) subtree. Stops on first
+// encountered error.
+func removeEmptyTree(path string, shouldCheck func(string) bool) (deleted bool, err error) {
+	if !shouldCheck(path) {
+		return false, nil
+	}
+
+	// 'Remove' will delete the directory if it is already empty.
+	if err := os.Remove(path); err == nil || os.IsNotExist(err) {
+		return true, nil
+	}
+
+	// Otherwise need to recurse into it.
+	fd, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true, nil // someone deleted it already, this is OK
+		}
+		return false, err
+	}
+
+	closed := false
+	defer func() {
+		if !closed {
+			fd.Close()
+		}
+	}()
+
+	total := 0
+	removed := 0
+	for {
+		infos, err := fd.Readdir(100)
+		if err == io.EOF || len(infos) == 0 {
+			break
+		}
+		if err != nil {
+			return false, err
+		}
+		total += len(infos)
+		for _, info := range infos {
+			if info.IsDir() {
+				abs := filepath.Join(path, info.Name())
+				switch rmed, err := removeEmptyTree(abs, shouldCheck); {
+				case err != nil:
+					return false, err
+				case rmed:
+					removed++
+				}
+			}
+		}
+	}
+
+	// Close directory, because windows won't remove opened directory.
+	fd.Close()
+	closed = true
+
+	// The directory is definitely not empty, since we skipped some stuff.
+	if total != removed {
+		return false, nil
+	}
+
+	// The directory is most likely empty now, unless someone concurrently put
+	// files there. Unfortunately it is not trivial to detect this specific
+	// condition in a cross-platform way. So assume Remove() errors (other than
+	// IsNotExit) are due to that.
+	err = os.Remove(path)
+	return err == nil || os.IsNotExist(err), nil
 }
