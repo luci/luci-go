@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a12df331_2da2cd6f",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T22:20:44Z",
+      "side": 1,
+      "message": "here we assume that the client we received as a parameter was derived from these settings.\n\ni wonder it would be cleaner and still simple to add Use/Get functions here to put/get access client AND its host to the context. This function will get simpler because users would not longer have to create and pass client. We\u0027d initialize access client only once, somewhere at the middleware level, and tests would still be able to specify a fake access client on context",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "ae1d89bb876410646836112d57035d139c5af9e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fbb21ad_94ca9477",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T22:20:44Z",
+      "side": 1,
+      "message": "what is %s of a memcache.Item? i think we want entries[i].Key() here",
+      "range": {
+        "startLine": 107,
+        "startChar": 58,
+        "endLine": 107,
+        "endChar": 69
+      },
+      "revId": "ae1d89bb876410646836112d57035d139c5af9e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
