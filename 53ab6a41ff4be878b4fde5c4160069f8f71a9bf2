@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "693c523c_ddf7f1a2",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T22:55:17Z",
+      "side": 1,
+      "message": "Ack. We should this situation with cfgclient... there is a ton of code that nobody uses",
+      "parentUuid": "d8f303fb_1554993e",
+      "range": {
+        "startLine": 37,
+        "startChar": 11,
+        "endLine": 37,
+        "endChar": 129
+      },
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1bebe066_27f78803",
         "filename": "machine-db/appengine/config/platforms.go",
         "patchSetId": 2
@@ -574,6 +598,24 @@
       "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5d4ef6f_47eddebb",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T22:55:17Z",
+      "side": 1,
+      "message": "separate CL is fine.\ni understand the alphabet is already defined elsewhere.\nplease research what is it.\nit is likely be more restricted than \"any number of any runes\" (note that we currently don\u0027t even require this to be ASCII, e.g. app allows \"🐈\" as a name)",
+      "parentUuid": "94386fc1_19d890f0",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
