@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b327f2e2_8b3dd923",
+        "filename": "client/cmd/isolate/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1174915
+      },
+      "writtenOn": "2017-12-19T05:56:45Z",
+      "side": 1,
+      "message": "Note: Although gerrit is showing a lot of change here, this is really just the old doExpArchive, moved from exp_archive.go.",
+      "range": {
+        "startLine": 165,
+        "startChar": 5,
+        "endLine": 165,
+        "endChar": 12
+      },
+      "revId": "4f06fbfd48ee55250a2df432da27a2789ab6ecc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
