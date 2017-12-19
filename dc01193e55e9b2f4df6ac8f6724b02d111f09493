@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "121ddb58_846e5e01",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-19T06:51:15Z",
+      "side": 1,
+      "message": "did not change, except service here is variable, not field of method struct",
+      "range": {
+        "startLine": 201,
+        "startChar": 1,
+        "endLine": 231,
+        "endChar": 51
+      },
+      "revId": "dc01193e55e9b2f4df6ac8f6724b02d111f09493",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
