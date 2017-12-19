@@ -137,7 +137,10 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 					// builder.PendingBuilds and will possibly not included
 					// in CurrentBuilds in case it is experimental.
 					// Thus, not zeroing builder.PendingBuilds.
-					builder.CurrentBuilds = nil
+
+					// In contrast to Golang, nil in JSON is not a valid array.
+					// so do not set CurrentBuilds to nil.
+					builder.CurrentBuilds = make([]int, 0, len(res.Builds))
 					for _, b := range res.Builds {
 						if b.Times.Start.IsZero() {
 							builder.PendingBuilds++
