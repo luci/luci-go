@@ -43,10 +43,6 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
-// EnvironmentVersion is an environment version string. It must advance each
-// time the layout of a VirtualEnv environment changes.
-const EnvironmentVersion = "v2"
-
 // ErrNotComplete is a sentinel error returned by AssertCompleteAndLoad to
 // indicate that the Environment is missing its completion flag.
 var ErrNotComplete = errors.New("environment is not complete")
@@ -185,6 +181,7 @@ type Env struct {
 	// BinDir is the VirtualEnv "bin" directory, containing Python and installed
 	// wheel binaries.
 	BinDir string
+
 	// EnvironmentStampPath is the path to the vpython.Environment stamp file that
 	// details a constructed environment. It will be in text protobuf format, and,
 	// therefore, suitable for input to other "vpython" invocations.
@@ -710,8 +707,8 @@ func (e *Env) injectSiteCustomization(c context.Context, env []string) error {
 		return err
 	}
 
-	data := assets.GetAsset("sitecustomize.py.tmpl")
-	if err := ioutil.WriteFile(filepath.Join(basePath, "sitecustomize.py"), data, 0444); err != nil {
+	data := assets.GetAsset(siteCustomizePy)
+	if err := ioutil.WriteFile(filepath.Join(basePath, siteCustomizePy), data, 0444); err != nil {
 		return errors.Annotate(err, "cannot create sitecustomize.py").Err()
 	}
 
@@ -880,4 +877,25 @@ func mustReleaseLock(c context.Context, lock fslock.Handle, fn func() error) err
 		}
 	}()
 	return fn()
+}
+
+// StripVirtualEnvPaths looks for all $PATH elements which are part of
+// a VirtualEnv deployment (created by VPython or not), and removes them.
+//
+// This uses VirtualEnv's "activate_this.py" file to identify VirtualEnvs.
+//
+// This returns a modified copy of env and a list of pruned paths (if any).
+func StripVirtualEnvPaths(env environ.Env) (ret environ.Env, pruned []string) {
+	ret = env.Clone()
+	path := filepath.SplitList(env.GetEmpty("PATH"))
+	newPath := make([]string, 0, len(path))
+	for _, entry := range path {
+		if _, err := os.Stat(filepath.Join(entry, "activate_this.py")); err == nil {
+			pruned = append(pruned, entry)
+		} else {
+			newPath = append(newPath, entry)
+		}
+	}
+	ret.Set("PATH", strings.Join(newPath, string(filepath.ListSeparator)))
+	return
 }
