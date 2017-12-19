@@ -124,7 +124,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.7.2"
+	UserAgent = "cipd 1.7.3"
 )
 
 func init() {
@@ -206,11 +206,11 @@ type UploadSession struct {
 	URL string
 }
 
-// InstanceInfo is returned by FetchInstanceInfo.
+// InstanceInfo is information about single package instance.
 type InstanceInfo struct {
 	// Pin identifies package instance.
 	Pin common.Pin `json:"pin"`
-	// RegisteredBy is identify of whoever uploaded this instance.
+	// RegisteredBy is identity of whoever uploaded this instance.
 	RegisteredBy string `json:"registered_by"`
 	// RegisteredTs is when the instance was registered.
 	RegisteredTs UnixTime `json:"registered_ts"`
@@ -220,17 +220,19 @@ type InstanceInfo struct {
 type TagInfo struct {
 	// Tag is actual tag name ("key:value" pair).
 	Tag string `json:"tag"`
-	// RegisteredBy is identify of whoever attached this tag.
+	// RegisteredBy is identity of whoever attached this tag.
 	RegisteredBy string `json:"registered_by"`
 	// RegisteredTs is when the tag was registered.
 	RegisteredTs UnixTime `json:"registered_ts"`
 }
 
-// RefInfo is returned by FetchInstanceRefs.
+// RefInfo is returned by FetchInstanceRefs and FetchPackageRefs.
 type RefInfo struct {
 	// Ref is the ref name.
 	Ref string `json:"ref"`
-	// ModifiedBy is identify of whoever modified this ref last time.
+	// InstanceID is ID of a package instance the ref points to.
+	InstanceID string `json:"instance_id"`
+	// ModifiedBy is identity of whoever modified this ref last time.
 	ModifiedBy string `json:"modified_by"`
 	// ModifiedTs is when the ref was modified last time.
 	ModifiedTs UnixTime `json:"modified_ts"`
@@ -421,6 +423,11 @@ type Client interface {
 	// 'refs' is empty, fetches all refs, otherwise only ones specified.
 	FetchInstanceRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
 
+	// FetchPackageRefs returns information about all refs defined for a package.
+	//
+	// The returned list is sorted by modification timestamp (newest first).
+	FetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error)
+
 	// FetchInstance downloads a package instance file from the repository.
 	//
 	// It verifies that the package hash matches pin.InstanceID.
@@ -454,6 +461,11 @@ type Client interface {
 	// Returns their concrete Pins.
 	SearchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error)
 
+	// ListInstances enumerates instances of a package, most recent first.
+	//
+	// Returns an object that can be used to fetch the listing, page by page.
+	ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error)
+
 	// EnsurePackages installs, removes and updates packages in the site root.
 	//
 	// Given a description of what packages (and versions) should be installed it
@@ -474,6 +486,12 @@ type Client interface {
 
 	// ReadCounter returns the current value of the counter.
 	ReadCounter(ctx context.Context, pin common.Pin, counterName string) (Counter, error)
+}
+
+// InstanceEnumerator produces a list of instances, fetching them in batches.
+type InstanceEnumerator interface {
+	// Next returns next up to 'limit' instances or 0 if there's no more.
+	Next(ctx context.Context, limit int) ([]InstanceInfo, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1066,6 +1084,21 @@ func (client *clientImpl) SearchInstances(ctx context.Context, tag, packageName 
 	return client.remote.searchInstances(ctx, tag, packageName)
 }
 
+func (client *clientImpl) ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error) {
+	if err := common.ValidatePackageName(packageName); err != nil {
+		return nil, err
+	}
+	return &instanceEnumeratorImpl{
+		fetch: func(ctx context.Context, limit int, cursor string) ([]InstanceInfo, string, error) {
+			resp, err := client.remote.listInstances(ctx, packageName, limit, cursor)
+			if err != nil {
+				return nil, "", err
+			}
+			return resp.instances, resp.cursor, nil
+		},
+	}, nil
+}
+
 func (client *clientImpl) FetchInstanceInfo(ctx context.Context, pin common.Pin) (InstanceInfo, error) {
 	err := common.ValidatePin(pin)
 	if err != nil {
@@ -1098,8 +1131,7 @@ func (s sortByTagKey) Less(i, j int) bool {
 }
 
 func (client *clientImpl) FetchInstanceTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
-	err := common.ValidatePin(pin)
-	if err != nil {
+	if err := common.ValidatePin(pin); err != nil {
 		return nil, err
 	}
 	fetched, err := client.remote.fetchTags(ctx, pin, tags)
@@ -1111,11 +1143,21 @@ func (client *clientImpl) FetchInstanceTags(ctx context.Context, pin common.Pin,
 }
 
 func (client *clientImpl) FetchInstanceRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error) {
-	err := common.ValidatePin(pin)
-	if err != nil {
+	if err := common.ValidatePin(pin); err != nil {
 		return nil, err
 	}
 	return client.remote.fetchRefs(ctx, pin, refs)
+}
+
+func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
+	if err := common.ValidatePackageName(packageName); err != nil {
+		return nil, err
+	}
+	out, err := client.remote.fetchPackage(ctx, packageName, true)
+	if err != nil {
+		return nil, err
+	}
+	return out.refs, nil
 }
 
 func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (local.InstanceFile, error) {
@@ -1410,6 +1452,7 @@ type remote interface {
 	finalizeUpload(ctx context.Context, sessionID string) (bool, error)
 	registerInstance(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error)
 
+	fetchPackage(ctx context.Context, packageName string, withRefs bool) (*fetchPackageResponse, error)
 	deletePackage(ctx context.Context, packageName string) error
 
 	setRef(ctx context.Context, ref string, pin common.Pin) error
@@ -1421,6 +1464,7 @@ type remote interface {
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
 	searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error)
+	listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error)
 
 	incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error
 	readCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error)
@@ -1429,6 +1473,14 @@ type remote interface {
 type storage interface {
 	upload(ctx context.Context, url string, data io.ReadSeeker) error
 	download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error
+}
+
+type fetchPackageResponse struct {
+	registeredBy string
+	registeredTs time.Time
+	hidden       bool
+
+	refs []RefInfo
 }
 
 type registerInstanceResponse struct {
@@ -1454,6 +1506,11 @@ type clientBinary struct {
 type fetchClientBinaryInfoResponse struct {
 	instance     *InstanceInfo
 	clientBinary *clientBinary
+}
+
+type listInstancesResponse struct {
+	instances []InstanceInfo
+	cursor    string
 }
 
 // deleteOnClose deletes the file once it is closed.
@@ -1542,5 +1599,27 @@ func buildActionPlan(desired, existing common.PinSliceBySubdir) (aMap ActionMap)
 	if len(aMap) == 0 {
 		return nil
 	}
+	return
+}
+
+type instanceEnumeratorImpl struct {
+	// A user-supplied callback that fetches the next page of results.
+	fetch func(ctx context.Context, limit int, cursor string) (out []InstanceInfo, nextCursor string, err error)
+
+	cursor string // last fetched cursor or "" at the start of the fetch
+	done   bool   // true if fetched the last page
+}
+
+// Next returns next up to 'limit' instances or 0 if there's no more.
+func (e *instanceEnumeratorImpl) Next(ctx context.Context, limit int) (out []InstanceInfo, err error) {
+	if e.done {
+		return nil, nil
+	}
+	out, nextCursor, err := e.fetch(ctx, limit, e.cursor)
+	if err != nil {
+		return nil, err
+	}
+	e.cursor = nextCursor
+	e.done = nextCursor == ""
 	return
 }

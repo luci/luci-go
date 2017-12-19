@@ -64,6 +64,21 @@ func TestRemoteImpl(t *testing.T) {
 		return remote.registerInstance(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
+	mockFetchPackage := func(c C, reply string) (*fetchPackageResponse, error) {
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/package",
+				Query: url.Values{
+					"package_name": []string{"pkgname"},
+					"with_refs":    []string{"true"},
+				},
+				Reply: reply,
+			},
+		})
+		return remote.fetchPackage(ctx, "pkgname", true)
+	}
+
 	mockDeletePackage := func(c C, reply string) error {
 		remote := mockRemoteImpl(c, []expectedHTTPCall{
 			{
@@ -202,6 +217,37 @@ func TestRemoteImpl(t *testing.T) {
 			},
 		})
 		return remote.listPackages(ctx, "pkgpath", false, false)
+	}
+
+	mockSearchInstances := func(c C, reply string) (PinSlice, error) {
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/instance/search",
+				Query: url.Values{
+					"package_name": []string{"pkgname"},
+					"tag":          []string{"tag:v"},
+				},
+				Reply: reply,
+			},
+		})
+		return remote.searchInstances(ctx, "tag:v", "pkgname")
+	}
+
+	mockListInstances := func(c C, reply string) (*listInstancesResponse, error) {
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/instances",
+				Query: url.Values{
+					"package_name": []string{"pkgname"},
+					"limit":        []string{"123"},
+					"cursor":       []string{"cursor_value"},
+				},
+				Reply: reply,
+			},
+		})
+		return remote.listInstances(ctx, "pkgname", 123, "cursor_value")
 	}
 
 	mockAttachTags := func(c C, tags []string, body, reply string) error {
@@ -490,6 +536,60 @@ func TestRemoteImpl(t *testing.T) {
 		So(result, ShouldBeNil)
 	})
 
+	Convey("fetchPackage SUCCESS", t, func(c C) {
+		result, err := mockFetchPackage(c, `{
+				"status": "SUCCESS",
+				"package": {
+					"registered_by": "user:abc@example.com",
+					"registered_ts": "1420244414571500",
+					"hidden": true
+				},
+				"refs": [
+					{
+						"ref": "ref1",
+						"modified_by": "user:a@example.com",
+						"modified_ts": "1420244414571500"
+					},
+					{
+						"ref": "ref2",
+						"modified_by": "user:a@example.com",
+						"modified_ts": "1420244414571500"
+					}
+				]
+			}`)
+		So(err, ShouldBeNil)
+		So(result, ShouldResemble, &fetchPackageResponse{
+			registeredBy: "user:abc@example.com",
+			registeredTs: time.Unix(0, 1420244414571500000),
+			hidden:       true,
+			refs: []RefInfo{
+				{
+					Ref:        "ref1",
+					ModifiedBy: "user:a@example.com",
+					ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
+				},
+				{
+					Ref:        "ref2",
+					ModifiedBy: "user:a@example.com",
+					ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
+				},
+			},
+		})
+	})
+
+	Convey("fetchPackage PACKAGE_NOT_FOUND", t, func(c C) {
+		_, err := mockFetchPackage(c, `{"status": "PACKAGE_NOT_FOUND"}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("fetchPackage ERROR", t, func(c C) {
+		_, err := mockFetchPackage(c, `{
+				"status": "ERROR",
+				"error_message": "Some error message"
+			}`)
+		So(err, ShouldNotBeNil)
+	})
+
 	Convey("deletePackage SUCCESS", t, func(c C) {
 		So(mockDeletePackage(c, `{"status": "SUCCESS"}`), ShouldBeNil)
 	})
@@ -617,7 +717,7 @@ func TestRemoteImpl(t *testing.T) {
 					{
 						"tag": "a:b2",
 						"registered_by": "user:a@example.com",
-						"registered_ts": "bad-timestamp"
+						"registered_ts": "1420244414571500"
 					}
 				]
 			}`, nil)
@@ -631,7 +731,7 @@ func TestRemoteImpl(t *testing.T) {
 			{
 				Tag:          "a:b2",
 				RegisteredBy: "user:a@example.com",
-				RegisteredTs: UnixTime{},
+				RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
 			},
 		})
 	})
@@ -669,7 +769,7 @@ func TestRemoteImpl(t *testing.T) {
 					{
 						"ref": "ref2",
 						"modified_by": "user:a@example.com",
-						"modified_ts": "bad-timestamp"
+						"modified_ts": "1420244414571500"
 					}
 				]
 			}`, nil)
@@ -683,7 +783,7 @@ func TestRemoteImpl(t *testing.T) {
 			{
 				Ref:        "ref2",
 				ModifiedBy: "user:a@example.com",
-				ModifiedTs: UnixTime{},
+				ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
 			},
 		})
 	})
@@ -847,6 +947,85 @@ func TestRemoteImpl(t *testing.T) {
 		So(err, ShouldNotBeNil)
 		So(pkgs, ShouldBeNil)
 		So(dirs, ShouldBeNil)
+	})
+
+	Convey("searchInstances SUCCESS", t, func(c C) {
+		pins, err := mockSearchInstances(c, `{
+				"status": "SUCCESS",
+				"instances": [
+					{
+						"package_name": "pkg1",
+						"instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+					},
+					{
+						"package_name": "pkg2",
+						"instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+					}
+				]
+			}`)
+		So(err, ShouldBeNil)
+		So(pins, ShouldResemble, PinSlice{
+			{"pkg1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			{"pkg2", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+		})
+	})
+
+	Convey("searchInstances ERROR", t, func(c C) {
+		_, err := mockSearchInstances(c, `{
+				"status": "ERROR",
+				"error_message": "Some error message"
+			}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("listInstances SUCCESS", t, func(c C) {
+		result, err := mockListInstances(c, `{
+				"status": "SUCCESS",
+				"instances": [
+					{
+						"instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+						"package_name": "pkgname",
+						"registered_by": "user:a@example.com",
+						"registered_ts": "1420244414571500"
+					},
+					{
+						"instance_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+						"package_name": "pkgname",
+						"registered_by": "user:b@example.com",
+						"registered_ts": "1420244414571500"
+					}
+				],
+				"cursor": "next_cursor"
+			}`)
+		So(err, ShouldBeNil)
+		So(result, ShouldResemble, &listInstancesResponse{
+			instances: []InstanceInfo{
+				{
+					Pin:          Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+					RegisteredBy: "user:a@example.com",
+					RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
+				},
+				{
+					Pin:          Pin{"pkgname", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+					RegisteredBy: "user:b@example.com",
+					RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
+				},
+			},
+			cursor: "next_cursor",
+		})
+	})
+
+	Convey("listInstances PACKAGE_NOT_FOUND", t, func(c C) {
+		_, err := mockListInstances(c, `{"status": "PACKAGE_NOT_FOUND"}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("listInstances ERROR", t, func(c C) {
+		_, err := mockListInstances(c, `{
+				"status": "ERROR",
+				"error_message": "Some error message"
+			}`)
+		So(err, ShouldNotBeNil)
 	})
 
 	Convey("attachTags SUCCESS", t, func(c C) {
