@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c45f31d_e15f0a86",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-19T18:45:50Z",
+      "side": 1,
+      "message": "I had to do this because logging isn\u0027t actually set up until line 215 (before that it\u0027s hard coded to \"error\").",
+      "revId": "46585016da44f326f58c163cf9e1c9ea2813e5d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
