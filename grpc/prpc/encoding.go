@@ -166,19 +166,18 @@ func codeStatus(code codes.Code) int {
 func writeError(c context.Context, w http.ResponseWriter, err error, status int) {
 	// TODO(nodir): use status.FromError instead of grpc.Code and grpc.ErrorDesc
 	code := errorCode(err)
+	desc := grpc.ErrorDesc(err)
 	if status == 0 {
 		status = codeStatus(code)
 	}
 
 	var body string
-	switch code {
-	case codes.Internal, codes.Unknown:
-		logging.Fields{
-			"code": code,
-		}.Errorf(c, "%s", grpc.ErrorDesc(err))
-		body = "Internal Server Error"
-	default:
-		body = grpc.ErrorDesc(err)
+	if status >= 500 {
+		logging.Errorf(c, "prpc: responding with %s error: %s", code, desc)
+		body = http.StatusText(status)
+	} else {
+		logging.Warningf(c, "prpc: responding with %s error: %s", code, desc)
+		body = desc
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(code)))
