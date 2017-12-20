@@ -26,7 +26,7 @@ import (
 
 // Datacenter represents a datacenter.
 type Datacenter struct {
-	config.DatacenterConfig
+	config.Datacenter
 	Id int64
 }
 
@@ -70,11 +70,11 @@ func (*DatacentersTable) needsUpdate(row, cfg *Datacenter) bool {
 }
 
 // computeChanges computes the changes that need to be made to the datacenters in the database.
-func (t *DatacentersTable) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) {
+func (t *DatacentersTable) computeChanges(c context.Context, datacenters []*config.Datacenter) {
 	cfgs := make(map[string]*Datacenter, len(datacenters))
 	for _, cfg := range datacenters {
 		cfgs[cfg.Name] = &Datacenter{
-			DatacenterConfig: config.DatacenterConfig{
+			Datacenter: config.Datacenter{
 				Name:        cfg.Name,
 				Description: cfg.Description,
 			},
@@ -237,7 +237,7 @@ func (t *DatacentersTable) ids(c context.Context) map[string]int64 {
 
 // EnsureDatacenters ensures the database contains exactly the given datacenters.
 // Returns a map of datacenter names to IDs in the database.
-func EnsureDatacenters(c context.Context, cfgs []*config.DatacenterConfig) (map[string]int64, error) {
+func EnsureDatacenters(c context.Context, cfgs []*config.Datacenter) (map[string]int64, error) {
 	t := &DatacentersTable{}
 	if err := t.fetch(c); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch datacenters").Err()

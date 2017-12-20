@@ -28,29 +28,29 @@ import (
 	"go.chromium.org/luci/machine-db/api/config/v1"
 )
 
-// osesConfig is the name of the config file enumerating operating systems.
-const osesConfig = "oses.cfg"
+// osesCfg is the name of the config file enumerating operating systems.
+const osesCfg = "oses.cfg"
 
-// importOSConfigs fetches, validates, and applies operating system configs.
-func importOSConfigs(c context.Context, configSet cfgtypes.ConfigSet) error {
-	os := &config.OSesConfig{}
+// importOSes fetches, validates, and applies operating system configs.
+func importOSes(c context.Context, configSet cfgtypes.ConfigSet) error {
+	os := &config.OSes{}
 	metadata := &cfgclient.Meta{}
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, osesConfig, textproto.Message(os), metadata); err != nil {
-		return errors.Annotate(err, "failed to load %s", osesConfig).Err()
+	if err := cfgclient.Get(c, cfgclient.AsService, configSet, osesCfg, textproto.Message(os), metadata); err != nil {
+		return errors.Annotate(err, "failed to load %s", osesCfg).Err()
 	}
-	logging.Infof(c, "Found %s revision %q", osesConfig, metadata.Revision)
+	logging.Infof(c, "Found %s revision %q", osesCfg, metadata.Revision)
 
-	validationContext := &validation.Context{Context: c}
-	validationContext.SetFile(osesConfig)
-	validateOSesConfig(validationContext, os)
-	if err := validationContext.Finalize(); err != nil {
+	ctx := &validation.Context{Context: c}
+	ctx.SetFile(osesCfg)
+	validateOSes(ctx, os)
+	if err := ctx.Finalize(); err != nil {
 		return errors.Annotate(err, "invalid config").Err()
 	}
 	return nil
 }
 
-// validateOSesConfig validates oses.cfg.
-func validateOSesConfig(c *validation.Context, cfg *config.OSesConfig) {
+// validateOSes validates oses.cfg.
+func validateOSes(c *validation.Context, cfg *config.OSes) {
 	// Operating system names must be unique.
 	// Keep records of ones we've already seen.
 	names := stringset.New(len(cfg.OperatingSystem))

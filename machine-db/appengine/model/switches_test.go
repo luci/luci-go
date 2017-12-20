@@ -60,7 +60,7 @@ func TestSwitches(t *testing.T) {
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*Switch{
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        "switch 1",
 						Description: "description 1",
 						Ports:       10,
@@ -69,7 +69,7 @@ func TestSwitches(t *testing.T) {
 					RackId: 1,
 				},
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        "switch 2",
 						Description: "description 2",
 						Ports:       20,
@@ -96,13 +96,13 @@ func TestSwitches(t *testing.T) {
 		})
 
 		Convey("id lookup failure", func() {
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name: "datacenter",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name: "rack",
-							Switch: []*config.SwitchConfig{
+							Switch: []*config.Switch{
 								{
 									Name: "switch",
 								},
@@ -118,13 +118,13 @@ func TestSwitches(t *testing.T) {
 		})
 
 		Convey("addition", func() {
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name: "datacenter 1",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name: "rack 1",
-							Switch: []*config.SwitchConfig{
+							Switch: []*config.Switch{
 								{
 									Name:        "switch 1",
 									Description: "description 1",
@@ -139,7 +139,7 @@ func TestSwitches(t *testing.T) {
 						},
 						{
 							Name: "rack 2",
-							Switch: []*config.SwitchConfig{
+							Switch: []*config.Switch{
 								{
 									Name:        "switch 3",
 									Description: "description 3",
@@ -151,10 +151,10 @@ func TestSwitches(t *testing.T) {
 				},
 				{
 					Name: "datacenter 2",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name: "rack 3",
-							Switch: []*config.SwitchConfig{
+							Switch: []*config.Switch{
 								{
 									Name:        "switch 4",
 									Description: "description 4",
@@ -171,7 +171,7 @@ func TestSwitches(t *testing.T) {
 			table.computeChanges(c, dcs)
 			So(table.additions, ShouldResemble, []*Switch{
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        "switch 1",
 						Description: "description 1",
 						Ports:       10,
@@ -179,7 +179,7 @@ func TestSwitches(t *testing.T) {
 					RackId: table.racks[dcs[0].Rack[0].Name],
 				},
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        "switch 2",
 						Description: "description 2",
 						Ports:       20,
@@ -187,7 +187,7 @@ func TestSwitches(t *testing.T) {
 					RackId: table.racks[dcs[0].Rack[0].Name],
 				},
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        "switch 3",
 						Description: "description 3",
 						Ports:       30,
@@ -195,7 +195,7 @@ func TestSwitches(t *testing.T) {
 					RackId: table.racks[dcs[0].Rack[1].Name],
 				},
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        "switch 4",
 						Description: "description 4",
 						Ports:       40,
@@ -209,7 +209,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("update", func() {
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name:        "switch 1",
 					Description: "old description",
 					Ports:       10,
@@ -218,19 +218,19 @@ func TestSwitches(t *testing.T) {
 				RackId: 1,
 			})
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch 2",
 				},
 				Id:     1,
 				RackId: 1,
 			})
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name: "datacenter",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name: "rack 1",
-							Switch: []*config.SwitchConfig{
+							Switch: []*config.Switch{
 								{
 									Name:        table.current[0].Name,
 									Description: "new description",
@@ -240,7 +240,7 @@ func TestSwitches(t *testing.T) {
 						},
 						{
 							Name: "rack 2",
-							Switch: []*config.SwitchConfig{
+							Switch: []*config.Switch{
 								{
 									Name: table.current[1].Name,
 								},
@@ -255,7 +255,7 @@ func TestSwitches(t *testing.T) {
 			So(table.additions, ShouldBeEmpty)
 			So(table.updates, ShouldResemble, []*Switch{
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        dcs[0].Rack[0].Switch[0].Name,
 						Description: dcs[0].Rack[0].Switch[0].Description,
 						Ports:       dcs[0].Rack[0].Switch[0].Ports,
@@ -264,7 +264,7 @@ func TestSwitches(t *testing.T) {
 					RackId: table.racks[dcs[0].Rack[0].Name],
 				},
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        dcs[0].Rack[1].Switch[0].Name,
 						Description: dcs[0].Rack[1].Switch[0].Description,
 						Ports:       dcs[0].Rack[1].Switch[0].Ports,
@@ -278,7 +278,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("removal", func() {
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch",
 				},
 				Id:     1,
@@ -289,7 +289,7 @@ func TestSwitches(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.removals, ShouldResemble, []*Switch{
 				{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name: table.current[0].Name,
 					},
 					Id:     table.current[0].Id,
@@ -315,7 +315,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.additions = append(table.additions, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch",
 				},
 				RackId: 1,
@@ -329,7 +329,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.additions = append(table.additions, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch",
 				},
 				RackId: 1,
@@ -344,7 +344,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("ok", func() {
 			table.additions = append(table.additions, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch",
 				},
 				RackId: 1,
@@ -375,13 +375,13 @@ func TestSwitches(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.removals = append(table.removals, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -395,13 +395,13 @@ func TestSwitches(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.removals = append(table.removals, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -416,13 +416,13 @@ func TestSwitches(t *testing.T) {
 
 		Convey("ok", func() {
 			table.removals = append(table.removals, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: "switch",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -452,7 +452,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.updates = append(table.updates, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name:        "switch",
 					Description: "new description",
 					Ports:       20,
@@ -461,7 +461,7 @@ func TestSwitches(t *testing.T) {
 				RackId: 2,
 			})
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 					Ports:       10,
@@ -478,7 +478,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.updates = append(table.updates, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name:        "switch",
 					Description: "new description",
 					Ports:       20,
@@ -487,7 +487,7 @@ func TestSwitches(t *testing.T) {
 				RackId: 2,
 			})
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 					Ports:       10,
@@ -505,7 +505,7 @@ func TestSwitches(t *testing.T) {
 
 		Convey("ok", func() {
 			table.updates = append(table.updates, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name:        "switch",
 					Description: "new description",
 					Ports:       20,
@@ -514,7 +514,7 @@ func TestSwitches(t *testing.T) {
 				RackId: 2,
 			})
 			table.current = append(table.current, &Switch{
-				SwitchConfig: config.SwitchConfig{
+				Switch: config.Switch{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 					Ports:       10,
