@@ -10,11 +10,9 @@ dev:
 
 up:
 	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine
-	appcfg.py -A luci-milo update_dispatch $(projdir)/frontend/appengine
 
 up-dev:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine
-	appcfg.py -A luci-milo-dev update_dispatch $(projdir)/frontend/appengine
 
 switch:
 	gcloud --project luci-milo app versions migrate $$(gae.py version -A luci-milo --app-dir $(projdir)/frontend/appengine)
