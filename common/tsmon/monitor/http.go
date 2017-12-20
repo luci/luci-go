@@ -86,7 +86,9 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
 			if err != nil {
 				logging.WithError(err).Errorf(ctx, "Failed to read error response body")
 			} else {
-				logging.Errorf(ctx, "Monitoring push failed.  Response body: %s", body)
+				logging.Errorf(
+					ctx, "Monitoring push failed.\nResponse body: %s\nRequest body: %s",
+					body, encoded.Bytes())
 			}
 			resp.Body.Close()
 		}
