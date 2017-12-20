@@ -1,0 +1,176 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7512a337_1bc2d533",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "nit: please move it out to a sep import block",
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbaf4996_9fdec4c8",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "nit: CIDR\nbecause abbreviation in Go, see also net.ParseCIDR",
+      "range": {
+        "startLine": 38,
+        "startChar": 13,
+        "endLine": 38,
+        "endChar": 17
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "980dcc90_c1187679",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "how about aliases? do we want to allow dup aliases? sounds like it would be confusing",
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d23e2f59_436c73ff",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "ids",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 14
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edeab588_ff220661",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "maybe include the actual invalid id in the error message",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 69,
+        "endChar": 3
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f60a9ad9_83a9246c",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "ideally we don\u0027t emit this error if id is unset\n\nconsider\n\n  switch _, ok :\u003d vlans[vlan.Id]; {\n  ....above cases...\n  case ok:\n      ...\n  }",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 41
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae3b2939_da96f7a2",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "do we want to include err here so that the user is told what\u0027s invalid about it?",
+      "range": {
+        "startLine": 86,
+        "startChar": 14,
+        "endLine": 86,
+        "endChar": 32
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad32c314_b2bb9d80",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:27:25Z",
+      "side": 1,
+      "message": "ignored and unnecessary because of c.Enter above",
+      "range": {
+        "startLine": 86,
+        "startChar": 35,
+        "endLine": 86,
+        "endChar": 42
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
