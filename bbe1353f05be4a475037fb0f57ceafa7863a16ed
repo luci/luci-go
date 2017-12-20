@@ -351,6 +351,30 @@
       "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7b623863_d97f2231",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:55:38Z",
+      "side": 1,
+      "message": "Actually it doesn\u0027t even emit anything useful. err is just \"invalid CIDR address: %s\".",
+      "parentUuid": "f240194c_1999b8de",
+      "range": {
+        "startLine": 86,
+        "startChar": 14,
+        "endLine": 86,
+        "endChar": 32
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
