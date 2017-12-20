@@ -60,14 +60,14 @@ func TestDatacenters(t *testing.T) {
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*Datacenter{
 				{
-					DatacenterConfig: config.DatacenterConfig{
+					Datacenter: config.Datacenter{
 						Name:        "datacenter 1",
 						Description: "description 1",
 					},
 					Id: 1,
 				},
 				{
-					DatacenterConfig: config.DatacenterConfig{
+					Datacenter: config.Datacenter{
 						Name:        "datacenter 2",
 						Description: "description 2",
 					},
@@ -90,7 +90,7 @@ func TestDatacenters(t *testing.T) {
 		})
 
 		Convey("addition", func() {
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name:        "datacenter 1",
 					Description: "description 1",
@@ -103,13 +103,13 @@ func TestDatacenters(t *testing.T) {
 			table.computeChanges(c, dcs)
 			So(table.additions, ShouldResemble, []*Datacenter{
 				{
-					DatacenterConfig: config.DatacenterConfig{
+					Datacenter: config.Datacenter{
 						Name:        "datacenter 1",
 						Description: "description 1",
 					},
 				},
 				{
-					DatacenterConfig: config.DatacenterConfig{
+					Datacenter: config.Datacenter{
 						Name:        "datacenter 2",
 						Description: "description 2",
 					},
@@ -121,13 +121,13 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("update", func() {
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name:        "datacenter",
 					Description: "old description",
 				},
 				Id: 1,
 			})
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name:        table.current[0].Name,
 					Description: "new description",
@@ -138,7 +138,7 @@ func TestDatacenters(t *testing.T) {
 			So(table.updates, ShouldHaveLength, 1)
 			So(table.updates, ShouldResemble, []*Datacenter{
 				{
-					DatacenterConfig: config.DatacenterConfig{
+					Datacenter: config.Datacenter{
 						Name:        table.current[0].Name,
 						Description: dcs[0].Description,
 					},
@@ -150,7 +150,7 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("removal", func() {
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: "datacenter",
 				},
 				Id: 1,
@@ -160,7 +160,7 @@ func TestDatacenters(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.removals, ShouldResemble, []*Datacenter{
 				{
-					DatacenterConfig: config.DatacenterConfig{
+					Datacenter: config.Datacenter{
 						Name: table.current[0].Name,
 					},
 					Id: 1,
@@ -185,7 +185,7 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.additions = append(table.additions, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: "datacenter",
 				},
 			})
@@ -198,7 +198,7 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.additions = append(table.additions, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: "datacenter",
 				},
 			})
@@ -212,7 +212,7 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("ok", func() {
 			table.additions = append(table.additions, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: "datacenter",
 				},
 			})
@@ -241,13 +241,13 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.removals = append(table.removals, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: "datacenter",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -261,13 +261,13 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.removals = append(table.removals, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: "datacenter",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -282,13 +282,13 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("ok", func() {
 			table.removals = append(table.removals, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: "datacenter",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -318,14 +318,14 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.updates = append(table.updates, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name:        "datacenter",
 					Description: "new description",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 				},
@@ -340,14 +340,14 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.updates = append(table.updates, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name:        "datacenter",
 					Description: "new description",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 				},
@@ -363,14 +363,14 @@ func TestDatacenters(t *testing.T) {
 
 		Convey("ok", func() {
 			table.updates = append(table.updates, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name:        "datacenter",
 					Description: "new description",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Datacenter{
-				DatacenterConfig: config.DatacenterConfig{
+				Datacenter: config.Datacenter{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 				},

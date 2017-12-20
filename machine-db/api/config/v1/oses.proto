@@ -6,16 +6,16 @@ syntax = "proto3";
 
 package config;
 
-// OSConfig describes an operating system.
-message OSConfig {
+// OS describes an operating system.
+message OS {
   // The name of this operating system.
   string name = 1;
   // A description of this operating system.
   string description = 2;
 }
 
-// OSesConfig enumerates operating systems.
-message OSesConfig {
+// OSes enumerates operating systems.
+message OSes {
   // A list of operating systems.
-  repeated OSConfig operating_system = 1;
+  repeated OS operating_system = 1;
 }

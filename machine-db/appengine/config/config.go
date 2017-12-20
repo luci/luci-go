@@ -25,11 +25,11 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-// configImportHandler handles HTTP requests to reimport the config.
-func configImportHandler(c *router.Context) {
+// importHandler handles HTTP requests to reimport the config.
+func importHandler(c *router.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
 
-	if err := importConfigs(c.Context); err != nil {
+	if err := Import(c.Context); err != nil {
 		errors.Log(c.Context, err)
 		c.Writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -38,16 +38,16 @@ func configImportHandler(c *router.Context) {
 	c.Writer.WriteHeader(http.StatusOK)
 }
 
-// importConfigs fetches, validates, and applies configs from the config service.
-func importConfigs(c context.Context) error {
+// Import fetches, validates, and applies configs from the config service.
+func Import(c context.Context) error {
 	configSet := cfgclient.CurrentServiceConfigSet(c)
-	if err := importDatacenterConfigs(c, configSet); err != nil {
+	if err := importDatacenters(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import datacenters").Err()
 	}
-	if err := importOSConfigs(c, configSet); err != nil {
+	if err := importOSes(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import operating systems").Err()
 	}
-	if err := importPlatformConfigs(c, configSet); err != nil {
+	if err := importPlatforms(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import platforms").Err()
 	}
 	// TODO(smut): Import the rest of the configs.
@@ -57,5 +57,5 @@ func importConfigs(c context.Context) error {
 // InstallHandlers installs handlers for HTTP requests pertaining to configs.
 func InstallHandlers(r *router.Router, middleware router.MiddlewareChain) {
 	cronMiddleware := middleware.Extend(gaemiddleware.RequireCron)
-	r.GET("/internal/cron/import-config", cronMiddleware, configImportHandler)
+	r.GET("/internal/cron/import-config", cronMiddleware, importHandler)
 }
