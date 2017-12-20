@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4acc3811_48614ec9",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7512a337_1bc2d533",
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fbaf4996_9fdec4c8",
         "filename": "machine-db/appengine/config/vlans.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "239a8c37_05fac1cb",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fbaf4996_9fdec4c8",
+      "range": {
+        "startLine": 38,
+        "startChar": 13,
+        "endLine": 38,
+        "endChar": 17
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +124,48 @@
     },
     {
       "key": {
+        "uuid": "a65d527b_a0bc291c",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d23e2f59_436c73ff",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 14
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0e534bf8_95f445fd",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Currently I can\u0027t guarantee uniqueness.",
+      "parentUuid": "980dcc90_c1187679",
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "edeab588_ff220661",
         "filename": "machine-db/appengine/config/vlans.go",
         "patchSetId": 4
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "d0b5dd90_67fc1e1f",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "edeab588_ff220661",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 69,
+        "endChar": 3
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f60a9ad9_83a9246c",
         "filename": "machine-db/appengine/config/vlans.go",
         "patchSetId": 4
@@ -125,6 +233,30 @@
       "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "251ebb9f_2f911db0",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f60a9ad9_83a9246c",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 41
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -171,6 +303,54 @@
       "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f240194c_1999b8de",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Not sure. We\u0027re not giving the user some app-specific conditions to adhere to, I think it\u0027s reasonable to just say it\u0027s invalid and let the user look up what a CIDR block is supposed to look like. What do you think?",
+      "parentUuid": "ae3b2939_da96f7a2",
+      "range": {
+        "startLine": 86,
+        "startChar": 14,
+        "endLine": 86,
+        "endChar": 32
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc6565b8_4b93142d",
+        "filename": "machine-db/appengine/config/vlans.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T23:46:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad32c314_b2bb9d80",
+      "range": {
+        "startLine": 86,
+        "startChar": 35,
+        "endLine": 86,
+        "endChar": 42
+      },
+      "revId": "bbe1353f05be4a475037fb0f57ceafa7863a16ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
