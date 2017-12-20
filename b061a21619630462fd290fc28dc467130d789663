@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b7a7ed86_751141ad",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T22:37:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92dbbbbe_a6671972",
+      "range": {
+        "startLine": 41,
+        "startChar": 3,
+        "endLine": 41,
+        "endChar": 9
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "337bd434_6b25c4f0",
         "filename": "machine-db/appengine/config/datacenters.go",
         "patchSetId": 1
@@ -95,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "7a9128b8_9a10756f",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T22:37:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0e73ff9_c1a995d0",
+      "range": {
+        "startLine": 142,
+        "startChar": 15,
+        "endLine": 142,
+        "endChar": 25
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46f61287_5b764074",
         "filename": "machine-db/appengine/config/datacenters.go",
         "patchSetId": 1
@@ -118,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "36d220e6_234b4fc4",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T22:37:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46f61287_5b764074",
+      "range": {
+        "startLine": 144,
+        "startChar": 15,
+        "endLine": 144,
+        "endChar": 25
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1868d889_2366cc02",
         "filename": "machine-db/appengine/config/oses.go",
         "patchSetId": 1
@@ -138,6 +210,30 @@
       "revId": "b061a21619630462fd290fc28dc467130d789663",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ce1f282_87c5c168",
+        "filename": "machine-db/appengine/config/oses.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-20T22:37:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1868d889_2366cc02",
+      "range": {
+        "startLine": 32,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 13
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
