@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9bf80fcb_8bfc94fe",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-20T16:35:13Z",
+      "side": 1,
+      "message": "good point, I like this approach. I added the logic for this here, but I\u0027m debating whether it would make sense to put this in the buildbucket package. while I can imagine a similar situation in other services, I also feel like needing the host is somewhat specific to this situation (and maybe eventually this should be moved to, say, luci/server/access or something, since really this code is server-specific).\n\nadditionally, moving this to the buildbucket package and making bbAccess.BucketPermissions just use a Context would make this all somewhat inefficient, since I know c.Value() is relatively expensive due to the fact that a Context\u0027s values are represented as a linked list. if this were in the buildbucket package, we would need to call Value() twice, once to get the Host for caching, and once to get the client in bbAccess.BucketPermissions.\n\nlet me know what you think!",
+      "parentUuid": "a12df331_2da2cd6f",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "ae1d89bb876410646836112d57035d139c5af9e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9fbb21ad_94ca9477",
         "filename": "milo/common/acl.go",
         "patchSetId": 19
@@ -45,6 +69,30 @@
       "revId": "ae1d89bb876410646836112d57035d139c5af9e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d0f57b9_62c6c5b9",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-12-20T16:35:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9fbb21ad_94ca9477",
+      "range": {
+        "startLine": 107,
+        "startChar": 58,
+        "endLine": 107,
+        "endChar": 69
+      },
+      "revId": "ae1d89bb876410646836112d57035d139c5af9e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
