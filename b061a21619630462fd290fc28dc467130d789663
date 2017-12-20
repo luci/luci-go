@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "6ae0faee_18c71ab7",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T05:32:59Z",
+      "side": 1,
+      "message": "actually never mind, a valid dc name may clash with another config name, like oses",
+      "parentUuid": "337bd434_6b25c4f0",
+      "range": {
+        "startLine": 115,
+        "startChar": 2,
+        "endLine": 115,
+        "endChar": 21
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0e73ff9_c1a995d0",
         "filename": "machine-db/appengine/config/datacenters.go",
         "patchSetId": 1
