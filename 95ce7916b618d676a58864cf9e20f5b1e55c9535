@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0720d910_062fbab8",
+        "filename": "common/tsmon/monitor/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:46:11Z",
+      "side": 1,
+      "message": "should request come before response though?",
+      "range": {
+        "startLine": 90,
+        "startChar": 35,
+        "endLine": 90,
+        "endChar": 67
+      },
+      "revId": "95ce7916b618d676a58864cf9e20f5b1e55c9535",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01dd33eb_9ce25f4f",
+        "filename": "common/tsmon/monitor/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T23:46:11Z",
+      "side": 1,
+      "message": "this makes a copy of the buffer\n.Bytes() wouldn\u0027t, but fmt would still render it as a string",
+      "range": {
+        "startLine": 91,
+        "startChar": 19,
+        "endLine": 91,
+        "endChar": 27
+      },
+      "revId": "95ce7916b618d676a58864cf9e20f5b1e55c9535",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
