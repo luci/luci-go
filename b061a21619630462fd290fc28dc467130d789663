@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92dbbbbe_a6671972",
+        "filename": "machine-db/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T05:19:49Z",
+      "side": 1,
+      "message": "Import",
+      "range": {
+        "startLine": 41,
+        "startChar": 3,
+        "endLine": 41,
+        "endChar": 9
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "337bd434_6b25c4f0",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T05:19:49Z",
+      "side": 1,
+      "message": "it occurred to me that we allow dc.Name !\u003d filename. I think such inconsistency would only confuse a user who is looking at config. Please disallow it, not necessarily in this CL",
+      "range": {
+        "startLine": 115,
+        "startChar": 2,
+        "endLine": 115,
+        "endChar": 21
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0e73ff9_c1a995d0",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T05:19:49Z",
+      "side": 1,
+      "message": "this is redundant with L139",
+      "range": {
+        "startLine": 142,
+        "startChar": 15,
+        "endLine": 142,
+        "endChar": 25
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46f61287_5b764074",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T05:19:49Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 144,
+        "startChar": 15,
+        "endLine": 144,
+        "endChar": 25
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1868d889_2366cc02",
+        "filename": "machine-db/appengine/config/oses.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-20T05:19:49Z",
+      "side": 1,
+      "message": "in a different context osesCfg may be interpreted as the config itself, not file name. Consider renaming to osesFilename. Same for other file names",
+      "range": {
+        "startLine": 32,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 13
+      },
+      "revId": "b061a21619630462fd290fc28dc467130d789663",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
