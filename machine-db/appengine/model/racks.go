@@ -26,7 +26,7 @@ import (
 
 // Rack represents a rack.
 type Rack struct {
-	config.RackConfig
+	config.Rack
 	DatacenterId int64
 	Id           int64
 }
@@ -73,7 +73,7 @@ func (*RacksTable) needsUpdate(row, cfg *Rack) bool {
 }
 
 // computeChanges computes the changes that need to be made to the racks in the database.
-func (t *RacksTable) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) error {
+func (t *RacksTable) computeChanges(c context.Context, datacenters []*config.Datacenter) error {
 	cfgs := make(map[string]*Rack, len(datacenters))
 	for _, dc := range datacenters {
 		for _, cfg := range dc.Rack {
@@ -82,7 +82,7 @@ func (t *RacksTable) computeChanges(c context.Context, datacenters []*config.Dat
 				return errors.Reason("failed to determine datacenter ID for rack %q: unknown datacenter %q", cfg.Name, dc.Name).Err()
 			}
 			cfgs[cfg.Name] = &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        cfg.Name,
 					Description: cfg.Description,
 				},
@@ -251,7 +251,7 @@ func (t *RacksTable) ids(c context.Context) map[string]int64 {
 
 // EnsureRacks ensures the database contains exactly the given racks.
 // Returns a map of rack names to IDs in the database.
-func EnsureRacks(c context.Context, cfgs []*config.DatacenterConfig, datacenterIds map[string]int64) (map[string]int64, error) {
+func EnsureRacks(c context.Context, cfgs []*config.Datacenter, datacenterIds map[string]int64) (map[string]int64, error) {
 	t := &RacksTable{}
 	t.datacenters = datacenterIds
 	if err := t.fetch(c); err != nil {

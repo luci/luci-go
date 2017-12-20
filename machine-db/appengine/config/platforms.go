@@ -28,29 +28,29 @@ import (
 	"go.chromium.org/luci/machine-db/api/config/v1"
 )
 
-// platformsConfig is the name of the config file enumerating platforms.
-const platformsConfig = "platforms.cfg"
+// platformsFilename is the name of the config file enumerating platforms.
+const platformsFilename = "platforms.cfg"
 
-// importPlatformConfigs fetches, validates, and applies platform configs.
-func importPlatformConfigs(c context.Context, configSet cfgtypes.ConfigSet) error {
-	platform := &config.PlatformsConfig{}
+// importPlatforms fetches, validates, and applies platform configs.
+func importPlatforms(c context.Context, configSet cfgtypes.ConfigSet) error {
+	platform := &config.Platforms{}
 	metadata := &cfgclient.Meta{}
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, platformsConfig, textproto.Message(platform), metadata); err != nil {
-		return errors.Annotate(err, "failed to load %s", platformsConfig).Err()
+	if err := cfgclient.Get(c, cfgclient.AsService, configSet, platformsFilename, textproto.Message(platform), metadata); err != nil {
+		return errors.Annotate(err, "failed to load %s", platformsFilename).Err()
 	}
-	logging.Infof(c, "Found %s revision %q", platformsConfig, metadata.Revision)
+	logging.Infof(c, "Found %s revision %q", platformsFilename, metadata.Revision)
 
-	validationContext := &validation.Context{Context: c}
-	validationContext.SetFile(platformsConfig)
-	validatePlatformsConfig(validationContext, platform)
-	if err := validationContext.Finalize(); err != nil {
+	ctx := &validation.Context{Context: c}
+	ctx.SetFile(platformsFilename)
+	validatePlatforms(ctx, platform)
+	if err := ctx.Finalize(); err != nil {
 		return errors.Annotate(err, "invalid config").Err()
 	}
 	return nil
 }
 
-// validatePlatformsConfig validates platforms.cfg.
-func validatePlatformsConfig(c *validation.Context, cfg *config.PlatformsConfig) {
+// validatePlatforms validates platforms.cfg.
+func validatePlatforms(c *validation.Context, cfg *config.Platforms) {
 	// Platform names must be unique.
 	// Keep records of ones we've already seen.
 	names := stringset.New(len(cfg.Platform))

@@ -26,33 +26,33 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateOSesConfig(t *testing.T) {
+func TestValidateOSes(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateOSesConfig", t, func() {
+	Convey("validateOSes", t, func() {
 		context := &validation.Context{Context: context.Background()}
 
 		Convey("empty config", func() {
-			osesConfig := &config.OSesConfig{}
-			validateOSesConfig(context, osesConfig)
+			oses := &config.OSes{}
+			validateOSes(context, oses)
 			So(context.Finalize(), ShouldBeNil)
 		})
 
 		Convey("unnamed operating system", func() {
-			osesConfig := &config.OSesConfig{
-				OperatingSystem: []*config.OSConfig{
+			oses := &config.OSes{
+				OperatingSystem: []*config.OS{
 					{
 						Name: "",
 					},
 				},
 			}
-			validateOSesConfig(context, osesConfig)
+			validateOSes(context, oses)
 			So(context.Finalize(), ShouldErrLike, "operating system names are required and must be non-empty")
 		})
 
 		Convey("duplicate operating system", func() {
-			osesConfig := &config.OSesConfig{
-				OperatingSystem: []*config.OSConfig{
+			oses := &config.OSes{
+				OperatingSystem: []*config.OS{
 					{
 						Name: "duplicate",
 					},
@@ -64,13 +64,13 @@ func TestValidateOSesConfig(t *testing.T) {
 					},
 				},
 			}
-			validateOSesConfig(context, osesConfig)
+			validateOSes(context, oses)
 			So(context.Finalize(), ShouldErrLike, "duplicate operating system")
 		})
 
 		Convey("ok", func() {
-			osesConfig := &config.OSesConfig{
-				OperatingSystem: []*config.OSConfig{
+			oses := &config.OSes{
+				OperatingSystem: []*config.OS{
 					{
 						Name: "os 1",
 					},
@@ -79,7 +79,7 @@ func TestValidateOSesConfig(t *testing.T) {
 					},
 				},
 			}
-			validateOSesConfig(context, osesConfig)
+			validateOSes(context, oses)
 			So(context.Finalize(), ShouldBeNil)
 		})
 	})

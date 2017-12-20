@@ -60,7 +60,7 @@ func TestRacks(t *testing.T) {
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*Rack{
 				{
-					RackConfig: config.RackConfig{
+					Rack: config.Rack{
 						Name:        "rack 1",
 						Description: "description 1",
 					},
@@ -68,7 +68,7 @@ func TestRacks(t *testing.T) {
 					DatacenterId: 1,
 				},
 				{
-					RackConfig: config.RackConfig{
+					Rack: config.Rack{
 						Name:        "rack 2",
 						Description: "description 2",
 					},
@@ -94,10 +94,10 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("id lookup failure", func() {
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name: "datacenter",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name: "rack",
 						},
@@ -111,10 +111,10 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("addition", func() {
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name: "datacenter 1",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name:        "rack 1",
 							Description: "description 1",
@@ -123,7 +123,7 @@ func TestRacks(t *testing.T) {
 				},
 				{
 					Name: "datacenter 2",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name:        "rack 2",
 							Description: "description 2",
@@ -136,14 +136,14 @@ func TestRacks(t *testing.T) {
 			table.computeChanges(c, dcs)
 			So(table.additions, ShouldResemble, []*Rack{
 				{
-					RackConfig: config.RackConfig{
+					Rack: config.Rack{
 						Name:        "rack 1",
 						Description: "description 1",
 					},
 					DatacenterId: table.datacenters[dcs[0].Name],
 				},
 				{
-					RackConfig: config.RackConfig{
+					Rack: config.Rack{
 						Name:        "rack 2",
 						Description: "description 2",
 					},
@@ -156,7 +156,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("update", func() {
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        "rack 1",
 					Description: "old description",
 				},
@@ -164,16 +164,16 @@ func TestRacks(t *testing.T) {
 				DatacenterId: 1,
 			})
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack 2",
 				},
 				Id:           1,
 				DatacenterId: 1,
 			})
-			dcs := []*config.DatacenterConfig{
+			dcs := []*config.Datacenter{
 				{
 					Name: "datacenter 1",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name:        "rack 1",
 							Description: "new description",
@@ -182,7 +182,7 @@ func TestRacks(t *testing.T) {
 				},
 				{
 					Name: "datacenter 2",
-					Rack: []*config.RackConfig{
+					Rack: []*config.Rack{
 						{
 							Name: "rack 2",
 						},
@@ -195,7 +195,7 @@ func TestRacks(t *testing.T) {
 			So(table.additions, ShouldBeEmpty)
 			So(table.updates, ShouldResemble, []*Rack{
 				{
-					RackConfig: config.RackConfig{
+					Rack: config.Rack{
 						Name:        dcs[0].Rack[0].Name,
 						Description: dcs[0].Rack[0].Description,
 					},
@@ -203,7 +203,7 @@ func TestRacks(t *testing.T) {
 					DatacenterId: table.datacenters[dcs[0].Name],
 				},
 				{
-					RackConfig: config.RackConfig{
+					Rack: config.Rack{
 						Name:        dcs[1].Rack[0].Name,
 						Description: dcs[1].Rack[0].Description,
 					},
@@ -216,7 +216,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("removal", func() {
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack",
 				},
 				Id:           1,
@@ -227,7 +227,7 @@ func TestRacks(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.removals, ShouldResemble, []*Rack{
 				{
-					RackConfig: config.RackConfig{
+					Rack: config.Rack{
 						Name: table.current[0].Name,
 					},
 					Id:           table.current[0].Id,
@@ -253,7 +253,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.additions = append(table.additions, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack",
 				},
 				DatacenterId: 1,
@@ -267,7 +267,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.additions = append(table.additions, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack",
 				},
 				DatacenterId: 1,
@@ -282,7 +282,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("ok", func() {
 			table.additions = append(table.additions, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack",
 				},
 				DatacenterId: 1,
@@ -313,13 +313,13 @@ func TestRacks(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.removals = append(table.removals, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -333,13 +333,13 @@ func TestRacks(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.removals = append(table.removals, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -354,13 +354,13 @@ func TestRacks(t *testing.T) {
 
 		Convey("ok", func() {
 			table.removals = append(table.removals, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: "rack",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name: table.removals[0].Name,
 				},
 				Id: table.removals[0].Id,
@@ -390,7 +390,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("prepare failed", func() {
 			table.updates = append(table.updates, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        "rack",
 					Description: "new description",
 				},
@@ -398,7 +398,7 @@ func TestRacks(t *testing.T) {
 				DatacenterId: 2,
 			})
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 				},
@@ -414,7 +414,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("exec failed", func() {
 			table.updates = append(table.updates, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        "rack",
 					Description: "new description",
 				},
@@ -422,7 +422,7 @@ func TestRacks(t *testing.T) {
 				DatacenterId: 2,
 			})
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 				},
@@ -439,7 +439,7 @@ func TestRacks(t *testing.T) {
 
 		Convey("ok", func() {
 			table.updates = append(table.updates, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        "rack",
 					Description: "new description",
 				},
@@ -447,7 +447,7 @@ func TestRacks(t *testing.T) {
 				DatacenterId: 2,
 			})
 			table.current = append(table.current, &Rack{
-				RackConfig: config.RackConfig{
+				Rack: config.Rack{
 					Name:        table.updates[0].Name,
 					Description: "old description",
 				},

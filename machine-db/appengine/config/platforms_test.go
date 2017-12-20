@@ -26,33 +26,33 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidatePlatformsConfig(t *testing.T) {
+func TestValidatePlatforms(t *testing.T) {
 	t.Parallel()
 
-	Convey("validatePlatformsConfig", t, func() {
+	Convey("validatePlatforms", t, func() {
 		context := &validation.Context{Context: context.Background()}
 
 		Convey("empty config", func() {
-			platformsConfig := &config.PlatformsConfig{}
-			validatePlatformsConfig(context, platformsConfig)
+			platforms := &config.Platforms{}
+			validatePlatforms(context, platforms)
 			So(context.Finalize(), ShouldBeNil)
 		})
 
 		Convey("unnamed platform", func() {
-			platformsConfig := &config.PlatformsConfig{
-				Platform: []*config.PlatformConfig{
+			platforms := &config.Platforms{
+				Platform: []*config.Platform{
 					{
 						Name: "",
 					},
 				},
 			}
-			validatePlatformsConfig(context, platformsConfig)
+			validatePlatforms(context, platforms)
 			So(context.Finalize(), ShouldErrLike, "platform names are required and must be non-empty")
 		})
 
 		Convey("duplicate platform", func() {
-			platformsConfig := &config.PlatformsConfig{
-				Platform: []*config.PlatformConfig{
+			platforms := &config.Platforms{
+				Platform: []*config.Platform{
 					{
 						Name: "duplicate",
 					},
@@ -64,13 +64,13 @@ func TestValidatePlatformsConfig(t *testing.T) {
 					},
 				},
 			}
-			validatePlatformsConfig(context, platformsConfig)
+			validatePlatforms(context, platforms)
 			So(context.Finalize(), ShouldErrLike, "duplicate platform")
 		})
 
 		Convey("ok", func() {
-			platformsConfig := &config.PlatformsConfig{
-				Platform: []*config.PlatformConfig{
+			platforms := &config.Platforms{
+				Platform: []*config.Platform{
 					{
 						Name: "platform 1",
 					},
@@ -79,7 +79,7 @@ func TestValidatePlatformsConfig(t *testing.T) {
 					},
 				},
 			}
-			validatePlatformsConfig(context, platformsConfig)
+			validatePlatforms(context, platforms)
 			So(context.Finalize(), ShouldBeNil)
 		})
 	})

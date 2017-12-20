@@ -26,7 +26,7 @@ import (
 
 // Switch represents a switch.
 type Switch struct {
-	config.SwitchConfig
+	config.Switch
 	RackId int64
 	Id     int64
 }
@@ -73,7 +73,7 @@ func (*SwitchesTable) needsUpdate(row, cfg *Switch) bool {
 }
 
 // computeChanges computes the changes that need to be made to the switches in the database.
-func (t *SwitchesTable) computeChanges(c context.Context, datacenters []*config.DatacenterConfig) error {
+func (t *SwitchesTable) computeChanges(c context.Context, datacenters []*config.Datacenter) error {
 	cfgs := make(map[string]*Switch, len(datacenters))
 	for _, dc := range datacenters {
 		for _, rack := range dc.Rack {
@@ -83,7 +83,7 @@ func (t *SwitchesTable) computeChanges(c context.Context, datacenters []*config.
 					return errors.Reason("failed to determine rack ID for switch %q: unknown rack %q", cfg.Name, rack.Name).Err()
 				}
 				cfgs[cfg.Name] = &Switch{
-					SwitchConfig: config.SwitchConfig{
+					Switch: config.Switch{
 						Name:        cfg.Name,
 						Description: cfg.Description,
 						Ports:       cfg.Ports,
@@ -256,7 +256,7 @@ func (t *SwitchesTable) ids(c context.Context) map[string]int64 {
 }
 
 // EnsureSwitches ensures the database contains exactly the given switches.
-func EnsureSwitches(c context.Context, cfgs []*config.DatacenterConfig, rackIds map[string]int64) error {
+func EnsureSwitches(c context.Context, cfgs []*config.Datacenter, rackIds map[string]int64) error {
 	t := &SwitchesTable{}
 	t.racks = rackIds
 	if err := t.fetch(c); err != nil {

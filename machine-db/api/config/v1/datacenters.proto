@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package config;
 
-// SwitchConfig describes a switch.
-message SwitchConfig {
+// Switch describes a switch.
+message Switch {
   // The name of this switch.
   string name = 1;
   // A description of this switch.
@@ -16,28 +16,28 @@ message SwitchConfig {
   int32 ports = 3;
 }
 
-// RackConfig describes a rack.
-message RackConfig {
+// Rack describes a rack.
+message Rack {
   // The name of this rack.
   string name = 1;
   // A description of this rack.
   string description = 2;
   // The switches belonging to this rack.
-  repeated SwitchConfig switch = 3;
+  repeated Switch switch = 3;
 }
 
-// DatacenterConfig describes a datacenter.
-message DatacenterConfig {
+// Datacenter describes a datacenter.
+message Datacenter {
   // The name of this datacenter.
   string name = 1;
   // A description of this datacenter.
   string description = 2;
   // The racks belonging to this datacenter.
-  repeated RackConfig rack = 3;
+  repeated Rack rack = 3;
 }
 
-// DatacentersConfig enumerates datacenter config files.
-message DatacentersConfig {
-  // The name of a datacenter config file.
+// Datacenters enumerates datacenter config files.
+message Datacenters {
+  // A list of names of datacenter config files.
   repeated string datacenter = 1;
 }
