@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3df1a86c_1d43bb48",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-21T19:09:47Z",
+      "side": 1,
+      "message": "do not use gob at all. It always causes headaches.",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 13
+      },
+      "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
