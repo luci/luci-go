@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 
 	"go.chromium.org/luci/machine-db/api/config/v1"
+	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
 // vlansFilename is the name of the config file enumerating vlans.
@@ -53,6 +54,11 @@ func importVLANs(c context.Context, configSet cfgtypes.ConfigSet) error {
 	if err := ctx.Finalize(); err != nil {
 		return errors.Annotate(err, "invalid config").Err()
 	}
+
+	if err := model.EnsureVLANs(c, vlan.Vlan); err != nil {
+		return errors.Annotate(err, "failed to ensure vlans").Err()
+	}
+	// TODO(smut): Ensure IP addresses.
 	return nil
 }
 
@@ -60,7 +66,7 @@ func importVLANs(c context.Context, configSet cfgtypes.ConfigSet) error {
 func validateVLANs(c *validation.Context, cfg *config.VLANs) {
 	// VLAN ids must be unique.
 	// Keep records of ones we've already seen.
-	vlans := make(map[int32]struct{}, len(cfg.Vlan))
+	vlans := make(map[int64]struct{}, len(cfg.Vlan))
 	for _, vlan := range cfg.Vlan {
 		switch _, ok := vlans[vlan.Id]; {
 		case vlan.Id < 1:
