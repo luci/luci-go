@@ -619,6 +619,24 @@
     },
     {
       "key": {
+        "uuid": "e5db354c_478e7609",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T00:56:38Z",
+      "side": 1,
+      "message": "actually looks like text protobuf can only be ascii\nanother name for \"protobuf text format\" is \"protobuf ascii\"",
+      "parentUuid": "b5d4ef6f_47eddebb",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a411f1a_b97dbfa5",
         "filename": "machine-db/appengine/config/platforms_test.go",
         "patchSetId": 2
