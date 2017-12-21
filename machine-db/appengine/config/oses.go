@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 
 	"go.chromium.org/luci/machine-db/api/config/v1"
+	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
 // osesFilename is the name of the config file enumerating operating systems.
@@ -46,6 +47,12 @@ func importOSes(c context.Context, configSet cfgtypes.ConfigSet) error {
 	if err := ctx.Finalize(); err != nil {
 		return errors.Annotate(err, "invalid config").Err()
 	}
+
+	err := model.EnsureOSes(c, os.OperatingSystem)
+	if err != nil {
+		return errors.Annotate(err, "failed to ensure operating systems").Err()
+	}
+
 	return nil
 }
 
