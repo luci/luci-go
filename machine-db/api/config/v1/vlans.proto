@@ -9,7 +9,7 @@ package config;
 // VLAN describes a virtual LAN.
 message VLAN {
   // The ID of this virtual LAN.
-  int32 id = 1;
+  int64 id = 1;
   // An alias for this virtual LAN.
   string alias = 2;
   // The blocks of IPv4 addresses belonging to this virtual LAN.
