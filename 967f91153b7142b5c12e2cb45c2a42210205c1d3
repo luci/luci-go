@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d3fe9139_704bd0c5",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T23:12:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ead0f18e_3c81b3b4",
+      "range": {
+        "startLine": 22,
+        "startChar": 11,
+        "endLine": 22,
+        "endChar": 19
+      },
+      "revId": "967f91153b7142b5c12e2cb45c2a42210205c1d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ad3ab78e_6c34a08c",
         "filename": "common/proto/gitiles/gitiles.proto",
         "patchSetId": 3
@@ -68,6 +92,54 @@
       "revId": "967f91153b7142b5c12e2cb45c2a42210205c1d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7eb05feb_3556fc6b",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T23:12:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5653465d_e4d9df78",
+      "range": {
+        "startLine": 24,
+        "startChar": 11,
+        "endLine": 24,
+        "endChar": 19
+      },
+      "revId": "967f91153b7142b5c12e2cb45c2a42210205c1d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d5ff7e07_6ecafc19",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T23:12:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad3ab78e_6c34a08c",
+      "range": {
+        "startLine": 24,
+        "startChar": 7,
+        "endLine": 24,
+        "endChar": 10
+      },
+      "revId": "967f91153b7142b5c12e2cb45c2a42210205c1d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
