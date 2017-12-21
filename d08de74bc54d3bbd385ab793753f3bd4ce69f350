@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "93fc3d7c_b69ca344",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T21:31:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7fe1e4d8_de4887c2",
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68094a27_c18d3dea",
         "filename": "milo/buildsource/console.go",
         "patchSetId": 8
@@ -39,6 +57,30 @@
       "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "153eb32f_9857b174",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T21:31:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68094a27_c18d3dea",
+      "range": {
+        "startLine": 54,
+        "startChar": 90,
+        "endLine": 54,
+        "endChar": 105
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "531a9bcb_2b98d246",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T21:31:52Z",
+      "side": 1,
+      "message": "sg, outside of the scope though\n\nI\u0027d love to move all this code to polymer",
+      "parentUuid": "54bbadb4_65516710",
+      "range": {
+        "startLine": 195,
+        "startChar": 17,
+        "endLine": 195,
+        "endChar": 26
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "035a90bd_86dcd781",
         "filename": "milo/git/log.go",
         "patchSetId": 8
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "39576d62_59243e55",
+        "filename": "milo/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T21:31:52Z",
+      "side": 1,
+      "message": "rephrased to emphasize the intention: keep reasoning of the past decisions in code, so that in future someone other than you or me does not add limit to the cache key. This knowledge should be in code, not our heads.",
+      "parentUuid": "035a90bd_86dcd781",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 43
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a80de6f8_da8387f1",
         "filename": "milo/git/log.go",
         "patchSetId": 8
@@ -108,6 +198,30 @@
       "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30eb5f5f_06b25181",
+        "filename": "milo/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T21:31:52Z",
+      "side": 1,
+      "message": "if we don\u0027t use auth, we will be subject to the small anonymous quota",
+      "parentUuid": "a80de6f8_da8387f1",
+      "range": {
+        "startLine": 117,
+        "startChar": 58,
+        "endLine": 117,
+        "endChar": 69
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
