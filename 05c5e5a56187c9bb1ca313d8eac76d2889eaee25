@@ -60,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "28a1be5b_c0e60d29",
+        "filename": "machine-db/appengine/database/setup/migrations/004_initialize_vlans.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-21T23:51:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43db6ef2_804580c9",
+      "range": {
+        "startLine": 30,
+        "startChar": 18,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49896e47_7cf5354b",
         "filename": "machine-db/appengine/model/vlans.go",
         "patchSetId": 1
@@ -80,6 +104,30 @@
       "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4eca167_6da00b37",
+        "filename": "machine-db/appengine/model/vlans.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-21T23:51:41Z",
+      "side": 1,
+      "message": "I didn\u0027t make it autoincrement:\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/841429/1/machine-db/appengine/database/setup/migrations/004_initialize_vlans.up.sql#20",
+      "parentUuid": "49896e47_7cf5354b",
+      "range": {
+        "startLine": 117,
+        "startChar": 21,
+        "endLine": 117,
+        "endChar": 23
+      },
+      "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
