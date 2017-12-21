@@ -19,19 +19,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
-	logpb "go.chromium.org/luci/common/eventlog/proto"
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
@@ -106,37 +103,22 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	al := archiveLogger{
-		logger:    NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
-		operation: logpb.IsolateClientEvent_ARCHIVE.Enum(),
-		start:     start,
-		quiet:     c.defaultFlags.Quiet,
+		start: start,
+		quiet: c.defaultFlags.Quiet,
 	}
 
 	return archive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, al)
 }
 
-// archiveLogger reports stats to eventlog and stderr.
+// archiveLogger reports stats to stderr.
 type archiveLogger struct {
-	logger    *IsolateEventLogger
-	operation *logpb.IsolateClientEvent_Operation
-	start     time.Time
-	quiet     bool
+	start time.Time
+	quiet bool
 }
 
 // LogSummary logs (to eventlog and stderr) a high-level summary of archive operations(s).
 func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int64, bytesHit, bytesPushed units.Size, digests []string) {
-	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
-		HitCount:    proto.Int64(hits),
-		MissCount:   proto.Int64(misses),
-		HitBytes:    proto.Int64(int64(bytesHit)),
-		MissBytes:   proto.Int64(int64(bytesPushed)),
-		IsolateHash: digests,
-	}
-
 	end := time.Now()
-	if err := al.logger.logStats(ctx, al.operation, al.start, end, archiveDetails); err != nil {
-		log.Printf("Failed to log to eventlog: %v", err)
-	}
 
 	if !al.quiet {
 		duration := end.Sub(al.start)

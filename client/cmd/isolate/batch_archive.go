@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
-	logpb "go.chromium.org/luci/common/eventlog/proto"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 )
@@ -149,10 +148,8 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	al := archiveLogger{
-		logger:    NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
-		start:     start,
-		quiet:     c.defaultFlags.Quiet,
-		operation: logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum(),
+		start: start,
+		quiet: c.defaultFlags.Quiet,
 	}
 	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, args)
 }
