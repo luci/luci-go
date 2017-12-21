@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "008210da_64faee98",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-21T19:15:11Z",
+      "side": 1,
+      "message": "but in practice it doesn\u0027t because the limits within a given context are the same. The reason I did this before was to avoid having a small amount of history cached in the same slot as something that needs a large amount of history. Caching \"deadbeef limit 10\" is very different (for all uses) than \"deadbeef limit 1000\".",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 19,
+        "endChar": 64
+      },
+      "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3df1a86c_1d43bb48",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 7
