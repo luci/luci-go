@@ -33,6 +33,10 @@ import (
 // token for Gitiles RPCs.
 const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
 
+// GobVersion if the version of this package
+// from the perspective of gob encoding/decoding.
+const GobVersion = 1
+
 // HTTPStatusTag is applied to errors returned by thin wrappers of Gitiles
 // RPCs.
 var HTTPStatusTagKey = errors.NewTagKey("HTTP Status code")
@@ -51,6 +55,8 @@ func HTTPStatus(err error) int {
 // Gitiles time encoded as a string. This allows for the time to be
 // parsed from a Gitiles Commit JSON object at decode time, which makes
 // the User struct more idiomatic.
+//
+// When making a gob-backward-incompatible change, increment GobVersion.
 type Time struct {
 	time.Time
 }
@@ -77,6 +83,8 @@ func (t *Time) UnmarshalJSON(b []byte) error {
 }
 
 // User is the author or the committer returned from gitiles.
+//
+// When making a gob-backward-incompatible change, increment GobVersion.
 type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
@@ -89,6 +97,8 @@ var KnownTreeDiffTypes = []string{
 }
 
 // TreeDiff shows the pertinent 'diff' information between two Commit objects.
+//
+// When making a gob-backward-incompatible change, increment GobVersion.
 type TreeDiff struct {
 	// Type is one of the KnownTreeDiffTypes.
 	Type    string `json:"type"`
@@ -101,6 +111,8 @@ type TreeDiff struct {
 }
 
 // Commit is the information of a commit returned from gitiles.
+//
+// When making a gob-backward-incompatible change, increment GobVersion.
 type Commit struct {
 	Commit    string     `json:"commit"`
 	Tree      string     `json:"tree"`
