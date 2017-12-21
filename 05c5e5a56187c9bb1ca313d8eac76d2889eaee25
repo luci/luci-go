@@ -16,6 +16,70 @@
       "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2c5302f_5ef4edb7",
+        "filename": "machine-db/api/config/v1/vlans.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T23:27:44Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4d6d6145_c557f947",
+      "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "43db6ef2_804580c9",
+        "filename": "machine-db/appengine/database/setup/migrations/004_initialize_vlans.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T23:27:44Z",
+      "side": 1,
+      "message": "IP",
+      "range": {
+        "startLine": 30,
+        "startChar": 18,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49896e47_7cf5354b",
+        "filename": "machine-db/appengine/model/vlans.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T23:27:44Z",
+      "side": 1,
+      "message": "does this work? the id field in the table definition is auto increment.\nmaybe it shouldn\u0027t be, since ids are specified in the config",
+      "range": {
+        "startLine": 117,
+        "startChar": 21,
+        "endLine": 117,
+        "endChar": 23
+      },
+      "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
