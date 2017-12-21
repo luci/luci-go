@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09843cd8_47bbdd15",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:42:28Z",
+      "side": 1,
+      "message": "space",
+      "range": {
+        "startLine": 286,
+        "startChar": 47,
+        "endLine": 286,
+        "endChar": 48
+      },
+      "revId": "5e07ebf74dd825b6fce8e7f1aa30f1e164cb54d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26189b18_9290b75c",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:42:28Z",
+      "side": 1,
+      "message": "revision",
+      "range": {
+        "startLine": 298,
+        "startChar": 24,
+        "endLine": 298,
+        "endChar": 30
+      },
+      "revId": "5e07ebf74dd825b6fce8e7f1aa30f1e164cb54d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14eede33_1e0a58f7",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:42:28Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 301,
+        "startChar": 20,
+        "endLine": 301,
+        "endChar": 30
+      },
+      "revId": "5e07ebf74dd825b6fce8e7f1aa30f1e164cb54d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
