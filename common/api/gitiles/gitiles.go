@@ -25,7 +25,10 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
+	"io/ioutil"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 )
 
@@ -434,11 +437,16 @@ func (c *Client) get(ctx context.Context, repoURL, subPath string, result interf
 		return transient.Tag.Apply(err)
 	}
 	defer r.Body.Close()
-	if r.StatusCode != 200 {
+	if r.StatusCode != http.StatusOK {
 		err = errors.Reason("failed to fetch %s, status code %d", URL, r.StatusCode).
 			Tag(errors.TagValue{Key: HTTPStatusTagKey, Value: r.StatusCode}).
 			Err()
-		if r.StatusCode >= 500 {
+		switch {
+		case r.StatusCode == http.StatusTooManyRequests:
+			body, _ := ioutil.ReadAll(r.Body)
+			logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s",
+				r.Header, r, body)
+		case r.StatusCode >= 500:
 			// TODO(tandrii): consider retrying.
 			err = transient.Tag.Apply(err)
 		}
