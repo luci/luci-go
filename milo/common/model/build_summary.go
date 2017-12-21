@@ -28,11 +28,11 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/git"
 )
@@ -287,7 +287,7 @@ var ErrUnknownPreviousBuild = errors.New("unable to find previous build")
 //
 // If this is unable to find the previous build, it returns
 // ErrUnknownPreviousBuild.
-func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*BuildSummary, hist *milo.ConsoleGitInfo, err error) {
+func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*BuildSummary, commits []gitiles.Commit, err error) {
 	gc := bs.GitilesCommit()
 	if gc == nil {
 		err = ErrUnknownPreviousBuild
@@ -296,7 +296,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 
 	// TODO(iannucci): this could be done in some sort of search pattern, e.g.
 	// 10+20+50, but I'm not sure if it's worth it.
-	hist, err = git.GetHistory(c, gc.RepoURL(), gc.Revision, 100)
+	commits, err = git.Log(c, gc.RepoURL(), gc.Revision)
 	if err != nil {
 		return
 	}
@@ -305,8 +305,8 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	// case this will be fast enough.
 	curGC := &buildbucket.GitilesCommit{Host: gc.Host, Project: gc.Project}
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
-	for i, commit := range hist.Commits {
-		curGC.Revision = hex.EncodeToString(commit.Hash)
+	for i, commit := range commits {
+		curGC.Revision = commit.Commit
 		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.String()), &builds); err != nil {
 			return
 		}
@@ -314,7 +314,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 			sort.Slice(builds, func(i, j int) bool {
 				return builds[i].Summary.Start.After(builds[j].Summary.Start)
 			})
-			hist.Commits = hist.Commits[:i+1]
+			commits = commits[:i+1]
 			return
 		}
 	}
