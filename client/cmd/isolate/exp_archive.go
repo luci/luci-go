@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
-	logpb "go.chromium.org/luci/common/eventlog/proto"
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
@@ -87,10 +86,8 @@ func (c *expArchiveRun) main() error {
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	al := archiveLogger{
-		logger:    NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
-		operation: logpb.IsolateClientEvent_ARCHIVE.Enum(),
-		start:     start,
-		quiet:     c.commonServerFlags.commonFlags.defaultFlags.Quiet,
+		start: start,
+		quiet: c.commonServerFlags.commonFlags.defaultFlags.Quiet,
 	}
 
 	return doExpArchive(ctx, client, archiveOpts, c.dumpJSON, al)
