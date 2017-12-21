@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4d6d6145_c557f947",
+        "filename": "machine-db/api/config/v1/vlans.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-21T23:18:33Z",
+      "side": 1,
+      "message": "Go libraries return database IDs as int64. Easier to just make this match.",
+      "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
