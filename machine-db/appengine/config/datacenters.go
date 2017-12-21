@@ -82,7 +82,6 @@ func importDatacenters(c context.Context, configSet cfgtypes.ConfigSet) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure switches").Err()
 	}
-
 	return nil
 }
 
