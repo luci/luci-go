@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "9c2ca356_6007a9c0",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T23:57:38Z",
+      "side": 1,
+      "message": "ACK",
+      "parentUuid": "23f78b14_f4b66bfd",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 61
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8d381d0_a5f059d8",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 4
@@ -234,6 +258,30 @@
       "revId": "aea1c62593b2a308ba948990768b421e50336b58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "748b09cf_62054d60",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T23:57:38Z",
+      "side": 1,
+      "message": "sorry, i can\u0027t find where I learned it either - somebody from Gerrit team must have left a comment on my CL at some point.",
+      "parentUuid": "2a794820_59446968",
+      "range": {
+        "startLine": 427,
+        "startChar": 1,
+        "endLine": 427,
+        "endChar": 12
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
