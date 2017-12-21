@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4cfd3be2_9ab1b2fb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T19:48:28Z",
+      "side": 1,
+      "message": "not a realistic example, we never ask for 1000 commits\n\nwe pay with the number of gitiles calls, not bandwidth, so we better make one call for both \"deadbeef limit 10\" and \"deadbeef limit 100\"",
+      "parentUuid": "008210da_64faee98",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 19,
+        "endChar": 64
+      },
+      "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3df1a86c_1d43bb48",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 7
@@ -36,6 +60,30 @@
       "writtenOn": "2017-12-21T19:09:47Z",
       "side": 1,
       "message": "do not use gob at all. It always causes headaches.",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 13
+      },
+      "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b6b967c_334f57ce",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T19:48:28Z",
+      "side": 1,
+      "message": "could you elaborate?",
+      "parentUuid": "3df1a86c_1d43bb48",
       "range": {
         "startLine": 36,
         "startChar": 3,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "05b7ce69_dfbad954",
+        "filename": "milo/git/log.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T19:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fe43943_a44907b1",
+      "range": {
+        "startLine": 42,
+        "startChar": 28,
+        "endLine": 42,
+        "endChar": 57
+      },
+      "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f52042f2_c8ea78df",
         "filename": "milo/git/log.go",
         "patchSetId": 7
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "0c7aaea8_63caead4",
+        "filename": "milo/git/log.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T19:48:28Z",
+      "side": 1,
+      "message": "go/how-to-write-software says \"The system should always look like it was designed to do exactly what it does now. Refactor it continuously so that it always looks like this, either before a change or immediately after it.\" and firmly agree with that. Nothing prevents you from changing this code when you *actually* implement the cron job. No need to complicate code prematurely.",
+      "parentUuid": "f52042f2_c8ea78df",
+      "range": {
+        "startLine": 50,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 8
+      },
+      "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee18bcf4_f155a8f7",
         "filename": "milo/git/log.go",
         "patchSetId": 7
@@ -114,6 +210,30 @@
       "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efccdd8b_0e1937ff",
+        "filename": "milo/git/log.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T19:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee18bcf4_f155a8f7",
+      "range": {
+        "startLine": 69,
+        "startChar": 13,
+        "endLine": 69,
+        "endChar": 26
+      },
+      "revId": "69376f2545f210de87644f5e13fa5cfced8a3348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
