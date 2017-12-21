@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2a02b05_9b63e2e8",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "please add \"and is guaranteed to be unique\"",
+      "range": {
+        "startLine": 81,
+        "startChar": 47,
+        "endLine": 81,
+        "endChar": 65
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34647f8c_09bca3df",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "FYI: not sure you are aware of this, but apparently gerrit doesn\u0027t guarantee that email:account is 1:1 mapping, rather it is 1:N, although normally out of N accounts at most 1 is active.",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 61
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8d381d0_a5f059d8",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "fix",
+      "range": {
+        "startLine": 395,
+        "startChar": 80,
+        "endLine": 395,
+        "endChar": 90
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec5a1053_21313239",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "delete",
+      "range": {
+        "startLine": 426,
+        "startChar": 21,
+        "endLine": 426,
+        "endChar": 24
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddbb9965_8987ac44",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "can you add a link? there is potentially quite useful \u0027:\u0027-separation scheme for tag values, which for example CQ relies on.",
+      "range": {
+        "startLine": 427,
+        "startChar": 1,
+        "endLine": 427,
+        "endChar": 12
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66ce14c5_18c4ce07",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "represents",
+      "range": {
+        "startLine": 430,
+        "startChar": 11,
+        "endLine": 430,
+        "endChar": 21
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f71bfc2b_a961199b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 464,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "their",
+      "range": {
+        "startLine": 464,
+        "startChar": 58,
+        "endLine": 464,
+        "endChar": 61
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "982972da_c193c4a4",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "AccountID",
+      "range": {
+        "startLine": 466,
+        "startChar": 53,
+        "endLine": 466,
+        "endChar": 64
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbeda254_64f36d4b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 526,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-21T22:56:29Z",
+      "side": 1,
+      "message": "parameter",
+      "range": {
+        "startLine": 526,
+        "startChar": 18,
+        "endLine": 526,
+        "endChar": 27
+      },
+      "revId": "aea1c62593b2a308ba948990768b421e50336b58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
