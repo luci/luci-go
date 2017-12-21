@@ -52,6 +52,24 @@
       "revId": "d40b54c2d46b7c2b168e461f25b59227ffea60c3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e47dbb59_c42f700a",
+        "filename": "machine-db/appengine/model/oses.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-21T22:51:18Z",
+      "side": 1,
+      "message": "good points, let\u0027s leave it as is",
+      "parentUuid": "9660aa84_88863f2a",
+      "revId": "d40b54c2d46b7c2b168e461f25b59227ffea60c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
