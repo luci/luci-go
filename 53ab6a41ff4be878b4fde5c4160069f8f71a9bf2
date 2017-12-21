@@ -637,6 +637,24 @@
     },
     {
       "key": {
+        "uuid": "69835285_a12b2da3",
+        "filename": "machine-db/appengine/config/platforms.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-21T01:05:11Z",
+      "side": 1,
+      "message": "That\u0027s good, I confirmed that we won\u0027t expect Unicode. I also confirmed that we don\u0027t expect arbitrary ASCII, only A-Za-z0-9_-, so I can prepare a CL for that at some point.",
+      "parentUuid": "e5db354c_478e7609",
+      "revId": "53ab6a41ff4be878b4fde5c4160069f8f71a9bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a411f1a_b97dbfa5",
         "filename": "machine-db/appengine/config/platforms_test.go",
         "patchSetId": 2
