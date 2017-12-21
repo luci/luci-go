@@ -1,0 +1,27 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// OSesRequest is a request to retrieve operating systems.
+message OSesRequest {
+  // The names of operating systems to retrieve.
+  repeated string names = 1;
+}
+
+// OS describes an operating system.
+message OS {
+  // The name of this operating system. Uniquely identifies this operating system.
+  string name = 1;
+  // A description of this operating system.
+  string description = 2;
+}
+
+// OSesResponse is a response to a request to retrieve operating systems.
+message OSesResponse {
+  // The operating systems matching the request.
+  repeated OS oses = 1;
+}
