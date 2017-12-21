@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -50,11 +51,11 @@ type ConsoleRow struct {
 // GetConsoleRows returns a row-oriented collection of BuildSummary
 // objects. Each row corresponds to the similarly-indexed commit in the
 // `commits` slice.
-func GetConsoleRows(c context.Context, project string, console *config.Console, commits []string) ([]*ConsoleRow, error) {
+func GetConsoleRows(c context.Context, project string, console *config.Console, commits []gitiles.Commit) ([]*ConsoleRow, error) {
 	rawCommits := make([][]byte, len(commits))
 	for i, c := range commits {
 		var err error
-		if rawCommits[i], err = hex.DecodeString(c); err != nil {
+		if rawCommits[i], err = hex.DecodeString(c.Commit); err != nil {
 			return nil, errors.Annotate(err, "bad commit[%d]: %q", i, c).Err()
 		}
 	}
@@ -82,7 +83,7 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 	err := parallel.WorkPool(16, func(ch chan<- func() error) {
 		for i := range rawCommits {
 			i := i
-			r := &ConsoleRow{Commit: commits[i]}
+			r := &ConsoleRow{Commit: commits[i].Commit}
 			ret[i] = r
 			ch <- func() error {
 				fullQ := q.Eq("ManifestKeys", partialKey.AddRevision(rawCommits[i]))
