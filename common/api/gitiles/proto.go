@@ -19,6 +19,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/git"
 )
@@ -190,19 +191,32 @@ func (c *Commit) FromProto(p *git.Commit) error {
 	return nil
 }
 
-// LogProto takes log data from e.g. Log(), and returns the LUCI standard
-// protobuf message form of the log data (suitable for embedding in other proto
-// messages).
-//
-// Errors may occur if the Commits contain bad hashes (i.e. not hexadecimal), or
-// undecodable timestamps. This should not occur if the []Commit was produced by
-// the Log function in this package.
-func LogProto(log []Commit) (ret []*git.Commit, err error) {
-	ret = make([]*git.Commit, len(log))
-	for i, c := range log {
-		if ret[i], err = c.Proto(); err != nil {
-			return nil, errors.Annotate(err, "converting commit %d", i).Err()
+// MarshalCommits marshals commits.
+func MarshalCommits(commits []Commit) ([]byte, error) {
+	log := &git.Log{
+		Commits: make([]*git.Commit, len(commits)),
+	}
+	for i, c := range commits {
+		var err error
+		if log.Commits[i], err = c.Proto(); err != nil {
+			return nil, errors.Annotate(err, "could not convert commit %s to proto", c.Commit).Err()
 		}
 	}
-	return ret, nil
+	return proto.Marshal(log)
+}
+
+// UnmarshalCommits unmarshals commits marshalled by MarshalCommits.
+func UnmarshalCommits(data []byte) ([]Commit, error) {
+	var log git.Log
+	if err := proto.Unmarshal(data, &log); err != nil {
+		return nil, err
+	}
+
+	commits := make([]Commit, len(log.Commits))
+	for i, c := range log.Commits {
+		if err := commits[i].FromProto(c); err != nil {
+			return nil, errors.Annotate(err, "could not convert commit %s from proto", c.Id).Err()
+		}
+	}
+	return commits, nil
 }

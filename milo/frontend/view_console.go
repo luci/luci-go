@@ -16,7 +16,6 @@ package frontend
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -175,35 +173,38 @@ func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]ui.Cons
 func consoleRowCommits(c context.Context, project string, def *config.Console, limit int) (
 	[]*buildsource.ConsoleRow, []ui.Commit, error) {
 	tGitiles := logTimer(c, "Rows: loading commit from gitiles")
-	commitInfo, err := git.GetHistory(c, def.RepoUrl, def.Ref, limit)
+	rawCommits, err := git.Log(c, def.RepoUrl, def.Ref)
 	if err != nil {
 		return nil, nil, err
 	}
 	tGitiles()
+	if len(rawCommits) > limit {
+		rawCommits = rawCommits[:limit]
+	}
 
-	commitNames := make([]string, len(commitInfo.Commits))
-	for i, commit := range commitInfo.Commits {
-		commitNames[i] = hex.EncodeToString(commit.Hash)
+	commitIDs := make([]string, len(rawCommits))
+	for i, c := range rawCommits {
+		commitIDs[i] = c.Commit
 	}
 
 	tBuilds := logTimer(c, "Rows: loading builds")
-	rows, err := buildsource.GetConsoleRows(c, project, def, commitNames)
+	rows, err := buildsource.GetConsoleRows(c, project, def, commitIDs)
 	tBuilds()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Build list of commits.
-	commits := make([]ui.Commit, len(commitInfo.Commits))
-	for row, commit := range commitInfo.Commits {
+	commits := make([]ui.Commit, len(rawCommits))
+	for row, commit := range rawCommits {
 		commits[row] = ui.Commit{
-			AuthorName:  commit.AuthorName,
-			AuthorEmail: commit.AuthorEmail,
-			CommitTime:  google.TimeFromProto(commit.CommitTime),
+			AuthorName:  commit.Author.Name,
+			AuthorEmail: commit.Author.Email,
+			CommitTime:  commit.Committer.Time.Time,
 			Repo:        def.RepoUrl,
 			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
-			Description: commit.Msg,
-			Revision:    ui.NewLink(commitNames[row], def.RepoUrl+"/+/"+commitNames[row], fmt.Sprintf("commit by %s", commit.AuthorEmail)),
+			Description: commit.Message,
+			Revision:    ui.NewLink(commit.Commit, def.RepoUrl+"/+/"+commit.Commit, fmt.Sprintf("commit by %s", commit.Author.Email)),
 		}
 	}
 

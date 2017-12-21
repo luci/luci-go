@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/data/base128"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
@@ -196,13 +197,16 @@ func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool)
 						return nil
 					}
 
-					gitCheckout.History, err = gitiles.LogProto(log)
-					if err != nil {
-						logging.WithError(err).Warningf(c, "protoizing log - %q", dirname)
-						atomic.StoreUint32(&hadErrors, 1)
-						return nil
+					history := make([]*git.Commit, len(log))
+					for i, commit := range log {
+						if gitCheckout.History[i], err = commit.Proto(); err != nil {
+							logging.WithError(err).Warningf(c, "protoizing commit %q - %q", commit.Commit, dirname)
+							atomic.StoreUint32(&hadErrors, 1)
+							return nil
+						}
 					}
 
+					gitCheckout.History = history
 					return nil
 				}
 			}

@@ -84,3 +84,8 @@ message Commit {
   }
   repeated TreeDiff tree_diff = 7;
 }
+
+// Log is a list of commits.
+message Log {
+  repeated Commit commits = 1;
+}
