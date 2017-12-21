@@ -37,6 +37,21 @@ func (s *DecoratedCrimson) GetDatacenters(c context.Context, req *DatacentersReq
 	return
 }
 
+func (s *DecoratedCrimson) GetOSes(c context.Context, req *OSesRequest) (rsp *OSesResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetOSes", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetOSes(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetOSes", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) GetRacks(c context.Context, req *RacksRequest) (rsp *RacksResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
