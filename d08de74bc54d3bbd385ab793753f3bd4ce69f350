@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7fe1e4d8_de4887c2",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-21T20:26:12Z",
+      "side": 1,
+      "message": "^ see? :)",
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68094a27_c18d3dea",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-21T20:26:12Z",
+      "side": 1,
+      "message": "boo... I really don\u0027t like that. You pass in a whole Commit object just to pull .Commit from it? What if something has a list of commits which doesn\u0027t come from gitiles?\n\nIf you\u0027re going to do this, please add a function \"ExtractGitilesCommits([]gitiles.Commits) -\u003e []string\". Don\u0027t pass a big chunk of data to functions which only need a small amount of it.",
+      "range": {
+        "startLine": 54,
+        "startChar": 90,
+        "endLine": 54,
+        "endChar": 105
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54bbadb4_65516710",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-21T20:26:12Z",
+      "side": 1,
+      "message": "I would love to get rid of THIS struct instead...",
+      "range": {
+        "startLine": 195,
+        "startChar": 17,
+        "endLine": 195,
+        "endChar": 26
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "035a90bd_86dcd781",
+        "filename": "milo/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-21T20:26:12Z",
+      "side": 1,
+      "message": "you got rid of limit, no reason to make a comment about it.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 43
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a80de6f8_da8387f1",
+        "filename": "milo/git/log.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-21T20:26:12Z",
+      "side": 1,
+      "message": "hm... did this change in a previous CL? I thought we used to auth only for public repos... is that no longer the case?",
+      "range": {
+        "startLine": 117,
+        "startChar": 58,
+        "endLine": 117,
+        "endChar": 69
+      },
+      "revId": "d08de74bc54d3bbd385ab793753f3bd4ce69f350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
