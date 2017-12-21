@@ -36,6 +36,24 @@ func (u *User) Proto() (ret *git.Commit_User, err error) {
 	return
 }
 
+// FromProto parses p into u, opposite of Proto().
+func (u *User) FromProto(p *git.Commit_User) error {
+	if p == nil {
+		*u = User{}
+		return nil
+	}
+	t, err := ptypes.Timestamp(p.Time)
+	if err != nil {
+		return err
+	}
+	*u = User{
+		Name:  p.Name,
+		Email: p.Email,
+		Time:  Time{t},
+	}
+	return nil
+}
+
 // Proto converts this TreeDiff to its protobuf equivalent.
 func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
 	ret = &git.Commit_TreeDiff{
@@ -69,6 +87,27 @@ func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
 	return
 }
 
+// FromProto parses p into t, opposite of Proto().
+func (t *TreeDiff) FromProto(p *git.Commit_TreeDiff) error {
+	if p == nil {
+		*t = TreeDiff{}
+		return nil
+	}
+	if p.Type < 0 || int(p.Type) > len(git.Commit_TreeDiff_ChangeType_name) {
+		return errors.Reason("bad change type %d", p.Type).Err()
+	}
+	*t = TreeDiff{
+		OldPath: p.OldPath,
+		OldMode: p.OldMode,
+		NewPath: p.NewPath,
+		NewMode: p.NewMode,
+		Type:    p.Type.String(),
+		OldID:   hex.EncodeToString(p.OldId),
+		NewID:   hex.EncodeToString(p.NewId),
+	}
+	return nil
+}
+
 // Proto converts this git.Commit to its protobuf equivalent.
 func (c *Commit) Proto() (ret *git.Commit, err error) {
 	ret = &git.Commit{}
@@ -91,11 +130,11 @@ func (c *Commit) Proto() (ret *git.Commit, err error) {
 		}
 	}
 	if ret.Author, err = c.Author.Proto(); err != nil {
-		err = errors.Annotate(err, "decoding author").Err()
+		err = errors.Annotate(err, "encoding author").Err()
 		return
 	}
 	if ret.Committer, err = c.Committer.Proto(); err != nil {
-		err = errors.Annotate(err, "decoding committer").Err()
+		err = errors.Annotate(err, "encoding committer").Err()
 		return
 	}
 	ret.Message = c.Message
@@ -111,6 +150,44 @@ func (c *Commit) Proto() (ret *git.Commit, err error) {
 	}
 
 	return
+}
+
+// FromProto parses p into c, opposite of Proto().
+func (c *Commit) FromProto(p *git.Commit) error {
+	if p == nil {
+		*c = Commit{}
+		return nil
+	}
+
+	ret := Commit{
+		Commit:  hex.EncodeToString(p.Id),
+		Tree:    hex.EncodeToString(p.Tree),
+		Message: p.Message,
+	}
+	ret.Author.FromProto(p.Author)
+	if len(p.Parents) > 0 {
+		ret.Parents = make([]string, len(p.Parents))
+		for i, p := range p.Parents {
+			ret.Parents[i] = hex.EncodeToString(p)
+		}
+	}
+	if err := ret.Author.FromProto(p.Author); err != nil {
+		return errors.Annotate(err, "decoding author").Err()
+	}
+	if err := ret.Committer.FromProto(p.Committer); err != nil {
+		return errors.Annotate(err, "decoding committer").Err()
+	}
+	if len(p.TreeDiff) > 0 {
+		ret.TreeDiff = make([]TreeDiff, len(p.TreeDiff))
+		for i, d := range p.TreeDiff {
+			if err := ret.TreeDiff[i].FromProto(d); err != nil {
+				return errors.Annotate(err, "decoding treediff %d", i).Err()
+			}
+		}
+	}
+
+	*c = ret
+	return nil
 }
 
 // LogProto takes log data from e.g. Log(), and returns the LUCI standard

@@ -59,6 +59,36 @@ func TestUserProto(t *testing.T) {
 			})
 		})
 	})
+
+	Convey(`Test User.Proto`, t, func() {
+		u := &User{
+			Name:  "Some name",
+			Email: "some.name@example.com",
+			Time:  Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)},
+		}
+
+		Convey(`basic`, func() {
+			uPB, err := u.Proto()
+			So(err, ShouldBeNil)
+			So(uPB, ShouldResemble, &git.Commit_User{
+				Name:  "Some name",
+				Email: "some.name@example.com",
+				Time: &timestamp.Timestamp{
+					Seconds: 1457495178,
+				},
+			})
+		})
+
+		Convey(`empty timestamp`, func() {
+			u.Time = Time{}
+			uPB, err := u.Proto()
+			So(err, ShouldBeNil)
+			So(uPB, ShouldResemble, &git.Commit_User{
+				Name:  "Some name",
+				Email: "some.name@example.com",
+			})
+		})
+	})
 }
 
 func TestTreeDiffProto(t *testing.T) {
@@ -105,6 +135,39 @@ func TestTreeDiffProto(t *testing.T) {
 			td.NewID = "Meep"
 			_, err := td.Proto()
 			So(err, ShouldErrLike, "decoding NewID")
+		})
+	})
+
+	Convey(`Test TreeDiff.FromProto`, t, func() {
+		td := &git.Commit_TreeDiff{
+			Type:    git.Commit_TreeDiff_MODIFY,
+			OldId:   bytes.Repeat([]byte{0xde, 0xad, 0xbe, 0xef}, 5),
+			OldPath: "some/path",
+			OldMode: 0666,
+			NewId:   bytes.Repeat([]byte{0xda, 0xff, 0x0d, 0x11}, 5),
+			NewPath: "some/path",
+			NewMode: 0666,
+		}
+		Convey(`basic`, func() {
+			var actual TreeDiff
+			err := actual.FromProto(td)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, TreeDiff{
+				Type:    "MODIFY",
+				OldID:   strings.Repeat("deadbeef", 5),
+				OldPath: "some/path",
+				OldMode: 0666,
+				NewID:   strings.Repeat("daff0d11", 5),
+				NewPath: "some/path",
+				NewMode: 0666,
+			})
+		})
+
+		Convey(`bad type`, func() {
+			td.Type = 54
+			var actual TreeDiff
+			err := actual.FromProto(td)
+			So(err, ShouldErrLike, "bad change type 54")
 		})
 	})
 }
@@ -165,6 +228,43 @@ func TestCommitProto(t *testing.T) {
 			c.Parents[0] = "nerp"
 			_, err := c.Proto()
 			So(err, ShouldErrLike, "decoding parent 0")
+		})
+	})
+
+	Convey(`Test Commit.Proto`, t, func() {
+		c := &git.Commit{
+			Id:   bytes.Repeat([]byte{0xde, 0xad, 0xbe, 0xef}, 5),
+			Tree: bytes.Repeat([]byte{0xac, 0x1d, 0xf0, 0x0d}, 5),
+			Parents: [][]byte{
+				bytes.Repeat([]byte{0xd1, 0x5c, 0x0b, 0xee}, 5),
+				bytes.Repeat([]byte{0xda, 0xff, 0x0d, 0x11}, 5),
+			},
+			Author: &git.Commit_User{
+				Name:  "author",
+				Email: "author@example.com",
+				Time:  &timestamp.Timestamp{Seconds: 1457495178},
+			},
+			Committer: &git.Commit_User{
+				Name:  "committer",
+				Email: "committer@example.com",
+				Time:  &timestamp.Timestamp{Seconds: 1457495178},
+			},
+			Message: "I am\na\nbanana",
+		}
+
+		var actual Commit
+		err := actual.FromProto(c)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, Commit{
+			Commit: strings.Repeat("deadbeef", 5),
+			Tree:   strings.Repeat("ac1df00d", 5),
+			Parents: []string{
+				strings.Repeat("d15c0bee", 5),
+				strings.Repeat("daff0d11", 5),
+			},
+			Author:    User{"author", "author@example.com", Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
+			Committer: User{"committer", "committer@example.com", Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
+			Message:   "I am\na\nbanana",
 		})
 	})
 }
