@@ -1,0 +1,27 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// PlatformsRequest is a request to retrieve platforms.
+message PlatformsRequest {
+  // The names of platforms to retrieve.
+  repeated string names = 1;
+}
+
+// Platform describes a platform.
+message Platform {
+  // The name of this platform. Uniquely identifies this platform.
+  string name = 1;
+  // A description of this platform.
+  string description = 2;
+}
+
+// PlatformsResponse is a response to a request to retrieve platforms.
+message PlatformsResponse {
+  // The platforms matching the request.
+  repeated Platform platforms = 1;
+}
