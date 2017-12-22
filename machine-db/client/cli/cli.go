@@ -99,6 +99,7 @@ func New(params *Parameters) *cli.Application {
 			getPlatformsCmd(),
 			getRacksCmd(),
 			getSwitchesCmd(),
+			getVLANsCmd(),
 		},
 	}
 }
