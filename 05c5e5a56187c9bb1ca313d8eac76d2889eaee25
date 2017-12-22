@@ -128,6 +128,30 @@
       "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0eb36f12_9e6d34fd",
+        "filename": "machine-db/appengine/model/vlans.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-22T00:20:33Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d4eca167_6da00b37",
+      "range": {
+        "startLine": 117,
+        "startChar": 21,
+        "endLine": 117,
+        "endChar": 23
+      },
+      "revId": "05c5e5a56187c9bb1ca313d8eac76d2889eaee25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
