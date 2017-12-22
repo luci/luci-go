@@ -1,0 +1,31 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// VLANsRequest is a request to retrieve vlans.
+message VLANsRequest {
+  // The IDs of vlans to retrieve.
+  repeated int64 ids = 1;
+  // The aliases of vlans to retrieve.
+  repeated string aliases = 2;
+}
+
+// VLAN describes a vlan.
+message VLAN {
+  // The ID of this vlan. Uniquely identifies this vlan.
+  int64 id = 1;
+  // An alias for this vlan.
+  string alias = 2;
+  // A description of this vlan.
+  string description = 3;
+}
+
+// VLANsResponse is a response to a request to retrieve vlans.
+message VLANsResponse {
+  // The vlans matching the request.
+  repeated VLAN vlans = 1;
+}

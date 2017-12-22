@@ -12,13 +12,13 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// VLAN describes a virtual LAN.
+// VLAN describes a vlan.
 type VLAN struct {
-	// The ID of this virtual LAN.
+	// The ID of this vlan.
 	Id int64 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	// An alias for this virtual LAN.
+	// An alias for this vlan.
 	Alias string `protobuf:"bytes,2,opt,name=alias" json:"alias,omitempty"`
-	// The blocks of IPv4 addresses belonging to this virtual LAN.
+	// The blocks of IPv4 addresses belonging to this vlan.
 	CidrBlock []string `protobuf:"bytes,3,rep,name=cidr_block,json=cidrBlock" json:"cidr_block,omitempty"`
 }
 
@@ -48,9 +48,9 @@ func (m *VLAN) GetCidrBlock() []string {
 	return nil
 }
 
-// VLANs enumerates virtual LANs.
+// VLANs enumerates vlans.
 type VLANs struct {
-	// A list of virtual LANs.
+	// A list of vlans.
 	Vlan []*VLAN `protobuf:"bytes,1,rep,name=vlan" json:"vlan,omitempty"`
 }
 
