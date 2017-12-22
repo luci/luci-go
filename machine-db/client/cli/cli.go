@@ -17,6 +17,8 @@ package cli
 
 import (
 	"os"
+	"strconv"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -34,6 +36,28 @@ import (
 
 // clientKey is the key to the context value withClient uses to store the RPC client.
 var clientKey = "client"
+
+// Int64ListFlag is a flag.Value implementation representing an ordered set of int64s.
+type Int64ListFlag []int64
+
+// String returns a string representation of the flag values.
+func (f Int64ListFlag) String() string {
+	s := make([]string, 0, len(f))
+	for _, i := range f {
+		s = append(s, strconv.FormatInt(i, 10))
+	}
+	return strings.Join(s, ", ")
+}
+
+// Set records seeing a flag value.
+func (f *Int64ListFlag) Set(val string) error {
+	i, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return errors.Reason("values must be 64-bit integers").Err()
+	}
+	*f = append(*f, i)
+	return nil
+}
 
 // Parameters contains parameters for constructing a new Machine Database command-line client.
 type Parameters struct {
@@ -97,6 +121,7 @@ func New(params *Parameters) *cli.Application {
 			getDatacentersCmd(),
 			getRacksCmd(),
 			getSwitchesCmd(),
+			getVLANsCmd(),
 		},
 	}
 }
