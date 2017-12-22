@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "309b6dd7_b2ac4a5c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-22T00:51:41Z",
+      "side": 1,
+      "message": "check accuracy of this message",
+      "range": {
+        "startLine": 9,
+        "startChar": 3,
+        "endLine": 19,
+        "endChar": 64
+      },
+      "revId": "e827944673a98ba4e0d12bcef1fbdf60050f9a8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5cca67a5_868b4446",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-22T00:51:41Z",
+      "side": 1,
+      "message": "why though? \u0027//common/proto/git\u0027 is in common for a reason. It\u0027s embedded in other proto messages directly (not as `bytes`)",
+      "range": {
+        "startLine": 194,
+        "startChar": 3,
+        "endLine": 194,
+        "endChar": 35
+      },
+      "revId": "e827944673a98ba4e0d12bcef1fbdf60050f9a8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf7d47f4_8130b948",
+        "filename": "milo/git/log.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-22T00:51:41Z",
+      "side": 1,
+      "message": "s/up to//",
+      "range": {
+        "startLine": 54,
+        "startChar": 49,
+        "endLine": 54,
+        "endChar": 59
+      },
+      "revId": "e827944673a98ba4e0d12bcef1fbdf60050f9a8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad410cad_33f51fb2",
+        "filename": "milo/git/log.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-22T00:51:41Z",
+      "side": 1,
+      "message": "extra .",
+      "range": {
+        "startLine": 55,
+        "startChar": 36,
+        "endLine": 55,
+        "endChar": 37
+      },
+      "revId": "e827944673a98ba4e0d12bcef1fbdf60050f9a8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfdd5d6b_37dd6914",
+        "filename": "milo/git/log.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-22T00:51:41Z",
+      "side": 1,
+      "message": "still don\u0027t need this comment",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 56
+      },
+      "revId": "e827944673a98ba4e0d12bcef1fbdf60050f9a8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a34f5a9e_cf7d2fcf",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-12-22T00:51:41Z",
+      "side": 1,
+      "message": "this loop wasn\u0027t necessary before... still don\u0027t understand the rationale for removing LogProto from gitiles?",
+      "range": {
+        "startLine": 201,
+        "startChar": 5,
+        "endLine": 201,
+        "endChar": 33
+      },
+      "revId": "e827944673a98ba4e0d12bcef1fbdf60050f9a8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
