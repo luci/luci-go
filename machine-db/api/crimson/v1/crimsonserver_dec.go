@@ -96,3 +96,18 @@ func (s *DecoratedCrimson) GetSwitches(c context.Context, req *SwitchesRequest) 
 	}
 	return
 }
+
+func (s *DecoratedCrimson) GetVLANs(c context.Context, req *VLANsRequest) (rsp *VLANsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetVLANs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetVLANs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetVLANs", rsp, err)
+	}
+	return
+}
