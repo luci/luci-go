@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2015 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gitiles implements GitilesClient in
-// "go.chromium.org/common/proto/gitiles" package
-// on top of Gitiles's REST API.
-// It allows querying Git repositories hosted on *.googlesource.com.
+//go:generate cproto
+//go:generate mockgen -source gitiles.pb.go -destination gitiles.mock.pb.go -package gitiles
+
+// Package gitiles contains Gitiles service definition.
 package gitiles
