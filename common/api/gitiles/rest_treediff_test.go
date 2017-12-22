@@ -15,10 +15,14 @@
 package gitiles
 
 import (
+	"encoding/hex"
 	"net/http"
 	"testing"
 
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/proto/gitiles"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -162,20 +166,32 @@ func TestLogWithTreeDiff(t *testing.T) {
 		})
 		defer srv.Close()
 
-		commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
-			"master..8de6836858c99e48f3c58164ab717bda728e95dd", Limit(10), WithTreeDiff)
+		res, err := c.Log(ctx, &gitiles.LogRequest{
+			Project:  "repo",
+			Treeish:  "8de6836858c99e48f3c58164ab717bda728e95dd",
+			Ancestor: "master",
+			PageSize: 10,
+			TreeDiff: true,
+		})
 		So(err, ShouldBeNil)
-
-		So(len(commits), ShouldEqual, 2)
-		So(commits[1].TreeDiff[0], ShouldResemble, TreeDiff{
-			Type:    "modify",
-			OldID:   "5e99bfe849b1272c4f93998c1a4e474d50f71d07",
+		So(len(res.Log), ShouldEqual, 2)
+		So(res.Log[1].TreeDiff[0], ShouldResemble, &git.Commit_TreeDiff{
+			Type:    git.Commit_TreeDiff_MODIFY,
+			OldId:   decodeHex("5e99bfe849b1272c4f93998c1a4e474d50f71d07"),
 			OldMode: 33188,
 			OldPath: "appengine/findit/model/flake/master_flake_analysis.py",
-			NewID:   "19db9511283f35ab878071b68c212cbf10ff0d08",
+			NewId:   decodeHex("19db9511283f35ab878071b68c212cbf10ff0d08"),
 			NewMode: 33188,
 			NewPath: "appengine/findit/model/flake/master_flake_analysis.py",
 		})
 
 	})
+}
+
+func decodeHex(s string) []byte {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
