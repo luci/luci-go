@@ -25,7 +25,7 @@ type SwitchesRequest struct {
 func (m *SwitchesRequest) Reset()                    { *m = SwitchesRequest{} }
 func (m *SwitchesRequest) String() string            { return proto.CompactTextString(m) }
 func (*SwitchesRequest) ProtoMessage()               {}
-func (*SwitchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
+func (*SwitchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
 
 func (m *SwitchesRequest) GetNames() []string {
 	if m != nil {
@@ -65,7 +65,7 @@ type Switch struct {
 func (m *Switch) Reset()                    { *m = Switch{} }
 func (m *Switch) String() string            { return proto.CompactTextString(m) }
 func (*Switch) ProtoMessage()               {}
-func (*Switch) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{1} }
+func (*Switch) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
 
 func (m *Switch) GetName() string {
 	if m != nil {
@@ -111,7 +111,7 @@ type SwitchesResponse struct {
 func (m *SwitchesResponse) Reset()                    { *m = SwitchesResponse{} }
 func (m *SwitchesResponse) String() string            { return proto.CompactTextString(m) }
 func (*SwitchesResponse) ProtoMessage()               {}
-func (*SwitchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{2} }
+func (*SwitchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
 
 func (m *SwitchesResponse) GetSwitches() []*Switch {
 	if m != nil {
@@ -127,10 +127,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor7)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor6)
 }
 
-var fileDescriptor7 = []byte{
+var fileDescriptor6 = []byte{
 	// 254 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x50, 0xcd, 0x4e, 0xf3, 0x30,
 	0x10, 0x54, 0xda, 0xa6, 0xdf, 0xd7, 0xed, 0xa1, 0xc8, 0xe2, 0xe0, 0x13, 0x8a, 0x72, 0x8a, 0x84,

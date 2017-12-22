@@ -6,18 +6,18 @@ syntax = "proto3";
 
 package config;
 
-// VLAN describes a virtual LAN.
+// VLAN describes a vlan.
 message VLAN {
-  // The ID of this virtual LAN.
+  // The ID of this vlan.
   int64 id = 1;
-  // An alias for this virtual LAN.
+  // An alias for this vlan.
   string alias = 2;
-  // The blocks of IPv4 addresses belonging to this virtual LAN.
+  // The blocks of IPv4 addresses belonging to this vlan.
   repeated string cidr_block = 3;
 }
 
-// VLANs enumerates virtual LANs.
+// VLANs enumerates vlans.
 message VLANs {
-  // A list of virtual LANs.
+  // A list of vlans.
   repeated VLAN vlan = 1;
 }

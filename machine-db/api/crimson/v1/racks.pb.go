@@ -23,7 +23,7 @@ type RacksRequest struct {
 func (m *RacksRequest) Reset()                    { *m = RacksRequest{} }
 func (m *RacksRequest) String() string            { return proto.CompactTextString(m) }
 func (*RacksRequest) ProtoMessage()               {}
-func (*RacksRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
+func (*RacksRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 func (m *RacksRequest) GetNames() []string {
 	if m != nil {
@@ -52,7 +52,7 @@ type Rack struct {
 func (m *Rack) Reset()                    { *m = Rack{} }
 func (m *Rack) String() string            { return proto.CompactTextString(m) }
 func (*Rack) ProtoMessage()               {}
-func (*Rack) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
+func (*Rack) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
 
 func (m *Rack) GetName() string {
 	if m != nil {
@@ -84,7 +84,7 @@ type RacksResponse struct {
 func (m *RacksResponse) Reset()                    { *m = RacksResponse{} }
 func (m *RacksResponse) String() string            { return proto.CompactTextString(m) }
 func (*RacksResponse) ProtoMessage()               {}
-func (*RacksResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
+func (*RacksResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
 
 func (m *RacksResponse) GetRacks() []*Rack {
 	if m != nil {
@@ -100,10 +100,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor6)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor5)
 }
 
-var fileDescriptor6 = []byte{
+var fileDescriptor5 = []byte{
 	// 219 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0xbd, 0x4e, 0x03, 0x31,
 	0x10, 0x84, 0x75, 0xf9, 0x01, 0x65, 0x43, 0x1a, 0x8b, 0xc2, 0x15, 0x3a, 0x1d, 0x4d, 0x1a, 0x6c,
