@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f3667386_d660d578",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-22T00:19:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d723593_3035ebb7",
+      "range": {
+        "startLine": 31,
+        "startChar": 15,
+        "endLine": 31,
+        "endChar": 21
+      },
+      "revId": "bd276d71f95f4e8d12b7660da041afe319de4684",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a38ad2a_4cb13a27",
         "filename": "machine-db/appengine/rpc/crimson.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "bd276d71f95f4e8d12b7660da041afe319de4684",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a531e4d_e09c05a7",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-12-22T00:19:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a38ad2a_4cb13a27",
+      "range": {
+        "startLine": 58,
+        "startChar": 3,
+        "endLine": 58,
+        "endChar": 10
+      },
+      "revId": "bd276d71f95f4e8d12b7660da041afe319de4684",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
