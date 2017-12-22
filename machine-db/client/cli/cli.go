@@ -95,6 +95,7 @@ func New(params *Parameters) *cli.Application {
 
 			// Static entities.
 			getDatacentersCmd(),
+			getOSesCmd(),
 			getRacksCmd(),
 			getSwitchesCmd(),
 		},
