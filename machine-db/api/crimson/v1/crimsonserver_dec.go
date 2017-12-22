@@ -52,6 +52,21 @@ func (s *DecoratedCrimson) GetOSes(c context.Context, req *OSesRequest) (rsp *OS
 	return
 }
 
+func (s *DecoratedCrimson) GetPlatforms(c context.Context, req *PlatformsRequest) (rsp *PlatformsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetPlatforms", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetPlatforms(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetPlatforms", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) GetRacks(c context.Context, req *RacksRequest) (rsp *RacksResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {

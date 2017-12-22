@@ -8,6 +8,7 @@ package crimson;
 
 import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto";
 
@@ -17,6 +18,8 @@ service Crimson {
   rpc GetDatacenters(DatacentersRequest) returns (DatacentersResponse);
   // GetOSes retrieves operating systems.
   rpc GetOSes(OSesRequest) returns (OSesResponse);
+  // GetPlatforms retrieves platforms.
+  rpc GetPlatforms(PlatformsRequest) returns (PlatformsResponse);
   // GetRacks retrieves racks.
   rpc GetRacks(RacksRequest) returns (RacksResponse);
   // GetSwitches retrieves switches.
