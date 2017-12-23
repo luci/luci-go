@@ -16,6 +16,47 @@
       "revId": "a2f39720c2638a7bae659344e1147d609b1dde3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b891a4b2_521a2129",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-23T20:26:39Z",
+      "side": 1,
+      "message": "this type is generic and could be useful in other applications. Could you move this type under https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/flag",
+      "parentUuid": "0646f425_ee920fd3",
+      "revId": "a2f39720c2638a7bae659344e1147d609b1dde3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f101a138_b6a8dd98",
+        "filename": "machine-db/client/cli/vlans.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-23T20:26:39Z",
+      "side": 1,
+      "message": "this may make the reader think that a vlan should match ID or alias, but actually we require both to match",
+      "range": {
+        "startLine": 60,
+        "startChar": 53,
+        "endLine": 60,
+        "endChar": 55
+      },
+      "revId": "a2f39720c2638a7bae659344e1147d609b1dde3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
