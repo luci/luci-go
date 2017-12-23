@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8142c92_844e7d50",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-23T00:04:55Z",
+      "side": 1,
+      "message": "+  I see nicety of grpc-kind of interface\n-  we now define similar structs twice so maintenance is costlier (not sure, see q. below)\n-  minor runtime cost due input and output data being shuffled through protobuf structs\n~- to me the whole contraption now looks more complex, though tests code might be a bit easier to write.\n\n\u003d\u003d\u003d I\u0027m not convinced yet this is a good change. Suppose it\u0027s justified, then the same reasons should apply to Gerrit package, which have many API methods and many input/output structs, each of which will need two copies. Maintaining and evolving these structs as Gerrit API changes will now require 2x work.\n\nP.S. But if we could make Gerrit/Gitiles expose grpc API, that\u0027d be so awesome :)",
+      "revId": "15e0cb87604b41c2f502c79c6c6497b5a51e4676",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84662a69_51bf79ac",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-23T00:04:55Z",
+      "side": 1,
+      "message": "do I get it right that now we have 2x definitions of the structs needed to talk to actual gitiles service? For example, log() output is now defined in 2 places - proto def and json parsing struct.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 42
+      },
+      "revId": "15e0cb87604b41c2f502c79c6c6497b5a51e4676",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9aae6f3_c5248d99",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-12-23T00:04:55Z",
+      "side": 1,
+      "message": "i think this by itself has little value, since you are adding two more new packages",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 52
+      },
+      "revId": "15e0cb87604b41c2f502c79c6c6497b5a51e4676",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
