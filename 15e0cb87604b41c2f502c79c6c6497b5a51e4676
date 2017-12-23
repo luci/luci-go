@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "43d4a166_9dd88e72",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-23T20:14:54Z",
+      "side": 1,
+      "message": "this CL description could be better. I\u0027ve answered  some of your questions in the new message. PTAL.\n\nre gerrit: not necessarily 2x, see below",
+      "parentUuid": "a8142c92_844e7d50",
+      "revId": "15e0cb87604b41c2f502c79c6c6497b5a51e4676",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "84662a69_51bf79ac",
         "filename": "/COMMIT_MSG",
         "patchSetId": 8
@@ -30,6 +48,30 @@
       "writtenOn": "2017-12-23T00:04:55Z",
       "side": 1,
       "message": "do I get it right that now we have 2x definitions of the structs needed to talk to actual gitiles service? For example, log() output is now defined in 2 places - proto def and json parsing struct.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 42
+      },
+      "revId": "15e0cb87604b41c2f502c79c6c6497b5a51e4676",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a45c6b62_060762cf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-23T20:14:54Z",
+      "side": 1,
+      "message": "we had to mirror structs because of the timestamp: it is different in Gerrit and proto.\n\nNote that refs has as much mirroring as before: before translated a map {string-\u003e(string,string)} to {string-\u003estring}, and do it after too, except we also wrap it in the response proto.\n\nSome of the gerrit types do not have to be mirrored and can be JSON-parsed right into protobuf structs, e.g. https://godoc.org/go.chromium.org/luci/common/api/gerrit#AccountInfo can be json-decoded directly.",
+      "parentUuid": "84662a69_51bf79ac",
       "range": {
         "startLine": 9,
         "startChar": 0,
@@ -62,6 +104,30 @@
       "revId": "15e0cb87604b41c2f502c79c6c6497b5a51e4676",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bcedbb0_3056eddc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-12-23T20:14:54Z",
+      "side": 1,
+      "message": "I\u0027ve deleted this sentence, but what I meant, I guess, is that overall amount of API in the repo shrinks. Now we have 1 type per commit, as opposed to 2. Now we have 0 types for timestamp (we reuse google.protobuf.Timestamp) as opposed to 1.",
+      "parentUuid": "b9aae6f3_c5248d99",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 52
+      },
+      "revId": "15e0cb87604b41c2f502c79c6c6497b5a51e4676",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
