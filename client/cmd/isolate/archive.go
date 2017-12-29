@@ -60,6 +60,7 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.isolateFlags.Init(&c.Flags)
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.BoolVar(&c.expArchive, "exparchive", true, "IGNORED (deprecated) Whether to use the new exparchive implementation, which tars small files before uploading them.")
+			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maxiumum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 				"Write isolated digests of archived trees to this file as JSON")
@@ -73,6 +74,7 @@ type archiveRun struct {
 	isolateFlags
 	loggingFlags         loggingFlags
 	expArchive           bool // deprecated
+	maxConcurrentChecks  int
 	maxConcurrentUploads int
 	dumpJSON             string
 }
@@ -110,7 +112,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		quiet:     c.defaultFlags.Quiet,
 	}
 
-	return archive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentUploads, al)
+	return archive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, al)
 }
 
 // archiveLogger reports stats to eventlog and stderr.
@@ -162,9 +164,9 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 
 // archive performs the archive operation for an isolate specified by archiveOpts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func archive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, concurrentUploads int, al archiveLogger) error {
+func archive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, concurrentChecks, concurrentUploads int, al archiveLogger) error {
 	// Set up a checker and uploader.
-	checker := NewChecker(ctx, client)
+	checker := NewChecker(ctx, client, concurrentChecks)
 	uploader := NewUploader(ctx, client, concurrentUploads)
 	archiver := NewTarringArchiver(checker, uploader)
 
@@ -188,7 +190,7 @@ func archive(ctx context.Context, client *isolatedclient.Client, archiveOpts *is
 		return err
 	}
 
-	al.LogSummary(ctx, int64(checker.Hit.Count), int64(checker.Miss.Count), units.Size(checker.Hit.Bytes), units.Size(checker.Miss.Bytes), []string{string(isolSummary.Digest)})
+	al.LogSummary(ctx, int64(checker.Hit.Count()), int64(checker.Miss.Count()), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()), []string{string(isolSummary.Digest)})
 	return nil
 }
 

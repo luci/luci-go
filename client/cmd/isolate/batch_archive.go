@@ -59,6 +59,7 @@ isolate. Format of files is:
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
 			c.Flags.BoolVar(&c.expArchive, "exparchive", true, "IGNORED (deprecated) Whether to use the new exparchive implementation, which tars small files before uploading them.")
+			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maxiumum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
 			return &c
 		},
@@ -70,6 +71,7 @@ type batchArchiveRun struct {
 	loggingFlags         loggingFlags
 	dumpJSON             string
 	expArchive           bool // deprecated
+	maxConcurrentChecks  int
 	maxConcurrentUploads int
 }
 
@@ -152,16 +154,16 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		quiet:     c.defaultFlags.Quiet,
 		operation: logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum(),
 	}
-	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentUploads, args)
+	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, args)
 }
 
 // batchArchive archives a series of isolates specified by genJSONPaths.
-func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentUploads int, genJSONPaths []string) error {
+func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, genJSONPaths []string) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
 	// disk at once.
-	checker := NewChecker(ctx, client)
+	checker := NewChecker(ctx, client, concurrentChecks)
 	uploader := NewUploader(ctx, client, concurrentUploads)
 	archiver := NewTarringArchiver(checker, uploader)
 
@@ -197,7 +199,7 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		return err
 	}
 
-	al.LogSummary(ctx, int64(checker.Hit.Count), int64(checker.Miss.Count), units.Size(checker.Hit.Bytes), units.Size(checker.Miss.Bytes), digests(isolSummaries))
+	al.LogSummary(ctx, int64(checker.Hit.Count()), int64(checker.Miss.Count()), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()), digests(isolSummaries))
 	return nil
 }
 
