@@ -56,7 +56,6 @@ func NewUploader(ctx context.Context, client *isolatedclient.Client, maxConcurre
 }
 
 func newUploader(ctx context.Context, svc isolateService, maxConcurrent int) *ConcurrentUploader {
-	const concurrentUploads = 10
 	return &ConcurrentUploader{
 		ctx:   ctx,
 		svc:   svc,

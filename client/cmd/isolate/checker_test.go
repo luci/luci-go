@@ -75,7 +75,7 @@ func (f *fakeIsolateService) Contains(ctx context.Context, digests []*service.Ha
 
 func TestChecker(t *testing.T) {
 	fake := &fakeIsolateService{}
-	checker := newChecker(context.Background(), fake)
+	checker := newChecker(context.Background(), fake, 8)
 
 	type itemPair struct {
 		item *Item
@@ -117,10 +117,10 @@ func TestChecker(t *testing.T) {
 		}
 	}
 
-	if got, want := checker.Hit.Count, 0; got != want {
+	if got, want := checker.Hit.Count(), 0; got != want {
 		t.Errorf("checker hit count: got %v ; want: %v", got, want)
 	}
-	if got, want := checker.Miss.Count, 150; got != want {
+	if got, want := checker.Miss.Count(), 150; got != want {
 		t.Errorf("checker hit count: got %v ; want: %v", got, want)
 	}
 }
@@ -128,7 +128,7 @@ func TestChecker(t *testing.T) {
 func TestCheckerDelay(t *testing.T) {
 	batchc := make(chan []*service.HandlersEndpointsV1Digest, 2)
 	fake := &fakeIsolateService{batchc: batchc}
-	checker := newChecker(context.Background(), fake)
+	checker := newChecker(context.Background(), fake, 8)
 
 	nop := func(item *Item, ps *isolatedclient.PushState) {}
 	checker.AddItem(&Item{Digest: "aaa"}, false, nop)
@@ -163,7 +163,7 @@ func TestCheckerErrors(t *testing.T) {
 	close(errc)
 
 	fake := &fakeIsolateService{errc: errc}
-	checker := newChecker(context.Background(), fake)
+	checker := newChecker(context.Background(), fake, 8)
 
 	nop := func(item *Item, ps *isolatedclient.PushState) {}
 	for i := 0; i < 150; i++ {
