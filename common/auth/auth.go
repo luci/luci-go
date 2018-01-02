@@ -1218,7 +1218,7 @@ func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compar
 			t.token = nil
 			return nil, false, err
 		}
-		logging.Debugf(ctx, "Token expires in %s", newTok.Expiry.Sub(clock.Now(ctx)))
+		logging.Debugf(ctx, "Token expires in %s", newTok.Expiry.Round(0).Sub(clock.Now(ctx)))
 		t.token = newTok
 		return newTok, true, nil
 	}()

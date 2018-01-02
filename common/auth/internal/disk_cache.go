@@ -98,7 +98,7 @@ func (e *cacheFileEntry) isOld(now time.Time) bool {
 	if exp.IsZero() {
 		exp = e.LastUpdate
 	}
-	return now.Sub(exp) >= delay
+	return now.Sub(exp.Round(0)) >= delay
 }
 
 func (c *DiskTokenCache) absPath() string {
