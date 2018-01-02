@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e95bb85a_43500b8b",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-02T19:43:43Z",
+      "side": 1,
+      "message": "known",
+      "range": {
+        "startLine": 119,
+        "startChar": 43,
+        "endLine": 119,
+        "endChar": 47
+      },
+      "revId": "dd71b4342cd120fd1397e8939155596cf94f3213",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
