@@ -116,6 +116,29 @@ func (g grpcCodeTag) In(err error) (v codes.Code, ok bool) {
 // The tag value MUST be a "google.golang.org/grpc/codes".Code.
 var Tag = grpcCodeTag{errors.NewTagKey("gRPC Code")}
 
+// Shortcuts for assigning tags with codes known at compile time.
+//
+// Instead errors.Annotate(...).Tag(grpcutil.Tag.With(codes.InvalidArgument)) do
+// errors.Annotate(...).Tag(grpcutil.InvalidArgumentTag)).
+var (
+	CanceledTag           = Tag.With(codes.Canceled)
+	UnknownTag            = Tag.With(codes.Unknown)
+	InvalidArgumentTag    = Tag.With(codes.InvalidArgument)
+	DeadlineExceededTag   = Tag.With(codes.DeadlineExceeded)
+	NotFoundTag           = Tag.With(codes.NotFound)
+	AlreadyExistsTag      = Tag.With(codes.AlreadyExists)
+	PermissionDeniedTag   = Tag.With(codes.PermissionDenied)
+	UnauthenticatedTag    = Tag.With(codes.Unauthenticated)
+	ResourceExhaustedTag  = Tag.With(codes.ResourceExhausted)
+	FailedPreconditionTag = Tag.With(codes.FailedPrecondition)
+	AbortedTag            = Tag.With(codes.Aborted)
+	OutOfRangeTag         = Tag.With(codes.OutOfRange)
+	UnimplementedTag      = Tag.With(codes.Unimplemented)
+	InternalTag           = Tag.With(codes.Internal)
+	UnavailableTag        = Tag.With(codes.Unavailable)
+	DataLossTag           = Tag.With(codes.DataLoss)
+)
+
 // Code returns the gRPC code for a given error.
 //
 // In addition to the functionality of grpc.Code, this will unwrap any wrapped
