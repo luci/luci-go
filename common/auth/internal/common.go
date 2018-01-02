@@ -262,29 +262,22 @@ func EqualTokens(a, b *Token) bool {
 
 // isBadTokenError sniffs out HTTP 400/401 from token source errors.
 func isBadTokenError(err error) bool {
-	// See https://github.com/golang/oauth2/blob/master/internal/token.go.
-	// Unfortunately, fmt.Errorf is used there, so there's no other way to
-	// differentiate between bad tokens/creds and transient errors.
-	// Note that mis-categorization is not a big deal: we'll unnecessarily retry
-	// fatal error a bunch of times, thinking it is transient.
-	if err == nil {
-		return false
+	if rerr, _ := err.(*oauth2.RetrieveError); rerr != nil {
+		return rerr.Response.StatusCode == 400 || rerr.Response.StatusCode == 401
 	}
-	s := strings.ToLower(err.Error())
-	return strings.Contains(s, "400 bad request") || strings.Contains(s, "401 unauthorized")
+	return false
 }
 
 // isBadKeyError sniffs out errors related to malformed private keys.
 func isBadKeyError(err error) bool {
-	// See https://github.com/golang/oauth2/blob/master/internal/oauth2.go.
-	// Unfortunately, if also uses fmt.Errorf.
-	// Note that mis-categorization is not a big deal: we'll unnecessarily retry
-	// fatal error a bunch of times, thinking it is transient.
 	if err == nil {
 		return false
 	}
+	// See https://go.googlesource.com/oauth2.git/+/197281d4/internal/oauth2.go#32
+	// Unfortunately, if uses fmt.Errorf.
 	s := err.Error()
-	return strings.Contains(s, "private key should be a PEM or plain PKSC1 or PKCS8") || s == "private key is invalid"
+	return strings.Contains(s, "private key should be a PEM or plain PKSC1 or PKCS8") ||
+		s == "private key is invalid"
 }
 
 // grabToken uses token source to create a new *oauth2.Token.
@@ -298,11 +291,10 @@ func grabToken(src oauth2.TokenSource) (*oauth2.Token, error) {
 		return nil, err
 	case err != nil:
 		// More often than not errors here are transient (network connectivity
-		// errors, HTTP 500 responses, etc). It is difficult to categorize them,
-		// since oauth2 library uses fmt.Errorf(...) for errors. Retrying a fatal
-		// error a bunch of times is not very bad, so pick safer approach and assume
-		// any error is transient. Revoked refresh token or bad credentials (most
-		// common source of fatal errors) is already handled above.
+		// errors, HTTP 500 responses, etc). Retrying a fatal error a bunch of times
+		// is not very bad, so pick safer approach and assume any error is
+		// transient. Revoked refresh token or bad credentials (most common source
+		// of fatal errors) is already handled above.
 		return nil, transient.Tag.Apply(err)
 	default:
 		return tok, nil
