@@ -200,7 +200,7 @@ func TokenExpiresIn(ctx context.Context, t *Token, lifetime time.Duration) bool 
 	if t.Expiry.IsZero() {
 		return false
 	}
-	return t.Expiry.Before(clock.Now(ctx).Add(lifetime))
+	return t.Expiry.Round(0).Before(clock.Now(ctx).Add(lifetime))
 }
 
 // TokenExpiresInRnd is like TokenExpiresIn, except it slightly randomizes the
@@ -230,18 +230,19 @@ func TokenExpiresInRnd(ctx context.Context, t *Token, lifetime time.Duration) bo
 	if t.Expiry.IsZero() {
 		return false
 	}
+	expiry := t.Expiry.Round(0) // force to use wall clock time
 	deadline := clock.Now(ctx).Add(lifetime)
-	if t.Expiry.Before(deadline) {
+	if expiry.Before(deadline) {
 		// Definitely expires within 'lifetime'.
 		return true
 	}
-	if t.Expiry.After(deadline.Add(expiryRandInterval)) {
+	if expiry.After(deadline.Add(expiryRandInterval)) {
 		// Definitely expires much later than 'lifetime', no need to involve RNG.
 		return false
 	}
 	// Semi-randomly declare it as expired.
 	rnd := time.Duration(mathrand.Int63n(ctx, int64(expiryRandInterval)))
-	return t.Expiry.Before(deadline.Add(rnd))
+	return expiry.Before(deadline.Add(rnd))
 }
 
 // EqualTokens returns true if tokens are equal.
