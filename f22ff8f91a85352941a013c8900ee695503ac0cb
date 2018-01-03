@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87b11f16_6f4719b0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-03T00:48:33Z",
+      "side": 1,
+      "message": "nit: protos of manifest diffs of commits",
+      "range": {
+        "startLine": 10,
+        "startChar": 35,
+        "endLine": 10,
+        "endChar": 63
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcaeea16_a91b866b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-03T00:48:33Z",
+      "side": 1,
+      "message": "👍 well written.",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 40
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "75bd182f_607ecf50",
+        "filename": "common/api/gitiles/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-03T00:48:33Z",
+      "side": 1,
+      "message": "TIL^^ Very neat.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 1
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "75c18937_10ce0fc7",
+        "filename": "common/api/gitiles/rest.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-03T00:48:33Z",
+      "side": 1,
+      "message": "support",
+      "range": {
+        "startLine": 193,
+        "startChar": 44,
+        "endLine": 193,
+        "endChar": 45
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12df5d33_9abc86d7",
+        "filename": "common/api/gitiles/rest_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-03T00:48:33Z",
+      "side": 1,
+      "message": "weird indentation",
+      "range": {
+        "startLine": 99,
+        "startChar": 5,
+        "endLine": 99,
+        "endChar": 11
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43c5a1e6_e8b9c96b",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-03T00:48:33Z",
+      "side": 1,
+      "message": "-",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 10
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce577371_48db4521",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-03T00:48:33Z",
+      "side": 1,
+      "message": "Retrieved",
+      "range": {
+        "startLine": 56,
+        "startChar": 7,
+        "endLine": 56,
+        "endChar": 15
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
