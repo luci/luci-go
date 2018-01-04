@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cbc221e0_a2d9abd5",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T01:28:20Z",
+      "side": 1,
+      "message": "afais, most users of gitiles lib will have to import two packages with the same default names. is it better to alias common/api/gitiles methods in go.chromium.org/luci/common/proto/gitiles?",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 42
+      },
+      "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86f76094_61979b66",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T01:28:20Z",
+      "side": 1,
+      "message": "cryptic to me, how about gitilesproto?",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 10
+      },
+      "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69772040_6e2183f3",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T01:28:20Z",
+      "side": 1,
+      "message": "1 call per each refs/\u003cspace\u003e is WAI, but tests aren\u0027t obvious - see L283 \u003d\u003e we basically need a mock to return different results depending on refs request parameter. It should be a lot easier to do now because no URL parsing is required, which is nice.",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 66
+      },
+      "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d7f8011_062ea027",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T01:28:20Z",
+      "side": 1,
+      "message": "i think this should be either deleted OR adapted.",
+      "range": {
+        "startLine": 279,
+        "startChar": 0,
+        "endLine": 352,
+        "endChar": 1
+      },
+      "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
