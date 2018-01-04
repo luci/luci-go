@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -266,8 +266,6 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 		}
 	}
 
-	// This could be potentially improved by using CAS,
-	// but it would significantly complicate this code.
 	if err := memcache.Set(c, caches...); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to cache gitiles log")
 	} else {
