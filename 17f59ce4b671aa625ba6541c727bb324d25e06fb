@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "c8d689e5_a7adec2b",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "package",
+      "range": {
+        "startLine": 128,
+        "startChar": 25,
+        "endLine": 128,
+        "endChar": 32
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c419960f_24b96f5d",
         "filename": "milo/git/client.go",
         "patchSetId": 5
@@ -34,6 +57,29 @@
       "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "872c6edb_c84c0999",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "const? or is to take \u0026factoryKey?",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 3
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -116,6 +162,167 @@
       "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "45014029_963f11c6",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "why ?",
+      "range": {
+        "startLine": 43,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 57
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b78009a_622b78d5",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "for correctness, this implies linear git history. So, this will work fine for Chrome, but not quite so well for Fuchsia or other repos using Merge submit strategy in Gerrit.\n\nleft suggestion below in cache setting func. tl;dr cache ancestors so long as there each commit has exactly 1 parent.",
+      "range": {
+        "startLine": 86,
+        "startChar": 3,
+        "endLine": 88,
+        "endChar": 36
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6332a8ec_3fbdc0e7",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "last, if you adopt my later suggestion for minor efficiency :)",
+      "range": {
+        "startLine": 90,
+        "startChar": 7,
+        "endLine": 90,
+        "endChar": 12
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ded2644_8f72d4d4",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "efficiency: if you swap the order (\u003cbyte\u003e, \u003cprotobuf\u003e) \u003d\u003e (\u003cprotobuf\u003e, \u003cbyte\u003e) you may avoid copying stuff if initial protobuf buffer can be extended by 1 byte.",
+      "range": {
+        "startLine": 221,
+        "startChar": 1,
+        "endLine": 222,
+        "endChar": 33
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a52be279_9da6830a",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "so long as lineage is linear (ie, exactly 1 ancestor(parent)).",
+      "range": {
+        "startLine": 236,
+        "startChar": 56,
+        "endLine": 236,
+        "endChar": 57
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d1fdc1b_b69c16a5",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": ", 0,",
+      "range": {
+        "startLine": 237,
+        "startChar": 40,
+        "endLine": 237,
+        "endChar": 42
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90c406c8_fb89ff97",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:26:20Z",
+      "side": 1,
+      "message": "i \u003c len(res.Log) \u0026\u0026 len(res.Log[i-1].Parents) \u003d\u003d 1",
+      "range": {
+        "startLine": 238,
+        "startChar": 14,
+        "endLine": 238,
+        "endChar": 31
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
