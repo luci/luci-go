@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "aa633202_27075156",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T00:27:41Z",
+      "side": 1,
+      "message": "i forgot \"in\" there",
+      "parentUuid": "87b11f16_6f4719b0",
+      "range": {
+        "startLine": 10,
+        "startChar": 35,
+        "endLine": 10,
+        "endChar": 63
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fcaeea16_a91b866b",
         "filename": "/COMMIT_MSG",
         "patchSetId": 10
@@ -65,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "fbd95c82_056d2836",
+        "filename": "common/api/gitiles/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T00:27:41Z",
+      "side": 1,
+      "message": "this is going away, see latest patchset",
+      "parentUuid": "326db0e3_00a6da12",
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75bd182f_607ecf50",
         "filename": "common/api/gitiles/common.go",
         "patchSetId": 10
@@ -76,6 +118,30 @@
       "writtenOn": "2018-01-03T00:48:33Z",
       "side": 1,
       "message": "TIL^^ Very neat.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 1
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b9330fd1_c6a3a756",
+        "filename": "common/api/gitiles/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T00:27:41Z",
+      "side": 1,
+      "message": "it occurred to me that we don\u0027t need this anymore. A grpc service should be using https://godoc.org/google.golang.org/grpc/codes instead",
+      "parentUuid": "75bd182f_607ecf50",
       "range": {
         "startLine": 29,
         "startChar": 0,
@@ -111,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "fcba0af1_172a3297",
+        "filename": "common/api/gitiles/rest.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T00:27:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75c18937_10ce0fc7",
+      "range": {
+        "startLine": 193,
+        "startChar": 44,
+        "endLine": 193,
+        "endChar": 45
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12df5d33_9abc86d7",
         "filename": "common/api/gitiles/rest_test.go",
         "patchSetId": 10
@@ -131,6 +221,30 @@
       "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2988b9b8_3330dfae",
+        "filename": "common/api/gitiles/rest_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T00:27:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12df5d33_9abc86d7",
+      "range": {
+        "startLine": 99,
+        "startChar": 5,
+        "endLine": 99,
+        "endChar": 11
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "88a8160c_650a2721",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T00:27:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43c5a1e6_e8b9c96b",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 10
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ce577371_48db4521",
         "filename": "common/proto/gitiles/gitiles.proto",
         "patchSetId": 10
@@ -177,6 +315,30 @@
       "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ac13dd4_71be480b",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T00:27:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce577371_48db4521",
+      "range": {
+        "startLine": 56,
+        "startChar": 7,
+        "endLine": 56,
+        "endChar": 15
+      },
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
