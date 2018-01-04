@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "bd640ee1_14f57df8",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T03:06:11Z",
+      "side": 1,
+      "message": "ah, true :( And we don\u0027t want to import protos into common/api/gitiles package.\nI\u0027d personally name proto/gitiles as \"proto/gitilespb\", so my editor does more work for me, but then we have inconsistent naming inside common/proto/*, unless we append \"pb\" to all of them (WDYT about that?).\n\nthis discussion shouldn\u0027t block this CL landing though.",
+      "parentUuid": "9f150f86_38a60471",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 42
+      },
+      "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "86f76094_61979b66",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 2
@@ -93,6 +117,30 @@
       "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c2453cd_a0c35bcc",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T03:06:11Z",
+      "side": 1,
+      "message": "fair enough, i\u0027ll get used to it.",
+      "parentUuid": "a5b3c79f_f0452acd",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 10
+      },
+      "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
