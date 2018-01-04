@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a932a11d_f843c9e4",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T23:00:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c419960f_24b96f5d",
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01c06eec_6d4cf089",
         "filename": "milo/git/client.go",
         "patchSetId": 5
@@ -74,6 +92,30 @@
       "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a888a504_c1504138",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T23:00:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e822243a_5185583f",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
