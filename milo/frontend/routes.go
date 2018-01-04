@@ -50,7 +50,7 @@ func Run(templatePath string) {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	baseMW := standard.Base().Extend(withRouterContextMiddleware)
+	baseMW := standard.Base().Extend(withRouterContextMiddleware, withGitilesMiddleware)
 	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute))
 	htmlMW := frontendMW.Extend(
 		auth.Authenticate(server.CookieAuth),
