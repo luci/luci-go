@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "650e816a_54d9bb57",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T15:27:50Z",
+      "side": 1,
+      "message": "pb suffix in package names is not what everyone else are doing :(\n\nhttps://godoc.org/github.com/golang/protobuf/ptypes#pkg-subdirectories\nhttps://godoc.org/?q\u003dproto\n\nwe might want to use type aliases in go1.9 to make gitiltespb types available in gitiles package.",
+      "parentUuid": "bd640ee1_14f57df8",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 42
+      },
+      "revId": "ba78897a3f9ae1c12d88bd242af56ae4deeba4e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "86f76094_61979b66",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 2
