@@ -48,6 +48,23 @@
     },
     {
       "key": {
+        "uuid": "326db0e3_00a6da12",
+        "filename": "common/api/gitiles/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-04T00:25:16Z",
+      "side": 1,
+      "message": "I think we\u0027ll want to hoist this out of gitiles. Milo reimplements the same thing.\n\nI would also recommend not exposing the TagKey directly, but following the example in the errors documentation: https://godoc.org/go.chromium.org/luci/common/errors#NewTagKey",
+      "revId": "f22ff8f91a85352941a013c8900ee695503ac0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "75bd182f_607ecf50",
         "filename": "common/api/gitiles/common.go",
         "patchSetId": 10
