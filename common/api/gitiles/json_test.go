@@ -16,25 +16,45 @@ package gitiles
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/proto/git"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestUserProto(t *testing.T) {
+func TestTimestamp(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test User.Proto`, t, func() {
-		u := &User{
+	Convey("Marshal and Unmarshal ts", t, func() {
+		// Nanoseconds must be zero because the string format in between
+		// does not contain nanoseconds.
+		tBefore := ts{time.Date(12, 2, 5, 6, 1, 3, 0, time.UTC)}
+		bytes, err := json.Marshal(tBefore)
+		So(err, ShouldBeNil)
+
+		var tAfter ts
+		err = json.Unmarshal(bytes, &tAfter)
+		So(err, ShouldBeNil)
+
+		So(tBefore, ShouldResemble, tAfter)
+	})
+}
+
+func TestUser(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test user.Proto`, t, func() {
+		u := &user{
 			Name:  "Some name",
 			Email: "some.name@example.com",
-			Time:  Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)},
+			Time:  ts{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)},
 		}
 
 		Convey(`basic`, func() {
@@ -49,8 +69,8 @@ func TestUserProto(t *testing.T) {
 			})
 		})
 
-		Convey(`empty timestamp`, func() {
-			u.Time = Time{}
+		Convey(`empty ts`, func() {
+			u.Time = ts{}
 			uPB, err := u.Proto()
 			So(err, ShouldBeNil)
 			So(uPB, ShouldResemble, &git.Commit_User{
@@ -61,11 +81,11 @@ func TestUserProto(t *testing.T) {
 	})
 }
 
-func TestTreeDiffProto(t *testing.T) {
+func TestTreeDiff(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test TreeDiff.Proto`, t, func() {
-		td := &TreeDiff{
+	Convey(`Test treeDiff.Proto`, t, func() {
+		td := &treeDiff{
 			Type:    "MODIFY",
 			OldID:   strings.Repeat("deadbeef", 5),
 			OldPath: "some/path",
@@ -109,19 +129,19 @@ func TestTreeDiffProto(t *testing.T) {
 	})
 }
 
-func TestCommitProto(t *testing.T) {
+func TestCommit(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test Commit.Proto`, t, func() {
-		c := &Commit{
+	Convey(`Test commit.Proto`, t, func() {
+		c := &commit{
 			Commit: strings.Repeat("deadbeef", 5),
 			Tree:   strings.Repeat("ac1df00d", 5),
 			Parents: []string{
 				strings.Repeat("d15c0bee", 5),
 				strings.Repeat("daff0d11", 5),
 			},
-			Author:    User{"author", "author@example.com", Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
-			Committer: User{"committer", "committer@example.com", Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
+			Author:    user{"author", "author@example.com", ts{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
+			Committer: user{"committer", "committer@example.com", ts{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
 			Message:   "I am\na\nbanana",
 		}
 
