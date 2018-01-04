@@ -247,8 +247,8 @@ func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 
 		// Does a spec file exist for this path?
 		specPath := path + Suffix
-		switch _, err := os.Stat(specPath); {
-		case err == nil:
+		switch st, err := os.Stat(specPath); {
+		case err == nil && !st.IsDir():
 			// Found the file.
 			return specPath, nil
 
@@ -366,8 +366,8 @@ func (l *Loader) findCommonWalkingFrom(startDir string) (string, error) {
 
 		for _, name := range names {
 			checkPath := filepath.Join(startDir, name)
-			switch _, err := os.Stat(checkPath); {
-			case err == nil:
+			switch st, err := os.Stat(checkPath); {
+			case err == nil && !st.IsDir():
 				return checkPath, nil
 
 			case filesystem.IsNotExist(err):
