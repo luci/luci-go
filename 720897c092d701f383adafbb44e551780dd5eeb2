@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cc34153_a091d4d6",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-04T22:59:42Z",
+      "side": 1,
+      "message": "? I mean... maybe? I don\u0027t think this is generally true... Should file a bug to document this limit and fix it in afterglow.",
+      "range": {
+        "startLine": 138,
+        "startChar": 4,
+        "endLine": 138,
+        "endChar": 48
+      },
+      "revId": "720897c092d701f383adafbb44e551780dd5eeb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7949e816_16eef545",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-04T22:59:42Z",
+      "side": 1,
+      "message": "this is unnecessary. the entire purpose of the Format string below is to demonstrate this.",
+      "range": {
+        "startLine": 166,
+        "startChar": 2,
+        "endLine": 166,
+        "endChar": 55
+      },
+      "revId": "720897c092d701f383adafbb44e551780dd5eeb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
