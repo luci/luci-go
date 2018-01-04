@@ -450,9 +450,5 @@ func normalizeGitilesTriggerData(in *internal.GitilesTriggerData) (*normalizedTr
 	if err != nil {
 		return nil, err
 	}
-	p, err := url.Parse(u)
-	if err != nil {
-		return nil, err
-	}
-	return &normalizedTrigger{repo: p, ref: in.Ref, revision: in.Revision}, nil
+	return &normalizedTrigger{repo: u, ref: in.Ref, revision: in.Revision}, nil
 }
