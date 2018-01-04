@@ -45,6 +45,30 @@
       "revId": "14348bacdd4da27ac06a7f95e198d16506819c02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63c4884c_2276bf52",
+        "filename": "tools/cmd/bqschemaupdater/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T22:59:08Z",
+      "side": 1,
+      "message": "apparently you already have a global doc https://chromium.googlesource.com/infra/infra/+/master/doc/users/event_pipeline.md",
+      "parentUuid": "688ff467_3dfd60b1",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 37
+      },
+      "revId": "14348bacdd4da27ac06a7f95e198d16506819c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
