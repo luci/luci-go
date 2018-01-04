@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "01c06eec_6d4cf089",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-04T22:52:20Z",
+      "side": 1,
+      "message": "do we still have the ability to do non-authenticated (anonymous) access?",
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "332b3ee4_2a913b96",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-04T22:52:20Z",
+      "side": 1,
+      "message": "does it make sense to do a CAS to avoid a race?",
+      "range": {
+        "startLine": 269,
+        "startChar": 20,
+        "endLine": 269,
+        "endChar": 23
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
