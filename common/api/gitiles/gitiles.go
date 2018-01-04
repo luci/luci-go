@@ -31,11 +31,10 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-// OAuthScope is OAuth 2.0 scope that must be included when acquiring an access
-// token for Gitiles RPCs.
-const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
+// TODO(nodir): update all clients to use NewRESTClient and
+// delete this file entirely.
 
-// HTTPStatusTag is applied to errors returned by thin wrappers of Gitiles
+// HTTPStatusTagKey is applied to errors returned by thin wrappers of Gitiles
 // RPCs.
 var HTTPStatusTagKey = errors.NewTagKey("HTTP Status code")
 
@@ -113,49 +112,8 @@ type Commit struct {
 	TreeDiff  []TreeDiff `json:"tree_diff"`
 }
 
-// ValidateRepoURL validates gitiles repository URL for use in this package.
-func ValidateRepoURL(repoURL string) error {
-	_, err := NormalizeRepoURL(repoURL, false)
-	return err
-}
-
-// NormalizeRepoURL returns canonical for gitiles URL of the repo.
-// error is returned if validation fails.
-//
-// If auth is true, the returned URL has "/a/" path prefix.
-func NormalizeRepoURL(repoURL string, auth bool) (string, error) {
-	u, err := url.Parse(repoURL)
-	if err != nil {
-		return "", err
-	}
-	if u.Scheme != "https" {
-		return "", fmt.Errorf("%s should start with https://", repoURL)
-	}
-	if !strings.HasSuffix(u.Host, ".googlesource.com") {
-		return "", errors.New("only .googlesource.com repos supported")
-	}
-	if u.Fragment != "" {
-		return "", errors.New("no fragments allowed in repoURL")
-	}
-	if u.Path == "" || u.Path == "/" {
-		return "", errors.New("path to repo is empty")
-	}
-	if !strings.HasPrefix(u.Path, "/") {
-		u.Path = "/" + u.Path
-	}
-	if strings.HasPrefix(u.Path, "/a/") {
-		u.Path = u.Path[2:]
-	}
-	if auth {
-		u.Path = "/a" + u.Path
-	}
-
-	u.Path = strings.TrimRight(u.Path, "/")
-	u.Path = strings.TrimSuffix(u.Path, ".git")
-	return u.String(), nil
-}
-
 // Client is Gitiles client.
+// DEPRECATED: use NewRESTClient.
 type Client struct {
 	Client *http.Client
 	// Auth, if true, indicates that the HTTP client sends authenticated
@@ -422,10 +380,11 @@ type logResponse struct {
 }
 
 func (c *Client) get(ctx context.Context, repoURL, subPath string, result interface{}) error {
-	repoURL, err := NormalizeRepoURL(repoURL, c.Auth)
+	u, err := NormalizeRepoURL(repoURL, c.Auth)
 	if err != nil {
 		return err
 	}
+	repoURL = u.String()
 
 	URL := fmt.Sprintf("%s/%s", repoURL, subPath)
 	if c.mockRepoURL != "" {

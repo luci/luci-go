@@ -1,0 +1,97 @@
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package gitiles;
+
+import "go.chromium.org/luci/common/proto/git/commit.proto";
+
+service Gitiles {
+    // Log retrieves commit log.
+    rpc Log(LogRequest) returns (LogResponse) {};
+    // Refs retrieves repo refs.
+    rpc Refs(RefsRequest) returns (RefsResponse) {};
+}
+
+// LogRequest is request message for Gitiles.Log rpc.
+message LogRequest {
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/master
+    // Required.
+    string project = 1;
+    // The commit where to start the listing from.
+    // The value can be:
+    //   - a git revision as 40-char string or its prefix so long as its unique in repo.
+    //   - a ref such as "refs/heads/branch" or just "branch"
+    //   - a ref defined as n-th parent of R in the form "R~n".
+    //     For example, "master~2" or "deadbeef~1".
+    // Required.
+    string treeish = 3;
+    // The commit where to stop listing at. Together with treeish,
+    // the represent git's "ancestor..treeish" notation.
+    string ancestor = 2;
+    // If true, include tree diff in commits.
+    bool tree_diff = 4;
+
+    // Value of next_page_token in LogResponse to continue.
+    string page_token = 10;
+    // If > 0, number of commits to retrieve.
+    int32 page_size = 11;
+}
+
+// LogRequest is response message for Gitiles.Log rpc.
+message LogResponse {
+    // Retrieved commits.
+    repeated git.Commit log = 1;
+    // A page token for next LogRequest to fetch next page of commits.
+    string next_page_token = 2;
+}
+
+// RefsRequest is a request message of Gitiles.Refs RPC.
+message RefsRequest {
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/master
+    // Required.
+    string project = 1;
+    // Limits which refs to resolve to only those matching {refsPath}/*.
+    //
+    // Must be "refs" or start with "refs/".
+    // Must not include glob '*'.
+    // Use "refs/heads" to retrieve all branches.
+    //
+    // To fetch **all** refs in a repo, specify just "refs" but beware of two
+    // caveats:
+    //  * refs returned include a ref for each patchset for each Gerrit change
+    //    associated with the repo.
+    //  * returned map will contain special "HEAD" ref whose value in resulting map
+    //    will be name of the actual ref to which "HEAD" points, which is typically
+    //    "refs/heads/master".
+    //
+    // Thus, if you are looking for all tags and all branches of repo, it's
+    // recommended to issue two Refs calls limited to "refs/tags" and "refs/heads"
+    // instead of one call for "refs".
+    //
+    // Since Gerrit allows per-ref ACLs, it is possible that some refs matching
+    // refPrefix would not be present in results because current user isn't granted
+    // read permission on them.
+    string refs_path = 2;
+}
+
+// RefsResponse is a response message of Gitiles.Refs RPC.
+message RefsResponse {
+    // revisions maps a ref to a revision.
+    // Git branches have keys start with "refs/heads/".
+    map<string, string> revisions = 2;
+}

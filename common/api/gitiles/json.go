@@ -16,6 +16,9 @@ package gitiles
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 
@@ -23,11 +26,49 @@ import (
 	"go.chromium.org/luci/common/proto/git"
 )
 
-// TODO(nodir): update all clients to use NewRESTClient and
-// delete this file entirely.
+// This file implements structs to parse Gitiles' JSON.
+
+// ts is a wrapper around time.Time for clean JSON interoperation with
+// Gitiles time encoded as a string. This allows for the time to be
+// parsed from a Gitiles Commit JSON object at decode time, which makes
+// the User struct more idiomatic.
+//
+// Note: we cannot use name "timestamp" because it is reserved by the
+// timestamp proto package.
+type ts struct {
+	time.Time
+}
+
+// MarshalJSON converts Time to an ANSIC string before marshalling.
+func (t ts) MarshalJSON() ([]byte, error) {
+	stringTime := t.Format(time.ANSIC)
+	return json.Marshal(stringTime)
+}
+
+// UnmarshalJSON unmarshals an ANSIC string before parsing it into a Time.
+func (t *ts) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	parsedTime, err := time.Parse(time.ANSIC, s)
+	if err != nil {
+		// Try it with the appended timezone version.
+		parsedTime, err = time.Parse(time.ANSIC+" -0700", s)
+	}
+	t.Time = parsedTime
+	return err
+}
+
+// user is the author or the committer returned from gitiles.
+type user struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Time  ts     `json:"time"`
+}
 
 // Proto converts this User to its protobuf equivalent.
-func (u *User) Proto() (ret *git.Commit_User, err error) {
+func (u *user) Proto() (ret *git.Commit_User, err error) {
 	ret = &git.Commit_User{
 		Name:  u.Name,
 		Email: u.Email,
@@ -39,8 +80,20 @@ func (u *User) Proto() (ret *git.Commit_User, err error) {
 	return
 }
 
+// treeDiff shows the pertinent 'diff' information between two Commit objects.
+type treeDiff struct {
+	// Type is one of the KnownTreeDiffTypes.
+	Type    string `json:"type"`
+	OldID   string `json:"old_id"`
+	OldMode uint32 `json:"old_mode"`
+	OldPath string `json:"old_path"`
+	NewID   string `json:"new_id"`
+	NewMode uint32 `json:"new_mode"`
+	NewPath string `json:"new_path"`
+}
+
 // Proto converts this TreeDiff to its protobuf equivalent.
-func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
+func (t *treeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
 	ret = &git.Commit_TreeDiff{
 		OldPath: t.OldPath,
 		OldMode: t.OldMode,
@@ -48,7 +101,7 @@ func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
 		NewMode: t.NewMode,
 	}
 
-	if val, ok := git.Commit_TreeDiff_ChangeType_value[t.Type]; ok {
+	if val, ok := git.Commit_TreeDiff_ChangeType_value[strings.ToUpper(t.Type)]; ok {
 		ret.Type = git.Commit_TreeDiff_ChangeType(val)
 	} else {
 		err = errors.Reason("bad change type: %q", t.Type).Err()
@@ -72,8 +125,19 @@ func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
 	return
 }
 
+// commit is the information of a commit returned from gitiles.
+type commit struct {
+	Commit    string     `json:"commit"`
+	Tree      string     `json:"tree"`
+	Parents   []string   `json:"parents"`
+	Author    user       `json:"author"`
+	Committer user       `json:"committer"`
+	Message   string     `json:"message"`
+	TreeDiff  []treeDiff `json:"tree_diff"`
+}
+
 // Proto converts this git.Commit to its protobuf equivalent.
-func (c *Commit) Proto() (ret *git.Commit, err error) {
+func (c *commit) Proto() (ret *git.Commit, err error) {
 	ret = &git.Commit{}
 
 	if ret.Id, err = hex.DecodeString(c.Commit); err != nil {
@@ -114,21 +178,4 @@ func (c *Commit) Proto() (ret *git.Commit, err error) {
 	}
 
 	return
-}
-
-// LogProto takes log data from e.g. Log(), and returns the LUCI standard
-// protobuf message form of the log data (suitable for embedding in other proto
-// messages).
-//
-// Errors may occur if the Commits contain bad hashes (i.e. not hexadecimal), or
-// undecodable timestamps. This should not occur if the []Commit was produced by
-// the Log function in this package.
-func LogProto(log []Commit) (ret []*git.Commit, err error) {
-	ret = make([]*git.Commit, len(log))
-	for i, c := range log {
-		if ret[i], err = c.Proto(); err != nil {
-			return nil, errors.Annotate(err, "converting commit %d", i).Err()
-		}
-	}
-	return ret, nil
 }
