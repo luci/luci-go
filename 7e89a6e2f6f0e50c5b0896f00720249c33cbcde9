@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8906999e_9afeaf22",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-04T01:16:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c17dbe91_c6cffe90",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 84
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7f3dce02_4737833e",
         "filename": "client/cmd/cloudkms/encrypt.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2017-12-14T01:03:06Z",
       "side": 1,
       "message": "what name?.. is it cryptoKey path?",
+      "range": {
+        "startLine": 32,
+        "startChar": 32,
+        "endLine": 32,
+        "endChar": 38
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fb99cf9_4a7dcab0",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-04T01:16:07Z",
+      "side": 1,
+      "message": "It\u0027s hard to put into only a couple words. In all the documentation they use \"name\" which (imo) is super weird but I was just keeping parity with that. I\u0027ll rename this to \"path,\" and LongDesc has more information.",
+      "parentUuid": "7f3dce02_4737833e",
       "range": {
         "startLine": 32,
         "startChar": 32,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "8835267f_82970693",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-04T01:16:07Z",
+      "side": 1,
+      "message": "Ah yes, good point. I made a mental note but it got lost. I\u0027ll make this much more detailed.",
+      "parentUuid": "a2bd929a_cdc82288",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 40,
+        "endChar": 74
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e6b191e_39d9a545",
         "filename": "client/cmd/cloudkms/encrypt.go",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9cd519d_dd610e8e",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-04T01:16:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e6b191e_39d9a545",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 5
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "b91be37d_7221154c",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-04T01:16:07Z",
+      "side": 1,
+      "message": "done: https://chromium-review.googlesource.com/c/infra/infra/+/849415",
+      "parentUuid": "34d587c0_eeb45218",
+      "range": {
+        "startLine": 27,
+        "startChar": 11,
+        "endLine": 27,
+        "endChar": 41
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "804b9f6e_fdc6ebfa",
         "filename": "client/cmd/cloudkms/main.go",
         "patchSetId": 2
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "f3764e43_d4264b29",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-04T01:16:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "804b9f6e_fdc6ebfa",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 39
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7b3eab0d_7aa75272",
         "filename": "client/cmd/cloudkms/main.go",
         "patchSetId": 2
@@ -160,6 +304,30 @@
       "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1d8ccf1_848f97c5",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-04T01:16:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b3eab0d_7aa75272",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 32
+      },
+      "revId": "7e89a6e2f6f0e50c5b0896f00720249c33cbcde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
