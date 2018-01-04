@@ -17,15 +17,15 @@ package gitiles
 import (
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/config/validation"
-	"go.chromium.org/luci/common/errors"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -49,7 +49,9 @@ func TestTriggerBuild(t *testing.T) {
 		parsedUrl, err := url.Parse(cfg.Repo)
 		So(err, ShouldBeNil)
 
-		loadNoError := func() map[string]string {
+		type strmap map[string]string
+
+		loadNoError := func() strmap {
 			state, err := loadState(c, jobID, parsedUrl)
 			if err != nil {
 				panic(err)
@@ -63,18 +65,27 @@ func TestTriggerBuild(t *testing.T) {
 			SaveCallback:  func() error { return nil },
 			OverrideJobID: jobID,
 		}
-		gitilesMock := &mockGitilesClient{}
+		// TODO(nodir): use goconvey.C instead of t in NewController.
+		gitilesMock := gitilespb.NewMockGitilesClient(gomock.NewController(t))
+
 		m := TaskManager{mockGitilesClient: gitilesMock}
 
-		Convey("new refs are discovered", func() {
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
-					"refs/heads/master": "deadbeef00",
-					"refs/weird":        "1234567890",
-				}, nil
+		expectRefs := func(refsPath string, tips strmap) *gomock.Call {
+			req := &gitilespb.RefsRequest{
+				Project:  "b",
+				RefsPath: refsPath,
 			}
+			res := &gitilespb.RefsResponse{
+				Revisions: tips,
+			}
+			return gitilesMock.EXPECT().Refs(gomock.Any(), req).Return(res, nil)
+		}
+
+		Convey("new refs are discovered", func() {
+			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
+			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master": "deadbeef00",
 			})
 			So(ctl.Triggers, ShouldHaveLength, 1)
@@ -87,36 +98,34 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("do not trigger if there are no new commits", func() {
-			So(saveState(c, jobID, parsedUrl, map[string]string{
+			So(saveState(c, jobID, parsedUrl, strmap{
 				"refs/heads/master": "deadbeef00",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
-					"refs/heads/master": "deadbeef00",
-					"refs/weird":        "1234567890",
-				}, nil
-			}
+
+			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
+			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master": "deadbeef00",
 			})
 		})
 
 		Convey("New, updated, and deleted refs", func() {
-			So(saveState(c, jobID, parsedUrl, map[string]string{
-				"refs/heads/master": "deadbeef00",
-				"refs/heads/branch": "1234567890",
-				"refs/was/watched":  "0987654321",
+			So(saveState(c, jobID, parsedUrl, strmap{
+				"refs/heads/master":   "deadbeef00",
+				"refs/branch-heads/x": "1234567890",
+				"refs/was/watched":    "0987654321",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
-					"refs/heads/master":       "deadbeef01",
-					"refs/branch-heads/1.2.3": "baadcafe00",
-				}, nil
-			}
+			expectRefs("refs/heads", strmap{
+				"refs/heads/master": "deadbeef01",
+			})
+			expectRefs("refs/branch-heads", strmap{
+				"refs/branch-heads/1.2.3": "baadcafe00",
+			})
+
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master":       "deadbeef01",
 				"refs/branch-heads/1.2.3": "baadcafe00",
 			})
@@ -126,21 +135,21 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("Refglobs: new, updated, and deleted refs", func() {
-			So(saveState(c, jobID, parsedUrl, map[string]string{
+			So(saveState(c, jobID, parsedUrl, strmap{
 				"refs/branch-heads/1.2.3": "deadbeef00",
 				"refs/branch-heads/4.5":   "beefcafe",
 				"refs/branch-heads/6.7":   "deadcafe",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
-					"refs/branch-heads/1.2.3":          "deadbeef01",
-					"refs/branch-heads/6.7":            "deadcafe",
-					"refs/branch-heads/8.9.0":          "beef44dead",
-					"refs/branch-heads/must/not/match": "deaddead",
-				}, nil
-			}
+			expectRefs("refs/heads", nil)
+			expectRefs("refs/branch-heads", strmap{
+				"refs/branch-heads/1.2.3":          "deadbeef01",
+				"refs/branch-heads/6.7":            "deadcafe",
+				"refs/branch-heads/8.9.0":          "beef44dead",
+				"refs/branch-heads/must/not/match": "deaddead",
+			})
+
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1.2.3": "deadbeef01", // updated.
 				"refs/branch-heads/6.7":   "deadcafe",   // same.
 				"refs/branch-heads/8.9.0": "beef44dead", // new.
@@ -151,42 +160,39 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("do nothing at all if there are no changes", func() {
-			So(saveState(c, jobID, parsedUrl, map[string]string{
+			So(saveState(c, jobID, parsedUrl, strmap{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
-					"refs/heads/master": "deadbeef",
-				}, nil
-			}
+			expectRefs("refs/heads", strmap{
+				"refs/heads/master": "deadbeef",
+			})
+			expectRefs("refs/branch-heads", nil)
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(ctl.Log, ShouldNotContain, "Saved 1 known refs")
 			So(ctl.Log, ShouldContain, "No changes detected")
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master": "deadbeef",
 			})
 		})
 
 		Convey("Avoid choking on too many refs", func() {
-			So(saveState(c, jobID, parsedUrl, map[string]string{
+			So(saveState(c, jobID, parsedUrl, strmap{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
-					"refs/branch-heads/1": "cafee1",
-					"refs/branch-heads/2": "cafee2",
-					"refs/branch-heads/3": "cafee3",
-					"refs/branch-heads/4": "cafee4",
-					"refs/branch-heads/5": "cafee5",
-				}, nil
-			}
-
+			expectRefs("refs/heads", nil).AnyTimes()
+			expectRefs("refs/branch-heads", strmap{
+				"refs/branch-heads/1": "cafee1",
+				"refs/branch-heads/2": "cafee2",
+				"refs/branch-heads/3": "cafee3",
+				"refs/branch-heads/4": "cafee4",
+				"refs/branch-heads/5": "cafee5",
+			}).AnyTimes()
 			m.maxTriggersPerInvocation = 2
 			// First run, refs/branch-heads/{1,2} updated, refs/heads/master removed.
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 			})
@@ -195,7 +201,7 @@ func TestTriggerBuild(t *testing.T) {
 			// Second run, refs/branch-heads/{3,4} updated.
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
@@ -206,7 +212,7 @@ func TestTriggerBuild(t *testing.T) {
 			// Final run, refs/branch-heads/5 updated.
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(loadNoError(), ShouldResemble, map[string]string{
+			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
@@ -268,80 +274,5 @@ func TestRefNamespace(t *testing.T) {
 		p, s = splitRef("refs/weird/")
 		So(p, ShouldEqual, "refs/weird")
 		So(s, ShouldEqual, "")
-	})
-}
-
-type mockGitilesClient struct {
-	allRefs func() (map[string]string, error)
-}
-
-func (m *mockGitilesClient) Refs(c context.Context, repo string, path string) (map[string]string, error) {
-	refs, err := m.allRefs()
-	if err != nil {
-		return nil, err
-	}
-	// Returns only those refs which reside in given path namespace.
-	for ref := range refs {
-		if ref == path || strings.HasPrefix(ref, path+"/") {
-			continue
-		}
-		delete(refs, ref)
-	}
-	return refs, err
-}
-
-func TestRefsMock(t *testing.T) {
-	t.Parallel()
-
-	Convey("Refs Mock works", t, func() {
-		c := context.Background()
-		repo := "https://repo/whatever.git"
-		m := mockGitilesClient{}
-		Convey("Error propagation", func() {
-			m.allRefs = func() (map[string]string, error) { return nil, errors.New("wtf") }
-			_, err := m.Refs(c, repo, "refs")
-			So(err, ShouldNotBeNil)
-		})
-		Convey("Correct namespacing", func() {
-			m.allRefs = func() (map[string]string, error) {
-				return map[string]string{
-					"refs/heads/master":       "1",
-					"refs/heads/infra/config": "2",
-					"refs/wtf/bar":            "3",
-					"refs/wtf/foo":            "4",
-					"refs/wtf2":               "5",
-				}, nil
-			}
-
-			refs, err := m.Refs(c, repo, "refs")
-			So(err, ShouldBeNil)
-			So(refs, ShouldResemble, map[string]string{
-				"refs/heads/master":       "1",
-				"refs/heads/infra/config": "2",
-				"refs/wtf/bar":            "3",
-				"refs/wtf/foo":            "4",
-				"refs/wtf2":               "5",
-			})
-
-			refs, err = m.Refs(c, repo, "refs/heads")
-			So(err, ShouldBeNil)
-			So(refs, ShouldResemble, map[string]string{
-				"refs/heads/master":       "1",
-				"refs/heads/infra/config": "2",
-			})
-
-			refs, err = m.Refs(c, repo, "refs/heads/infra")
-			So(err, ShouldBeNil)
-			So(refs, ShouldResemble, map[string]string{
-				"refs/heads/infra/config": "2",
-			})
-
-			refs, err = m.Refs(c, repo, "refs/wtf")
-			So(err, ShouldBeNil)
-			So(refs, ShouldResemble, map[string]string{
-				"refs/wtf/bar": "3",
-				"refs/wtf/foo": "4",
-			})
-		})
 	})
 }
