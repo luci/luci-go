@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc9020da_2c486820",
+        "filename": "tools/cmd/bqschemaupdater/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T22:50:55Z",
+      "side": 1,
+      "message": "i am not sure bqschemaupdater supports ARRAY types? only repeated fields",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 49
+      },
+      "revId": "14348bacdd4da27ac06a7f95e198d16506819c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "688ff467_3dfd60b1",
+        "filename": "tools/cmd/bqschemaupdater/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T22:50:55Z",
+      "side": 1,
+      "message": "does this information belong to bqschemaupdater though? bqschemaupdater only updates schema. Libs that actually send data are better place than bqschemaupdater, and a global markdown onepager (like go/ts_mon) might be even better (because it is not scoped to a very specific tool, such as bqschemaupdater)",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 37
+      },
+      "revId": "14348bacdd4da27ac06a7f95e198d16506819c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
