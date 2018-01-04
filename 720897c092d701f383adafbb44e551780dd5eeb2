@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "e399859c_41b33d80",
+        "filename": "milo/buildsource/buildbot/buildstore/blame.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-04T23:06:35Z",
+      "side": 1,
+      "message": "ah ok, cool",
+      "parentUuid": "8d9c78ea_76cff4fe",
+      "range": {
+        "startLine": 138,
+        "startChar": 4,
+        "endLine": 138,
+        "endChar": 48
+      },
+      "revId": "720897c092d701f383adafbb44e551780dd5eeb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7949e816_16eef545",
         "filename": "milo/buildsource/buildbot/buildstore/blame.go",
         "patchSetId": 2
