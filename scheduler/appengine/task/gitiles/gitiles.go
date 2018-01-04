@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -44,8 +45,8 @@ const defaultMaxTriggersPerInvocation = 100
 // TaskManager implements task.Manager interface for tasks defined with
 // GitilesTask proto message.
 type TaskManager struct {
-	mockGitilesClient        gitilesClient // Used for testing only.
-	maxTriggersPerInvocation int           // Avoid choking on DS or runtime limits.
+	mockGitilesClient        gitilespb.GitilesClient // Used for testing only.
+	maxTriggersPerInvocation int                     // Avoid choking on DS or runtime limits.
 }
 
 // Name is part of Manager interface.
@@ -246,8 +247,13 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 }
 
 // getRefsTips returns tip for each ref being watched.
-func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repo string, watched watchedRefs) (map[string]string, error) {
-	g, err := m.getGitilesClient(c, ctl)
+func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repoURL string, watched watchedRefs) (map[string]string, error) {
+	host, project, err := gitiles.ParseRepoURL(repoURL)
+	if err != nil {
+		return nil, errors.Annotate(err, "invalid repo URL %q", repoURL).Err()
+	}
+
+	g, err := m.getGitilesClient(c, ctl, host)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +268,10 @@ func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repo st
 		wg.Add(1)
 		go func(wrs *watchedRefNamespace) {
 			defer wg.Done()
-			tips, err := g.Refs(c, repo, wrs.namespace)
+			res, err := g.Refs(c, &gitilespb.RefsRequest{
+				Project:  project,
+				RefsPath: wrs.namespace,
+			})
 			lock.Lock()
 			defer lock.Unlock()
 			if err != nil {
@@ -270,7 +279,7 @@ func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repo st
 				errs = append(errs, err)
 				return
 			}
-			for ref, tip := range tips {
+			for ref, tip := range res.Revisions {
 				if watched.hasRef(ref) {
 					allTips[ref] = tip
 				}
@@ -284,21 +293,19 @@ func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repo st
 	return allTips, nil
 }
 
-type gitilesClient interface {
-	Refs(ctx context.Context, repoURL, refsPath string) (map[string]string, error)
-}
-
-func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (gitilesClient, error) {
-	httpClient, err := ctl.GetClient(c, time.Minute, auth.WithScopes(gitiles.OAuthScope))
-	if err != nil {
-		return nil, err
-	}
+func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, host string) (gitilespb.GitilesClient, error) {
 	if m.mockGitilesClient != nil {
 		// Used for testing only.
 		logging.Infof(c, "using mockGitilesClient")
 		return m.mockGitilesClient, nil
 	}
-	return &gitiles.Client{Client: httpClient, Auth: true}, nil
+
+	httpClient, err := ctl.GetClient(c, time.Minute, auth.WithScopes(gitiles.OAuthScope))
+	if err != nil {
+		return nil, err
+	}
+
+	return gitiles.NewRESTClient(httpClient, host, true)
 }
 
 type watchedRefNamespace struct {
