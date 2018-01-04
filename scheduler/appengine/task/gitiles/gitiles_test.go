@@ -20,12 +20,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -63,16 +65,19 @@ func TestTriggerBuild(t *testing.T) {
 			SaveCallback:  func() error { return nil },
 			OverrideJobID: jobID,
 		}
-		gitilesMock := &mockGitilesClient{}
+		// TODO(nodir): use goconvey.C instead of t in NewController.
+		gitilesMock := gitilespb.NewMockGitilesClient(gomock.NewController(t))
+		// TODO(tandrii, vadimsh): figure out why AnyTimes() is required
+		refsCall := gitilesMock.EXPECT().Refs(gomock.Any(), gomock.Any()).AnyTimes()
 		m := TaskManager{mockGitilesClient: gitilesMock}
 
 		Convey("new refs are discovered", func() {
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
+			refsCall.Return(&gitilespb.RefsResponse{
+				Revisions: map[string]string{
 					"refs/heads/master": "deadbeef00",
 					"refs/weird":        "1234567890",
-				}, nil
-			}
+				},
+			}, nil)
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, map[string]string{
 				"refs/heads/master": "deadbeef00",
@@ -90,12 +95,12 @@ func TestTriggerBuild(t *testing.T) {
 			So(saveState(c, jobID, parsedUrl, map[string]string{
 				"refs/heads/master": "deadbeef00",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
+			refsCall.Return(&gitilespb.RefsResponse{
+				Revisions: map[string]string{
 					"refs/heads/master": "deadbeef00",
 					"refs/weird":        "1234567890",
-				}, nil
-			}
+				},
+			}, nil)
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(loadNoError(), ShouldResemble, map[string]string{
@@ -109,12 +114,12 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/heads/branch": "1234567890",
 				"refs/was/watched":  "0987654321",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
+			refsCall.Return(&gitilespb.RefsResponse{
+				Revisions: map[string]string{
 					"refs/heads/master":       "deadbeef01",
 					"refs/branch-heads/1.2.3": "baadcafe00",
-				}, nil
-			}
+				},
+			}, nil)
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, map[string]string{
 				"refs/heads/master":       "deadbeef01",
@@ -131,14 +136,14 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/branch-heads/4.5":   "beefcafe",
 				"refs/branch-heads/6.7":   "deadcafe",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
+			refsCall.Return(&gitilespb.RefsResponse{
+				Revisions: map[string]string{
 					"refs/branch-heads/1.2.3":          "deadbeef01",
 					"refs/branch-heads/6.7":            "deadcafe",
 					"refs/branch-heads/8.9.0":          "beef44dead",
 					"refs/branch-heads/must/not/match": "deaddead",
-				}, nil
-			}
+				},
+			}, nil)
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, map[string]string{
 				"refs/branch-heads/1.2.3": "deadbeef01", // updated.
@@ -154,11 +159,11 @@ func TestTriggerBuild(t *testing.T) {
 			So(saveState(c, jobID, parsedUrl, map[string]string{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
+			refsCall.Return(&gitilespb.RefsResponse{
+				Revisions: map[string]string{
 					"refs/heads/master": "deadbeef",
-				}, nil
-			}
+				},
+			}, nil)
 			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(ctl.Log, ShouldNotContain, "Saved 1 known refs")
@@ -172,15 +177,15 @@ func TestTriggerBuild(t *testing.T) {
 			So(saveState(c, jobID, parsedUrl, map[string]string{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
-			gitilesMock.allRefs = func() (map[string]string, error) {
-				return map[string]string{
+			refsCall.AnyTimes().Return(&gitilespb.RefsResponse{
+				Revisions: map[string]string{
 					"refs/branch-heads/1": "cafee1",
 					"refs/branch-heads/2": "cafee2",
 					"refs/branch-heads/3": "cafee3",
 					"refs/branch-heads/4": "cafee4",
 					"refs/branch-heads/5": "cafee5",
-				}, nil
-			}
+				},
+			}, nil)
 
 			m.maxTriggersPerInvocation = 2
 			// First run, refs/branch-heads/{1,2} updated, refs/heads/master removed.
