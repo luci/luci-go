@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8de0fd26_a5cd4b37",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T22:57:55Z",
+      "side": 1,
+      "message": "we don\u0027t. To be clear: the symbol contains \"Authenticated\" to make it explicit.",
+      "parentUuid": "01c06eec_6d4cf089",
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "332b3ee4_2a913b96",
         "filename": "milo/git/log.go",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d94b3569_38211e81",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-04T22:57:55Z",
+      "side": 1,
+      "message": "i considered it, but i decided against. Replied in the comment (in code)",
+      "parentUuid": "332b3ee4_2a913b96",
+      "range": {
+        "startLine": 269,
+        "startChar": 20,
+        "endLine": 269,
+        "endChar": 23
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
