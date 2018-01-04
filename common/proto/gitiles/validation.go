@@ -1,10 +1,9 @@
 package gitiles
 
 import (
-	"fmt"
-	"strings"
-
 	"go.chromium.org/luci/common/errors"
+	"strings"
+	"fmt"
 )
 
 // Validate returns an error if r is invalid.
@@ -27,7 +26,7 @@ func (r *RefsRequest) Validate() error {
 	case r.Project == "":
 		return errors.New("project is required")
 	case r.RefsPath != "refs" && !strings.HasPrefix(r.RefsPath, "refs/"):
-		return fmt.Errorf(`refsPath must be "refs" or start with "refs/": %q`, r.RefsPath)
+			return fmt.Errorf(`refsPath must be "refs" or start with "refs/": %q`, r.RefsPath)
 	default:
 		return nil
 	}
