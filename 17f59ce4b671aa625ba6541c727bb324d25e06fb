@@ -188,6 +188,30 @@
     },
     {
       "key": {
+        "uuid": "f7cc5811_52c03d34",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-04T23:27:26Z",
+      "side": 1,
+      "message": "nvm, i figured it out.",
+      "parentUuid": "45014029_963f11c6",
+      "range": {
+        "startLine": 43,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 57
+      },
+      "revId": "17f59ce4b671aa625ba6541c727bb324d25e06fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b78009a_622b78d5",
         "filename": "milo/git/log.go",
         "patchSetId": 5
