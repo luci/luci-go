@@ -16,10 +16,12 @@ package application
 
 import (
 	"fmt"
+	"os"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/vpython"
 )
 
 // returnCodeError is an error wrapping a return code value.
@@ -52,7 +54,17 @@ func run(c context.Context, fn func(context.Context) error) int {
 		return int(t)
 
 	default:
-		errors.Log(c, err)
+		// If the error is tagged as a UserError, just print it without the scary
+		// stack trace.
+		if vpython.IsUserError.In(err) {
+			executable, eErr := os.Executable()
+			if eErr != nil {
+				executable = "<unknown executable>"
+			}
+			fmt.Fprintf(os.Stderr, "%s: %s\n", executable, err)
+		} else {
+			errors.Log(c, err)
+		}
 		return 1
 	}
 }
