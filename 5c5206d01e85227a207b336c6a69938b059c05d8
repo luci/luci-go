@@ -22,6 +22,30 @@
       "revId": "5c5206d01e85227a207b336c6a69938b059c05d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a67eba5e_7a7c3aeb",
+        "filename": "machine-db/appengine/rpc/vlans.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-05T23:07:50Z",
+      "side": 1,
+      "message": "It\u0027s not the same. If len(ids) !\u003d 0 that doesn\u0027t mean we need both ok \u0026\u0026 matches(aliases, vlan.Alias). The current way it reads is right: either id in ids OR alias in aliases OR (no ids and no aliases specified so select all).",
+      "parentUuid": "7afa72e7_0a91c1e4",
+      "range": {
+        "startLine": 63,
+        "startChar": 28,
+        "endLine": 63,
+        "endChar": 98
+      },
+      "revId": "5c5206d01e85227a207b336c6a69938b059c05d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
