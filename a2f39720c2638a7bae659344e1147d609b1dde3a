@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "4cd09b2e_10e1cbd9",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-05T23:56:40Z",
+      "side": 1,
+      "message": "I think I deleted this cl by mistake. New link: https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/853224.",
+      "parentUuid": "64154943_306a6f97",
+      "revId": "a2f39720c2638a7bae659344e1147d609b1dde3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f101a138_b6a8dd98",
         "filename": "machine-db/client/cli/vlans.go",
         "patchSetId": 1
