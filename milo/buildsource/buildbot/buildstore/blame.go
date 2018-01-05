@@ -125,6 +125,7 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 	// extra or missing commits. This matters only for the first build after
 	// next build number bump.
 
+	// TODO(nodir): use git package to share cache.
 	client := gitiles.Client{Client: &http.Client{}}
 	rpcAuth := auth.NoAuth
 	if strings.HasPrefix(b.Sourcestamp.Repository, "https://chromium.googlesource.com/") {

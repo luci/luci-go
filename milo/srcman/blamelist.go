@@ -196,6 +196,7 @@ func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool)
 						return nil
 					}
 
+					// TODO(nodir): use git package to share cache.
 					gitCheckout.History, err = gitiles.LogProto(log)
 					if err != nil {
 						logging.WithError(err).Warningf(c, "protoizing log - %q", dirname)

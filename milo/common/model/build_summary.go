@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	milo "go.chromium.org/luci/milo/api/proto"
+	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/git"
 )
@@ -276,27 +276,30 @@ func (bs *BuildSummary) GitilesCommit() *buildbucket.GitilesCommit {
 // to find the previous build.
 var ErrUnknownPreviousBuild = errors.New("unable to find previous build")
 
-// PreviousByGitilesCommit returns the previous build(s) (and all invervening
+// PreviousByGitilesCommit returns the previous build(s) (and all intervening
 // commits) based on the GitilesCommit BuildSet of the given build.
 //
 // There may be multiple BuildSummaries, if there were rebuilds. The resulting
 // BuildSummaries will be sorted in reverse creation order, so that builds[0] is
 // always the most-recently-created build.
 //
-// This will only look up to 100 commits into the past.
+// This will only look up to 50 commits into the past.
 //
 // If this is unable to find the previous build, it returns
 // ErrUnknownPreviousBuild.
-func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*BuildSummary, hist *milo.ConsoleGitInfo, err error) {
+func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*BuildSummary, commits []*gitpb.Commit, err error) {
 	gc := bs.GitilesCommit()
 	if gc == nil {
 		err = ErrUnknownPreviousBuild
 		return
 	}
 
-	// TODO(iannucci): this could be done in some sort of search pattern, e.g.
-	// 10+20+50, but I'm not sure if it's worth it.
-	hist, err = git.GetHistory(c, gc.RepoURL(), gc.Revision, 100)
+	// Note: this cannot be done using exponential search
+	// because there may be gaps in commits,
+	// i.e. some commits may not have builds.
+
+	// We don't really need a blamelist longer than 50 commits.
+	commits, err = git.Log(c, gc.Host, gc.Project, gc.Revision, 50)
 	if err != nil {
 		return
 	}
@@ -305,8 +308,8 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	// case this will be fast enough.
 	curGC := &buildbucket.GitilesCommit{Host: gc.Host, Project: gc.Project}
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
-	for i, commit := range hist.Commits {
-		curGC.Revision = hex.EncodeToString(commit.Hash)
+	for i, commit := range commits {
+		curGC.Revision = hex.EncodeToString(commit.Id)
 		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.String()), &builds); err != nil {
 			return
 		}
@@ -314,7 +317,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 			sort.Slice(builds, func(i, j int) bool {
 				return builds[i].Summary.Start.After(builds[j].Summary.Start)
 			})
-			hist.Commits = hist.Commits[:i+1]
+			commits = commits[:i+1]
 			return
 		}
 	}

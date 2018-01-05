@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/git"
 )
 
 // A collection of useful templating functions
@@ -304,6 +305,13 @@ func withRouterContext(c context.Context, r *router.Context) context.Context {
 // This is used for various things in the default template.
 func withRouterContextMiddleware(c *router.Context, next router.Handler) {
 	c.Context = withRouterContext(c.Context, c)
+	next(c)
+}
+
+// withGitilesMiddleware is a middleware that installs a prod Gitiles client
+// factory into the context.
+func withGitilesMiddleware(c *router.Context, next router.Handler) {
+	c.Context = git.UseFactory(c.Context, git.AuthenticatedProdClient)
 	next(c)
 }
 
