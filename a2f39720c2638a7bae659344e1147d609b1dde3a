@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "64154943_306a6f97",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-05T23:55:05Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/853212",
+      "parentUuid": "b891a4b2_521a2129",
+      "revId": "a2f39720c2638a7bae659344e1147d609b1dde3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f101a138_b6a8dd98",
         "filename": "machine-db/client/cli/vlans.go",
         "patchSetId": 1
@@ -57,6 +75,30 @@
       "revId": "a2f39720c2638a7bae659344e1147d609b1dde3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb864e8e_9e3da305",
+        "filename": "machine-db/client/cli/vlans.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-05T23:55:05Z",
+      "side": 1,
+      "message": "No, I\u0027m allowing either to match. See examples.",
+      "parentUuid": "f101a138_b6a8dd98",
+      "range": {
+        "startLine": 60,
+        "startChar": 53,
+        "endLine": 60,
+        "endChar": 55
+      },
+      "revId": "a2f39720c2638a7bae659344e1147d609b1dde3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
