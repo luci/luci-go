@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce7d938d_96d5f915",
+        "filename": "milo/git/log.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-05T02:54:42Z",
+      "side": 1,
+      "message": "remove.\n\nIf you trust gitiles response to traverses DAG in -\u003eparent-\u003e direction \u0026\u0026 output each commit at most once,\nthen second part of condition is redundant (it can be true IFF first part of condition is true for at least one prior commit).",
+      "range": {
+        "startLine": 245,
+        "startChar": 40,
+        "endLine": 245,
+        "endChar": 91
+      },
+      "revId": "96a4c80c77c018039d45e19b1be537f84f5be1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
