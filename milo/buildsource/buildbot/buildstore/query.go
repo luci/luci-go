@@ -238,7 +238,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	}
 	logging.Infof(c, "conversion from buildbucket builds took %s", clock.Since(c, start))
 
-	if !q.NoChangeFetch {
+	if !q.NoChangeFetch && len(builds) > 0 {
 		start = clock.Now(c)
 		// We need to compute blamelist for multiple builds.
 		// 1) We don't have a guarantee that the numbers are contiguous
@@ -253,17 +253,13 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 		}
 		memcache.Set(c, caches...)
 
-		err = parallel.WorkPool(10, func(work chan<- func() error) {
-			for _, b := range builds {
-				b := b
-				work <- func() error {
-					return blame(c, b)
-				}
+		// compute blamelist serially so that git cache is reused.
+		for _, b := range builds {
+			if err := blame(c, b); err != nil {
+				return nil, errors.Annotate(err, "blamelist computation for build #%d failed", b.Number).Err()
 			}
-		})
-		if err != nil {
-			return nil, errors.Annotate(err, "blamelist computation failed").Err()
 		}
+
 		logging.Infof(c, "blamelist computation took %s", clock.Since(c, start))
 	}
 	return builds, nil

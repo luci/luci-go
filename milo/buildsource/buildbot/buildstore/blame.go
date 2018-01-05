@@ -15,21 +15,26 @@
 package buildstore
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"regexp"
 	"strings"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gitpb "go.chromium.org/luci/common/proto/git"
+
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/milo/git"
 )
 
 // This file computes a static blamelist of a buildbot build via Gitiles RPCs.
@@ -99,10 +104,15 @@ func fetchChangesCached(c context.Context, b *buildbot.Build) error {
 func fetchChanges(c context.Context, b *buildbot.Build) error {
 	memcache.Set(c, buildRevCache(c, b))
 
-	if b.Sourcestamp.Repository == "" {
-		logging.Warningf(c, "build %q has no repository URL. Skipping blamelist computation", b.ID())
+	host, project, err := gitiles.ParseRepoURL(b.Sourcestamp.Repository)
+	if err != nil {
+		logging.Warningf(
+			c,
+			"build %q does not have a valid Gitiles repository URL, %q. Skipping blamelist computation",
+			b.ID(), b.Sourcestamp.Repository)
 		return nil
 	}
+
 	if !commitHashRe.MatchString(b.Sourcestamp.Revision) {
 		logging.Warningf(
 			c,
@@ -125,50 +135,42 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 	// extra or missing commits. This matters only for the first build after
 	// next build number bump.
 
-	// TODO(nodir): use git package to share cache.
-	client := gitiles.Client{Client: &http.Client{}}
-	rpcAuth := auth.NoAuth
-	if strings.HasPrefix(b.Sourcestamp.Repository, "https://chromium.googlesource.com/") {
-		// Use authentication only for the known public Gitiles host
-		// to avoid small anonymous quota.
-		// This is the typical case.
-		client.Auth = true
-		rpcAuth = auth.AsSelf
-	}
-	if client.Client.Transport, err = auth.GetRPCTransport(c, rpcAuth, auth.WithScopes(gitiles.OAuthScope)); err != nil {
-		return err
-	}
+	// we don't really need a blamelist with a length > 50
+	commits, err := git.Log(c, host, project, b.Sourcestamp.Revision, 50)
+	switch status.Code(err) {
+	case codes.OK:
+		b.Sourcestamp.Changes = make([]buildbot.Change, len(commits))
+		for i, commit := range commits {
+			b.Sourcestamp.Changes[i] = changeFromGitiles(b.Sourcestamp.Repository, "master", commit)
+		}
+		return nil
 
-	revRange := prevRev + ".." + b.Sourcestamp.Revision
-	commits, err := client.Log(c, b.Sourcestamp.Repository, revRange)
-	switch {
-	case gitiles.HTTPStatus(err) == http.StatusNotFound:
-		logging.WithError(err).Warningf(c, "gitiles returned 404 for range %q", revRange)
+	case codes.NotFound:
+		logging.WithError(err).Warningf(
+			c,
+			"gitiles.log returned 404 %s/+/%s",
+			b.Sourcestamp.Repository, b.Sourcestamp.Revision)
 		b.Sourcestamp.Changes = nil
 		return nil
-	case err != nil:
+
+	default:
 		return err
 	}
-
-	b.Sourcestamp.Changes = make([]buildbot.Change, len(commits))
-	for i, commit := range commits {
-		b.Sourcestamp.Changes[i] = changeFromGitiles(b.Sourcestamp.Repository, "master", commit)
-	}
-	return nil
 }
 
 // changeFromGitiles converts a gitiles.Commit to a buildbot change.
-func changeFromGitiles(repoURL, branch string, commit gitiles.Commit) buildbot.Change {
+func changeFromGitiles(repoURL, branch string, commit *gitpb.Commit) buildbot.Change {
+	ct, _ := ptypes.Timestamp(commit.Committer.Time)
+	id := hex.EncodeToString(commit.Id)
 	return buildbot.Change{
-		// Real-world example of At: Fri 13 Oct 2017 13:42:58
-		At:         commit.Committer.Time.Format("Mon _2 Jan 2006 15:04:05"),
+		At:         ct.Format("Mon _2 Jan 2006 15:04:05"),
 		Branch:     &branch,
 		Comments:   commit.Message,
 		Repository: repoURL,
-		Rev:        commit.Commit,
-		Revision:   commit.Commit,
-		Revlink:    fmt.Sprintf("%s/+/%s", strings.TrimSuffix(repoURL, "/"), commit.Commit),
-		When:       int(commit.Committer.Time.Unix()),
+		Rev:        id,
+		Revision:   id,
+		Revlink:    fmt.Sprintf("%s/+/%s", strings.TrimSuffix(repoURL, "/"), id),
+		When:       int(ct.Unix()),
 		Who:        commit.Author.Email,
 		// TODO(nodir): add Files if someone needs them.
 	}
