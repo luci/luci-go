@@ -30,6 +30,12 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
+// IsUserError is tagged into errors caused by bad user inputs (e.g. modules or
+// scripts which don't exist).
+var IsUserError = errors.BoolTag{
+	Key: errors.NewTagKey("this error occured due to a user input."),
+}
+
 // Options is the set of options to use to construct and execute a VirtualEnv
 // Python application.
 type Options struct {
@@ -124,7 +130,7 @@ func (o *Options) ResolveSpec(c context.Context) error {
 		// Confirm that the script path actually exists.
 		st, err := os.Stat(script.Path)
 		if err != nil {
-			return errors.Annotate(err, "failed to stat Python script: %s", cmd.Target).Err()
+			return IsUserError.Apply(err)
 		}
 
 		// If the script is a directory, then we assume that we're doing a module
