@@ -120,7 +120,7 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
 func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *ui.MiloBuild) error {
-	_, hist, err := build.PreviousByGitilesCommit(c)
+	_, commits, err := build.PreviousByGitilesCommit(c)
 	switch {
 	case err == nil:
 	case err == model.ErrUnknownPreviousBuild:
@@ -132,24 +132,24 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 	}
 
 	gc := build.GitilesCommit()
-	rb.Blame = make([]*ui.Commit, len(hist.Commits))
-	for i, c := range hist.Commits {
-		rev := hex.EncodeToString(c.Hash)
+	rb.Blame = make([]*ui.Commit, len(commits))
+	for i, c := range commits {
+		id := hex.EncodeToString(c.Id)
 		rb.Blame[i] = &ui.Commit{
-			AuthorName:  c.AuthorName,
-			AuthorEmail: c.AuthorEmail,
+			AuthorName:  c.Author.Name,
+			AuthorEmail: c.Author.Email,
 			Repo:        gc.RepoURL(),
-			Description: c.Msg,
+			Description: c.Message,
 			// TODO(iannucci): also include the diffstat.
 
 			// TODO(iannucci): this use of links is very sloppy; the frontend should
 			// know how to render a Commit without having Links embedded in it.
 			Revision: ui.NewLink(
-				rev,
-				gc.RepoURL()+"/+/"+rev, fmt.Sprintf("commit by %s", c.AuthorEmail)),
+				id,
+				gc.RepoURL()+"/+/"+id, fmt.Sprintf("commit by %s", c.Author.Email)),
 		}
 
-		rb.Blame[i].CommitTime, _ = ptypes.Timestamp(c.CommitTime)
+		rb.Blame[i].CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
 	}
 
 	return nil
