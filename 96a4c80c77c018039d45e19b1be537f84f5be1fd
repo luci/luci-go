@@ -22,6 +22,30 @@
       "revId": "96a4c80c77c018039d45e19b1be537f84f5be1fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b60a9679_4338dcee",
+        "filename": "milo/git/log.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-05T17:14:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce7d938d_96d5f915",
+      "range": {
+        "startLine": 245,
+        "startChar": 40,
+        "endLine": 245,
+        "endChar": 91
+      },
+      "revId": "96a4c80c77c018039d45e19b1be537f84f5be1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
