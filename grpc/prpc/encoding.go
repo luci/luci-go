@@ -134,23 +134,22 @@ func errorCode(err error) codes.Code {
 }
 
 // codeToStatus maps gRPC codes to HTTP statuses.
-// This map may need to be corrected when
-// https://github.com/grpc/grpc-common/issues/210
-// is closed.
+// Based on https://cloud.google.com/apis/design/errors
 var codeToStatus = map[codes.Code]int{
 	codes.OK:                 http.StatusOK,
-	codes.Canceled:           http.StatusNoContent,
+	codes.Canceled:           499,
 	codes.InvalidArgument:    http.StatusBadRequest,
-	codes.DeadlineExceeded:   http.StatusServiceUnavailable,
+	codes.DeadlineExceeded:   http.StatusGatewayTimeout,
 	codes.NotFound:           http.StatusNotFound,
 	codes.AlreadyExists:      http.StatusConflict,
 	codes.PermissionDenied:   http.StatusForbidden,
 	codes.Unauthenticated:    http.StatusUnauthorized,
-	codes.ResourceExhausted:  http.StatusServiceUnavailable,
-	codes.FailedPrecondition: http.StatusPreconditionFailed,
+	codes.ResourceExhausted:  http.StatusTooManyRequests,
+	codes.FailedPrecondition: http.StatusBadRequest,
 	codes.OutOfRange:         http.StatusBadRequest,
 	codes.Unimplemented:      http.StatusNotImplemented,
 	codes.Unavailable:        http.StatusServiceUnavailable,
+	codes.Aborted:            http.StatusConflict,
 }
 
 // codeStatus maps gRPC codes to HTTP status codes.
