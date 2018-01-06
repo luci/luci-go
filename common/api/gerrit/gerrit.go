@@ -40,33 +40,66 @@ const contentType = "application/json; charset=UTF-8"
 // struct. Adding more fields to this struct should be okay (but only
 // Gerrit-supported keys will be populated).
 type Change struct {
-	ChangeNumber           int         `json:"_number"`
-	ID                     string      `json:"id"`
-	ChangeID               string      `json:"change_id"`
-	Project                string      `json:"project"`
-	Branch                 string      `json:"branch"`
-	Topic                  string      `json:"topic"`
-	Hashtags               []string    `json:"hashtags"`
-	Subject                string      `json:"subject"`
-	Status                 string      `json:"status"`
-	Created                string      `json:"created"`
-	Updated                string      `json:"updated"`
-	Mergeable              bool        `json:"mergeable"`
-	Submitted              string      `json:"submitted"`
-	SubmitType             string      `json:"submit_type"`
-	Insertions             int         `json:"insertions"`
-	Deletions              int         `json:"deletions"`
-	UnresolvedCommentCount int         `json:"unresolved_comment_count"`
-	HasReviewStarted       bool        `json:"has_review_started"`
-	Owner                  AccountInfo `json:"owner"`
-	Submitter              AccountInfo `json:"submitter"`
-	Reviewers              Reviewers   `json:"reviewers"`
-	RevertOf               int         `json:"revert_of"`
-	CurrentRevision        string      `json:"current_revision"`
+	ChangeNumber           int                  `json:"_number"`
+	ID                     string               `json:"id"`
+	ChangeID               string               `json:"change_id"`
+	Project                string               `json:"project"`
+	Branch                 string               `json:"branch"`
+	Topic                  string               `json:"topic"`
+	Hashtags               []string             `json:"hashtags"`
+	Subject                string               `json:"subject"`
+	Status                 string               `json:"status"`
+	Created                string               `json:"created"`
+	Updated                string               `json:"updated"`
+	Mergeable              bool                 `json:"mergeable"`
+	Submitted              string               `json:"submitted"`
+	SubmitType             string               `json:"submit_type"`
+	Insertions             int                  `json:"insertions"`
+	Deletions              int                  `json:"deletions"`
+	UnresolvedCommentCount int                  `json:"unresolved_comment_count"`
+	HasReviewStarted       bool                 `json:"has_review_started"`
+	Owner                  AccountInfo          `json:"owner"`
+	Labels                 map[string]LabelInfo `json:"labels"`
+	Submitter              AccountInfo          `json:"submitter"`
+	Reviewers              Reviewers            `json:"reviewers"`
+	RevertOf               int                  `json:"revert_of"`
+	CurrentRevision        string               `json:"current_revision"`
 	// MoreChanges is not part of a Change, but gerrit piggy-backs on the
 	// last Change in a page to set this flag if there are more changes
 	// in the results of a query.
 	MoreChanges bool `json:"_more_changes"`
+}
+
+// LabelInfo contains information about a label on a change, always corresponding
+// to the current patch set.
+//
+// Only one of Approved, Rejected, Recommended, and Disliked will be set, with priority
+// Rejected > Approved > Recommened > Disliked if multiple users have given the label
+// different values.
+//
+// TODO(mknyszek): Support 'value' and 'default_value' fields, as well as the fields
+// given with the query parameter DETAILED_LABELS.
+type LabelInfo struct {
+	// Optional reflects whether the label is optional (neither necessary
+	// for nor blocking submission).
+	Optional bool `json:"optional,omitempty"`
+
+	// Approved refers to one user who approved this label (max value).
+	Approved *AccountInfo `json:"approved,omitempty"`
+
+	// Rejected refers to one user who rejected this label (min value).
+	Rejected *AccountInfo `json:"rejected,omitempty"`
+
+	// Recommended refers to one user who recommended this label (positive
+	// value, but not max).
+	Recommended *AccountInfo `json:"recommended,omitempty"`
+
+	// Disliked refers to one user who disliked this label (negative value
+	// but not min).
+	Disliked *AccountInfo `json:"disliked,omitempty"`
+
+	// Blocking reflects whether this label block the submit operation.
+	Blocking bool `json:"blocking,omitempty"`
 }
 
 // Reviewers is a map that maps a type of reviewer to its account info.
