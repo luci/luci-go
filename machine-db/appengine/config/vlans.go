@@ -58,7 +58,9 @@ func importVLANs(c context.Context, configSet cfgtypes.ConfigSet) error {
 	if err := model.EnsureVLANs(c, vlan.Vlan); err != nil {
 		return errors.Annotate(err, "failed to ensure vlans").Err()
 	}
-	// TODO(smut): Ensure IP addresses.
+	if err := model.EnsureIPs(c, vlan.Vlan); err != nil {
+		return errors.Annotate(err, "failed to ensure IP addresses").Err()
+	}
 	return nil
 }
 

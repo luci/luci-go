@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS vlans (
 CREATE TABLE IF NOT EXISTS ips (
 	id int NOT NULL AUTO_INCREMENT,
 	-- The ipv4 address of this ip.
-	ipv4 int,
+	ipv4 int unsigned,
 	-- The vlan this ip belongs to.
 	vlan_id int,
 	PRIMARY KEY (id),
