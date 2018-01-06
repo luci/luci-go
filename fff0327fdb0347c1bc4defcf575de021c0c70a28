@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88f0ece7_f68765af",
+        "filename": "common/flag/int64listflag/int64listflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-06T00:56:53Z",
+      "side": 1,
+      "message": "this part is ~obvious from the func signature. I recommend to mention that the return value is comma-separated",
+      "range": {
+        "startLine": 32,
+        "startChar": 17,
+        "endLine": 32,
+        "endChar": 61
+      },
+      "revId": "fff0327fdb0347c1bc4defcf575de021c0c70a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3bf14e0_59a5b143",
+        "filename": "common/flag/int64listflag/int64listflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-06T00:56:53Z",
+      "side": 1,
+      "message": "nit: since we know the length, consider using s[...] \u003d ... \ni think we do it in other places too",
+      "range": {
+        "startLine": 36,
+        "startChar": 6,
+        "endLine": 36,
+        "endChar": 12
+      },
+      "revId": "fff0327fdb0347c1bc4defcf575de021c0c70a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
