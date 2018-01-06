@@ -44,5 +44,15 @@ func TestPut(t *testing.T) {
 				ClientOperationId: "prefix-0",
 			},
 		})
+
+		reqs, err = parse(`{"bucket": "master.tryserver.chromium.linux", "experimental": true}`)
+		So(err, ShouldBeNil)
+		So(reqs, ShouldResemble, []*buildbucket.ApiPutRequestMessage{
+			{
+				Bucket:            "master.tryserver.chromium.linux",
+				ClientOperationId: "prefix-0",
+				Experimental:      true,
+			},
+		})
 	})
 }
