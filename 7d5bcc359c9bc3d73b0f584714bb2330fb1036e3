@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d3b3096_4233d59a",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-06T01:03:57Z",
+      "side": 1,
+      "message": "I have a strong feeling Appengine may not like this",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 30
+      },
+      "revId": "7d5bcc359c9bc3d73b0f584714bb2330fb1036e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e944f1a_ebc2513e",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-06T01:03:57Z",
+      "side": 1,
+      "message": "really? :( Not being able to detect a failed precondition is a big deal, since its often used in various \"compare and swap\" sort of calls.",
+      "range": {
+        "startLine": 148,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 48
+      },
+      "revId": "7d5bcc359c9bc3d73b0f584714bb2330fb1036e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
