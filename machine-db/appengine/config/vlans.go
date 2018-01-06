@@ -36,10 +36,14 @@ const vlansFilename = "vlans.cfg"
 // vlanMaxId is the highest ID a vlan may have.
 const vlanMaxId = 65535
 
-// vlanMaxCIDRBlocks is the maximum number of cidr blocks a vlan may have.
+// vlanMaxCIDRBlocks is the maximum number of CIDR blocks a VLAN may have.
 const vlanMaxCIDRBlocks = 32
 
-// importVLANs fetches, validates, and applies vlan configs.
+// vlanMinCIDRBlockSuffix is the minimum suffix of a CIDR block.
+// This limits the length of CIDR blocks. Each block contains 2^(32 - suffix) IP addresses.
+const vlanMinCIDRBlockSuffix = 18
+
+// importVLANs fetches, validates, and applies VLAN configs.
 func importVLANs(c context.Context, configSet cfgtypes.ConfigSet) error {
 	vlan := &config.VLANs{}
 	metadata := &cfgclient.Meta{}
@@ -56,39 +60,46 @@ func importVLANs(c context.Context, configSet cfgtypes.ConfigSet) error {
 	}
 
 	if err := model.EnsureVLANs(c, vlan.Vlan); err != nil {
-		return errors.Annotate(err, "failed to ensure vlans").Err()
+		return errors.Annotate(err, "failed to ensure VLANs").Err()
 	}
-	// TODO(smut): Ensure IP addresses.
+	if err := model.EnsureIPs(c, vlan.Vlan); err != nil {
+		return errors.Annotate(err, "failed to ensure IP addresses").Err()
+	}
 	return nil
 }
 
 // validateVLANs validates vlans.cfg.
 func validateVLANs(c *validation.Context, cfg *config.VLANs) {
-	// VLAN ids must be unique.
+	// VLAN IDs must be unique.
 	// Keep records of ones we've already seen.
 	vlans := make(map[int64]struct{}, len(cfg.Vlan))
 	for _, vlan := range cfg.Vlan {
 		switch _, ok := vlans[vlan.Id]; {
 		case vlan.Id < 1:
-			c.Errorf("vlan id %d must be positive", vlan.Id)
+			c.Errorf("VLAN id %d must be positive", vlan.Id)
 		case vlan.Id > vlanMaxId:
-			c.Errorf("vlan id %d must not exceed %d", vlan.Id, vlanMaxId)
+			c.Errorf("VLAN id %d must not exceed %d", vlan.Id, vlanMaxId)
 		case ok:
-			c.Errorf("duplicate vlan %d", vlan.Id)
+			c.Errorf("duplicate VLAN %d", vlan.Id)
 		}
 		vlans[vlan.Id] = struct{}{}
-		c.Enter("vlan %d", vlan.Id)
+		c.Enter("VLAN %d", vlan.Id)
 		switch {
 		case len(vlan.CidrBlock) < 1:
-			c.Errorf("vlans must have at least one cidr block")
+			c.Errorf("VLANs must have at least one CIDR block")
 		case len(vlan.CidrBlock) > vlanMaxCIDRBlocks:
-			c.Errorf("vlans must have at most %d cidr blocks", vlanMaxCIDRBlocks)
+			c.Errorf("VLANs must have at most %d CIDR blocks", vlanMaxCIDRBlocks)
 		}
 		for _, block := range vlan.CidrBlock {
-			c.Enter("cidr block %q", vlan.CidrBlock)
-			_, _, err := net.ParseCIDR(block)
+			c.Enter("CIDR block %q", vlan.CidrBlock)
+			_, subnet, err := net.ParseCIDR(block)
 			if err != nil {
-				c.Errorf("invalid cidr block")
+				c.Errorf("invalid CIDR block")
+			} else {
+				ones, _ := subnet.Mask.Size()
+				if ones < vlanMinCIDRBlockSuffix {
+					c.Errorf("CIDR block suffix must be at least %d", vlanMinCIDRBlockSuffix)
+				}
 			}
 			c.Exit()
 		}
