@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "54bf5d0a_971ba39b",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-06T01:40:16Z",
+      "side": 1,
+      "message": "it didn\u0027t bother\nhttps://pantheon.corp.google.com/logs/viewer?project\u003dluci-milo-dev\u0026minLogLevel\u003d0\u0026expandAll\u003dfalse\u0026timestamp\u003d2018-01-06T01%3A35%3A58.836628000Z\u0026dateRangeStart\u003d2018-01-06T00%3A36%3A13.530Z\u0026dateRangeEnd\u003d2018-01-06T01%3A36%3A13.530Z\u0026interval\u003dPT1H\u0026resource\u003dgae_app%2Fmodule_id%2Fdefault%2Fversion_id%2F2563-db1e023-tainted-nodir\u0026logName\u003dprojects%2Fluci-milo-dev%2Flogs%2Fappengine.googleapis.com%252Frequest_log\u0026advancedFilter\u003dresource.type%3D%22gae_app%22%0Aresource.labels.module_id%3D%22default%22%0Aresource.labels.zone%3D%22us10%22%0Aresource.labels.project_id%3D%22luci-milo-dev%22%0Aresource.labels.version_id%3D%222563-db1e023-tainted-nodir%22%0Atimestamp%3D%222018-01-06T01%3A35%3A58.836628000Z%22%0AinsertId%3D%225a5027ff0000fa5fbc9bd347%22",
+      "parentUuid": "1d3b3096_4233d59a",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 30
+      },
+      "revId": "7d5bcc359c9bc3d73b0f584714bb2330fb1036e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e944f1a_ebc2513e",
         "filename": "grpc/prpc/encoding.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-01-06T01:03:57Z",
       "side": 1,
       "message": "really? :( Not being able to detect a failed precondition is a big deal, since its often used in various \"compare and swap\" sort of calls.",
+      "range": {
+        "startLine": 148,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 48
+      },
+      "revId": "7d5bcc359c9bc3d73b0f584714bb2330fb1036e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "714ee318_1cd65cf7",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-06T01:40:16Z",
+      "side": 1,
+      "message": "one can detect a failed precondition by checking the grpc code.\ngrpc code is what prpc clients check, not HTTP status code.\n\nfrankly, i was surprised by this mapping too, but apparently http.StatusPreconditionFailed wasn\u0027t correct either. HTTP 412 is defined as \n\n\u003e The precondition given in one or more of the request-header fields evaluated to false when it was tested on the server. This response code allows the client to place preconditions on the current resource metainformation (header field data) and thus prevent the requested method from being applied to a resource other than the one intended.\"\n\nin https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html",
+      "parentUuid": "9e944f1a_ebc2513e",
       "range": {
         "startLine": 148,
         "startChar": 1,
