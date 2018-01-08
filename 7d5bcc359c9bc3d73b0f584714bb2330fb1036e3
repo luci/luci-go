@@ -93,6 +93,30 @@
       "revId": "7d5bcc359c9bc3d73b0f584714bb2330fb1036e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f2d4b6a_39b2657f",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T17:16:41Z",
+      "side": 1,
+      "message": "resolved",
+      "parentUuid": "714ee318_1cd65cf7",
+      "range": {
+        "startLine": 148,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 48
+      },
+      "revId": "7d5bcc359c9bc3d73b0f584714bb2330fb1036e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
