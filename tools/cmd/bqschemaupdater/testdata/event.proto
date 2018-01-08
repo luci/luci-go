@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package testdata;
 
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 
@@ -34,6 +35,8 @@ message BuildEvent {
     Input input = 4;
     Output output = 5;
     google.protobuf.Timestamp timestamp = 6;
+
+    google.protobuf.Struct ignored = 7;
 }
 
 enum Status {
