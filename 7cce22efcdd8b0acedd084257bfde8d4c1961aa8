@@ -22,6 +22,30 @@
       "revId": "7cce22efcdd8b0acedd084257bfde8d4c1961aa8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3823b668_e4cd96d4",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-08T19:00:38Z",
+      "side": 1,
+      "message": "I originally wrote this because NewAccessClient is really a more general pRPC client for buildbucket, but just happens to live in acl.go because right now buildbucket api v2 isn\u0027t implemented. I can clarify this further, or drop it. What do you think?",
+      "parentUuid": "be59c5b5_1395fdda",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 76
+      },
+      "revId": "7cce22efcdd8b0acedd084257bfde8d4c1961aa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
