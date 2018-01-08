@@ -100,13 +100,7 @@ func TestPubSub(t *testing.T) {
 			buildExp.CreatedTs = buildbucket.FormatTimestamp(RefTime.Add(2 * time.Hour))
 			buildExp.StartedTs = buildbucket.FormatTimestamp(RefTime.Add(3 * time.Hour))
 			buildExp.UpdatedTs = buildbucket.FormatTimestamp(RefTime.Add(5 * time.Hour))
-			buildExp.ParametersJson = `{
-				"properties": {
-					"$recipe_engine/runtime": {
-						"is_experimental": true
-					}
-				}
-			}`
+			buildExp.Experimental = true
 
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
