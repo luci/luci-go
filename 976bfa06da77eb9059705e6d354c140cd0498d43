@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "824b7148_4943db8c",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-08T23:14:00Z",
+      "side": 1,
+      "message": "It seems sort of pointless to put stuff in the context if it is used right away. Consider switching it to common.BucketPermissions(c.Context, client, bucket), unless it is used somewhere else.\n\nAnother option (if AccessClient is used often) is to put its initialization in some middleware, so it is already available in the context in all handlers. (Somewhere here I guess, but I\u0027m not familiar with milo\u0027s code: https://chromium.googlesource.com/infra/luci/luci-go/+/master/milo/frontend/middleware.go)",
+      "range": {
+        "startLine": 34,
+        "startChar": 13,
+        "endLine": 34,
+        "endChar": 36
+      },
+      "revId": "976bfa06da77eb9059705e6d354c140cd0498d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09d62668_11cf2819",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-08T23:14:00Z",
+      "side": 1,
+      "message": "nit:\n\nperms, err :\u003d common.BucketPermissions(...)\nswitch {\n  case err !\u003d nil:\n    ...\n  case !perms.Can(...):\n    ...\n}",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 43,
+        "endChar": 2
+      },
+      "revId": "976bfa06da77eb9059705e6d354c140cd0498d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
