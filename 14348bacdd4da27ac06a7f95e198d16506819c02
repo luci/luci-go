@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f113237b_68479ace",
+        "filename": "tools/cmd/bqschemaupdater/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T20:52:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6e13afd_6f51bba6",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 49
+      },
+      "revId": "14348bacdd4da27ac06a7f95e198d16506819c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "688ff467_3dfd60b1",
         "filename": "tools/cmd/bqschemaupdater/README.md",
         "patchSetId": 1
@@ -117,6 +141,30 @@
       "revId": "14348bacdd4da27ac06a7f95e198d16506819c02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04cb91c9_8122f430",
+        "filename": "tools/cmd/bqschemaupdater/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T20:52:03Z",
+      "side": 1,
+      "message": "yeah, a link is much better",
+      "parentUuid": "cd37f5a0_95e33044",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 37
+      },
+      "revId": "14348bacdd4da27ac06a7f95e198d16506819c02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
