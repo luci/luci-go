@@ -22,6 +22,30 @@
       "revId": "ce18baf7915d9f015dad00f792963a7b22642e28",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d0bb5c8_54d867eb",
+        "filename": "machine-db/client/cli/vlans.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-08T23:55:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a8bdcb8_bdb7b22e",
+      "range": {
+        "startLine": 61,
+        "startChar": 24,
+        "endLine": 61,
+        "endChar": 29
+      },
+      "revId": "ce18baf7915d9f015dad00f792963a7b22642e28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
