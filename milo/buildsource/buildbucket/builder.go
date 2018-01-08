@@ -48,6 +48,7 @@ func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
 	search.Bucket(bucket)
 	search.Status(status)
 	search.Tag(strpair.Format(buildbucket.TagBuilder, builder))
+	search.IncludeExperimental(true)
 
 	if limit < 0 {
 		limit = 100
@@ -130,8 +131,11 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.Build
 	if result.Revision == "" {
 		result.Revision = params.Properties.Revision
 	}
+	if b.Experimental {
+		result.Text = []string{"Experimental"}
+	}
 	if resultDetails.UI.Info != "" {
-		result.Text = strings.Split(resultDetails.UI.Info, "\n")
+		result.Text = append(result.Text, strings.Split(resultDetails.UI.Info, "\n")...)
 	}
 
 	for _, bs := range b.BuildSets {
