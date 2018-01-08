@@ -37,15 +37,16 @@ func (c *schemaConverter) schema(messageName string) (schema bigquery.Schema, de
 		return nil, "", fmt.Errorf("expected %q to be a message, but it is %T", messageName, obj)
 	}
 
-	s := make(bigquery.Schema, len(msg.Field))
-	for i, field := range msg.Field {
-		var err error
-		s[i], err = c.field(file, field)
-		if err != nil {
+	schema = make(bigquery.Schema, 0, len(msg.Field))
+	for _, field := range msg.Field {
+		switch s, err := c.field(file, field); {
+		case err != nil:
 			return nil, "", errors.Annotate(err, "failed to derive schema for field %q in message %q", field.Name, msg.Name).Err()
+		case s != nil:
+			schema = append(schema, s)
 		}
 	}
-	return s, c.description(file, msg), nil
+	return schema, c.description(file, msg), nil
 }
 
 // field constructs bigquery.FieldSchema from proto field descriptor.
@@ -92,9 +93,25 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 		schema.Type = bigquery.StringFieldType
 
 	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
-		if typeName == "google.protobuf.Timestamp" {
+		switch typeName {
+		case "google.protobuf.Timestamp":
 			schema.Type = bigquery.TimestampFieldType
-		} else {
+		case "google.protobuf.Struct":
+			// Schemaless data, such as protobuf Structs, should not be used in
+			// BigQuery tables.
+			// Instead, users that need that data should maintain their own
+			// structured BQ tables, possibly duplicating some data.
+			//
+			// For example, instead of putting arbitrary build properties in
+			// completed_builds event table, a user that needs test results
+			// surfaced in the output properties, should instead maintain their
+			// own BQ test results table, possibly duplicating some data from
+			// completed_builds table (e.g. build id, builder).
+			//
+			// This consensus was reached at
+			// https://docs.google.com/document/d/1PccZ62hmF8QQHHa7GDF9NriCGS5mm-uL_NcXBp2UCDI/edit?ts=5a5390ac#
+			return nil, nil
+		default:
 			schema.Type = bigquery.RecordFieldType
 			var err error
 			if schema.Schema, _, err = c.schema(typeName); err != nil {

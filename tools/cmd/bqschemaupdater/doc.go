@@ -13,6 +13,7 @@
 //   - if a field is of enum type, the BigQuery type is string
 //     and valid values are appended to the BigQuery field description
 //   - if a field is google.protobuf.Timestamp, the BigQuery type is TIMESTAMP
+//   - if a field is google.protobuf.Struct, it is ignored
 //   - if a field is of message type, the BigQuery type is RECORD
 //     with schema corresponding to the proto field type. Recursively.
 package main
