@@ -1,0 +1,274 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb641c9a_824dc82c",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "this should be \"IP\" because it is an abbreviation (golang convention)",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 3
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7ba1223_95db7f11",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "this should be \"VLAN\"",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 5
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ad0e577_5cd3125a",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "what values length can take? according to utils.Range, it can be very large. Consider return an error if length happens to be \u003e some constant.\n\nWhat length of cfgs do you expect here? Looks IP reserving seems to make cfg-\u003edb function a whole a lot slower",
+      "range": {
+        "startLine": 84,
+        "startChar": 19,
+        "endLine": 84,
+        "endChar": 25
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b7425b6_e9ad38a0",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "this cannot happen because it succeeded earlier in this function. Let\u0027s replace it with \n\n  panic(\"impossible: \u003cwhy impossible\u003e\")",
+      "range": {
+        "startLine": 116,
+        "startChar": 4,
+        "endLine": 116,
+        "endChar": 109
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95fc1efe_78d362fe",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "depending on the number of ip addresses we insert here, this might be very slow and batching may be needed",
+      "range": {
+        "startLine": 150,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 56
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2fb7022_1b1fa9e0",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "this will be hard to parse. Consider adding \n\n  ParseIP(dest *ip.IP, src uint32)\n\nto util.go",
+      "range": {
+        "startLine": 152,
+        "startChar": 57,
+        "endLine": 152,
+        "endChar": 59
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c795282_2bfd02ec",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 156,
+        "startChar": 37,
+        "endLine": 156,
+        "endChar": 39
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08040dae_6be84fa0",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 159,
+        "startChar": 60,
+        "endLine": 159,
+        "endChar": 62
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ba7b9b8_cc7b6346",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "you already have common package. Not to put this file there as ip.go?\n\nnote that it is perfectly OK to have types and functions in a package that has subpackages (example: package net)",
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4531a688_31794ef6",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "I don\u0027t understand much in networks, but is it possible someone passes a block that causes ones to be 0? then int wouldn\u0027t be sufficient on 32-bit systems (uint32 would be)",
+      "range": {
+        "startLine": 27,
+        "startChar": 34,
+        "endLine": 27,
+        "endChar": 37
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29078e86_8a41798e",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "ipv4?",
+      "range": {
+        "startLine": 37,
+        "startChar": 32,
+        "endLine": 37,
+        "endChar": 52
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dea5cb68_b65a8116",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-08T18:14:21Z",
+      "side": 1,
+      "message": "(1 \u003c\u003c (32-ones)) would be a lot faster, I think, and one may argue it is simpler",
+      "range": {
+        "startLine": 37,
+        "startChar": 55,
+        "endLine": 37,
+        "endChar": 89
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
