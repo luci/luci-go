@@ -5,12 +5,6 @@ service: default
 instance_class: F4_1G
 
 handlers:
-# Warmup, pubsub handlers, etc.
-- url: /_ah/.*
-  script: _go_app
-  secure: always
-  login: admin
-
 # For static resources such as css and js files.
 - url: /static
   secure: always
@@ -24,6 +18,14 @@ handlers:
 
 # All internal handlers, such as cron.
 - url: /internal/.*
+  script: _go_app
+  secure: always
+  login: admin
+
+# Pubsub Handler.  This is strictly necessary because the default module
+# contains a /.* routing rule, so if it was targetted directly, we still want
+# login:admin to apply.
+- url: /_ah/push-handlers/.*
   script: _go_app
   secure: always
   login: admin
