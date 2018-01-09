@@ -147,8 +147,8 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.Build
 
 		// support only one CL per build.
 		result.Blame = []*ui.Commit{{
-			Changelist: ui.NewLink(fmt.Sprintf("Gerrit CL %d", cl.Change), cl.URL(),
-				fmt.Sprintf("gerrit changelist %d", cl.Change)),
+			Changelist: ui.NewLink(fmt.Sprintf("Gerrit CL %d (ps#%d)", cl.Change, cl.PatchSet), cl.URL(),
+				fmt.Sprintf("gerrit changelist %d (ps#%d)", cl.Change, cl.PatchSet)),
 			RequestRevision: ui.NewLink(params.Properties.Revision, "", fmt.Sprintf("request revision %s", params.Properties.Revision)),
 		}}
 
