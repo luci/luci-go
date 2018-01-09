@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2e4f64f0_5fefe920",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-09T00:32:08Z",
+      "side": 1,
+      "message": "you raise a good point.\n\nthe function signature you listed is what I had originally, but after nodir\u0027s reviews we just pass it through the context (this makes testing cleaner, for one).\n\nI put it in the middleware, but made it part of the following CL: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/820571 (since this one depends on that one, though it\u0027s a superficial dependency).",
+      "parentUuid": "824b7148_4943db8c",
+      "range": {
+        "startLine": 34,
+        "startChar": 13,
+        "endLine": 34,
+        "endChar": 36
+      },
+      "revId": "976bfa06da77eb9059705e6d354c140cd0498d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "09d62668_11cf2819",
         "filename": "milo/frontend/view_builder.go",
         "patchSetId": 13
