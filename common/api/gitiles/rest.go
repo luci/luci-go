@@ -174,7 +174,7 @@ func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest
 
 	case http.StatusTooManyRequests:
 		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s",
-			r.Header, r, body)
+			r.Header, body)
 		return status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
 
 	case http.StatusNotFound:
@@ -183,7 +183,7 @@ func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest
 	default:
 		logging.Errorf(ctx, "gitiles: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",
 			r.StatusCode,
-			r.Header, r, body)
+			r.Header, body)
 		return status.Errorf(codes.Internal, "unexpected HTTP %d from Gitiles", r.StatusCode)
 	}
 }
