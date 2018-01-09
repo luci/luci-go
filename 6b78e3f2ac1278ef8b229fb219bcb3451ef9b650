@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee0338d9_e7e24490",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-09T20:55:52Z",
+      "side": 1,
+      "message": "this is bucket only if the first return value is \"buildbucket\", otherwise it is a master which is not a bucket",
+      "range": {
+        "startLine": 24,
+        "startChar": 4,
+        "endLine": 24,
+        "endChar": 10
+      },
+      "revId": "6b78e3f2ac1278ef8b229fb219bcb3451ef9b650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fca2f225_475d31c4",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-09T20:55:52Z",
+      "side": 1,
+      "message": "there is three ErrorHandler calls here. Consider adding error as return value and adding a helper function that receives handler-with-error and returns a handler-without-error that calls handler-with-error and then calls ErrorHandler on error.\n\nPlease use it in all handlers, perhaps in a separate CL",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 14
+      },
+      "revId": "6b78e3f2ac1278ef8b229fb219bcb3451ef9b650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
