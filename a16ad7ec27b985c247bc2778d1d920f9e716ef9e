@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72b37d13_b5f68f5d",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-09T21:06:28Z",
+      "side": 1,
+      "message": "how do we know these URLs are safe to force-HTTPs in this context? I don\u0027t think we do. If we want to do it blindly (I am not sure we want that), then we should do for all href attributes of all anchors on this and other pages.\n\nI think the source of the crbug.com/796806 problem is not here, but somewhere where we get http://build.chromium.org/.... links in our system, so ideally we fix the problem at source, or at least as close to source as possible. Please investigate where the link is coming from. E.g. if it is buildbot\u0027s pubsub, perhaps we could replace r\"^http://build.chromium.org/\" with https link there.",
+      "revId": "a16ad7ec27b985c247bc2778d1d920f9e716ef9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
