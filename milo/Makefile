@@ -8,13 +8,34 @@ projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 dev:
 	gae.py devserver --app-dir $(projdir)/frontend/appengine -- --host 0.0.0.0 --port 8082 --admin_port 7999 --log_level debug
 
-up:
-	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine
+# This is intentionally not dependent on the others below to avoid
+# asking for user confirmation multiple times.
+up: up-all up-dispatch
+
+up-all:
+	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default pubsub api
+
+up-default:
+	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default
+
+up-pubsub:
+	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine pubsub
+
+up-api:
+	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine api
+
+up-dispatch:
 	appcfg.py -A luci-milo update_dispatch $(projdir)/frontend/appengine
 
 up-dev:
-	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine
+	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default pubsub api
 	appcfg.py -A luci-milo-dev update_dispatch $(projdir)/frontend/appengine
+
+up-dev-default:
+	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default
+
+up-dev-logs:
+	gcloud app deploy --project luci-milo-dev --version dev $(projdir)/logs/module-logs.yaml
 
 switch:
 	gcloud --project luci-milo app versions migrate $$(gae.py version -A luci-milo --app-dir $(projdir)/frontend/appengine)
