@@ -201,8 +201,8 @@
                 <li class="sublink">{{.MainLink.HTML}}</li>
                 {{- if eq .Verbosity.String "Interesting" -}}
                   {{ range .MainLink }}
-                    <link rel="prerender" href="{{.URL}}">
-                    <link rel="prefetch" href="{{.URL}}">
+                    <link rel="prerender" href="{{ .URL | forceHTTPS }}">
+                    <link rel="prefetch" href="{{ .URL | forceHTTPS }}">
                   {{ end }}
                 {{ end }}
               {{- end }}
