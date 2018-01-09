@@ -5,5 +5,3 @@ dispatch:
 # purposes.
   - url: "*/prpc/*"
     service: api
-  - url: "*/log/*"
-    service: logs
