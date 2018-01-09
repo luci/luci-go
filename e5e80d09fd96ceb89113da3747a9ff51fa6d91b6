@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4d1e0367_cc99dd1f",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-09T20:07:01Z",
+      "side": 1,
+      "message": "oops! good catch.",
+      "parentUuid": "12ee031f_12e9337e",
+      "range": {
+        "startLine": 326,
+        "startChar": 2,
+        "endLine": 326,
+        "endChar": 22
+      },
+      "revId": "e5e80d09fd96ceb89113da3747a9ff51fa6d91b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78b9ef6e_e1be6f12",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 14
@@ -69,6 +93,30 @@
       "revId": "e5e80d09fd96ceb89113da3747a9ff51fa6d91b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fb3fe31_5e19d1f8",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-09T20:07:01Z",
+      "side": 1,
+      "message": "yeah that\u0027s true; I don\u0027t think there\u0027s any harm, I was mainly doing this because it sort of \"marks\" which endpoints need access checked, but that\u0027s not really all that useful.\n\nSo, done.",
+      "parentUuid": "507a36e1_81945822",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 59
+      },
+      "revId": "e5e80d09fd96ceb89113da3747a9ff51fa6d91b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
