@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +46,7 @@ import (
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
 	"faviconMIMEType": faviconMIMEType,
+	"forceHTTPS":      forceHTTPS,
 	"formatTime":      formatTime,
 	"humanDuration":   humanDuration,
 	"localTime":       localTime,
@@ -52,8 +54,8 @@ var funcMap = template.FuncMap{
 	"pagedURL":        pagedURL,
 	"parseRFC3339":    parseRFC3339,
 	"percent":         percent,
-	"shortenEmail":    shortenEmail,
 	"shortHash":       shortHash,
+	"shortenEmail":    shortenEmail,
 	"startswith":      strings.HasPrefix,
 	"sub":             sub,
 	"toLower":         strings.ToLower,
@@ -113,6 +115,17 @@ func humanDuration(d time.Duration) string {
 	}
 
 	return "0"
+}
+
+// forceHTTPS converts a http:// URL to https://.  If the URL is not an
+// http:// URL, the orginial URL is returned.
+func forceHTTPS(URL string) string {
+	u, err := url.Parse(URL)
+	if err == nil && u.Scheme == "http" {
+		u.Scheme = "https"
+		return u.String()
+	}
+	return URL
 }
 
 // obfuscateEmail converts a string containing email adddress email@address.com
