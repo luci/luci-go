@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c1baa5f_6b6d7db8",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-09T00:38:14Z",
+      "side": 1,
+      "message": "nit: sorry, I didn\u0027t notice \u0027perm\u0027 is not used below. This can be shorter even more then\n\nswitch perms, err :\u003d common.... {\n  ...\n}",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 9
+      },
+      "revId": "a23c308753ee5637c9f2874c3d2d209c442ec618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
