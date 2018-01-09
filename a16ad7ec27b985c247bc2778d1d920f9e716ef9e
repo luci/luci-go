@@ -16,6 +16,24 @@
       "revId": "a16ad7ec27b985c247bc2778d1d920f9e716ef9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2724ef7_c0b9c705",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-01-09T21:17:24Z",
+      "side": 1,
+      "message": "URLs are stored as-is from buildbot, so we get http:// links because buildbot sends them.  The reason buildbot sends them as http:// is because that is how every single buildbot master is configured:\n\nhttps://cs.chromium.org/chromium/build/masters/master.chromium/master_site_config.py?l\u003d14\n\nIf we replace them at the root, we would have to restart all 140 masters.  WDYT?",
+      "parentUuid": "72b37d13_b5f68f5d",
+      "revId": "a16ad7ec27b985c247bc2778d1d920f9e716ef9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
