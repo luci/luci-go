@@ -34,6 +34,24 @@
       "revId": "a16ad7ec27b985c247bc2778d1d920f9e716ef9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dd90eec_75e67c94",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-09T23:21:15Z",
+      "side": 1,
+      "message": "yeah, that\u0027s why I was suggesting to do \"at least as close to source as possible\". The source here is pubsub. However, as you are saying, they are also stored as http:// in the datastore now and updating all entities is hard. So, IMO \"as close to the source as possible\" is \n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/buildsource/buildbot/buildstore/build.go?rcl\u003dc71a35e2ce715b3337e320f792411f7e00a70236\u0026l\u003d438\n\ncan we replace http://build.chromium.org/ there instead?",
+      "parentUuid": "d2724ef7_c0b9c705",
+      "revId": "a16ad7ec27b985c247bc2778d1d920f9e716ef9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
