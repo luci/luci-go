@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/model"
+	"go.chromium.org/luci/machine-db/common"
 )
 
 // datacentersFilename is the name of the config file enumerating datacenter files.
@@ -118,6 +119,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*config.D
 		}
 
 		c.Enter("datacenter %q", dc.Name)
+		common.ValidateState(c, dc.State)
 		for _, rack := range dc.Rack {
 			switch {
 			case rack.Name == "":
@@ -127,6 +129,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*config.D
 			}
 
 			c.Enter("rack %q", rack.Name)
+			common.ValidateState(c, rack.State)
 			for _, s := range rack.Switch {
 				switch {
 				case s.Name == "":
@@ -136,6 +139,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*config.D
 				}
 
 				c.Enter("switch %q", s.Name)
+				common.ValidateState(c, s.State)
 				switch {
 				case s.Ports < 1:
 					c.Errorf("switches must have at least one port")
