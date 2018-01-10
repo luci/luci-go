@@ -107,6 +107,17 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate datacenter")
 		})
 
+		Convey("invalid datacenter state", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					State: "invalid state",
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "invalid state")
+		})
+
 		Convey("unnamed rack", func() {
 			datacenters := map[string]*config.Datacenter{
 				"datacenter.cfg": {
@@ -165,6 +176,22 @@ func TestValidateDatacenters(t *testing.T) {
 			}
 			validateDatacenters(context, datacenters)
 			So(context.Finalize(), ShouldErrLike, "duplicate rack")
+		})
+
+		Convey("invalid rack state", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenters.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+							State: "invalid state",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "invalid state")
 		})
 
 		Convey("unnamed switch", func() {
@@ -336,44 +363,75 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "switches must have at most 65535 ports")
 		})
 
+		Convey("invalid switch state", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+							Switch: []*config.Switch{
+								{
+									Name: "switch",
+									Ports: 4,
+									State: "invalid state",
+								},
+							},
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "invalid state")
+		})
+
 		Convey("ok", func() {
 			datacenters := map[string]*config.Datacenter{
 				"datacenter1.cfg": {
 					Name:        "datacenter 1",
 					Description: "A description of datacenter 1",
+					State: "serving",
 					Rack: []*config.Rack{
 						{
 							Name:        "rack 1",
 							Description: "A description of rack 1",
+							State: "serving",
 							Switch: []*config.Switch{
 								{
 									Name:        "switch 1",
 									Description: "A description of switch 1",
 									Ports:       4,
+									State: "serving",
 								},
 							},
 						},
 						{
 							Name: "rack 2",
+							State: "decommissioned",
 						},
 					},
 				},
 				"datacenter2.cfg": {
 					Name: "datacenter 2",
+					State: "prerelease",
 				},
 				"datacenter3.cfg": {
 					Name: "datacenter 3",
+					State: "serving",
 					Rack: []*config.Rack{
 						{
 							Name: "rack 3",
+							State: "serving",
 							Switch: []*config.Switch{
 								{
 									Name:  "switch 2",
 									Ports: 8,
+									State: "serving",
 								},
 								{
 									Name:  "switch 3",
 									Ports: 16,
+									State: "serving",
 								},
 							},
 						},
