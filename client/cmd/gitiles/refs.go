@@ -16,13 +16,15 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/errors"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 )
 
 func cmdRefs(authOpts auth.Options) *subcommands.Command {
@@ -49,32 +51,43 @@ type refsRun struct {
 }
 
 func (c *refsRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
+	switch err := c.commonFlags.Parse(); {
+	case err != nil:
 		return err
+	case len(args) != 2:
+		return errors.New("exactly 2 position arguments are expected")
+	default:
+		return nil
 	}
-	if len(args) < 2 {
-		return errors.New("position arguments missing")
-	} else if len(args) > 2 {
-		return errors.New("position arguments not expected")
-	}
-	return nil
 }
 
 func (c *refsRun) main(a subcommands.Application, args []string) error {
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+
+	host, project, err := gitiles.ParseRepoURL(args[0])
+	if err != nil {
+		return errors.Annotate(err, "invalid repo URL %q", args[0]).Err()
+	}
+
 	authCl, err := c.createAuthClient()
 	if err != nil {
 		return err
 	}
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+	g, err := gitiles.NewRESTClient(authCl, host, true)
+	if err != nil {
+		return err
+	}
 
-	g := &gitiles.Client{Client: authCl}
-	refs, err := g.Refs(ctx, args[0], args[1])
+	res, err := g.Refs(ctx, &gitilespb.RefsRequest{
+		Project:  project,
+		RefsPath: args[1],
+	})
 	if err != nil {
 		return err
 	}
 
 	if c.jsonOutput == "" {
-		for k, v := range refs {
+		for k, v := range res.Revisions {
 			fmt.Printf("%s        %s\n", v, k)
 		}
 		return nil
@@ -88,7 +101,8 @@ func (c *refsRun) main(a subcommands.Application, args []string) error {
 		}
 		defer out.Close()
 	}
-	data, err := json.MarshalIndent(refs, "", "  ")
+
+	data, err := json.MarshalIndent(res.Revisions, "", "  ")
 	if err != nil {
 		return err
 	}
