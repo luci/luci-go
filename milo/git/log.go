@@ -111,7 +111,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		"project":   l.project,
 		"commitish": l.commitish,
 	})
-	c, err := info.Namespace(c, "git-log")
+	c, err := info.Namespace(c, "git-log-v2")
 	if err != nil {
 		return nil, errors.Annotate(err, "could not set namespace").Err()
 	}
@@ -231,7 +231,7 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 	caches[0] = l.commitishEntry
 	if !l.commitishIsHash && len(res.Log) > 0 {
 		// cache with commit hash cache key too.
-		e := l.mkCache(c, hex.EncodeToString(res.Log[0].Id))
+		e := l.mkCache(c, res.Log[0].Id)
 		e.SetValue(l.commitishEntry.Value())
 		caches = append(caches, e)
 	}
@@ -240,7 +240,7 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 		// Also potentially cache with ancestors as cache keys.
 		ancestorCaches := make([]memcache.Item, 0, len(res.Log)-1)
 		for i := 1; i < len(res.Log) && len(res.Log[i-1].Parents) == 1; i++ {
-			ancestorCaches = append(ancestorCaches, l.mkCache(c, hex.EncodeToString(res.Log[i].Id)))
+			ancestorCaches = append(ancestorCaches, l.mkCache(c, res.Log[i].Id))
 		}
 		if err := memcache.Get(c, ancestorCaches...); err != nil {
 			merr, ok := err.(errors.MultiError)
@@ -257,18 +257,24 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 				}
 			}
 		}
-		for i, e := range ancestorCaches {
-			dist := byte(i + 1)
-			if v := e.Value(); len(v) > 0 && v[len(v)-1] <= dist {
-				// This cache entry is not worse than what we can offer.
-			} else {
-				// We have data with a shorter distance.
-				// see logReq comment for format of this cache value.
-				v := make([]byte, len(res.Log[0].Id)+1)
-				copy(v, res.Log[0].Id)
-				v[len(v)-1] = dist
-				e.SetValue(v)
-				caches = append(caches, e)
+
+		topCommitId, err := hex.DecodeString(res.Log[0].Id)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "commit id %q is not a valid hex", res.Log[0].Id)
+		} else {
+			for i, e := range ancestorCaches {
+				dist := byte(i + 1)
+				if v := e.Value(); len(v) > 0 && v[len(v)-1] <= dist {
+					// This cache entry is not worse than what we can offer.
+				} else {
+					// We have data with a shorter distance.
+					// see logReq comment for format of this cache value.
+					v := make([]byte, len(topCommitId)+1)
+					copy(v, topCommitId)
+					v[len(v)-1] = dist
+					e.SetValue(v)
+					caches = append(caches, e)
+				}
 			}
 		}
 	}

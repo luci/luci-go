@@ -15,9 +15,7 @@
 package gitiles
 
 import (
-	"encoding/hex"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -80,83 +78,27 @@ func (u *user) Proto() (ret *git.Commit_User, err error) {
 	return
 }
 
-// treeDiff shows the pertinent 'diff' information between two Commit objects.
-type treeDiff struct {
-	// Type is one of the KnownTreeDiffTypes.
-	Type    string `json:"type"`
-	OldID   string `json:"old_id"`
-	OldMode uint32 `json:"old_mode"`
-	OldPath string `json:"old_path"`
-	NewID   string `json:"new_id"`
-	NewMode uint32 `json:"new_mode"`
-	NewPath string `json:"new_path"`
-}
-
-// Proto converts this TreeDiff to its protobuf equivalent.
-func (t *treeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
-	ret = &git.Commit_TreeDiff{
-		OldPath: t.OldPath,
-		OldMode: t.OldMode,
-		NewPath: t.NewPath,
-		NewMode: t.NewMode,
-	}
-
-	if val, ok := git.Commit_TreeDiff_ChangeType_value[strings.ToUpper(t.Type)]; ok {
-		ret.Type = git.Commit_TreeDiff_ChangeType(val)
-	} else {
-		err = errors.Reason("bad change type: %q", t.Type).Err()
-		return
-	}
-
-	if t.OldID != "" {
-		if ret.OldId, err = hex.DecodeString(t.OldID); err != nil {
-			err = errors.Annotate(err, "decoding OldID").Err()
-			return
-		}
-	}
-
-	if t.NewID != "" {
-		if ret.NewId, err = hex.DecodeString(t.NewID); err != nil {
-			err = errors.Annotate(err, "decoding NewID").Err()
-			return
-		}
-	}
-
-	return
-}
-
 // commit is the information of a commit returned from gitiles.
 type commit struct {
-	Commit    string     `json:"commit"`
-	Tree      string     `json:"tree"`
-	Parents   []string   `json:"parents"`
-	Author    user       `json:"author"`
-	Committer user       `json:"committer"`
-	Message   string     `json:"message"`
-	TreeDiff  []treeDiff `json:"tree_diff"`
+	Commit    string                 `json:"commit"`
+	Tree      string                 `json:"tree"`
+	Parents   []string               `json:"parents"`
+	Author    user                   `json:"author"`
+	Committer user                   `json:"committer"`
+	Message   string                 `json:"message"`
+	TreeDiff  []*git.Commit_TreeDiff `json:"tree_diff"`
 }
 
 // Proto converts this git.Commit to its protobuf equivalent.
 func (c *commit) Proto() (ret *git.Commit, err error) {
-	ret = &git.Commit{}
+	ret = &git.Commit{
+		Id:       c.Commit,
+		Tree:     c.Tree,
+		Parents:  c.Parents,
+		Message:  c.Message,
+		TreeDiff: c.TreeDiff,
+	}
 
-	if ret.Id, err = hex.DecodeString(c.Commit); err != nil {
-		err = errors.Annotate(err, "decoding id").Err()
-		return
-	}
-	if ret.Tree, err = hex.DecodeString(c.Tree); err != nil {
-		err = errors.Annotate(err, "decoding tree").Err()
-		return
-	}
-	if len(c.Parents) > 0 {
-		ret.Parents = make([][]byte, len(c.Parents))
-		for i, p := range c.Parents {
-			if ret.Parents[i], err = hex.DecodeString(p); err != nil {
-				err = errors.Annotate(err, "decoding parent %d", i).Err()
-				return
-			}
-		}
-	}
 	if ret.Author, err = c.Author.Proto(); err != nil {
 		err = errors.Annotate(err, "decoding author").Err()
 		return
@@ -164,17 +106,6 @@ func (c *commit) Proto() (ret *git.Commit, err error) {
 	if ret.Committer, err = c.Committer.Proto(); err != nil {
 		err = errors.Annotate(err, "decoding committer").Err()
 		return
-	}
-	ret.Message = c.Message
-
-	if len(c.TreeDiff) > 0 {
-		ret.TreeDiff = make([]*git.Commit_TreeDiff, len(c.TreeDiff))
-		for i, d := range c.TreeDiff {
-			if ret.TreeDiff[i], err = d.Proto(); err != nil {
-				err = errors.Annotate(err, "decoding treediff %d", i).Err()
-				return
-			}
-		}
 	}
 
 	return

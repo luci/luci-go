@@ -15,7 +15,6 @@
 package buildbucket
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -134,7 +133,6 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 	gc := build.GitilesCommit()
 	rb.Blame = make([]*ui.Commit, len(commits))
 	for i, c := range commits {
-		id := hex.EncodeToString(c.Id)
 		rb.Blame[i] = &ui.Commit{
 			AuthorName:  c.Author.Name,
 			AuthorEmail: c.Author.Email,
@@ -145,8 +143,8 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 			// TODO(iannucci): this use of links is very sloppy; the frontend should
 			// know how to render a Commit without having Links embedded in it.
 			Revision: ui.NewLink(
-				id,
-				gc.RepoURL()+"/+/"+id, fmt.Sprintf("commit by %s", c.Author.Email)),
+				c.Id,
+				gc.RepoURL()+"/+/"+c.Id, fmt.Sprintf("commit by %s", c.Author.Email)),
 		}
 
 		rb.Blame[i].CommitTime, _ = ptypes.Timestamp(c.Committer.Time)

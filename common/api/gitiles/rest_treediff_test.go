@@ -15,7 +15,6 @@
 package gitiles
 
 import (
-	"encoding/hex"
 	"net/http"
 	"testing"
 
@@ -177,21 +176,13 @@ func TestLogWithTreeDiff(t *testing.T) {
 		So(len(res.Log), ShouldEqual, 2)
 		So(res.Log[1].TreeDiff[0], ShouldResemble, &git.Commit_TreeDiff{
 			Type:    git.Commit_TreeDiff_MODIFY,
-			OldId:   decodeHex("5e99bfe849b1272c4f93998c1a4e474d50f71d07"),
+			OldId:   "5e99bfe849b1272c4f93998c1a4e474d50f71d07",
 			OldMode: 33188,
 			OldPath: "appengine/findit/model/flake/master_flake_analysis.py",
-			NewId:   decodeHex("19db9511283f35ab878071b68c212cbf10ff0d08"),
+			NewId:   "19db9511283f35ab878071b68c212cbf10ff0d08",
 			NewMode: 33188,
 			NewPath: "appengine/findit/model/flake/master_flake_analysis.py",
 		})
 
 	})
-}
-
-func decodeHex(s string) []byte {
-	b, err := hex.DecodeString(s)
-	if err != nil {
-		panic(err)
-	}
-	return b
 }

@@ -45,16 +45,15 @@ func TestLog(t *testing.T) {
 
 		Convey("cold cache", func() {
 			fakeCommits := make([]*gitpb.Commit, 255)
+			commitID := make([]byte, 20)
+			commitID[0] = 255
 			for i := range fakeCommits {
-				id := make([]byte, 20)
-				id[0] = byte(len(fakeCommits) - i) // descending
-				fakeCommits[i] = &gitpb.Commit{
-					Id:      id,
-					Message: hex.EncodeToString(id), // message is ID in hex.
-				}
+				fakeCommits[i] = &gitpb.Commit{Id: hex.EncodeToString(commitID)}
 				if i > 0 {
-					fakeCommits[i-1].Parents = [][]byte{fakeCommits[i].Id}
+					fakeCommits[i-1].Parents = []string{fakeCommits[i].Id}
 				}
+
+				commitID[0]--
 			}
 
 			req := &gitilespb.LogRequest{
@@ -81,19 +80,19 @@ func TestLog(t *testing.T) {
 			})
 
 			Convey("with top commit in cache", func() {
-				commits, err := Log(c, "host", "project", fakeCommits[1].Message, 0)
+				commits, err := Log(c, "host", "project", fakeCommits[1].Id, 0)
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res.Log)
 			})
 
 			Convey("with ancestor commit in cache", func() {
-				commits, err := Log(c, "host", "project", fakeCommits[2].Message, 0)
+				commits, err := Log(c, "host", "project", fakeCommits[2].Id, 0)
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res.Log[1:])
 			})
 
 			Convey("with second ancestor commit in cache", func() {
-				commits, err := Log(c, "host", "project", fakeCommits[3].Message, 0)
+				commits, err := Log(c, "host", "project", fakeCommits[3].Id, 0)
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res.Log[2:])
 			})
@@ -101,7 +100,7 @@ func TestLog(t *testing.T) {
 			Convey("min is honored", func() {
 				req2 := &gitilespb.LogRequest{
 					Project:  "project",
-					Treeish:  fakeCommits[2].Message,
+					Treeish:  fakeCommits[2].Id,
 					PageSize: 100,
 				}
 				res2 := &gitilespb.LogResponse{
@@ -109,7 +108,7 @@ func TestLog(t *testing.T) {
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
 
-				commits, err := Log(c, "host", "project", fakeCommits[2].Message, 100)
+				commits, err := Log(c, "host", "project", fakeCommits[2].Id, 100)
 				So(err, ShouldBeNil)
 				So(commits, ShouldHaveLength, 100)
 				So(commits, ShouldResemble, res2.Log)
@@ -118,14 +117,14 @@ func TestLog(t *testing.T) {
 			Convey("request of item not in cache", func() {
 				req2 := &gitilespb.LogRequest{
 					Project:  "project",
-					Treeish:  fakeCommits[101].Message,
+					Treeish:  fakeCommits[101].Id,
 					PageSize: 100,
 				}
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[101:201],
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
-				commits, err := Log(c, "host", "project", fakeCommits[101].Message, 0)
+				commits, err := Log(c, "host", "project", fakeCommits[101].Id, 0)
 				So(err, ShouldBeNil)
 				So(commits, ShouldHaveLength, 100)
 				So(commits, ShouldResemble, res2.Log)
@@ -136,7 +135,7 @@ func TestLog(t *testing.T) {
 					host:    "host",
 					project: "project",
 				}).mkCache(c, "refs/heads/master")
-				c, err := info.Namespace(c, "git-log")
+				c, err := info.Namespace(c, "git-log-v2")
 				So(err, ShouldBeNil)
 				err = memcache.Delete(c, refCache.Key())
 				So(err, ShouldBeNil)
@@ -155,7 +154,7 @@ func TestLog(t *testing.T) {
 				So(commits, ShouldResemble, res2.Log)
 
 				// ensure we still get 100-len log for second commit
-				commits, err = Log(c, "host", "project", fakeCommits[1].Message, 1)
+				commits, err = Log(c, "host", "project", fakeCommits[1].Id, 1)
 				So(err, ShouldBeNil)
 				So(commits, ShouldHaveLength, 100)
 			})
