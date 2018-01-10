@@ -19,6 +19,8 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"runtime"
+	"math"
 	"strings"
 	"time"
 
@@ -34,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -378,4 +381,19 @@ func ProjectLinks(project, group string) []ui.LinkGroup {
 		})
 	}
 	return links
+}
+
+func leakDetector(c *router.Context, next router.Handler) {
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	next(c)
+	runtime.ReadMemStats(&after)
+
+	beforeAlloc := float64(before.Alloc)/1024/1024
+	afterAlloc := float64(after.Alloc)/1024/1024
+	delta := afterAlloc - beforeAlloc
+	if delta >= 1.0 {
+		// allocation increased by >= 1 Mb
+		logging.Warningf(c.Context, "mem alloc %+.2f Mb => %.2f MB", delta, afterAlloc)
+	}
 }

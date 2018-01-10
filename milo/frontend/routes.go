@@ -51,7 +51,7 @@ func Run(templatePath string) {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	baseMW := standard.Base().Extend(withRouterContextMiddleware, withGitilesMiddleware)
+	baseMW := standard.Base().Extend(leakDetector, withRouterContextMiddleware, withGitilesMiddleware)
 	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute))
 	htmlMW := frontendMW.Extend(
 		auth.Authenticate(server.CookieAuth),
