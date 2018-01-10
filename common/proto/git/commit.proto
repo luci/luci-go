@@ -21,14 +21,14 @@ package git;
 // Commit is a single parsed commit as represented in a git log or git show
 // expression.
 message Commit {
-  // The sha1 of the commit.
-  bytes id = 1;
+  // The hex sha1 of the commit.
+  string id = 1;
 
-  // The sha1 of the tree for this commit.
-  bytes tree = 2;
+  // The hex sha1 of the tree for this commit.
+  string tree = 2;
 
-  // The sha1's of each of this commits' parents.
-  repeated bytes parents = 3;
+  // The hex sha1's of each of this commits' parents.
+  repeated string parents = 3;
 
   // User represents the (name, email, timestamp) Commit header for author and/or
   // commtter.
@@ -74,11 +74,11 @@ message Commit {
     // How this file changed.
     ChangeType type = 1;
 
-    bytes old_id = 2;
+    string old_id = 2;
     uint32 old_mode = 3;
     string old_path = 4;
 
-    bytes new_id = 5;
+    string new_id = 5;
     uint32 new_mode = 6;
     string new_path = 7;
   }

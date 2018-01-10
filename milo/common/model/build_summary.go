@@ -309,7 +309,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	curGC := &buildbucket.GitilesCommit{Host: gc.Host, Project: gc.Project}
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
 	for i, commit := range commits {
-		curGC.Revision = hex.EncodeToString(commit.Id)
+		curGC.Revision = commit.Id
 		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.String()), &builds); err != nil {
 			return
 		}

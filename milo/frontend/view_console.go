@@ -16,7 +16,6 @@ package frontend
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -192,7 +191,7 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 
 	commitIDs := make([]string, len(rawCommits))
 	for i, c := range rawCommits {
-		commitIDs[i] = hex.EncodeToString(c.Id)
+		commitIDs[i] = c.Id
 	}
 
 	tBuilds := logTimer(c, "Rows: loading builds")
@@ -206,7 +205,6 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	commits := make([]ui.Commit, len(rawCommits))
 	for row, commit := range rawCommits {
 		ct, _ := ptypes.Timestamp(commit.Committer.Time)
-		id := hex.EncodeToString(commit.Id)
 		commits[row] = ui.Commit{
 			AuthorName:  commit.Author.Name,
 			AuthorEmail: commit.Author.Email,
@@ -214,7 +212,10 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 			Repo:        def.RepoUrl,
 			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
 			Description: commit.Message,
-			Revision:    ui.NewLink(id, def.RepoUrl+"/+/"+id, fmt.Sprintf("commit by %s", commit.Author.Email)),
+			Revision: ui.NewLink(
+				commit.Id,
+				def.RepoUrl+"/+/"+commit.Id,
+				fmt.Sprintf("commit by %s", commit.Author.Email)),
 		}
 	}
 

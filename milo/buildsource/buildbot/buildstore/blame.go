@@ -15,7 +15,6 @@
 package buildstore
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -161,15 +160,14 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 // changeFromGitiles converts a gitiles.Commit to a buildbot change.
 func changeFromGitiles(repoURL, branch string, commit *gitpb.Commit) buildbot.Change {
 	ct, _ := ptypes.Timestamp(commit.Committer.Time)
-	id := hex.EncodeToString(commit.Id)
 	return buildbot.Change{
 		At:         ct.Format("Mon _2 Jan 2006 15:04:05"),
 		Branch:     &branch,
 		Comments:   commit.Message,
 		Repository: repoURL,
-		Rev:        id,
-		Revision:   id,
-		Revlink:    fmt.Sprintf("%s/+/%s", strings.TrimSuffix(repoURL, "/"), id),
+		Rev:        commit.Id,
+		Revision:   commit.Id,
+		Revlink:    fmt.Sprintf("%s/+/%s", strings.TrimSuffix(repoURL, "/"), commit.Id),
 		When:       int(ct.Unix()),
 		Who:        commit.Author.Email,
 		// TODO(nodir): add Files if someone needs them.

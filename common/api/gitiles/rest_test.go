@@ -15,7 +15,6 @@
 package gitiles
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -58,7 +57,7 @@ func TestLog(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(res.Log), ShouldEqual, 2)
 			So(res.Log[0].Author.Name, ShouldEqual, "Author 1")
-			So(hex.EncodeToString(res.Log[1].Id), ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
+			So(res.Log[1].Id, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
 		})
 	})
 }

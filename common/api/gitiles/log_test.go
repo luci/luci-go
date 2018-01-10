@@ -15,7 +15,6 @@
 package gitiles
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"testing"
@@ -60,7 +59,7 @@ func TestPagingLog(t *testing.T) {
 			So(reqs[9].FormValue("s"), ShouldEqual, "next_cursor_value")
 			So(len(commits), ShouldEqual, 10)
 			So(commits[0].Author.Name, ShouldEqual, "Author 1")
-			So(hex.EncodeToString(commits[1].Id), ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
+			So(commits[1].Id, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
 		})
 
 		Convey("Page till limit", func() {
