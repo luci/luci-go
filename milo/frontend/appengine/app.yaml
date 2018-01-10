@@ -3,6 +3,9 @@ api_version: go1
 service: default
 
 instance_class: F4_1G
+automatic_scaling:
+  max_concurrent_requests: 2
+
 
 handlers:
 # For static resources such as css and js files.
