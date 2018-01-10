@@ -22,6 +22,30 @@
       "revId": "422b7a08d9c8c50b35d3d2859d0d1625cc111c9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c616015b_5b287b20",
+        "filename": "milo/buildsource/buildbot/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-01-10T02:13:07Z",
+      "side": 1,
+      "message": "I thought about that, but we risk losing some builds forever that way.  If we continue (to the next build), we don\u0027t lose builds.  Going to try to continue first, and if it\u0027s still an issue, then break.",
+      "parentUuid": "20246cbd_54707e35",
+      "range": {
+        "startLine": 284,
+        "startChar": 3,
+        "endLine": 284,
+        "endChar": 11
+      },
+      "revId": "422b7a08d9c8c50b35d3d2859d0d1625cc111c9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
