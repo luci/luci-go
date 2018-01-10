@@ -15,8 +15,6 @@
 package gitiles
 
 import (
-	"encoding/hex"
-
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/common/errors"
@@ -42,10 +40,12 @@ func (u *User) Proto() (ret *git.Commit_User, err error) {
 // Proto converts this TreeDiff to its protobuf equivalent.
 func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
 	ret = &git.Commit_TreeDiff{
-		OldPath: t.OldPath,
+		OldId:   t.OldID,
 		OldMode: t.OldMode,
-		NewPath: t.NewPath,
+		OldPath: t.OldPath,
+		NewId:   t.NewID,
 		NewMode: t.NewMode,
+		NewPath: t.NewPath,
 	}
 
 	if val, ok := git.Commit_TreeDiff_ChangeType_value[t.Type]; ok {
@@ -55,44 +55,18 @@ func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
 		return
 	}
 
-	if t.OldID != "" {
-		if ret.OldId, err = hex.DecodeString(t.OldID); err != nil {
-			err = errors.Annotate(err, "decoding OldID").Err()
-			return
-		}
-	}
-
-	if t.NewID != "" {
-		if ret.NewId, err = hex.DecodeString(t.NewID); err != nil {
-			err = errors.Annotate(err, "decoding NewID").Err()
-			return
-		}
-	}
-
 	return
 }
 
 // Proto converts this git.Commit to its protobuf equivalent.
 func (c *Commit) Proto() (ret *git.Commit, err error) {
-	ret = &git.Commit{}
+	ret = &git.Commit{
+		Id:      c.Commit,
+		Tree:    c.Tree,
+		Parents: c.Parents,
+		Message: c.Message,
+	}
 
-	if ret.Id, err = hex.DecodeString(c.Commit); err != nil {
-		err = errors.Annotate(err, "decoding id").Err()
-		return
-	}
-	if ret.Tree, err = hex.DecodeString(c.Tree); err != nil {
-		err = errors.Annotate(err, "decoding tree").Err()
-		return
-	}
-	if len(c.Parents) > 0 {
-		ret.Parents = make([][]byte, len(c.Parents))
-		for i, p := range c.Parents {
-			if ret.Parents[i], err = hex.DecodeString(p); err != nil {
-				err = errors.Annotate(err, "decoding parent %d", i).Err()
-				return
-			}
-		}
-	}
 	if ret.Author, err = c.Author.Proto(); err != nil {
 		err = errors.Annotate(err, "decoding author").Err()
 		return
@@ -101,7 +75,6 @@ func (c *Commit) Proto() (ret *git.Commit, err error) {
 		err = errors.Annotate(err, "decoding committer").Err()
 		return
 	}
-	ret.Message = c.Message
 
 	if len(c.TreeDiff) > 0 {
 		ret.TreeDiff = make([]*git.Commit_TreeDiff, len(c.TreeDiff))
