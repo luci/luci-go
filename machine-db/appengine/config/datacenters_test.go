@@ -341,39 +341,48 @@ func TestValidateDatacenters(t *testing.T) {
 				"datacenter1.cfg": {
 					Name:        "datacenter 1",
 					Description: "A description of datacenter 1",
+					State:       "serving",
 					Rack: []*config.Rack{
 						{
 							Name:        "rack 1",
 							Description: "A description of rack 1",
+							State:       "serving",
 							Switch: []*config.Switch{
 								{
 									Name:        "switch 1",
 									Description: "A description of switch 1",
 									Ports:       4,
+									State:       "serving",
 								},
 							},
 						},
 						{
-							Name: "rack 2",
+							Name:  "rack 2",
+							State: "decommissioned",
 						},
 					},
 				},
 				"datacenter2.cfg": {
-					Name: "datacenter 2",
+					Name:  "datacenter 2",
+					State: "prerelease",
 				},
 				"datacenter3.cfg": {
-					Name: "datacenter 3",
+					Name:  "datacenter 3",
+					State: "serving",
 					Rack: []*config.Rack{
 						{
-							Name: "rack 3",
+							Name:  "rack 3",
+							State: "serving",
 							Switch: []*config.Switch{
 								{
 									Name:  "switch 2",
 									Ports: 8,
+									State: "serving",
 								},
 								{
 									Name:  "switch 3",
 									Ports: 16,
+									State: "serving",
 								},
 							},
 						},
