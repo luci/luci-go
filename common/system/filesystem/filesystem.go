@@ -90,12 +90,8 @@ func RemoveAll(path string) error {
 		}
 
 		// Make user-writable, if it's not already.
-		mode := fi.Mode()
-		if (mode & 0200) == 0 {
-			mode |= 0200
-			if err := os.Chmod(path, mode); err != nil {
-				return errors.Annotate(err, "could not Chmod path").InternalReason("mode(%#o)/path(%q)", mode, path).Err()
-			}
+		if err := MakePathUserWritable(path, fi); err != nil {
+			return err
 		}
 
 		if err := os.Remove(path); err != nil {
@@ -115,6 +111,32 @@ func MakeReadOnly(path string, filter func(string) bool) error {
 	return recursiveChmod(path, filter, func(mode os.FileMode) os.FileMode {
 		return mode & (^os.FileMode(0222))
 	})
+}
+
+// MakePathUserWritable updates the filesystem metadata on a single file or
+// directory to make it user-writable.
+//
+// fi is optional. If nil, os.Stat will be called on path. Otherwise, fi will
+// be regarded as the results of calling os.Stat on path. This is provided as
+// an optimization, since some filesystem operations automatically yield a
+// FileInfo.
+func MakePathUserWritable(path string, fi os.FileInfo) error {
+	if fi == nil {
+		var err error
+		if fi, err = os.Stat(path); err != nil {
+			return errors.Annotate(err, "failed to Stat path").InternalReason("path(%q)", path).Err()
+		}
+	}
+
+	// Make user-writable, if it's not already.
+	mode := fi.Mode()
+	if (mode & 0200) == 0 {
+		mode |= 0200
+		if err := os.Chmod(path, mode); err != nil {
+			return errors.Annotate(err, "could not Chmod path").InternalReason("mode(%#o)/path(%q)", mode, path).Err()
+		}
+	}
+	return nil
 }
 
 func recursiveChmod(path string, filter func(string) bool, chmod func(mode os.FileMode) os.FileMode) error {
