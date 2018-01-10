@@ -75,92 +75,92 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 
 	// Builds.
-	r.GET("/p/:project/builds/b:id", projectMW, func(c *router.Context) {
-		BuildHandler(c, &buildbucket.BuildID{
+	r.GET("/p/:project/builds/b:id", projectMW, handleError(func(c *router.Context) error {
+		return BuildHandler(c, &buildbucket.BuildID{
 			Project: c.Params.ByName("project"),
 			Address: c.Params.ByName("id"),
 		})
-	})
-	r.GET("/p/:project/builders/:bucket/:builder/:number", projectMW, func(c *router.Context) {
-		BuildHandler(c, &buildbucket.BuildID{
+	}))
+	r.GET("/p/:project/builders/:bucket/:builder/:number", projectMW, handleError(func(c *router.Context) error {
+		return BuildHandler(c, &buildbucket.BuildID{
 			Project: c.Params.ByName("project"),
 			Address: fmt.Sprintf("%s/%s/%s",
 				c.Params.ByName("bucket"),
 				c.Params.ByName("builder"),
 				c.Params.ByName("number")),
 		})
-	})
+	}))
 
 	// Console
-	r.GET("/p/:project", projectMW, func(c *router.Context) {
-		ConsolesHandler(c, c.Params.ByName("project"))
-	})
+	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
+		return ConsolesHandler(c, c.Params.ByName("project"))
+	}))
 	r.GET("/p/:project/", frontendMW, movedPermanently("/p/:project"))
 	r.GET("/p/:project/g", frontendMW, movedPermanently("/p/:project"))
-	r.GET("/p/:project/g/:group/console", projectMW, ConsoleHandler)
+	r.GET("/p/:project/g/:group/console", projectMW, handleError(ConsoleHandler))
 	r.GET("/p/:project/g/:group", projectMW, redirect("/p/:project/g/:group/console", http.StatusFound))
 	r.GET("/p/:project/g/:group/", frontendMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
-	r.GET("/p/:project/builders", projectMW, func(c *router.Context) {
-		BuildersRelativeHandler(c, c.Params.ByName("project"), "")
-	})
-	r.GET("/p/:project/g/:group/builders", projectMW, func(c *router.Context) {
-		BuildersRelativeHandler(c, c.Params.ByName("project"), c.Params.ByName("group"))
-	})
+	r.GET("/p/:project/builders", projectMW, handleError(func(c *router.Context) error {
+		return BuildersRelativeHandler(c, c.Params.ByName("project"), "")
+	}))
+	r.GET("/p/:project/g/:group/builders", projectMW, handleError(func(c *router.Context) error {
+		return BuildersRelativeHandler(c, c.Params.ByName("project"), c.Params.ByName("group"))
+	}))
 
 	// Swarming
-	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, func(c *router.Context) {
-		LogHandler(c, &swarming.BuildID{
+	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, handleError(func(c *router.Context) error {
+		return LogHandler(c, &swarming.BuildID{
 			TaskID: c.Params.ByName("id"),
 			Host:   c.Request.FormValue("server"),
 		}, c.Params.ByName("logname"))
-	})
-	r.GET(swarming.URLBase+"/:id", htmlMW, func(c *router.Context) {
-		BuildHandler(c, &swarming.BuildID{
+	}))
+	r.GET(swarming.URLBase+"/:id", htmlMW, handleError(func(c *router.Context) error {
+		return BuildHandler(c, &swarming.BuildID{
 			TaskID: c.Params.ByName("id"),
 			Host:   c.Request.FormValue("server"),
 		})
-	})
+	}))
 	// Backward-compatible URLs for Swarming:
-	r.GET("/swarming/prod/:id/steps/*logname", htmlMW, func(c *router.Context) {
-		LogHandler(c, &swarming.BuildID{
+	r.GET("/swarming/prod/:id/steps/*logname", htmlMW, handleError(func(c *router.Context) error {
+		return LogHandler(c, &swarming.BuildID{
 			TaskID: c.Params.ByName("id"),
 		}, c.Params.ByName("logname"))
-	})
-	r.GET("/swarming/prod/:id", htmlMW, func(c *router.Context) {
-		BuildHandler(c, &swarming.BuildID{TaskID: c.Params.ByName("id")})
-	})
+	}))
+	r.GET("/swarming/prod/:id", htmlMW, handleError(func(c *router.Context) error {
+		return BuildHandler(c, &swarming.BuildID{TaskID: c.Params.ByName("id")})
+	}))
 
 	// Buildbucket
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
-	r.GET("/p/:project/builders/:bucket/:builder", projectMW, func(c *router.Context) {
+	r.GET("/p/:project/builders/:bucket/:builder", projectMW, handleError(func(c *router.Context) error {
 		// TODO(nodir): use project parameter.
 		// Besides implementation, requires deleting the redirect for
 		// /buildbucket/:bucket/:builder
 		// because it assumes that project is not used here and
 		// simply passes project=chromium.
 
-		BuilderHandler(c, buildsource.BuilderID(
+		return BuilderHandler(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbucket/%s/%s", c.Params.ByName("bucket"), c.Params.ByName("builder"))))
-	})
+	}))
 	// TODO(nodir): delete this redirect and the chromium project assumption with it
 	r.GET("/buildbucket/:bucket/:builder", frontendMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
 
 	// Buildbot
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
-	r.GET("/buildbot/:master/:builder/:build", htmlMW.Extend(emulationMiddleware), func(c *router.Context) {
-		BuildHandler(c, &buildbot.BuildID{
+	r.GET("/buildbot/:master/:builder/:build", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
+		return BuildHandler(c, &buildbot.BuildID{
 			Master:      c.Params.ByName("master"),
 			BuilderName: c.Params.ByName("builder"),
 			BuildNumber: c.Params.ByName("build"),
 		})
-	})
-	r.GET("/buildbot/:master/:builder/", htmlMW.Extend(emulationMiddleware), func(c *router.Context) {
-		BuilderHandler(c, buildsource.BuilderID(
+	}))
+	r.GET("/buildbot/:master/:builder/", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
+		return BuilderHandler(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
-	})
+	}))
 	r.GET("/buildbot/:master/", frontendMW, func(c *router.Context) {
 		u := *c.Request.URL
 		u.Path = "/search"
@@ -171,13 +171,13 @@ func Run(templatePath string) {
 	// LogDog Milo Annotation Streams.
 	// This mimicks the `logdog://logdog_host/project/*path` url scheme seen on
 	// swarming tasks.
-	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, func(c *router.Context) {
-		BuildHandler(c, rawpresentation.NewBuildID(
+	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, handleError(func(c *router.Context) error {
+		return BuildHandler(c, rawpresentation.NewBuildID(
 			c.Params.ByName("logdog_host"),
 			c.Params.ByName("project"),
 			c.Params.ByName("path"),
 		))
-	})
+	}))
 
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbot", backendMW, buildbot.PubSubHandler)
@@ -210,6 +210,16 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 	c = buildstore.WithEmulation(c, true)
 
 	return c, nil
+}
+
+// handleError is a wrapper for a handler so that it can return an error
+// rather than call ErrorHandler directly.
+func handleError(handler func(c *router.Context) error) func(c *router.Context) {
+	return func(c *router.Context) {
+		if err := handler(c); err != nil {
+			ErrorHandler(c, err)
+		}
+	}
 }
 
 // redirect returns a handler that responds with given HTTP status

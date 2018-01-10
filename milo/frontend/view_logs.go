@@ -12,14 +12,14 @@ import (
 
 // LogHandler is responsible for taking a universal build ID and rendering the
 // build page (defined in ./appengine/templates/pages/log.html).
-func LogHandler(c *router.Context, buildID buildsource.ID, logname string) {
+func LogHandler(c *router.Context, buildID buildsource.ID, logname string) error {
 	log, closed, err := buildID.GetLog(c.Context, logname)
 	if err != nil {
-		ErrorHandler(c, err)
-	} else {
-		templates.MustRender(c.Context, c.Writer, "pages/log.html", templates.Args{
-			"Log":    log,
-			"Closed": closed,
-		})
+		return err
 	}
+	templates.MustRender(c.Context, c.Writer, "pages/log.html", templates.Args{
+		"Log":    log,
+		"Closed": closed,
+	})
+	return nil
 }
