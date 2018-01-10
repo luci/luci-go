@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5235bc32_51ad24d7",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "613faae7_97497c30",
+      "range": {
+        "startLine": 153,
+        "startChar": 87,
+        "endLine": 153,
+        "endChar": 96
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a25dc35_b1ff33a1",
         "filename": "machine-db/appengine/model/ips.go",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3b49f62_d2453c9b",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a25dc35_b1ff33a1",
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "0e97c415_4225bc2d",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "228403f5_6b05d7ca",
+      "range": {
+        "startLine": 160,
+        "startChar": 90,
+        "endLine": 160,
+        "endChar": 99
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a575ae68_d5b08713",
         "filename": "machine-db/appengine/model/ips.go",
         "patchSetId": 3
@@ -76,6 +142,30 @@
       "writtenOn": "2018-01-10T02:39:34Z",
       "side": 1,
       "message": "consider adding a method in IP that returns net.IP, or even better store IP.IPv4 as net.IP and convert it to uint32 only when needed. Note also that uint32-\u003enet.IP requires heap allocation, while net.IP-\u003euint32 does not, so I recommend making IP.IPv4 a net.IP. It also a better usage of type system, to me.",
+      "range": {
+        "startLine": 200,
+        "startChar": 65,
+        "endLine": 200,
+        "endChar": 90
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a6f3abe_46256dce",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "It seems more costly. Currently the most conversions to do are when the config is updated (to print the \"Added IP address\" message) and there are few conversions to do when the config is unchanging (most of the time).\n\nIf we put net.IP in the IP struct we will save the on-update conversions but in computeChanges the map[uint32]*IP will require every single uint32 to be converted to net.IP to create the IP struct. Right now, we only do one conversion per CIDR block: the first net.IP in the block is converted to uint32, then we can just do i++ to create each IP struct. \u003c 100 type conversions on every cron where there\u0027s nothing to update, vs. \u003c 100,000 type conversions on every cron where there\u0027s nothing to update.",
+      "parentUuid": "a575ae68_d5b08713",
       "range": {
         "startLine": 200,
         "startChar": 65,
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "3f5b92ad_4627354c",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be0d0166_858789b8",
+      "range": {
+        "startLine": 241,
+        "startChar": 90,
+        "endLine": 241,
+        "endChar": 99
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7bfda820_f9ef01c6",
         "filename": "machine-db/appengine/model/ips.go",
         "patchSetId": 3
@@ -131,6 +245,30 @@
       "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4c93bb0_e8d56e5f",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7bfda820_f9ef01c6",
+      "range": {
+        "startLine": 245,
+        "startChar": 44,
+        "endLine": 245,
+        "endChar": 51
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "8c588537_e14375c4",
+        "filename": "machine-db/common/ip.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87b0d83e_f43fcddf",
+      "range": {
+        "startLine": 25,
+        "startChar": 3,
+        "endLine": 25,
+        "endChar": 10
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36f98151_427c233e",
         "filename": "machine-db/common/ip.go",
         "patchSetId": 3
@@ -177,6 +339,30 @@
       "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a81bb46_17a12223",
+        "filename": "machine-db/common/ip.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T03:36:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36f98151_427c233e",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 9
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
