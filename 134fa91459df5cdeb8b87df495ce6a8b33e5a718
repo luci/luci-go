@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1141ef7f_643d6493",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb641c9a_824dc82c",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 3
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7ba1223_95db7f11",
         "filename": "machine-db/appengine/model/ips.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae815877_6e2508a2",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7ba1223_95db7f11",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 5
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "c98e1ec3_4f1d67b4",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "Added to config validation instead so by the time it reaches here it\u0027s definitely within a tolerable range.",
+      "parentUuid": "1ad0e577_5cd3125a",
+      "range": {
+        "startLine": 84,
+        "startChar": 19,
+        "endLine": 84,
+        "endChar": 25
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b7425b6_e9ad38a0",
         "filename": "machine-db/appengine/model/ips.go",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2018-01-08T18:14:21Z",
       "side": 1,
       "message": "this cannot happen because it succeeded earlier in this function. Let\u0027s replace it with \n\n  panic(\"impossible: \u003cwhy impossible\u003e\")",
+      "range": {
+        "startLine": 116,
+        "startChar": 4,
+        "endLine": 116,
+        "endChar": 109
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ae9bf62_be0891ef",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "True that it can\u0027t happen now but it could happen if the code was restructured somehow, in which case I\u0027d prefer to err instead of panicking and crashing the entire cron. What do you think?",
+      "parentUuid": "0b7425b6_e9ad38a0",
       "range": {
         "startLine": 116,
         "startChar": 4,
@@ -114,6 +210,30 @@
       "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3affd8ca_2af46a13",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "True, but for current actual dataset batching was not needed (verified on dev). Added TODO in any case.",
+      "parentUuid": "95fc1efe_78d362fe",
+      "range": {
+        "startLine": 150,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 56
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +323,24 @@
     },
     {
       "key": {
+        "uuid": "d81e07d3_34d796f1",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ba7b9b8_cc7b6346",
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4531a688_31794ef6",
         "filename": "machine-db/common/utils/utils.go",
         "patchSetId": 1
@@ -223,6 +361,30 @@
       "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4e022c0_678dd6a8",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "I think it\u0027s possible, changed.",
+      "parentUuid": "4531a688_31794ef6",
+      "range": {
+        "startLine": 27,
+        "startChar": 34,
+        "endLine": 27,
+        "endChar": 37
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -269,6 +431,54 @@
       "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80c1e1df_ed5fa21f",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29078e86_8a41798e",
+      "range": {
+        "startLine": 37,
+        "startChar": 32,
+        "endLine": 37,
+        "endChar": 52
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2c3bb224_031ee897",
+        "filename": "machine-db/common/utils/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-10T00:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dea5cb68_b65a8116",
+      "range": {
+        "startLine": 37,
+        "startChar": 55,
+        "endLine": 37,
+        "endChar": 89
+      },
+      "revId": "134fa91459df5cdeb8b87df495ce6a8b33e5a718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
