@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "440f1b9a_cad43391",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003293
+      },
+      "writtenOn": "2018-01-10T21:03:56Z",
+      "side": 1,
+      "message": "I suspect this was the reason I forbid it in the first place (this was a conscious decision, as you can see by the unit tests that checks \".\" specifically).",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 53
+      },
+      "revId": "8db4879155487fc8cc181016c7807f2b5cfd72ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
