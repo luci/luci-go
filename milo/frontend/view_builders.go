@@ -39,7 +39,7 @@ import (
 //
 // The builders list page by relative time is defined in
 // ./appengine/templates/pages/builders_relative_time.html.
-func BuildersRelativeHandler(c *router.Context, projectID, group string) {
+func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 	limit := 30
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
@@ -47,13 +47,13 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) {
 
 	hists, err := getBuilderHistories(c.Context, projectID, group, limit)
 	if err != nil {
-		ErrorHandler(c, err)
-		return
+		return err
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/builders_relative_time.html", templates.Args{
 		"Builders": hists,
 	})
+	return nil
 }
 
 // builderHistory stores the recent history of a builder.

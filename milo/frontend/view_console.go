@@ -547,18 +547,17 @@ func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*ui.Link, error) {
 }
 
 // ConsoleHandler renders the console page.
-func ConsoleHandler(c *router.Context) {
+func ConsoleHandler(c *router.Context) error {
 	project := c.Params.ByName("project")
 	if project == "" {
-		ErrorHandler(c, errors.New("Missing Project", common.CodeParameterError))
-		return
+		return errors.New("missing project", common.CodeParameterError)
 	}
 	group := c.Params.ByName("group")
 
 	// If group is a tryserver group, redirect to builders view.
 	if strings.Contains(group, "tryserver") {
 		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
-		return
+		return nil
 	}
 
 	const defaultLimit = 50
@@ -573,8 +572,7 @@ func ConsoleHandler(c *router.Context) {
 
 	result, err := console(c.Context, project, group, limit)
 	if err != nil {
-		ErrorHandler(c, err)
-		return
+		return err
 	}
 
 	var reload *int
@@ -586,15 +584,15 @@ func ConsoleHandler(c *router.Context) {
 		"Console": consoleRenderer{result},
 		"Reload":  reload,
 	})
+	return nil
 }
 
 // ConsolesHandler is responsible for taking a project name and rendering the
 // console list page (defined in ./appengine/templates/pages/builder_groups.html).
-func ConsolesHandler(c *router.Context, projectID string) {
+func ConsolesHandler(c *router.Context, projectID string) error {
 	cons, err := common.GetProjectConsoles(c.Context, projectID)
 	if err != nil {
-		ErrorHandler(c, err)
-		return
+		return err
 	}
 	type fullConsole struct {
 		ProjectID string
@@ -604,8 +602,7 @@ func ConsolesHandler(c *router.Context, projectID string) {
 	var consoles []fullConsole
 	summaryMap, err := buildsource.GetConsoleSummariesFromDefs(c.Context, cons, projectID)
 	if err != nil {
-		ErrorHandler(c, err)
-		return
+		return err
 	}
 	for _, con := range cons {
 		summary, ok := summaryMap[con.ConsoleID()]
@@ -636,6 +633,7 @@ func ConsolesHandler(c *router.Context, projectID string) {
 		"Consoles":  consoles,
 		"Reload":    reload,
 	})
+	return nil
 }
 
 func consoleTestData() []common.TestBundle {

@@ -12,7 +12,7 @@ import (
 
 // BuilderHandler is responsible for taking a universal builder ID and rendering
 // the builder page (defined in ./appengine/templates/pages/builder.html).
-func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) {
+func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) error {
 	limit := 25
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
@@ -22,10 +22,10 @@ func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) {
 	// host/prefix/path instead of by directly pulling it. Do all annotation
 	// stream rendering in the frontend.
 	if err != nil {
-		ErrorHandler(c, err)
-	} else {
-		templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
-			"Builder": builder,
-		})
+		return err
 	}
+	templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
+		"Builder": builder,
+	})
+	return nil
 }
