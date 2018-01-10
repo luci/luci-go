@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20246cbd_54707e35",
+        "filename": "milo/buildsource/buildbot/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-10T02:09:59Z",
+      "side": 1,
+      "message": "but we continue? shouldn\u0027t we break?\n\nI think this will just drop every build in this message? Is there a more granular way to do it?",
+      "range": {
+        "startLine": 284,
+        "startChar": 3,
+        "endLine": 284,
+        "endChar": 11
+      },
+      "revId": "422b7a08d9c8c50b35d3d2859d0d1625cc111c9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
