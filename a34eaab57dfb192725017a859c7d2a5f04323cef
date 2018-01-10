@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1b97af3c_6039ed1e",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-01-10T19:40:11Z",
+      "side": 1,
+      "message": "Todo unclear, doesn\u0027t sound actionable.",
+      "revId": "a34eaab57dfb192725017a859c7d2a5f04323cef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "254108d9_c848ac46",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 634,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-01-10T19:40:11Z",
+      "side": 1,
+      "message": "Also here",
+      "range": {
+        "startLine": 634,
+        "startChar": 3,
+        "endLine": 634,
+        "endChar": 14
+      },
+      "revId": "a34eaab57dfb192725017a859c7d2a5f04323cef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
