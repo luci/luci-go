@@ -249,6 +249,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 
 	// This is used to cache the master used for extracting OS information.
 	var cachedMaster buildstore.Master
+	bail := false
 	for _, build := range builds {
 		if build.Master == "" {
 			logging.Errorf(c, "Invalid message, missing master name")
@@ -279,6 +280,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 			// This will never work, we don't want PubSub to retry.
 			logging.WithError(err).Errorf(
 				c, "Could not save build to datastore, failing permanently")
+			bail = true // This large build could potentially cause issues, need to bail after this.
 			continue
 		case err != nil:
 			// This is transient, we do want PubSub to retry.
@@ -294,6 +296,10 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		}
 		buildCounter.Add(
 			c, 1, false, build.Master, build.Buildername, build.Finished, status)
+	}
+	if bail {
+		logging.Infof(c, "Skipping saving master data due to potential OOM")
+		return http.StatusOK
 	}
 	if master != nil {
 		code := saveMaster(c, master, internal)
