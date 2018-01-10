@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c89535b1_340d0e64",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T06:02:34Z",
+      "side": 1,
+      "message": "up to you: we call common.Uint32ToIPv4(ip.IPv4) in this loop body in any case, with or without error. Consider calling once, saving to a variable and reusing in all 3 places. \n\nsame in remove() and update()",
+      "range": {
+        "startLine": 158,
+        "startChar": 42,
+        "endLine": 158,
+        "endChar": 70
+      },
+      "revId": "362645afa821aa32614dab2b60710efd3692c81c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a964f54_e1815fc4",
+        "filename": "machine-db/common/ips.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T06:02:34Z",
+      "side": 1,
+      "message": "2018, in other files too",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "362645afa821aa32614dab2b60710efd3692c81c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48b58374_10b1242d",
+        "filename": "machine-db/common/ips.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T06:02:34Z",
+      "side": 1,
+      "message": "this creates a new 16-length byte slice https://golang.org/src/net/ip.go#L45\nthe bytes variable is already what you need to return\n\n  ip :\u003d make(net.IP, 4)\n  binary.BigEndian.PutUint32(ip, ipv4)\n  return ip\n\nshould work (it is like L45)",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 56
+      },
+      "revId": "362645afa821aa32614dab2b60710efd3692c81c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4717a0bd_827cdae0",
+        "filename": "machine-db/common/ips_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T06:02:34Z",
+      "side": 1,
+      "message": "uint32(3232235777)\n\nhttps://logs.chromium.org/v/?s\u003dinfra%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8957818255502102480%2F%2B%2Fsteps%2Fgo_test%2F0%2Fstdout",
+      "range": {
+        "startLine": 67,
+        "startChar": 24,
+        "endLine": 67,
+        "endChar": 34
+      },
+      "revId": "362645afa821aa32614dab2b60710efd3692c81c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a83e7d7c_2c1058d1",
+        "filename": "machine-db/common/ips_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T06:02:34Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 79,
+        "startChar": 24,
+        "endLine": 79,
+        "endChar": 34
+      },
+      "revId": "362645afa821aa32614dab2b60710efd3692c81c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

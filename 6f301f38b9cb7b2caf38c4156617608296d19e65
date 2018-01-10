@@ -178,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "925996fe_a886572f",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T06:02:34Z",
+      "side": 1,
+      "message": "i agree with your reasoning",
+      "parentUuid": "7a6f3abe_46256dce",
+      "range": {
+        "startLine": 200,
+        "startChar": 65,
+        "endLine": 200,
+        "endChar": 90
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be0d0166_858789b8",
         "filename": "machine-db/appengine/model/ips.go",
         "patchSetId": 3
