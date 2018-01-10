@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package config;
 
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
+
 // Switch describes a switch.
 message Switch {
   // The name of this switch.
@@ -14,6 +16,8 @@ message Switch {
   string description = 2;
   // The number of ports this switch has.
   int32 ports = 3;
+  // The state of this switch.
+  common.State state = 4;
 }
 
 // Rack describes a rack.
@@ -24,6 +28,8 @@ message Rack {
   string description = 2;
   // The switches belonging to this rack.
   repeated Switch switch = 3;
+  // The state of this rack.
+  common.State state = 4;
 }
 
 // Datacenter describes a datacenter.
@@ -34,6 +40,8 @@ message Datacenter {
   string description = 2;
   // The racks belonging to this datacenter.
   repeated Rack rack = 3;
+  // The state of this datacenter.
+  common.State state = 4;
 }
 
 // Datacenters enumerates datacenter config files.

@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -341,39 +342,48 @@ func TestValidateDatacenters(t *testing.T) {
 				"datacenter1.cfg": {
 					Name:        "datacenter 1",
 					Description: "A description of datacenter 1",
+					State:       common.State_SERVING,
 					Rack: []*config.Rack{
 						{
 							Name:        "rack 1",
 							Description: "A description of rack 1",
+							State:       common.State_SERVING,
 							Switch: []*config.Switch{
 								{
 									Name:        "switch 1",
 									Description: "A description of switch 1",
 									Ports:       4,
+									State:       common.State_SERVING,
 								},
 							},
 						},
 						{
-							Name: "rack 2",
+							Name:  "rack 2",
+							State: common.State_DECOMMISSIONED,
 						},
 					},
 				},
 				"datacenter2.cfg": {
-					Name: "datacenter 2",
+					Name:  "datacenter 2",
+					State: common.State_PRERELEASE,
 				},
 				"datacenter3.cfg": {
-					Name: "datacenter 3",
+					Name:  "datacenter 3",
+					State: common.State_SERVING,
 					Rack: []*config.Rack{
 						{
-							Name: "rack 3",
+							Name:  "rack 3",
+							State: common.State_SERVING,
 							Switch: []*config.Switch{
 								{
 									Name:  "switch 2",
 									Ports: 8,
+									State: common.State_SERVING,
 								},
 								{
 									Name:  "switch 3",
 									Ports: 16,
+									State: common.State_SERVING,
 								},
 							},
 						},

@@ -1,0 +1,27 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package common;
+
+// State is an enumeration of possible states a resource may be in.
+// When adding a state here, choose a name that results in no common prefixes
+// between any two states, then update prefix-matching in prefixes.go.
+enum State {
+  // Resource state unspecified.
+  STATE_UNSPECIFIED = 0;
+  // Resource is not allocated.
+  FREE = 1;
+  // Resource is allocated for future use.
+  PRERELEASE = 2;
+  // Resource is allocated and currently used in production.
+  SERVING = 3;
+  // Resource is allocated and currently used for testing.
+  TEST = 4;
+  // Resource is undergoing repairs.
+  REPAIR = 5;
+  // Resource is allocated but unused.
+  DECOMMISSIONED = 6;
+}
