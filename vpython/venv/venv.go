@@ -17,6 +17,7 @@ package venv
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -721,7 +722,12 @@ func (e *Env) injectSiteCustomization(c context.Context, env []string) error {
 	// content in overlay, adding it to the virtualenv).
 	data := assets.GetAsset(siteCustomizePy)
 	if err := ioutil.WriteFile(filepath.Join(basePath, siteCustomizePy), data, 0444); err != nil {
-		return errors.Annotate(err, "cannot create sitecustomize.py").Err()
+		rerr := errors.Annotate(err, "cannot create sitecustomize.py").Err()
+
+		fi, err := os.Stat(filepath.Join(basePath, siteCustomizePy))
+		fmt.Printf("%v %v\n", fi, err)
+
+		return rerr
 	}
 
 	// This is read by the VirtualEnv's generated 'site.py', instructing it not to import global site packages.
