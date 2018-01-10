@@ -717,10 +717,13 @@ func (e *Env) injectSiteCustomization(c context.Context, env []string) error {
 	// incorporated in the spec.Hash in config.go:envNameForSpec.
 	//
 	// If you need to add files other than siteCustomizePy, please consider making
-	// this function more generic (e.g. s/assets/overlay, the looping through all
+	// this function more generic (e.g. s/assets/overlay, then looping through all
 	// content in overlay, adding it to the virtualenv).
-	data := assets.GetAsset(siteCustomizePy)
-	if err := ioutil.WriteFile(filepath.Join(basePath, siteCustomizePy), data, 0444); err != nil {
+	siteCustomizePath := filepath.Join(basePath, siteCustomizePy)
+	if err := os.Remove(siteCustomizePath); err != nil && !os.IsNotExist(err) {
+		return errors.Annotate(err, "cannot remove existing sitecustomize.py").Err()
+	}
+	if err := ioutil.WriteFile(siteCustomizePath, assets.GetAsset(siteCustomizePy), 0444); err != nil {
 		return errors.Annotate(err, "cannot create sitecustomize.py").Err()
 	}
 
