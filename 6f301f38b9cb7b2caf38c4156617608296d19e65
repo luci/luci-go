@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "613faae7_97497c30",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "unnecessary. see also L157",
+      "range": {
+        "startLine": 153,
+        "startChar": 87,
+        "endLine": 153,
+        "endChar": 96
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a25dc35_b1ff33a1",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "please also log the number of added IPs. I was wondering how many was there in \n\nhttps://pantheon.corp.google.com/logs/viewer?project\u003dmachine-db-dev\u0026minLogLevel\u003d0\u0026expandAll\u003dfalse\u0026timestamp\u003d2018-01-06T03:27:57.389063000Z\u0026interval\u003dNO_LIMIT\u0026resource\u003dgae_app\u0026logName\u003dprojects%2Fmachine-db-dev%2Flogs%2Fappengine.googleapis.com%252Frequest_log\u0026filters\u003dtext:%22Added%20IP%20address%22\u0026advancedFilter\u003dresource.type%3D%22gae_app%22%0AlogName%3D%22projects%2Fmachine-db-dev%2Flogs%2Fappengine.googleapis.com%252Frequest_log%22%0A%22Added%20IP%20address%22%0Aoperation.id%3D%225a50423d00ff05efc76a714cb10001737e6d616368696e652d64622d6465760001323536392d313363323231612d7461696e7465642d736d7574000100%22",
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "228403f5_6b05d7ca",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 160,
+        "startChar": 90,
+        "endLine": 160,
+        "endChar": 99
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a575ae68_d5b08713",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "consider adding a method in IP that returns net.IP, or even better store IP.IPv4 as net.IP and convert it to uint32 only when needed. Note also that uint32-\u003enet.IP requires heap allocation, while net.IP-\u003euint32 does not, so I recommend making IP.IPv4 a net.IP. It also a better usage of type system, to me.",
+      "range": {
+        "startLine": 200,
+        "startChar": 65,
+        "endLine": 200,
+        "endChar": 90
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be0d0166_858789b8",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 241,
+        "startChar": 90,
+        "endLine": 241,
+        "endChar": 99
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bfda820_f9ef01c6",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "hard to read for humans\n\nit is an easy mistake to make. Perhaps ip.IPv4 should be net.IP.",
+      "range": {
+        "startLine": 245,
+        "startChar": 44,
+        "endLine": 245,
+        "endChar": 51
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87b0d83e_f43fcddf",
+        "filename": "machine-db/common/ip.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "nit: IPv4Range returns",
+      "range": {
+        "startLine": 25,
+        "startChar": 3,
+        "endLine": 25,
+        "endChar": 10
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36f98151_427c233e",
+        "filename": "machine-db/common/ip.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-10T02:39:34Z",
+      "side": 1,
+      "message": "ParseIPv4 parses",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 9
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
