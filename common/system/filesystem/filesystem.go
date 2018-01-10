@@ -79,6 +79,8 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 
 // RemoveAll is a wrapper around os.RemoveAll which makes sure all files are
 // writeable (recursively) prior to removing them.
+//
+// If the specified path does not exist, RemoveAll will return nil.
 func RemoveAll(path string) error {
 	err := removeAllImpl(path, func(path string, fi os.FileInfo) error {
 		// If we aren't handed a FileInfo, use Lstat to get one.

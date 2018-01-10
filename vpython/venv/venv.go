@@ -707,12 +707,6 @@ func (e *Env) injectSiteCustomization(c context.Context, env []string) error {
 		return err
 	}
 
-	// Ensure that our base path is writable. This avoids a dependency on
-	// VirtualEnv creating an otherwise functional read-only VirtualEnv hierarchy.
-	if err := filesystem.MakePathUserWritable(basePath, nil); err != nil {
-		return errors.Annotate(err, "failed to mark stdlib user-writable").Err()
-	}
-
 	// NOTE: Any assets added to the virtualenv here must have their asset hashes
 	// incorporated in the spec.Hash in config.go:envNameForSpec.
 	//
@@ -720,10 +714,7 @@ func (e *Env) injectSiteCustomization(c context.Context, env []string) error {
 	// this function more generic (e.g. s/assets/overlay, then looping through all
 	// content in overlay, adding it to the virtualenv).
 	siteCustomizePath := filepath.Join(basePath, siteCustomizePy)
-	if err := os.Remove(siteCustomizePath); err != nil && !os.IsNotExist(err) {
-		return errors.Annotate(err, "cannot remove existing sitecustomize.py").Err()
-	}
-	if err := ioutil.WriteFile(siteCustomizePath, assets.GetAsset(siteCustomizePy), 0444); err != nil {
+	if err := writeFile(siteCustomizePath, assets.GetAsset(siteCustomizePy), 0444); err != nil {
 		return errors.Annotate(err, "cannot create sitecustomize.py").Err()
 	}
 
@@ -892,6 +883,29 @@ func mustReleaseLock(c context.Context, lock fslock.Handle, fn func() error) err
 		}
 	}()
 	return fn()
+}
+
+// writeFile writes the contents of data to the specified path. It
+// handles additional cases where the file already exists by deleting it
+// first, allowing it to be overwritten.
+func writeFile(path string, data []byte, mode os.FileMode) error {
+	// Ensure that the parent directory is user-writable, since this is a
+	// requirement in order to make modifications to that directory.
+	parentDir := filepath.Dir(path)
+	if err := filesystem.MakePathUserWritable(parentDir, nil); err != nil {
+		return errors.Annotate(err, "failed to mark parent directory user-writable").
+			InternalReason("path(%q)", parentDir).Err()
+	}
+
+	// Ensure that the target path doesn't already exist. Use filesystem.RemoveAll
+	// in case it exists, but is not user-writable.
+	if err := filesystem.RemoveAll(path); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(path, data, mode); err != nil {
+		return errors.Annotate(err, "could not write file contents").InternalReason("path(%q)", path).Err()
+	}
+	return nil
 }
 
 // StripVirtualEnvPaths looks for all $PATH elements which are the `BinDir` of
