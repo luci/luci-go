@@ -15,21 +15,26 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/maruel/subcommands"
+
+	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/errors"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 )
 
 func cmdLog(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "log <options> repository treeish",
+		UsageLine: "log <options> repository-url treeish",
 		ShortDesc: "prints commits based on a repo and treeish",
 		LongDesc: `Prints commits based on a repo and treeish.
 
@@ -39,7 +44,12 @@ This should be equivalent of a "git log <treeish>" call in that repository.`,
 			c.commonFlags.Init(authOpts)
 			c.Flags.IntVar(&c.limit, "limit", 0, "Limit the number of log entries returned.")
 			c.Flags.BoolVar(&c.withTreeDiff, "with-tree-diff", false, "Return 'TreeDiff' information in the returned commits.")
-			c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
+			c.Flags.StringVar(
+				&c.jsonOutput,
+				"json-output",
+				"",
+				"Path to write operation results to. "+
+					"Output is JSON array of JSONPB commits.")
 			return &c
 		},
 	}
@@ -53,45 +63,62 @@ type logRun struct {
 }
 
 func (c *logRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
+	switch err := c.commonFlags.Parse(); {
+	case err != nil:
 		return err
+	case len(args) != 2:
+		return errors.New("exactly 2 position arguments are expected")
+	default:
+		return nil
 	}
-	if len(args) < 2 {
-		return errors.New("position arguments missing")
-	} else if len(args) > 2 {
-		return errors.New("position arguments not expected")
-	}
-	return nil
 }
 
 func (c *logRun) main(a subcommands.Application, args []string) error {
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+
+	host, project, err := gitiles.ParseRepoURL(args[0])
+	if err != nil {
+		return errors.Annotate(err, "invalid repo URL %q", args[0]).Err()
+	}
+
+	req := &gitilespb.LogRequest{
+		Project:  project,
+		PageSize: int32(c.limit),
+		TreeDiff: c.withTreeDiff,
+	}
+
+	switch commits := strings.SplitN(args[1], "..", 2); len(commits) {
+	case 0:
+		return errors.New("treeish is required")
+	case 1:
+		req.Treeish = commits[0]
+	case 2:
+		req.Ancestor = commits[0]
+		req.Treeish = commits[1]
+	default:
+		panic("impossible")
+	}
+
 	authCl, err := c.createAuthClient()
 	if err != nil {
 		return err
 	}
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
-
-	repo := args[0]
-	treeish := args[1]
-	opts := []gitiles.LogOption{}
-	if c.limit != 0 {
-		opts = append(opts, gitiles.Limit(c.limit))
-	}
-	if c.withTreeDiff {
-		opts = append(opts, gitiles.WithTreeDiff)
+	g, err := gitiles.NewRESTClient(authCl, host, true)
+	if err != nil {
+		return err
 	}
 
-	g := &gitiles.Client{Client: authCl}
-	commits, err := g.Log(ctx, repo, treeish, opts...)
+	res, err := g.Log(ctx, req)
 	if err != nil {
 		return err
 	}
 
 	if c.jsonOutput == "" {
-		for _, c := range commits {
-			fmt.Printf("commit %s\n", c.Commit)
+		for _, c := range res.Log {
+			fmt.Printf("commit %s\n", c.Id)
 			fmt.Printf("Author: %s <%s>\n", c.Author.Name, c.Author.Email)
-			fmt.Printf("Date:   %s\n\n", c.Author.Time.Format(time.UnixDate))
+			t, _ := ptypes.Timestamp(c.Author.Time)
+			fmt.Printf("Date:   %s\n\n", t.Format(time.UnixDate))
 			for _, l := range strings.Split(c.Message, "\n") {
 				fmt.Printf("    %s\n", l)
 			}
@@ -107,7 +134,21 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 		}
 		defer out.Close()
 	}
-	data, err := json.MarshalIndent(commits, "", "  ")
+
+	// Note: for historical reasons, output format is JSON array, so
+	// marshal individual commits to JSONPB and then marshall all that
+	// as a JSON array.
+	arr := make([]json.RawMessage, len(res.Log))
+	m := &jsonpb.Marshaler{}
+	for i, c := range res.Log {
+		buf := &bytes.Buffer{} // cannot reuse
+		if err := m.Marshal(buf, c); err != nil {
+			return errors.Annotate(err, "could not marshal commit %q to JSONPB", c.Id).Err()
+		}
+		arr[i] = json.RawMessage(buf.Bytes())
+	}
+
+	data, err := json.MarshalIndent(arr, "", "  ")
 	if err != nil {
 		return err
 	}
