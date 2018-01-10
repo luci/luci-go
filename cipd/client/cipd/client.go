@@ -124,7 +124,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.7.3"
+	UserAgent = "cipd 1.7.4"
 )
 
 func init() {

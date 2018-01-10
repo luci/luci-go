@@ -31,14 +31,17 @@ func TestValidatePackageName(t *testing.T) {
 		So(ValidatePackageName("good/name"), ShouldBeNil)
 		So(ValidatePackageName("good_name"), ShouldBeNil)
 		So(ValidatePackageName("123-_/also/good/name"), ShouldBeNil)
+		So(ValidatePackageName("good.name/.name/..name"), ShouldBeNil)
 		So(ValidatePackageName(""), ShouldNotBeNil)
 		So(ValidatePackageName("BAD/name"), ShouldNotBeNil)
 		So(ValidatePackageName("bad//name"), ShouldNotBeNil)
 		So(ValidatePackageName("bad/name/"), ShouldNotBeNil)
-		So(ValidatePackageName("bad.name"), ShouldNotBeNil)
 		So(ValidatePackageName("/bad/name"), ShouldNotBeNil)
 		So(ValidatePackageName("bad/name\nyeah"), ShouldNotBeNil)
+		So(ValidatePackageName("./name"), ShouldNotBeNil)
+		So(ValidatePackageName("name/../name"), ShouldNotBeNil)
 		So(ValidatePackageName("../../yeah"), ShouldNotBeNil)
+		So(ValidatePackageName("..."), ShouldNotBeNil)
 	})
 }
 

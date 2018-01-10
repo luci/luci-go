@@ -30,9 +30,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// packageNameRe is a regular expression for a package name: <word>/<word/<word>
-// Package names must be lower case.
-var packageNameRe = regexp.MustCompile(`^([a-z0-9_\-]+/)*[a-z0-9_\-]+$`)
+// packageNameRe is a regular expression for a superset of a set of allowed
+// package names.
+//
+// Package names must be lower case and have form "<word>/<word/<word>". See
+// ValidatePackageName for the full spec of how the package name can look.
+var packageNameRe = regexp.MustCompile(`^([a-z0-9_\-\.]+/)*[a-z0-9_\-\.]+$`)
 
 // instanceTagKeyRe is a regular expression for a tag key.
 var instanceTagKeyRe = regexp.MustCompile(`^[a-z0-9_\-]+$`)
@@ -55,6 +58,11 @@ func (pin Pin) String() string {
 func ValidatePackageName(name string) error {
 	if !packageNameRe.MatchString(name) {
 		return fmt.Errorf("invalid package name: %s", name)
+	}
+	for _, chunk := range strings.Split(name, "/") {
+		if strings.Count(chunk, ".") == len(chunk) {
+			return fmt.Errorf("invalid package name (dots-only names are forbidden): %s", name)
+		}
 	}
 	return nil
 }
