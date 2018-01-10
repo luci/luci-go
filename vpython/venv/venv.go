@@ -707,6 +707,12 @@ func (e *Env) injectSiteCustomization(c context.Context, env []string) error {
 		return err
 	}
 
+	// Ensure that our base path is writable. This avoids a dependency on
+	// VirtualEnv creating an otherwise functional read-only VirtualEnv hierarchy.
+	if err := filesystem.MakePathUserWritable(basePath, nil); err != nil {
+		return errors.Annotate(err, "failed to mark stdlib user-writable").Err()
+	}
+
 	// NOTE: Any assets added to the virtualenv here must have their asset hashes
 	// incorporated in the spec.Hash in config.go:envNameForSpec.
 	//
