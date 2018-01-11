@@ -2,6 +2,299 @@
   "comments": [
     {
       "key": {
+        "uuid": "73239ffc_983f3d18",
+        "filename": "machine-db/api/crimson/v1/crimson.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "i recommend CreateMachine, according to https://cloud.google.com/apis/design/standard_methods#create",
+      "range": {
+        "startLine": 33,
+        "startChar": 6,
+        "endLine": 33,
+        "endChar": 9
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dc9c523_84166a14",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "quoting https://cloud.google.com/apis/design/errors\n\n\u003e Because most Google APIs use resource-oriented API design, the error handling follows the same design principle by using a small set of standard errors with a large number of resources. For example, instead of defining different kinds of \"not found\" errors, the server uses one standard google.rpc.Code.NOT_FOUND error code and tells the client which specific resource was not found. The smaller state space reduces the complexity of documentation, affords better idiomatic mappings in client libraries, and reduces client logic complexity while not restricting the inclusion of actionable information.\n\n\nplease use https://godoc.org/google.golang.org/grpc/status#Error",
+      "range": {
+        "startLine": 9,
+        "startChar": 3,
+        "endLine": 9,
+        "endChar": 12
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8556175b_36cea4c4",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "https://godoc.org/google.golang.org/grpc/codes#Unknown\nor\nhttps://godoc.org/google.golang.org/grpc/codes#Internal",
+      "range": {
+        "startLine": 12,
+        "startChar": 2,
+        "endLine": 12,
+        "endChar": 7
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49ebf993_e7b839cf",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "https://godoc.org/google.golang.org/grpc/codes#InvalidArgument",
+      "range": {
+        "startLine": 14,
+        "startChar": 2,
+        "endLine": 14,
+        "endChar": 18
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1095ad85_cbf0b13e",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "https://godoc.org/google.golang.org/grpc/codes#AlreadyExists",
+      "range": {
+        "startLine": 16,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9ed5360_e6b0c98b",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "https://godoc.org/google.golang.org/grpc/codes#NotFound",
+      "range": {
+        "startLine": 18,
+        "startChar": 2,
+        "endLine": 18,
+        "endChar": 11
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "506487e6_02f7ab55",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "according to https://cloud.google.com/apis/design/standard_methods#create\n\na method that creates a machine should accept a machine message",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 31
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c58e0455_357bde83",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "according to https://cloud.google.com/apis/design/standard_methods#create\n\na method that creates a machine should return the machine message",
+      "range": {
+        "startLine": 30,
+        "startChar": 8,
+        "endLine": 30,
+        "endChar": 26
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49f978a8_cda3c745",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "please add a TODO somewhere to support paging\n\nalso see standard field names for paging in https://cloud.google.com/apis/design/standard_fields",
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97744c39_f6d1da9e",
+        "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.down.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "2018",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28312275_d388bef6",
+        "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "description is usually longer than name, but both have same max length. It seems that either name field allows too long strings, or this one is insufficient",
+      "range": {
+        "startLine": 27,
+        "startChar": 21,
+        "endLine": 27,
+        "endChar": 24
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9380f5d1_6cc39fe3",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "error responses should return an err. A non-err respond will result in HTTP 200, which is confusing for users and does not help monitoring\n\nSome history: Cloud Endpoints made Buildbucket and CIPD server to return HTTP 200 for error responses because Cloud Endpoints does not allow structured responses for non-200 responses, e.g. Buildbucket could not return application-level error codes. This confused users. They forgot to check \"error\" field in an HTTP-200 response, which is non-intuitive. Me and Vadim were happy to discovery that gRPC does not have that problem: we can use standard gRPC error codes.\n\nI see that you want to return a list of invalid arguments. gRPC standard has \thttps://godoc.org/google.golang.org/genproto/googleapis/rpc/errdetails#BadRequest for that, and grpc package has https://godoc.org/google.golang.org/grpc/status#Status.WithDetails\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/833993\nis a CL where I started to add support for structured error details\n\nI think you could add a function\n\n  func badReq(err []error) *errordetails.BadRequest\n\nand then use it as\n\n  return nil, status.New(codes.InvalidArgument, \"invalid args or something\").WithDetails(badReq(errs))",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 8
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb57dbac_fe120802",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "this is confusing, please use standard errors",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 10
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "728746fb_2738f09c",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -13,6 +306,162 @@
       "writtenOn": "2018-01-11T04:11:27Z",
       "side": 1,
       "message": "I also tried the squirrel package\u0027s SQL statement builder, but to me this was easier to read.\n\nhttps://github.com/Masterminds/squirrel",
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e00df1d_0fd8aaec",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "this lgtm",
+      "parentUuid": "728746fb_2738f09c",
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46f35262_7b4338cf",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "this is a case too, please move to switch below\n\nand then you can move the assignment above to the swithc:\n\n  switch e, ok :\u003d err.(*mysql.MySQLError); {",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 10
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43d60568_7d5e2a9a",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "please include a real-world example of an error message as a comment, below too \n\nso this check looks too broad. Is the field name quoted?",
+      "range": {
+        "startLine": 85,
+        "startChar": 44,
+        "endLine": 85,
+        "endChar": 79
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d4ad1fe_0e69f460",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "to do this, you will probably need to generate an SQL expression and that code can be reused in other GetXXX functions",
+      "range": {
+        "startLine": 136,
+        "startChar": 5,
+        "endLine": 136,
+        "endChar": 15
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eb7a0d6e_1f1a06e8",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "invalid arg is the only kind of error this function can return \u003d\u003e we can (and it would be simpler) return []error here and move the \"validation errors are invalid arg errors\" logic to the callsite.",
+      "range": {
+        "startLine": 145,
+        "startChar": 63,
+        "endLine": 145,
+        "endChar": 79
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef5bd018_2183ca90",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "this logic is not an implementation detail of the service, but applies to any usage of AddMachineRequest, i.e. we can (and probably should) document that these fields are required at the machine.proto level.\n\nThus, I recommend moving this to proto package:\n\npackage crimson\n\nfunc (r *AddMachineRequest) Validate() []error\n\nbtw, https://godoc.org/go.chromium.org/luci/common/config/validation#Context\n\nseems to be convenient way to generate a list of validation errors. Maybe it should be moved out of \"config\" package. It is not really tied to configs.",
+      "range": {
+        "startLine": 145,
+        "startChar": 5,
+        "endLine": 145,
+        "endChar": 30
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42057ec1_f3c124d3",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T21:17:16Z",
+      "side": 1,
+      "message": "nit: this is implied by \"must be non-empty\". Maybe just \"machine name must be non-empty\"?\n\nsame below.",
+      "range": {
+        "startLine": 150,
+        "startChar": 30,
+        "endLine": 150,
+        "endChar": 45
+      },
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
