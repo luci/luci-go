@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "437f78fd_f0112ae4",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T20:15:43Z",
+      "side": 1,
+      "message": "what values can this string take? What sets it? please document what is state. Is string most optimal type for this indeed? e.g. why not enum or a structured message.\n\nupdate: according to another file, it should be an enum",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 17,
+        "endChar": 30
+      },
+      "revId": "f5f2fab77c1b55d4b2c315eb7b981444aba4e73e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "180fd365_9df002db",
+        "filename": "machine-db/common/states.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T20:15:43Z",
+      "side": 1,
+      "message": "please use proto enums for this",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 1
+      },
+      "revId": "f5f2fab77c1b55d4b2c315eb7b981444aba4e73e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
