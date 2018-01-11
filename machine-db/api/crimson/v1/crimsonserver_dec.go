@@ -111,3 +111,33 @@ func (s *DecoratedCrimson) ListVLANs(c context.Context, req *ListVLANsRequest) (
 	}
 	return
 }
+
+func (s *DecoratedCrimson) CreateMachine(c context.Context, req *CreateMachineRequest) (rsp *Machine, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "CreateMachine", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.CreateMachine(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "CreateMachine", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedCrimson) ListMachines(c context.Context, req *ListMachinesRequest) (rsp *ListMachinesResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ListMachines", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ListMachines(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ListMachines", rsp, err)
+	}
+	return
+}
