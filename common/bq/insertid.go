@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package eventupload is a library for streaming events to BigQuery.
-package eventupload
+package bq
 
 import (
 	"fmt"
