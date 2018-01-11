@@ -23,7 +23,7 @@ type VLANsRequest struct {
 func (m *VLANsRequest) Reset()                    { *m = VLANsRequest{} }
 func (m *VLANsRequest) String() string            { return proto.CompactTextString(m) }
 func (*VLANsRequest) ProtoMessage()               {}
-func (*VLANsRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
+func (*VLANsRequest) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
 
 func (m *VLANsRequest) GetIds() []int64 {
 	if m != nil {
@@ -52,7 +52,7 @@ type VLAN struct {
 func (m *VLAN) Reset()                    { *m = VLAN{} }
 func (m *VLAN) String() string            { return proto.CompactTextString(m) }
 func (*VLAN) ProtoMessage()               {}
-func (*VLAN) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
+func (*VLAN) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{1} }
 
 func (m *VLAN) GetId() int64 {
 	if m != nil {
@@ -84,7 +84,7 @@ type VLANsResponse struct {
 func (m *VLANsResponse) Reset()                    { *m = VLANsResponse{} }
 func (m *VLANsResponse) String() string            { return proto.CompactTextString(m) }
 func (*VLANsResponse) ProtoMessage()               {}
-func (*VLANsResponse) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
+func (*VLANsResponse) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{2} }
 
 func (m *VLANsResponse) GetVlans() []*VLAN {
 	if m != nil {
@@ -100,10 +100,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto", fileDescriptor8)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto", fileDescriptor7)
 }
 
-var fileDescriptor8 = []byte{
+var fileDescriptor7 = []byte{
 	// 222 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0xbb, 0x6b, 0xc3, 0x30,
 	0x10, 0xc6, 0xb1, 0xd5, 0x34, 0xe4, 0xd2, 0x94, 0x22, 0x3a, 0x68, 0x14, 0xee, 0xe2, 0xa5, 0x12,
