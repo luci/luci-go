@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "326f5f39_f8199892",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-11T22:20:19Z",
+      "side": 1,
+      "message": "Making it an enum means duplicating the list of states in protos and machine-db/common, which will have to be kept in sync. Strings reflect the way users will specify them on the command line. I\u0027d prefer to have users use the same format in configs as on the CLI.",
+      "parentUuid": "437f78fd_f0112ae4",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 17,
+        "endChar": 30
+      },
+      "revId": "f5f2fab77c1b55d4b2c315eb7b981444aba4e73e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "180fd365_9df002db",
         "filename": "machine-db/common/states.go",
         "patchSetId": 2
