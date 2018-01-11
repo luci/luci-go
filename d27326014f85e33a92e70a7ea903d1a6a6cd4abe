@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa6857cc_79cf06ab",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T19:37:27Z",
+      "side": 1,
+      "message": "result of this code ends up not used if users does not have access to the builder. Let\u0027s move this after access check",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 2
+      },
+      "revId": "d27326014f85e33a92e70a7ea903d1a6a6cd4abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "681e14d8_5c2fafda",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T19:37:27Z",
+      "side": 1,
+      "message": "builderType",
+      "range": {
+        "startLine": 24,
+        "startChar": 1,
+        "endLine": 24,
+        "endChar": 13
+      },
+      "revId": "d27326014f85e33a92e70a7ea903d1a6a6cd4abe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
