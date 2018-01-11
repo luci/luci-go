@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "079e8a91_14b10249",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T19:34:02Z",
+      "side": 1,
+      "message": "at least at the moment, this is bucket only if the first return value of Split() is \"buildbucket\".",
+      "range": {
+        "startLine": 82,
+        "startChar": 5,
+        "endLine": 82,
+        "endChar": 11
+      },
+      "revId": "3f1073b6a465da1c27a6e8ce391d627e8246ead2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5756a4a_19cac870",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T19:34:02Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 96,
+        "startChar": 5,
+        "endLine": 96,
+        "endChar": 11
+      },
+      "revId": "3f1073b6a465da1c27a6e8ce391d627e8246ead2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
