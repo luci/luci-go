@@ -308,9 +308,9 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		extraStatus += fmt.Sprintf("console-%s", br.Builder.LastFinishedStatus)
 	}
 	must(fmt.Fprintf(
-		buffer, `<span class="%s"><a class="console-builder-item" href="/%s" title="%s">%s</a></span>`,
+		buffer, `<span class="%s"><a class="console-builder-item" href="%s" title="%s">%s</a></span>`,
 		template.HTMLEscapeString(extraStatus),
-		template.HTMLEscapeString(br.ID),
+		template.HTMLEscapeString(br.Builder.SelfLink()),
 		template.HTMLEscapeString(br.BuilderName()),
 		template.HTMLEscapeString(br.ShortName)))
 	must(buffer.WriteString(`</div>`))

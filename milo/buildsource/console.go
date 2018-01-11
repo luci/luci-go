@@ -115,7 +115,9 @@ type ConsolePreview map[BuilderID]*model.BuildSummary
 //
 // This list of console summaries directly corresponds to the input list of
 // console IDs.
-func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID) (
+//
+// projectID is the project being served in the current request.
+func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID, projectID string) (
 	map[common.ConsoleID]ui.ConsoleSummary, error) {
 
 	// Get the console definitions and builders, then rearrange them into console summaries.
@@ -123,7 +125,7 @@ func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID
 	if err != nil {
 		return nil, err
 	}
-	return GetConsoleSummariesFromDefs(c, defs)
+	return GetConsoleSummariesFromDefs(c, defs, projectID)
 }
 
 // GetConsoleSummariesFromDefs returns a list of console summaries from the datastore
@@ -131,7 +133,9 @@ func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID
 //
 // This list of console summaries directly corresponds to the input list of
 // console definition entities.
-func GetConsoleSummariesFromDefs(c context.Context, defs []*common.Console) (map[common.ConsoleID]ui.ConsoleSummary, error) {
+//
+// This expects all builders in all defs coming from the same projectID.
+func GetConsoleSummariesFromDefs(c context.Context, defs []*common.Console, projectID string) (map[common.ConsoleID]ui.ConsoleSummary, error) {
 	builders := stringset.New(len(defs) * 10) // We'll start with approx 10 builders per console.
 	for _, def := range defs {
 		for _, builder := range def.Builders {
@@ -140,7 +144,11 @@ func GetConsoleSummariesFromDefs(c context.Context, defs []*common.Console) (map
 	}
 	bs := make([]*model.BuilderSummary, 0, builders.Len())
 	builders.Iter(func(builderID string) bool {
-		bs = append(bs, &model.BuilderSummary{BuilderID: builderID})
+		bs = append(bs, &model.BuilderSummary{
+			BuilderID: builderID,
+			// TODO: change builder ID format to include project id.
+			ProjectID: projectID,
+		})
 		return true
 	})
 	if err := datastore.Get(c, bs); err != nil {

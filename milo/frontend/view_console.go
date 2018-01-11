@@ -223,7 +223,9 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 
 // summaries fetches all of the console summaries in the header, in addition
 // to the ones for the current console.
-func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header) (
+//
+// projectID is the project being served in the current request.
+func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header, projectID string) (
 	map[common.ConsoleID]ui.ConsoleSummary, error) {
 
 	var ids []common.ConsoleID
@@ -234,7 +236,7 @@ func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header
 		}
 	}
 	ids = append(ids, consoleID)
-	return buildsource.GetConsoleSummariesFromIDs(c, ids)
+	return buildsource.GetConsoleSummariesFromIDs(c, ids, projectID)
 }
 
 func console(c context.Context, project, id string, limit int) (*ui.Console, error) {
@@ -262,7 +264,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 		}
 		ch <- func() (err error) {
 			defer logTimer(c, "summaries")()
-			consoleSummaries, err = summaries(c, consoleID, def.Header)
+			consoleSummaries, err = summaries(c, consoleID, def.Header, project)
 			return
 		}
 		ch <- func() (err error) {
@@ -587,8 +589,8 @@ func ConsoleHandler(c *router.Context) {
 
 // ConsolesHandler is responsible for taking a project name and rendering the
 // console list page (defined in ./appengine/templates/pages/builder_groups.html).
-func ConsolesHandler(c *router.Context, projectName string) {
-	cons, err := common.GetProjectConsoles(c.Context, projectName)
+func ConsolesHandler(c *router.Context, projectID string) {
+	cons, err := common.GetProjectConsoles(c.Context, projectID)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
@@ -599,7 +601,7 @@ func ConsolesHandler(c *router.Context, projectName string) {
 		Render    consoleRenderer
 	}
 	var consoles []fullConsole
-	summaryMap, err := buildsource.GetConsoleSummariesFromDefs(c.Context, cons)
+	summaryMap, err := buildsource.GetConsoleSummariesFromDefs(c.Context, cons, projectID)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
@@ -629,15 +631,15 @@ func ConsolesHandler(c *router.Context, projectName string) {
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/builder_groups.html", templates.Args{
-		"ProjectName": projectName,
-		"Consoles":    consoles,
-		"Reload":      reload,
+		"ProjectID": projectID,
+		"Consoles":  consoles,
+		"Reload":    reload,
 	})
 }
 
 func consoleTestData() []common.TestBundle {
 	builder := &ui.BuilderRef{
-		ID:        "tester",
+		ID:        "buildbucket/luci.project-foo.try/builder-bar",
 		ShortName: "tst",
 		Build: []*model.BuildSummary{
 			{
@@ -648,7 +650,8 @@ func consoleTestData() []common.TestBundle {
 			nil,
 		},
 		Builder: &model.BuilderSummary{
-			BuilderID:          "tester",
+			BuilderID:          "buildbucket/luci.project-foo.try/builder-bar",
+			ProjectID:          "project-foo",
 			LastFinishedStatus: model.InfraFailure,
 		},
 	}
