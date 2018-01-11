@@ -16,6 +16,7 @@ package logging
 
 import (
 	"flag"
+	"fmt"
 
 	"golang.org/x/net/context"
 )
@@ -26,8 +27,20 @@ type Config struct {
 }
 
 // AddFlags adds common flags to a supplied FlagSet.
-func (c *Config) AddFlags(fs *flag.FlagSet) {
-	fs.Var(&c.Level, "log-level",
+//
+// A single optional string prefix can be supplied which will be prepended to
+// each added flag verbatim.
+func (c *Config) AddFlags(fs *flag.FlagSet, prefix ...string) {
+	pfx := ""
+	switch len(prefix) {
+	case 1:
+		pfx = prefix[0]
+	case 0:
+	default:
+		panic(fmt.Errorf("AddFlags can only accept one prefix string: %v", prefix))
+	}
+
+	fs.Var(&c.Level, pfx+"log-level",
 		"The logging level. Valid options are: debug, info, warning, error.")
 }
 
