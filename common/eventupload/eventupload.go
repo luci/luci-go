@@ -25,11 +25,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -153,21 +154,31 @@ func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
 	}
 
 	props := proto.GetProperties(t).Prop
-	bqFields[t] = make([]fieldInfo, len(props))
-	for i, p := range props {
-		switch f, ok := t.FieldByName(p.Name); {
+	fields := make([]fieldInfo, 0, len(props))
+	for _, p := range props {
+		f, ok := t.FieldByName(p.Name)
+		switch {
 		case !ok:
 			return nil, fmt.Errorf("field %q not found in %q", p.Name, t)
 		case p.OrigName == "":
 			return nil, fmt.Errorf("OrigName of field %q.%q is empty", t, p.Name)
-		case f.Type.PkgPath() == "github.com/golang/protobuf/ptypes/struct":
+		}
+
+		t := f.Type
+		for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
+			t = t.Elem()
+		}
+		if t.PkgPath() == "github.com/golang/protobuf/ptypes/struct" {
 			// Ignore protobuf structs, according to
 			// https://godoc.org/go.chromium.org/luci/tools/cmd/bqschemaupdater
-		default:
-			bqFields[t][i] = fieldInfo{f.Index, p}
+			continue
 		}
+
+		fields = append(fields, fieldInfo{f.Index, p})
 	}
-	return bqFields[t], nil
+
+	bqFields[t] = fields
+	return fields, nil
 }
 
 func getValue(value interface{}, path []string) (interface{}, error) {
