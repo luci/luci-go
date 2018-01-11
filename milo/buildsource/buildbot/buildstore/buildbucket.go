@@ -69,6 +69,10 @@ func buildFromBuildbucket(c context.Context, master string, msg *bbapi.ApiCommon
 		Internal:    b.Bucket != "luci.chromium.try",
 		Finished:    b.Status.Completed(),
 		Sourcestamp: &buildbot.SourceStamp{},
+
+		// non-nil slice because we want an array, not null,
+		// when converted to JSON
+		Steps: []buildbot.Step{},
 	}
 
 	for _, bs := range b.BuildSets {
