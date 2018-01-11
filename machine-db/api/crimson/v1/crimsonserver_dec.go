@@ -111,3 +111,33 @@ func (s *DecoratedCrimson) GetVLANs(c context.Context, req *VLANsRequest) (rsp *
 	}
 	return
 }
+
+func (s *DecoratedCrimson) AddMachine(c context.Context, req *AddMachineRequest) (rsp *AddMachineResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "AddMachine", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.AddMachine(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "AddMachine", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedCrimson) GetMachines(c context.Context, req *GetMachinesRequest) (rsp *GetMachinesResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetMachines", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetMachines(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetMachines", rsp, err)
+	}
+	return
+}

@@ -1,0 +1,27 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// ErrorCode is an enumeration of possible errors that can occur in requests to the Crimson service.
+enum ErrorCode {
+  // Indicates a generic error. Should not be used, but zero values are required.
+  ERROR = 0;
+  // Indicates a field contained an invalid value.
+  INVALID_ARGUMENT = 1;
+  // Indicates a field value referred to an existing entity in the Machine Database.
+  NOT_UNIQUE = 2;
+  // Indicates a field value referred to a non-existent entity in the Machine Database.
+  NOT_FOUND = 3;
+}
+
+// Error represents an error in a request to the Crimson service.
+message Error {
+  // The error code.
+  ErrorCode code = 1;
+  // A description of the error.
+  string description = 2;
+}
