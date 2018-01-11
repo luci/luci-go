@@ -1,4 +1,4 @@
-{{define "title"}}{{.ProjectName}} | Builder Groups{{end}}
+{{define "title"}}{{.ProjectID}} | Builder Groups{{end}}
 
 {{define "head"}}
 {{ if .Reload }}
@@ -8,7 +8,7 @@
 {{end}}
 
 {{define "body"}}
-<h1>{{ .ProjectName }}</h1>
+<h1>{{ .ProjectID }}</h1>
 <h2>Builder Groups</h2>
 
 <div class="console-column">
