@@ -23,9 +23,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/eventupload/testdata"
 	"go.chromium.org/luci/common/tsmon"
-
-	"infra/libs/eventupload/testdata"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -147,12 +146,12 @@ func TestSave(t *testing.T) {
 			InsertID: "testid",
 		}
 		row, id, err := r.Save()
+		So(err, ShouldBeNil)
 		So(row["name"], ShouldEqual, "testname")
 		So(row["timestamp"].(time.Time), ShouldResemble, time.Time{})
 		So(row["nested"].(map[string]bigquery.Value)["name"], ShouldEqual, "nestedname")
 		So(row["repeated_nested"].([]interface{})[0].(map[string]bigquery.Value)["name"], ShouldEqual, "repeated_one")
 		So(id, ShouldEqual, "testid")
-		So(err, ShouldBeNil)
 	})
 }
 
