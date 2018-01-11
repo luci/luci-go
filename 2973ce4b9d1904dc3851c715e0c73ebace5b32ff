@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e239fde8_a4954d2f",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T19:43:02Z",
+      "side": 1,
+      "message": "unnecessary",
+      "revId": "2973ce4b9d1904dc3851c715e0c73ebace5b32ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98517183_76384b83",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 550,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-11T19:43:02Z",
+      "side": 1,
+      "message": "please, make it lower case. Thank you!",
+      "range": {
+        "startLine": 550,
+        "startChar": 21,
+        "endLine": 550,
+        "endChar": 22
+      },
+      "revId": "2973ce4b9d1904dc3851c715e0c73ebace5b32ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
