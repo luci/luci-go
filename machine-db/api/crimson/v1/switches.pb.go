@@ -25,7 +25,7 @@ type ListSwitchesRequest struct {
 func (m *ListSwitchesRequest) Reset()                    { *m = ListSwitchesRequest{} }
 func (m *ListSwitchesRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListSwitchesRequest) ProtoMessage()               {}
-func (*ListSwitchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
+func (*ListSwitchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
 
 func (m *ListSwitchesRequest) GetNames() []string {
 	if m != nil {
@@ -65,7 +65,7 @@ type Switch struct {
 func (m *Switch) Reset()                    { *m = Switch{} }
 func (m *Switch) String() string            { return proto.CompactTextString(m) }
 func (*Switch) ProtoMessage()               {}
-func (*Switch) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
+func (*Switch) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
 
 func (m *Switch) GetName() string {
 	if m != nil {
@@ -111,7 +111,7 @@ type ListSwitchesResponse struct {
 func (m *ListSwitchesResponse) Reset()                    { *m = ListSwitchesResponse{} }
 func (m *ListSwitchesResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListSwitchesResponse) ProtoMessage()               {}
-func (*ListSwitchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
+func (*ListSwitchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
 
 func (m *ListSwitchesResponse) GetSwitches() []*Switch {
 	if m != nil {
@@ -127,10 +127,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor5)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor6)
 }
 
-var fileDescriptor5 = []byte{
+var fileDescriptor6 = []byte{
 	// 257 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x50, 0xbd, 0x4e, 0x33, 0x31,
 	0x10, 0xd4, 0x25, 0xb9, 0x7c, 0x5f, 0x36, 0x05, 0x92, 0x49, 0xe1, 0x0a, 0x9d, 0xae, 0x3a, 0x09,

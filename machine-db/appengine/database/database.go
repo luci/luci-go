@@ -92,6 +92,11 @@ func getDatabaseConnection(c context.Context) (*sql.DB, error) {
 	return db, nil
 }
 
+// Begin begins a transaction using the database pointer embedded in the current context.
+func Begin(c context.Context) (*sql.Tx, error) {
+	return Get(c).BeginTx(c, nil)
+}
+
 // Get returns the database pointer embedded in the current context.
 // The database pointer can be embedded in the current context using With.
 func Get(c context.Context) *sql.DB {

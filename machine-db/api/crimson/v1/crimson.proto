@@ -7,6 +7,7 @@ syntax = "proto3";
 package crimson;
 
 import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto";
@@ -27,4 +28,9 @@ service Crimson {
   rpc ListSwitches(ListSwitchesRequest) returns (ListSwitchesResponse);
   // Lists VLANs in the database.
   rpc ListVLANs(ListVLANsRequest) returns (ListVLANsResponse);
+
+  // Creates a new machine in the database.
+  rpc CreateMachine(CreateMachineRequest) returns (Machine);
+  // Lists machines in the database.
+  rpc ListMachines(ListMachinesRequest) returns (ListMachinesResponse);
 }
