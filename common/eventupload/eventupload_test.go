@@ -142,12 +142,14 @@ func TestSave(t *testing.T) {
 					{Name: "repeated_one"},
 					{Name: "repeated_two"},
 				},
+				Foo: testdata.TestMessage_Y,
 			},
 			InsertID: "testid",
 		}
 		row, id, err := r.Save()
 		So(err, ShouldBeNil)
 		So(row["name"], ShouldEqual, "testname")
+		So(row["foo"], ShouldEqual, "Y")
 		So(row["timestamp"].(time.Time), ShouldResemble, time.Time{})
 		So(row["nested"].(map[string]bigquery.Value)["name"], ShouldEqual, "nestedname")
 		So(row["repeated_nested"].([]interface{})[0].(map[string]bigquery.Value)["name"], ShouldEqual, "repeated_one")

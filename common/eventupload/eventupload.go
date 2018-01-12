@@ -28,6 +28,7 @@ import (
 	"golang.org/x/net/context"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -127,6 +128,12 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 				}
 			}
 			value = elems
+		} else if fi.Enum != "" {
+			intVal := s.FieldByIndex(fi.structIndex).Int()
+			value = getStringValueForEnum(m, fi, intVal)
+			if value == "" {
+				return nil, fmt.Errorf("Could not find string value for enum %s and int value %d", fi.Enum, intVal)
+			}
 		} else {
 			value, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path)
 			if err != nil {
@@ -136,6 +143,22 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 		rowMap[fi.OrigName] = bigquery.Value(value)
 	}
 	return rowMap, nil
+}
+
+func getStringValueForEnum(m proto.Message, fi fieldInfo, v int64) string {
+	_, dp := descriptor.ForMessage(m.(descriptor.Message))
+	parts := strings.Split(fi.Enum, "_")
+	enumName := parts[len(parts)-1]
+	for _, edp := range dp.EnumType {
+		if *edp.Name == enumName {
+			for _, evdp := range edp.Value {
+				if int64(*evdp.Number) == v {
+					return *evdp.Name
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
