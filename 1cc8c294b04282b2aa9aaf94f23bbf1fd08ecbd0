@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6fb06d57_7bcbaab8",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-01-12T02:16:23Z",
+      "side": 1,
+      "message": "Add | humanDuration here.",
+      "range": {
+        "startLine": 143,
+        "startChar": 40,
+        "endLine": 143,
+        "endChar": 41
+      },
+      "revId": "1cc8c294b04282b2aa9aaf94f23bbf1fd08ecbd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
