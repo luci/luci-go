@@ -24,19 +24,19 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// GetOSes handles a request to retrieve operating systems.
-func (*Service) GetOSes(c context.Context, req *crimson.OSesRequest) (*crimson.OSesResponse, error) {
-	oses, err := getOSes(c, stringset.NewFromSlice(req.Names...))
+// ListOSes handles a request to retrieve operating systems.
+func (*Service) ListOSes(c context.Context, req *crimson.ListOSesRequest) (*crimson.ListOSesResponse, error) {
+	oses, err := listOSes(c, stringset.NewFromSlice(req.Names...))
 	if err != nil {
 		return nil, internalError(c, err)
 	}
-	return &crimson.OSesResponse{
+	return &crimson.ListOSesResponse{
 		Oses: oses,
 	}, nil
 }
 
-// getOSes returns a slice of operating systems in the database.
-func getOSes(c context.Context, names stringset.Set) ([]*crimson.OS, error) {
+// listOSes returns a slice of operating systems in the database.
+func listOSes(c context.Context, names stringset.Set) ([]*crimson.OS, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
 		SELECT os.name, os.description

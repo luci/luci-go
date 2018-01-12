@@ -6,26 +6,26 @@ syntax = "proto3";
 
 package crimson;
 
-// VLANsRequest is a request to retrieve vlans.
-message VLANsRequest {
-  // The IDs of vlans to retrieve.
+// ListVLANsRequest is a request to retrieve VLANs.
+message ListVLANsRequest {
+  // The IDs of VLANs to retrieve.
   repeated int64 ids = 1;
-  // The aliases of vlans to retrieve.
+  // The aliases of VLANs to retrieve.
   repeated string aliases = 2;
 }
 
-// VLAN describes a vlan.
+// VLAN describes a VLAN.
 message VLAN {
-  // The ID of this vlan. Uniquely identifies this vlan.
+  // The ID of this VLAN. Uniquely identifies this VLAN.
   int64 id = 1;
-  // An alias for this vlan.
+  // An alias for this VLAN.
   string alias = 2;
-  // A description of this vlan.
+  // A description of this VLAN.
   string description = 3;
 }
 
-// VLANsResponse is a response to a request to retrieve vlans.
-message VLANsResponse {
-  // The vlans matching the request.
+// ListVLANsResponse is a response to a request to retrieve VLANs.
+message ListVLANsResponse {
+  // The VLANs matching the request.
   repeated VLAN vlans = 1;
 }

@@ -38,13 +38,13 @@ type GetSwitchesCmd struct {
 // Run runs the command to get switches.
 func (c *GetSwitchesCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.SwitchesRequest{
+	req := &crimson.ListSwitchesRequest{
 		Names:       c.names,
 		Racks:       c.racks,
 		Datacenters: c.datacenters,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetSwitches(ctx, req)
+	resp, err := client.ListSwitches(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1

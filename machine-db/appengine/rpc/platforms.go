@@ -24,19 +24,19 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// GetPlatforms handles a request to retrieve platforms.
-func (*Service) GetPlatforms(c context.Context, req *crimson.PlatformsRequest) (*crimson.PlatformsResponse, error) {
-	platforms, err := getPlatforms(c, stringset.NewFromSlice(req.Names...))
+// ListPlatforms handles a request to retrieve platforms.
+func (*Service) ListPlatforms(c context.Context, req *crimson.ListPlatformsRequest) (*crimson.ListPlatformsResponse, error) {
+	platforms, err := listPlatforms(c, stringset.NewFromSlice(req.Names...))
 	if err != nil {
 		return nil, internalError(c, err)
 	}
-	return &crimson.PlatformsResponse{
+	return &crimson.ListPlatformsResponse{
 		Platforms: platforms,
 	}, nil
 }
 
-// getPlatforms returns a slice of platforms in the database.
-func getPlatforms(c context.Context, names stringset.Set) ([]*crimson.Platform, error) {
+// listPlatforms returns a slice of platforms in the database.
+func listPlatforms(c context.Context, names stringset.Set) ([]*crimson.Platform, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
 		SELECT p.name, p.description

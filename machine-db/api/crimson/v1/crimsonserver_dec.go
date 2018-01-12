@@ -22,92 +22,92 @@ type DecoratedCrimson struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedCrimson) GetDatacenters(c context.Context, req *DatacentersRequest) (rsp *DatacentersResponse, err error) {
+func (s *DecoratedCrimson) ListDatacenters(c context.Context, req *ListDatacentersRequest) (rsp *ListDatacentersResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetDatacenters", req)
+		newCtx, err = s.Prelude(c, "ListDatacenters", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.GetDatacenters(c, req)
+		rsp, err = s.Service.ListDatacenters(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetDatacenters", rsp, err)
+		err = s.Postlude(c, "ListDatacenters", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) GetOSes(c context.Context, req *OSesRequest) (rsp *OSesResponse, err error) {
+func (s *DecoratedCrimson) ListOSes(c context.Context, req *ListOSesRequest) (rsp *ListOSesResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetOSes", req)
+		newCtx, err = s.Prelude(c, "ListOSes", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.GetOSes(c, req)
+		rsp, err = s.Service.ListOSes(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetOSes", rsp, err)
+		err = s.Postlude(c, "ListOSes", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) GetPlatforms(c context.Context, req *PlatformsRequest) (rsp *PlatformsResponse, err error) {
+func (s *DecoratedCrimson) ListPlatforms(c context.Context, req *ListPlatformsRequest) (rsp *ListPlatformsResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetPlatforms", req)
+		newCtx, err = s.Prelude(c, "ListPlatforms", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.GetPlatforms(c, req)
+		rsp, err = s.Service.ListPlatforms(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetPlatforms", rsp, err)
+		err = s.Postlude(c, "ListPlatforms", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) GetRacks(c context.Context, req *RacksRequest) (rsp *RacksResponse, err error) {
+func (s *DecoratedCrimson) ListRacks(c context.Context, req *ListRacksRequest) (rsp *ListRacksResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetRacks", req)
+		newCtx, err = s.Prelude(c, "ListRacks", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.GetRacks(c, req)
+		rsp, err = s.Service.ListRacks(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetRacks", rsp, err)
+		err = s.Postlude(c, "ListRacks", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) GetSwitches(c context.Context, req *SwitchesRequest) (rsp *SwitchesResponse, err error) {
+func (s *DecoratedCrimson) ListSwitches(c context.Context, req *ListSwitchesRequest) (rsp *ListSwitchesResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetSwitches", req)
+		newCtx, err = s.Prelude(c, "ListSwitches", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.GetSwitches(c, req)
+		rsp, err = s.Service.ListSwitches(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetSwitches", rsp, err)
+		err = s.Postlude(c, "ListSwitches", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) GetVLANs(c context.Context, req *VLANsRequest) (rsp *VLANsResponse, err error) {
+func (s *DecoratedCrimson) ListVLANs(c context.Context, req *ListVLANsRequest) (rsp *ListVLANsResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetVLANs", req)
+		newCtx, err = s.Prelude(c, "ListVLANs", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.GetVLANs(c, req)
+		rsp, err = s.Service.ListVLANs(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetVLANs", rsp, err)
+		err = s.Postlude(c, "ListVLANs", rsp, err)
 	}
 	return
 }

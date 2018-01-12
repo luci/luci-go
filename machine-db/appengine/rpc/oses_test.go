@@ -31,8 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGetOSes(t *testing.T) {
-	Convey("getOSes", t, func() {
+func TestListOSes(t *testing.T) {
+	Convey("listOSes", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -46,7 +46,7 @@ func TestGetOSes(t *testing.T) {
 		Convey("query failed", func() {
 			names := stringset.NewFromSlice("os")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			oses, err := getOSes(c, names)
+			oses, err := listOSes(c, names)
 			So(err, ShouldErrLike, "failed to fetch operating systems")
 			So(oses, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -55,7 +55,7 @@ func TestGetOSes(t *testing.T) {
 		Convey("empty", func() {
 			names := stringset.NewFromSlice("os")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			oses, err := getOSes(c, names)
+			oses, err := listOSes(c, names)
 			So(err, ShouldBeNil)
 			So(oses, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -66,7 +66,7 @@ func TestGetOSes(t *testing.T) {
 			rows.AddRow("os 1", "description 1")
 			rows.AddRow("os 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			oses, err := getOSes(c, names)
+			oses, err := listOSes(c, names)
 			So(err, ShouldBeNil)
 			So(oses, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -78,7 +78,7 @@ func TestGetOSes(t *testing.T) {
 			rows.AddRow("os 2", "description 2")
 			rows.AddRow("os 3", "description 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			oses, err := getOSes(c, names)
+			oses, err := listOSes(c, names)
 			So(err, ShouldBeNil)
 			So(oses, ShouldResemble, []*crimson.OS{
 				{
@@ -98,7 +98,7 @@ func TestGetOSes(t *testing.T) {
 			rows.AddRow("os 1", "description 1")
 			rows.AddRow("os 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			oses, err := getOSes(c, names)
+			oses, err := listOSes(c, names)
 			So(err, ShouldBeNil)
 			So(oses, ShouldResemble, []*crimson.OS{
 				{

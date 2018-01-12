@@ -31,8 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGetSwitches(t *testing.T) {
-	Convey("getSwitches", t, func() {
+func TestListSwitches(t *testing.T) {
+	Convey("listSwitches", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -49,7 +49,7 @@ func TestGetSwitches(t *testing.T) {
 			racks := stringset.NewFromSlice("rack")
 			dcs := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			switches, err := getSwitches(c, names, racks, dcs)
+			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldErrLike, "failed to fetch switches")
 			So(switches, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -60,7 +60,7 @@ func TestGetSwitches(t *testing.T) {
 			racks := stringset.NewFromSlice("rack")
 			dcs := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			switches, err := getSwitches(c, names, racks, dcs)
+			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldBeNil)
 			So(switches, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -73,7 +73,7 @@ func TestGetSwitches(t *testing.T) {
 			rows.AddRow("switch 1", "description 1", 10, "rack 1", "datacenter 1")
 			rows.AddRow("switch 2", "description 2", 20, "rack 2", "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			switches, err := getSwitches(c, names, racks, dcs)
+			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldBeNil)
 			So(switches, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -88,7 +88,7 @@ func TestGetSwitches(t *testing.T) {
 			rows.AddRow("switch 3", "description 3", 30, "rack 3", "datacenter 3")
 			rows.AddRow("switch 4", "description 4", 40, "rack 4", "datacenter 4")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			switches, err := getSwitches(c, names, racks, dcs)
+			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldBeNil)
 			So(switches, ShouldResemble, []*crimson.Switch{
 				{
@@ -116,7 +116,7 @@ func TestGetSwitches(t *testing.T) {
 			rows.AddRow("switch 1", "description 1", 10, "rack 1", "datacenter 1")
 			rows.AddRow("switch 2", "description 2", 20, "rack 2", "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			switches, err := getSwitches(c, names, racks, dcs)
+			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldBeNil)
 			So(switches, ShouldResemble, []*crimson.Switch{
 				{

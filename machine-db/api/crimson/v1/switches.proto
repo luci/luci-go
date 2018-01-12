@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
-// SwitchesRequest is a request to retrieve switches.
-message SwitchesRequest {
+// ListSwitchesRequest is a request to retrieve switches.
+message ListSwitchesRequest {
   // The names of switches to retrieve.
   repeated string names = 1;
   // The datacenters to filter retrieved switches on.
@@ -30,8 +30,8 @@ message Switch {
   string rack = 5;
 }
 
-// SwitchesResponse is a response to a request to retrieve switches.
-message SwitchesResponse {
+// ListSwitchesResponse is a response to a request to retrieve switches.
+message ListSwitchesResponse {
   // The switches matching the request.
   repeated Switch switches = 1;
 }

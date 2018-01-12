@@ -24,19 +24,19 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// GetDatacenters handles a request to retrieve datacenters.
-func (*Service) GetDatacenters(c context.Context, req *crimson.DatacentersRequest) (*crimson.DatacentersResponse, error) {
-	datacenters, err := getDatacenters(c, stringset.NewFromSlice(req.Names...))
+// ListDatacenters handles a request to retrieve datacenters.
+func (*Service) ListDatacenters(c context.Context, req *crimson.ListDatacentersRequest) (*crimson.ListDatacentersResponse, error) {
+	datacenters, err := listDatacenters(c, stringset.NewFromSlice(req.Names...))
 	if err != nil {
 		return nil, internalError(c, err)
 	}
-	return &crimson.DatacentersResponse{
+	return &crimson.ListDatacentersResponse{
 		Datacenters: datacenters,
 	}, nil
 }
 
-// getDatacenters returns a slice of datacenters in the database.
-func getDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
+// listDatacenters returns a slice of datacenters in the database.
+func listDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
 		SELECT d.name, d.description

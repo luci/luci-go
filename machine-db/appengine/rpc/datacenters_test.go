@@ -31,8 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGetDatacenters(t *testing.T) {
-	Convey("getDatacenters", t, func() {
+func TestListDatacenters(t *testing.T) {
+	Convey("listDatacenters", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -46,7 +46,7 @@ func TestGetDatacenters(t *testing.T) {
 		Convey("query failed", func() {
 			names := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			dcs, err := getDatacenters(c, names)
+			dcs, err := listDatacenters(c, names)
 			So(err, ShouldErrLike, "failed to fetch datacenters")
 			So(dcs, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -55,7 +55,7 @@ func TestGetDatacenters(t *testing.T) {
 		Convey("empty", func() {
 			names := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			dcs, err := getDatacenters(c, names)
+			dcs, err := listDatacenters(c, names)
 			So(err, ShouldBeNil)
 			So(dcs, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -66,7 +66,7 @@ func TestGetDatacenters(t *testing.T) {
 			rows.AddRow("datacenter 1", "description 1")
 			rows.AddRow("datacenter 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			dcs, err := getDatacenters(c, names)
+			dcs, err := listDatacenters(c, names)
 			So(err, ShouldBeNil)
 			So(dcs, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -78,7 +78,7 @@ func TestGetDatacenters(t *testing.T) {
 			rows.AddRow("datacenter 2", "description 2")
 			rows.AddRow("datacenter 3", "description 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			dcs, err := getDatacenters(c, names)
+			dcs, err := listDatacenters(c, names)
 			So(err, ShouldBeNil)
 			So(dcs, ShouldResemble, []*crimson.Datacenter{
 				{
@@ -98,7 +98,7 @@ func TestGetDatacenters(t *testing.T) {
 			rows.AddRow("datacenter 1", "description 1")
 			rows.AddRow("datacenter 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			dcs, err := getDatacenters(c, names)
+			dcs, err := listDatacenters(c, names)
 			So(err, ShouldBeNil)
 			So(dcs, ShouldResemble, []*crimson.Datacenter{
 				{

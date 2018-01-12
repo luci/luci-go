@@ -24,19 +24,19 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// GetRacks handles a request to retrieve racks.
-func (*Service) GetRacks(c context.Context, req *crimson.RacksRequest) (*crimson.RacksResponse, error) {
-	racks, err := getRacks(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Datacenters...))
+// ListRacks handles a request to retrieve racks.
+func (*Service) ListRacks(c context.Context, req *crimson.ListRacksRequest) (*crimson.ListRacksResponse, error) {
+	racks, err := listRacks(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Datacenters...))
 	if err != nil {
 		return nil, internalError(c, err)
 	}
-	return &crimson.RacksResponse{
+	return &crimson.ListRacksResponse{
 		Racks: racks,
 	}, nil
 }
 
-// getRacks returns a slice of racks in the database.
-func getRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.Rack, error) {
+// listRacks returns a slice of racks in the database.
+func listRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.Rack, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
 		SELECT r.name, r.description, d.name

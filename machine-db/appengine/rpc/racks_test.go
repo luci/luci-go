@@ -31,8 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGetRacks(t *testing.T) {
-	Convey("getRacks", t, func() {
+func TestListRacks(t *testing.T) {
+	Convey("listRacks", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -48,7 +48,7 @@ func TestGetRacks(t *testing.T) {
 			names := stringset.NewFromSlice("rack")
 			dcs := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			racks, err := getRacks(c, names, dcs)
+			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldErrLike, "failed to fetch racks")
 			So(racks, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -58,7 +58,7 @@ func TestGetRacks(t *testing.T) {
 			names := stringset.NewFromSlice("rack")
 			dcs := stringset.NewFromSlice("datacenter")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			racks, err := getRacks(c, names, dcs)
+			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldBeNil)
 			So(racks, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -70,7 +70,7 @@ func TestGetRacks(t *testing.T) {
 			rows.AddRow("rack 1", "description 1", "datacenter 1")
 			rows.AddRow("rack 2", "description 2", "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			racks, err := getRacks(c, names, dcs)
+			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldBeNil)
 			So(racks, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -83,7 +83,7 @@ func TestGetRacks(t *testing.T) {
 			rows.AddRow("rack 2", "description 2", "datacenter 2")
 			rows.AddRow("rack 3", "description 3", "datacenter 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			racks, err := getRacks(c, names, dcs)
+			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldBeNil)
 			So(racks, ShouldResemble, []*crimson.Rack{
 				{
@@ -106,7 +106,7 @@ func TestGetRacks(t *testing.T) {
 			rows.AddRow("rack 1", "description 1", "datacenter 1")
 			rows.AddRow("rack 2", "description 2", "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			racks, err := getRacks(c, names, dcs)
+			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldBeNil)
 			So(racks, ShouldResemble, []*crimson.Rack{
 				{
