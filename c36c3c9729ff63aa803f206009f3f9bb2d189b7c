@@ -507,6 +507,30 @@
     },
     {
       "key": {
+        "uuid": "0d862a53_97659f6a",
+        "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-12T22:16:50Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bb2efa2b_d5e7260e",
+      "range": {
+        "startLine": 27,
+        "startChar": 21,
+        "endLine": 27,
+        "endChar": 24
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9380f5d1_6cc39fe3",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -551,6 +575,30 @@
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f02ce33_d39280ca",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-12T22:16:50Z",
+      "side": 1,
+      "message": "SG",
+      "parentUuid": "54c8db26_e4bac6a9",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 8
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -906,6 +954,30 @@
       "side": 1,
       "message": "It\u0027s to distinguish between argument not provided at all, and empty string explicitly provided. User may not realize that omitting a string argument is the same as supplying an empty string. At any rate, this is the message used when validating configs as well.",
       "parentUuid": "42057ec1_f3c124d3",
+      "range": {
+        "startLine": 150,
+        "startChar": 30,
+        "endLine": 150,
+        "endChar": 45
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "584db615_73681b89",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-12T22:16:50Z",
+      "side": 1,
+      "message": "unspecified string and \"\" are indistinguishable in proto3. This was an intentional breaking change from proto2. In this function, we deal with a proto message. This logic equally applies to configs: there is no way to distinguish absence of the field in the config file from empty value.\n\nIt is possible to distinguish no CLI flag from empty flag value, thought, but that is specific to CLI, while this code is deals with protos\n\nhowever, this is just a error message, so it is not a big deal.",
+      "parentUuid": "c899947e_4aa27862",
       "range": {
         "startLine": 150,
         "startChar": 30,
