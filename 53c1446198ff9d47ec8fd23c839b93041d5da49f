@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "b82c6f02_43aacfb9",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-12T23:22:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f1b9ab39_547b15b8",
+      "revId": "53c1446198ff9d47ec8fd23c839b93041d5da49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f6bbe69_8d559561",
         "filename": "machine-db/api/common/v1/states.proto",
         "patchSetId": 4
@@ -72,6 +90,30 @@
       "side": 1,
       "message": "Then the Go name will be State_STATE_UNSPECIFIED and string name will either not match the constant name, or it will be redundant. In CLI would you do -state unspecified -\u003e STATE_UNSPECIFIED, or -state state_unspecified -\u003e STATE_UNSPECIFIED? Both seem odd to me.",
       "parentUuid": "1f6bbe69_8d559561",
+      "range": {
+        "startLine": 14,
+        "startChar": 2,
+        "endLine": 14,
+        "endChar": 13
+      },
+      "revId": "53c1446198ff9d47ec8fd23c839b93041d5da49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8740184f_5a363c12",
+        "filename": "machine-db/api/common/v1/states.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-12T23:22:06Z",
+      "side": 1,
+      "message": "i think unspecified -state flag should mean STATE_UNSPECIFIED. That would make perfect sense to me.",
+      "parentUuid": "6c6ed7ee_1291c837",
       "range": {
         "startLine": 14,
         "startChar": 2,
@@ -128,6 +170,30 @@
       "revId": "53c1446198ff9d47ec8fd23c839b93041d5da49f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2df3efc2_a5b42ff3",
+        "filename": "machine-db/api/common/v1/states.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-12T23:22:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "42160672_0be264c8",
+      "range": {
+        "startLine": 18,
+        "startChar": 2,
+        "endLine": 18,
+        "endChar": 12
+      },
+      "revId": "53c1446198ff9d47ec8fd23c839b93041d5da49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
