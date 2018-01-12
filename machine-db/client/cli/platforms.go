@@ -36,11 +36,11 @@ type GetPlatformsCmd struct {
 // Run runs the command to get platforms.
 func (c *GetPlatformsCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.PlatformsRequest{
+	req := &crimson.ListPlatformsRequest{
 		Names: c.names,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetPlatforms(ctx, req)
+	resp, err := client.ListPlatforms(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1

@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
-// OSesRequest is a request to retrieve operating systems.
-message OSesRequest {
+// ListOSesRequest is a request to retrieve operating systems.
+message ListOSesRequest {
   // The names of operating systems to retrieve.
   repeated string names = 1;
 }
@@ -20,8 +20,8 @@ message OS {
   string description = 2;
 }
 
-// OSesResponse is a response to a request to retrieve operating systems.
-message OSesResponse {
+// ListOSesResponse is a response to a request to retrieve operating systems.
+message ListOSesResponse {
   // The operating systems matching the request.
   repeated OS oses = 1;
 }

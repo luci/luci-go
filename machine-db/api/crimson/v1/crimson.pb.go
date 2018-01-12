@@ -7,8 +7,6 @@ Package crimson is a generated protocol buffer package.
 It is generated from these files:
 	go.chromium.org/luci/machine-db/api/crimson/v1/crimson.proto
 	go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto
-	go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto
-	go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto
 	go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto
 	go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto
 	go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto
@@ -16,42 +14,24 @@ It is generated from these files:
 	go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto
 
 It has these top-level messages:
-	DatacentersRequest
+	ListDatacentersRequest
 	Datacenter
-	DatacentersResponse
-	Host
-	AddHostRequest
-	AddHostResponse
-	DeleteHostRequest
-	DeleteHostResponse
-	EditHostRequest
-	EditHostResponse
-	GetHostsRequest
-	GetHostsResponse
-	Machine
-	AddMachineRequest
-	AddMachineResponse
-	DeleteMachineRequest
-	DeleteMachineResponse
-	EditMachineRequest
-	EditMachineResponse
-	GetMachinesRequest
-	GetMachinesResponse
-	OSesRequest
+	ListDatacentersResponse
+	ListOSesRequest
 	OS
-	OSesResponse
-	PlatformsRequest
+	ListOSesResponse
+	ListPlatformsRequest
 	Platform
-	PlatformsResponse
-	RacksRequest
+	ListPlatformsResponse
+	ListRacksRequest
 	Rack
-	RacksResponse
-	SwitchesRequest
+	ListRacksResponse
+	ListSwitchesRequest
 	Switch
-	SwitchesResponse
-	VLANsRequest
+	ListSwitchesResponse
+	ListVLANsRequest
 	VLAN
-	VLANsResponse
+	ListVLANsResponse
 */
 package crimson
 
@@ -88,18 +68,18 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Crimson service
 
 type CrimsonClient interface {
-	// GetDatacenters retrieves datacenters.
-	GetDatacenters(ctx context.Context, in *DatacentersRequest, opts ...grpc.CallOption) (*DatacentersResponse, error)
-	// GetOSes retrieves operating systems.
-	GetOSes(ctx context.Context, in *OSesRequest, opts ...grpc.CallOption) (*OSesResponse, error)
-	// GetPlatforms retrieves platforms.
-	GetPlatforms(ctx context.Context, in *PlatformsRequest, opts ...grpc.CallOption) (*PlatformsResponse, error)
-	// GetRacks retrieves racks.
-	GetRacks(ctx context.Context, in *RacksRequest, opts ...grpc.CallOption) (*RacksResponse, error)
-	// GetSwitches retrieves switches.
-	GetSwitches(ctx context.Context, in *SwitchesRequest, opts ...grpc.CallOption) (*SwitchesResponse, error)
-	// GetVLANs retrieves vlans.
-	GetVLANs(ctx context.Context, in *VLANsRequest, opts ...grpc.CallOption) (*VLANsResponse, error)
+	// Lists datacenters in the database.
+	ListDatacenters(ctx context.Context, in *ListDatacentersRequest, opts ...grpc.CallOption) (*ListDatacentersResponse, error)
+	// Lists operating systems in the database.
+	ListOSes(ctx context.Context, in *ListOSesRequest, opts ...grpc.CallOption) (*ListOSesResponse, error)
+	// Lists platforms in the database.
+	ListPlatforms(ctx context.Context, in *ListPlatformsRequest, opts ...grpc.CallOption) (*ListPlatformsResponse, error)
+	// Lists racks in the database.
+	ListRacks(ctx context.Context, in *ListRacksRequest, opts ...grpc.CallOption) (*ListRacksResponse, error)
+	// Lists switches in the database.
+	ListSwitches(ctx context.Context, in *ListSwitchesRequest, opts ...grpc.CallOption) (*ListSwitchesResponse, error)
+	// Lists VLANs in the database.
+	ListVLANs(ctx context.Context, in *ListVLANsRequest, opts ...grpc.CallOption) (*ListVLANsResponse, error)
 }
 type crimsonPRPCClient struct {
 	client *prpc.Client
@@ -109,54 +89,54 @@ func NewCrimsonPRPCClient(client *prpc.Client) CrimsonClient {
 	return &crimsonPRPCClient{client}
 }
 
-func (c *crimsonPRPCClient) GetDatacenters(ctx context.Context, in *DatacentersRequest, opts ...grpc.CallOption) (*DatacentersResponse, error) {
-	out := new(DatacentersResponse)
-	err := c.client.Call(ctx, "crimson.Crimson", "GetDatacenters", in, out, opts...)
+func (c *crimsonPRPCClient) ListDatacenters(ctx context.Context, in *ListDatacentersRequest, opts ...grpc.CallOption) (*ListDatacentersResponse, error) {
+	out := new(ListDatacentersResponse)
+	err := c.client.Call(ctx, "crimson.Crimson", "ListDatacenters", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonPRPCClient) GetOSes(ctx context.Context, in *OSesRequest, opts ...grpc.CallOption) (*OSesResponse, error) {
-	out := new(OSesResponse)
-	err := c.client.Call(ctx, "crimson.Crimson", "GetOSes", in, out, opts...)
+func (c *crimsonPRPCClient) ListOSes(ctx context.Context, in *ListOSesRequest, opts ...grpc.CallOption) (*ListOSesResponse, error) {
+	out := new(ListOSesResponse)
+	err := c.client.Call(ctx, "crimson.Crimson", "ListOSes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonPRPCClient) GetPlatforms(ctx context.Context, in *PlatformsRequest, opts ...grpc.CallOption) (*PlatformsResponse, error) {
-	out := new(PlatformsResponse)
-	err := c.client.Call(ctx, "crimson.Crimson", "GetPlatforms", in, out, opts...)
+func (c *crimsonPRPCClient) ListPlatforms(ctx context.Context, in *ListPlatformsRequest, opts ...grpc.CallOption) (*ListPlatformsResponse, error) {
+	out := new(ListPlatformsResponse)
+	err := c.client.Call(ctx, "crimson.Crimson", "ListPlatforms", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonPRPCClient) GetRacks(ctx context.Context, in *RacksRequest, opts ...grpc.CallOption) (*RacksResponse, error) {
-	out := new(RacksResponse)
-	err := c.client.Call(ctx, "crimson.Crimson", "GetRacks", in, out, opts...)
+func (c *crimsonPRPCClient) ListRacks(ctx context.Context, in *ListRacksRequest, opts ...grpc.CallOption) (*ListRacksResponse, error) {
+	out := new(ListRacksResponse)
+	err := c.client.Call(ctx, "crimson.Crimson", "ListRacks", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonPRPCClient) GetSwitches(ctx context.Context, in *SwitchesRequest, opts ...grpc.CallOption) (*SwitchesResponse, error) {
-	out := new(SwitchesResponse)
-	err := c.client.Call(ctx, "crimson.Crimson", "GetSwitches", in, out, opts...)
+func (c *crimsonPRPCClient) ListSwitches(ctx context.Context, in *ListSwitchesRequest, opts ...grpc.CallOption) (*ListSwitchesResponse, error) {
+	out := new(ListSwitchesResponse)
+	err := c.client.Call(ctx, "crimson.Crimson", "ListSwitches", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonPRPCClient) GetVLANs(ctx context.Context, in *VLANsRequest, opts ...grpc.CallOption) (*VLANsResponse, error) {
-	out := new(VLANsResponse)
-	err := c.client.Call(ctx, "crimson.Crimson", "GetVLANs", in, out, opts...)
+func (c *crimsonPRPCClient) ListVLANs(ctx context.Context, in *ListVLANsRequest, opts ...grpc.CallOption) (*ListVLANsResponse, error) {
+	out := new(ListVLANsResponse)
+	err := c.client.Call(ctx, "crimson.Crimson", "ListVLANs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -171,54 +151,54 @@ func NewCrimsonClient(cc *grpc.ClientConn) CrimsonClient {
 	return &crimsonClient{cc}
 }
 
-func (c *crimsonClient) GetDatacenters(ctx context.Context, in *DatacentersRequest, opts ...grpc.CallOption) (*DatacentersResponse, error) {
-	out := new(DatacentersResponse)
-	err := grpc.Invoke(ctx, "/crimson.Crimson/GetDatacenters", in, out, c.cc, opts...)
+func (c *crimsonClient) ListDatacenters(ctx context.Context, in *ListDatacentersRequest, opts ...grpc.CallOption) (*ListDatacentersResponse, error) {
+	out := new(ListDatacentersResponse)
+	err := grpc.Invoke(ctx, "/crimson.Crimson/ListDatacenters", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonClient) GetOSes(ctx context.Context, in *OSesRequest, opts ...grpc.CallOption) (*OSesResponse, error) {
-	out := new(OSesResponse)
-	err := grpc.Invoke(ctx, "/crimson.Crimson/GetOSes", in, out, c.cc, opts...)
+func (c *crimsonClient) ListOSes(ctx context.Context, in *ListOSesRequest, opts ...grpc.CallOption) (*ListOSesResponse, error) {
+	out := new(ListOSesResponse)
+	err := grpc.Invoke(ctx, "/crimson.Crimson/ListOSes", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonClient) GetPlatforms(ctx context.Context, in *PlatformsRequest, opts ...grpc.CallOption) (*PlatformsResponse, error) {
-	out := new(PlatformsResponse)
-	err := grpc.Invoke(ctx, "/crimson.Crimson/GetPlatforms", in, out, c.cc, opts...)
+func (c *crimsonClient) ListPlatforms(ctx context.Context, in *ListPlatformsRequest, opts ...grpc.CallOption) (*ListPlatformsResponse, error) {
+	out := new(ListPlatformsResponse)
+	err := grpc.Invoke(ctx, "/crimson.Crimson/ListPlatforms", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonClient) GetRacks(ctx context.Context, in *RacksRequest, opts ...grpc.CallOption) (*RacksResponse, error) {
-	out := new(RacksResponse)
-	err := grpc.Invoke(ctx, "/crimson.Crimson/GetRacks", in, out, c.cc, opts...)
+func (c *crimsonClient) ListRacks(ctx context.Context, in *ListRacksRequest, opts ...grpc.CallOption) (*ListRacksResponse, error) {
+	out := new(ListRacksResponse)
+	err := grpc.Invoke(ctx, "/crimson.Crimson/ListRacks", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonClient) GetSwitches(ctx context.Context, in *SwitchesRequest, opts ...grpc.CallOption) (*SwitchesResponse, error) {
-	out := new(SwitchesResponse)
-	err := grpc.Invoke(ctx, "/crimson.Crimson/GetSwitches", in, out, c.cc, opts...)
+func (c *crimsonClient) ListSwitches(ctx context.Context, in *ListSwitchesRequest, opts ...grpc.CallOption) (*ListSwitchesResponse, error) {
+	out := new(ListSwitchesResponse)
+	err := grpc.Invoke(ctx, "/crimson.Crimson/ListSwitches", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *crimsonClient) GetVLANs(ctx context.Context, in *VLANsRequest, opts ...grpc.CallOption) (*VLANsResponse, error) {
-	out := new(VLANsResponse)
-	err := grpc.Invoke(ctx, "/crimson.Crimson/GetVLANs", in, out, c.cc, opts...)
+func (c *crimsonClient) ListVLANs(ctx context.Context, in *ListVLANsRequest, opts ...grpc.CallOption) (*ListVLANsResponse, error) {
+	out := new(ListVLANsResponse)
+	err := grpc.Invoke(ctx, "/crimson.Crimson/ListVLANs", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -228,128 +208,128 @@ func (c *crimsonClient) GetVLANs(ctx context.Context, in *VLANsRequest, opts ...
 // Server API for Crimson service
 
 type CrimsonServer interface {
-	// GetDatacenters retrieves datacenters.
-	GetDatacenters(context.Context, *DatacentersRequest) (*DatacentersResponse, error)
-	// GetOSes retrieves operating systems.
-	GetOSes(context.Context, *OSesRequest) (*OSesResponse, error)
-	// GetPlatforms retrieves platforms.
-	GetPlatforms(context.Context, *PlatformsRequest) (*PlatformsResponse, error)
-	// GetRacks retrieves racks.
-	GetRacks(context.Context, *RacksRequest) (*RacksResponse, error)
-	// GetSwitches retrieves switches.
-	GetSwitches(context.Context, *SwitchesRequest) (*SwitchesResponse, error)
-	// GetVLANs retrieves vlans.
-	GetVLANs(context.Context, *VLANsRequest) (*VLANsResponse, error)
+	// Lists datacenters in the database.
+	ListDatacenters(context.Context, *ListDatacentersRequest) (*ListDatacentersResponse, error)
+	// Lists operating systems in the database.
+	ListOSes(context.Context, *ListOSesRequest) (*ListOSesResponse, error)
+	// Lists platforms in the database.
+	ListPlatforms(context.Context, *ListPlatformsRequest) (*ListPlatformsResponse, error)
+	// Lists racks in the database.
+	ListRacks(context.Context, *ListRacksRequest) (*ListRacksResponse, error)
+	// Lists switches in the database.
+	ListSwitches(context.Context, *ListSwitchesRequest) (*ListSwitchesResponse, error)
+	// Lists VLANs in the database.
+	ListVLANs(context.Context, *ListVLANsRequest) (*ListVLANsResponse, error)
 }
 
 func RegisterCrimsonServer(s prpc.Registrar, srv CrimsonServer) {
 	s.RegisterService(&_Crimson_serviceDesc, srv)
 }
 
-func _Crimson_GetDatacenters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DatacentersRequest)
+func _Crimson_ListDatacenters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDatacentersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrimsonServer).GetDatacenters(ctx, in)
+		return srv.(CrimsonServer).ListDatacenters(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/crimson.Crimson/GetDatacenters",
+		FullMethod: "/crimson.Crimson/ListDatacenters",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrimsonServer).GetDatacenters(ctx, req.(*DatacentersRequest))
+		return srv.(CrimsonServer).ListDatacenters(ctx, req.(*ListDatacentersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Crimson_GetOSes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OSesRequest)
+func _Crimson_ListOSes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOSesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrimsonServer).GetOSes(ctx, in)
+		return srv.(CrimsonServer).ListOSes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/crimson.Crimson/GetOSes",
+		FullMethod: "/crimson.Crimson/ListOSes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrimsonServer).GetOSes(ctx, req.(*OSesRequest))
+		return srv.(CrimsonServer).ListOSes(ctx, req.(*ListOSesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Crimson_GetPlatforms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PlatformsRequest)
+func _Crimson_ListPlatforms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPlatformsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrimsonServer).GetPlatforms(ctx, in)
+		return srv.(CrimsonServer).ListPlatforms(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/crimson.Crimson/GetPlatforms",
+		FullMethod: "/crimson.Crimson/ListPlatforms",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrimsonServer).GetPlatforms(ctx, req.(*PlatformsRequest))
+		return srv.(CrimsonServer).ListPlatforms(ctx, req.(*ListPlatformsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Crimson_GetRacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RacksRequest)
+func _Crimson_ListRacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRacksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrimsonServer).GetRacks(ctx, in)
+		return srv.(CrimsonServer).ListRacks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/crimson.Crimson/GetRacks",
+		FullMethod: "/crimson.Crimson/ListRacks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrimsonServer).GetRacks(ctx, req.(*RacksRequest))
+		return srv.(CrimsonServer).ListRacks(ctx, req.(*ListRacksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Crimson_GetSwitches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SwitchesRequest)
+func _Crimson_ListSwitches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSwitchesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrimsonServer).GetSwitches(ctx, in)
+		return srv.(CrimsonServer).ListSwitches(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/crimson.Crimson/GetSwitches",
+		FullMethod: "/crimson.Crimson/ListSwitches",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrimsonServer).GetSwitches(ctx, req.(*SwitchesRequest))
+		return srv.(CrimsonServer).ListSwitches(ctx, req.(*ListSwitchesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Crimson_GetVLANs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VLANsRequest)
+func _Crimson_ListVLANs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVLANsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrimsonServer).GetVLANs(ctx, in)
+		return srv.(CrimsonServer).ListVLANs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/crimson.Crimson/GetVLANs",
+		FullMethod: "/crimson.Crimson/ListVLANs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrimsonServer).GetVLANs(ctx, req.(*VLANsRequest))
+		return srv.(CrimsonServer).ListVLANs(ctx, req.(*ListVLANsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -359,28 +339,28 @@ var _Crimson_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*CrimsonServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetDatacenters",
-			Handler:    _Crimson_GetDatacenters_Handler,
+			MethodName: "ListDatacenters",
+			Handler:    _Crimson_ListDatacenters_Handler,
 		},
 		{
-			MethodName: "GetOSes",
-			Handler:    _Crimson_GetOSes_Handler,
+			MethodName: "ListOSes",
+			Handler:    _Crimson_ListOSes_Handler,
 		},
 		{
-			MethodName: "GetPlatforms",
-			Handler:    _Crimson_GetPlatforms_Handler,
+			MethodName: "ListPlatforms",
+			Handler:    _Crimson_ListPlatforms_Handler,
 		},
 		{
-			MethodName: "GetRacks",
-			Handler:    _Crimson_GetRacks_Handler,
+			MethodName: "ListRacks",
+			Handler:    _Crimson_ListRacks_Handler,
 		},
 		{
-			MethodName: "GetSwitches",
-			Handler:    _Crimson_GetSwitches_Handler,
+			MethodName: "ListSwitches",
+			Handler:    _Crimson_ListSwitches_Handler,
 		},
 		{
-			MethodName: "GetVLANs",
-			Handler:    _Crimson_GetVLANs_Handler,
+			MethodName: "ListVLANs",
+			Handler:    _Crimson_ListVLANs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -392,24 +372,24 @@ func init() {
 }
 
 var fileDescriptor0 = []byte{
-	// 294 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x91, 0x5f, 0x4b, 0xc3, 0x30,
-	0x14, 0xc5, 0x1f, 0x04, 0x27, 0x51, 0x7c, 0x08, 0x2a, 0xae, 0xfa, 0x15, 0x6c, 0x51, 0x41, 0x98,
-	0xa8, 0xf8, 0x97, 0x3e, 0x28, 0x2a, 0x1b, 0xf8, 0x9e, 0x65, 0xd7, 0x35, 0xd8, 0x26, 0x35, 0xb9,
-	0x9d, 0x1f, 0xc3, 0xaf, 0x2c, 0x6b, 0x73, 0xbb, 0x39, 0xfb, 0x12, 0xdf, 0x72, 0xcf, 0xbd, 0xbf,
-	0x73, 0xe0, 0x84, 0x5d, 0x4c, 0x4d, 0x2c, 0x33, 0x6b, 0x0a, 0x55, 0x15, 0xb1, 0xb1, 0xd3, 0x24,
-	0xaf, 0xa4, 0x4a, 0x0a, 0x21, 0x33, 0xa5, 0xe1, 0x68, 0x32, 0x4e, 0x44, 0xa9, 0x12, 0x69, 0x55,
-	0xe1, 0x8c, 0x4e, 0x66, 0xc7, 0xf4, 0x8c, 0x4b, 0x6b, 0xd0, 0xf0, 0x9e, 0x1f, 0xa3, 0xeb, 0x40,
-	0x9b, 0x89, 0x40, 0x21, 0x41, 0x23, 0x58, 0xd7, 0x58, 0x45, 0x83, 0x40, 0x07, 0xe3, 0x80, 0xd0,
-	0xab, 0x40, 0xb4, 0xcc, 0x05, 0xbe, 0x1b, 0x5b, 0x10, 0x7f, 0x1e, 0xc8, 0x5b, 0x21, 0x3f, 0x88,
-	0xbd, 0x0c, 0x64, 0xdd, 0x97, 0x42, 0x99, 0xc1, 0x7f, 0xa3, 0x67, 0xb9, 0xd0, 0x9e, 0x3d, 0xf9,
-	0x5e, 0x63, 0xbd, 0xbb, 0x66, 0xc5, 0x1f, 0xd9, 0x76, 0x0a, 0x78, 0xbf, 0x68, 0x95, 0x1f, 0xc4,
-	0xf4, 0x55, 0x4b, 0xea, 0x10, 0x3e, 0x2b, 0x70, 0x18, 0x1d, 0x76, 0x2f, 0x5d, 0x69, 0xb4, 0x03,
-	0x7e, 0xc6, 0x7a, 0x29, 0xe0, 0xcb, 0x08, 0x1c, 0xdf, 0x69, 0x0f, 0xe7, 0x23, 0xe1, 0xbb, 0x2b,
-	0xaa, 0xe7, 0x1e, 0xd8, 0x56, 0x0a, 0xf8, 0x4a, 0xed, 0xf2, 0x7e, 0x7b, 0xd6, 0x6a, 0xe4, 0x10,
-	0x75, 0xad, 0xbc, 0xcd, 0x80, 0x6d, 0xa4, 0x80, 0xc3, 0x79, 0xc9, 0x7c, 0x91, 0x54, 0xcf, 0x84,
-	0xef, 0xad, 0xca, 0x1e, 0xbd, 0x65, 0x9b, 0x29, 0xe0, 0xc8, 0x77, 0xcc, 0xf7, 0xdb, 0x33, 0x92,
-	0xc8, 0xa0, 0xdf, 0xb1, 0xf9, 0x15, 0xff, 0xf6, 0x74, 0xf3, 0xbc, 0x1c, 0x5f, 0xcf, 0x7f, 0xe3,
-	0xbd, 0xdc, 0xa0, 0xe3, 0xf5, 0xfa, 0x63, 0x4e, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x60, 0x9a,
-	0x1f, 0x3c, 0x55, 0x03, 0x00, 0x00,
+	// 293 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x91, 0x4f, 0x4f, 0xc3, 0x20,
+	0x18, 0xc6, 0x0f, 0x26, 0x4e, 0x89, 0xc6, 0x84, 0x93, 0x36, 0x4e, 0xfd, 0x02, 0x96, 0xa8, 0x27,
+	0x8d, 0xff, 0xf5, 0xe6, 0x32, 0xcd, 0x66, 0xbc, 0x33, 0x86, 0x2b, 0xb1, 0x40, 0x05, 0x3a, 0x3f,
+	0xa1, 0xdf, 0xcb, 0xd0, 0xf2, 0x6a, 0x58, 0xda, 0x03, 0xde, 0xda, 0xe7, 0xf7, 0x3e, 0x3f, 0x08,
+	0x2f, 0xba, 0x5c, 0xe8, 0x9c, 0x15, 0x46, 0x4b, 0x51, 0xcb, 0x5c, 0x9b, 0x05, 0x29, 0x6b, 0x26,
+	0x88, 0xa4, 0xac, 0x10, 0x8a, 0x1f, 0xcf, 0x67, 0x84, 0x56, 0x82, 0x30, 0x23, 0xa4, 0xd5, 0x8a,
+	0x2c, 0x4f, 0xe0, 0x33, 0xaf, 0x8c, 0x76, 0x1a, 0x0f, 0xc2, 0x6f, 0x76, 0x9b, 0xa8, 0x99, 0x53,
+	0x47, 0x19, 0x57, 0x8e, 0x1b, 0xdb, 0xaa, 0xb2, 0xf3, 0x44, 0x83, 0xb6, 0x1c, 0xaa, 0xd7, 0x89,
+	0xd5, 0xaa, 0xa4, 0xee, 0x5d, 0x1b, 0x09, 0xfd, 0x8b, 0xc4, 0xbe, 0xa1, 0xec, 0x03, 0xba, 0x57,
+	0x89, 0x5d, 0xfb, 0x25, 0x1c, 0x2b, 0xf8, 0x7f, 0x8f, 0x5e, 0x96, 0x54, 0x85, 0xee, 0xe9, 0xf7,
+	0x1a, 0x1a, 0x3c, 0xb4, 0x08, 0xbf, 0xa2, 0x9d, 0x91, 0xb0, 0xee, 0xf1, 0xef, 0x59, 0xf1, 0x61,
+	0x0e, 0xbb, 0x5a, 0x21, 0x13, 0xfe, 0x59, 0x73, 0xeb, 0xb2, 0xa3, 0xfe, 0x01, 0x5b, 0x69, 0x65,
+	0x39, 0xbe, 0x41, 0x1b, 0x1e, 0x3d, 0x4f, 0xb9, 0xc5, 0xbb, 0xd1, 0xb4, 0x8f, 0xc0, 0xb3, 0xd7,
+	0x41, 0x82, 0x60, 0x8c, 0xb6, 0x7d, 0xf6, 0x02, 0x0f, 0x8e, 0x87, 0xd1, 0xec, 0x6f, 0x0e, 0xaa,
+	0x83, 0x3e, 0x1c, 0x7c, 0xf7, 0x68, 0xd3, 0x83, 0x89, 0x5f, 0x00, 0x8e, 0xcf, 0x6d, 0x32, 0xf0,
+	0x64, 0x5d, 0x28, 0x38, 0x9e, 0xd0, 0x96, 0x0f, 0xa7, 0x61, 0x11, 0x78, 0x3f, 0x9a, 0x85, 0x18,
+	0x4c, 0xc3, 0x1e, 0x1a, 0x5f, 0xe8, 0x6d, 0x74, 0x37, 0x5e, 0xbd, 0x50, 0x93, 0x75, 0x5f, 0x28,
+	0xa0, 0xd6, 0x31, 0x5b, 0x6f, 0xd6, 0x79, 0xf6, 0x13, 0x00, 0x00, 0xff, 0xff, 0xac, 0x36, 0x45,
+	0x11, 0x8b, 0x03, 0x00, 0x00,
 }

@@ -36,11 +36,11 @@ type GetDatacentersCmd struct {
 // Run runs the command to get datacenters.
 func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.DatacentersRequest{
+	req := &crimson.ListDatacentersRequest{
 		Names: c.names,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetDatacenters(ctx, req)
+	resp, err := client.ListDatacenters(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
