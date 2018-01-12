@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1b0cf5df_0f14a381",
+        "filename": "machine-db/api/crimson/v1/crimson.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73239ffc_983f3d18",
+      "range": {
+        "startLine": 33,
+        "startChar": 6,
+        "endLine": 33,
+        "endChar": 9
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2dc9c523_84166a14",
         "filename": "machine-db/api/crimson/v1/errors.proto",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4630d63c_24bcc12e",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2dc9c523_84166a14",
+      "range": {
+        "startLine": 9,
+        "startChar": 3,
+        "endLine": 9,
+        "endChar": 12
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "62da9546_fea8d401",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8556175b_36cea4c4",
+      "range": {
+        "startLine": 12,
+        "startChar": 2,
+        "endLine": 12,
+        "endChar": 7
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49ebf993_e7b839cf",
         "filename": "machine-db/api/crimson/v1/errors.proto",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc75e3b3_af2af9ac",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49ebf993_e7b839cf",
+      "range": {
+        "startLine": 14,
+        "startChar": 2,
+        "endLine": 14,
+        "endChar": 18
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "205ca69c_d4959f00",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1095ad85_cbf0b13e",
+      "range": {
+        "startLine": 16,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9ed5360_e6b0c98b",
         "filename": "machine-db/api/crimson/v1/errors.proto",
         "patchSetId": 1
@@ -137,6 +257,30 @@
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba153560_82d53f59",
+        "filename": "machine-db/api/crimson/v1/errors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9ed5360_e6b0c98b",
+      "range": {
+        "startLine": 18,
+        "startChar": 2,
+        "endLine": 18,
+        "endChar": 11
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "f2fbb4f1_2f2aff3b",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "506487e6_02f7ab55",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 31
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c58e0455_357bde83",
         "filename": "machine-db/api/crimson/v1/machines.proto",
         "patchSetId": 1
@@ -186,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "8c658fb3_ceefce7c",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c58e0455_357bde83",
+      "range": {
+        "startLine": 30,
+        "startChar": 8,
+        "endLine": 30,
+        "endChar": 26
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49f978a8_cda3c745",
         "filename": "machine-db/api/crimson/v1/machines.proto",
         "patchSetId": 1
@@ -200,6 +392,24 @@
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2eadb51_1e9bd8ad",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49f978a8_cda3c745",
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -226,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "4cc85577_db245fa5",
+        "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.down.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97744c39_f6d1da9e",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28312275_d388bef6",
         "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.up.sql",
         "patchSetId": 1
@@ -249,6 +483,30 @@
     },
     {
       "key": {
+        "uuid": "bb2efa2b_d5e7260e",
+        "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "The existing descriptions that users have to describe their entities are very short, so it\u0027s possible name fields are too long. However, varchar space usage is proportional to the length of the contained value, so it\u0027s not like space is being wasted by having varchar(255) where varchar(32) may suffice (I\u0027m not even sure if it would).\n\nI can try to figure out exactly what length is needed for each field later on, but it\u0027s not a priority right now.",
+      "parentUuid": "28312275_d388bef6",
+      "range": {
+        "startLine": 27,
+        "startChar": 21,
+        "endLine": 27,
+        "endChar": 24
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9380f5d1_6cc39fe3",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -260,6 +518,30 @@
       "writtenOn": "2018-01-11T21:17:16Z",
       "side": 1,
       "message": "error responses should return an err. A non-err respond will result in HTTP 200, which is confusing for users and does not help monitoring\n\nSome history: Cloud Endpoints made Buildbucket and CIPD server to return HTTP 200 for error responses because Cloud Endpoints does not allow structured responses for non-200 responses, e.g. Buildbucket could not return application-level error codes. This confused users. They forgot to check \"error\" field in an HTTP-200 response, which is non-intuitive. Me and Vadim were happy to discovery that gRPC does not have that problem: we can use standard gRPC error codes.\n\nI see that you want to return a list of invalid arguments. gRPC standard has \thttps://godoc.org/google.golang.org/genproto/googleapis/rpc/errdetails#BadRequest for that, and grpc package has https://godoc.org/google.golang.org/grpc/status#Status.WithDetails\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/833993\nis a CL where I started to add support for structured error details\n\nI think you could add a function\n\n  func badReq(err []error) *errordetails.BadRequest\n\nand then use it as\n\n  return nil, status.New(codes.InvalidArgument, \"invalid args or something\").WithDetails(badReq(errs))",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 8
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54c8db26_e4bac6a9",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "errdetails seems like a lot of extra code to read and write and a lot more things the caller needs to know just to describe more than one error at a time. The server needs to create the error from status.Status (WithDetails itself may also err, meaning you could end up with an internal server error in the middle of trying to give the user a validation error), and then clients need to know to convert the returned error to a status.Status so they can call Details. Then they need to know to interpret the Details as errordetails.BadRequest.\n\nI think it\u0027s fine to just return a status.Error. The disadvantage is that if there are multiple InvalidArguments in the request, the user will only find out about one, so they may need to issue the request several times, correcting one field each time. However, since we are also writing the recommended client as part of this project, that client could be written to validate fields as well, meaning we wouldn\u0027t get into a situation where a user needs to try an RPC 3 times to figure out that machine name, platform, and rack are all required.",
+      "parentUuid": "9380f5d1_6cc39fe3",
       "range": {
         "startLine": 36,
         "startChar": 2,
@@ -292,6 +574,30 @@
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b6e2077_58b046cb",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cb57dbac_fe120802",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 10
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -353,6 +659,30 @@
     },
     {
       "key": {
+        "uuid": "88667537_324e93c5",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46f35262_7b4338cf",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 10
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43d60568_7d5e2a9a",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -376,6 +706,30 @@
     },
     {
       "key": {
+        "uuid": "e1c2e4a3_51ca5d4e",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Included example. It\u0027s probably not necessary to check this at all. The only fields required unique are id and name, and id is auto-incremented so name is the only field this message could possibly apply to.",
+      "parentUuid": "43d60568_7d5e2a9a",
+      "range": {
+        "startLine": 85,
+        "startChar": 44,
+        "endLine": 85,
+        "endChar": 79
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1d4ad1fe_0e69f460",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -387,6 +741,30 @@
       "writtenOn": "2018-01-11T21:17:16Z",
       "side": 1,
       "message": "to do this, you will probably need to generate an SQL expression and that code can be reused in other GetXXX functions",
+      "range": {
+        "startLine": 136,
+        "startChar": 5,
+        "endLine": 136,
+        "endChar": 15
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "faf91455_9abbcacf",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Maybe, but it\u0027s also possible that batching is only needed here, since there will be an order of magnitude more machines than anything else.",
+      "parentUuid": "1d4ad1fe_0e69f460",
       "range": {
         "startLine": 136,
         "startChar": 5,
@@ -445,6 +823,54 @@
     },
     {
       "key": {
+        "uuid": "00545141_11d8db23",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Per discussion, will move later.",
+      "parentUuid": "ef5bd018_2183ca90",
+      "range": {
+        "startLine": 145,
+        "startChar": 5,
+        "endLine": 145,
+        "endChar": 30
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "56cf577a_f402aac3",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb7a0d6e_1f1a06e8",
+      "range": {
+        "startLine": 145,
+        "startChar": 63,
+        "endLine": 145,
+        "endChar": 79
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "42057ec1_f3c124d3",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -456,6 +882,30 @@
       "writtenOn": "2018-01-11T21:17:16Z",
       "side": 1,
       "message": "nit: this is implied by \"must be non-empty\". Maybe just \"machine name must be non-empty\"?\n\nsame below.",
+      "range": {
+        "startLine": 150,
+        "startChar": 30,
+        "endLine": 150,
+        "endChar": 45
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c899947e_4aa27862",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T00:33:06Z",
+      "side": 1,
+      "message": "It\u0027s to distinguish between argument not provided at all, and empty string explicitly provided. User may not realize that omitting a string argument is the same as supplying an empty string. At any rate, this is the message used when validating configs as well.",
+      "parentUuid": "42057ec1_f3c124d3",
       "range": {
         "startLine": 150,
         "startChar": 30,
