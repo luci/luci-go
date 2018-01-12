@@ -34,6 +34,7 @@ import (
 
 	cipdVersion "go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -167,7 +168,7 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.StringVar(&a.specPath, "vpython-spec", a.specPath,
 		"Path to environment specification file to load. Default probes for one.")
 
-	a.logConfig.AddFlags(fs)
+	a.logConfig.AddFlagsPrefix(fs, "vpython-")
 }
 
 func (a *application) mainImpl(c context.Context, argv0 string, args []string) error {
@@ -240,6 +241,28 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	if a.Bypass {
 		return a.runDirect(c, args, &lp)
 	}
+
+	// Strip out unsupported arguments.
+	unsupportedArgs := stringset.NewFromSlice(
+		// -S prevents 'site.py' from importing implicitly. This is guaranteed to
+		// break VirtualEnv which relies on site to actually set up the VirtualEnv.
+		// You might use this flag if you wanted to isolate from the system python;
+		// however vpython already guarantees this isolation (better than passing -S
+		// would anyway).
+		"-S",
+	)
+	newArgs := make([]string, 0, len(args))
+	for _, arg := range args {
+		if arg == "--" { // don't cross a "--" boundary
+			break
+		}
+		if unsupportedArgs.Has(arg) {
+			logging.Warningf(c, "removing unsupported arg %q", arg)
+		} else {
+			newArgs = append(newArgs, arg)
+		}
+	}
+	args = newArgs
 
 	// If an empty BaseDir was specified, use a temporary directory and clean it
 	// up on completion.
