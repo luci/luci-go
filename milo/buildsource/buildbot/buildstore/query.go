@@ -223,8 +223,12 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 			i := i
 			msg := msg
 			work <- func() error {
+				var buildbucketBuild buildbucket.Build
+				if err := buildbucketBuild.ParseMessage(msg); err != nil {
+					return err
+				}
 				// may load annotations from logdog, that's why parallelized.
-				b, err := buildFromBuildbucket(c, q.Master, msg, !q.NoAnnotationFetch)
+				b, err := buildFromBuildbucket(c, q.Master, &buildbucketBuild, !q.NoAnnotationFetch)
 				if err != nil {
 					return err
 				}

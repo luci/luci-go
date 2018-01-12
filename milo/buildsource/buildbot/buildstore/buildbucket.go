@@ -41,12 +41,8 @@ import (
 //
 // Does not populate OSFamily, OSVersion, Blame or SourceStamp.Changes
 // fields.
-func buildFromBuildbucket(c context.Context, master string, msg *bbapi.ApiCommonBuildMessage, fetchAnnotations bool) (*buildbot.Build, error) {
-	var b buildbucket.Build
-	if err := b.ParseMessage(msg); err != nil {
-		return nil, err
-	}
-	num, err := buildNumber(&b)
+func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build, fetchAnnotations bool) (*buildbot.Build, error) {
+	num, err := buildNumber(b)
 	if err != nil {
 		return nil, errors.Annotate(err, "parsing buildnumber").Err()
 	}
@@ -84,7 +80,7 @@ func buildFromBuildbucket(c context.Context, master string, msg *bbapi.ApiCommon
 	}
 
 	if fetchAnnotations && b.Status != buildbucket.StatusScheduled {
-		addr, err := logLocation(&b)
+		addr, err := logLocation(b)
 		if err != nil {
 			return nil, err
 		}
