@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eventupload
+package bq
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/eventupload/testdata"
+	"go.chromium.org/luci/common/bq/testdata"
 	"go.chromium.org/luci/common/tsmon"
 
 	. "github.com/smartystreets/goconvey/convey"
