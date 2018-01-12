@@ -987,6 +987,30 @@
       "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7df670af_8c77764d",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T22:38:45Z",
+      "side": 1,
+      "message": "No, I know that. The reason for the message is that users may not know that. When using the rpcexplorer, you can specify: {\"machine\": {}} or you can specify {\"machine\": {\"name\": \"\"}}. They are the same, but users might not realize so I\u0027m trying to inform them that they need to provide a non-empty name.",
+      "parentUuid": "584db615_73681b89",
+      "range": {
+        "startLine": 150,
+        "startChar": 30,
+        "endLine": 150,
+        "endChar": 45
+      },
+      "revId": "c36c3c9729ff63aa803f206009f3f9bb2d189b7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
