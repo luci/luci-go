@@ -17,6 +17,7 @@ package frontend
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -151,11 +152,27 @@ func Run(templatePath string) {
 	// Buildbot
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
 	r.GET("/buildbot/:master/:builder/:build", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
-		return BuildHandler(c, &buildbot.BuildID{
+		id := &buildbot.BuildID{
 			Master:      c.Params.ByName("master"),
 			BuilderName: c.Params.ByName("builder"),
 			BuildNumber: c.Params.ByName("build"),
-		})
+		}
+
+		// If this build is emulated, redirect to LUCI.
+		if number, err := strconv.Atoi(id.BuildNumber); err == nil {
+			b, err := buildstore.EmulationOf(c.Context, id.Master, id.BuilderName, number)
+			switch {
+			case err != nil:
+				return err
+			case b != nil && b.Number != nil:
+				u := *c.Request.URL
+				u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", b.Project, b.Bucket, b.Builder, *b.Number)
+				http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
+				return nil
+			}
+		}
+
+		return BuildHandler(c, id)
 	}))
 	r.GET("/buildbot/:master/:builder/", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
 		return BuilderHandler(c, buildsource.BuilderID(
