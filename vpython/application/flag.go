@@ -17,6 +17,9 @@ package application
 import (
 	"flag"
 	"strings"
+
+	"go.chromium.org/luci/common/logging"
+	"golang.org/x/net/context"
 )
 
 // boolFlag is an interface implemented by boolean flag Value instances. We use
@@ -113,5 +116,55 @@ func extractFlagsForSet(args []string, fs *flag.FlagSet) (fsArgs, remainder []st
 
 	// Got to the end with no non-"fs" flags, so everything goes to fsArgs.
 	fsArgs, remainder = candidates, args[len(candidates):]
+	return
+}
+
+// sanitizeArgs removes unsupported python args from the args we might pass to
+// the VirtualEnv python executable.
+//
+// This modifies the contents of `args` and returns a possibly truncated version
+// of it.
+func sanitizeArgs(c context.Context, args []string) (ret []string) {
+	ret = args[:0]
+	skip := false
+	for i, arg := range args {
+		if skip {
+			skip = false
+			continue
+		}
+
+		switch arg {
+		// These all indicate that the program to run, or to stop processing args.
+		// Anything else is args for the program.
+		case "-", "-c", "-m", "--":
+			ret = append(ret, args[i:]...)
+			return
+
+		// These options take 2 arguments
+		case "-W", "-Q":
+			bound := 1
+			if len(args) >= i+2 {
+				bound = 2
+			}
+			ret = append(ret, args[i:i+bound]...)
+			skip = true
+
+		case "-S":
+			// -S prevents 'site.py' from importing implicitly. This is guaranteed to
+			// break VirtualEnv which relies on site to actually set up the
+			// VirtualEnv.  You might use this flag if you wanted to isolate from the
+			// system python; however vpython already guarantees this isolation
+			// (better than passing -S would anyway).
+			logging.Infof(c, "sanitizeArgs: removing `-S`: vpython implements superset of -S")
+
+		default:
+			if !strings.HasPrefix(arg, "-") {
+				ret = append(ret, args[i:]...)
+				return
+			}
+
+			ret = append(ret, arg)
+		}
+	}
 	return
 }

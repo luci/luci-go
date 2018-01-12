@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestExtractFlagsForSet(t *testing.T) {
@@ -69,6 +70,29 @@ func TestExtractFlagsForSet(t *testing.T) {
 				self, extra := extractFlagsForSet(tc.args, fs)
 				So(self, ShouldResemble, tc.self)
 				So(extra, ShouldResemble, tc.extra)
+			})
+		}
+	})
+}
+
+func TestSanitizeArgs(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test SanitizeArgs`, t, func() {
+		for _, tc := range []struct {
+			args   []string
+			result []string
+		}{
+			{[]string{}, []string{}},
+			{[]string{"-S"}, []string{}},
+			{[]string{"-S", "script"}, []string{"script"}},
+			{[]string{"--", "-S"}, []string{"--", "-S"}},
+			{[]string{"-m", "foof", "-S"}, []string{"-m", "foof", "-S"}},
+			{[]string{"-W", "new", "-S"}, []string{"-W", "new"}},
+			{[]string{"-v", "-W", "new", "-S"}, []string{"-v", "-W", "new"}},
+		} {
+			Convey(fmt.Sprintf(`Sanitizing %v results in %v`, tc.args, tc.result), func() {
+				So(sanitizeArgs(context.Background(), tc.args), ShouldResemble, tc.result)
 			})
 		}
 	})
