@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6561f2ad_848d5445",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-12T20:12:54Z",
+      "side": 1,
+      "message": "nothing that matters relies on it. I\u0027ll fix the optionally-used main_test flag.",
+      "parentUuid": "3be39fde_381c1f60",
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2df52668_95d3fb42",
         "filename": "vpython/application/application.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "5eb51b150454132f94adac66e685cd9506f59357",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c41d8b82_7e231c95",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-12T20:12:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2df52668_95d3fb42",
+      "range": {
+        "startLine": 246,
+        "startChar": 0,
+        "endLine": 246,
+        "endChar": 43
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "b9a29196_227c79c4",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-12T20:12:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd674c21_92619452",
+      "range": {
+        "startLine": 255,
+        "startChar": 0,
+        "endLine": 255,
+        "endChar": 27
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "334bf5c5_8218a6f4",
         "filename": "vpython/application/application.go",
         "patchSetId": 4
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "1445754b_168a3f2d",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-12T20:12:54Z",
+      "side": 1,
+      "message": "oop, yep, that\u0027s a bug.",
+      "parentUuid": "334bf5c5_8218a6f4",
+      "range": {
+        "startLine": 256,
+        "startChar": 0,
+        "endLine": 256,
+        "endChar": 49
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "24b01ffd_dc0ca82b",
         "filename": "vpython/application/application.go",
         "patchSetId": 4
@@ -99,6 +189,30 @@
       "writtenOn": "2018-01-12T18:16:56Z",
       "side": 1,
       "message": "I\u0027m not a fan of this warning. We\u0027re saying, \"we\u0027re implementing our super-version of -S\"; consequently, I don\u0027t think the user has to care. Their intent was registered and acted on.\n\nIf we need to see why something is breaking, we can just run with a verbosity to see what flags are passed. I\u0027d go make this Infof/Debugf. If someone passes \"-S\", I think a reasonable UX would be to execute their intent and not show any additional content.",
+      "range": {
+        "startLine": 260,
+        "startChar": 0,
+        "endLine": 260,
+        "endChar": 58
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d6d8e7c_ba008975",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-12T20:12:54Z",
+      "side": 1,
+      "message": "all log messages are hidden unless something breaks... I\u0027m confused what you\u0027re saying? This message doesn\u0027t show up in any normal usage.",
+      "parentUuid": "24b01ffd_dc0ca82b",
       "range": {
         "startLine": 260,
         "startChar": 0,
@@ -131,6 +245,30 @@
       "revId": "5eb51b150454132f94adac66e685cd9506f59357",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "806e3027_b25b4e0a",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-12T20:12:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d4c6415_886d2478",
+      "range": {
+        "startLine": 245,
+        "startChar": 1,
+        "endLine": 266,
+        "endChar": 0
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
