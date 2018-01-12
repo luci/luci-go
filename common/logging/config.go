@@ -27,7 +27,15 @@ type Config struct {
 
 // AddFlags adds common flags to a supplied FlagSet.
 func (c *Config) AddFlags(fs *flag.FlagSet) {
-	fs.Var(&c.Level, "log-level",
+	c.AddFlagsPrefix(fs, "")
+}
+
+// AddFlagsPrefix adds common flags to a supplied FlagSet with a prefix.
+//
+// A string prefix must be supplied which will be prepended to
+// each added flag verbatim.
+func (c *Config) AddFlagsPrefix(fs *flag.FlagSet, prefix string) {
+	fs.Var(&c.Level, prefix+"log-level",
 		"The logging level. Valid options are: debug, info, warning, error.")
 }
 

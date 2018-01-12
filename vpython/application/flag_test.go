@@ -39,11 +39,11 @@ func TestExtractFlagsForSet(t *testing.T) {
 			{[]string{}, nil, nil},
 			{[]string{"-i"}, []string{}, []string{"-i"}},
 			{[]string{"script", "-log-level", "debug"}, nil, []string{"script", "-log-level", "debug"}},
-			{[]string{"-log-level", "--", "-foo", "-bar"}, []string{"-log-level"}, []string{"--", "-foo", "-bar"}},
+			{[]string{"-vpython-log-level", "--", "-foo", "-bar"}, []string{"-vpython-log-level"}, []string{"--", "-foo", "-bar"}},
 
 			{
-				[]string{"-log-level", "debug", "--pants", "-vpython-spec=/foo", "-i", "-W"},
-				[]string{"-log-level", "debug", "--pants", "-vpython-spec=/foo"},
+				[]string{"-vpython-log-level", "debug", "--pants", "-vpython-spec=/foo", "-i", "-W"},
+				[]string{"-vpython-log-level", "debug", "--pants", "-vpython-spec=/foo"},
 				[]string{"-i", "-W"},
 			},
 
@@ -54,14 +54,14 @@ func TestExtractFlagsForSet(t *testing.T) {
 			},
 
 			{
-				[]string{"-log-level", "--", "ohai"},
-				[]string{"-log-level"},
+				[]string{"-vpython-log-level", "--", "ohai"},
+				[]string{"-vpython-log-level"},
 				[]string{"--", "ohai"},
 			},
 
 			{
-				[]string{"--log-level", "debug", "-d", "--", "script"},
-				[]string{"--log-level", "debug"},
+				[]string{"--vpython-log-level", "debug", "-d", "--", "script"},
+				[]string{"--vpython-log-level", "debug"},
 				[]string{"-d", "--", "script"},
 			},
 		} {
