@@ -10,10 +10,10 @@ dev:
 
 # This is intentionally not dependent on the others below to avoid
 # asking for user confirmation multiple times.
-up: up-all up-dispatch
+up: up-all
 
 up-all:
-	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default pubsub api
+	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default pubsub
 
 up-default:
 	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default
@@ -21,21 +21,12 @@ up-default:
 up-pubsub:
 	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine pubsub
 
-up-api:
-	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine api
-
-up-dispatch:
-	appcfg.py -A luci-milo update_dispatch $(projdir)/frontend/appengine
-
 up-dev:
-	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default pubsub api
+	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default pubsub
 	appcfg.py -A luci-milo-dev update_dispatch $(projdir)/frontend/appengine
 
 up-dev-default:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default
-
-up-dev-logs:
-	gcloud app deploy --project luci-milo-dev --version dev $(projdir)/logs/module-logs.yaml
 
 switch:
 	gcloud --project luci-milo app versions migrate $$(gae.py version -A luci-milo --app-dir $(projdir)/frontend/appengine)
