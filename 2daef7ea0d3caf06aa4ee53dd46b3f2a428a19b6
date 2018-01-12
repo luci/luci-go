@@ -70,6 +70,30 @@
       "revId": "2daef7ea0d3caf06aa4ee53dd46b3f2a428a19b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b162c1bc_babedb8f",
+        "filename": "common/logging/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1116444
+      },
+      "writtenOn": "2018-01-12T00:24:11Z",
+      "side": 1,
+      "message": "Hmm... This will cause a run-time panic pretty much everywhere other than vpython, and is essentially deferring the updates to random people who want to recompile other code. Maybe it\u0027s worth splitting this change into a separate CL, making the arg required and fixing all the call sites. It\u0027s not material to the current change.",
+      "parentUuid": "752510bb_d683c423",
+      "range": {
+        "startLine": 33,
+        "startChar": 44,
+        "endLine": 33,
+        "endChar": 60
+      },
+      "revId": "2daef7ea0d3caf06aa4ee53dd46b3f2a428a19b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
