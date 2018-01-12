@@ -36,11 +36,11 @@ type GetOSesCmd struct {
 // Run runs the command to get operating systems.
 func (c *GetOSesCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.OSesRequest{
+	req := &crimson.ListOSesRequest{
 		Names: c.names,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetOSes(ctx, req)
+	resp, err := client.ListOSes(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1

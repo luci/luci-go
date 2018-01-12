@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
-// RacksRequest is a request to retrieve racks.
-message RacksRequest {
+// ListRacksRequest is a request to retrieve racks.
+message ListRacksRequest {
   // The names of racks to retrieve.
   repeated string names = 1;
   // The datacenters to filter retrieved racks on.
@@ -24,8 +24,8 @@ message Rack {
   string datacenter = 3;
 }
 
-// RacksResponse is a response to a request to retrieve racks.
-message RacksResponse {
+// ListRacksResponse is a response to a request to retrieve racks.
+message ListRacksResponse {
   // The racks matching the request.
   repeated Rack racks = 1;
 }

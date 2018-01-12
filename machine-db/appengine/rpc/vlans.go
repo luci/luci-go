@@ -24,24 +24,24 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// GetVLANs handles a request to retrieve VLANs.
-func (*Service) GetVLANs(c context.Context, req *crimson.VLANsRequest) (*crimson.VLANsResponse, error) {
+// ListVLANs handles a request to retrieve VLANs.
+func (*Service) ListVLANs(c context.Context, req *crimson.ListVLANsRequest) (*crimson.ListVLANsResponse, error) {
 	ids := make(map[int64]struct{}, len(req.Ids))
 	for _, id := range req.Ids {
 		ids[id] = struct{}{}
 	}
-	vlans, err := getVLANs(c, ids, stringset.NewFromSlice(req.Aliases...))
+	vlans, err := listVLANs(c, ids, stringset.NewFromSlice(req.Aliases...))
 	if err != nil {
 		return nil, internalError(c, err)
 	}
-	return &crimson.VLANsResponse{
+	return &crimson.ListVLANsResponse{
 		Vlans: vlans,
 	}, nil
 }
 
-// getVLANs returns a slice of VLANs in the database.
+// listVLANs returns a slice of VLANs in the database.
 // VLANs matching either a given ID or a given alias are returned. Specify no IDs or aliases to return all VLANs.
-func getVLANs(c context.Context, ids map[int64]struct{}, aliases stringset.Set) ([]*crimson.VLAN, error) {
+func listVLANs(c context.Context, ids map[int64]struct{}, aliases stringset.Set) ([]*crimson.VLAN, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
 		SELECT v.id, v.alias

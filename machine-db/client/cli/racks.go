@@ -37,12 +37,12 @@ type GetRacksCmd struct {
 // Run runs the command to get racks.
 func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.RacksRequest{
+	req := &crimson.ListRacksRequest{
 		Names:       c.names,
 		Datacenters: c.datacenters,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetRacks(ctx, req)
+	resp, err := client.ListRacks(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1

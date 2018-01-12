@@ -38,12 +38,12 @@ type GetVLANsCmd struct {
 // Run runs the command to get VLANs.
 func (c *GetVLANsCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.VLANsRequest{
+	req := &crimson.ListVLANsRequest{
 		Ids:     c.ids,
 		Aliases: c.aliases,
 	}
 	client := getClient(ctx)
-	resp, err := client.GetVLANs(ctx, req)
+	resp, err := client.ListVLANs(ctx, req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1

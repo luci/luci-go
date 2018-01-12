@@ -31,8 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGetPlatforms(t *testing.T) {
-	Convey("getPlatforms", t, func() {
+func TestListPlatforms(t *testing.T) {
+	Convey("listPlatforms", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -46,7 +46,7 @@ func TestGetPlatforms(t *testing.T) {
 		Convey("query failed", func() {
 			names := stringset.NewFromSlice("platform")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			platforms, err := getPlatforms(c, names)
+			platforms, err := listPlatforms(c, names)
 			So(err, ShouldErrLike, "failed to fetch platforms")
 			So(platforms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -55,7 +55,7 @@ func TestGetPlatforms(t *testing.T) {
 		Convey("empty", func() {
 			names := stringset.NewFromSlice("platform")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := getPlatforms(c, names)
+			platforms, err := listPlatforms(c, names)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -66,7 +66,7 @@ func TestGetPlatforms(t *testing.T) {
 			rows.AddRow("platform 1", "description 1")
 			rows.AddRow("platform 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := getPlatforms(c, names)
+			platforms, err := listPlatforms(c, names)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -78,7 +78,7 @@ func TestGetPlatforms(t *testing.T) {
 			rows.AddRow("platform 2", "description 2")
 			rows.AddRow("platform 3", "description 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := getPlatforms(c, names)
+			platforms, err := listPlatforms(c, names)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldResemble, []*crimson.Platform{
 				{
@@ -98,7 +98,7 @@ func TestGetPlatforms(t *testing.T) {
 			rows.AddRow("platform 1", "description 1")
 			rows.AddRow("platform 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := getPlatforms(c, names)
+			platforms, err := listPlatforms(c, names)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldResemble, []*crimson.Platform{
 				{

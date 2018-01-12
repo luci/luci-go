@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
-// PlatformsRequest is a request to retrieve platforms.
-message PlatformsRequest {
+// ListPlatformsRequest is a request to retrieve platforms.
+message ListPlatformsRequest {
   // The names of platforms to retrieve.
   repeated string names = 1;
 }
@@ -20,8 +20,8 @@ message Platform {
   string description = 2;
 }
 
-// PlatformsResponse is a response to a request to retrieve platforms.
-message PlatformsResponse {
+// ListPlatformsResponse is a response to a request to retrieve platforms.
+message ListPlatformsResponse {
   // The platforms matching the request.
   repeated Platform platforms = 1;
 }
