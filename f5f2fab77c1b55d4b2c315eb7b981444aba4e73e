@@ -141,6 +141,30 @@
       "revId": "f5f2fab77c1b55d4b2c315eb7b981444aba4e73e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "391958a1_001e2b87",
+        "filename": "machine-db/common/states.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-12T22:41:41Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8d3fb466_97240eaf",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 1
+      },
+      "revId": "f5f2fab77c1b55d4b2c315eb7b981444aba4e73e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
