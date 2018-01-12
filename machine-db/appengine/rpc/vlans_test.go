@@ -31,8 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGetVLANs(t *testing.T) {
-	Convey("getVLANs", t, func() {
+func TestListVLANs(t *testing.T) {
+	Convey("listVLANs", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -47,7 +47,7 @@ func TestGetVLANs(t *testing.T) {
 			ids := map[int64]struct{}{0: {}}
 			aliases := stringset.NewFromSlice("vlan")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			vlans, err := getVLANs(c, ids, aliases)
+			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldErrLike, "failed to fetch VLANs")
 			So(vlans, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -57,7 +57,7 @@ func TestGetVLANs(t *testing.T) {
 			ids := map[int64]struct{}{0: {}}
 			aliases := stringset.NewFromSlice("vlan")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vlans, err := getVLANs(c, ids, aliases)
+			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -69,7 +69,7 @@ func TestGetVLANs(t *testing.T) {
 			rows.AddRow(1, "vlan 1")
 			rows.AddRow(2, "vlan 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vlans, err := getVLANs(c, ids, aliases)
+			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -82,7 +82,7 @@ func TestGetVLANs(t *testing.T) {
 			rows.AddRow(2, "vlan 2")
 			rows.AddRow(3, "vlan 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vlans, err := getVLANs(c, ids, aliases)
+			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{
@@ -104,7 +104,7 @@ func TestGetVLANs(t *testing.T) {
 			rows.AddRow(2, "vlan 2")
 			rows.AddRow(3, "vlan 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vlans, err := getVLANs(c, ids, aliases)
+			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{
@@ -122,7 +122,7 @@ func TestGetVLANs(t *testing.T) {
 			rows.AddRow(2, "vlan 2")
 			rows.AddRow(3, "vlan 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vlans, err := getVLANs(c, ids, aliases)
+			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{
@@ -139,7 +139,7 @@ func TestGetVLANs(t *testing.T) {
 			rows.AddRow(1, "vlan 1")
 			rows.AddRow(2, "vlan 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vlans, err := getVLANs(c, ids, aliases)
+			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{

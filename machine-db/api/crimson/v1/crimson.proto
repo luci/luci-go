@@ -15,16 +15,16 @@ import "go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto";
 
 // Crimson implements the Crimson service.
 service Crimson {
-  // GetDatacenters retrieves datacenters.
-  rpc GetDatacenters(DatacentersRequest) returns (DatacentersResponse);
-  // GetOSes retrieves operating systems.
-  rpc GetOSes(OSesRequest) returns (OSesResponse);
-  // GetPlatforms retrieves platforms.
-  rpc GetPlatforms(PlatformsRequest) returns (PlatformsResponse);
-  // GetRacks retrieves racks.
-  rpc GetRacks(RacksRequest) returns (RacksResponse);
-  // GetSwitches retrieves switches.
-  rpc GetSwitches(SwitchesRequest) returns (SwitchesResponse);
-  // GetVLANs retrieves vlans.
-  rpc GetVLANs(VLANsRequest) returns (VLANsResponse);
+  // Lists datacenters in the database.
+  rpc ListDatacenters(ListDatacentersRequest) returns (ListDatacentersResponse);
+  // Lists operating systems in the database.
+  rpc ListOSes(ListOSesRequest) returns (ListOSesResponse);
+  // Lists platforms in the database.
+  rpc ListPlatforms(ListPlatformsRequest) returns (ListPlatformsResponse);
+  // Lists racks in the database.
+  rpc ListRacks(ListRacksRequest) returns (ListRacksResponse);
+  // Lists switches in the database.
+  rpc ListSwitches(ListSwitchesRequest) returns (ListSwitchesResponse);
+  // Lists VLANs in the database.
+  rpc ListVLANs(ListVLANsRequest) returns (ListVLANsResponse);
 }
