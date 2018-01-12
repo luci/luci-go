@@ -48,7 +48,7 @@ func TestGetVLANs(t *testing.T) {
 			aliases := stringset.NewFromSlice("vlan")
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
 			vlans, err := getVLANs(c, ids, aliases)
-			So(err, ShouldErrLike, "failed to fetch vlans")
+			So(err, ShouldErrLike, "failed to fetch VLANs")
 			So(vlans, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
@@ -97,7 +97,7 @@ func TestGetVLANs(t *testing.T) {
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("no ids", func() {
+		Convey("no IDs", func() {
 			ids := make(map[int64]struct{}, 0)
 			aliases := stringset.NewFromSlice("vlan 3")
 			rows.AddRow(1, "vlan 1")

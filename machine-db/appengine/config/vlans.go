@@ -30,10 +30,10 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
-// vlansFilename is the name of the config file enumerating vlans.
+// vlansFilename is the name of the config file enumerating VLANs.
 const vlansFilename = "vlans.cfg"
 
-// vlanMaxId is the highest ID a vlan may have.
+// vlanMaxId is the highest ID a VLAN may have.
 const vlanMaxId = 65535
 
 // vlanMaxCIDRBlocks is the maximum number of CIDR blocks a VLAN may have.
@@ -76,9 +76,9 @@ func validateVLANs(c *validation.Context, cfg *config.VLANs) {
 	for _, vlan := range cfg.Vlan {
 		switch _, ok := vlans[vlan.Id]; {
 		case vlan.Id < 1:
-			c.Errorf("VLAN id %d must be positive", vlan.Id)
+			c.Errorf("VLAN ID %d must be positive", vlan.Id)
 		case vlan.Id > vlanMaxId:
-			c.Errorf("VLAN id %d must not exceed %d", vlan.Id, vlanMaxId)
+			c.Errorf("VLAN ID %d must not exceed %d", vlan.Id, vlanMaxId)
 		case ok:
 			c.Errorf("duplicate VLAN %d", vlan.Id)
 		}
