@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "200fdd9c_2c9dedba",
+        "filename": "vpython/application/flag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T20:27:22Z",
+      "side": 1,
+      "message": "nit, whitespace between luci imports and others",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 27
+      },
+      "revId": "8ce72595cdcdbb3982395b58bfba6859d80a9de3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06a7a69c_f0782079",
+        "filename": "vpython/application/flag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T20:27:22Z",
+      "side": 1,
+      "message": "You can do \"-Wasdf\" and \"-W asdf\", \"-Qwarn\", \"-Q warn\" :(\n\nvpython already has a function to parse Python command-line flags: https://chromium.googlesource.com/infra/luci/luci-go/+/master/vpython/python/python.go#87\n\nWDYT about just using that as a starting point? Doesn\u0027t make much sense to me to implement this twice.",
+      "range": {
+        "startLine": 143,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 14
+      },
+      "revId": "8ce72595cdcdbb3982395b58bfba6859d80a9de3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
