@@ -222,6 +222,30 @@
     },
     {
       "key": {
+        "uuid": "75576462_a783c321",
+        "filename": "machine-db/api/common/v1/states.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T23:31:34Z",
+      "side": 1,
+      "message": "Oh, didn\u0027t see this comment. Both \"\" and \"unspecified\" should match? Realistically speaking I think users shouldn\u0027t ever be typing \"unspecified\" anyway. They would just omit it entirely so for now I made only \"\" match STATE_UNSPECIFIED.",
+      "parentUuid": "8d11fbf1_11d7be58",
+      "range": {
+        "startLine": 14,
+        "startChar": 2,
+        "endLine": 14,
+        "endChar": 13
+      },
+      "revId": "53c1446198ff9d47ec8fd23c839b93041d5da49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "551a6416_bce45522",
         "filename": "machine-db/api/common/v1/states.proto",
         "patchSetId": 4
