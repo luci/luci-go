@@ -118,8 +118,11 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 // getEmulatedBuild returns a buildbot build derived from a LUCI build.
 func getEmulatedBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	buildbucketBuild, err := EmulationOf(c, master, builder, number)
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, err
+	case buildbucketBuild == nil:
+		return nil, nil
 	}
 
 	buildbotBuild, err := buildFromBuildbucket(c, master, buildbucketBuild, fetchAnnotations)
