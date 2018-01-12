@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "931c9ad7_2d201763",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-01-12T23:53:12Z",
+      "side": 1,
+      "message": "Document notfound behavior here (since sometime we use a special error type to indicate notfound-ness)",
+      "revId": "1c27dba746a8cc362e79e8d065a277a5498cb74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
