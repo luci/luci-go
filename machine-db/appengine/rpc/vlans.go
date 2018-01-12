@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// GetVLANs handles a request to retrieve vlans.
+// GetVLANs handles a request to retrieve VLANs.
 func (*Service) GetVLANs(c context.Context, req *crimson.VLANsRequest) (*crimson.VLANsResponse, error) {
 	ids := make(map[int64]struct{}, len(req.Ids))
 	for _, id := range req.Ids {
@@ -39,8 +39,8 @@ func (*Service) GetVLANs(c context.Context, req *crimson.VLANsRequest) (*crimson
 	}, nil
 }
 
-// getVLANs returns a slice of vlans in the database.
-// Vlans matching either a given id or a given alias are returned. Specify no ids or aliases to return all vlans.
+// getVLANs returns a slice of VLANs in the database.
+// VLANs matching either a given ID or a given alias are returned. Specify no IDs or aliases to return all VLANs.
 func getVLANs(c context.Context, ids map[int64]struct{}, aliases stringset.Set) ([]*crimson.VLAN, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
@@ -48,7 +48,7 @@ func getVLANs(c context.Context, ids map[int64]struct{}, aliases stringset.Set) 
 		FROM vlans v
 	`)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch vlans").Err()
+		return nil, errors.Annotate(err, "failed to fetch VLANs").Err()
 	}
 	defer rows.Close()
 
@@ -56,10 +56,10 @@ func getVLANs(c context.Context, ids map[int64]struct{}, aliases stringset.Set) 
 	for rows.Next() {
 		vlan := &crimson.VLAN{}
 		if err = rows.Scan(&vlan.Id, &vlan.Alias); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch vlan").Err()
+			return nil, errors.Annotate(err, "failed to fetch VLAN").Err()
 		}
-		// Vlan may match either the given ids or aliases.
-		// If both ids and aliases are empty, consider all vlans to match.
+		// VLAN may match either the given IDs or aliases.
+		// If both IDs and aliases are empty, consider all VLANs to match.
 		if _, ok := ids[vlan.Id]; ok || aliases.Has(vlan.Alias) || (len(ids) == 0 && aliases.Len() == 0) {
 			vlans = append(vlans, vlan)
 		}

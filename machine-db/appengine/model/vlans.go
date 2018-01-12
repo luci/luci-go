@@ -24,25 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// VLAN represents a vlan.
+// VLAN represents a VLAN.
 type VLAN struct {
 	config.VLAN
 }
 
-// VLANsTable represents the table of vlans in the database.
+// VLANsTable represents the table of VLANs in the database.
 type VLANsTable struct {
-	// current is the slice of vlans in the database.
+	// current is the slice of VLANs in the database.
 	current []*VLAN
 
-	// additions is a slice of vlans pending addition to the database.
+	// additions is a slice of VLANs pending addition to the database.
 	additions []*VLAN
-	// removals is a slice of vlans pending removal from the database.
+	// removals is a slice of VLANs pending removal from the database.
 	removals []*VLAN
-	// updates is a slice of vlans pending update in the database.
+	// updates is a slice of VLANs pending update in the database.
 	updates []*VLAN
 }
 
-// fetch fetches the vlans from the database.
+// fetch fetches the VLANs from the database.
 func (t *VLANsTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
@@ -50,13 +50,13 @@ func (t *VLANsTable) fetch(c context.Context) error {
 		FROM vlans
 	`)
 	if err != nil {
-		return errors.Annotate(err, "failed to select vlans").Err()
+		return errors.Annotate(err, "failed to select VLANs").Err()
 	}
 	defer rows.Close()
 	for rows.Next() {
 		vlan := &VLAN{}
 		if err := rows.Scan(&vlan.Id, &vlan.Alias); err != nil {
-			return errors.Annotate(err, "failed to scan vlan").Err()
+			return errors.Annotate(err, "failed to scan VLAN").Err()
 		}
 		t.current = append(t.current, vlan)
 	}
@@ -68,7 +68,7 @@ func (*VLANsTable) needsUpdate(row, cfg *VLAN) bool {
 	return row.Alias != cfg.Alias
 }
 
-// computeChanges computes the changes that need to be made to the vlans in the database.
+// computeChanges computes the changes that need to be made to the VLANs in the database.
 func (t *VLANsTable) computeChanges(c context.Context, vlans []*config.VLAN) {
 	cfgs := make(map[int64]*VLAN, len(vlans))
 	for _, cfg := range vlans {
@@ -82,21 +82,21 @@ func (t *VLANsTable) computeChanges(c context.Context, vlans []*config.VLAN) {
 
 	for _, vlan := range t.current {
 		if cfg, ok := cfgs[vlan.Id]; ok {
-			// Vlan found in the config.
+			// VLAN found in the config.
 			if t.needsUpdate(vlan, cfg) {
-				// Vlan doesn't match the config.
+				// VLAN doesn't match the config.
 				t.updates = append(t.updates, cfg)
 			}
-			// Record that the vlan config has been seen.
+			// Record that the VLAN config has been seen.
 			delete(cfgs, cfg.Id)
 		} else {
-			// Vlan not found in the config.
+			// VLAN not found in the config.
 			t.removals = append(t.removals, vlan)
 		}
 	}
 
-	// Vlans remaining in the map are present in the config but not the database.
-	// Iterate deterministically over the slice to determine which vlans need to be added.
+	// VLANs remaining in the map are present in the config but not the database.
+	// Iterate deterministically over the slice to determine which VLANs need to be added.
 	for _, cfg := range vlans {
 		if p, ok := cfgs[cfg.Id]; ok {
 			t.additions = append(t.additions, p)
@@ -104,7 +104,7 @@ func (t *VLANsTable) computeChanges(c context.Context, vlans []*config.VLAN) {
 	}
 }
 
-// add adds all vlans pending addition to the database, clearing pending additions.
+// add adds all VLANs pending addition to the database, clearing pending additions.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
 func (t *VLANsTable) add(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
@@ -122,21 +122,21 @@ func (t *VLANsTable) add(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Add each vlan to the database, and update the slice of vlans with each addition.
+	// Add each VLAN to the database, and update the slice of VLANs with each addition.
 	for len(t.additions) > 0 {
 		vlan := t.additions[0]
 		_, err := stmt.ExecContext(c, vlan.Id, vlan.Alias)
 		if err != nil {
-			return errors.Annotate(err, "failed to add vlan %d", vlan.Id).Err()
+			return errors.Annotate(err, "failed to add VLAN %d", vlan.Id).Err()
 		}
 		t.current = append(t.current, vlan)
 		t.additions = t.additions[1:]
-		logging.Infof(c, "Added vlan %d", vlan.Id)
+		logging.Infof(c, "Added VLAN %d", vlan.Id)
 	}
 	return nil
 }
 
-// remove removes all vlans pending removal from the database, clearing pending removals.
+// remove removes all VLANs pending removal from the database, clearing pending removals.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
 func (t *VLANsTable) remove(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
@@ -154,8 +154,8 @@ func (t *VLANsTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each vlans from the database. It's more efficient to update the slice of
-	// vlans once at the end rather than for each removal, so use a defer.
+	// Remove each VLANs from the database. It's more efficient to update the slice of
+	// VLANs once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
 		var vlans []*VLAN
@@ -169,17 +169,17 @@ func (t *VLANsTable) remove(c context.Context) error {
 	for len(t.removals) > 0 {
 		vlan := t.removals[0]
 		if _, err := stmt.ExecContext(c, vlan.Id); err != nil {
-			// Defer ensures the slice of vlans is updated even if we exit early.
-			return errors.Annotate(err, "failed to remove vlan %d", vlan.Id).Err()
+			// Defer ensures the slice of VLANs is updated even if we exit early.
+			return errors.Annotate(err, "failed to remove VLAN %d", vlan.Id).Err()
 		}
 		removed[vlan.Id] = struct{}{}
 		t.removals = t.removals[1:]
-		logging.Infof(c, "Removed vlan %d", vlan.Id)
+		logging.Infof(c, "Removed VLAN %d", vlan.Id)
 	}
 	return nil
 }
 
-// update updates all vlans pending update in the database, clearing pending updates.
+// update updates all VLANs pending update in the database, clearing pending updates.
 // No-op unless computeChanges was called first. Idempotent until computeChanges is called again.
 func (t *VLANsTable) update(c context.Context) error {
 	// Avoid using the database connection to prepare unnecessary statements.
@@ -198,8 +198,8 @@ func (t *VLANsTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each vlan in the database. It's more efficient to update the slice of
-	// vlans once at the end rather than for each update, so use a defer.
+	// Update each VLAN in the database. It's more efficient to update the slice of
+	// VLANs once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*VLAN, len(t.updates))
 	defer func() {
 		for _, vlan := range t.current {
@@ -211,30 +211,30 @@ func (t *VLANsTable) update(c context.Context) error {
 	for len(t.updates) > 0 {
 		vlan := t.updates[0]
 		if _, err := stmt.ExecContext(c, vlan.Alias, vlan.Id); err != nil {
-			return errors.Annotate(err, "failed to update vlan %d", vlan.Id).Err()
+			return errors.Annotate(err, "failed to update VLAN %d", vlan.Id).Err()
 		}
 		updated[vlan.Id] = vlan
 		t.updates = t.updates[1:]
-		logging.Infof(c, "Updated vlan %d", vlan.Id)
+		logging.Infof(c, "Updated VLAN %d", vlan.Id)
 	}
 	return nil
 }
 
-// EnsureVLANs ensures the database contains exactly the given vlans.
+// EnsureVLANs ensures the database contains exactly the given VLANs.
 func EnsureVLANs(c context.Context, cfgs []*config.VLAN) error {
 	t := &VLANsTable{}
 	if err := t.fetch(c); err != nil {
-		return errors.Annotate(err, "failed to fetch vlans").Err()
+		return errors.Annotate(err, "failed to fetch VLANs").Err()
 	}
 	t.computeChanges(c, cfgs)
 	if err := t.add(c); err != nil {
-		return errors.Annotate(err, "failed to add vlans").Err()
+		return errors.Annotate(err, "failed to add VLANs").Err()
 	}
 	if err := t.remove(c); err != nil {
-		return errors.Annotate(err, "failed to remove vlans").Err()
+		return errors.Annotate(err, "failed to remove VLANs").Err()
 	}
 	if err := t.update(c); err != nil {
-		return errors.Annotate(err, "failed to update vlans").Err()
+		return errors.Annotate(err, "failed to update VLANs").Err()
 	}
 	return nil
 }
