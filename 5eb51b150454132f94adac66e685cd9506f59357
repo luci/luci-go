@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3be39fde_381c1f60",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T18:16:56Z",
+      "side": 1,
+      "message": "Did you check to make sure nothing relies on this?\n\nI found: https://cs.chromium.org/chromium/infra/go/src/infra/tools/vpython/main_test.go?q\u003d%22-log-level%22\u0026sq\u003dpackage:chromium\u0026dr\u003dC\u0026l\u003d172",
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2df52668_95d3fb42",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T18:16:56Z",
+      "side": 1,
+      "message": "Not sure if we need to generalize this? I\u0027d just \"stripSiteFlag\" function and use a switch:\n\nswitch arg {\ncase \"-S\":\n  // Comment, ignore.\n\ndefault:\n  args \u003d append(args, arg)\n}",
+      "range": {
+        "startLine": 246,
+        "startChar": 0,
+        "endLine": 246,
+        "endChar": 43
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd674c21_92619452",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T18:16:56Z",
+      "side": 1,
+      "message": "This scan is overkill. Just do it in-place and adjust bounds.\n\norigArgs :\u003d args\nargs \u003d args[:0]\nfor i, arg :\u003d range origArgs {\n  if arg \u003d\u003d \"--\" {\n    args \u003d append(args, origArgs[i:]...)\n    break\n  }\n  if !unsupportedArgs.Has(arg) {\n    args \u003d append(args, arg)\n  }\n  /*\n  switch arg {\n  case \"-S\":\n    // -S prevents \u0027site.py\u0027 ...\n  default:\n    args \u003d append(args, arg)\n  }\n  */\n}",
+      "range": {
+        "startLine": 255,
+        "startChar": 0,
+        "endLine": 255,
+        "endChar": 27
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "334bf5c5_8218a6f4",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T18:16:56Z",
+      "side": 1,
+      "message": "I think this is a bug? If it sees \"--\" in args, it will never add it or anything past it into \"newArgs\".",
+      "range": {
+        "startLine": 256,
+        "startChar": 0,
+        "endLine": 256,
+        "endChar": 49
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24b01ffd_dc0ca82b",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T18:16:56Z",
+      "side": 1,
+      "message": "I\u0027m not a fan of this warning. We\u0027re saying, \"we\u0027re implementing our super-version of -S\"; consequently, I don\u0027t think the user has to care. Their intent was registered and acted on.\n\nIf we need to see why something is breaking, we can just run with a verbosity to see what flags are passed. I\u0027d go make this Infof/Debugf. If someone passes \"-S\", I think a reasonable UX would be to execute their intent and not show any additional content.",
+      "range": {
+        "startLine": 260,
+        "startChar": 0,
+        "endLine": 260,
+        "endChar": 58
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d4c6415_886d2478",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-12T18:16:56Z",
+      "side": 1,
+      "message": "Any chance you\u0027d mind moving this to \"flag.go\" in a follow-up CL? And adding some tests? :)",
+      "range": {
+        "startLine": 245,
+        "startChar": 1,
+        "endLine": 266,
+        "endChar": 0
+      },
+      "revId": "5eb51b150454132f94adac66e685cd9506f59357",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
