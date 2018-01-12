@@ -26,11 +26,13 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -81,8 +83,8 @@ func getBuild(c context.Context, master, builder string, number int, fetchAnnota
 	}
 }
 
-// getEmulatedBuild returns a buildbot build derived from a LUCI build.
-func getEmulatedBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
+// EmulationOf returns the Buildbucket build that the given Buildbot build is emulating.
+func EmulationOf(c context.Context, master, builder string, number int) (*buildbucket.Build, error) {
 	bb, err := buildbucketClient(c)
 	if err != nil {
 		return nil, err
@@ -107,20 +109,31 @@ func getEmulatedBuild(c context.Context, master, builder string, number int, fet
 		return nil, err
 	case len(msgs) == 0:
 		return nil, nil
+	default:
+		var b buildbucket.Build
+		return &b, b.ParseMessage(msgs[0])
+	}
+}
+
+// getEmulatedBuild returns a buildbot build derived from a LUCI build.
+func getEmulatedBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
+	buildbucketBuild, err := EmulationOf(c, master, builder, number)
+	if err != nil {
+		return nil, err
 	}
 
-	build, err := buildFromBuildbucket(c, master, msgs[0], fetchAnnotations)
+	buildbotBuild, err := buildFromBuildbucket(c, master, buildbucketBuild, fetchAnnotations)
 	if err != nil {
 		return nil, err
 	}
 
 	if fetchChanges {
-		if err := blame(c, build); err != nil {
+		if err := blame(c, buildbotBuild); err != nil {
 			return nil, err
 		}
 	}
 
-	return build, nil
+	return buildbotBuild, nil
 }
 
 func getDatastoreBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
