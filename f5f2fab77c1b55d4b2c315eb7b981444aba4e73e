@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "88a16a6c_4a69aecc",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T01:36:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "326f5f39_f8199892",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 17,
+        "endChar": 30
+      },
+      "revId": "f5f2fab77c1b55d4b2c315eb7b981444aba4e73e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "180fd365_9df002db",
         "filename": "machine-db/common/states.go",
         "patchSetId": 2
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "Come to think of it, where would you put the proto enum for this? The same states need to apply to entities in machine-db/api/config/v1 and machine-db/api/crimson/v1.",
       "parentUuid": "180fd365_9df002db",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 1
+      },
+      "revId": "f5f2fab77c1b55d4b2c315eb7b981444aba4e73e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d3fb466_97240eaf",
+        "filename": "machine-db/common/states.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-12T01:36:44Z",
+      "side": 1,
+      "message": "Created machine-db/api/common/v1 to be imported from both places, let me know if it\u0027s incorrect.",
+      "parentUuid": "01e5604b_3dfecc52",
       "range": {
         "startLine": 24,
         "startChar": 0,
