@@ -1,0 +1,18 @@
+queue:
+
+# [FROM_PYTHON_CIPD]
+# https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages/queue.yaml
+
+- name: cas-verify
+  bucket_size: 100
+  rate: 50/s
+  retry_parameters:
+    task_age_limit: 6h
+
+- name: cipd-process
+  bucket_size: 100
+  rate: 50/s
+  retry_parameters:
+    task_age_limit: 6h
+
+# [/FROM_PYTHON_CIPD]
