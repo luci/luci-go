@@ -22,6 +22,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// parameterSeparatorCommandLineFlag is a special-case command-line flag that
+// represents the double-dash separator ("--").
+//
+// This is represented as a flag with value "-". Since a flag renders with a
+// preceding "-", this will render as "--".
+var parameterSeparatorCommandLineFlag = CommandLineFlag{Flag: "-"}
+
 // CommandLineFlag is a command-line flag and its associated argument, if one
 // is provided.
 type CommandLineFlag struct {
@@ -316,7 +323,7 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 		// to the interpreter.
 		if arg == "-" {
 			canHaveFlags = false
-			cl.Flags = append(cl.Flags, CommandLineFlag{"-", ""})
+			cl.Flags = append(cl.Flags, parameterSeparatorCommandLineFlag)
 			continue
 		}
 
