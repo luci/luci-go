@@ -34,7 +34,6 @@ import (
 
 	cipdVersion "go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -122,6 +121,7 @@ type application struct {
 
 	// opts is the set of configured options.
 	opts vpython.Options
+	args []string
 
 	help      bool
 	toolMode  bool
@@ -237,32 +237,26 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		}
 	}
 
+	var err error
+	if a.opts.CommandLine, err = python.ParseCommandLine(args); err != nil {
+		return errors.Annotate(err, "failed to parse Python command-line").
+			InternalReason("args(%v)", args).Err()
+	}
+	logging.Debugf(c, "Parsed command-line: %#v", a.opts.CommandLine)
+
 	// If we're bypassing "vpython", run Python directly.
 	if a.Bypass {
-		return a.runDirect(c, args, &lp)
+		return a.runDirect(c, a.opts.CommandLine, &lp)
 	}
 
-	// Strip out unsupported arguments.
-	unsupportedArgs := stringset.NewFromSlice(
-		// -S prevents 'site.py' from importing implicitly. This is guaranteed to
-		// break VirtualEnv which relies on site to actually set up the VirtualEnv.
-		// You might use this flag if you wanted to isolate from the system python;
-		// however vpython already guarantees this isolation (better than passing -S
-		// would anyway).
-		"-S",
-	)
-	newArgs := make([]string, 0, len(args))
-	for _, arg := range args {
-		if arg == "--" { // don't cross a "--" boundary
-			break
-		}
-		if unsupportedArgs.Has(arg) {
-			logging.Warningf(c, "removing unsupported arg %q", arg)
-		} else {
-			newArgs = append(newArgs, arg)
-		}
+	// -S prevents 'site.py' from importing implicitly. This is guaranteed to
+	// break VirtualEnv which relies on site to actually set up the VirtualEnv.
+	// You might use this flag if you wanted to isolate from the system python;
+	// however vpython already guarantees this isolation (better than passing -S
+	// would anyway).
+	if a.opts.CommandLine.RemoveAllFlag("S") {
+		logging.Warningf(c, "Removing unsupported arg -S")
 	}
-	args = newArgs
 
 	// If an empty BaseDir was specified, use a temporary directory and clean it
 	// up on completion.
@@ -285,7 +279,6 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		return a.mainDev(c, args)
 	}
 
-	a.opts.Args = args
 	return vpython.Run(c, a.opts)
 }
 
@@ -319,7 +312,7 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 	return nil
 }
 
-func (a *application) runDirect(c context.Context, args []string, lp *lookPath) error {
+func (a *application) runDirect(c context.Context, cl *python.CommandLine, lp *lookPath) error {
 	var version python.Version
 	if s := a.opts.EnvConfig.Spec; s != nil {
 		var err error
@@ -332,8 +325,8 @@ func (a *application) runDirect(c context.Context, args []string, lp *lookPath) 
 		return errors.Annotate(err, "could not find Python interpreter").Err()
 	}
 
-	logging.Infof(c, "Directly executing Python command with %v: %v", i.Python, args)
-	return vpython.Exec(c, i, args, a.opts.Environ, "", nil)
+	logging.Infof(c, "Directly executing Python command with %v", i.Python)
+	return vpython.Exec(c, i, cl, a.opts.Environ, "", nil)
 }
 
 // Main is the main application entry point.
