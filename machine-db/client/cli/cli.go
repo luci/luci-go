@@ -100,6 +100,10 @@ func New(params *Parameters) *cli.Application {
 			getRacksCmd(),
 			getSwitchesCmd(),
 			getVLANsCmd(),
+			{},
+
+			// Machines.
+			addMachineCmd(),
 		},
 	}
 }
