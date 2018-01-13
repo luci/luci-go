@@ -127,6 +127,12 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 				}
 			}
 			value = elems
+		} else if fi.Enum != "" {
+			stringer, ok := s.FieldByIndex(fi.structIndex).Interface().(fmt.Stringer)
+			if !ok {
+				return nil, fmt.Errorf("Could not convert enum value %s to string.", fi.Enum)
+			}
+			value = stringer.String()
 		} else {
 			value, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path)
 			if err != nil {
