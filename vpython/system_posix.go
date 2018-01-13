@@ -22,6 +22,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
+	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/common/errors"
@@ -39,8 +40,8 @@ import (
 //
 // This can be error-prone, as it places the burden on the subprocess to
 // manage the file descriptor.
-func systemSpecificLaunch(c context.Context, ve *venv.Env, args []string, env environ.Env, dir string) error {
-	return Exec(c, ve.Interpreter(), args, env, dir, func() error {
+func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLine, env environ.Env, dir string) error {
+	return Exec(c, ve.Interpreter(), cl, env, dir, func() error {
 		// Store our lock file descriptor as FD #3 (after #2, STDERR).
 		lockFD := ve.LockHandle.LockFile().Fd()
 		if lockFD == 3 {

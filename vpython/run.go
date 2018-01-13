@@ -71,7 +71,7 @@ func Run(c context.Context, opts Options) error {
 
 		// Run our bootstrapped Python command.
 		logging.Debugf(c, "Python environment:\nWorkDir: %s\nEnv: %s", opts.WorkDir, e)
-		if err := systemSpecificLaunch(c, ve, opts.Args, e, opts.WorkDir); err != nil {
+		if err := systemSpecificLaunch(c, ve, opts.CommandLine, e, opts.WorkDir); err != nil {
 			return errors.Annotate(err, "failed to execute bootstrapped Python").Err()
 		}
 		return nil
@@ -88,7 +88,7 @@ func Run(c context.Context, opts Options) error {
 //
 // interp is the Python interperer to run.
 //
-// args is the set of arguments to pass to the interpreter.
+// cl is the populated CommandLine to run.
 //
 // env is the environment to install.
 //
@@ -103,8 +103,11 @@ func Run(c context.Context, opts Options) error {
 // executed process.
 //
 // The implementation of Exec is platform-specific.
-func Exec(c context.Context, interp *python.Interpreter, args []string, env environ.Env, dir string, setupFn func() error) error {
-	argv := interp.IsolatedCommandParams(args...)
-	logging.Debugf(c, "Exec Python command: %v", argv)
+func Exec(c context.Context, interp *python.Interpreter, cl *python.CommandLine, env environ.Env, dir string, setupFn func() error) error {
+	cl = cl.Clone()
+	cl.SetIsolatedFlags()
+
+	argv := append([]string{interp.Python}, cl.BuildArgs()...)
+	logging.Debugf(c, "Exec Python command: %#v", argv)
 	return execImpl(c, argv, env, dir, nil)
 }

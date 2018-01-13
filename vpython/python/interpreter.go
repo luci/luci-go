@@ -66,34 +66,18 @@ func (i *Interpreter) Normalize() error {
 //	- The user's "site.py".
 //	- The current PYTHONPATH environment variable.
 //	- Compiled ".pyc/.pyo" files.
-func (i *Interpreter) IsolatedCommand(c context.Context, args ...string) *exec.Cmd {
+func (i *Interpreter) IsolatedCommand(c context.Context, script string, args ...string) *exec.Cmd {
 	// Isolate the supplied arguments.
-	argv := i.IsolatedCommandParams(args...)
-	cmd := exec.CommandContext(c, argv[0], argv[1:]...)
+	cl := CommandLine{
+		Target: ScriptTarget{script},
+		Args:   args,
+	}
+	cl.SetIsolatedFlags()
+	cmd := exec.CommandContext(c, i.Python, cl.BuildArgs()...)
 	if i.testCommandHook != nil {
 		i.testCommandHook(cmd)
 	}
 	return cmd
-}
-
-// IsolatedCommandParams returns parameters to run this interpreter in an
-// isolated environment.
-//
-// The supplied arguments have several Python isolation flags prepended to them
-// to remove environmental factors such as:
-//	- The user's "site.py".
-//	- The current PYTHONPATH environment variable.
-//	- Compiled ".pyc/.pyo" files.
-func (i *Interpreter) IsolatedCommandParams(args ...string) (argv []string) {
-	argv = make([]string, 0, 4+len(args))
-	argv = append(argv,
-		i.Python,
-		"-B", // Don't compile "pyo" binaries.
-		"-E", // Don't use PYTHON* environment variables.
-		"-s", // Don't use user 'site.py'.
-	)
-	argv = append(argv, args...)
-	return
 }
 
 // GetVersion runs the specified Python interpreter with the "--version"
