@@ -18,6 +18,14 @@ message TestMessage {
     // This field will be ignored because it is
     // google.protobuf.Struct.
     google.protobuf.Struct will_be_ignored = 5;
+
+    enum FOO {
+      X = 0;
+      Y = 1;
+      Z = 2;
+    }
+
+    FOO foo = 6;
 }
 
 message NestedTestMessage {
