@@ -77,8 +77,8 @@ func resolveFromPath(vers python.Version) *resolvedInterpreter {
 
 var (
 	pythonGeneric = resolveFromPath(python.Version{})
-	python27      = resolveFromPath(python.Version{2, 7, 0})
-	python3       = resolveFromPath(python.Version{3, 0, 0})
+	python27      = resolveFromPath(python.Version{Major: 2, Minor: 7, Patch: 0})
+	python3       = resolveFromPath(python.Version{Major: 3, Minor: 0, Patch: 0})
 )
 
 func TestResolvePythonInterpreter(t *testing.T) {

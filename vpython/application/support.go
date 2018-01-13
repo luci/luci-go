@@ -39,7 +39,7 @@ func withApplication(c context.Context, a *application) context.Context {
 
 func getApplication(c context.Context, args []string) *application {
 	a := c.Value(&appKey).(*application)
-	a.opts.Args = args
+	a.args = args
 	return a
 }
 
