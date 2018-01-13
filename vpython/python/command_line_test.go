@@ -61,6 +61,15 @@ func TestParseCommandLine(t *testing.T) {
 			[]string{"path.py", "--", "foo", "bar"},
 		},
 
+		{[]string{"-v", "-cprint", "foo", "bar"},
+			CommandLine{
+				Target: CommandTarget{"print"},
+				Flags:  []CommandLineFlag{f("v")},
+				Args:   []string{"foo", "bar"},
+			},
+			[]string{"-v", "-c", "print", "foo", "bar"},
+		},
+
 		{[]string{"-Wbar", "-", "-foo", "-bar"},
 			CommandLine{
 				Target: ScriptTarget{"-"},
@@ -70,6 +79,9 @@ func TestParseCommandLine(t *testing.T) {
 			[]string{"-Wbar", "-", "-foo", "-bar"},
 		},
 
+		// NOTE: This will parse the first positional argument, "-c", as the path
+		// to the script to run. This is generally not done, but exercises the
+		// positional argument code.
 		{[]string{"--", "-c", "-foo", "-bar"},
 			CommandLine{
 				Target: ScriptTarget{"-c"},
@@ -137,6 +149,18 @@ func TestParseCommandLine(t *testing.T) {
 			},
 			[]string{"-a", "-b", "-m", "'foo.bar.baz'", "arg"},
 		},
+
+		// First separator signals end of flags, next is first positional argument,
+		// which is the path of the script. Remainder are positional arguments to
+		// the script.
+		{[]string{"--", "--", "--", "--"},
+			CommandLine{
+				Target: ScriptTarget{"--"},
+				Flags:  []CommandLineFlag{parameterSeparatorCommandLineFlag},
+				Args:   []string{"--", "--"},
+			},
+			[]string{"--", "--", "--", "--"},
+		},
 	}
 
 	failures := []struct {
@@ -145,23 +169,31 @@ func TestParseCommandLine(t *testing.T) {
 	}{
 		{[]string{"-a", "-b", "-Q"}, "two-value flag missing second value"},
 		{[]string{"-c"}, "missing second value"},
+		{[]string{"-vvm"}, "missing second value"},
 		{[]string{"-\x80"}, "invalid rune in flag"},
 	}
 
 	Convey(`Testing Python command-line parsing`, t, func() {
-		for _, tc := range successes {
-			Convey(fmt.Sprintf(`Success cases: %v`, tc.args), func() {
+		for i, tc := range successes {
+			Convey(fmt.Sprintf(`Success case #%d: %v`, i, tc.args), func() {
 				cmd, err := ParseCommandLine(tc.args)
 				So(err, ShouldBeNil)
 
 				builtArgs := cmd.BuildArgs()
 				So(cmd, ShouldResemble, &tc.cmd)
 				So(builtArgs, ShouldResemble, tc.build)
+
+				// Round-trip!
+				roundTripBuiltArgs := cmd.BuildArgs()
+				cmd, err = ParseCommandLine(builtArgs)
+				So(cmd, ShouldResemble, &tc.cmd)
+				So(roundTripBuiltArgs, ShouldResemble, tc.build)
+				So(roundTripBuiltArgs, ShouldResemble, builtArgs)
 			})
 		}
 
-		for _, tc := range failures {
-			Convey(fmt.Sprintf(`Error cases: %v`, tc.args), func() {
+		for i, tc := range failures {
+			Convey(fmt.Sprintf(`Error case #%d: %v`, i, tc.args), func() {
 				_, err := ParseCommandLine(tc.args)
 				So(err, ShouldErrLike, tc.err)
 			})
@@ -179,9 +211,9 @@ func TestCommandLine(t *testing.T) {
 		expected []CommandLineFlag
 	}{
 		{"Can remove a flag, '-OO'",
-			[]CommandLineFlag{f("c"), f("OO"), f("S")},
+			[]CommandLineFlag{f("c"), f("OO"), f("O"), f("S")},
 			func(cl *CommandLine) { cl.RemoveAllFlag("OO") },
-			[]CommandLineFlag{f("c"), f("S")},
+			[]CommandLineFlag{f("c"), f("O"), f("S")},
 		},
 
 		{"Can remove all instances of a flag, '-W'",
@@ -209,10 +241,10 @@ func TestCommandLine(t *testing.T) {
 			[]CommandLineFlag{f("v"), f("O"), f("W", "foo"), f("W")},
 			func(cl *CommandLine) {
 				cl.AddFlag(CommandLineFlag{"W", "foo"})
-				cl.AddSingleFlag("W")
+				cl.AddSingleFlag("OO")
 				cl.AddFlag(CommandLineFlag{"W", "bar"})
 			},
-			[]CommandLineFlag{f("v"), f("O"), f("W", "foo"), f("W"), f("W", "bar")},
+			[]CommandLineFlag{f("v"), f("O"), f("W", "foo"), f("W"), f("OO"), f("W", "bar")},
 		},
 	}
 
@@ -226,5 +258,21 @@ func TestCommandLine(t *testing.T) {
 				So(cl.Flags, ShouldResemble, tc.expected)
 			})
 		}
+
+		Convey(`Testing Clone`, func() {
+			// Create a command-line with all fields populated.
+			cmd := CommandLine{
+				Target: ScriptTarget{"script"},
+				Flags:  []CommandLineFlag{f("OO"), f("v"), f("Q", "warnall")},
+				Args:   []string{"foo"},
+			}
+
+			clone := cmd.Clone()
+			So(clone, ShouldResemble, &cmd)
+
+			clone.Flags = append(clone.Flags[:0], f("B"), f("d"), f("E"), f("H"))
+			clone.Args = append(clone.Args[:0], "bar", "baz")
+			So(clone, ShouldNotResemble, &cmd)
+		})
 	})
 }
