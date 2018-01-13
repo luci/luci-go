@@ -49,11 +49,15 @@ var TooBigTag = errors.BoolTag{
 const maxDataSize = 950000
 
 // GetBuild fetches a buildbot build from the storage.
+// Returns (nil, nil) if build is not found.
 // Does not check access.
 func GetBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
 	return getBuild(c, master, builder, number, true, true)
 }
 
+// getBuild returns a build by master, builder and number.
+// The returned build may be coming from datastore or Buildbucket RPC.
+// Returns (nil, nil) if build is not found.
 func getBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	if !EmulationEnabled(c) {
 		return getDatastoreBuild(c, master, builder, number)
@@ -84,6 +88,7 @@ func getBuild(c context.Context, master, builder string, number int, fetchAnnota
 }
 
 // EmulationOf returns the Buildbucket build that the given Buildbot build is emulating.
+// Returns (nil, nil) if build is not found.
 func EmulationOf(c context.Context, master, builder string, number int) (*buildbucket.Build, error) {
 	bb, err := buildbucketClient(c)
 	if err != nil {
@@ -116,10 +121,14 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 }
 
 // getEmulatedBuild returns a buildbot build derived from a LUCI build.
+// Returns (nil, nil) if build is not found.
 func getEmulatedBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	buildbucketBuild, err := EmulationOf(c, master, builder, number)
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, err
+	case buildbucketBuild == nil:
+		return nil, nil
 	}
 
 	buildbotBuild, err := buildFromBuildbucket(c, master, buildbucketBuild, fetchAnnotations)
@@ -136,6 +145,8 @@ func getEmulatedBuild(c context.Context, master, builder string, number int, fet
 	return buildbotBuild, nil
 }
 
+// getDatastoreBuild returns a buildbot build from the datastore.
+// Returns (nil, nil) if build is not found.
 func getDatastoreBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
 	entity := &buildEntity{
 		Master:      master,
