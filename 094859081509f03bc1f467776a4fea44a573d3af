@@ -22,6 +22,30 @@
       "revId": "094859081509f03bc1f467776a4fea44a573d3af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "527c4a86_c99d8113",
+        "filename": "common/eventupload/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-01-13T00:45:32Z",
+      "side": 1,
+      "message": "Didn\u0027t know about Stringer--thanks!",
+      "parentUuid": "21c5d6e7_fdbdd2bf",
+      "range": {
+        "startLine": 133,
+        "startChar": 11,
+        "endLine": 133,
+        "endChar": 47
+      },
+      "revId": "094859081509f03bc1f467776a4fea44a573d3af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
