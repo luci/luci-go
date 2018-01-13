@@ -123,6 +123,10 @@ func TestInterpreterGetVersion(t *testing.T) {
 				vers, err := i.GetVersion(c)
 				So(err, ShouldBeNil)
 				So(vers, ShouldResemble, tc.vers)
+
+				cachedVers, err := i.GetVersion(c)
+				So(err, ShouldBeNil)
+				So(cachedVers, ShouldResemble, vers)
 			})
 		}
 
@@ -134,5 +138,21 @@ func TestInterpreterGetVersion(t *testing.T) {
 				So(err, ShouldErrLike, tc.err)
 			})
 		}
+	})
+}
+
+func TestIsolateEnvironment(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Testing IsolateEnvironment`, t, func() {
+		Convey(`Will return nil if the environment is nil.`, func() {
+			So(func() { IsolateEnvironment(nil) }, ShouldNotPanic)
+		})
+
+		Convey(`Will remove environment variables`, func() {
+			env := environ.New([]string{"FOO=", "BAR=", "PYTHONPATH=a:b:c", "PYTHONHOME=/foo/bar", "PYTHONNOUSERSITE=0"})
+			IsolateEnvironment(&env)
+			So(env.Sorted(), ShouldResemble, []string{"BAR=", "FOO=", "PYTHONNOUSERSITE=1"})
+		})
 	})
 }

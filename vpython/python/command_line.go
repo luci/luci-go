@@ -22,6 +22,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// parameterSeparatorCommandLineFlag is a special-case command-line flag that
+// represents the double-dash separator ("--").
+//
+// This is represented as a flag with value "-". Since a flag renders with a
+// preceding "-", this will render as "--".
+var parameterSeparatorCommandLineFlag = CommandLineFlag{Flag: "-"}
+
 // CommandLineFlag is a command-line flag and its associated argument, if one
 // is provided.
 type CommandLineFlag struct {
@@ -197,21 +204,6 @@ func (cl *CommandLine) Clone() *CommandLine {
 
 // parseSingleFlag parses a single flag from a state.
 func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
-	twoVarType := func() (val string, err error) {
-		switch {
-		case len(fs.flag) > 0:
-			val, fs.flag = fs.flag, ""
-			return
-		case len(fs.args) == 0:
-			err = errors.New("two-value flag missing second value")
-			return
-		default:
-			// Consume the argument.
-			val, fs.args = fs.args[0], fs.args[1:]
-			return
-		}
-	}
-
 	// Consume the first character from flag into "r". "flag" is the remainder.
 	r, l := utf8.DecodeRuneInString(fs.flag)
 	if r == utf8.RuneError {
@@ -219,18 +211,35 @@ func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
 	}
 	fs.flag = fs.flag[l:]
 
-	// Is this a combined flag/value (e.g., -c'paoskdpo') ?
+	// Retrieve the value for a non-binary flag. This mutates the flag state to
+	// consume that value.
+	getFlagValue := func() (val string, err error) {
+		switch {
+		case len(fs.flag) > 0:
+			// Combined flag/value (e.g., -c'paoskdpo')
+			val, fs.flag = fs.flag, ""
+		case len(fs.args) == 0:
+			err = errors.New("two-value flag missing second value")
+		default:
+			// Flag value is in subsequent argument (e.g., "-c 'paoskdpo'").
+			// Consume the argument.
+			val, fs.args = fs.args[0], fs.args[1:]
+		}
+		return
+	}
+
 	switch r {
-	// Two-variable execution flags.
 	case 'c':
-		val, err := twoVarType()
+		// Inline command target.
+		val, err := getFlagValue()
 		if err != nil {
 			return err
 		}
 		cl.Target = CommandTarget{val}
 
 	case 'm':
-		val, err := twoVarType()
+		// Python module target.
+		val, err := getFlagValue()
 		if err != nil {
 			return err
 		}
@@ -238,7 +247,7 @@ func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
 
 	case 'Q', 'W', 'X':
 		// Two-argument Python flags.
-		val, err := twoVarType()
+		val, err := getFlagValue()
 		if err != nil {
 			return err
 		}
@@ -310,13 +319,13 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 			continue
 		}
 
-		// Note that ta this point we've trimmed the preceding "-" from arg, so
+		// Note that at this point we've trimmed the preceding "-" from arg, so
 		// this is really "--". If we encounter "--" that marks the end of
 		// interpreter flag parsing; everything hereafter is considered positional
 		// to the interpreter.
 		if arg == "-" {
 			canHaveFlags = false
-			cl.Flags = append(cl.Flags, CommandLineFlag{"-", ""})
+			cl.Flags = append(cl.Flags, parameterSeparatorCommandLineFlag)
 			continue
 		}
 
