@@ -59,30 +59,25 @@ func ParseVersion(s string) (Version, error) {
 	}
 	parts := strings.Split(match[2], ".")
 
-	parseVersion := func(value string) (int, error) {
+	// Values are expected to parse, and will panic otherwise. This is safe
+	// because the value has already been determined to be canonical above.
+	mustParseVersion := func(value string) int {
 		version, err := strconv.Atoi(value)
 		if err != nil {
-			return 0, errors.Annotate(err, "invalid number value: %q", value).Err()
+			panic(fmt.Sprintf("invalid number value %q: %s", value, err))
 		}
-		return version, nil
+		return version
 	}
 
 	// Regexp match guarantees that "parts" will have at least one component, and
 	// that all components are well-formed numbers.
-	var err error
 	if len(parts) >= 3 {
-		if v.Patch, err = parseVersion(parts[2]); err != nil {
-			return v, errors.Annotate(err, "invalid patch value").Err()
-		}
+		v.Patch = mustParseVersion(parts[2])
 	}
 	if len(parts) >= 2 {
-		if v.Minor, err = parseVersion(parts[1]); err != nil {
-			return v, errors.Annotate(err, "invalid minor value").Err()
-		}
+		v.Minor = mustParseVersion(parts[1])
 	}
-	if v.Major, err = parseVersion(parts[0]); err != nil {
-		return v, errors.Annotate(err, "invalid major value").Err()
-	}
+	v.Major = mustParseVersion(parts[0])
 	if v.IsZero() {
 		return v, errors.Reason("version is incomplete").Err()
 	}
