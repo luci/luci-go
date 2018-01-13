@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a03fab02_fc236a4e",
+        "filename": "vpython/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T04:14:39Z",
+      "side": 1,
+      "message": "Since it is not copyable, I want to discourage copying it by value and ensure that it\u0027s always regarded as a pointer.",
+      "parentUuid": "56bc4c7b_3c0ea57c",
+      "range": {
+        "startLine": 42,
+        "startChar": 40,
+        "endLine": 42,
+        "endChar": 55
+      },
+      "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "58881e83_ba982024",
         "filename": "vpython/python/python.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-01-13T01:35:45Z",
       "side": 1,
       "message": "could also make this an interface with SoloCommandFlag and ArgCommandFlag impls?\n\nThen the various Target dealies below could just inherit/wrap the relevant flag type/",
+      "range": {
+        "startLine": 27,
+        "startChar": 5,
+        "endLine": 27,
+        "endChar": 20
+      },
+      "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3f01bcb_02dc753a",
+        "filename": "vpython/python/python.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T04:14:39Z",
+      "side": 1,
+      "message": "I simplified it to always \"%s%s\" since ... well, if Arg is empty, the latter \"%s\" becomes nothing.",
+      "parentUuid": "58881e83_ba982024",
       "range": {
         "startLine": 27,
         "startChar": 5,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "104dce77_21f09f24",
+        "filename": "vpython/python/python.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T04:14:39Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "53deda89_db1299ac",
+      "range": {
+        "startLine": 103,
+        "startChar": 23,
+        "endLine": 103,
+        "endChar": 32
+      },
+      "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e71895c_78b84b1f",
         "filename": "vpython/python/python.go",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2018-01-13T01:35:45Z",
       "side": 1,
       "message": "could just have this take the rune and the value, then keep CommandLineFlag private",
+      "range": {
+        "startLine": 130,
+        "startChar": 23,
+        "endLine": 130,
+        "endChar": 41
+      },
+      "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc2c68e3_0dccaec7",
+        "filename": "vpython/python/python.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T04:14:39Z",
+      "side": 1,
+      "message": "I am taking the approach of offering a \"flag\" value and a full-match value on these. I did update the signatures, though. PTAL",
+      "parentUuid": "1e71895c_78b84b1f",
       "range": {
         "startLine": 130,
         "startChar": 23,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "f03a4fd8_0f7cabf3",
+        "filename": "vpython/python/python.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T04:14:39Z",
+      "side": 1,
+      "message": "Damned \"OO\" flag. I forgot about it. Updated the code to detect it, and changed \"rune\" to \"string\" everywhere.",
+      "parentUuid": "1552e57d_9583e010",
+      "range": {
+        "startLine": 147,
+        "startChar": 50,
+        "endLine": 147,
+        "endChar": 54
+      },
+      "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d2718767_0c51d7b6",
         "filename": "vpython/python/python.go",
         "patchSetId": 1
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "97ccfa53_5a2c9c18",
+        "filename": "vpython/python/python.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T04:14:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2718767_0c51d7b6",
+      "range": {
+        "startLine": 205,
+        "startChar": 4,
+        "endLine": 205,
+        "endChar": 32
+      },
+      "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e8aaa46_f309411d",
         "filename": "vpython/python/python.go",
         "patchSetId": 1
@@ -160,6 +304,30 @@
       "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9868a047_bd96d37e",
+        "filename": "vpython/python/python.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T04:14:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e8aaa46_f309411d",
+      "range": {
+        "startLine": 283,
+        "startChar": 23,
+        "endLine": 283,
+        "endChar": 24
+      },
+      "revId": "a61d5cf5f7e372a4d4d9e84f296f2579e06280e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
