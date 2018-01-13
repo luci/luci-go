@@ -39,6 +39,9 @@ var IsUserError = errors.BoolTag{
 // Options is the set of options to use to construct and execute a VirtualEnv
 // Python application.
 type Options struct {
+	// The Python command-line to execute. Must not be nil.
+	CommandLine *python.CommandLine
+
 	// EnvConfig is the VirtualEnv configuration to run from.
 	EnvConfig venv.Config
 
@@ -56,9 +59,6 @@ type Options struct {
 	//
 	// The empty value is a valid default spec.Loader.
 	SpecLoader spec.Loader
-
-	// Args are the arguments to forward to the Python process.
-	Args []string
 
 	// WaitForEnv, if true, means that if another agent holds a lock on the target
 	// environment, we will wait until it is available. If false, we will
@@ -103,28 +103,26 @@ func (o *Options) resolve(c context.Context) error {
 // ResolveSpec resolves the configured environment specification. The resulting
 // spec is installed into o's EnvConfig.Spec field.
 func (o *Options) ResolveSpec(c context.Context) error {
+	if o.CommandLine == nil {
+		panic("a CommandLine must be specified")
+	}
+
 	// If a spec is explicitly provided, we're done.
 	if o.EnvConfig.Spec != nil {
 		return nil
 	}
 
-	// Determine our specification from the Python command-line that we are being
-	// invoked with.
-	cmd, err := python.ParseCommandLine(o.Args)
-	if err != nil {
-		return errors.Annotate(err, "failed to parse Python command-line").Err()
-	}
-
 	// If we're running a Python script, assert that the target script exists.
 	// Additionally, track whether it's a file or a module (directory).
-	script, isScriptTarget := cmd.Target.(python.ScriptTarget)
+	target := o.CommandLine.Target
+	script, isScriptTarget := target.(python.ScriptTarget)
 	isModule := false
 	if isScriptTarget {
-		logging.Debugf(c, "Resolved Python target script: %s", cmd.Target)
+		logging.Debugf(c, "Resolved Python target script: %s", target)
 
 		// Resolve to absolute script path.
 		if err := filesystem.AbsPath(&script.Path); err != nil {
-			return errors.Annotate(err, "failed to get absolute path of: %s", cmd.Target).Err()
+			return errors.Annotate(err, "failed to get absolute path of: %s", target).Err()
 		}
 
 		// Confirm that the script path actually exists.
@@ -142,7 +140,7 @@ func (o *Options) ResolveSpec(c context.Context) error {
 	if isScriptTarget {
 		spec, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
 		if err != nil {
-			return errors.Annotate(err, "failed to load spec for script: %s", cmd.Target).
+			return errors.Annotate(err, "failed to load spec for script: %s", target).
 				InternalReason("isModule(%v)", isModule).Err()
 		}
 		if spec != nil {

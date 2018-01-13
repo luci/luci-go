@@ -15,11 +15,26 @@
 package python
 
 import (
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
 	"go.chromium.org/luci/common/errors"
 )
+
+// CommandLineFlag is a command-line flag and its associated argument, if one
+// is provided.
+type CommandLineFlag struct {
+	Flag string
+	Arg  string
+}
+
+func (f *CommandLineFlag) String() string {
+	if f.Arg != "" {
+		return fmt.Sprintf("-%s%s", f.Flag, f.Arg)
+	}
+	return fmt.Sprintf("-%s", f.Flag)
+}
 
 // Target describes a Python invocation target.
 //
@@ -33,16 +48,16 @@ import (
 //	- CommandTarget
 //	- ModuleTarget
 type Target interface {
-	// implementsTarget is an internal method used to constrain Target
-	// implementations to internal packages.
-	implementsTarget()
+	// buildArgsForTarget returns the arguments to pass to the interpreter to
+	// invoke this target.
+	buildArgsForTarget() []string
 }
 
 // NoTarget is a Target implementation indicating no Python target (i.e.,
 // interactive).
 type NoTarget struct{}
 
-func (st NoTarget) implementsTarget() {}
+func (NoTarget) buildArgsForTarget() []string { return nil }
 
 // ScriptTarget is a Python executable script target.
 type ScriptTarget struct {
@@ -52,7 +67,7 @@ type ScriptTarget struct {
 	Path string
 }
 
-func (st ScriptTarget) implementsTarget() {}
+func (t ScriptTarget) buildArgsForTarget() []string { return []string{t.Path} }
 
 // CommandTarget is a Target implementation for a command-line string
 // (-c ...).
@@ -61,7 +76,7 @@ type CommandTarget struct {
 	Command string
 }
 
-func (st CommandTarget) implementsTarget() {}
+func (t CommandTarget) buildArgsForTarget() []string { return []string{"-c", t.Command} }
 
 // ModuleTarget is a Target implementating indicating a Python module (-m ...).
 type ModuleTarget struct {
@@ -69,7 +84,23 @@ type ModuleTarget struct {
 	Module string
 }
 
-func (st ModuleTarget) implementsTarget() {}
+func (t ModuleTarget) buildArgsForTarget() []string { return []string{"-m", t.Module} }
+
+// parsedFlagState is the current state of a parsed flag block. It is advanced
+// in CommandLine's parseSingleFlag as flags are parsed.
+type parsedFlagState struct {
+	// flag is the current flag block. It does not include the preceding "-".
+	//
+	// If a block is single, e.g., "-w", it will contain "w".
+	// If a block contains multiple flags, e.g, "-vvv", it will contain "vvv".
+	flag string
+	// args is the remainder of args following the flag block. It is used when
+	// a multi-argument flag does not include a conjoined data block.
+	//
+	// For example, "-Wall" has flag "W", value "all". ["-W", "all"], parses
+	// identically, but requires the argument after the "-W" to resolve.
+	args []string
+}
 
 // CommandLine is a parsed Python command-line.
 //
@@ -79,104 +110,207 @@ type CommandLine struct {
 	Target Target
 
 	// Flags are flags to the Python interpreter.
-	Flags []string
+	Flags []CommandLineFlag
 	// Args are arguments passed to the Python script.
 	Args []string
 }
 
-// ParseCommandLine parses Python command-line arguments and returns a
-// structured representation.
-func ParseCommandLine(args []string) (cmd CommandLine, err error) {
-	flags := 0
-	i := 0
-	for i < len(args) && cmd.Target == nil {
-		arg := args[i]
-		i++
+// BuildArgs returns an array of Python interpreter arguments for cl.
+func (cl *CommandLine) BuildArgs() []string {
+	targetArgs := cl.Target.buildArgsForTarget()
+	args := make([]string, 0, len(cl.Flags)+len(targetArgs)+len(cl.Args))
+	for _, flag := range cl.Flags {
+		args = append(args, flag.String())
+	}
+	args = append(args, targetArgs...)
+	args = append(args, cl.Args...)
+	return args
+}
 
-		flag, has := trimPrefix(arg, "-")
-		if !has {
-			// Non-flag argument, so path to script.
-			cmd.Target = ScriptTarget{
-				Path: flag,
-			}
-			break
-		}
+// SetIsolatedFlags updates cl to include command-line flags to run in an
+// isolated environment.
+//
+// The supplied arguments have several Python isolation flags prepended to them
+// to remove environmental factors such as:
+//	- The user's "site.py".
+//	- The current PYTHONPATH environment variable.
+//	- Compiled ".pyc/.pyo" files.
+func (cl *CommandLine) SetIsolatedFlags() {
+	cl.AddInterpreterSingleFlag('B') // Don't compile "pyo" binaries.
+	cl.AddInterpreterSingleFlag('E') // Don't use PYTHON* environment variables.
+	cl.AddInterpreterSingleFlag('s') // Don't use user 'site.py'.
+}
 
-		// -<flag>
-		if len(flag) == 0 {
-			// "-" instructs Python to load the script from STDIN.
-			cmd.Target = ScriptTarget{
-				Path: "-",
-			}
-			break
-		}
-
-		// Extract the flag Target. -f<lag>
-		r, l := utf8.DecodeRuneInString(flag)
-		if r == utf8.RuneError {
-			err = errors.Reason("invalid rune in flag #%d", i).Err()
+// AddInterpreterFlag adds an interpreter flag to cl if it's not already
+// present.
+func (cl *CommandLine) AddInterpreterFlag(flag CommandLineFlag) {
+	for _, f := range cl.Flags {
+		if f == flag {
 			return
 		}
+	}
+	cl.Flags = append(cl.Flags, flag)
+}
 
-		// Is this a combined flag/value (e.g., -c'paoskdpo') ?
-		flag = flag[l:]
-		twoVarType := func() (string, error) {
-			if len(flag) > 0 {
-				return flag, nil
-			}
+// AddInterpreterSingleFlag adds a single no-argument interpreter flag to cl
+// if it's not already specified.
+func (cl *CommandLine) AddInterpreterSingleFlag(flag rune) {
+	cl.AddInterpreterFlag(CommandLineFlag{Flag: string(flag)})
+}
 
-			if i >= len(args) {
-				return "", errors.Reason("two-value flag -%c missing second value at %d", r, i).Err()
-			}
-
-			value := args[i]
-			i++
-			return value, nil
-		}
-
-		switch r {
-		// Two-variable execution flags.
-		case 'c':
-			var target CommandTarget
-			if target.Command, err = twoVarType(); err != nil {
-				return
-			}
-			cmd.Target = target
-
-		case 'm':
-			var target ModuleTarget
-			if target.Module, err = twoVarType(); err != nil {
-				return
-			}
-			cmd.Target = target
-
-		case 'Q', 'W', 'X':
-			// Random two-argument Python flags.
-			if len(flag) == 0 {
-				flags++
-				i++
-			}
-			fallthrough
-
-		default:
-			// One-argument Python flags.
-			flags++
+// RemoveInterpreterFlag removes all instances of the specified flag
+// from the interpreter command line.
+func (cl *CommandLine) RemoveInterpreterFlag(flag rune) (found bool) {
+	flagStr := string(flag)
+	newFlags := cl.Flags[:0]
+	for _, f := range cl.Flags {
+		if f.Flag != flagStr {
+			newFlags = append(newFlags, f)
+		} else {
+			found = true
 		}
 	}
-
-	if i > len(args) {
-		err = errors.New("truncated two-variable argument")
-		return
-	}
-
-	// If no target was specified, use NoTarget.
-	if cmd.Target == nil {
-		cmd.Target = NoTarget{}
-	}
-
-	cmd.Flags = args[:flags]
-	cmd.Args = args[i:]
+	cl.Flags = newFlags
 	return
+}
+
+// Clone returns an independent deep copy of cl.
+func (cl *CommandLine) Clone() *CommandLine {
+	return &CommandLine{
+		Target: cl.Target,
+		Flags:  append([]CommandLineFlag(nil), cl.Flags...),
+		Args:   append([]string(nil), cl.Args...),
+	}
+}
+
+// parseSingleFlag parses a single flag from a state.
+func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
+	twoVarType := func() (val string, err error) {
+		switch {
+		case len(fs.flag) > 0:
+			val, fs.flag = fs.flag, ""
+			return
+		case len(fs.args) == 0:
+			err = errors.New("two-value flag missing second value")
+			return
+		default:
+			// Consume the argument.
+			val, fs.args = fs.args[0], fs.args[1:]
+			return
+		}
+	}
+
+	// Consume the first character from flag into "r". "flag" is the remainder.
+	r, l := utf8.DecodeRuneInString(fs.flag)
+	if r == utf8.RuneError {
+		return errors.Reason("invalid rune in flag").Err()
+	}
+	fs.flag = fs.flag[l:]
+
+	// Is this a combined flag/value (e.g., -c'paoskdpo') ?
+	switch r {
+	// Two-variable execution flags.
+	case 'c':
+		val, err := twoVarType()
+		if err != nil {
+			return err
+		}
+		cl.Target = CommandTarget{val}
+
+	case 'm':
+		val, err := twoVarType()
+		if err != nil {
+			return err
+		}
+		cl.Target = ModuleTarget{val}
+
+	case 'Q', 'W', 'X':
+		// Two-argument Python flags.
+		val, err := twoVarType()
+		if err != nil {
+			return err
+		}
+		cl.Flags = append(cl.Flags, CommandLineFlag{string(r), val})
+
+	default:
+		// One-argument Python flags. If there are more characters in "flag",
+		// don't consume the entire flag; instead, replace it with the remainder
+		// for subsequent parses. This handles cases like "-vvc <script>".
+		cl.Flags = append(cl.Flags, CommandLineFlag{string(r), ""})
+	}
+
+	return nil
+}
+
+// ParseCommandLine parses Python command-line arguments and returns a
+// structured representation.
+func ParseCommandLine(args []string) (*CommandLine, error) {
+	noTarget := NoTarget{}
+
+	cl := CommandLine{
+		Target: noTarget,
+	}
+	var (
+		i            = 0
+		canHaveFlags = true
+	)
+	for len(args) > 0 {
+		// Stop parsing after we have a target, as Python does.
+		if cl.Target != noTarget {
+			break
+		}
+
+		// Consume the next argument.
+		arg := args[0]
+		args = args[1:]
+		i++
+
+		if arg == "-" {
+			// "-" instructs Python to load the script from STDIN.
+			cl.Target = ScriptTarget{
+				Path: "-",
+			}
+			continue
+		}
+
+		isFlag := false
+		if canHaveFlags {
+			arg, isFlag = trimPrefix(arg, "-")
+		}
+
+		if !isFlag {
+			// The first positional argument is the path to the script, and all
+			// subsequent arguments are script arguments.
+			cl.Target = ScriptTarget{
+				Path: arg,
+			}
+			continue
+		}
+
+		// If we encounter "--", that marks the end of interpreter flag parsing.
+		if arg == "-" {
+			canHaveFlags = false
+			cl.Flags = append(cl.Flags, CommandLineFlag{"-", ""})
+			continue
+		}
+
+		// Parse this flag and any remainder.
+		fs := parsedFlagState{
+			flag: arg,
+			args: args,
+		}
+		for len(fs.flag) > 0 {
+			if err := cl.parseSingleFlag(&fs); err != nil {
+				return nil, errors.Annotate(err, "failed to parse Python flag #%d", i).
+					InternalReason("arg(%q)", arg).Err()
+			}
+		}
+		args = fs.args
+	}
+
+	// The remainder of arguments are for the script.
+	cl.Args = append([]string(nil), args...)
+	return &cl, nil
 }
 
 func trimPrefix(v, pfx string) (string, bool) {
