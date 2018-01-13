@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 
+	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/common/logging"
@@ -39,8 +40,8 @@ import (
 //
 // On Windows, we launch it as a child process and interpret any signal that we
 // receive as terminal, cancelling the child.
-func systemSpecificLaunch(c context.Context, ve *venv.Env, args []string, env environ.Env, dir string) error {
-	return Exec(c, ve.Interpreter(), args, env, dir, nil)
+func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLine, env environ.Env, dir string) error {
+	return Exec(c, ve.Interpreter(), cl, env, dir, nil)
 }
 
 func execImpl(c context.Context, argv []string, env environ.Env, dir string, setupFn func() error) error {
