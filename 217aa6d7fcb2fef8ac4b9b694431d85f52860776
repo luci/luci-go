@@ -22,6 +22,30 @@
       "revId": "217aa6d7fcb2fef8ac4b9b694431d85f52860776",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f3e9a3a_37d673bd",
+        "filename": "vpython/python/python_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-13T07:02:29Z",
+      "side": 1,
+      "message": "Well, maybe holistically, but this function/test doesn\u0027t care :)",
+      "parentUuid": "3aee11bb_6f555e1d",
+      "range": {
+        "startLine": 212,
+        "startChar": 22,
+        "endLine": 212,
+        "endChar": 23
+      },
+      "revId": "217aa6d7fcb2fef8ac4b9b694431d85f52860776",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
