@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3aee11bb_6f555e1d",
+        "filename": "vpython/python/python_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-13T06:44:47Z",
+      "side": 1,
+      "message": "this is maybe a bad example because W always takes an argument?",
+      "range": {
+        "startLine": 212,
+        "startChar": 22,
+        "endLine": 212,
+        "endChar": 23
+      },
+      "revId": "217aa6d7fcb2fef8ac4b9b694431d85f52860776",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
