@@ -65,7 +65,7 @@ func TestInterpreter(t *testing.T) {
 		})
 
 		Convey(`Testing IsolatedCommand`, func() {
-			cmd := i.IsolatedCommand(c, "foo", "bar")
+			cmd := i.IsolatedCommand(c, NoTarget{}, "foo", "bar")
 			So(cmd.Args, ShouldResemble, []string{self, "-B", "-E", "-s", "foo", "bar"})
 		})
 

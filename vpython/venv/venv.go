@@ -51,6 +51,37 @@ const (
 	lockHeldDelay = 10 * time.Millisecond
 )
 
+// pipIsolateOptions is a collection of "pip" overrides that we use to restrict
+// unpredictable and uncontrolled behavior from "pip".
+//
+// Environment Variables:
+// "pip" is used internally within VirtualEnv, and there is no mechanism to
+// pass it our isolation flags. Therefore, we resort to using environment
+// variable configuration:
+// https://pip.pypa.io/en/stable/user_guide/#environment-variables
+//
+// Flags:
+// When we run "pip install", we pass it "--isolated", which removes the
+// influence of environment variable configuration. Since we're running "pip"
+// directly, we can pass command-line flag equivalents. The benefits of using
+// "--isolated" are worth the cost of exporting dual environment/flag versions
+// of these isolation directives.
+var pipIsolateOptions = []struct {
+	// env is the environment variable string to add ("FOO=BAR").
+	env string
+	// installFlag is the "pip install" flag equivalent.
+	installFlag string
+}{
+	// Override any global configuration that prohibits binary (wheel) usage.
+	{"PIP_NO_BINARY=:none:", "--no-binary=:none:"},
+
+	// Enforce that all packages must be installed with wheels.
+	{"PIP_ONLY_BINARY=:all:", "--only-binary=:all:"},
+
+	// Override (deprecated) "--no-use-wheel" option.
+	{"PIP_USE_WHEEL=1", "--use-wheel"},
+}
+
 // blocker is an fslock.Blocker implementation that sleeps lockHeldDelay in
 // between attempts.
 func blocker(c context.Context) fslock.Blocker {
@@ -469,17 +500,7 @@ func (e *Env) createLocked(c context.Context) error {
 			return errors.Annotate(err, "could not create bootstrap packages directory").Err()
 		}
 
-		// Use a temporary HOME directory.
-		//
-		// This is an ugly hack. However, it's the only way to stop VirtualEnv's
-		// "pip" invocation's "setuptools" invocation from reading the local user's
-		// "~/.pydistutils.cfg" file, which can lead to broken VirtualEnv results.
-		//
-		// It has the nice side-effect of catching some potential artifacts that can
-		// be generated. There probably won't be any, but if they are, they will be
-		// cleaned up now.
-		setupEnv := e.isolatedSetupEnvironment()
-		setupEnv.Set("HOME", bootstrapDir)
+		setupEnv := e.isolatedSetupEnvironment(bootstrapDir)
 		setupEnvSorted := setupEnv.Sorted()
 
 		if err := e.downloadPackages(c, pkgDir, packages); err != nil {
@@ -563,7 +584,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 	logging.Debugf(c, "Creating VirtualEnv at: %s", e.Root)
 
 	cmd := e.Config.systemInterpreter().IsolatedCommand(c,
-		"virtualenv.py",
+		python.ScriptTarget{Path: "virtualenv.py"},
 		"--no-download",
 		e.Root)
 	cmd.Env = env
@@ -576,7 +597,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 
 	logging.Debugf(c, "Making VirtualEnv relocatable at: %s", e.Root)
 	cmd = e.Interpreter().IsolatedCommand(c,
-		"virtualenv.py",
+		python.ScriptTarget{Path: "virtualenv.py"},
 		"--relocatable",
 		e.Root)
 	cmd.Env = env
@@ -596,8 +617,9 @@ func (e *Env) getStdlibPath(c context.Context, env []string) (string, error) {
 	// This script will return the directory where the `site` Python module is found.
 	// This module is always created by the VirtualEnv, and so is a reliable
 	// indicator of where 'stdlib' imports exist.
-	cmd := e.Interpreter().IsolatedCommand(c, "-c",
-		`import sys, site, os;sys.stdout.write(os.path.dirname(site.__file__))`)
+	const script = `import os, site, sys; ` +
+		`sys.stdout.write(os.path.dirname(site.__file__))`
+	cmd := e.Interpreter().IsolatedCommand(c, python.CommandTarget{Command: script})
 	cmd.Env = env
 
 	var stdout bytes.Buffer
@@ -620,13 +642,11 @@ func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425T
 	// [0]: version (e.g., "cp27")
 	// [1]: abi (e.g., "cp27mu", "none")
 	// [2]: arch (e.g., "x86_64", "armv7l", "any")
-	const script = `import json;` +
-		`import pip.pep425tags;` +
-		`import sys;` +
+	const script = `import json, pip.pep425tags, sys; ` +
 		`sys.stdout.write(json.dumps(pip.pep425tags.get_supported()))`
 	type pep425TagEntry []string
 
-	cmd := e.Interpreter().IsolatedCommand(c, "-c", script)
+	cmd := e.Interpreter().IsolatedCommand(c, python.CommandTarget{Command: script})
 	cmd.Env = env
 
 	var stdout bytes.Buffer
@@ -683,15 +703,26 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env 
 		return errors.Annotate(err, "failed to render requirements file").Err()
 	}
 
-	cmd := e.Interpreter().IsolatedCommand(c,
-		"-m", "pip",
+	// We use "--isolated", which disables "PIP_" environment variable
+	// configuration overrides that we set up in "isolatedSetupEnvironment".
+	// Therefore, we append flag equivalents.
+	//
+	// See pipIsolateOptions.
+	pythonCmd := []string{
 		"install",
 		"--isolated",
-		"--use-wheel",
 		"--compile",
 		"--no-index",
 		"--find-links", pkgDir,
-		"--requirement", reqPath)
+		"--requirement", reqPath,
+	}
+	for _, opt := range pipIsolateOptions {
+		pythonCmd = append(pythonCmd, opt.installFlag)
+	}
+
+	cmd := e.Interpreter().IsolatedCommand(c,
+		python.ModuleTarget{Module: "pip"},
+		pythonCmd...)
 	cmd.Env = env
 	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
@@ -754,9 +785,39 @@ func (e *Env) touchCompleteFlagLocked() error {
 	return nil
 }
 
-func (e *Env) isolatedSetupEnvironment() environ.Env {
+func (e *Env) isolatedSetupEnvironment(bootstrapDir string) environ.Env {
 	env := e.Config.SetupEnv.Clone()
 	python.IsolateEnvironment(&env)
+
+	// Remove all "PIP_" environment variable overrides. See:
+	// https://pip.pypa.io/en/stable/user_guide/#environment-variables
+	e.Config.SetupEnv.Iter(func(k, v string) bool {
+		if strings.HasPrefix(k, "PIP_") {
+			env.Remove(k)
+		}
+		return true
+	})
+
+	// Use a temporary HOME directory.
+	//
+	// This is an ugly hack. However, it's the only way to stop VirtualEnv's
+	// "pip" invocation's "setuptools" invocation from reading the local user's
+	// "~/.pydistutils.cfg" file, which can lead to broken VirtualEnv results.
+	//
+	// It has the nice side-effect of catching some potential artifacts that can
+	// be generated. There probably won't be any, but if they are, they will be
+	// cleaned up now.
+	env.Set("HOME", bootstrapDir)
+
+	// Set some basic "pip" options to override any "pip" configuration.
+	//
+	// Unfortunately, there's no mechanism to disable loading global configuration
+	// files, and if we want to influence VirtualEnv (which calls "pip")
+	// internally, we are stuck overriding it with our own preferred defaults.
+	for _, opt := range pipIsolateOptions {
+		env.SetEntry(opt.env)
+	}
+
 	return env
 }
 

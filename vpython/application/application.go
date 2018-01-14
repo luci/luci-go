@@ -303,7 +303,7 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 
 	// Redirect all "--help" to Stdout for consistency.
 	fmt.Fprintf(os.Stdout, "\nPython help for %s:\n", i.Python)
-	cmd := i.IsolatedCommand(c, "--help")
+	cmd := i.IsolatedCommand(c, python.NoTarget{}, "--help")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	if err := cmd.Run(); err != nil {
