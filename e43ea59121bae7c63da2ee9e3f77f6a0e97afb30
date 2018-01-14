@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c7bacf09_8ad8447c",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 818,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-14T19:00:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "183e1049_4f8c3d13",
+      "range": {
+        "startLine": 818,
+        "startChar": 4,
+        "endLine": 818,
+        "endChar": 7
+      },
+      "revId": "e43ea59121bae7c63da2ee9e3f77f6a0e97afb30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13205eaa_a17066c4",
         "filename": "vpython/venv/venv.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-01-14T16:25:49Z",
       "side": 1,
       "message": "booooo\n\nDoes virtualenv already take care of \"PYTHONUSERBASE\" too? Or does vpython do that?",
+      "range": {
+        "startLine": 907,
+        "startChar": 8,
+        "endLine": 907,
+        "endChar": 56
+      },
+      "revId": "e43ea59121bae7c63da2ee9e3f77f6a0e97afb30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99bae940_8d32fe92",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 907,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-14T19:00:03Z",
+      "side": 1,
+      "message": "I believe VirtualEnv handles that.",
+      "parentUuid": "13205eaa_a17066c4",
       "range": {
         "startLine": 907,
         "startChar": 8,
