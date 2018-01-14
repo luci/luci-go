@@ -235,7 +235,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		// expected forms on all systems.
 		err := With(ctx, cfg, func(ctx context.Context, env *Env) error {
 			cmd := env.Interpreter().IsolatedCommand(ctx,
-				"setup.py",
+				python.ScriptTarget{Path: "setup.py"},
 				"--no-user-cfg",
 				"bdist_wheel",
 				"--bdist-dir", buildDir,

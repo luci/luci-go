@@ -66,10 +66,10 @@ func (i *Interpreter) Normalize() error {
 //	- The user's "site.py".
 //	- The current PYTHONPATH environment variable.
 //	- Compiled ".pyc/.pyo" files.
-func (i *Interpreter) IsolatedCommand(c context.Context, script string, args ...string) *exec.Cmd {
+func (i *Interpreter) IsolatedCommand(c context.Context, target Target, args ...string) *exec.Cmd {
 	// Isolate the supplied arguments.
 	cl := CommandLine{
-		Target: ScriptTarget{script},
+		Target: target,
 		Args:   args,
 	}
 	cl.SetIsolatedFlags()
@@ -94,7 +94,7 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 
 	// We use CombinedOutput here becuase Python2 writes the version to STDERR,
 	// while Python3+ writes it to STDOUT.
-	cmd := i.IsolatedCommand(c, "--version")
+	cmd := i.IsolatedCommand(c, NoTarget{}, "--version")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		err = errors.Annotate(err, "").Err()
