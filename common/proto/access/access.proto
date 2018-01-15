@@ -13,14 +13,11 @@ package access;
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 
-// Access service can be used to check what actions a given user can perform
-// on a given resource.
+// Provides a requester's permitted actions for resources hosted on the server.
 service Access {
-  // PermittedActions returns a list of actions the requester can perform
-  // on a given resource.
+  // Returns a list of actions the requester can perform on given resources.
   rpc PermittedActions(PermittedActionsRequest) returns (PermittedActionsResponse) {};
-  // Description returns types of resources and actions that this service
-  // supports.
+  // Returns types of resources and actions that this service supports.
   // It is intended to be used as self-documentation, for humans that play
   // with the API.
   // If the concepts returned by this RPC are internal, it should be restricted.
@@ -36,32 +33,41 @@ message DescriptionResponse {
 
     // Action describes what a user can do with a resource.
     message Action {
-      // Comment provides more human-readable info about the action.
+      // A human-readable description of the action.
       string comment = 1;
+
+      // A bit mask that should be used to check if this action
+      // is included in the PermittedActions.
+      // For example, if action A's mask is M and PermittedActions returned P,
+      // A is permitted iff (P & M) == M.
+      //
+      // For implementers:
+      // use powers of two. Changing a mask is a breaking change.
+      int64 mask = 2;
     }
 
-    // Role is a named set of allowed actions.
+    // A named set of allowed actions.
     message Role {
-      // AllowedActions is a set of action IDs.
-      // It defines what a role bearer can do with the resource.
+      // A set of action IDs.
+      // Defines what a role bearer can do with the resource.
       repeated string allowed_actions = 1;
-      // Comment provides more info about the role.
+      // A human-readable description of the role.
       string comment = 2;
     }
 
-    // Kind identifies the resource type presented on the service.
-    // Access.PermittedActions accepts one of resource kinds.
+    // Type of the resource.
     // Example: "bucket" for buildbucket bucket, "package" for CIPD package.
     //
     // For implementers:
     // Kind must match regexp `^[a-z\-/]+$`.
     string kind = 1;
 
-    // Comment provides more info about the resource.
+    // A human-readable description of the resource.
+    // MUST explain resource name format, for example for a buildbucket bucket
+    // the format could be "projects/{project-id}/buckets/{bucket-name}".
     string comment = 2;
 
-    // Actions defines all possible actions that can be performed on this type
-    // of resource.
+    // All possible actions that can be performed on this type of resource.
     //
     // Map key is an action ID, unique within the resource.
     // It is referenced from Role.allowed_actions.
@@ -75,7 +81,7 @@ message DescriptionResponse {
     //   abstract ones ("MODIFY", "WRITE", "UPDATE").
     map<string, Action> actions = 3;
 
-    // Roles maps a role id to a set of actions.
+    // A mapping from a role id to a set of actions.
     // Access configurations are typically expressed with roles, not actions.
     //
     // For implementers:
@@ -85,44 +91,35 @@ message DescriptionResponse {
     map<string, Role> roles = 4;
   }
 
-  // Resources is a list of resource types presented on the given service.
+  // A list of resource types presented on the given service.
   repeated ResourceDescription resources = 1;
 }
 
-// PermittedActionsRequest is a request message to Access.PermittedActions.
+// A request message to Access.PermittedActions.
 //
 // Besides explicit fields in the message, there is an implicit parameter: the
 // current identity which is defined by the "Authorization" OAuth 2.0 HTTP
 // header and, optionally, LUCI-specific delegation token header.
 message PermittedActionsRequest {
-  // ResourceKind is one of Resource.kind values returned by Access.Description.
-  // It identifies the type of the resource being checked.
-  string resource_kind = 1;
-
-  // ResourceIds identifies the resources presented on this service.
-  // For example, for a buildbucket bucket it would be a bucket name
-  // ("luci.chromium.try").
-  // For a CIPD package it would be a full package name,
-  // "infra/git/linux-amd64".
-  repeated string resource_ids = 2;
+  // Names of resources to get permitted actions for.
+  // For example, for a buildbucket bucket "luci.chromium.try"
+  // it would be "projects/chromium/buckets/luci.chromium.try".
+  // For a CIPD package "infra/git/linux-amd64", it would be
+  // "packages/infra/git/linux-amd64".
+  // See also https://cloud.google.com/apis/design/resource_names.
+  repeated string resource_names = 1;
 }
 
 
-// PermittedActionsResponse is the response message of the
-// Accses.PermittedActions.
+// A response message of the Accses.PermittedActions.
 message PermittedActionsResponse {
 
-  // ResourcePermissions describes what is permitted on a single resource.
-  message ResourcePermissions {
-    // Actions is a list of action ids that the user can do on the resource.
-    // For resources that do not exist, this list must be empty.
-    repeated string actions = 1;
-  }
+  // The list of permitted actions, in the same order as resource_names
+  // in the request.
+  // Each value is bitwise OR of all permitted action masks,
+  // see DescriptionResponse.ResourceDescription.Action.mask.
+  repeated int64 permitted = 1;
 
-  // Permitted maps a resource id to resource permissions.
-  map<string, ResourcePermissions> permitted = 1;
-
-  // ValiditiyDuration specifies for how long clients may cache this
-  // information.
+  // The duration clients may cache this information.
   google.protobuf.Duration validity_duration = 2;
 }
