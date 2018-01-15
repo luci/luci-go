@@ -53,9 +53,17 @@ const (
 	// used for the VirtualEnv root.
 	VirtualEnvRootENV = "VPYTHON_VIRTUALENV_ROOT"
 
-	// DefaultSpecENV is an enviornment variable that, if set, will be used as the
+	// DefaultSpecENV is an environment variable that, if set, will be used as the
 	// default VirtualEnv spec file if none is provided or found through probing.
 	DefaultSpecENV = "VPYTHON_DEFAULT_SPEC"
+
+	// LogTraceENV is an environment variable that, if set, will set the default
+	// log level to Debug.
+	//
+	// This is useful when debugging scripts that invoke "vpython" internally,
+	// where adding the "-vpython-log-level" flag is not straightforward. The
+	// flag is preferred when possible.
+	LogTraceENV = "VPYTHON_LOG_TRACE"
 )
 
 // VerificationFunc is a function used in environment verification.
@@ -172,6 +180,17 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 }
 
 func (a *application) mainImpl(c context.Context, argv0 string, args []string) error {
+	// Identify the currently-running binary, either by path or (preferred) CIPD
+	// package.
+	self, err := os.Executable()
+	if err != nil {
+		self = "<vpython>"
+	}
+	vers, err := cipdVersion.GetStartupVersion()
+	if err == nil && vers.PackageName != "" && vers.InstanceID != "" {
+		self = fmt.Sprintf("%s (%s@%s)", self, vers.PackageName, vers.InstanceID)
+	}
+
 	// First things first; We never want to see a VirtualEnv on $PATH. This can
 	// lead to identifying a VirtualEnv python as "our base python", or passing
 	// ever-accumulating $PATH values as vpython processes call vpython processes
@@ -214,11 +233,13 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	}
 
 	if a.help {
-		return a.showPythonHelp(c, fs, &lp)
+		return a.showPythonHelp(c, self, fs, &lp)
 	}
 
 	c = a.logConfig.Set(c)
 
+	// Now that logging is configured, log previous information.
+	logging.Infof(c, "Running vpython: %s", self)
 	for _, path := range prunedPaths {
 		logging.Infof(c, "Pruned VirtualEnv from $PATH: %q", path)
 	}
@@ -237,12 +258,11 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		}
 	}
 
-	var err error
 	if a.opts.CommandLine, err = python.ParseCommandLine(args); err != nil {
 		return errors.Annotate(err, "failed to parse Python command-line").
 			InternalReason("args(%v)", args).Err()
 	}
-	logging.Debugf(c, "Parsed command-line: %#v", a.opts.CommandLine)
+	logging.Debugf(c, "Parsed command-line %v: %#v", args, a.opts.CommandLine)
 
 	// If we're bypassing "vpython", run Python directly.
 	if a.Bypass {
@@ -282,16 +302,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	return vpython.Run(c, a.opts)
 }
 
-func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lookPath) error {
-	self, err := os.Executable()
-	if err != nil {
-		self = "vpython"
-	}
-	vers, err := cipdVersion.GetStartupVersion()
-	if err == nil && vers.PackageName != "" && vers.InstanceID != "" {
-		self = fmt.Sprintf("%s (%s@%s)", self, vers.PackageName, vers.InstanceID)
-	}
-
+func (a *application) showPythonHelp(c context.Context, self string, fs *flag.FlagSet, lp *lookPath) error {
 	fmt.Fprintf(os.Stdout, "Usage of %s:\n", self)
 	fs.SetOutput(os.Stdout)
 	fs.PrintDefaults()
@@ -341,8 +352,13 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 		return 1
 	}
 
+	defaultLogLevel := logging.Error
+	if env.GetEmpty(LogTraceENV) != "" {
+		defaultLogLevel = logging.Debug
+	}
+
 	c = gologger.StdConfig.Use(c)
-	c = logging.SetLevel(c, logging.Error)
+	c = logging.SetLevel(c, defaultLogLevel)
 
 	a := application{
 		Config: cfg,
@@ -362,7 +378,7 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 			Environ:    env,
 		},
 		logConfig: logging.Config{
-			Level: logging.Error,
+			Level: defaultLogLevel,
 		},
 	}
 
