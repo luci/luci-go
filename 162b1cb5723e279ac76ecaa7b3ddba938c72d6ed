@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d39fdb22_5658369f",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-15T20:43:25Z",
+      "side": 1,
+      "message": "IMHO we are introducing confusion here between Cloud Projects and LUCI projects. Making LUCI resources look like Cloud resources, while they are in fact not, can lead to misunderstanding. For example, there\u0027re some Cloud APIs that work with arbitrary cloud resources (e.g SetIAMPolicy). One may be tempted to use them with LUCI resources, because they look so similar.\n\nWe are not part of Cloud ecosystem. Copying their model and pretending we are is not great :( Links to Cloud API docs also contribute to the confusion.",
+      "range": {
+        "startLine": 67,
+        "startChar": 28,
+        "endLine": 67,
+        "endChar": 71
+      },
+      "revId": "162b1cb5723e279ac76ecaa7b3ddba938c72d6ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ad9b155_9eb2becc",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-15T20:43:25Z",
+      "side": 1,
+      "message": "This is quite cryptic response. Are puny optimizations brought by the usage of bit masks really worth obscuring the protocol? The result of this call is cached and the overhead of parsing of the response is amortized across many calls, it is minuscule on average.",
+      "range": {
+        "startLine": 121,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 31
+      },
+      "revId": "162b1cb5723e279ac76ecaa7b3ddba938c72d6ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
