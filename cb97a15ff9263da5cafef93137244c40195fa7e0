@@ -16,6 +16,24 @@
       "revId": "cb97a15ff9263da5cafef93137244c40195fa7e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7202fbed_30319342",
+        "filename": "client/cmd/gitiles/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-15T16:46:27Z",
+      "side": 1,
+      "message": "yeah, it would be cleaner. Let\u0027s do in a separate CL though, so I can continue cleaning the Go side.",
+      "parentUuid": "e18239c9_795f75a3",
+      "revId": "cb97a15ff9263da5cafef93137244c40195fa7e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
