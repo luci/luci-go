@@ -58,6 +58,10 @@
 // A pRPC server MUST support Binary and SHOULD support JSON and Text.
 //
 // Request headers:
+//  - "X-Prpc-Version": specifies the version of the pRPC protocol.
+//    A client SHOULD specify it.
+//    Defaults to 1.0.
+//    The response MUST be compatible with this version.
 //  - "X-Prpc-Timeout": specifies request timeout.
 //    A client MAY specify it.
 //    If a service hits the timeout, a server MUST respond with HTTP 503 and
@@ -99,8 +103,14 @@
 // A server MUST always specify "X-Prpc-Grpc-Code".
 // The server SHOULD specify HTTP status corresponding to the gRPC code.
 //
-// If the "X-Prpc-Grpc-Code" response header value is not 0, the response body
-// MUST contain a description of the error.
+// If the "X-Prpc-Grpc-Code" response header value is not 0, and protocol
+// version is "1.0", the response body MUST contain a description of the error
+// in plain text, and "Content-Header" must be "plain/text".
+// Otherwise, if the protocol version is "1.1" or higher,
+// the error MUST be converted to a Status protocol buffer message
+// https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto
+// and encoded according to the Accept HTTP header, similar to the response
+// message.
 //
 // If a service/method is not found, the server MUST respond with Unimplemented
 // gRPC code and SHOULD specify HTTP 501 status.
