@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e18239c9_795f75a3",
+        "filename": "client/cmd/gitiles/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-01-15T09:32:25Z",
+      "side": 1,
+      "message": "I\u0027d be happy to update recipe module if you\u0027d prefer to marshal the output to JSONPB as-is.",
+      "revId": "cb97a15ff9263da5cafef93137244c40195fa7e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
