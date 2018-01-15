@@ -22,13 +22,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// parameterSeparatorCommandLineFlag is a special-case command-line flag that
-// represents the double-dash separator ("--").
-//
-// This is represented as a flag with value "-". Since a flag renders with a
-// preceding "-", this will render as "--".
-var parameterSeparatorCommandLineFlag = CommandLineFlag{Flag: "-"}
-
 // CommandLineFlag is a command-line flag and its associated argument, if one
 // is provided.
 type CommandLineFlag struct {
@@ -117,6 +110,9 @@ type CommandLine struct {
 
 	// Flags are flags to the Python interpreter.
 	Flags []CommandLineFlag
+	// FlagSeparator, if true, means that a "--" flag separator, which separates
+	// the interpreter's flags from its positional arguments, was found.
+	FlagSeparator bool
 	// Args are arguments passed to the Python script.
 	Args []string
 }
@@ -124,9 +120,12 @@ type CommandLine struct {
 // BuildArgs returns an array of Python interpreter arguments for cl.
 func (cl *CommandLine) BuildArgs() []string {
 	targetArgs := cl.Target.buildArgsForTarget()
-	args := make([]string, 0, len(cl.Flags)+len(targetArgs)+len(cl.Args))
+	args := make([]string, 0, len(cl.Flags)+1+len(targetArgs)+len(cl.Args))
 	for _, flag := range cl.Flags {
 		args = append(args, flag.String())
+	}
+	if cl.FlagSeparator {
+		args = append(args, "--")
 	}
 	args = append(args, targetArgs...)
 	args = append(args, cl.Args...)
@@ -149,6 +148,9 @@ func (cl *CommandLine) SetIsolatedFlags() {
 
 // AddFlag adds an interpreter flag to cl if it's not already present.
 func (cl *CommandLine) AddFlag(flag CommandLineFlag) {
+	if strings.HasPrefix(flag.Flag, "-") {
+		panic("flag must not begin with '-'")
+	}
 	for _, f := range cl.Flags {
 		if f == flag {
 			return
@@ -282,10 +284,7 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 	cl := CommandLine{
 		Target: noTarget,
 	}
-	var (
-		i            = 0
-		canHaveFlags = true
-	)
+	i := 0
 	for len(args) > 0 {
 		// Stop parsing after we have a target, as Python does.
 		if cl.Target != noTarget {
@@ -306,7 +305,7 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 		}
 
 		isFlag := false
-		if canHaveFlags {
+		if !cl.FlagSeparator {
 			arg, isFlag = trimPrefix(arg, "-")
 		}
 
@@ -324,8 +323,7 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 		// interpreter flag parsing; everything hereafter is considered positional
 		// to the interpreter.
 		if arg == "-" {
-			canHaveFlags = false
-			cl.Flags = append(cl.Flags, parameterSeparatorCommandLineFlag)
+			cl.FlagSeparator = true
 			continue
 		}
 

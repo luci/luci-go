@@ -84,9 +84,9 @@ func TestParseCommandLine(t *testing.T) {
 		// positional argument code.
 		{[]string{"--", "-c", "-foo", "-bar"},
 			CommandLine{
-				Target: ScriptTarget{"-c"},
-				Args:   []string{"-foo", "-bar"},
-				Flags:  []CommandLineFlag{f("-")},
+				Target:        ScriptTarget{"-c"},
+				Args:          []string{"-foo", "-bar"},
+				FlagSeparator: true,
 			},
 			[]string{"--", "-c", "-foo", "-bar"},
 		},
@@ -155,9 +155,9 @@ func TestParseCommandLine(t *testing.T) {
 		// the script.
 		{[]string{"--", "--", "--", "--"},
 			CommandLine{
-				Target: ScriptTarget{"--"},
-				Flags:  []CommandLineFlag{parameterSeparatorCommandLineFlag},
-				Args:   []string{"--", "--"},
+				Target:        ScriptTarget{"--"},
+				FlagSeparator: true,
+				Args:          []string{"--", "--"},
 			},
 			[]string{"--", "--", "--", "--"},
 		},
@@ -273,6 +273,22 @@ func TestCommandLine(t *testing.T) {
 			clone.Flags = append(clone.Flags[:0], f("B"), f("d"), f("E"), f("H"))
 			clone.Args = append(clone.Args[:0], "bar", "baz")
 			So(clone, ShouldNotResemble, &cmd)
+		})
+
+		Convey(`Adding a flag with a '-' causes a panic.`, func() {
+			var cl CommandLine
+			So(func() { cl.AddSingleFlag("-") }, ShouldPanic)
+			So(func() { cl.AddFlag(f("-W", "all")) }, ShouldPanic)
+		})
+
+		Convey(`Adding a flag to a command-line with a flag separator`, func() {
+			cl, err := ParseCommandLine([]string{"--", "foo", "bar"})
+			So(err, ShouldBeNil)
+
+			cl.AddSingleFlag("B")
+			cl.AddSingleFlag("E")
+
+			So(cl.BuildArgs(), ShouldResemble, []string{"-B", "-E", "--", "foo", "bar"})
 		})
 	})
 }
