@@ -51,7 +51,7 @@
 // encode the returned output message or error to the HTTP response.
 //
 // pRPC protocol defines three protocol buffer encodings and media types.
-//  - Binary: "application/prpc; encoding=binary"
+//  - Binary: "application/prpc; encoding=binary" (default).
 //  - JSON:   "application/prpc; encoding=json"   or "application/json"
 //    A response body MUST have `)]}'` prefix to avoid CSRF.
 //  - Text:   "application/prpc; encoding=text"
