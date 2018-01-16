@@ -53,12 +53,44 @@ func TestParseCommandLine(t *testing.T) {
 			[]string{"-a", "-b", "-Q'foo.bar.baz'", "-X'foo.bar.baz'", "-Wbar"},
 		},
 
+		// Script target with flag separator.
 		{[]string{"path.py", "--", "foo", "bar"},
 			CommandLine{
 				Target: ScriptTarget{"path.py"},
 				Args:   []string{"--", "foo", "bar"},
 			},
 			[]string{"path.py", "--", "foo", "bar"},
+		},
+
+		// Command target with flag separator.
+		{[]string{"-v", "-c", "<script>", "--", "-foo", "-bar"},
+			CommandLine{
+				Flags:  []CommandLineFlag{f("v")},
+				Target: CommandTarget{"<script>"},
+				Args:   []string{"--", "-foo", "-bar"},
+			},
+			[]string{"-v", "-c", "<script>", "--", "-foo", "-bar"},
+		},
+
+		// Script target before with flag separator.
+		{[]string{"-v", "<script>", "--", "-foo", "-bar"},
+			CommandLine{
+				Flags:  []CommandLineFlag{f("v")},
+				Target: ScriptTarget{"<script>"},
+				Args:   []string{"--", "-foo", "-bar"},
+			},
+			[]string{"-v", "<script>", "--", "-foo", "-bar"},
+		},
+
+		// Script target after flag separator.
+		{[]string{"-v", "--", "<script>", "-foo", "-bar"},
+			CommandLine{
+				Flags:         []CommandLineFlag{f("v")},
+				Target:        ScriptTarget{"<script>"},
+				FlagSeparator: true,
+				Args:          []string{"-foo", "-bar"},
+			},
+			[]string{"-v", "--", "<script>", "-foo", "-bar"},
 		},
 
 		{[]string{"-v", "-cprint", "foo", "bar"},
