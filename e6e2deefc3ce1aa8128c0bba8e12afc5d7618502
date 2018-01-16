@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2156d25c_f78bdae0",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-16T23:48:00Z",
+      "side": 1,
+      "message": "you could embed crimson.Machine here and then do cmd.Flags.StringVar(\u0026cmd.Machine.name)",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 38,
+        "endChar": 24
+      },
+      "revId": "e6e2deefc3ce1aa8128c0bba8e12afc5d7618502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
