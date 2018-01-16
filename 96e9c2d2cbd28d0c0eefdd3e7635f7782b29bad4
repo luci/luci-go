@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85f157e2_f340a0f6",
+        "filename": "cipd/appengine/frontend/phony.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-16T22:39:19Z",
+      "side": 1,
+      "message": "set http error?",
+      "range": {
+        "startLine": 21,
+        "startChar": 18,
+        "endLine": 21,
+        "endChar": 23
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
