@@ -56,7 +56,7 @@ func TestParseCommandLine(t *testing.T) {
 		// Script target with flag separator.
 		{[]string{"path.py", "--", "foo", "bar"},
 			CommandLine{
-				Target: ScriptTarget{"path.py"},
+				Target: ScriptTarget{"path.py", false},
 				Args:   []string{"--", "foo", "bar"},
 			},
 			[]string{"path.py", "--", "foo", "bar"},
@@ -76,7 +76,7 @@ func TestParseCommandLine(t *testing.T) {
 		{[]string{"-v", "<script>", "--", "-foo", "-bar"},
 			CommandLine{
 				Flags:  []CommandLineFlag{f("v")},
-				Target: ScriptTarget{"<script>"},
+				Target: ScriptTarget{"<script>", false},
 				Args:   []string{"--", "-foo", "-bar"},
 			},
 			[]string{"-v", "<script>", "--", "-foo", "-bar"},
@@ -86,7 +86,7 @@ func TestParseCommandLine(t *testing.T) {
 		{[]string{"-v", "--", "<script>", "-foo", "-bar"},
 			CommandLine{
 				Flags:         []CommandLineFlag{f("v")},
-				Target:        ScriptTarget{"<script>"},
+				Target:        ScriptTarget{"<script>", true},
 				FlagSeparator: true,
 				Args:          []string{"-foo", "-bar"},
 			},
@@ -104,7 +104,7 @@ func TestParseCommandLine(t *testing.T) {
 
 		{[]string{"-Wbar", "-", "-foo", "-bar"},
 			CommandLine{
-				Target: ScriptTarget{"-"},
+				Target: ScriptTarget{"-", false},
 				Flags:  []CommandLineFlag{f("W", "bar")},
 				Args:   []string{"-foo", "-bar"},
 			},
@@ -116,7 +116,7 @@ func TestParseCommandLine(t *testing.T) {
 		// positional argument code.
 		{[]string{"--", "-c", "-foo", "-bar"},
 			CommandLine{
-				Target:        ScriptTarget{"-c"},
+				Target:        ScriptTarget{"-c", true},
 				Args:          []string{"-foo", "-bar"},
 				FlagSeparator: true,
 			},
@@ -125,7 +125,7 @@ func TestParseCommandLine(t *testing.T) {
 
 		{[]string{"-a", "-Wfoo", "-", "--", "foo"},
 			CommandLine{
-				Target: ScriptTarget{"-"},
+				Target: ScriptTarget{"-", false},
 				Flags:  []CommandLineFlag{f("a"), f("W", "foo")},
 				Args:   []string{"--", "foo"},
 			},
@@ -153,7 +153,7 @@ func TestParseCommandLine(t *testing.T) {
 		// NOTE: -W-c is invalid argument to "-W", but it parses.
 		{[]string{"-vWfoo", "-vvvW", "-c", "script", "-arg"},
 			CommandLine{
-				Target: ScriptTarget{"script"},
+				Target: ScriptTarget{"script", false},
 				Flags:  []CommandLineFlag{f("v"), f("W", "foo"), f("v"), f("v"), f("v"), f("W", "-c")},
 				Args:   []string{"-arg"},
 			},
@@ -187,7 +187,7 @@ func TestParseCommandLine(t *testing.T) {
 		// the script.
 		{[]string{"--", "--", "--", "--"},
 			CommandLine{
-				Target:        ScriptTarget{"--"},
+				Target:        ScriptTarget{"--", true},
 				FlagSeparator: true,
 				Args:          []string{"--", "--"},
 			},
@@ -294,7 +294,7 @@ func TestCommandLine(t *testing.T) {
 		Convey(`Testing Clone`, func() {
 			// Create a command-line with all fields populated.
 			cmd := CommandLine{
-				Target: ScriptTarget{"script"},
+				Target: ScriptTarget{"script", false},
 				Flags:  []CommandLineFlag{f("OO"), f("v"), f("Q", "warnall")},
 				Args:   []string{"foo"},
 			}
@@ -321,6 +321,15 @@ func TestCommandLine(t *testing.T) {
 			cl.AddSingleFlag("E")
 
 			So(cl.BuildArgs(), ShouldResemble, []string{"-B", "-E", "--", "foo", "bar"})
+		})
+
+		Convey(`Setting FlagSeparator with a flag target includes the flag in the proper section.`, func() {
+			cl := CommandLine{
+				Target:        ModuleTarget{Module: "<module>"},
+				FlagSeparator: true,
+				Args:          []string{"foo", "bar"},
+			}
+			So(cl.BuildArgs(), ShouldResemble, []string{"-m", "<module>", "--", "foo", "bar"})
 		})
 	})
 }

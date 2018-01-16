@@ -50,6 +50,13 @@ type Target interface {
 	// buildArgsForTarget returns the arguments to pass to the interpreter to
 	// invoke this target.
 	buildArgsForTarget() []string
+	// followsFlagSeparator returns true if this target follows the command-line
+	// flag separator (if present). This will be false for all flag arguments,
+	// since flags must precede the separator.
+	//
+	//	- true: python <flags> -- <script> ...
+	//	- false: python <flags> <script> -- ...
+	followsFlagSeparator() bool
 }
 
 // NoTarget is a Target implementation indicating no Python target (i.e.,
@@ -57,6 +64,7 @@ type Target interface {
 type NoTarget struct{}
 
 func (NoTarget) buildArgsForTarget() []string { return nil }
+func (NoTarget) followsFlagSeparator() bool   { return false }
 
 // ScriptTarget is a Python executable script target.
 type ScriptTarget struct {
@@ -64,9 +72,12 @@ type ScriptTarget struct {
 	//
 	// This may be "-", indicating that the script is being read from STDIN.
 	Path string
+	// FollowsSeparator is true if the script argument follows the flag separator.
+	FollowsSeparator bool
 }
 
 func (t ScriptTarget) buildArgsForTarget() []string { return []string{t.Path} }
+func (t ScriptTarget) followsFlagSeparator() bool   { return t.FollowsSeparator }
 
 // CommandTarget is a Target implementation for a command-line string
 // (-c ...).
@@ -76,6 +87,7 @@ type CommandTarget struct {
 }
 
 func (t CommandTarget) buildArgsForTarget() []string { return []string{"-c", t.Command} }
+func (CommandTarget) followsFlagSeparator() bool     { return false }
 
 // ModuleTarget is a Target implementating indicating a Python module (-m ...).
 type ModuleTarget struct {
@@ -84,6 +96,7 @@ type ModuleTarget struct {
 }
 
 func (t ModuleTarget) buildArgsForTarget() []string { return []string{"-m", t.Module} }
+func (ModuleTarget) followsFlagSeparator() bool     { return false }
 
 // parsedFlagState is the current state of a parsed flag block. It is advanced
 // in CommandLine's parseSingleFlag as flags are parsed.
@@ -124,10 +137,23 @@ func (cl *CommandLine) BuildArgs() []string {
 	for _, flag := range cl.Flags {
 		args = append(args, flag.String())
 	}
+
+	var flagSeparator []string
 	if cl.FlagSeparator {
-		args = append(args, "--")
+		flagSeparator = []string{"--"}
 	}
-	args = append(args, targetArgs...)
+
+	// If our target is specified as a flag, we need to emit it before the flag
+	// separator. If our target is specified as a positional argument (e.g.,
+	// CommandTarget), we can emit it on either side.
+	if !cl.Target.followsFlagSeparator() {
+		args = append(args, targetArgs...)
+		args = append(args, flagSeparator...)
+	} else {
+		args = append(args, flagSeparator...)
+		args = append(args, targetArgs...)
+	}
+
 	args = append(args, cl.Args...)
 	return args
 }
@@ -313,7 +339,8 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 			// The first positional argument is the path to the script, and all
 			// subsequent arguments are script arguments.
 			cl.Target = ScriptTarget{
-				Path: arg,
+				Path:             arg,
+				FollowsSeparator: cl.FlagSeparator,
 			}
 			continue
 		}
