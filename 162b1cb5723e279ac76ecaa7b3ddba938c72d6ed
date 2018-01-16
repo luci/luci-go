@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d600fd86_3e5e5867",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-16T17:29:48Z",
+      "side": 1,
+      "message": "i didn\u0027t realize this and Cloud resources have common prefix \"projects/\". I agree that this is confusing.\n\nI\u0027ve replaced \"projects/\" with \"luci-projects/\". Does it address the concern?\n\nContext: the API Design guide seems very sensible to me and I\u0027d like to make it a standard. Currently I am evaluating it with buildbucket api v2 as a guinea pig (see mocks in go/chops-build-api-prd).",
+      "parentUuid": "d39fdb22_5658369f",
+      "range": {
+        "startLine": 67,
+        "startChar": 28,
+        "endLine": 67,
+        "endChar": 71
+      },
+      "revId": "162b1cb5723e279ac76ecaa7b3ddba938c72d6ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7ad9b155_9eb2becc",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2018-01-15T20:43:25Z",
       "side": 1,
       "message": "This is quite cryptic response. Are puny optimizations brought by the usage of bit masks really worth obscuring the protocol? The result of this call is cached and the overhead of parsing of the response is amortized across many calls, it is minuscule on average.",
+      "range": {
+        "startLine": 121,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 31
+      },
+      "revId": "162b1cb5723e279ac76ecaa7b3ddba938c72d6ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d191b296_f953edbb",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-16T17:29:48Z",
+      "side": 1,
+      "message": "the only client that we have today is buildbucket access client\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/11d9b050100a0a69bc4d1f88e536a8fbd9b3af92/buildbucket/access/acl.go#42\n\nA bit field is exactly what it needs, so this change is a simplification from its POV.\nAlso it is simpler to implement in Buildbucket server. It would have just map role-\u003eint64.\n\nIMO a bit field is the best way to represent a set of actions in any application, not necessarily buildbucket.\n\n----\n\n\nA typical buildbucket response is for SCHEDULER role. The following message in old format, \n\npermitted {\n  key: \"luci.chromium.try\"\n  value {\n  \tactions: \"ADD_BUILD\"\n  \tactions: \"VIEW_BUILD\"\n  \tactions: \"CANCEL_BUILD\"\n  \tactions: \"SEARCH_BUILDS\"\n  \tactions: \"ACCESS_BUCKET \"\n  }\n}\nvalidity_duration {\n  seconds: 10\n}\n\ntakes 95 bytes in binary. Equivalent message in new format takes 8 bytes. That\u0027s 10x improvement in response size.\n\nI\u0027ve added an example. Does it address your concern?",
+      "parentUuid": "7ad9b155_9eb2becc",
       "range": {
         "startLine": 121,
         "startChar": 2,
