@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6a94147_48167a2e",
+        "filename": "machine-db/common/mac_addresses.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-17T23:13:03Z",
+      "side": 1,
+      "message": "it is very unusual for String() to return an error. This does not match https://godoc.org/fmt#Stringer which means it work for %s and %q. How about omitting the validation in String() or returning fmt.Sprintf(\"invalid MAC-48 address %d\", m).\n\n\noptional: we can have\n\n  (MAC48) func IsValid() bool \n\nfor users to check if they are not sure",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 41
+      },
+      "revId": "841bd06a1524910edf336587c98aa435796b74d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04fcdb24_a530d9af",
+        "filename": "machine-db/common/mac_addresses.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-17T23:13:03Z",
+      "side": 1,
+      "message": "mac :\u003d make(net.HardwareAddr, 8)\nbinary.BigEndian.PutUint64(mac, uint64(m))\nreturn mac[2:].String()",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 25
+      },
+      "revId": "841bd06a1524910edf336587c98aa435796b74d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
