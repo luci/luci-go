@@ -64,6 +64,15 @@ const (
 	// where adding the "-vpython-log-level" flag is not straightforward. The
 	// flag is preferred when possible.
 	LogTraceENV = "VPYTHON_LOG_TRACE"
+
+	// ClearPythonPathENV if set instructs vpython to clear the PYTHONPATH
+	// environment variable prior to launching the VirtualEnv Python interpreter.
+	//
+	// After initial processing, this enviornment variable will be cleared.
+	//
+	// TODO(iannucci): Delete this once we're satisfied that PYTHONPATH exports
+	// are under control.
+	ClearPythonPathENV = "VPYTHON_CLEAR_PYTHONPATH"
 )
 
 // VerificationFunc is a function used in environment verification.
@@ -277,6 +286,9 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	if a.opts.CommandLine.RemoveAllFlag("S") {
 		logging.Warningf(c, "Removing unsupported arg -S")
 	}
+
+	// Should we clear PYTHONPATH when we run the Python script?
+	a.opts.ClearPythonPath = a.opts.Environ.Remove(ClearPythonPathENV)
 
 	// If an empty BaseDir was specified, use a temporary directory and clean it
 	// up on completion.

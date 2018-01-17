@@ -62,7 +62,7 @@ func Run(c context.Context, opts Options) error {
 	opts.EnvConfig.FailIfLocked = !opts.WaitForEnv
 	err := venv.With(c, opts.EnvConfig, func(c context.Context, ve *venv.Env) error {
 		e := opts.Environ.Clone()
-		python.IsolateEnvironment(&e)
+		python.IsolateEnvironment(&e, !opts.ClearPythonPath)
 
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
 		// Prepend BinDir to $PATH
