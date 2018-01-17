@@ -104,8 +104,12 @@ func Run(c context.Context, opts Options) error {
 //
 // The implementation of Exec is platform-specific.
 func Exec(c context.Context, interp *python.Interpreter, cl *python.CommandLine, env environ.Env, dir string, setupFn func() error) error {
+	// Don't use cl.SetIsolatedFlags here, because they include -B and -E, which
+	// both turn off commonly-used aspects of the python interpreter. We do set
+	// '-s' though, because we don't want vpython to pick up the user's site
+	// directory by default (to maintain some semblance of isolation).
 	cl = cl.Clone()
-	cl.SetIsolatedFlags()
+	cl.AddSingleFlag("s")
 
 	argv := append([]string{interp.Python}, cl.BuildArgs()...)
 	logging.Debugf(c, "Exec Python command: %#v", argv)
