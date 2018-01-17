@@ -28,6 +28,13 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	// KeepUserSiteEnv if set instructs vpython to keep respecting the
+	// 'user site' directory. Otherwise vpython will always apply the `-s`
+	// parameter when invoking the underlying script, for better isolation.
+	KeepUserSiteEnv = "VPYTHON_KEEP_USER_SITE"
+)
+
 type runCommand struct {
 	args    []string
 	env     environ.Env
@@ -104,8 +111,14 @@ func Run(c context.Context, opts Options) error {
 //
 // The implementation of Exec is platform-specific.
 func Exec(c context.Context, interp *python.Interpreter, cl *python.CommandLine, env environ.Env, dir string, setupFn func() error) error {
-	cl = cl.Clone()
-	cl.SetIsolatedFlags()
+	// Don't use cl.SetIsolatedFlags here, because they include -B and -E, which
+	// both turn off commonly-used aspects of the python interpreter. We do set
+	// '-s' though, because we don't want vpython to pick up the user's site
+	// directory by default (to maintain some semblance of isolation).
+	if env.GetEmpty(KeepUserSiteEnv) == "" {
+		cl = cl.Clone()
+		cl.AddSingleFlag("s")
+	}
 
 	argv := append([]string{interp.Python}, cl.BuildArgs()...)
 	logging.Debugf(c, "Exec Python command: %#v", argv)
