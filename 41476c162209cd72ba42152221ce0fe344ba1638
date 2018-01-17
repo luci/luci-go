@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f0d49fbe_3f691624",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-17T03:26:00Z",
+      "side": 1,
+      "message": "not sure about this. maybe we should add \"X-Prpc-Error: true\" or something",
+      "range": {
+        "startLine": 128,
+        "startChar": 3,
+        "endLine": 128,
+        "endChar": 52
+      },
+      "revId": "41476c162209cd72ba42152221ce0fe344ba1638",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
