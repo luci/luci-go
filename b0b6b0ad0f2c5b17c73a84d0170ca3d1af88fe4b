@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d16b21c7_e5983811",
+        "filename": "vpython/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-17T18:19:36Z",
+      "side": 1,
+      "message": "WDYT about making this a function in \"interpreter.go\" like SetIsolatedFlags?",
+      "range": {
+        "startLine": 112,
+        "startChar": 4,
+        "endLine": 112,
+        "endChar": 17
+      },
+      "revId": "b0b6b0ad0f2c5b17c73a84d0170ca3d1af88fe4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
