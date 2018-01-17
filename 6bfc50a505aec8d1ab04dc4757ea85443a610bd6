@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d82e4c9d_8aedccdc",
+        "filename": "machine-db/api/crimson/v1/nics.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T22:55:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f1f12653_be20c898",
+      "range": {
+        "startLine": 9,
+        "startChar": 3,
+        "endLine": 9,
+        "endChar": 36
+      },
+      "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e417a65a_8b34d872",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "23b10ca2_e4142a42",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T22:55:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e417a65a_8b34d872",
+      "range": {
+        "startLine": 80,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 34
+      },
+      "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2fb6300c_4e7068f7",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c89c83a_30e77037",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T22:55:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fb6300c_4e7068f7",
+      "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "e5a65a4d_45ca35c7",
+        "filename": "machine-db/common/mac_addresses.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T22:55:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53301b83_3fb8254c",
+      "range": {
+        "startLine": 26,
+        "startChar": 17,
+        "endLine": 26,
+        "endChar": 69
+      },
+      "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "743a0d55_ab969576",
         "filename": "machine-db/common/mac_addresses.go",
         "patchSetId": 1
@@ -102,6 +192,24 @@
       "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5483e1e0_d0486d05",
+        "filename": "machine-db/common/mac_addresses.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T22:55:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "743a0d55_ab969576",
+      "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -125,6 +233,30 @@
       "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fc3f60c_4c6f0fb1",
+        "filename": "machine-db/common/mac_addresses.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T22:55:03Z",
+      "side": 1,
+      "message": "I\u0027m not stripping them, first argument to copy is the destination. net.HardwareAddr is 6 bytes but binary.BigEndian.Uint64 requires 8.",
+      "parentUuid": "a3acd75f_6f95d583",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 23
+      },
+      "revId": "6bfc50a505aec8d1ab04dc4757ea85443a610bd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
