@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -131,7 +132,7 @@ func TestIPs(t *testing.T) {
 		Convey("update", func() {
 			table.current = append(table.current, &IP{
 				Id:     1,
-				IPv4:   uint32(2130706432),
+				IPv4:   common.IPv4(2130706432),
 				VLANId: 10,
 			})
 			vlans := []*config.VLAN{

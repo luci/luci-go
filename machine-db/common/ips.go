@@ -22,32 +22,26 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// IPv4 represents an IPv4 address.
+type IPv4 uint32
+
+// String returns a string representation of this IPv4 address.
+func (i IPv4) String() string {
+	ip := make(net.IP, 4)
+	binary.BigEndian.PutUint32(ip, uint32(i))
+	return ip.String()
+}
+
 // IPv4Range returns the starting address and length of the given IPv4 CIDR block.
-func IPv4Range(block string) (uint32, int64, error) {
+func IPv4Range(block string) (IPv4, int64, error) {
 	ip, subnet, err := net.ParseCIDR(block)
 	if err != nil {
 		return 0, 0, errors.Reason("invalid CIDR block %q", block).Err()
 	}
-	ipv4, err := IPv4ToUint32(ip.Mask(subnet.Mask))
-	if err != nil {
-		return 0, 0, errors.Reason("invalid IPv4 CIDR block").Err()
+	ipv4 := ip.Mask(subnet.Mask).To4()
+	if ipv4 == nil {
+		return 0, 0, errors.Reason("invalid IPv4 CIDR block %q", block).Err()
 	}
 	ones, _ := subnet.Mask.Size()
-	return ipv4, 1 << uint32(32-ones), nil
-}
-
-// IPv4ToUint32 returns a uint32 representation of the given net.IP.
-func IPv4ToUint32(ip net.IP) (uint32, error) {
-	ipv4 := ip.To4()
-	if ipv4 == nil {
-		return 0, errors.Reason("invalid IPv4 address %q", ip).Err()
-	}
-	return binary.BigEndian.Uint32(ipv4), nil
-}
-
-// Uint32ToIPv4 returns a net.IP address from the given uint32.
-func Uint32ToIPv4(ipv4 uint32) net.IP {
-	ip := make(net.IP, 4)
-	binary.BigEndian.PutUint32(ip, ipv4)
-	return ip
+	return IPv4(binary.BigEndian.Uint32(ipv4)), 1 << uint32(32-ones), nil
 }

@@ -15,14 +15,25 @@
 package common
 
 import (
-	"net"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestIPv4(t *testing.T) {
+	t.Parallel()
+
+	Convey("String", t, func() {
+		So(IPv4(2130706433).String(), ShouldEqual, "127.0.0.1")
+		So(IPv4(0).String(), ShouldEqual, "0.0.0.0")
+		So(IPv4(uint32(4294967295)).String(), ShouldEqual, "255.255.255.255")
+	})
+}
+
 func TestIPv4Range(t *testing.T) {
+	t.Parallel()
+
 	Convey("invalid CIDR block", t, func() {
 		_, _, err := IPv4Range("a.b.c.d/f")
 		So(err, ShouldErrLike, "invalid CIDR block")
@@ -52,38 +63,5 @@ func TestIPv4Range(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(start, ShouldEqual, 2130706432)
 		So(length, ShouldEqual, 256)
-	})
-}
-
-func TestIPv4ToUint32(t *testing.T) {
-	Convey("IPv6", t, func() {
-		_, err := IPv4ToUint32(net.ParseIP("2001:db8:a0b:12f0::1"))
-		So(err, ShouldErrLike, "invalid IPv4 address")
-	})
-
-	Convey("ok", t, func() {
-		ipv4, err := IPv4ToUint32(net.IPv4(192, 168, 1, 1))
-		So(err, ShouldBeNil)
-		So(ipv4, ShouldEqual, uint32(3232235777))
-	})
-
-	Convey("min", t, func() {
-		ipv4, err := IPv4ToUint32(net.IPv4(0, 0, 0, 0))
-		So(err, ShouldBeNil)
-		So(ipv4, ShouldEqual, 0)
-	})
-
-	Convey("max", t, func() {
-		ipv4, err := IPv4ToUint32(net.IPv4(255, 255, 255, 255))
-		So(err, ShouldBeNil)
-		So(ipv4, ShouldEqual, uint32(4294967295))
-	})
-}
-
-func TestUint32ToIPv4(t *testing.T) {
-	Convey("ok", t, func() {
-		So(Uint32ToIPv4(uint32(0)).String(), ShouldEqual, "0.0.0.0")
-		So(Uint32ToIPv4(uint32(2130706433)).String(), ShouldEqual, "127.0.0.1")
-		So(Uint32ToIPv4(uint32(4294967295)).String(), ShouldEqual, "255.255.255.255")
 	})
 }

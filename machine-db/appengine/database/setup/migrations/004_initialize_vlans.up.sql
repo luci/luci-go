@@ -16,18 +16,18 @@
 -- The Machine Database will enforce any such constraints.
 
 CREATE TABLE IF NOT EXISTS vlans (
-	-- The id of this vlan.
+	-- The ID of this VLAN.
 	id int,
-	-- An alias for this vlan.
+	-- An alias for this VLAN.
 	alias varchar(255),
 	PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS ips (
 	id int NOT NULL AUTO_INCREMENT,
-	-- The ipv4 address of this ip.
+	-- The IPv4 address of this IP.
 	ipv4 int unsigned,
-	-- The vlan this ip belongs to.
+	-- The VLAN this IP belongs to.
 	vlan_id int,
 	PRIMARY KEY (id),
 	FOREIGN KEY (vlan_id) REFERENCES vlans (id) ON DELETE CASCADE,

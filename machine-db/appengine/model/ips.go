@@ -28,7 +28,7 @@ import (
 // IP represents an IP address.
 type IP struct {
 	Id     int64
-	IPv4   uint32
+	IPv4   common.IPv4
 	VLANId int64
 }
 
@@ -73,7 +73,7 @@ func (*IPsTable) needsUpdate(row, cfg *IP) bool {
 
 // computeChanges computes the changes that need to be made to the IP addresses in the database.
 func (t *IPsTable) computeChanges(c context.Context, vlans []*config.VLAN) error {
-	cfgs := make(map[uint32]*IP, len(vlans))
+	cfgs := make(map[common.IPv4]*IP, len(vlans))
 	for _, vlan := range vlans {
 		for _, block := range vlan.CidrBlock {
 			ipv4, length, err := common.IPv4Range(block)
@@ -149,17 +149,16 @@ func (t *IPsTable) add(c context.Context) error {
 	logging.Infof(c, "Attempting to add %d IP addresses", len(t.additions))
 	for len(t.additions) > 0 {
 		ip := t.additions[0]
-		ipv4 := common.Uint32ToIPv4(ip.IPv4)
 		result, err := stmt.ExecContext(c, ip.IPv4, ip.VLANId)
 		if err != nil {
-			return errors.Annotate(err, "failed to add IP address %q", ipv4).Err()
+			return errors.Annotate(err, "failed to add IP address %q", ip.IPv4).Err()
 		}
 		t.current = append(t.current, ip)
 		t.additions = t.additions[1:]
-		logging.Infof(c, "Added IP address %q", ipv4)
+		logging.Infof(c, "Added IP address %q", ip.IPv4)
 		ip.Id, err = result.LastInsertId()
 		if err != nil {
-			return errors.Annotate(err, "failed to get IP address ID %q", ipv4).Err()
+			return errors.Annotate(err, "failed to get IP address ID %q", ip.IPv4).Err()
 		}
 	}
 	return nil
@@ -197,14 +196,13 @@ func (t *IPsTable) remove(c context.Context) error {
 	}()
 	for len(t.removals) > 0 {
 		ip := t.removals[0]
-		ipv4 := common.Uint32ToIPv4(ip.IPv4)
 		if _, err := stmt.ExecContext(c, ip.Id); err != nil {
 			// Defer ensures the slice of IP addresses is updated even if we exit early.
-			return errors.Annotate(err, "failed to remove IP address %q", ipv4).Err()
+			return errors.Annotate(err, "failed to remove IP address %q", ip.IPv4).Err()
 		}
 		removed[ip.Id] = struct{}{}
 		t.removals = t.removals[1:]
-		logging.Infof(c, "Removed IP address %q", ipv4)
+		logging.Infof(c, "Removed IP address %q", ip.IPv4)
 	}
 	return nil
 }
@@ -240,20 +238,19 @@ func (t *IPsTable) update(c context.Context) error {
 	}()
 	for len(t.updates) > 0 {
 		ip := t.updates[0]
-		ipv4 := common.Uint32ToIPv4(ip.IPv4)
 		if _, err := stmt.ExecContext(c, ip.VLANId, ip.Id); err != nil {
-			return errors.Annotate(err, "failed to update IP address %q", ipv4).Err()
+			return errors.Annotate(err, "failed to update IP address %q", ip.IPv4).Err()
 		}
 		updated[ip.Id] = ip
 		t.updates = t.updates[1:]
-		logging.Infof(c, "Updated IP address %q", ipv4)
+		logging.Infof(c, "Updated IP address %q", ip.IPv4)
 	}
 	return nil
 }
 
 // ids returns a map of IP addresses to IDs.
-func (t *IPsTable) ids(c context.Context) map[uint32]int64 {
-	ips := make(map[uint32]int64, len(t.current))
+func (t *IPsTable) ids(c context.Context) map[common.IPv4]int64 {
+	ips := make(map[common.IPv4]int64, len(t.current))
 	for _, ip := range t.current {
 		ips[ip.IPv4] = ip.Id
 	}
