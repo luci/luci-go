@@ -141,3 +141,33 @@ func (s *DecoratedCrimson) ListMachines(c context.Context, req *ListMachinesRequ
 	}
 	return
 }
+
+func (s *DecoratedCrimson) CreateNIC(c context.Context, req *CreateNICRequest) (rsp *NIC, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "CreateNIC", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.CreateNIC(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "CreateNIC", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedCrimson) ListNICs(c context.Context, req *ListNICsRequest) (rsp *ListNICsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ListNICs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ListNICs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ListNICs", rsp, err)
+	}
+	return
+}

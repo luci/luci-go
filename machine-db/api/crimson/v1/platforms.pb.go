@@ -21,7 +21,7 @@ type ListPlatformsRequest struct {
 func (m *ListPlatformsRequest) Reset()                    { *m = ListPlatformsRequest{} }
 func (m *ListPlatformsRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListPlatformsRequest) ProtoMessage()               {}
-func (*ListPlatformsRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*ListPlatformsRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 func (m *ListPlatformsRequest) GetNames() []string {
 	if m != nil {
@@ -41,7 +41,7 @@ type Platform struct {
 func (m *Platform) Reset()                    { *m = Platform{} }
 func (m *Platform) String() string            { return proto.CompactTextString(m) }
 func (*Platform) ProtoMessage()               {}
-func (*Platform) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (*Platform) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
 
 func (m *Platform) GetName() string {
 	if m != nil {
@@ -66,7 +66,7 @@ type ListPlatformsResponse struct {
 func (m *ListPlatformsResponse) Reset()                    { *m = ListPlatformsResponse{} }
 func (m *ListPlatformsResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListPlatformsResponse) ProtoMessage()               {}
-func (*ListPlatformsResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (*ListPlatformsResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
 
 func (m *ListPlatformsResponse) GetPlatforms() []*Platform {
 	if m != nil {
@@ -82,10 +82,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto", fileDescriptor4)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto", fileDescriptor5)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor5 = []byte{
 	// 201 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x8f, 0xbd, 0x4e, 0xc4, 0x30,
 	0x10, 0x84, 0x15, 0xfe, 0xb3, 0x57, 0x61, 0x1d, 0x52, 0xca, 0x28, 0xd5, 0x15, 0x60, 0x0b, 0xe8,
