@@ -202,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "e115adb4_4d7b0756",
+        "filename": "machine-db/appengine/model/ips.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-17T20:02:03Z",
+      "side": 1,
+      "message": "it occurred to me that we still can have nice types and decrease the likelihood of forgetting to call common.ParseIPv4 when logging, without any allocations\n\n  package common\n\n  type IPv4 int32\n  func ParseIPv4(ip string) IPv4\n  func (ip IPv4) String() string\n  \n  package model\n  type IP struct {\n    ...\n    common.IPv4\n  }\n\nthis means\n\n- common.IPv4 can be used as %s or %q directly\n- same for model.IP: it embeds common.IPv4 so it \"inherits\" its String() method\n- type safety without net.IP allocations",
+      "parentUuid": "925996fe_a886572f",
+      "range": {
+        "startLine": 200,
+        "startChar": 65,
+        "endLine": 200,
+        "endChar": 90
+      },
+      "revId": "6f301f38b9cb7b2caf38c4156617608296d19e65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be0d0166_858789b8",
         "filename": "machine-db/appengine/model/ips.go",
         "patchSetId": 3
