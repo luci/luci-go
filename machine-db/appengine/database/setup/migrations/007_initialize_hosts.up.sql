@@ -12,21 +12,26 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE TABLE IF NOT EXISTS nics (
+CREATE TABLE IF NOT EXISTS hosts (
 	id int NOT NULL AUTO_INCREMENT,
-	-- The name of this NIC.
+	-- The name of this host.
 	name varchar(255),
-	-- The machine this NIC belongs to.
+	-- The VLAN this host belongs to.
+	vlan_id int NOT NULL,
+	-- The machine backing this host.
 	machine_id int NOT NULL,
-	-- The MAC address associated with this NIC.
-	mac_address bigint unsigned,
-	-- The switch this NIC is connected to.
-	switch_id int NOT NULL,
-	-- The switchport this NIC is connected to.
-	switchport int NOT NULL,
+	-- The operating system backing this host.
+	os_id int NOT NULL,
+	-- The number of VMs which can be deployed on this host.
+	vm_slots int unsigned NOT NULL,
+	-- A description of this host.
+	description varchar(255),
+	-- The deployment ticket associated with this host.
+	deployment_ticket varchar(255),
 	PRIMARY KEY (id),
+	FOREIGN KEY (vlan_id) REFERENCES vlans (id) ON DELETE RESTRICT,
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
-	FOREIGN KEY (switch_id) REFERENCES switches (id) ON DELETE RESTRICT,
-	UNIQUE (name, machine_id),
-	UNIQUE (mac_address)
+	FOREIGN KEY (os_id) REFERENCES oses (id) ON DELETE RESTRICT,
+	UNIQUE (name, vlan_id),
+	UNIQUE (machine_id)
 );
