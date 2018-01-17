@@ -201,8 +201,8 @@ func TestListMachines(t *testing.T) {
 		})
 
 		Convey("no matches", func() {
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			names := stringset.NewFromSlice("machine")
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "")
 			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "")
 			machines, err := listMachines(c, names)

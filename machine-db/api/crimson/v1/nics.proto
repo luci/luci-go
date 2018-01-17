@@ -1,0 +1,43 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// NIC describes a network interface.
+message NIC {
+  // The name of this NIC. With machine, uniquely identifies this NIC.
+  string name = 1;
+  // The machine this NIC belongs to. With name, uniquely identifies this NIC.
+  string machine = 2;
+  // The MAC address associated with this NIC.
+  string mac_address = 3;
+  // The switch this NIC is connected to.
+  string switch = 4;
+  // The switchport this NIC is connected to.
+  int32 switchport = 5;
+}
+
+// CreateNICRequest is a request to create a new NIC in the database.
+message CreateNICRequest {
+  // The NIC to create in the database.
+  NIC nic = 1;
+}
+
+// ListNICsRequest is a request to list NICs in the database.
+message ListNICsRequest {
+  // The names of NICs to get.
+  repeated string names = 1;
+  // The machines to filter retrieved NICs on.
+  repeated string machines = 2;
+  // TODO(smut): Add the rest of the filters.
+}
+
+// ListNICResponse is a response to a request to list NICs.
+message ListNICsResponse {
+  // The NICs matching this request.
+  repeated NIC nics = 1;
+  // TODO(smut): Support page tokens.
+}
