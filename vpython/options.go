@@ -73,6 +73,13 @@ type Options struct {
 
 	// Environ is environment to pass to subprocesses.
 	Environ environ.Env
+
+	// ClearPythonPath, if true, instructs vpython to clear the PYTHONPATH
+	// environment variable prior to launch.
+	//
+	// TODO(iannucci): Delete this once we're satisfied that PYTHONPATH exports
+	// are under control.
+	ClearPythonPath bool
 }
 
 func (o *Options) resolve(c context.Context) error {

@@ -64,6 +64,13 @@ const (
 	// where adding the "-vpython-log-level" flag is not straightforward. The
 	// flag is preferred when possible.
 	LogTraceENV = "VPYTHON_LOG_TRACE"
+
+	// ClearPythonPathENV if set instructs vpython to clear the PYTHONPATH
+	// environment variable prior to launching the VirtualEnv Python interpreter.
+	//
+	// TODO(iannucci): Delete this once we're satisfied that PYTHONPATH exports
+	// are under control.
+	ClearPythonPathENV = "VPYTHON_CLEAR_PYTHONPATH"
 )
 
 // VerificationFunc is a function used in environment verification.
@@ -372,10 +379,11 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
 				Loader:            cfg.PackageLoader,
 			},
-			BaseWheels: cfg.BaseWheels,
-			WaitForEnv: true,
-			SpecLoader: cfg.SpecLoader,
-			Environ:    env,
+			BaseWheels:      cfg.BaseWheels,
+			WaitForEnv:      true,
+			SpecLoader:      cfg.SpecLoader,
+			Environ:         env,
+			ClearPythonPath: env.GetEmpty(ClearPythonPathENV) != "",
 		},
 		logConfig: logging.Config{
 			Level: defaultLogLevel,
