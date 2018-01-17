@@ -21,7 +21,7 @@ type ListOSesRequest struct {
 func (m *ListOSesRequest) Reset()                    { *m = ListOSesRequest{} }
 func (m *ListOSesRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListOSesRequest) ProtoMessage()               {}
-func (*ListOSesRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*ListOSesRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
 func (m *ListOSesRequest) GetNames() []string {
 	if m != nil {
@@ -41,7 +41,7 @@ type OS struct {
 func (m *OS) Reset()                    { *m = OS{} }
 func (m *OS) String() string            { return proto.CompactTextString(m) }
 func (*OS) ProtoMessage()               {}
-func (*OS) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*OS) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
 
 func (m *OS) GetName() string {
 	if m != nil {
@@ -66,7 +66,7 @@ type ListOSesResponse struct {
 func (m *ListOSesResponse) Reset()                    { *m = ListOSesResponse{} }
 func (m *ListOSesResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListOSesResponse) ProtoMessage()               {}
-func (*ListOSesResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (*ListOSesResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
 
 func (m *ListOSesResponse) GetOses() []*OS {
 	if m != nil {
@@ -82,10 +82,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto", fileDescriptor4)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor4 = []byte{
 	// 196 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8e, 0xcf, 0x4a, 0xc4, 0x30,
 	0x10, 0x87, 0xe9, 0xba, 0x2a, 0x3b, 0x3d, 0x28, 0xc1, 0x43, 0x6f, 0x96, 0x5e, 0xdc, 0x8b, 0x09,
