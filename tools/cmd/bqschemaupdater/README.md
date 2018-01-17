@@ -1,21 +1,9 @@
-bqschemaupdater is a tool for adding and updating BigQuery table schema.
+bqschemaupdater is a tool for adding and updating BigQuery table schema. It
+also updates documentation for tables, making them easier to discover.
 
 # Usage
 
 schemas should be written in .proto format.
-
-To create or modify a new table, you need to be authenticated in the Google
-Cloud Project project to which that table will belong. To check your
-authentication status, ensure that you have the Cloud SDK
-[installed](https://cloud.google.com/sdk/docs/quickstarts), then run:
-
-```
-gcloud info
-```
-
-If you don't see the correct project id, reach out to an
-[editor](https://pantheon.corp.google.com/iam-admin/iam) of that project to
-request access.
 
 ```
 bqschemaupdater --help

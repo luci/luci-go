@@ -1,6 +1,16 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package main
 
@@ -65,10 +75,12 @@ func updateFromTableDef(ctx context.Context, ts tableStore, td tableDef) error {
 
 type flags struct {
 	tableDef
-	protoDir    string
-	messageName string
-	dryRun      bool
-	importPaths stringlistflag.Flag
+	protoDir         string
+	messageName      string
+	dryRun           bool
+	importPaths      stringlistflag.Flag
+	projectRoot      string
+	disableDocUpdate bool
 }
 
 func parseFlags() (*flags, error) {
@@ -82,6 +94,8 @@ func parseFlags() (*flags, error) {
 	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message")
 	// -I matches protoc's flag and its error message suggesting to pass -I.
 	flag.Var(&f.importPaths, "I", "path to directory with the imported .proto file; can be specified multiple times")
+	flag.StringVar(&f.projectRoot, "project-root", "", "Path to the project root of the proto")
+	flag.BoolVar(&f.disableDocUpdate, "disable-doc-update", false, "Do not update list of tables in documentation")
 
 	flag.StringVar(&f.messageName,
 		"message",
@@ -96,7 +110,9 @@ func parseFlags() (*flags, error) {
 	case *table == "":
 		return nil, fmt.Errorf("-table is required")
 	case f.messageName == "":
-		return nil, fmt.Errorf("-message is required")
+		return nil, fmt.Errorf("-message is required (the name must contain the proto package name)")
+	case f.projectRoot == "":
+		return nil, fmt.Errorf("-project-root is required")
 	}
 	if parts := strings.Split(*table, "."); len(parts) == 3 {
 		f.ProjectID = parts[0]
@@ -107,6 +123,28 @@ func parseFlags() (*flags, error) {
 	}
 
 	return &f, nil
+}
+
+func updateTableDescription(td *tableDef, protoDir string, projectRoot string) error {
+	project := filepath.Base(projectRoot)
+	if protoDir == "." {
+		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			return err
+		}
+		protoDir = dir
+	}
+	protoPath, err := filepath.Rel(projectRoot, protoDir)
+	if err != nil {
+		return err
+	}
+	s := fmt.Sprintf("Proto location: %s:%s", project, protoPath)
+	if td.Description != "" {
+		td.Description = fmt.Sprintf("%s Table description: %s", s, td.Description)
+	} else {
+		td.Description = s
+	}
+	return nil
 }
 
 func run(ctx context.Context) error {
@@ -124,6 +162,10 @@ func run(ctx context.Context) error {
 	td.Schema, td.Description, err = schemaFromMessage(desc, flags.messageName)
 	if err != nil {
 		return errors.Annotate(err, "could not derive schema from message %q at path %q", flags.messageName, flags.protoDir).Err()
+	}
+	err = updateTableDescription(&td, flags.protoDir, flags.projectRoot)
+	if err != nil {
+		return errors.Annotate(err, "failed to update proto desc with proto location").Err()
 	}
 
 	// Create an Authenticator and use it for BigQuery operations.
@@ -150,6 +192,14 @@ func run(ctx context.Context) error {
 		return errors.Annotate(err, "failed to update table").Err()
 	}
 	log.Println("Finished updating table.")
+	if flags.disableDocUpdate {
+		return nil
+	}
+	err = updateTableList(td, flags.projectRoot)
+	if err != nil {
+		return errors.Annotate(err, "could not update table list").Err()
+	}
+	log.Printf("%s updated. Please review and commit the change.", filepath.Join(flags.projectRoot, DOC_DIR, DOC_FILE))
 	return nil
 }
 
