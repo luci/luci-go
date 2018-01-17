@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "15e435b1_aeb5b7d9",
+        "filename": "vpython/python/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-17T03:33:28Z",
+      "side": 1,
+      "message": "we should clear VPYTHON_CLEAR_PYTHONPATH too; once we\u0027ve gone through a single cleansing bath, we shouldn\u0027t need to again.",
+      "revId": "bd5b2152ae37dea570166058bb4cfcf23e9491cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
