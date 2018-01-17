@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a057ad98_6dc0d22c",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-17T03:44:07Z",
+      "side": 1,
+      "message": "slick.",
+      "revId": "b6c85b9f97cda8e555ced38e0cc9b2647fc218ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
