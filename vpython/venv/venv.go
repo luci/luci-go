@@ -787,7 +787,7 @@ func (e *Env) touchCompleteFlagLocked() error {
 
 func (e *Env) isolatedSetupEnvironment(bootstrapDir string) environ.Env {
 	env := e.Config.SetupEnv.Clone()
-	python.IsolateEnvironment(&env)
+	python.IsolateEnvironment(&env, false)
 
 	// Remove all "PIP_" environment variable overrides. See:
 	// https://pip.pypa.io/en/stable/user_guide/#environment-variables

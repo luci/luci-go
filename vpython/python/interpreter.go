@@ -159,18 +159,25 @@ func ParseVersionOutput(output string) (Version, error) {
 // IsolateEnvironment mutates e to remove any environmental influence over
 // the Python interpreter.
 //
+// If keepPythonPath is true, PYTHONPATH will not be cleared. This is used
+// by the actual VirtualEnv Python invocation to preserve PYTHONPATH since it is
+// a form of user input.
+//
 // If e is nil, no operation will be performed.
-func IsolateEnvironment(e *environ.Env) {
+func IsolateEnvironment(e *environ.Env, keepPythonPath bool) {
 	if e == nil {
 		return
 	}
 
-	// Remove PYTHONPATH and PYTHONHOME from the environment. This prevents them
-	// from being propagated to delegate processes (e.g., "vpython" script calls
-	// Python script, the "vpython" one uses the Interpreter's IsolatedCommand
-	// to isolate the initial run, but the delegate command blindly uses the
-	// environment that it's provided).
-	e.Remove("PYTHONPATH")
+	// Remove PYTHONPATH if instructed.
+	if !keepPythonPath {
+		e.Remove("PYTHONPATH")
+	}
+
+	// Remove PYTHONHOME from the environment. PYTHONHOME is used to set the
+	// location of standard Python libraries, which we make a point of overriding.
+	//
+	// https://docs.python.org/2/using/cmdline.html#envvar-PYTHONHOME
 	e.Remove("PYTHONHOME")
 
 	// set PYTHONNOUSERSITE, which prevents a user's "site" configuration

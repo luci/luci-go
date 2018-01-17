@@ -146,13 +146,21 @@ func TestIsolateEnvironment(t *testing.T) {
 
 	Convey(`Testing IsolateEnvironment`, t, func() {
 		Convey(`Will return nil if the environment is nil.`, func() {
-			So(func() { IsolateEnvironment(nil) }, ShouldNotPanic)
+			So(func() { IsolateEnvironment(nil, false) }, ShouldNotPanic)
 		})
 
 		Convey(`Will remove environment variables`, func() {
 			env := environ.New([]string{"FOO=", "BAR=", "PYTHONPATH=a:b:c", "PYTHONHOME=/foo/bar", "PYTHONNOUSERSITE=0"})
-			IsolateEnvironment(&env)
-			So(env.Sorted(), ShouldResemble, []string{"BAR=", "FOO=", "PYTHONNOUSERSITE=1"})
+
+			Convey(`When keepPythonPath is false`, func() {
+				IsolateEnvironment(&env, false)
+				So(env.Sorted(), ShouldResemble, []string{"BAR=", "FOO=", "PYTHONNOUSERSITE=1"})
+			})
+
+			Convey(`When keepPythonPath is true`, func() {
+				IsolateEnvironment(&env, true)
+				So(env.Sorted(), ShouldResemble, []string{"BAR=", "FOO=", "PYTHONNOUSERSITE=1", "PYTHONPATH=a:b:c"})
+			})
 		})
 	})
 }
