@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d075fe7b_c377fc94",
+        "filename": "machine-db/common/mac_addresses.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T23:25:34Z",
+      "side": 1,
+      "message": "Well, the only use case here is to stringify data that comes out of the database, and we validate data going into the database, so I\u0027d expect no error here anyway. Done.",
+      "parentUuid": "e6a94147_48167a2e",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 41
+      },
+      "revId": "841bd06a1524910edf336587c98aa435796b74d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04fcdb24_a530d9af",
         "filename": "machine-db/common/mac_addresses.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "841bd06a1524910edf336587c98aa435796b74d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4436e639_f689df9e",
+        "filename": "machine-db/common/mac_addresses.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-17T23:25:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04fcdb24_a530d9af",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 25
+      },
+      "revId": "841bd06a1524910edf336587c98aa435796b74d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
