@@ -8,6 +8,7 @@ package crimson;
 
 import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto";
@@ -33,4 +34,9 @@ service Crimson {
   rpc CreateMachine(CreateMachineRequest) returns (Machine);
   // Lists machines in the database.
   rpc ListMachines(ListMachinesRequest) returns (ListMachinesResponse);
+
+  // Creates a new NIC in the database.
+  rpc CreateNIC(CreateNICRequest) returns (NIC);
+  // Lists NICs in the database.
+  rpc ListNICs(ListNICsRequest) returns (ListNICsResponse);
 }

@@ -23,7 +23,7 @@ type ListRacksRequest struct {
 func (m *ListRacksRequest) Reset()                    { *m = ListRacksRequest{} }
 func (m *ListRacksRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListRacksRequest) ProtoMessage()               {}
-func (*ListRacksRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
+func (*ListRacksRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
 
 func (m *ListRacksRequest) GetNames() []string {
 	if m != nil {
@@ -52,7 +52,7 @@ type Rack struct {
 func (m *Rack) Reset()                    { *m = Rack{} }
 func (m *Rack) String() string            { return proto.CompactTextString(m) }
 func (*Rack) ProtoMessage()               {}
-func (*Rack) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
+func (*Rack) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
 
 func (m *Rack) GetName() string {
 	if m != nil {
@@ -84,7 +84,7 @@ type ListRacksResponse struct {
 func (m *ListRacksResponse) Reset()                    { *m = ListRacksResponse{} }
 func (m *ListRacksResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListRacksResponse) ProtoMessage()               {}
-func (*ListRacksResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
+func (*ListRacksResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
 
 func (m *ListRacksResponse) GetRacks() []*Rack {
 	if m != nil {
@@ -100,10 +100,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor5)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor6)
 }
 
-var fileDescriptor5 = []byte{
+var fileDescriptor6 = []byte{
 	// 222 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0x4d, 0x4b, 0x03, 0x31,
 	0x10, 0x86, 0xd9, 0x7e, 0x28, 0x9d, 0x22, 0x68, 0xf0, 0x90, 0x93, 0x2c, 0xeb, 0xa5, 0x17, 0x13,
