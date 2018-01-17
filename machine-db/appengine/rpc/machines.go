@@ -135,6 +135,7 @@ func validateMachineForCreation(m *crimson.Machine) error {
 		return status.Error(codes.InvalidArgument, "platform is required and must be non-empty")
 	case m.Rack == "":
 		return status.Error(codes.InvalidArgument, "rack is required and must be non-empty")
+	default:
+		return nil
 	}
-	return nil
 }
