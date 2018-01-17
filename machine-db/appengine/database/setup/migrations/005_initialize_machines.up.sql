@@ -12,9 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
--- Required fields are not enforced by this schema.
--- The Machine Database will enforce any such constraints.
-
 CREATE TABLE IF NOT EXISTS machines (
 	id int NOT NULL AUTO_INCREMENT,
 	-- The name of this machine.

@@ -23,7 +23,7 @@ type ListVLANsRequest struct {
 func (m *ListVLANsRequest) Reset()                    { *m = ListVLANsRequest{} }
 func (m *ListVLANsRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListVLANsRequest) ProtoMessage()               {}
-func (*ListVLANsRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
+func (*ListVLANsRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
 
 func (m *ListVLANsRequest) GetIds() []int64 {
 	if m != nil {
@@ -52,7 +52,7 @@ type VLAN struct {
 func (m *VLAN) Reset()                    { *m = VLAN{} }
 func (m *VLAN) String() string            { return proto.CompactTextString(m) }
 func (*VLAN) ProtoMessage()               {}
-func (*VLAN) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
+func (*VLAN) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{1} }
 
 func (m *VLAN) GetId() int64 {
 	if m != nil {
@@ -84,7 +84,7 @@ type ListVLANsResponse struct {
 func (m *ListVLANsResponse) Reset()                    { *m = ListVLANsResponse{} }
 func (m *ListVLANsResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListVLANsResponse) ProtoMessage()               {}
-func (*ListVLANsResponse) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
+func (*ListVLANsResponse) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{2} }
 
 func (m *ListVLANsResponse) GetVlans() []*VLAN {
 	if m != nil {
@@ -100,10 +100,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto", fileDescriptor8)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto", fileDescriptor9)
 }
 
-var fileDescriptor8 = []byte{
+var fileDescriptor9 = []byte{
 	// 226 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0x3f, 0x6b, 0xc3, 0x30,
 	0x10, 0xc5, 0xb1, 0xd5, 0x34, 0xe4, 0x42, 0x4b, 0x2a, 0x3a, 0x68, 0x14, 0xee, 0xe2, 0xa5, 0x12,
