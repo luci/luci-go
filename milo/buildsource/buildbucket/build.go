@@ -160,6 +160,16 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 
 	logging.Infof(c, "Added %d commit blamelist", len(rb.Blame))
 
+	// this means that there were more than 50 commits in-between.
+	if len(builds) == 0 {
+		rb.Blame = append(rb.Blame, &ui.Commit{
+			Description: "<blame list capped at 50 commits>",
+			Revision:    &ui.Link{},
+		})
+	}
+
+	logging.Infof(c, "Added %d commit blamelist", len(rb.Blame))
+
 	return nil
 }
 
