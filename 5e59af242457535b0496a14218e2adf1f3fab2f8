@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "416841b4_2bfda1e8",
+        "filename": "cipd/appengine/impl/gs/gs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T04:40:16Z",
+      "side": 1,
+      "message": "note: this may change later when I add more stuff to the backend or when I start sharing code between the server and the client. It wasn\u0027t needed for now.",
+      "range": {
+        "startLine": 193,
+        "startChar": 55,
+        "endLine": 194,
+        "endChar": 20
+      },
+      "revId": "5e59af242457535b0496a14218e2adf1f3fab2f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "349d3059_860eb3e4",
+        "filename": "cipd/appengine/impl/gs/path.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T04:40:16Z",
+      "side": 1,
+      "message": "The real reason: I didn\u0027t want to deal with unicode shenanigans in SplitPath below :) Index arithmetics there doesn\u0027t work for generic UTF8 strings. I\u0027m 100% sure we won\u0027t need non-ASCII paths in CIPD, so it is simpler to just forbid them.",
+      "range": {
+        "startLine": 28,
+        "startChar": 19,
+        "endLine": 28,
+        "endChar": 74
+      },
+      "revId": "5e59af242457535b0496a14218e2adf1f3fab2f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
