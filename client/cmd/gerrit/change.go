@@ -126,7 +126,7 @@ func (c *changeRun) main(a subcommands.Application) error {
 	// Write output.
 	out := os.Stdout
 	if c.jsonOutput != "-" {
-		out, err := os.Create(c.jsonOutput)
+		out, err = os.Create(c.jsonOutput)
 		if err != nil {
 			return err
 		}
