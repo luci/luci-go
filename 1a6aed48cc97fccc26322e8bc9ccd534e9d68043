@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3919e6ae_3f188bb7",
+        "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-18T23:41:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8feff3c6_8b37b315",
+      "revId": "1a6aed48cc97fccc26322e8bc9ccd534e9d68043",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "995cc1a1_12423eb5",
         "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "245122dd_56451b5f",
+        "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-18T23:41:25Z",
+      "side": 1,
+      "message": "Not in protos. We will accept the IP address as a string and convert it to common.IPv4 serverside.",
+      "parentUuid": "995cc1a1_12423eb5",
+      "range": {
+        "startLine": 20,
+        "startChar": 2,
+        "endLine": 20,
+        "endChar": 8
+      },
+      "revId": "1a6aed48cc97fccc26322e8bc9ccd534e9d68043",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c52755e9_66389ffb",
         "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
         "patchSetId": 1
@@ -56,6 +98,24 @@
       "revId": "1a6aed48cc97fccc26322e8bc9ccd534e9d68043",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c35daa1_2ef3fd66",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-18T23:41:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c52755e9_66389ffb",
+      "revId": "1a6aed48cc97fccc26322e8bc9ccd534e9d68043",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
