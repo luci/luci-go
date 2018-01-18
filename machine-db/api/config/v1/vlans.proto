@@ -6,18 +6,22 @@ syntax = "proto3";
 
 package config;
 
-// VLAN describes a vlan.
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
+
+// VLAN describes a VLAN.
 message VLAN {
-  // The ID of this vlan.
+  // The ID of this VLAN.
   int64 id = 1;
-  // An alias for this vlan.
+  // An alias for this VLAN.
   string alias = 2;
-  // The blocks of IPv4 addresses belonging to this vlan.
+  // The blocks of IPv4 addresses belonging to this VLAN.
   repeated string cidr_block = 3;
+  // The state of this VLAN.
+  common.State state = 4;
 }
 
-// VLANs enumerates vlans.
+// VLANs enumerates VLANs.
 message VLANs {
-  // A list of vlans.
+  // A list of VLANs.
   repeated VLAN vlan = 1;
 }
