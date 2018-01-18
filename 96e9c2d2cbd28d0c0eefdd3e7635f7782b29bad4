@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "0b80d15f_20ac8467",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T03:01:45Z",
+      "side": 1,
+      "message": "Argh, stupid doc. Their documentation example contradicts interface names convention example \u003e_\u003c https://cloud.google.com/apis/design/naming_convention#interface_names :\n\n\"\"\"\nAn interface name should use an intuitive noun such as Calendar or Blob. The name should not conflict with any well-established concepts in programming languages and their runtime libraries (for example, File).\n\nIn the rare case where an interface name would conflict with another name within the API, a suffix (for example Api or Service) should be used to disambiguate.\n\"\"\"\n\nRenaming StorageService back to Storage...",
+      "parentUuid": "9ea8fd8e_1d3f887d",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 23,
+        "endChar": 9
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4558035_64e5807f",
         "filename": "cipd/appengine/README.md",
         "patchSetId": 2
