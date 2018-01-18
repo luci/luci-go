@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -72,10 +73,12 @@ func TestValidatePlatforms(t *testing.T) {
 			platforms := &config.Platforms{
 				Platform: []*config.Platform{
 					{
-						Name: "platform 1",
+						Name:  "platform 1",
+						State: common.State_SERVING,
 					},
 					{
-						Name: "platform 2",
+						Name:  "platform 2",
+						State: common.State_PRERELEASE,
 					},
 				},
 			}

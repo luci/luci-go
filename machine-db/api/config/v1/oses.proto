@@ -6,12 +6,16 @@ syntax = "proto3";
 
 package config;
 
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
+
 // OS describes an operating system.
 message OS {
   // The name of this operating system.
   string name = 1;
   // A description of this operating system.
   string description = 2;
+  // The state of this operating system.
+  common.State state = 4;
 }
 
 // OSes enumerates operating systems.

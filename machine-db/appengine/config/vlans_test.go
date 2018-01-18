@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -200,12 +201,14 @@ func TestValidateVLANs(t *testing.T) {
 						CidrBlock: []string{
 							"127.0.0.1/32",
 						},
+						State: common.State_SERVING,
 					},
 					{
 						Id: 2,
 						CidrBlock: []string{
 							"127.0.0.1/32",
 						},
+						State: common.State_PRERELEASE,
 					},
 				},
 			}
