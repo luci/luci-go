@@ -149,6 +149,7 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 
 		rb.Blame[i].CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
 	}
+	logging.Infof(c, "Added %d commit blamelist", len(rb.Blame))
 
 	return nil
 }
