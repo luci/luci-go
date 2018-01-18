@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "05297d10_d37be0c5",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-18T22:43:34Z",
+      "side": 1,
+      "message": "None of the others are inline, prefer to keep consistent. Plus more stuff will be added later.",
+      "parentUuid": "5553be46_af0c8e7c",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 4
+      },
+      "revId": "b17b4381d597fd42ba536c08637345b163e66053",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a0cc279_9049b1ea",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e5b0db28_41233ebe",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-18T22:43:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a0cc279_9049b1ea",
+      "range": {
+        "startLine": 102,
+        "startChar": 24,
+        "endLine": 102,
+        "endChar": 33
+      },
+      "revId": "b17b4381d597fd42ba536c08637345b163e66053",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "57b7dcc5_287011ac",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "b17b4381d597fd42ba536c08637345b163e66053",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb9e5023_1732a69a",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-18T22:43:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57b7dcc5_287011ac",
+      "revId": "b17b4381d597fd42ba536c08637345b163e66053",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
