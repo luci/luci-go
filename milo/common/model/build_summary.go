@@ -300,7 +300,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 
 	// We don't really need a blamelist longer than 50 commits.
 	commits, err = git.Log(c, gc.Host, gc.Project, gc.Revision, 50)
-	if err != nil {
+	if err != nil || len(commits) == 0 {
 		return
 	}
 
@@ -308,16 +308,18 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	// case this will be fast enough.
 	curGC := &buildbucket.GitilesCommit{Host: gc.Host, Project: gc.Project}
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
-	for i, commit := range commits {
+	for i, commit := range commits[1:] { // skip the first commit... it's us!
 		curGC.Revision = commit.Id
 		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.String()), &builds); err != nil {
 			return
 		}
 		if len(builds) > 0 {
+			logging.Infof(c, "I found %d builds. build[0]: %q", len(builds), builds[0].BuildID)
 			sort.Slice(builds, func(i, j int) bool {
 				return builds[i].Summary.Start.After(builds[j].Summary.Start)
 			})
-			commits = commits[:i+1]
+			commits = commits[:i+1] // since we skip the first one
+			logging.Infof(c, "Sliced commit list down to %d", len(commits))
 			return
 		}
 	}

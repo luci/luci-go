@@ -119,7 +119,7 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
 func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *ui.MiloBuild) error {
-	_, commits, err := build.PreviousByGitilesCommit(c)
+	builds, commits, err := build.PreviousByGitilesCommit(c)
 	switch {
 	case err == nil:
 	case err == model.ErrUnknownPreviousBuild:
@@ -149,6 +149,16 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 
 		rb.Blame[i].CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
 	}
+
+	// this means that there were more than 50 commits in-between.
+	if len(builds) == 0 {
+		rb.Blame = append(rb.Blame, &ui.Commit{
+			Description: "<blame list capped at 50 commits>",
+			Revision:    &ui.Link{},
+		})
+	}
+
+	logging.Infof(c, "Added %d commit blamelist", len(rb.Blame))
 
 	return nil
 }
