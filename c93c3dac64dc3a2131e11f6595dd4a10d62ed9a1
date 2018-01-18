@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88461d5e_54779026",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-01-18T22:22:45Z",
+      "side": 1,
+      "message": "this is the actual fix",
+      "range": {
+        "startLine": 311,
+        "startChar": 31,
+        "endLine": 311,
+        "endChar": 32
+      },
+      "revId": "c93c3dac64dc3a2131e11f6595dd4a10d62ed9a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
