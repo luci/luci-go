@@ -167,12 +167,12 @@ func (s *Server) handlePOST(c *router.Context) {
 	serviceName := c.Params.ByName("service")
 	methodName := c.Params.ByName("method")
 	s.setAccessControlHeaders(c, false)
-	out, format, err := s.call(c, serviceName, methodName)
-	if err != nil {
-		writeError(c.Context, c.Writer, err)
+	res := s.call(c, serviceName, methodName)
+	if res.err != nil {
+		writeError(c.Context, c.Writer, res.err)
 		return
 	}
-	writeMessage(c.Context, c.Writer, out, format)
+	writeMessage(c.Context, c.Writer, res.out, res.fmt)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
@@ -180,31 +180,42 @@ func (s *Server) handleOPTIONS(c *router.Context) {
 	c.Writer.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) call(c *router.Context, serviceName, methodName string) (proto.Message, Format, error) {
+type response struct {
+	out proto.Message
+	fmt Format
+	err error
+}
+
+func (s *Server) call(c *router.Context, serviceName, methodName string) (r response) {
 	service := s.services[serviceName]
 	if service == nil {
-		return nil, 0, status.Errorf(
+		r.err = status.Errorf(
 			codes.Unimplemented,
 			"service %q is not implemented",
 			serviceName)
+		return
 	}
 
 	method, ok := service.methods[methodName]
 	if !ok {
-		return nil, 0, status.Errorf(
+		r.err = status.Errorf(
 			codes.Unimplemented,
 			"method %q in service %q is not implemented",
 			methodName, serviceName)
+		return
 	}
 
-	format, perr := responseFormat(c.Request.Header.Get(headerAccept))
+	var perr *protocolError
+	r.fmt, perr = responseFormat(c.Request.Header.Get(headerAccept))
 	if perr != nil {
-		return nil, 0, perr
+		r.err = perr
+		return
 	}
 
 	methodCtx, err := parseHeader(c.Context, c.Request.Header)
 	if err != nil {
-		return nil, 0, withStatus(err, http.StatusBadRequest)
+		r.err = withStatus(err, http.StatusBadRequest)
+		return
 	}
 
 	out, err := method.Handler(service.impl, methodCtx, func(in interface{}) error {
@@ -217,14 +228,16 @@ func (s *Server) call(c *router.Context, serviceName, methodName string) (proto.
 		}
 		return nil
 	}, s.UnaryServerInterceptor)
-	if err != nil {
-		return nil, 0, err
-	}
 
-	if out == nil {
-		return nil, 0, status.Error(codes.Internal, "service returned nil message")
+	switch {
+	case err != nil:
+		r.err = err
+	case out == nil:
+		r.err = status.Error(codes.Internal, "service returned nil message")
+	default:
+		r.out = out.(proto.Message)
 	}
-	return out.(proto.Message), format, nil
+	return
 }
 
 func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
