@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9ea8fd8e_1d3f887d",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "Done, though name StorageServiceServer makes me uncomfortable.",
+      "parentUuid": "bac139a8_6f4f01a3",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 23,
+        "endChar": 9
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4558035_64e5807f",
         "filename": "cipd/appengine/README.md",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebfaacdf_24bf9aeb",
+        "filename": "cipd/appengine/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4558035_64e5807f",
+      "range": {
+        "startLine": 8,
+        "startChar": 40,
+        "endLine": 8,
+        "endChar": 46
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "523d92af_32e86b05",
+        "filename": "cipd/appengine/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4238103_4bd50d99",
+      "range": {
+        "startLine": 15,
+        "startChar": 18,
+        "endLine": 15,
+        "endChar": 26
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff35cc70_e1f6c8b6",
         "filename": "cipd/appengine/frontend/app.yaml",
         "patchSetId": 2
@@ -85,6 +157,24 @@
       "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67f259c0_01de9a32",
+        "filename": "cipd/appengine/frontend/app.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "See Makefile, README and dispatch.yaml. I prefer to keep python modules where they are and deploy Go stuff on top. I already successfully deployed it this way to chrome-infra-packages-dev: https://screenshot.googleplex.com/QaSH5MXWmUe.png\n\nI don\u0027t expect anyone but me to deploy this stuff until its development is done. And I\u0027ll be careful to use Makefile instead of gae.py.",
+      "parentUuid": "ff35cc70_e1f6c8b6",
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "0658f187_05d98abe",
+        "filename": "cipd/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5937208_61342c71",
+      "range": {
+        "startLine": 46,
+        "startChar": 27,
+        "endLine": 46,
+        "endChar": 28
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "85f157e2_f340a0f6",
         "filename": "cipd/appengine/frontend/phony.py",
         "patchSetId": 2
@@ -131,6 +245,30 @@
       "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b768195c_0d27aac3",
+        "filename": "cipd/appengine/frontend/phony.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85f157e2_f340a0f6",
+      "range": {
+        "startLine": 21,
+        "startChar": 18,
+        "endLine": 21,
+        "endChar": 23
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "93eac304_bf429bf6",
+        "filename": "cipd/appengine/impl/common/grpc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91b439ed_82f8426d",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 9
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c807a16a_9c912f2d",
         "filename": "cipd/appengine/impl/common/grpc.go",
         "patchSetId": 2
@@ -168,6 +330,30 @@
       "writtenOn": "2018-01-18T01:03:48Z",
       "side": 1,
       "message": "this logic is asymmetric with L38. Why?\n\nBTW pRPC logs are error responses (you reviewed that), but without a stack trace",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 2
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17ee5c38_832f16de",
+        "filename": "cipd/appengine/impl/common/grpc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-18T02:57:36Z",
+      "side": 1,
+      "message": "What do you mean by \"asymmetric\"?\n\nSee the comment for this method. If err is already grpc.Status, it will skip any logging. Line 38 does this check.",
+      "parentUuid": "c807a16a_9c912f2d",
       "range": {
         "startLine": 42,
         "startChar": 1,
