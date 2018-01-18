@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringlistflag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -65,6 +66,44 @@ func addMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			return cmd
+		},
+	}
+}
+
+// GetMachinesCmd is the command to get machines.
+type GetMachinesCmd struct {
+	subcommands.CommandRunBase
+	names stringlistflag.Flag
+}
+
+// Run runs the command to get machines.
+func (c *GetMachinesCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	req := &crimson.ListMachinesRequest{
+		Names: c.names,
+	}
+	client := getClient(ctx)
+	resp, err := client.ListMachines(ctx, req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	// TODO(smut): Format this response.
+	fmt.Print(proto.MarshalTextString(resp))
+	return 0
+}
+
+// getMachineCmd returns a command to get machines.
+func getMachinesCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "get-machines [-name <name>]...",
+		ShortDesc: "retrieves machines",
+		LongDesc:  "Retrieves machines matching the given names, or all machines if names are omitted.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &GetMachinesCmd{}
+			cmd.Flags.Var(&cmd.names, "name", "Name of a machine to filter by. Can be specified multiple times.")
+			// TODO(smut): Add the other filters.
 			return cmd
 		},
 	}
