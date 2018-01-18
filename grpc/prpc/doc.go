@@ -41,8 +41,12 @@
 //
 // Protocol
 //
-// This section describes the pRPC protocol. It is based on HTTP 1.x and employs
-// gRPC codes.
+// pRPC protocol has versions 1.0 and 1.1. This section describes
+// them in this order.
+//
+//   v1.0
+//
+// pRPC protocol is based on HTTP 1.x and employs gRPC codes.
 //
 // A pRPC server MUST handle HTTP POST requests at `/prpc/{service}/{method}`
 // where service is a full service name including full package name.
@@ -104,4 +108,24 @@
 //
 // If a service/method is not found, the server MUST respond with Unimplemented
 // gRPC code and SHOULD specify HTTP 501 status.
+//
+//   v1.1
+//
+// Protocol 1.1 is 1.0 with the following amendments.
+//
+// X-Prpc-Version request header specifies the version of the pRPC protocol.
+// A client SHOULD specify it.
+// Possible values: "1.0" (default), "1.1".
+// The response MUST be compatible with the specified version.
+//
+// If a service implementation returns an error, it MUST be converted to
+// a Status protocol buffer message
+// https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto,
+// encoded according to the Accept HTTP header, similar to the response
+// message, and used as the response body.
+//
+// X-Prpc-Grpc-Code response header is deprecated and MUST NOT used.
+// Clients MUST check HTTP status code: if it is 200, then the response body
+// is the method's response message. Otherwise, it a Status message that
+// contains the error code.
 package prpc
