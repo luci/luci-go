@@ -1,0 +1,30 @@
+cron:
+
+# [FROM_PYTHON_CIPD]
+# See https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages/cron.yaml
+
+- description: ereporter2 cleanup
+  target: backend
+  url: /internal/cron/ereporter2/cleanup
+  schedule: every 1 hours
+- description: ereporter2 mail exception report
+  target: backend
+  url: /internal/cron/ereporter2/mail
+  schedule: every 1 hours synchronized
+- description: Send ts_mon metrics
+  target: backend
+  url: /internal/cron/ts_mon/send
+  schedule: every 1 minutes
+
+# [/FROM_PYTHON_CIPD]
+
+
+- description: tsmon house keeping
+  target: backend-go
+  url: /internal/cron/ts_mon/housekeeping
+  schedule: every 1 minutes
+
+- description: "LUCI Config datastore cache periodic refresh"
+  target: backend-go
+  url: /admin/config/cache/manage
+  schedule: every 10 minutes

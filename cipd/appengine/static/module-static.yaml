@@ -1,0 +1,6 @@
+module: static
+runtime: go
+api_version: go1
+
+includes:
+  - common

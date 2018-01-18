@@ -1,0 +1,11 @@
+dispatch:
+  - url: "*/rpcexplorer/*"
+    module: static
+
+  # TODO(vadimsh): Delete these routes once Python code is gone.
+  - url: "*/prpc/*"
+    module: default-go
+  - url: "*/admin/*"
+    module: default-go
+  - url: "*/internal/tq/*"
+    module: backend-go

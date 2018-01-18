@@ -1,0 +1,14 @@
+# This module exists EXCLUSIVELY to satisfy dev_appserver.py's craving for
+# a default module, since the real default module is in python codebase.
+#
+# See module-frontend.yaml for the future 'default' module.
+
+module: default
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /.*
+  script: phony.app
+  secure: always
