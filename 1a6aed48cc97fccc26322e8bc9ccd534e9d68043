@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8feff3c6_8b37b315",
+        "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-18T23:15:28Z",
+      "side": 1,
+      "message": "nit: consider following the guidleine of how to format comments for messages, services, methods, etc\nhttps://cloud.google.com/apis/design/documentation#resource_description",
+      "revId": "1a6aed48cc97fccc26322e8bc9ccd534e9d68043",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "995cc1a1_12423eb5",
+        "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-18T23:15:28Z",
+      "side": 1,
+      "message": "can we use common.IPv4 here, proposed in another CL?",
+      "range": {
+        "startLine": 20,
+        "startChar": 2,
+        "endLine": 20,
+        "endChar": 8
+      },
+      "revId": "1a6aed48cc97fccc26322e8bc9ccd534e9d68043",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c52755e9_66389ffb",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-18T23:15:28Z",
+      "side": 1,
+      "message": "the FK AND UNIQUE constraints should use machine id, not nic id",
+      "revId": "1a6aed48cc97fccc26322e8bc9ccd534e9d68043",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
