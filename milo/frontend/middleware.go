@@ -335,10 +335,14 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 	}
 }
 
+func emulationEnabled(r *http.Request) bool {
+	return r.FormValue("emulation") != ""
+}
+
 // emulationMiddleware enables buildstore emulation if "emulation" query
 // string parameter is not empty.
 func emulationMiddleware(c *router.Context, next router.Handler) {
-	c.Context = buildstore.WithEmulation(c.Context, c.Request.FormValue("emulation") != "")
+	c.Context = buildstore.WithEmulation(c.Context, emulationEnabled(c.Request))
 	next(c)
 }
 
