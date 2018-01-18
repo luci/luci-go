@@ -22,12 +22,16 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -104,20 +108,58 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 	}
 
 	buildAddress := fmt.Sprintf("%s/%s/%d", bucket, builder, number)
-	msgs, err := bb.Search().
-		// this search is optimized, a datastore.get.
-		Tag(strpair.Format("build_address", buildAddress)).
-		Context(c).
-		Fetch(1, nil)
-	switch {
+	c = logging.SetField(c, "build_address", buildAddress)
+
+	var msg *bbapi.ApiCommonBuildMessage
+
+	// Check cache first.
+	c = info.MustNamespace(c, "buildstore-buildbucket-builds")
+	cache := memcache.NewItem(c, buildAddress)
+	switch err := memcache.Get(c, cache); {
+	case err == memcache.ErrCacheMiss:
 	case err != nil:
-		return nil, err
-	case len(msgs) == 0:
-		return nil, nil
-	default:
-		var b buildbucket.Build
-		return &b, b.ParseMessage(msgs[0])
+		logging.WithError(err).Warningf(c, "memcache.get failure")
+	case err == nil:
+		var m bbapi.ApiCommonBuildMessage
+		if err := json.Unmarshal(cache.Value(), &m); err != nil {
+			logging.WithError(err).Warningf(c, "corrupted memcache value")
+		} else {
+			msg = &m
+		}
 	}
+
+	if msg == nil {
+		logging.Infof(c, "fetching buildbucket build")
+		msgs, err := bb.Search().
+			// this search is optimized, a datastore.get.
+			Tag(strpair.Format("build_address", buildAddress)).
+			Context(c).
+			Fetch(1, nil)
+		switch {
+		case err != nil:
+			return nil, err
+		case len(msgs) == 0:
+			return nil, nil
+		default:
+			msg = msgs[0]
+
+			// Cache this message for 1m. Failures are not critical.
+			marshalled, err := json.Marshal(msg)
+			if err != nil {
+				// this should never happen because we just unmarshaled it from JSON
+				logging.WithError(err).Errorf(c, "could not marshal a build message")
+			} else {
+				cache.SetValue(marshalled)
+				cache.SetExpiration(time.Minute) // 1min update latency is acceptable.
+				if err := memcache.Set(c, cache); err != nil {
+					logging.WithError(err).Warningf(c, "memcache.set failure")
+				}
+			}
+		}
+	}
+
+	var b buildbucket.Build
+	return &b, b.ParseMessage(msg)
 }
 
 // getEmulatedBuild returns a buildbot build derived from a LUCI build.

@@ -158,17 +158,20 @@ func Run(templatePath string) {
 			BuildNumber: c.Params.ByName("build"),
 		}
 
-		// If this build is emulated, redirect to LUCI.
-		if number, err := strconv.Atoi(id.BuildNumber); err == nil {
-			b, err := buildstore.EmulationOf(c.Context, id.Master, id.BuilderName, number)
-			switch {
-			case err != nil:
-				return err
-			case b != nil && b.Number != nil:
-				u := *c.Request.URL
-				u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", b.Project, b.Bucket, b.Builder, *b.Number)
-				http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
-				return nil
+		// If this build is emulated and emulation is not requested explicitly,
+		// redirect to LUCI build page.
+		if !emulationEnabled(c.Request) {
+			if number, err := strconv.Atoi(id.BuildNumber); err == nil {
+				b, err := buildstore.EmulationOf(c.Context, id.Master, id.BuilderName, number)
+				switch {
+				case err != nil:
+					return err
+				case b != nil && b.Number != nil:
+					u := *c.Request.URL
+					u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", b.Project, b.Bucket, b.Builder, *b.Number)
+					http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
+					return nil
+				}
 			}
 		}
 
