@@ -178,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "51b23f81_babd1799",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:53:33Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "86b6a1e2_26475f3e",
+      "range": {
+        "startLine": 63,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 2
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5412deb7_29954ce9",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 3
@@ -222,6 +246,30 @@
       "revId": "fa9b0e657a63d85044f922888961932c9076f528",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6be3f92c_34a6ed46",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:53:33Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f097b372_4f1cf7fc",
+      "range": {
+        "startLine": 135,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 27
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
