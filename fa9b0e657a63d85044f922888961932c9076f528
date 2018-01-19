@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "63d11479_0d0a685d",
+        "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-19T00:47:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1eb1b737_c9b0155e",
+      "range": {
+        "startLine": 17,
+        "startChar": 1,
+        "endLine": 18,
+        "endChar": 18
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "64665723_528e0fd7",
         "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "fa9b0e657a63d85044f922888961932c9076f528",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57961073_c0f6e651",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-19T00:47:39Z",
+      "side": 1,
+      "message": "Bad copy/paste. Done.",
+      "parentUuid": "64665723_528e0fd7",
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "defdc5e1_3c2a7f79",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-19T00:47:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f4b6199_de0a9cd4",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 34
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a76807c_e4ad52ce",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 3
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "86b6a1e2_26475f3e",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-19T00:47:39Z",
+      "side": 1,
+      "message": "A transaction will be needed here later because assigning an IP address requires updating another table.",
+      "parentUuid": "6a76807c_e4ad52ce",
+      "range": {
+        "startLine": 63,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 2
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5412deb7_29954ce9",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 3
@@ -99,6 +189,30 @@
       "writtenOn": "2018-01-19T00:10:22Z",
       "side": 1,
       "message": "to me we are just procrastinating doing the right thing",
+      "range": {
+        "startLine": 135,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 27
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f097b372_4f1cf7fc",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-19T00:47:39Z",
+      "side": 1,
+      "message": "It\u0027s not the priority right now, priority is getting the service working. Adding proper filtering which alters the query itself greatly expands the number of test cases we need to test the various combinations of filters, which means a lot more work needs to be done at each stage to unblock progress on the next stage (e.g. we can\u0027t start on vms until this cl is committed and proper filtering makes this cl take longer). Once the dependency chain is completed, we can do everything else in parallel, making it faster overall to punt on this task for now.",
+      "parentUuid": "5412deb7_29954ce9",
       "range": {
         "startLine": 135,
         "startChar": 2,
@@ -131,6 +245,30 @@
       "revId": "fa9b0e657a63d85044f922888961932c9076f528",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fbfc6f9_8571bc1f",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-19T00:47:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aea59fcb_2f11ac85",
+      "range": {
+        "startLine": 154,
+        "startChar": 5,
+        "endLine": 154,
+        "endChar": 18
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
