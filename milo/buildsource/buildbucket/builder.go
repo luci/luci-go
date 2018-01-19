@@ -268,7 +268,10 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error {
-			return fetch(bbapi.StatusFilterIncomplete, -1)
+			return fetch(bbapi.StatusScheduled, -1)
+		}
+		work <- func() error {
+			return fetch(bbapi.StatusStarted, -1)
 		}
 		work <- func() error {
 			return fetch(bbapi.StatusCompleted, limit)
