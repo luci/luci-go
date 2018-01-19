@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1eb1b737_c9b0155e",
+        "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:10:22Z",
+      "side": 1,
+      "message": "this is not used and there is no ip in the table schema, so let\u0027s remove this and add a TODO to add it later, when add the column to the table",
+      "range": {
+        "startLine": 17,
+        "startChar": 1,
+        "endLine": 18,
+        "endChar": 18
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64665723_528e0fd7",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:10:22Z",
+      "side": 1,
+      "message": "not sure what this means. This schema has NOT NULL constraints. Looks like a required fields are enforced.",
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f4b6199_de0a9cd4",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:10:22Z",
+      "side": 1,
+      "message": "I think this and \"github.com/go-sql-driver/mysql\" should be in the same import block",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 34
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a76807c_e4ad52ce",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:10:22Z",
+      "side": 1,
+      "message": "it just occurred to me that three is no reason for this transaction because there is only one SQL statement that we send. I think.\n\nI think same applies to other createXXX functions",
+      "range": {
+        "startLine": 63,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 2
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5412deb7_29954ce9",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:10:22Z",
+      "side": 1,
+      "message": "to me we are just procrastinating doing the right thing",
+      "range": {
+        "startLine": 135,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 27
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aea59fcb_2f11ac85",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T00:10:22Z",
+      "side": 1,
+      "message": "we should validate IP format here\n\nupdate: let\u0027s replace this with a TODO to add IP support",
+      "range": {
+        "startLine": 154,
+        "startChar": 5,
+        "endLine": 154,
+        "endChar": 18
+      },
+      "revId": "fa9b0e657a63d85044f922888961932c9076f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
