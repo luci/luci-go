@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4b5c407_80c8f1e1",
+        "filename": "cipd/appengine/impl/gs/gs.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T20:45:43Z",
+      "side": 1,
+      "message": "perhaps use do int(r.size-off) instead\nthen you don\u0027t need casting in L318 and L343",
+      "range": {
+        "startLine": 319,
+        "startChar": 11,
+        "endLine": 319,
+        "endChar": 23
+      },
+      "revId": "64bb0ce0499fd216d83ef42a02b08a4fae550864",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
