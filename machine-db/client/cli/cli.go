@@ -104,6 +104,7 @@ func New(params *Parameters) *cli.Application {
 
 			// Machines.
 			addMachineCmd(),
+			deleteMachineCmd(),
 			getMachinesCmd(),
 		},
 	}

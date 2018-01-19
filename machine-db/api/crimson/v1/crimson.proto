@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package crimson;
 
+import "google/protobuf/empty.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto";
@@ -34,6 +35,8 @@ service Crimson {
 
   // Creates a new machine in the database.
   rpc CreateMachine(CreateMachineRequest) returns (Machine);
+  // Deletes a machine from the database.
+  rpc DeleteMachine(DeleteMachineRequest) returns (google.protobuf.Empty);
   // Lists machines in the database.
   rpc ListMachines(ListMachinesRequest) returns (ListMachinesResponse);
 

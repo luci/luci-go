@@ -71,6 +71,41 @@ func addMachineCmd() *subcommands.Command {
 	}
 }
 
+// DeleteMachineCmd is the command to delete a machine.
+type DeleteMachineCmd struct {
+	subcommands.CommandRunBase
+	req crimson.DeleteMachineRequest
+}
+
+// Run runs the command to delete a machine.
+func (c *DeleteMachineCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	// TODO(smut): Validate required fields client-side.
+	client := getClient(ctx)
+	resp, err := client.DeleteMachine(ctx, &c.req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	// TODO(smut): Format this response.
+	fmt.Print(proto.MarshalTextString(resp))
+	return 0
+}
+
+// deleteMachineCmd returns a command to delete a machine.
+func deleteMachineCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "del-machine -name name",
+		ShortDesc: "deletes a machine",
+		LongDesc:  "Deletes a machine from the database.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &DeleteMachineCmd{}
+			cmd.Flags.StringVar(&cmd.req.Name, "name", "", "The name of the machine to delete.")
+			return cmd
+		},
+	}
+}
+
 // GetMachinesCmd is the command to get machines.
 type GetMachinesCmd struct {
 	subcommands.CommandRunBase

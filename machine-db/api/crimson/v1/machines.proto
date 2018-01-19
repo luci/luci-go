@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package crimson;
 
-// Machine describes a machine.
+// A machine in the database.
 message Machine {
   // The name of this machine. Uniquely identifies this machine.
   string name = 1;
@@ -28,6 +28,12 @@ message Machine {
 message CreateMachineRequest {
   // The machine to create in the database.
   Machine machine = 1;
+}
+
+// DeleteMachineRequest is a request to delete a machine from the database.
+message DeleteMachineRequest {
+  // The name of the machine to delete.
+  string name = 1;
 }
 
 // ListMachinesRequest is a request to list machines in the database.

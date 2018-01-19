@@ -5,6 +5,8 @@ package crimson
 import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
+
+	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedCrimson struct {
@@ -123,6 +125,21 @@ func (s *DecoratedCrimson) CreateMachine(c context.Context, req *CreateMachineRe
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(c, "CreateMachine", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedCrimson) DeleteMachine(c context.Context, req *DeleteMachineRequest) (rsp *google_protobuf.Empty, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "DeleteMachine", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.DeleteMachine(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "DeleteMachine", rsp, err)
 	}
 	return
 }

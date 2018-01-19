@@ -43,23 +43,12 @@ func TestCreateMachine(t *testing.T) {
 			VALUES \(\?, \(SELECT id FROM platforms WHERE name = \?\), \(SELECT id FROM racks WHERE name = \?\), \?, \?, \?, \?\)$
 		`
 
-		Convey("begin failed", func() {
-			machine := &crimson.Machine{
-				Name:     "name",
-				Platform: "platform",
-				Rack:     "rack",
-			}
-			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
-			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
-		})
-
 		Convey("prepare failed", func() {
 			machine := &crimson.Machine{
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt).WillReturnError(fmt.Errorf("error"))
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
@@ -70,7 +59,6 @@ func TestCreateMachine(t *testing.T) {
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(fmt.Errorf("error"))
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
@@ -82,10 +70,8 @@ func TestCreateMachine(t *testing.T) {
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
-			m.ExpectCommit()
 			So(createMachine(c, machine), ShouldErrLike, "duplicate machine")
 		})
 
@@ -95,10 +81,8 @@ func TestCreateMachine(t *testing.T) {
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
-			m.ExpectCommit()
 			So(createMachine(c, machine), ShouldErrLike, "unknown platform")
 		})
 
@@ -108,10 +92,8 @@ func TestCreateMachine(t *testing.T) {
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
-			m.ExpectCommit()
 			So(createMachine(c, machine), ShouldErrLike, "unknown rack")
 		})
 
@@ -121,10 +103,8 @@ func TestCreateMachine(t *testing.T) {
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
-			m.ExpectCommit()
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
 
@@ -134,23 +114,8 @@ func TestCreateMachine(t *testing.T) {
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
-			m.ExpectCommit()
-			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
-		})
-
-		Convey("commit failed", func() {
-			machine := &crimson.Machine{
-				Name:     "name",
-				Platform: "platform",
-				Rack:     "rack",
-			}
-			m.ExpectBegin()
-			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
 
@@ -160,11 +125,49 @@ func TestCreateMachine(t *testing.T) {
 				Platform: "platform",
 				Rack:     "rack",
 			}
-			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectCommit()
 			So(createMachine(c, machine), ShouldBeNil)
+		})
+	})
+}
+
+func TestDeleteMachine(t *testing.T) {
+	Convey("deleteMachine", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		deleteStmt := `
+			^DELETE FROM machines WHERE name = \?$
+		`
+
+		Convey("prepare failed", func() {
+			m.ExpectPrepare(deleteStmt).WillReturnError(fmt.Errorf("error"))
+			So(deleteMachine(c, "machine"), ShouldErrLike, "Internal server error")
+		})
+
+		Convey("query failed", func() {
+			m.ExpectPrepare(deleteStmt)
+			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnError(fmt.Errorf("error"))
+			So(deleteMachine(c, "machine"), ShouldErrLike, "Internal server error")
+		})
+
+		Convey("referenced", func() {
+			m.ExpectPrepare(deleteStmt)
+			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_ROW_IS_REFERENCED_2, Message: "`machine_id`"})
+			So(deleteMachine(c, "machine"), ShouldErrLike, "delete entities referencing this machine first")
+		})
+
+		Convey("invalid", func() {
+			m.ExpectPrepare(deleteStmt)
+			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnResult(sqlmock.NewResult(1, 0))
+			So(deleteMachine(c, "machine"), ShouldErrLike, "unknown machine")
+		})
+
+		Convey("ok", func() {
+			m.ExpectPrepare(deleteStmt)
+			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			So(deleteMachine(c, "machine"), ShouldBeNil)
 		})
 	})
 }
