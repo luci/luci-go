@@ -17,13 +17,14 @@ package rpc
 import (
 	"strings"
 
-	"github.com/go-sql-driver/mysql"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/VividCortex/mysqlerr"
+	"github.com/go-sql-driver/mysql"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -40,6 +41,14 @@ func (*Service) CreateMachine(c context.Context, req *crimson.CreateMachineReque
 	return req.Machine, nil
 }
 
+// DeleteMachine handles a request to delete an existing machine.
+func (*Service) DeleteMachine(c context.Context, req *crimson.DeleteMachineRequest) (*empty.Empty, error) {
+	if err := deleteMachine(c, req.Name); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
+}
+
 // ListMachines handles a request to list machines.
 func (*Service) ListMachines(c context.Context, req *crimson.ListMachinesRequest) (*crimson.ListMachinesResponse, error) {
 	machines, err := listMachines(c, stringset.NewFromSlice(req.Names...))
@@ -51,19 +60,16 @@ func (*Service) ListMachines(c context.Context, req *crimson.ListMachinesRequest
 	}, nil
 }
 
-// createMachine creates a new machine in the database. Returns a gRPC error if unsuccessful.
+// createMachine creates a new machine in the database.
 func createMachine(c context.Context, m *crimson.Machine) error {
 	if err := validateMachineForCreation(m); err != nil {
 		return err
 	}
-	tx, err := database.Begin(c)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
-	}
 
+	db := database.Get(c)
 	// By setting machines.platform_id and machines.rack_id NOT NULL when setting up the database, we can avoid checking if the given
 	// platform and rack are valid. MySQL will turn up NULL for their column values which will be rejected as an error.
-	stmt, err := tx.PrepareContext(c, `
+	stmt, err := db.PrepareContext(c, `
 		INSERT INTO machines (name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket)
 		VALUES (?, (SELECT id FROM platforms WHERE name = ?), (SELECT id FROM racks WHERE name = ?), ?, ?, ?, ?)
 	`)
@@ -72,8 +78,7 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 	}
 	_, err = stmt.ExecContext(c, m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket)
 	if err != nil {
-		e, ok := err.(*mysql.MySQLError)
-		switch {
+		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_DUP_ENTRY:
@@ -89,11 +94,44 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 		}
 		return internalError(c, errors.Annotate(err, "failed to create machine").Err())
 	}
-
-	if err := tx.Commit(); err != nil {
-		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
-	}
 	return nil
+}
+
+// deleteMachine deletes an existing machine in the database.
+func deleteMachine(c context.Context, name string) error {
+	if name == "" {
+		return status.Error(codes.InvalidArgument, "machine name is required and must be non-empty")
+	}
+
+	db := database.Get(c)
+	stmt, err := db.PrepareContext(c, `
+		DELETE FROM machines WHERE name = ?
+	`)
+	if err != nil {
+		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
+	}
+	res, err := stmt.ExecContext(c, name)
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_ROW_IS_REFERENCED_2 && strings.Contains(e.Message, "`machine_id`"):
+			// e.g. "Error 1452: Cannot add or update a child row: a foreign key constraint fails (FOREIGN KEY (`machine_id`) REFERENCES `machines` (`id`))".
+			return status.Errorf(codes.FailedPrecondition, "delete entities referencing this machine first")
+		}
+		return internalError(c, errors.Annotate(err, "failed to delete machine").Err())
+	}
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
+	case rows == 0:
+		return status.Errorf(codes.NotFound, "unknown machine %q", name)
+	case rows == 1:
+		return nil
+	default:
+		// Shouldn't happen because name is unique in the database.
+		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+	}
 }
 
 // listMachines returns a slice of machines in the database.
