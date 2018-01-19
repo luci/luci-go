@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3028d3fe_c3bdad00",
+        "filename": "cipd/appengine/impl/settings/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T18:36:48Z",
+      "side": 1,
+      "message": "Returns",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 9
+      },
+      "revId": "9c166efdd7f557e3670f998776518d0404b3063c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c62c5082_4ebd6971",
+        "filename": "cipd/appengine/impl/settings/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T18:36:48Z",
+      "side": 1,
+      "message": "why c for settings? was it config before?",
+      "range": {
+        "startLine": 63,
+        "startChar": 1,
+        "endLine": 63,
+        "endChar": 2
+      },
+      "revId": "9c166efdd7f557e3670f998776518d0404b3063c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
