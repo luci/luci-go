@@ -202,6 +202,24 @@
     },
     {
       "key": {
+        "uuid": "a254e723_40ef724e",
+        "filename": "cipd/appengine/frontend/app.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T17:23:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "67f259c0_01de9a32",
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5937208_61342c71",
         "filename": "cipd/appengine/frontend/main.go",
         "patchSetId": 2
@@ -387,6 +405,30 @@
       "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86e82c96_2caf3ed2",
+        "filename": "cipd/appengine/impl/common/grpc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-19T17:23:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "17ee5c38_832f16de",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 2
+      },
+      "revId": "96e9c2d2cbd28d0c0eefdd3e7635f7782b29bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
