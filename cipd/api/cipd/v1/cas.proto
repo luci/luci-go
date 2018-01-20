@@ -19,6 +19,23 @@ package cipd;
 option go_package = "api";
 
 
+// Supported hashing algorithms used by the content-addressable storage.
+//
+// Literal names are important, since they are used to construct Google Storage
+// paths internally.
+enum HashAlgo {
+  HASH_ALGO_UNSPECIFIED = 0;
+  SHA1 = 1;
+}
+
+
+// A references to an object in the content-addressable storage.
+message ObjectRef {
+  HashAlgo hash_algo = 1;  // an algorithm applied to the body to get the name
+  string hex_digest  = 2;  // the name as lowercase hex string, e.g 'abcdef...'
+}
+
+
 // Exposes content-addressable storage that stores the package files.
 //
 // All CIPD package instances (actual physical files) are residing in this
@@ -30,5 +47,34 @@ option go_package = "api";
 // FinishUpload that is allowed to be used directly by clients to finalize
 // upload sessions started by the backend.
 service Storage {
-  // TODO
+  // GetObjectURL returns a signed URL that can be used to fetch an object.
+  //
+  // Returns NOT_FOUND status code if there's no such object.
+  rpc GetObjectURL(GetObjectURLRequest) returns (ObjectURL);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message GetObjectURLRequest {
+  // A reference to the object the client wants to fetch.
+  ObjectRef object = 1;
+
+  // If present, the returned URL will be served with Content-Disposition header
+  // that includes the given filename. It makes browsers save the file under the
+  // given name.
+  string download_filename = 2;
+}
+
+
+message ObjectURL {
+  // A signed HTTPS URL to the object's body.
+  //
+  // Fetching it doesn't require authentication. Expires after some unspecified
+  // short amount of time. It is expected that callers will use it immediately.
+  //
+  // The URL isn't guaranteed to have any particular internal structure. Do not
+  // attempt to parse it.
+  string signed_url = 1;
 }

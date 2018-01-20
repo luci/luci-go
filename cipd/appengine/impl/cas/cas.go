@@ -15,7 +15,17 @@
 package cas
 
 import (
+	"strings"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/errors"
+
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/common"
+	"go.chromium.org/luci/cipd/appengine/impl/settings"
 )
 
 // Internal returns non-ACLed implementation of cas.StorageService.
@@ -30,3 +40,30 @@ func Internal() api.StorageServer {
 //
 // Doesn't do any ACL checks.
 type storageImpl struct{}
+
+// GetObjectURL implements the corresponding RPC method, see the proto doc.
+func (storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest) (resp *api.ObjectURL, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	if err := ValidateObjectRef(r.Object); err != nil {
+		return nil, errors.Annotate(err, "bad 'object' field").Err()
+	}
+
+	// Lite validation for Content-Disposition header. As long as the filename
+	// doesn't have '"' or '\n', we are constructing a valid header. Let the
+	// browser do the rest of the validation however it likes.
+	if strings.ContainsAny(r.DownloadFilename, "\"\r\n") {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'download_filename' field, contains forbidden characters")
+	}
+
+	cfg, err := settings.Get(c)
+	if err != nil {
+		return nil, err
+	}
+
+	signedURL, err := getSignedURL(c, cfg.ObjectPath(r.Object), cfg.SignAs, r.DownloadFilename)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get signed URL").Err()
+	}
+	return &api.ObjectURL{SignedUrl: signedURL}, nil
+}
