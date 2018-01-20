@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d03b29d5_461400f1",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "vlan should not be here because physical host is already associated with a vlan",
+      "range": {
+        "startLine": 15,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 17
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26017f0e_9c28f99c",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "unindent",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f28cc85_243bd132",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "should not be here",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 22
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c28e692_48ee2057",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "VM",
+      "range": {
+        "startLine": 23,
+        "startChar": 38,
+        "endLine": 23,
+        "endChar": 42
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53b9eade_2c49b17f",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "nit: \"running on\" because it is rather the VM backing the OS\nsame in other files",
+      "range": {
+        "startLine": 23,
+        "startChar": 25,
+        "endLine": 23,
+        "endChar": 32
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fc9a7da_baab943c",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "VM",
+      "range": {
+        "startLine": 25,
+        "startChar": 26,
+        "endLine": 25,
+        "endChar": 30
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdfa379e_918c732d",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "VM",
+      "range": {
+        "startLine": 27,
+        "startChar": 47,
+        "endLine": 27,
+        "endChar": 51
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97db2359_df981e9f",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "unnecessary, `UNIQUE (name, host_id)` covers this",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb69b8b4_a51a34c0",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-20T01:14:59Z",
+      "side": 1,
+      "message": "can a physical host and a VM have the same hostname on a given VLAN? If not, this model may be problematic. \n\nI noticed that VM and hosts are quite similar. Wouldn\u0027t it be simpler to add\n\n  parent_host_id int\n\nfield which is id of another host backing this host. This implies (parent_host_id IS NOT NULL) \u003d\u003e (host is virtual)",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
