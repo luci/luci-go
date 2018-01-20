@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "91f4644f_ccf72a84",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "Yes it should be, it\u0027s needed to identify the physical host. Physical host name is only unique per VLAN. How will you distinguish between a VM being deployed on host1 on VLAN 1 and host1 on VLAN 2?",
+      "parentUuid": "d03b29d5_461400f1",
+      "range": {
+        "startLine": 15,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 17
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "26017f0e_9c28f99c",
         "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
         "patchSetId": 1
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "5062ed24_b650dc6c",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "Why? This is the indentation style in every single .sql file here.",
+      "parentUuid": "26017f0e_9c28f99c",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8f28cc85_243bd132",
         "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
         "patchSetId": 1
@@ -53,6 +95,30 @@
       "writtenOn": "2018-01-20T01:14:59Z",
       "side": 1,
       "message": "should not be here",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 22
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f3089d8_f5ec6df3",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "It\u0027s not needed for any reason except the UNIQUE (name, vlan_id) constraint below. This allows us to enforce per-VLAN hostname uniqueness with one SQL statement. Imagine a user wants to add a VM called \"vm\" to \"physical-host-1\" and another VM also called \"vm\" to \"physical-host-2\". How do we know if this is allowed or not? It\u0027s allowed if physical-host-1 and physical-host-2 are on different VLANs. If vlan_id is not here, then we need some other way to ensure that the name for this VM isn\u0027t being reused on any machine that has the same VLAN ID.",
+      "parentUuid": "8f28cc85_243bd132",
       "range": {
         "startLine": 21,
         "startChar": 1,
@@ -111,6 +177,54 @@
     },
     {
       "key": {
+        "uuid": "9e3862de_311e9fdb",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c28e692_48ee2057",
+      "range": {
+        "startLine": 23,
+        "startChar": 38,
+        "endLine": 23,
+        "endChar": 42
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "210b8af3_1ce37a0b",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53b9eade_2c49b17f",
+      "range": {
+        "startLine": 23,
+        "startChar": 25,
+        "endLine": 23,
+        "endChar": 32
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9fc9a7da_baab943c",
         "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
         "patchSetId": 1
@@ -131,6 +245,30 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9d9058a_fcb38cd8",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9fc9a7da_baab943c",
+      "range": {
+        "startLine": 25,
+        "startChar": 26,
+        "endLine": 25,
+        "endChar": 30
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "0715e199_6dcb0ccb",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fdfa379e_918c732d",
+      "range": {
+        "startLine": 27,
+        "startChar": 47,
+        "endLine": 27,
+        "endChar": 51
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97db2359_df981e9f",
         "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
         "patchSetId": 1
@@ -174,6 +336,24 @@
     },
     {
       "key": {
+        "uuid": "73d72937_05cb1b13",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "What is unnecessary? You\u0027re saying \"UNIQUE (name, host_id)\" is unnecessary because \"UNIQUE (name, host_id)\" covers it. They\u0027re the same. I don\u0027t understand.",
+      "parentUuid": "97db2359_df981e9f",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cb69b8b4_a51a34c0",
         "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
         "patchSetId": 1
@@ -185,6 +365,24 @@
       "writtenOn": "2018-01-20T01:14:59Z",
       "side": 1,
       "message": "can a physical host and a VM have the same hostname on a given VLAN? If not, this model may be problematic. \n\nI noticed that VM and hosts are quite similar. Wouldn\u0027t it be simpler to add\n\n  parent_host_id int\n\nfield which is id of another host backing this host. This implies (parent_host_id IS NOT NULL) \u003d\u003e (host is virtual)",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5272c7d4_b65ef6fb",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-20T02:23:29Z",
+      "side": 1,
+      "message": "They can\u0027t have the same name, agreed this isn\u0027t being addressed in the current schema.\n\nUnder the current schema I guess it\u0027s simpler, because we made hosts own all NICs on the machine. Originally, the hosts table needed a physical NIC to reference and there wouldn\u0027t be one for VMs. I guess I can do this. In fact, that means there can be a unified API for physical and virtual hosts, and the deciding factor between physical and virtual would be whether or not a parent host has been specified. What do you think?\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/877508",
+      "parentUuid": "cb69b8b4_a51a34c0",
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
