@@ -172,32 +172,32 @@ func (s *DecoratedCrimson) ListNICs(c context.Context, req *ListNICsRequest) (rs
 	return
 }
 
-func (s *DecoratedCrimson) CreatePhysicalHost(c context.Context, req *CreatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
+func (s *DecoratedCrimson) CreateHost(c context.Context, req *CreateHostRequest) (rsp *Host, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "CreatePhysicalHost", req)
+		newCtx, err = s.Prelude(c, "CreateHost", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.CreatePhysicalHost(c, req)
+		rsp, err = s.Service.CreateHost(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CreatePhysicalHost", rsp, err)
+		err = s.Postlude(c, "CreateHost", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListPhysicalHosts(c context.Context, req *ListPhysicalHostsRequest) (rsp *ListPhysicalHostsResponse, err error) {
+func (s *DecoratedCrimson) ListHosts(c context.Context, req *ListHostsRequest) (rsp *ListHostsResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "ListPhysicalHosts", req)
+		newCtx, err = s.Prelude(c, "ListHosts", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.ListPhysicalHosts(c, req)
+		rsp, err = s.Service.ListHosts(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListPhysicalHosts", rsp, err)
+		err = s.Postlude(c, "ListHosts", rsp, err)
 	}
 	return
 }

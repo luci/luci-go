@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
-// A physical host in the database.
-message PhysicalHost {
+// A host in the database.
+message Host {
   // The name of this host on the network. With VLAN ID, uniquely identifies this host.
   string name = 1;
   // The VLAN this host belongs to. With hostname, uniquely identifies this host.
@@ -25,14 +25,14 @@ message PhysicalHost {
   // TODO(smut): Add IP address.
 }
 
-// CreatePhysicalHostRequest is a request to create a new physical host in the database.
-message CreatePhysicalHostRequest {
+// CreateHostRequest is a request to create a new host in the database.
+message CreateHostRequest {
   // The host to create in the database.
-  PhysicalHost host = 1;
+  Host host = 1;
 }
 
-// ListPhysicalHostsRequest is a request to list physical hosts in the database.
-message ListPhysicalHostsRequest {
+// ListHostsRequest is a request to list hosts in the database.
+message ListHostsRequest {
   // The names of hosts to get.
   repeated string names = 1;
   // The VLANs to filter retrieved hosts on.
@@ -40,9 +40,9 @@ message ListPhysicalHostsRequest {
   // TODO(smut): Add the rest of the filters.
 }
 
-// ListPhysicalHostsResponse is a response to a request to list physical hosts.
-message ListPhysicalHostsResponse {
+// ListHostsResponse is a response to a request to list hosts.
+message ListHostsResponse {
   // The hosts matching this request.
-  repeated PhysicalHost hosts = 1;
+  repeated Host hosts = 1;
   // TODO(smut): Support page tokens.
 }

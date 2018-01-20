@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS hosts (
 	vlan_id int NOT NULL,
 	-- The machine backing this host.
 	machine_id int NOT NULL,
-	-- The operating system backing this host.
+	-- The operating system running on this host.
 	os_id int NOT NULL,
 	-- The number of VMs which can be deployed on this host.
 	vm_slots int unsigned NOT NULL,
