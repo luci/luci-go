@@ -65,5 +65,5 @@ var perMethodACL = map[string]struct {
 	group string
 	check func(c context.Context, req proto.Message) error
 }{
-// TODO
+	"GetObjectURL": {"administrators", nil},
 }
