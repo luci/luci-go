@@ -111,13 +111,6 @@ func TestPEP425Matches(t *testing.T) {
 func TestPackageMatches(t *testing.T) {
 	t.Parallel()
 
-	mkPkg := func(name string, tags ...*vpython.PEP425Tag) *vpython.Spec_Package {
-		return &vpython.Spec_Package{
-			Name:     name,
-			MatchTag: tags,
-		}
-	}
-
 	testCases := []struct {
 		tags         []*vpython.PEP425Tag
 		matchPkgs    []*vpython.Spec_Package
@@ -126,11 +119,17 @@ func TestPackageMatches(t *testing.T) {
 		{
 			tags: nil,
 			matchPkgs: []*vpython.Spec_Package{
-				mkPkg("NoTags"),
+				{Name: "NoTags"},
 			},
 			notMatchPkgs: []*vpython.Spec_Package{
-				mkPkg("EmptyMatch", mkTag("", "", "")),
-				mkPkg("MissingMatch", mkTag("cp27", "cp27mu", "manylinux1_x86_64")),
+				{
+					Name:     "EmptyMatch",
+					MatchTag: []*vpython.PEP425Tag{mkTag("", "", "")},
+				},
+				{
+					Name:     "MissingMatch",
+					MatchTag: []*vpython.PEP425Tag{mkTag("cp27", "cp27mu", "manylinux1_x86_64")},
+				},
 			},
 		},
 		{
@@ -139,13 +138,37 @@ func TestPackageMatches(t *testing.T) {
 				mkTag("py2", "cp27m", "macosx_10_9_universal"),
 			},
 			matchPkgs: []*vpython.Spec_Package{
-				mkPkg("NoTags"),
-				mkPkg("OneMatchingTag", mkTag("cp27", "", "")),
-				mkPkg("MultipleMatchingTag", mkTag("cp27", "", ""), mkTag("", "cp27m", "")),
+				{Name: "NoTags"},
+				{
+					Name:     "OneMatchingTag",
+					MatchTag: []*vpython.PEP425Tag{mkTag("cp27", "", "")},
+				},
+				{
+					Name: "MultipleMatchingTag",
+					MatchTag: []*vpython.PEP425Tag{
+						mkTag("cp27", "", ""),
+						mkTag("", "cp27m", ""),
+					},
+				},
 			},
 			notMatchPkgs: []*vpython.Spec_Package{
-				mkPkg("EmptyMatch", mkTag("", "", "")),
-				mkPkg("MissingMatch", mkTag("none", "none", "none")),
+				{
+					Name:     "EmptyMatch",
+					MatchTag: []*vpython.PEP425Tag{mkTag("", "", "")},
+				},
+				{
+					Name:     "MissingMatch",
+					MatchTag: []*vpython.PEP425Tag{mkTag("none", "none", "none")},
+				},
+				{
+					Name:        "NotMatchTag",
+					NotMatchTag: []*vpython.PEP425Tag{mkTag("", "cp27mu", "")},
+				},
+				{
+					Name:        "NotMatchTagWithMatchTag",
+					MatchTag:    []*vpython.PEP425Tag{mkTag("py2", "", "")},
+					NotMatchTag: []*vpython.PEP425Tag{mkTag("", "cp27mu", "")},
+				},
 			},
 		},
 	}
