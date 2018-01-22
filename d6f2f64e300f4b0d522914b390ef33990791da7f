@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "aec6106a_287ac34a",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-22T23:43:05Z",
+      "side": 1,
+      "message": "ah right",
+      "parentUuid": "91f4644f_ccf72a84",
+      "range": {
+        "startLine": 15,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 17
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26017f0e_9c28f99c",
         "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
         "patchSetId": 1
@@ -78,6 +102,24 @@
       "side": 1,
       "message": "Why? This is the indentation style in every single .sql file here.",
       "parentUuid": "26017f0e_9c28f99c",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95191222_1a002b75",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-22T23:43:05Z",
+      "side": 1,
+      "message": "this line uses spaces, while others use tabs",
+      "parentUuid": "5062ed24_b650dc6c",
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -128,6 +170,30 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "823baa6a_f636a00a",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-22T23:43:05Z",
+      "side": 1,
+      "message": "i see",
+      "parentUuid": "4f3089d8_f5ec6df3",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 22
+      },
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -354,6 +420,24 @@
     },
     {
       "key": {
+        "uuid": "d20414ee_a2f62ea6",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-22T23:43:05Z",
+      "side": 1,
+      "message": "i mistyped, sorry. I meant that this constraint is a relaxed version of UNIQUE (name, vlan_id)",
+      "parentUuid": "73d72937_05cb1b13",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cb69b8b4_a51a34c0",
         "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
         "patchSetId": 1
@@ -383,6 +467,24 @@
       "side": 1,
       "message": "They can\u0027t have the same name, agreed this isn\u0027t being addressed in the current schema.\n\nUnder the current schema I guess it\u0027s simpler, because we made hosts own all NICs on the machine. Originally, the hosts table needed a physical NIC to reference and there wouldn\u0027t be one for VMs. I guess I can do this. In fact, that means there can be a unified API for physical and virtual hosts, and the deciding factor between physical and virtual would be whether or not a parent host has been specified. What do you think?\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/877508",
       "parentUuid": "cb69b8b4_a51a34c0",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24c07e04_bc736887",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-22T23:43:05Z",
+      "side": 1,
+      "message": "Here are constraints that an ideal schema will guarantee:\n- host name is unique within VLAN\n- a host is either bare metal or virtual, not both, not none\n- one bare metal host per machine\n- for a VM to exist, a bare metal host on the same machine must exit\n- VM\u0027s machine equals machine of the backing bare metal host\n- VM\u0027s VLAN equals VLAN of the backing bare metal host\n\nAlso ideally every hosts row has machine_id column filled, so that we don\u0027t have to retrieve machine id via parent_id.\n\nnote that an inter-row constraint must be guaranteed by the database. I find it acceptable for the database schema NOT to guarantee an in-row constraint, e.g. \"a host is either metal or virtual\", because we can check that before inserting a row.\n\nthe problem with parent_id approach is that we can no longer have UNIQUE(machine_id) constraint, which means this schema does not guarantee that there is only one bare metal host per machine. We need to design a schema that will provide most guarantees.\n\nHere is something I came up with:\n+ add field parent_host_id int, nullable, FK to hosts(id)\n+ add field parent_machine_id int, nullable, FK to machines(id)\none of the fields must be non-NULL. DB cannot guarantee that, but we can check that when creating a host.\n\nWith those fields, other constraints can be guaranteed:\n- UNIQUE(parent_machine_id) guarantees that only one bare metal host exists on a machine\n- UNIQUE(vlan_id, name) guarantees name is unique within VLAN\n- FK hosts(parent_host_id, machine_id)-\u003ehosts(id, machine_id) guarantees that a bare metal host exists for this VM and its runs on the same machine\n- FK hosts(parent_host_id, vlan_id)-\u003ehosts(id, vlan_id) guarantees that a bare metal host exists for this VM and its runs in the same VLAN\n\nI don\u0027t like that this schema allows\n1) a host to be neither virtual nor bare metal\n2) a host to be both virtual and bare metal pointing, pointing to itself via parent_host_id. Creation of such rows may be challenging though, because you don\u0027t know the id of a new row to put it in the parent_host_id, but it is possible technically (via disabling FK constarints and then reenabling them).\n\nbut we can control that when creating a row and it is not a subject to race with other db clients.\n\nWDYT?",
+      "parentUuid": "5272c7d4_b65ef6fb",
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
