@@ -165,7 +165,7 @@ vendored packges, you need to define an environment specification file that
 describes which wheels to install.
 
 An environment specification file is a text protobuf defined as `Spec`
-[here](./api/env/spec.proto). An example is:
+[here](./api/vpython/spec.proto). An example is:
 
 ```
 # Any 2.7 interpreter will do.
