@@ -26,10 +26,18 @@ import (
 //
 // See PEP425Matches for more information.
 func PackageMatches(pkg *vpython.Spec_Package, tags []*vpython.PEP425Tag) bool {
+	// If any "not_match_tag" matches, then this package does not match.
+	for _, matchTag := range pkg.NotMatchTag {
+		if PEP425Matches(matchTag, tags) {
+			return false
+		}
+	}
+
+	// If we have no match tags, or if a match tag matches a host tag, then the
+	// package matches.
 	if len(pkg.MatchTag) == 0 {
 		return true
 	}
-
 	for _, matchTag := range pkg.MatchTag {
 		if PEP425Matches(matchTag, tags) {
 			return true
