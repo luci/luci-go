@@ -15,6 +15,8 @@
 package spec
 
 import (
+	"fmt"
+
 	"go.chromium.org/luci/vpython/api/vpython"
 )
 
@@ -26,10 +28,20 @@ import (
 //
 // See PEP425Matches for more information.
 func PackageMatches(pkg *vpython.Spec_Package, tags []*vpython.PEP425Tag) bool {
+	// If any "not_match_tag" matches, then this package does not match.
+	for _, matchTag := range pkg.NotMatchTag {
+		fmt.Println("TRY:", matchTag, tags)
+		if PEP425Matches(matchTag, tags) {
+			fmt.Println("NOT MATCH")
+			return false
+		}
+	}
+
+	// If we have no match tags, or if a maetch tag matches, then the package
+	// matches.
 	if len(pkg.MatchTag) == 0 {
 		return true
 	}
-
 	for _, matchTag := range pkg.MatchTag {
 		if PEP425Matches(matchTag, tags) {
 			return true
