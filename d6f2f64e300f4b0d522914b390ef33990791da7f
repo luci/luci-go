@@ -542,6 +542,24 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37721985_077af21d",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T23:42:16Z",
+      "side": 1,
+      "message": "I think a FK field name must clearly communicate the relationship that the field is representing. So far, \"\u003canother_table_name\u003e_id\" worked well because relationships were obvious:\n\n- vlan_id: VLAN of the host\n- os_id: OS of the host\n- machine_id: machine of the host\n\nThis does not work for host_id: \"the host of the host\". This does not make sense. \"parent_id\" was a bit better, but also not great: what is parent exactly.\n\n\"machine_id\" name with the new meaning is problematic too because it reads as \"machine of the host\", but that\u0027s not true for virtual hosts: they won\u0027t have machine id, although there is definitely machine backing up the vm indirectly.\n\nthe relationships we want to add are:\n- the underlying physical host backing this virtual host\n- the underlying machine *directly* backing this physical host.\n\nlet\u0027s choose field names that clearly communicate these relationships.",
+      "parentUuid": "8d50db72_73afa796",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
