@@ -1,0 +1,268 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e37478b9_65681506",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "reference",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 15
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "844d8b33_59dfb648",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "nit: see recommended order of declarations in a proto file https://cloud.google.com/apis/design/file_structure",
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a8240cd_d51d23f2",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "nit: omit https://cloud.google.com/apis/design/documentation#method_description",
+      "range": {
+        "startLine": 50,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 18
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0dd312e7_cd9fcf0d",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "did you consider\n\n  defer common.GRPCifyAndLogErr(c, \u0026err)\n\n? i didn\u0027t check it works though",
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff117e89_45d38ea6",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "nit: you are leaving the reader to guess which chars are forbidden",
+      "range": {
+        "startLine": 58,
+        "startChar": 92,
+        "endLine": 58,
+        "endChar": 101
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "317aa4ee_8116583f",
+        "filename": "cipd/appengine/impl/cas/hash.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "consider a slice instead of map, it is faster, in case you care\n\n  var supportedAlogs \u003d []struct { ... \n  }{\n    api.HashAlgo_HASH_ALGO_UNSPECIFIED: {},\n    api.HashAlgo_SHA1: {40, sha1.New},\n  }",
+      "range": {
+        "startLine": 28,
+        "startChar": 21,
+        "endLine": 28,
+        "endChar": 38
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b41bab9_c1f705c1",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "a signed",
+      "range": {
+        "startLine": 50,
+        "startChar": 24,
+        "endLine": 50,
+        "endChar": 30
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3557e1cc_ca530c69",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "let\u0027s mention that otherwise the func will panic\nalternatively, since this function can return an error, let\u0027s validate it",
+      "range": {
+        "startLine": 52,
+        "startChar": 12,
+        "endLine": 52,
+        "endChar": 18
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ceedab38_af2ac809",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "i am curious, why do we need this",
+      "range": {
+        "startLine": 53,
+        "startChar": 73,
+        "endLine": 54,
+        "endChar": 63
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a59984b_291d0d4e",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "can this end with a new line? if so, fmt.Fprintln might be simpler for all these lines",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 12
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c9b6069_506e0699",
+        "filename": "cipd/appengine/impl/settings/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "typo?\n\nconsider \"from s.StorageGSPath\"",
+      "range": {
+        "startLine": 77,
+        "startChar": 8,
+        "endLine": 77,
+        "endChar": 12
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "478a2805_83fd9b6c",
+        "filename": "cipd/appengine/impl/settings/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:16:32Z",
+      "side": 1,
+      "message": "strings.TrimSuffix(s.StorageGSPath, \"/\")",
+      "range": {
+        "startLine": 79,
+        "startChar": 8,
+        "endLine": 79,
+        "endChar": 23
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
