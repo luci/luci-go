@@ -14,7 +14,9 @@ message Host {
   int64 vlan = 2;
   // The machine backing this host.
   string machine = 3;
-  // The operating system backing this host.
+  // The host this host is running on. Implies this is a virtual host.
+  string host = 4;
+  // The operating system running on this host.
   string os = 5;
   // The number of VMs which can be deployed on this host.
   int32 vm_slots = 6;

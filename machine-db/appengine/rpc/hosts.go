@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"database/sql"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -64,21 +65,53 @@ func createHost(c context.Context, h *crimson.Host) error {
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
+	defer func() {
+		// Ignore sql.ErrTxDone, which indicates we've already committed the transaction.
+		// A committed transaction cannot be rolled back, so this is fine.
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			errors.Log(c, errors.Annotate(err, "failed to roll back transaction").Err())
+		}
+	}()
 
 	// TODO(smut): Check that the provided IP address is unassigned.
 
-	// By setting hosts.vlan_id, hosts.machine_id, and hosts.os_id NOT NULL when setting up the database, we can avoid
-	// checking if the given VLAN, machine, and OS are valid. MySQL will turn up NULL for its column values which will be
-	// rejected as an error. We don't need to look up VLAN because the ID is given in the request, but we look it up
-	// anyway to ensure it exists in the database.
+	// NullInt64 can be set to an int64 value or MySQL NULL, controlled by NullInt64.Valid.
+	machineId := &sql.NullInt64{}
+	machineId.Valid = false
+	if h.Machine != "" {
+		machineId.Int64, err = getMachineId(c, tx, h.Machine)
+		if err != nil {
+			return err
+		}
+		machineId.Valid = true
+	}
+	hostId := &sql.NullInt64{}
+	hostId.Valid = false
+	if h.Host != "" {
+		hostId.Int64, err = getHostId(c, tx, h.Host, h.Vlan)
+		if err != nil {
+			return err
+		}
+		hostId.Valid = true
+	}
+	// This shouldn't happen since input has been validated already, but do one final check to ensure exactly one
+	// of machine_id or host_id is being inserted into the database. MySQL is unable to enforce such a condition.
+	if machineId.Valid == hostId.Valid {
+		return internalError(c, errors.Reason("expected exactly one of machine_id, host_id").Err())
+	}
+
+	// By setting hosts.vlan_id and hosts.os_id NOT NULL when setting up the database, we can avoid checking if the given VLAN and OS are valid.
+	// MySQL will turn up NULL for its column values which will be rejected as an error. We don't need to look up VLAN because the ID is given
+	// in the request, but we look it up anyway to ensure it exists in the database.
 	stmt, err := tx.PrepareContext(c, `
-		INSERT INTO hosts (name, vlan_id, machine_id, os_id, vm_slots, description, deployment_ticket)
-		VALUES (?, (SELECT id FROM vlans WHERE id = ?), (SELECT id FROM machines WHERE name = ?), (SELECT id FROM oses WHERE name = ?), ?, ?, ?)
+		INSERT INTO hosts (name, vlan_id, machine_id, host_id, os_id, vm_slots, description, deployment_ticket)
+		VALUES (?, (SELECT id FROM vlans WHERE id = ?), ?, ?, (SELECT id FROM oses WHERE name = ?), ?, ?, ?)
 	`)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
 	}
-	_, err = stmt.ExecContext(c, h.Name, h.Vlan, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
+	defer stmt.Close()
+	_, err = stmt.ExecContext(c, h.Name, h.Vlan, machineId, hostId, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -92,9 +125,6 @@ func createHost(c context.Context, h *crimson.Host) error {
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'vlan_id'"):
 			// e.g. "Error 1048: Column 'vlan_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown VLAN %d", h.Vlan)
-		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
-			// e.g. "Error 1048: Column 'machine_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
@@ -110,14 +140,36 @@ func createHost(c context.Context, h *crimson.Host) error {
 	return nil
 }
 
+// getHostId returns the ID of the host with the given hostname on the given VLAN.
+func getHostId(c context.Context, tx *sql.Tx, name string, vlan int64) (int64, error) {
+	rows, err := tx.QueryContext(c, `
+		SELECT id FROM hosts
+		WHERE name = ?
+			AND vlan_id = ?
+			AND host_id IS NULL
+	`, name, vlan)
+	if err != nil {
+		return 0, internalError(c, errors.Annotate(err, "failed to fetch hosts").Err())
+	}
+	defer rows.Close()
+	// Database constraints mean there can be at most one match, so use if and not for.
+	if !rows.Next() {
+		return 0, status.Errorf(codes.NotFound, "unknown host %q for VLAN %d", name, vlan)
+	}
+	var id int64
+	if err = rows.Scan(&id); err != nil {
+		return 0, internalError(c, errors.Annotate(err, "failed to fetch host %q", name).Err())
+	}
+	return id, nil
+}
+
 // listHosts returns a slice of hosts in the database.
 func listHosts(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.Host, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT h.name, v.id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket
-		FROM hosts h, vlans v, machines m, oses o
+		SELECT h.name, v.id, m.name, p.name, o.name, h.vm_slots, h.description, h.deployment_ticket
+		FROM (hosts h, vlans v, oses o) LEFT OUTER JOIN machines m ON h.machine_id = m.id LEFT OUTER JOIN hosts p on h.host_id = p.id
 		WHERE h.vlan_id = v.id
-			AND h.machine_id = m.id
 			AND h.os_id = o.id
 	`)
 	// TODO(smut): Fetch the assigned IP address.
@@ -128,12 +180,24 @@ func listHosts(c context.Context, names stringset.Set, vlans map[int64]struct{})
 
 	var hosts []*crimson.Host
 	for rows.Next() {
+		machine := sql.NullString{}
+		host := sql.NullString{}
 		h := &crimson.Host{}
-		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket); err != nil {
+		if err = rows.Scan(&h.Name, &h.Vlan, &machine, &host, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch host").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.
 		if _, ok := vlans[h.Vlan]; matches(h.Name, names) && (ok || len(vlans) == 0) {
+			if !machine.Valid {
+				h.Machine = ""
+			} else {
+				h.Machine = machine.String
+			}
+			if !host.Valid {
+				h.Host = ""
+			} else {
+				h.Host = host.String
+			}
 			hosts = append(hosts, h)
 		}
 	}
@@ -149,8 +213,8 @@ func validateHostForCreation(h *crimson.Host) error {
 		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
 	case h.Vlan < 1:
 		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
-	case h.Machine == "":
-		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
+	case h.Machine == "" && h.Host == "" || h.Machine != "" && h.Host != "":
+		return status.Error(codes.InvalidArgument, "exactly one of machine or host is required and must be non-empty")
 	case h.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
 	default:
