@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2e6564f_a8fcc1ed",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T19:47:03Z",
+      "side": 1,
+      "message": "can we overwrite builders variable here? I\u0027d like it to be impossible to accidentally use builders below instead of okBuilders",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "422fd7cc83b9f9a4350c105b2fe6a907d9d6fd0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c05773a9_df5c8a7d",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T19:47:03Z",
+      "side": 1,
+      "message": "this is way more than we will need in practice.\nin practice, there will be one bucket and a lot of builders on that bucket\n\nlet\u0027s use 0 here",
+      "range": {
+        "startLine": 79,
+        "startChar": 26,
+        "endLine": 79,
+        "endChar": 39
+      },
+      "revId": "422fd7cc83b9f9a4350c105b2fe6a907d9d6fd0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
