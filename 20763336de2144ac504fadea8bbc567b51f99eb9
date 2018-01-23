@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a7dc63b1_416961a6",
+        "filename": "vpython/api/vpython/spec.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-23T19:58:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3813045_a6a48dc6",
+      "range": {
+        "startLine": 60,
+        "startChar": 38,
+        "endLine": 60,
+        "endChar": 39
+      },
+      "revId": "20763336de2144ac504fadea8bbc567b51f99eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a27377ea_9e4c9f3a",
         "filename": "vpython/api/vpython/spec.proto",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ca17589b_ca1d84db",
+        "filename": "vpython/api/vpython/spec.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-23T19:58:14Z",
+      "side": 1,
+      "message": "I chose this b/c it has the phrase \"match_tag\" in it, and I think it\u0027s important that it does so it\u0027s visibly linked to the \"match_tag\" field.",
+      "parentUuid": "a27377ea_9e4c9f3a",
+      "range": {
+        "startLine": 61,
+        "startChar": 31,
+        "endLine": 61,
+        "endChar": 44
+      },
+      "revId": "20763336de2144ac504fadea8bbc567b51f99eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8b933a72_85e97d6d",
         "filename": "vpython/spec/match.go",
         "patchSetId": 3
@@ -59,6 +107,24 @@
       "writtenOn": "2018-01-23T19:50:59Z",
       "side": 1,
       "message": "Update comment.  Eg.\n\nreturns true if:\n* None of the tags matches any of the blacklist AND\n* Any of the tags matches any of the supplied PEP425 tags.",
+      "revId": "20763336de2144ac504fadea8bbc567b51f99eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6bd0879_9f07e9b6",
+        "filename": "vpython/spec/match.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-01-23T19:58:14Z",
+      "side": 1,
+      "message": "Good catch, done",
+      "parentUuid": "8b933a72_85e97d6d",
       "revId": "20763336de2144ac504fadea8bbc567b51f99eb9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
