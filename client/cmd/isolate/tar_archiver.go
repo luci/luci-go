@@ -19,6 +19,7 @@ import (
 	"crypto/sha1"
 	"io"
 	"os"
+	"sort"
 
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/isolated"
@@ -40,12 +41,14 @@ type ItemBundle struct {
 // ShardItems shards the provided items into ItemBundles, using the provided
 // threshold as the maximum size the resultant tars should be.
 //
-// ShardItems does not access the filesystem to determine
+// ShardItems does not access the filesystem.
 func ShardItems(items []*Item, threshold int64) []*ItemBundle {
 	var (
 		bundles []*ItemBundle
 		bundle  *ItemBundle
 	)
+
+	orderDeterministically(items)
 
 	for len(items) > 0 {
 		bundle, items = oneBundle(items, threshold)
@@ -117,4 +120,25 @@ func (b *ItemBundle) writeTar(w io.Writer) error {
 		}
 	}
 	return tw.Close()
+}
+
+func orderDeterministically(items []*Item) {
+	sort.Sort(itemByPath(items))
+}
+
+// itemByPath implements sort.Interface through path-based comparison.
+//
+// Comparison by size would be faster CPU-wise, but the order of items will be
+// less stable across builds, meaning that more tar archives would change,
+// hence more uploading/downloading later on.
+type itemByPath []*Item
+
+func (s itemByPath) Len() int {
+	return len(s)
+}
+func (s itemByPath) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s itemByPath) Less(i, j int) bool {
+	return s[i].RelPath < s[j].RelPath
 }
