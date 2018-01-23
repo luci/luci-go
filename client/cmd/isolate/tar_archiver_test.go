@@ -84,6 +84,23 @@ func TestItemBundle(t *testing.T) {
 			},
 		},
 		{
+			desc: "multi bundle deterministic",
+			// Item's relPath is based on sizes; shufling the order of sizes
+			// should result in the same set of relPath.
+			sizes:       []int64{2000, 100, 500, 200, 400, 300},
+			wantBundles: []int{3, 2, 1},
+			wantSize: []int{
+				1024 + 1024 + 1024 + 1024,
+				1024 + 1024 + 1024,
+				1024 + 2560,
+			},
+			wantDigests: []isolated.HexDigest{
+				"003afa69f9b267a2cf267cc5ff715968cb05354b",
+				"7f8cedcc12dc7ddcbe0849a46628b2748f5e84aa",
+				"e4a390dbfa081e564fe61368bac77bb9ef30a4e7",
+			},
+		},
+		{
 			desc:        "file below boundary",
 			sizes:       []int64{511},
 			wantBundles: []int{1},
