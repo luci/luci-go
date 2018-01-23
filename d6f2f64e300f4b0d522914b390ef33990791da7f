@@ -506,6 +506,24 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c6e1381_752a7169",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T01:50:33Z",
+      "side": 1,
+      "message": "SG. \n\nIf we need to list physical AND virtual hosts on a given machine, we can use OUTER JOIN when joining with the parent host. OUTER JOIN will produce all NULLs in the row of the parent table and we will be able to do ISNULL(machine_id, parent.machine_id) which will work for both physical and virtual hosts. Not sure if that we will work well (fast) when JOINing with machines table though.\n\nConsider renaming machine_id to parent_machine_id\n- to be consistent with parent_host_id\n- to reduce a possibility that a reader (reasonably) thinks that any host has a machine id. In other words, to be better distinguish \"the machine directly backing a physical host host\" from \"the machine directly/indirectly backing a physical/virtual host\"\n\n\u003e My understanding is that NULLs are excluded, so this constraint will only apply when machine_id \u003c\u003e NULL.\n\nthat\u0027s my understanding too. https://dev.mysql.com/doc/refman/5.7/en/create-table.html says \"For all engines, a UNIQUE index permits multiple NULL values for columns that can contain NULL\"",
+      "parentUuid": "00daea78_a004c304",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
