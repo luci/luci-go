@@ -524,6 +524,24 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d50db72_73afa796",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-23T01:56:47Z",
+      "side": 1,
+      "message": "For consistency I was actually thinking of machine_id and host_id since none of the other columns have parent_ in their name (e.g. nics refer to their parent by machine_id not parent_machine_id, and every other foreign key also omits parent_: os_id, vlan_id, etc.).\n\nI think that a reader may be confused either way. If a reader sees parent_machine_id and parent_host_id, the reader may expect there to be two parents of different types and for both to be filled in. Comments in relevant places would likely be needed in any case.",
+      "parentUuid": "6c6e1381_752a7169",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
