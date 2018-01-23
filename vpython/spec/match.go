@@ -18,18 +18,30 @@ import (
 	"go.chromium.org/luci/vpython/api/vpython"
 )
 
-// PackageMatches returns true if any of the match qualifiers in the supplied
-// package match at least one of the supplied PEP425 tags.
+// PackageMatches returns true if the package's match constraints are compatible
+// with tags. A package matches if:
+//
+//	- None of the tags matches any of the "not_match_tag" entries, and
+//	- Every "match_tag" entry matches at least one tag.
 //
 // As a special case, if the package doesn't specify any match tags, it will
-// always match regardless of the supplied PEP425 tags.
+// always match regardless of the supplied PEP425 tags. This handles the deafult
+// case where the user specifies no constraints.
 //
-// See PEP425Matches for more information.
+// See PEP425Matches for information about how tags are matched.
 func PackageMatches(pkg *vpython.Spec_Package, tags []*vpython.PEP425Tag) bool {
+	// If any "not_match_tag" matches, then this package does not match.
+	for _, matchTag := range pkg.NotMatchTag {
+		if PEP425Matches(matchTag, tags) {
+			return false
+		}
+	}
+
+	// If we have no match tags, or if a match tag matches a host tag, then the
+	// package matches.
 	if len(pkg.MatchTag) == 0 {
 		return true
 	}
-
 	for _, matchTag := range pkg.MatchTag {
 		if PEP425Matches(matchTag, tags) {
 			return true
