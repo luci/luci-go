@@ -560,6 +560,24 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "340edb10_c869a96b",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-23T23:59:07Z",
+      "side": 1,
+      "message": "It\u0027s not always \"of the\". For example, you asked me to change the OS comment to something like \"the os running on the host\". If we call it host_id we can use a comment like \"the host this host is running on\". I think that there\u0027re no names we can choose which won\u0027t require comments, because of the confusion caused by physical hosts having a machine reference and virtual hosts only having another host reference even though they indirectly have a machine. Originally this was resolved by the two-table schema-- I think it\u0027s obvious what it means if virtual_hosts has a host_id which references physical_hosts.\n\nConceptually host_id seems fine to me. Each foreign key is really just stating that the row is associated with another row. host_id implies this row is associated with another host, and it\u0027s up to the comment to explain what precisely that association is.\n\nAs I mentioned, I believe parent_machine_id and parent_host_id are no clearer than machine_id and host_id. parent_ does not imply that only one of parent_machine_id and parent_host_id should be filled in. Since any naming scheme will require explanation, I prefer to keep it consistent and keep the meaning as \"\u003ctable\u003e_id is a row in \u003ctable\u003e associated with this row\".",
+      "parentUuid": "37721985_077af21d",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
