@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7320a5d6_76c5c20a",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T19:37:39Z",
+      "side": 1,
+      "message": "this will filter out all buildbot builds.",
+      "revId": "adcd51c93a2a475a5fc954dc0256b6d57712b156",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
