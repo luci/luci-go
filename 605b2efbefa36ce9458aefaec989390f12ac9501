@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3fc4701b_815129ba",
+        "filename": "common/bq/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T23:17:34Z",
+      "side": 1,
+      "message": "no doc.go file in go.chromium.org uses /* https://cs.chromium.org/search/?q\u003d%5C/%5C*+file:doc.go+file:go.chromium.org\u0026sq\u003dpackage:chromium\u0026type\u003dcs\nall of them seem to use // https://cs.chromium.org/search/?q\u003d%22//+Package%22++file:doc.go+file:go.chromium.org\u0026sq\u003dpackage:chromium\u0026type\u003dcs\n\nplease use // to be consistent",
+      "revId": "605b2efbefa36ce9458aefaec989390f12ac9501",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9479bd3b_72ef63d3",
+        "filename": "common/bq/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-23T23:17:34Z",
+      "side": 1,
+      "message": "it is unusual in package docs to have links to the same page. \n\nhttps://godoc.org/net/http\n\nrefers to its own symbols just by name, e.g. \n\n\u003e ListenAndServe starts an HTTP server with a given address and handler.\n\nthere are other examples in other std lib packages too.\n\nIn practice, if I see a reference to a symbol in the same package, i can just press F on godoc.org and it will popup search where I can quickly type \"Uploader\".\n\nso I think this is unnecessary. Also it points to NewUploader, instead of Uploader.",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 71
+      },
+      "revId": "605b2efbefa36ce9458aefaec989390f12ac9501",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
