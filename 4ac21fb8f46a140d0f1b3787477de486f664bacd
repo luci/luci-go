@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "454c58fb_b00ffa65",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-23T23:15:08Z",
+      "side": 1,
+      "message": "please don\u0027t use this, common/cli supersedes it",
+      "range": {
+        "startLine": 27,
+        "startChar": 2,
+        "endLine": 27,
+        "endChar": 45
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3669110_d1aa78a1",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-23T23:15:08Z",
+      "side": 1,
+      "message": "nit: \"positional\" ? (and below)",
+      "range": {
+        "startLine": 56,
+        "startChar": 21,
+        "endLine": 56,
+        "endChar": 29
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc172a07_e83c3f26",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-23T23:15:08Z",
+      "side": 1,
+      "message": "this should accept a context (obtained via cli.GetContext, see below).",
+      "range": {
+        "startLine": 77,
+        "startChar": 34,
+        "endLine": 77,
+        "endChar": 36
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e2d5856_fc8e1be3",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-23T23:15:08Z",
+      "side": 1,
+      "message": "it might make sense to retry a bunch of times when receiving HTTP codes \u003e\u003d 500. See e.g https://chromium.googlesource.com/infra/luci/luci-go/+/master/cipd/appengine/impl/gs/retry.go#55",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 2
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67958cc3_8cf98258",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-23T23:15:08Z",
+      "side": 1,
+      "message": "use cli.GetContext(a, c, env) to grab a context and pass it down to main(). It will have logging (and some other stuff) already initialized. See existing usage of cli.GetContext: https://cs.chromium.org/search/?q\u003dcli.GetContext\u0026sq\u003dpackage:chromium\u0026type\u003dcs",
+      "range": {
+        "startLine": 108,
+        "startChar": 21,
+        "endLine": 108,
+        "endChar": 85
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
