@@ -16,6 +16,24 @@
       "revId": "adcd51c93a2a475a5fc954dc0256b6d57712b156",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4389bae6_dcba387c",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-01-23T19:41:18Z",
+      "side": 1,
+      "message": "oops! good point. fixed",
+      "parentUuid": "7320a5d6_76c5c20a",
+      "revId": "adcd51c93a2a475a5fc954dc0256b6d57712b156",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
