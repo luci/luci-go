@@ -488,6 +488,24 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00daea78_a004c304",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-23T00:52:25Z",
+      "side": 1,
+      "message": "I\u0027m not sure it\u0027s necessary to have machine_id in a virtual host row. Assuming we don\u0027t need it, I believe we can fulfill the same subset of the ideal requirements with the addition of just one parent_host_id column. Then if machine_id \u003c\u003e NULL then the row is a physical host and if parent_host_id \u003c\u003e NULL then the row is a virtual host. Ideally the schema would enforce that machine_id \u003c\u003e NULL xor parent_host_id \u003c\u003e NULL, but I don\u0027t believe it can.\n\nThen the constraints would be:\n- UNIQUE(name, vlan_id). Enforces name uniqueness per VLAN.\n- UNIQUE(machine_id). Enforces at most one physical host per machine. My understanding is that NULLs are excluded, so this constraint will only apply when machine_id \u003c\u003e NULL.\n- FOREIGN KEY (parent_host_id, vlan_id) REFERENCES hosts(id, vlan_id). Enforces that the parent host being referenced exists on the same VLAN. My understanding is that if parent_host_id is NULL, this constraint won\u0027t apply, which is fine.\n\nI realize this is almost exactly the same as what you came up with, just with fewer columns and fewer foreign key constraints. When we fetch rows we will need an extra join to find the machine backing the physical host backing the VM.\n\nI guess that means we agree % having a NOT NULL machine_id column for easy lookup. I don\u0027t really care if we have this or not, but not having it will save us the FOREIGN KEY (parent_host_id, machine_id) constraint.\n\nAgreed that the xor condition has to be controlled in other ways. I think it\u0027s impossible to enforce with one table.",
+      "parentUuid": "24c07e04_bc736887",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
