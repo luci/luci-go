@@ -50,6 +50,15 @@ message Spec {
     // tag specifies just an ABI field, any system PEP425 tag with that ABI will
     // be considered a successful match, regardless of other field values.
     repeated vpython.PEP425Tag match_tag = 3;
+
+    // Optional PEP425 tags to determine whether this package is NOT included on
+    // the target system. This has the opposite behavior as "match_tag": if any
+    // host tags match any tags in this list, the package will not be installed
+    // on this host.
+    //
+    // A "not_match_tag" overrides a "match_tag", so if a host has tags that
+    // match entries in both, the package will be not considered a match.
+    repeated vpython.PEP425Tag not_match_tag = 4;
   }
   repeated Package wheel = 2;
 
