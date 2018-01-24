@@ -56,7 +56,7 @@ func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHo
 }
 
 // createPhysicalHost creates a new physical host in the database. Returns a gRPC error if unsuccessful.
-func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) error {
+func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) {
 	if err := validatePhysicalHostForCreation(h); err != nil {
 		return err
 	}
@@ -64,34 +64,62 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) error {
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
+	defer func() {
+		if err != nil {
+			if e := tx.Rollback(); e != nil {
+				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
+			}
+		}
+	}()
 
 	// TODO(smut): Check that the provided IP address is unassigned.
 
-	// By setting hosts.vlan_id, hosts.machine_id, and hosts.os_id NOT NULL when setting up the database, we can avoid
-	// checking if the given VLAN, machine, and OS are valid. MySQL will turn up NULL for its column values which will be
-	// rejected as an error. We don't need to look up VLAN because the ID is given in the request, but we look it up
-	// anyway to ensure it exists in the database.
+	// By setting hostnames.vlan_id as both FOREIGN KEY and NOT NULL when setting up the database,
+	// we can avoid checking if the given VLAN is valid. MySQL will ensure the given VLAN exists.
 	stmt, err := tx.PrepareContext(c, `
-		INSERT INTO hosts (name, vlan_id, machine_id, os_id, vm_slots, description, deployment_ticket)
-		VALUES (?, (SELECT id FROM vlans WHERE id = ?), (SELECT id FROM machines WHERE name = ?), (SELECT id FROM oses WHERE name = ?), ?, ?, ?)
+		INSERT INTO hostnames (name, vlan_id)
+		VALUES (?, ?)
 	`)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
 	}
-	_, err = stmt.ExecContext(c, h.Name, h.Vlan, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
+	res, err := stmt.ExecContext(c, h.Name, h.Vlan)
+	stmt.Close()
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'name'"):
 			// e.g. "Error 1062: Duplicate entry 'hostname-vlanId' for key 'name'".
-			return status.Errorf(codes.AlreadyExists, "duplicate host %q for VLAN %d", h.Name, h.Vlan)
+			return status.Errorf(codes.AlreadyExists, "duplicate hostname %q for VLAN %d", h.Name, h.Vlan)
+		case e.Number == mysqlerr.ER_NO_REFERENCED_ROW_2 && strings.Contains(e.Message, "`vlan_id`"):
+			// e.g. "Error 1452: Cannot add or update a child row: a foreign key constraint fails (FOREIGN KEY (`vlan_id`) REFERENCES `vlans` (`id`))".
+			return status.Errorf(codes.NotFound, "unknown VLAN %d", h.Vlan)
+		}
+		return internalError(c, errors.Annotate(err, "failed to create hostname").Err())
+	}
+	hostnameId, err := res.LastInsertId()
+	if err != nil {
+		return internalError(c, errors.Annotate(err, "failed to fetch hostname").Err())
+	}
+
+	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
+	stmt, err = tx.PrepareContext(c, `
+		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket)
+		VALUES (?, (SELECT id FROM machines WHERE name = ?), (SELECT id FROM oses WHERE name = ?), ?, ?, ?)
+	`)
+	if err != nil {
+		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
+	}
+	_, err = stmt.ExecContext(c, hostnameId, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
+	stmt.Close()
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
 		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
-			return status.Errorf(codes.AlreadyExists, "duplicate host for machine %q", h.Machine)
-		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'vlan_id'"):
-			// e.g. "Error 1048: Column 'vlan_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown VLAN %d", h.Vlan)
+			return status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
@@ -99,7 +127,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) error {
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
 		}
-		return internalError(c, errors.Annotate(err, "failed to create host").Err())
+		return internalError(c, errors.Annotate(err, "failed to create physical host").Err())
 	}
 
 	// TODO(smut): Assign the provided IP address.
@@ -114,15 +142,16 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) error {
 func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.PhysicalHost, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT h.name, v.id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket
-		FROM hosts h, vlans v, machines m, oses o
-		WHERE h.vlan_id = v.id
-			AND h.machine_id = m.id
-			AND h.os_id = o.id
+		SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket
+		FROM physical_hosts p, hostnames h, vlans v, machines m, oses o
+		WHERE p.hostname_id = h.id
+			AND h.vlan_id = v.id
+			AND p.machine_id = m.id
+			AND p.os_id = o.id
 	`)
 	// TODO(smut): Fetch the assigned IP address.
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch hosts").Err()
+		return nil, errors.Annotate(err, "failed to fetch physical hosts").Err()
 	}
 	defer rows.Close()
 
@@ -130,7 +159,7 @@ func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]s
 	for rows.Next() {
 		h := &crimson.PhysicalHost{}
 		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch host").Err()
+			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.
 		if _, ok := vlans[h.Vlan]; matches(h.Name, names) && (ok || len(vlans) == 0) {
@@ -144,7 +173,7 @@ func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]s
 func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 	switch {
 	case h == nil:
-		return status.Error(codes.InvalidArgument, "host specification is required")
+		return status.Error(codes.InvalidArgument, "physical host specification is required")
 	case h.Name == "":
 		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
 	case h.Vlan < 1:
