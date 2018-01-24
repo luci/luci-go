@@ -12,4 +12,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-DROP TABLE IF EXISTS hosts;
+DROP TABLE IF EXISTS physical_hosts;
+DROP TABLE IF EXISTS hostnames;
