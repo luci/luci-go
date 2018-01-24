@@ -32,32 +32,32 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// CreateHost handles a request to create a new host.
-func (*Service) CreateHost(c context.Context, req *crimson.CreateHostRequest) (*crimson.Host, error) {
-	if err := createHost(c, req.Host); err != nil {
+// CreatePhysicalHost handles a request to create a new physical host.
+func (*Service) CreatePhysicalHost(c context.Context, req *crimson.CreatePhysicalHostRequest) (*crimson.PhysicalHost, error) {
+	if err := createPhysicalHost(c, req.Host); err != nil {
 		return nil, err
 	}
 	return req.Host, nil
 }
 
-// ListHosts handles a request to list hosts.
-func (*Service) ListHosts(c context.Context, req *crimson.ListHostsRequest) (*crimson.ListHostsResponse, error) {
+// ListPhysicalHosts handles a request to list physical hosts.
+func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHostsRequest) (*crimson.ListPhysicalHostsResponse, error) {
 	vlans := make(map[int64]struct{}, len(req.Vlans))
 	for _, vlan := range req.Vlans {
 		vlans[vlan] = struct{}{}
 	}
-	hosts, err := listHosts(c, stringset.NewFromSlice(req.Names...), vlans)
+	hosts, err := listPhysicalHosts(c, stringset.NewFromSlice(req.Names...), vlans)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
-	return &crimson.ListHostsResponse{
+	return &crimson.ListPhysicalHostsResponse{
 		Hosts: hosts,
 	}, nil
 }
 
-// createHost creates a new host in the database. Returns a gRPC error if unsuccessful.
-func createHost(c context.Context, h *crimson.Host) error {
-	if err := validateHostForCreation(h); err != nil {
+// createPhysicalHost creates a new physical host in the database. Returns a gRPC error if unsuccessful.
+func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) error {
+	if err := validatePhysicalHostForCreation(h); err != nil {
 		return err
 	}
 	tx, err := database.Begin(c)
@@ -110,8 +110,8 @@ func createHost(c context.Context, h *crimson.Host) error {
 	return nil
 }
 
-// listHosts returns a slice of hosts in the database.
-func listHosts(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.Host, error) {
+// listPhysicalHosts returns a slice of physical hosts in the database.
+func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.PhysicalHost, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
 		SELECT h.name, v.id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket
@@ -126,9 +126,9 @@ func listHosts(c context.Context, names stringset.Set, vlans map[int64]struct{})
 	}
 	defer rows.Close()
 
-	var hosts []*crimson.Host
+	var hosts []*crimson.PhysicalHost
 	for rows.Next() {
-		h := &crimson.Host{}
+		h := &crimson.PhysicalHost{}
 		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch host").Err()
 		}
@@ -140,8 +140,8 @@ func listHosts(c context.Context, names stringset.Set, vlans map[int64]struct{})
 	return hosts, nil
 }
 
-// validateHostForCreation validates a host for creation.
-func validateHostForCreation(h *crimson.Host) error {
+// validatePhysicalHostForCreation validates a physical host for creation.
+func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 	switch {
 	case h == nil:
 		return status.Error(codes.InvalidArgument, "host specification is required")

@@ -10,7 +10,7 @@ import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto";
-import "go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto";
@@ -41,8 +41,8 @@ service Crimson {
   // Lists NICs in the database.
   rpc ListNICs(ListNICsRequest) returns (ListNICsResponse);
 
-  // Creates a new host in the database.
-  rpc CreateHost(CreateHostRequest) returns (Host);
-  // Lists hosts in the database.
-  rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
+  // Creates a new physical host in the database.
+  rpc CreatePhysicalHost(CreatePhysicalHostRequest) returns (PhysicalHost);
+  // Lists physical hosts in the database.
+  rpc ListPhysicalHosts(ListPhysicalHostsRequest) returns (ListPhysicalHostsResponse);
 }
