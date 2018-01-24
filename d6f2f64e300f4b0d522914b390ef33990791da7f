@@ -578,6 +578,24 @@
       "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14960004_a8919105",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-24T00:02:42Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "340edb10_c869a96b",
+      "revId": "d6f2f64e300f4b0d522914b390ef33990791da7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
