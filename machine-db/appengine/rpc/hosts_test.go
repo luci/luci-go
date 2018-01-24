@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 
@@ -38,9 +39,21 @@ func TestCreateHost(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
+		mSelectStmt := `
+			^SELECT id FROM machines
+			WHERE name = \?$
+		`
+		mColumns := []string{"m.name"}
+		mRows := sqlmock.NewRows(mColumns)
+		hSelectStmt := `
+			^SELECT id FROM hosts
+			WHERE name = \? AND vlan_id = \?$
+		`
+		hColumns := []string{"h.name"}
+		hRows := sqlmock.NewRows(hColumns)
 		insertStmt := `
-			^INSERT INTO hosts \(name, vlan_id, machine_id, os_id, vm_slots, description, deployment_ticket\)
-			VALUES \(\?, \(SELECT id FROM vlans WHERE id = \?\), \(SELECT id FROM machines WHERE name = \?\), \(SELECT id FROM oses WHERE name = \?\), \?, \?, \?\)$
+			^INSERT INTO hosts \(name, vlan_id, machine_id, host_id, os_id, vm_slots, description, deployment_ticket\)
+			VALUES \(\?, \(SELECT id FROM vlans WHERE id = \?\), \?, \?, \(SELECT id FROM oses WHERE name = \?\), \?, \?, \?\)$
 		`
 
 		Convey("begin failed", func() {
@@ -61,7 +74,9 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt).WillReturnError(fmt.Errorf("error"))
 			So(createHost(c, host), ShouldErrLike, "Internal server error")
 		})
@@ -73,9 +88,11 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(fmt.Errorf("error"))
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(fmt.Errorf("error"))
 			So(createHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
@@ -86,9 +103,11 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
 			m.ExpectCommit()
 			So(createHost(c, host), ShouldErrLike, "duplicate host")
 		})
@@ -100,9 +119,11 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'machine_id'"})
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'machine_id'"})
 			m.ExpectCommit()
 			So(createHost(c, host), ShouldErrLike, "duplicate host for machine")
 		})
@@ -114,25 +135,13 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'vlan_id' is null"})
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'vlan_id' is null"})
 			m.ExpectCommit()
 			So(createHost(c, host), ShouldErrLike, "unknown VLAN")
-		})
-
-		Convey("invalid machine", func() {
-			host := &crimson.Host{
-				Name:    "host",
-				Vlan:    1,
-				Machine: "machine",
-				Os:      "os",
-			}
-			m.ExpectBegin()
-			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
-			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "unknown machine")
 		})
 
 		Convey("invalid operating system", func() {
@@ -142,9 +151,11 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'os_id' is null"})
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'os_id' is null"})
 			m.ExpectCommit()
 			So(createHost(c, host), ShouldErrLike, "unknown operating system")
 		})
@@ -156,9 +167,11 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			m.ExpectCommit()
 			So(createHost(c, host), ShouldErrLike, "Internal server error")
 		})
@@ -170,9 +183,11 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
 			m.ExpectCommit()
 			So(createHost(c, host), ShouldErrLike, "Internal server error")
 		})
@@ -184,23 +199,27 @@ func TestCreateHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 			}
+			mRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(mSelectStmt).WillReturnRows(mRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, 1, sql.NullInt64{Valid: false}, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			So(createHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("ok", func() {
 			host := &crimson.Host{
-				Name:    "host",
-				Vlan:    1,
-				Machine: "machine",
-				Os:      "os",
+				Name: "host",
+				Vlan: 1,
+				Host: "host",
+				Os:   "os",
 			}
+			hRows.AddRow("1")
 			m.ExpectBegin()
+			m.ExpectQuery(hSelectStmt).WillReturnRows(hRows)
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, sql.NullInt64{Valid: false}, 1, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit()
 			So(createHost(c, host), ShouldBeNil)
 		})
@@ -213,11 +232,11 @@ func TestListHosts(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT h.name, v.id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket
-			FROM hosts h, vlans v, machines m, oses o
-			WHERE h.vlan_id = v.id AND h.machine_id = m.id AND h.os_id = o.id$
+			^SELECT h.name, v.id, m.name, p.name, o.name, h.vm_slots, h.description, h.deployment_ticket
+			FROM \(hosts h, vlans v, oses o\) LEFT OUTER JOIN machines m ON h.machine_id = m.id LEFT OUTER JOIN hosts p on h.host_id = p.id
+			WHERE h.vlan_id = v.id AND h.os_id = o.id$
 		`
-		columns := []string{"h.name", "v.id", "m.name", "o.name", "h.vm_slots", "h.description", "h.deployment_ticket"}
+		columns := []string{"h.name", "v.id", "m.name", "p.name", "o.name", "h.vm_slots", "h.description", "h.deployment_ticket"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -244,8 +263,8 @@ func TestListHosts(t *testing.T) {
 			names := stringset.NewFromSlice("host")
 			vlans := map[int64]struct{}{0: {}}
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "")
-			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "")
+			rows.AddRow("host 1", 1, "machine 1", "", "os 1", 1, "", "")
+			rows.AddRow("host 2", 2, "", "host 1", "os 2", 2, "", "")
 			hosts, err := listHosts(c, names, vlans)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
@@ -255,9 +274,9 @@ func TestListHosts(t *testing.T) {
 		Convey("matches", func() {
 			names := stringset.NewFromSlice("host 1", "host 2")
 			vlans := map[int64]struct{}{1: {}, 2: {}}
-			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "")
-			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "")
-			rows.AddRow("host 3", 3, "machine 3", "os 3", 3, "", "")
+			rows.AddRow("host 1", 1, "machine 1", "", "os 1", 1, "", "")
+			rows.AddRow("host 2", 2, "", "host 1", "os 2", 2, "", "")
+			rows.AddRow("host 3", 3, "machine 3", "", "os 3", 3, "", "")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			hosts, err := listHosts(c, names, vlans)
 			So(err, ShouldBeNil)
@@ -272,7 +291,7 @@ func TestListHosts(t *testing.T) {
 				{
 					Name:    "host 2",
 					Vlan:    2,
-					Machine: "machine 2",
+					Host:    "host 1",
 					Os:      "os 2",
 					VmSlots: 2,
 				},
@@ -283,8 +302,8 @@ func TestListHosts(t *testing.T) {
 		Convey("ok", func() {
 			names := stringset.New(0)
 			vlans := map[int64]struct{}{}
-			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "")
-			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "")
+			rows.AddRow("host 1", 1, "machine 1", "", "os 1", 1, "", "")
+			rows.AddRow("host 2", 2, "", "host 1", "os 2", 2, "", "")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			hosts, err := listHosts(c, names, vlans)
 			So(err, ShouldBeNil)
@@ -299,7 +318,7 @@ func TestListHosts(t *testing.T) {
 				{
 					Name:    "host 2",
 					Vlan:    2,
-					Machine: "machine 2",
+					Host:    "host 1",
 					Os:      "os 2",
 					VmSlots: 2,
 				},
@@ -345,22 +364,24 @@ func TestValidateHostForCreation(t *testing.T) {
 		So(err, ShouldErrLike, "VLAN is required and must be positive")
 	})
 
-	Convey("machine unspecified", t, func() {
+	Convey("machine and host unspecified", t, func() {
 		err := validateHostForCreation(&crimson.Host{
 			Name: "hostname",
 			Vlan: 1,
 			Os:   "os",
 		})
-		So(err, ShouldErrLike, "machine is required and must be non-empty")
+		So(err, ShouldErrLike, "exactly one of machine or host is required and must be non-empty")
 	})
 
-	Convey("machine unspecified", t, func() {
+	Convey("machine and host specified", t, func() {
 		err := validateHostForCreation(&crimson.Host{
-			Name: "hostname",
-			Vlan: 1,
-			Os:   "os",
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Host:    "host",
+			Os:      "os",
 		})
-		So(err, ShouldErrLike, "machine is required and must be non-empty")
+		So(err, ShouldErrLike, "exactly one of machine or host is required and must be non-empty")
 	})
 
 	Convey("operating system unspecified", t, func() {

@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS hosts (
 	-- The VLAN this host belongs to.
 	vlan_id int NOT NULL,
 	-- The machine backing this host.
-	machine_id int NOT NULL,
+	machine_id int,
+	-- The host this host is running on. Implies this is a virtual host.
+	host_id int,
 	-- The operating system running on this host.
 	os_id int NOT NULL,
 	-- The number of VMs which can be deployed on this host.
@@ -32,6 +34,9 @@ CREATE TABLE IF NOT EXISTS hosts (
 	FOREIGN KEY (vlan_id) REFERENCES vlans (id) ON DELETE RESTRICT,
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
 	FOREIGN KEY (os_id) REFERENCES oses (id) ON DELETE RESTRICT,
+	FOREIGN KEY (host_id) REFERENCES hosts (id) ON DELETE RESTRICT,
+	FOREIGN KEY (host_id, vlan_id) REFERENCES hosts (id, vlan_id) ON DELETE RESTRICT,
 	UNIQUE (name, vlan_id),
-	UNIQUE (machine_id)
+	UNIQUE (machine_id),
+	UNIQUE (id, vlan_id)
 );

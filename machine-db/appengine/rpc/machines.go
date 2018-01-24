@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"database/sql"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -94,6 +95,27 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
 	}
 	return nil
+}
+
+// getMachineId returns the ID of the machine with the given name.
+func getMachineId(c context.Context, tx *sql.Tx, name string) (int64, error) {
+	rows, err := tx.QueryContext(c, `
+		SELECT id FROM machines
+		WHERE name = ?
+	`)
+	if err != nil {
+		return 0, internalError(c, errors.Annotate(err, "failed to fetch machines").Err())
+	}
+	defer rows.Close()
+	// Database constraints mean there can be at most one match, so use if and not for.
+	if !rows.Next() {
+		return 0, status.Errorf(codes.NotFound, "unknown machine %q", name)
+	}
+	var id int64
+	if err = rows.Scan(&id); err != nil {
+		return 0, internalError(c, errors.Annotate(err, "failed to fetch machine %q", name).Err())
+	}
+	return id, nil
 }
 
 // listMachines returns a slice of machines in the database.
