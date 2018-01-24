@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ed532ab8_5599d834",
+        "filename": "client/cmd/isolate/tar_archiver_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2018-01-24T02:03:53Z",
+      "side": 1,
+      "message": "s/make //",
+      "range": {
+        "startLine": 33,
+        "startChar": 19,
+        "endLine": 33,
+        "endChar": 24
+      },
+      "revId": "d3126dce432dcc3c426c6e45e6a11a7844bdbb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
