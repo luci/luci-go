@@ -131,6 +131,7 @@ func TestSave(t *testing.T) {
 		if err != nil {
 			t.Fatal("could not convert time to timestamp")
 		}
+
 		r := &Row{
 			Message: &testdata.TestMessage{
 				Name:      "testname",
@@ -143,6 +144,10 @@ func TestSave(t *testing.T) {
 					{Name: "repeated_two"},
 				},
 				Foo: testdata.TestMessage_Y,
+				FooRepeated: []testdata.TestMessage_FOO{
+					testdata.TestMessage_Y,
+					testdata.TestMessage_X,
+				},
 			},
 			InsertID: "testid",
 		}
@@ -150,6 +155,16 @@ func TestSave(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(row["name"], ShouldEqual, "testname")
 		So(row["foo"], ShouldEqual, "Y")
+
+		// Prints "[]interface {}{1, 0}"
+		Printf("%#v\n", row["foo_repeated"])
+
+		// Panics with "interface conversion: interface {} is testdata.TestMessage_FOO, not string"
+		So(row["foo_repeated"].([]interface{})[0].(string), ShouldEqual, "Y")
+
+		// Fails too.
+		So(row["foo_repeated"].([]interface{}), ShouldEqual, []string{"Y", "X"})
+
 		So(row["timestamp"].(time.Time), ShouldResemble, time.Time{})
 		So(row["nested"].(map[string]bigquery.Value)["name"], ShouldEqual, "nestedname")
 		So(row["repeated_nested"].([]interface{})[0].(map[string]bigquery.Value)["name"], ShouldEqual, "repeated_one")
