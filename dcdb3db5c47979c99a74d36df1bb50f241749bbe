@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce03b9d2_9d1130f1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-25T23:48:22Z",
+      "side": 1,
+      "message": "sgtm.",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 72
+      },
+      "revId": "dcdb3db5c47979c99a74d36df1bb50f241749bbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6aac3055_45d48f59",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-25T23:48:22Z",
+      "side": 1,
+      "message": "nit nit, intentional?",
+      "revId": "dcdb3db5c47979c99a74d36df1bb50f241749bbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
