@@ -19,6 +19,7 @@ package internal.triggers;
 option go_package = "internal";
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto";
 
 
 // Trigger can be emitted by triggering tasks (such as Gitiles tasks) and
@@ -57,24 +58,9 @@ message Trigger {
 
   // Actual trigger data that depends on type of the trigger.
   oneof payload {
-    NoopTriggerData noop = 50;
-    GitilesTriggerData gitiles = 51;
+    scheduler.NoopTrigger noop = 50;
+    scheduler.GitilesTrigger gitiles = 51;
   }
-}
-
-
-// NoopTriggerData is used by tests to represent test triggers.
-message NoopTriggerData {
-  string data = 1;
-}
-
-
-// GitilesTriggerData is payload of triggers emitted by Gitiles tasks.
-message GitilesTriggerData {
-  string repo = 1;
-  // ref is full ref name like refs/heads/master.
-  string ref = 2;
-  string revision = 3;
 }
 
 

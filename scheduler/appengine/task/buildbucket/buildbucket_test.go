@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/config/validation"
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -307,6 +308,6 @@ func TestTriggeredFlow(t *testing.T) {
 
 func makePayload(repo, ref, rev string) *internal.Trigger_Gitiles {
 	return &internal.Trigger_Gitiles{
-		Gitiles: &internal.GitilesTriggerData{repo, ref, rev},
+		Gitiles: &api.GitilesTrigger{repo, ref, rev},
 	}
 }

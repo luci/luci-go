@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/scheduler/appengine/internal"
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils"
@@ -413,10 +413,10 @@ func maybeGetTrigger(c context.Context, ctl task.Controller) *normalizedTrigger 
 			ctl.DebugLog("ignoring non-gitiles trigger %s", t.Id)
 			continue
 		}
-		n, err := normalizeGitilesTriggerData(g)
+		n, err := normalizeGitilesTrigger(g)
 		if err != nil {
-			logging.Errorf(c, "failed to normalize GitilesTriggerData id='%s': %s", t.Id, err)
-			ctl.DebugLog("failed to normalize GitilesTriggerData id='%s': %s", t.Id, err)
+			logging.Errorf(c, "failed to normalize GitilesTrigger id='%s': %s", t.Id, err)
+			ctl.DebugLog("failed to normalize GitilesTrigger id='%s': %s", t.Id, err)
 			continue
 		}
 		// Latest trigger wins until engine v2 is available, because v1 requires
@@ -445,7 +445,7 @@ func (n *normalizedTrigger) buildset() string {
 	return c.String()
 }
 
-func normalizeGitilesTriggerData(in *internal.GitilesTriggerData) (*normalizedTrigger, error) {
+func normalizeGitilesTrigger(in *api.GitilesTrigger) (*normalizedTrigger, error) {
 	u, err := gitiles.NormalizeRepoURL(in.Repo, false)
 	if err != nil {
 		return nil, err
