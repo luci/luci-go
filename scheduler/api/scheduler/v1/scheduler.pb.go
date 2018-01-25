@@ -6,6 +6,7 @@ Package scheduler is a generated protocol buffer package.
 
 It is generated from these files:
 	go.chromium.org/luci/scheduler/api/scheduler/v1/scheduler.proto
+	go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto
 
 It has these top-level messages:
 	JobsRequest
@@ -17,6 +18,8 @@ It has these top-level messages:
 	Job
 	JobState
 	Invocation
+	NoopTrigger
+	GitilesTrigger
 */
 package scheduler
 

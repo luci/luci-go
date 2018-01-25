@@ -32,10 +32,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/server/auth"
+
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
-	"go.chromium.org/luci/server/auth"
 )
 
 // defaultMaxTriggersPerInvocation limits number of triggers emitted per one
@@ -199,7 +201,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 			Title: newHead,
 			Url:   fmt.Sprintf("%s/+/%s", cfg.Repo, newHead),
 			Payload: &internal.Trigger_Gitiles{
-				Gitiles: &internal.GitilesTriggerData{Repo: cfg.Repo, Ref: ref, Revision: newHead},
+				Gitiles: &api.GitilesTrigger{Repo: cfg.Repo, Ref: ref, Revision: newHead},
 			},
 		})
 
