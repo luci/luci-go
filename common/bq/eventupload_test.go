@@ -125,12 +125,38 @@ func TestUpload(t *testing.T) {
 	})
 }
 
+func fooType(t string) (testdata.TestMessage_FOO, error) {
+	if ret, ok := testdata.TestMessage_FOO_value[t]; ok {
+		return testdata.TestMessage_FOO(ret), nil
+	}
+	return 0, fmt.Errorf("Unknown ResultType: %v", t)
+}
+
+func fooTypes(ts []string) ([]testdata.TestMessage_FOO, error) {
+	ret := make([]testdata.TestMessage_FOO, len(ts))
+	for i, t := range ts {
+		var v testdata.TestMessage_FOO
+		var err error
+		if v, err = fooType(t); err != nil {
+			return nil, err
+		}
+		ret[i] = v
+	}
+	return ret, nil
+}
+
 func TestSave(t *testing.T) {
 	Convey("TestSave", t, func() {
 		ts, err := ptypes.TimestampProto(time.Time{})
 		if err != nil {
 			t.Fatal("could not convert time to timestamp")
 		}
+		ft, err := fooType("Y")
+		So(err, ShouldBeNil)
+
+		fts, err := fooTypes([]string{"Y", "X"})
+		So(err, ShouldBeNil)
+
 		r := &Row{
 			Message: &testdata.TestMessage{
 				Name:      "testname",
@@ -142,7 +168,8 @@ func TestSave(t *testing.T) {
 					{Name: "repeated_one"},
 					{Name: "repeated_two"},
 				},
-				Foo: testdata.TestMessage_Y,
+				Foo:         ft,
+				FooRepeated: fts,
 			},
 			InsertID: "testid",
 		}
@@ -150,6 +177,16 @@ func TestSave(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(row["name"], ShouldEqual, "testname")
 		So(row["foo"], ShouldEqual, "Y")
+
+		// Prints "[]interface {}{1, 0}"
+		Printf("%#v\n", row["foo_repeated"])
+
+		// Panics with "interface conversion: interface {} is testdata.TestMessage_FOO, not string"
+		So(row["foo_repeated"].([]interface{})[0].(string), ShouldEqual, "Y")
+
+		// Fails too.
+		So(row["foo_repeated"].([]interface{}), ShouldEqual, []string{"Y", "X"})
+
 		So(row["timestamp"].(time.Time), ShouldResemble, time.Time{})
 		So(row["nested"].(map[string]bigquery.Value)["name"], ShouldEqual, "nestedname")
 		So(row["repeated_nested"].([]interface{})[0].(map[string]bigquery.Value)["name"], ShouldEqual, "repeated_one")
