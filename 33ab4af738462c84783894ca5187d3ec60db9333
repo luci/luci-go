@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8456819b_d985bc0e",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-25T01:54:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c77f865e_d3bc6ea1",
+      "range": {
+        "startLine": 75,
+        "startChar": 13,
+        "endLine": 75,
+        "endChar": 48
+      },
+      "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "325575b5_76fc21a9",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 3
@@ -36,6 +60,24 @@
       "writtenOn": "2018-01-25T01:31:27Z",
       "side": 1,
       "message": "this is easy, consider doing it in this CL. After L66:\n\ndefer func() {\n  if err ... rollback\n}()",
+      "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19d7092e_8b182e08",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-25T01:54:43Z",
+      "side": 1,
+      "message": "I\u0027m not sure because sometimes err is scoped locally to an if block. If I check \"if err !\u003d nil\" the defer, which \"err\" is it referring to?",
+      "parentUuid": "325575b5_76fc21a9",
       "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -79,6 +121,48 @@
       "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e8d79ba_cf6473ed",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-25T01:54:43Z",
+      "side": 1,
+      "message": "It\u0027s shorter now that a SELECT has been removed.",
+      "parentUuid": "9fa5ddc1_ff2df854",
+      "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "256d7d49_1ad3d46f",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-25T01:54:43Z",
+      "side": 1,
+      "message": "I considered LastInsertId but it introduces extra error-checking because LastInsertId can fail. Done anyway.",
+      "parentUuid": "f5e85d0c_47a63e43",
+      "range": {
+        "startLine": 106,
+        "startChar": 10,
+        "endLine": 106,
+        "endChar": 67
+      },
+      "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
