@@ -52,6 +52,24 @@
       "revId": "a16ad7ec27b985c247bc2778d1d920f9e716ef9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9649d95b_84451de4",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2018-01-25T00:23:51Z",
+      "side": 1,
+      "message": "Will that work, Ryan? 3 people have reported this now so I think we should decide on something, even if it\u0027s sub-optimal.",
+      "parentUuid": "4dd90eec_75e67c94",
+      "revId": "a16ad7ec27b985c247bc2778d1d920f9e716ef9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
