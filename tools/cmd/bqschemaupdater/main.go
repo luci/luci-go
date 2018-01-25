@@ -1,6 +1,16 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package main
 
@@ -96,7 +106,7 @@ func parseFlags() (*flags, error) {
 	case *table == "":
 		return nil, fmt.Errorf("-table is required")
 	case f.messageName == "":
-		return nil, fmt.Errorf("-message is required")
+		return nil, fmt.Errorf("-message is required (the name must contain the proto package name)")
 	}
 	if parts := strings.Split(*table, "."); len(parts) == 3 {
 		f.ProjectID = parts[0]
@@ -107,6 +117,51 @@ func parseFlags() (*flags, error) {
 	}
 
 	return &f, nil
+}
+
+func updateTableDescription(td *tableDef, protoDir string) error {
+	var (
+		cmdOut []byte
+		err    error
+	)
+	if protoDir == "." {
+		protoDir = os.Args[0]
+	}
+	protoDir, err = filepath.Abs(filepath.Dir(protoDir))
+	if err != nil {
+		return err
+	}
+	workDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	err = os.Chdir(protoDir)
+	if err != nil {
+		return err
+	}
+	args := []string{"rev-parse", "--show-toplevel"}
+	if cmdOut, err = exec.Command("git", args...).Output(); err != nil {
+		return err
+	}
+	gitRoot := strings.TrimSpace(string(cmdOut))
+	args = []string{"config", "--get", "remote.origin.url"}
+	if cmdOut, err = exec.Command("git", args...).Output(); err != nil {
+		return err
+	}
+	srcURL := strings.TrimSpace(string(cmdOut))
+	err = os.Chdir(workDir)
+	if err != nil {
+		return err
+	}
+	relProtoPath := strings.Replace(protoDir, gitRoot, "", 1)
+	protoURL := strings.Join([]string{srcURL, "/+/master", relProtoPath}, "")
+	s := fmt.Sprintf("Proto location: %s", protoURL)
+	if td.Description != "" {
+		td.Description = fmt.Sprintf("%s Table description: %s", s, td.Description)
+	} else {
+		td.Description = s
+	}
+	return nil
 }
 
 func run(ctx context.Context) error {
@@ -124,6 +179,10 @@ func run(ctx context.Context) error {
 	td.Schema, td.Description, err = schemaFromMessage(desc, flags.messageName)
 	if err != nil {
 		return errors.Annotate(err, "could not derive schema from message %q at path %q", flags.messageName, flags.protoDir).Err()
+	}
+	err = updateTableDescription(&td, flags.protoDir)
+	if err != nil {
+		return errors.Annotate(err, "failed to update proto desc with proto location").Err()
 	}
 
 	// Create an Authenticator and use it for BigQuery operations.
@@ -150,6 +209,7 @@ func run(ctx context.Context) error {
 		return errors.Annotate(err, "failed to update table").Err()
 	}
 	log.Println("Finished updating table.")
+	log.Printf("If creating a new table, please update the documentation in doc/bigquery_tables.md")
 	return nil
 }
 
