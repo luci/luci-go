@@ -84,7 +84,7 @@ func TestTriggerBuild(t *testing.T) {
 		Convey("new refs are discovered", func() {
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master": "deadbeef00",
 			})
@@ -104,7 +104,7 @@ func TestTriggerBuild(t *testing.T) {
 
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master": "deadbeef00",
@@ -124,7 +124,7 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/branch-heads/1.2.3": "baadcafe00",
 			})
 
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master":       "deadbeef01",
 				"refs/branch-heads/1.2.3": "baadcafe00",
@@ -148,7 +148,7 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/branch-heads/must/not/match": "deaddead",
 			})
 
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1.2.3": "deadbeef01", // updated.
 				"refs/branch-heads/6.7":   "deadcafe",   // same.
@@ -167,7 +167,7 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/heads/master": "deadbeef",
 			})
 			expectRefs("refs/branch-heads", nil)
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(ctl.Log, ShouldNotContain, "Saved 1 known refs")
 			So(ctl.Log, ShouldContain, "No changes detected")
@@ -190,7 +190,7 @@ func TestTriggerBuild(t *testing.T) {
 			}).AnyTimes()
 			m.maxTriggersPerInvocation = 2
 			// First run, refs/branch-heads/{1,2} updated, refs/heads/master removed.
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1": "cafee1",
@@ -199,7 +199,7 @@ func TestTriggerBuild(t *testing.T) {
 			ctl.Triggers = nil
 
 			// Second run, refs/branch-heads/{3,4} updated.
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1": "cafee1",
@@ -210,7 +210,7 @@ func TestTriggerBuild(t *testing.T) {
 			ctl.Triggers = nil
 
 			// Final run, refs/branch-heads/5 updated.
-			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 1)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/branch-heads/1": "cafee1",

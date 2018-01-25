@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
-	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 
@@ -359,7 +358,7 @@ func (m fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.M
 	}
 }
 
-func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	So(ctl.Task(), ShouldNotBeNil)
 	return nil
 }

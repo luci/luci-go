@@ -198,7 +198,7 @@ func TestFullFlow(t *testing.T) {
 		}
 
 		// Launch.
-		So(mgr.LaunchTask(c, ctl, nil), ShouldBeNil)
+		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),
@@ -275,6 +275,12 @@ func TestTriggeredFlow(t *testing.T) {
 				Builder: "builder",
 				Tags:    []string{"a:b", "c:d"},
 			},
+			Req: task.Request{
+				IncomingTriggers: []*internal.Trigger{
+					{Id: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
+					{Id: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
+				},
+			},
 			Client:       http.DefaultClient,
 			SaveCallback: func() error { return nil },
 			PrepareTopicCallback: func(publisher string) (string, string, error) {
@@ -284,11 +290,7 @@ func TestTriggeredFlow(t *testing.T) {
 		}
 
 		// Launch with triggers,
-		triggers := []*internal.Trigger{
-			{Id: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
-			{Id: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
-		}
-		So(mgr.LaunchTask(c, ctl, triggers), ShouldBeNil)
+		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),

@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
 	"go.chromium.org/luci/scheduler/appengine/internal"
+	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // errTriagePrepareFail is returned by 'prepare' on errors.
@@ -54,10 +55,10 @@ type triageOp struct {
 	// a bunch of new invocations.
 	//
 	// TODO(vadimsh): Convert to interface. Document the contract.
-	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]InvocationRequest, error)
+	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error)
 
 	// enqueueInvocations transactionally creates and starts new invocations.
-	enqueueInvocations func(c context.Context, job *Job, req []InvocationRequest) error
+	enqueueInvocations func(c context.Context, job *Job, req []task.Request) error
 
 	// The rest of fields are used internally.
 
@@ -282,7 +283,7 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 	}
 
 	// Look at what's left and decide what invocations to start (if any) by
-	// getting a bunch of InvocationRequests from the triggering policy function.
+	// getting a bunch of task.Requests from the triggering policy function.
 	now := clock.Now(c)
 	logging.Infof(c, "Pending triggers:")
 	for _, t := range triggers {

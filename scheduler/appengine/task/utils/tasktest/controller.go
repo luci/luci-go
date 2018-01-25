@@ -42,6 +42,8 @@ type TestController struct {
 	OverrideInvID    int64  // return value of InvocationID() if not 0
 	OverrideInvNonce int64  // return value of InvocationNonce() if not 0
 
+	Req task.Request // return value of Request
+
 	TaskMessage proto.Message // return value of Task
 	TaskState   task.State    // return value of State(), mutated in place
 	Client      *http.Client  // return value by GetClient()
@@ -76,6 +78,11 @@ func (c *TestController) InvocationNonce() int64 {
 		return c.OverrideInvNonce
 	}
 	return 2
+}
+
+// Request is part of Controller interface.
+func (c *TestController) Request() task.Request {
+	return c.Req
 }
 
 // Task is part of Controller interface.

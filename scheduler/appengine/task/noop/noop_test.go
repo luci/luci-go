@@ -51,7 +51,7 @@ func TestFullFlow(t *testing.T) {
 			SaveCallback: func() error { return nil },
 		}
 
-		So(mgr.LaunchTask(c, ctl, nil), ShouldBeNil)
+		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status: task.StatusSucceeded,
 		})

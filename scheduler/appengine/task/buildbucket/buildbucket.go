@@ -151,7 +151,7 @@ type taskData struct {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// At this point config is already validated by ValidateProtoMessage.
 	cfg := ctl.Task().(*messages.BuildbucketTask)
 
@@ -169,7 +169,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	for _, kv := range utils.UnpackKVList(cfg.Properties, ':') {
 		params.Properties[kv.Key] = kv.Value
 	}
-	if t := maybeGetTrigger(c, ctl, triggers); t != nil {
+	if t := maybeGetTrigger(c, ctl); t != nil {
 		params.Properties["revision"] = t.revision
 		params.Properties["branch"] = t.ref
 		tags = append(tags, "buildset:"+t.buildset(), "gitiles_ref:"+t.ref)
@@ -404,10 +404,10 @@ func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r
 	}
 }
 
-func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []*internal.Trigger) *normalizedTrigger {
+func maybeGetTrigger(c context.Context, ctl task.Controller) *normalizedTrigger {
 	var prevTriggerID string
 	var latest *normalizedTrigger
-	for _, t := range triggers {
+	for _, t := range ctl.Request().IncomingTriggers {
 		g := t.GetGitiles()
 		if g == nil {
 			ctl.DebugLog("ignoring non-gitiles trigger %s", t.Id)

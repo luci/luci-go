@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/server/auth"
 
@@ -150,17 +151,7 @@ type Manager interface {
 	// TaskManager may optionally use ctl.Save() to checkpoint progress and save
 	// debug log. ctl.Save() is also implicitly called by the engine when
 	// `LaunchTask` returns.
-	//
-	// triggers if not empty contains a list of emitted messages from triggering
-	// jobs. All these triggers result only in this task and won't persist to the
-	// next one. In other words, all these triggers will be lost upon this task
-	// successful start from engine PoV. This is a limitation of current engine,
-	// and it'll be eventually addressed in v2.
-	// TODO(tandrii): workaround this restriction in v2 of the engine by allowing
-	// launching multiple tasks from a given set of triggers.
-	// Till then, implementations which care about triggers must act on all passed
-	// triggers in this single task invocation.
-	LaunchTask(c context.Context, ctl Controller, triggers []*internal.Trigger) error
+	LaunchTask(c context.Context, ctl Controller) error
 
 	// AbortTask is called to opportunistically abort launched task.
 	//
@@ -217,6 +208,9 @@ type Controller interface {
 	//
 	// TODO(vadimsh): Remove in v2, use InvocationID instead.
 	InvocationNonce() int64
+
+	// Request contains parameters of the invocation supplied when it was created.
+	Request() Request
 
 	// Task is proto message with task definition.
 	//
@@ -297,4 +291,13 @@ type State struct {
 	Status   Status // overall status of the invocation, see the enum
 	TaskData []byte // storage for TaskManager-specific task data
 	ViewURL  string // URL to human readable task page, shows in UI
+}
+
+// Request contains parameters of the invocation supplied when it was created.
+//
+// They are calculated from the pending triggers when the invocation is
+// initiated.
+type Request struct {
+	TriggeredBy      identity.Identity
+	IncomingTriggers []*internal.Trigger
 }
