@@ -47,6 +47,7 @@ type taskController struct {
 
 	task    proto.Message // extracted from saved.Task blob
 	manager task.Manager
+	request task.Request
 
 	saved    Invocation          // what have been given initially or saved in Save()
 	state    task.State          // state mutated by TaskManager
@@ -67,26 +68,43 @@ func controllerForInvocation(c context.Context, e *engineImpl, inv *Invocation) 
 		eng:   e,
 		saved: *inv,
 	}
-	ctl.populateState()
 	var err error
-	ctl.task, err = e.cfg.Catalog.UnmarshalTask(c, inv.Task)
-	if err != nil {
+	if ctl.task, err = e.cfg.Catalog.UnmarshalTask(c, inv.Task); err != nil {
 		return ctl, fmt.Errorf("failed to unmarshal the task - %s", err)
 	}
-	ctl.manager = e.cfg.Catalog.GetTaskManager(ctl.task)
-	if ctl.manager == nil {
+	if ctl.manager = e.cfg.Catalog.GetTaskManager(ctl.task); ctl.manager == nil {
 		return ctl, fmt.Errorf("TaskManager is unexpectedly missing")
+	}
+	if err = ctl.populateState(); err != nil {
+		return ctl, fmt.Errorf("failed to construct task.State - %s", err)
+	}
+	if err = ctl.populateRequest(); err != nil {
+		return ctl, fmt.Errorf("failed to construct task.Request - %s", err)
 	}
 	return ctl, nil
 }
 
 // populateState populates 'state' using data in 'saved'.
-func (ctl *taskController) populateState() {
+func (ctl *taskController) populateState() error {
 	ctl.state = task.State{
 		Status:   ctl.saved.Status,
 		ViewURL:  ctl.saved.ViewURL,
 		TaskData: append([]byte(nil), ctl.saved.TaskData...), // copy
 	}
+	return nil
+}
+
+// populateRequest populates 'request' using data in 'saved'.
+func (ctl *taskController) populateRequest() error {
+	triggers, err := ctl.saved.IncomingTriggers()
+	if err != nil {
+		return err
+	}
+	ctl.request = task.Request{
+		TriggeredBy:      ctl.saved.TriggeredBy,
+		IncomingTriggers: triggers,
+	}
+	return nil
 }
 
 // consumeTimer removes the given timer from the invocation, if it is there.
@@ -135,6 +153,11 @@ func (ctl *taskController) InvocationNonce() int64 {
 // Task is part of task.Controller interface.
 func (ctl *taskController) Task() proto.Message {
 	return ctl.task
+}
+
+// Request is part of task.Controller interface.
+func (ctl *taskController) Request() task.Request {
+	return ctl.request
 }
 
 // State is part of task.Controller interface.

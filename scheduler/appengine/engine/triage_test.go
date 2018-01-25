@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/scheduler/appengine/internal"
+	"go.chromium.org/luci/scheduler/appengine/task"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -85,7 +86,7 @@ func TestTriageOp(t *testing.T) {
 			after, err := tb.runTestTriage(c, before)
 			So(err, ShouldBeNil)
 			So(after.ActiveInvocations, ShouldResemble, []int64{1, 2, 3, 4})
-			So(tb.requests, ShouldResemble, []InvocationRequest{
+			So(tb.requests, ShouldResemble, []task.Request{
 				{IncomingTriggers: []*internal.Trigger{triggers[2]}},
 				{IncomingTriggers: []*internal.Trigger{triggers[3]}},
 				{IncomingTriggers: []*internal.Trigger{triggers[0]}},
@@ -105,11 +106,11 @@ func TestTriageOp(t *testing.T) {
 
 type triageTestBed struct {
 	// Inputs.
-	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]InvocationRequest, error)
+	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error)
 
 	// Outputs.
 	nextInvID int64
-	requests  []InvocationRequest
+	requests  []task.Request
 }
 
 func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Job, err error) {
@@ -125,7 +126,7 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 	op := triageOp{
 		jobID:            before.JobID,
 		triggeringPolicy: policy,
-		enqueueInvocations: func(c context.Context, job *Job, req []InvocationRequest) error {
+		enqueueInvocations: func(c context.Context, job *Job, req []task.Request) error {
 			t.requests = append(t.requests, req...)
 			for range req {
 				t.nextInvID++
@@ -161,9 +162,9 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 	return after, nil
 }
 
-func (t *triageTestBed) defaultTriggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) (out []InvocationRequest, err error) {
+func (t *triageTestBed) defaultTriggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) (out []task.Request, err error) {
 	for _, t := range triggers {
-		out = append(out, InvocationRequest{
+		out = append(out, task.Request{
 			IncomingTriggers: []*internal.Trigger{t},
 		})
 	}

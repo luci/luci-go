@@ -58,7 +58,7 @@ func (m TaskManager) Traits() task.Traits {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.NoopTask)
 
 	sleepFor := time.Duration(cfg.SleepMs) * time.Millisecond

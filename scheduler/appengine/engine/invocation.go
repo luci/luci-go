@@ -245,16 +245,6 @@ type Invocation struct {
 	MutationsCount int64 `gae:",noindex"`
 }
 
-// InvocationRequest contains parameters for a new invocation of some particular
-// job.
-//
-// It is part of Invocation that contains externally supplied parameters (and
-// not something that comes from corresponding Job entity).
-type InvocationRequest struct {
-	TriggeredBy      identity.Identity
-	IncomingTriggers []*internal.Trigger
-}
-
 // jobID returns ID of the job the invocation belongs too.
 //
 // Supports both v1 and v2 invocations.

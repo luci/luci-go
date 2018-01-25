@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -104,7 +103,7 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.UrlFetchTask)
 	started := clock.Now(c)
 

@@ -971,7 +971,7 @@ func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64)
 // outside the transaction (since they are in different entity groups). If the
 // transaction fails, these entities may keep hanging unreferenced by anything
 // as garbage. This is fine, since they are not discoverable by any queries.
-func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []InvocationRequest) ([]*Invocation, error) {
+func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []task.Request) ([]*Invocation, error) {
 	assertInTransaction(c)
 
 	// Create N new Invocation entities in Starting state.
@@ -1002,7 +1002,7 @@ func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []Invoc
 // allocateInvocation creates new Invocation entity in a separate transaction.
 //
 // Supports only v2 invocations!
-func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req InvocationRequest) (*Invocation, error) {
+func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Request) (*Invocation, error) {
 	var inv *Invocation
 	err := runIsolatedTxn(c, func(c context.Context) (err error) {
 		inv, err = e.initInvocationID(c, job.JobID, &Invocation{
@@ -1036,7 +1036,7 @@ func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req Invocat
 // allocateInvocations is a batch version of allocateInvocation.
 //
 // It launches N independent transactions in parallel to create N invocations.
-func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []InvocationRequest) ([]*Invocation, error) {
+func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task.Request) ([]*Invocation, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(req))
 
@@ -1647,12 +1647,9 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	// StatusRetrying or StatusFailed state (depending on whether the error is
 	// transient or not and how many retries are left). In either case, invocation
 	// never ends up in StatusStarting state.
-	triggers, err := inv.IncomingTriggers()
-	if err == nil {
-		err = ctl.manager.LaunchTask(c, ctl, triggers)
-		if err != nil {
-			logging.WithError(err).Errorf(c, "Failed to LaunchTask")
-		}
+	err = ctl.manager.LaunchTask(c, ctl)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to LaunchTask")
 	}
 	if ctl.State().Status == task.StatusStarting && err == nil {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
@@ -2097,7 +2094,7 @@ func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message)
 	op := triageOp{
 		jobID:            jobID,
 		triggeringPolicy: e.triggeringPolicy,
-		enqueueInvocations: func(c context.Context, job *Job, req []InvocationRequest) error {
+		enqueueInvocations: func(c context.Context, job *Job, req []task.Request) error {
 			_, err := e.enqueueInvocations(c, job, req)
 			return err
 		},
@@ -2127,14 +2124,14 @@ func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message)
 // a bunch of new invocations.
 //
 // Called within a job transaction. Must not do any expensive calls.
-func (e *engineImpl) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) ([]InvocationRequest, error) {
+func (e *engineImpl) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error) {
 	// TODO(vadimsh): This policy matches v1 behavior:
 	//  * Don't start anything new if some invocation is already running.
 	//  * Otherwise consume all pending triggers at once.
 	if len(job.ActiveInvocations) != 0 {
 		return nil, nil
 	}
-	return []InvocationRequest{
+	return []task.Request{
 		{IncomingTriggers: triggers},
 	}, nil
 }

@@ -57,7 +57,7 @@ func TestEnqueueInvocations(t *testing.T) {
 		var invs []*Invocation
 		err := runTxn(c, func(c context.Context) error {
 			var err error
-			invs, err = e.enqueueInvocations(c, &job, []InvocationRequest{
+			invs, err = e.enqueueInvocations(c, &job, []task.Request{
 				{TriggeredBy: "user:a@example.com"},
 				{TriggeredBy: "user:b@example.com"},
 			})
@@ -193,7 +193,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		// Prepare Invocation in Starting state.
 		job := Job{JobID: "project/job-v2"}
 		So(datastore.Get(c, &job), ShouldBeNil)
-		inv, err := e.allocateInvocation(c, &job, InvocationRequest{
+		inv, err := e.allocateInvocation(c, &job, task.Request{
 			IncomingTriggers: []*internal.Trigger{{Id: "a"}},
 		})
 		So(err, ShouldBeNil)
@@ -215,7 +215,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		}
 
 		Convey("happy path", func() {
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				So(ctl.InvocationID(), ShouldEqual, inv.ID)
 				So(ctl.InvocationNonce(), ShouldEqual, inv.InvocationNonce)
 				ctl.DebugLog("Succeeded!")
@@ -251,7 +251,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		Convey("already aborted", func() {
 			inv.Status = task.StatusAborted
 			So(datastore.Put(c, inv), ShouldBeNil)
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				return fmt.Errorf("must not be called")
 			}
 			So(callLaunchInvocation(c, 0), ShouldBeNil)
@@ -260,14 +260,14 @@ func TestLaunchInvocationTask(t *testing.T) {
 
 		Convey("retying", func() {
 			// Attempt #1.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				return transient.Tag.Apply(fmt.Errorf("oops, failed to start"))
 			}
 			So(callLaunchInvocation(c, 0), ShouldEqual, errRetryingLaunch)
 			So(fetchInvocation(c).Status, ShouldEqual, task.StatusRetrying)
 
 			// Attempt #2.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.DebugLog("Succeeded!")
 				ctl.State().Status = task.StatusSucceeded
 				return nil
@@ -340,7 +340,7 @@ func TestForceInvocationV2(t *testing.T) {
 			})
 
 			// Eventually it runs the task, which then cleans up job state.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.DebugLog("Started!")
 				ctl.State().Status = task.StatusSucceeded
 				return nil
@@ -439,7 +439,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			// Eventually it runs the task which emits a bunch of triggers, which
 			// cause triggered job triage, which eventually results in a new
 			// invocation launch. At this point we stop and examine what we see.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t1"})
 				So(ctl.Save(ctx), ShouldBeNil)
 				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t2"})
@@ -526,8 +526,8 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			// Now we resume the simulation. It will start the triggered invocation
 			// and run it.
 			var seen []*internal.Trigger
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
-				seen = triggers
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				seen = ctl.Request().IncomingTriggers
 				ctl.State().Status = task.StatusSucceeded
 				return nil
 			}
@@ -597,7 +597,7 @@ func TestInvocationTimers(t *testing.T) {
 
 			// Eventually it runs the task which emits a bunch of timers and then
 			// some more, and then stops.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.AddTimer(ctx, time.Minute, "1 min", []byte{1})
 				ctl.AddTimer(ctx, 2*time.Minute, "2 min", []byte{2})
 				ctl.State().Status = task.StatusRunning

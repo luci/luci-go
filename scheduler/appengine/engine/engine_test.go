@@ -365,7 +365,7 @@ func TestFullFlow(t *testing.T) {
 		taskqueue.GetTestable(c).ResetTasks()
 
 		// Time to run the job and it fails to launch with a transient error.
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 			// Check data provided via the controller.
 			So(ctl.JobID(), ShouldEqual, "abc/1")
 			So(ctl.InvocationID(), ShouldEqual, int64(9200093518582484688))
@@ -421,7 +421,7 @@ func TestFullFlow(t *testing.T) {
 		}))
 
 		// Second attempt. Now starts, hangs midway, they finishes.
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
 			ctl.State().Status = task.StatusRunning
@@ -561,7 +561,7 @@ func TestForceInvocation(t *testing.T) {
 
 		// Launch it.
 		var startedInvID int64
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []*internal.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 			startedInvID = ctl.InvocationID()
 			ctl.State().Status = task.StatusRunning
 			return nil
@@ -636,7 +636,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 
 		var invID int64 // set inside launchTask once invocation is known.
 
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []*internal.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
 			ctl.State().Status = task.StatusRunning
@@ -698,10 +698,11 @@ func TestFullTriggeredFlow(t *testing.T) {
 
 		// Prepare to track triggers passed to task launchers.
 		deliveredTriggers := map[string][]string{}
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 			So(deliveredTriggers, ShouldNotContainKey, ctl.JobID())
-			ids := make([]string, 0, len(triggers))
-			for _, t := range triggers {
+			req := ctl.Request()
+			ids := make([]string, 0, len(req.IncomingTriggers))
+			for _, t := range req.IncomingTriggers {
 				ids = append(ids, t.Id)
 			}
 			sort.Strings(ids) // For deterministic tests.
@@ -1098,7 +1099,7 @@ func TestAborts(t *testing.T) {
 
 		launchInv := func() int64 {
 			var invID int64
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				invID = ctl.InvocationID()
 				ctl.State().Status = task.StatusRunning
 				So(ctl.Save(ctx), ShouldBeNil)
@@ -1198,7 +1199,7 @@ func TestAddTimer(t *testing.T) {
 
 		Convey("AddTimer works", func() {
 			// Start an invocation that adds a timer.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.AddTimer(ctx, time.Minute, "timer-name", []byte{1, 2, 3})
 				ctl.State().Status = task.StatusRunning
 				return nil
@@ -1385,7 +1386,7 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
-	launchTask         func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error
+	launchTask         func(ctx context.Context, ctl task.Controller) error
 	handleNotification func(ctx context.Context, msg *pubsub.PubsubMessage) error
 	handleTimer        func(ctx context.Context, ctl task.Controller, name string, payload []byte) error
 }
@@ -1404,8 +1405,8 @@ func (m *fakeTaskManager) Traits() task.Traits {
 
 func (m *fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {}
 
-func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
-	return m.launchTask(c, ctl, triggers)
+func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+	return m.launchTask(c, ctl)
 }
 
 func (m *fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
