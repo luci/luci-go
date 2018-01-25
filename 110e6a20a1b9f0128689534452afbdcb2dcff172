@@ -1,0 +1,244 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "15508e5f_5670a8ad",
+        "filename": "common/bq/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "rebase?",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70556c13_31dfcfd6",
+        "filename": "tools/cmd/bqschemaupdater/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "if you have time, in another CL this could be converted to doc.go too",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20f3c5a8_675b3fad",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "most of the code in this function is figuring out a gitiles URL for a given file. Please extract this code into a separate function, e.g.\n\n  func getFileURL(filePath string) (string, error)",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "783e1ae9_d490ffd6",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "why is this needed? it is safe to call filepath.Dir(filepath.Abs(\".\"))",
+      "range": {
+        "startLine": 127,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 2
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5ba5c62_549b812b",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "protoDir is also made absolute in L284. Let\u0027s move this and that absolufication into a common place. I think the best place is parseFlags itself, so that the rest of the code can expect protoDir to always be absolute",
+      "range": {
+        "startLine": 130,
+        "startChar": 17,
+        "endLine": 130,
+        "endChar": 53
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19a73ba7_659f9ef8",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "this is no longer proto dir, but a parent of proto dir, it seems",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 9
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58a7ff02_156c83fe",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "please use git\u0027s -C flag. It is less invasive",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56e48fdb_d995f62c",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "if inlined, it would look simpler:\n\n  exec.Command(\"git\", \"rev-parse\", \"--show-toplevel\")\n\nsame below",
+      "range": {
+        "startLine": 143,
+        "startChar": 38,
+        "endLine": 143,
+        "endChar": 42
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b6666c1_ceb273cf",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "this will happen if the file is not in a git repo. I think we should not prohibit bqschemaupdater usage with proto files not in git. In general, below, let\u0027s just use the filename \"foo.proto\" if gitiles URL could not be determined. This is consistent with .go files generated from .proto files.",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4e2bd32_7d1bf5e1",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "this may happen if the git repo was just created without an origin remote. Let\u0027s just use filename in this case",
+      "range": {
+        "startLine": 149,
+        "startChar": 9,
+        "endLine": 149,
+        "endChar": 12
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef68ab1a_1ee916be",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "FWIU this code intends to strip the gitRoot prefix from protoDir. Let\u0027s be more direct here and use strings.TrimPrefix\n\nnote, however, that this does not work correctly on case-insensitive OSes, such as Windows.\n\nthinking about this more... it looks \n\n  git ls-tree --full-name --name-only HEAD \u003cfilename\u003e\n\nwill get you exactly what you need and it will piggy-back on git\u0027s implementation of prefix stripping. Consider that instead of --show-top-level",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8580666_3065c480",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T19:00:42Z",
+      "side": 1,
+      "message": "this does not have the file name, only directory and I am not sure how to fix it correctly.\n\nThe file name is available in\n\n   (*schemaConverter) schema()\n\nfunction, but it is relative to an import path, but which one? There are multiple import paths that we pass and the list of paths depends on whether this Go or Python project. This is getting complicated.\n\nThere is a much simpler alternative to gitiles URL which works 99% of the time:\n\n q :\u003d fmt.Sprintf(\"%s file:%s\", messageName, fileName)\n fmt.Sprintf(\"https://cs.chromium.org/%s\", url.PathEscape(q))\n\nwhere file name can be computed in main.go, right after loading the descriptor:\n\n  \tfile, _, err :\u003d descutil.Resolve(desc, flags.messageName)\n        ...\n        file.GetName() is the file name\n\n\nfor example, the result would be\n\n https://cs.chromium.org/SOMAlertsEvent%20file:infra/appengine/sheriff-o-matic/som/model/gen/events.proto\n\nwhich takes the user not only to the file, but to the message definition itself, which is pretty cool. Also it means you don\u0027t have to deal with git. Sorry I didn\u0027t see earlier that retrieving file name will be hard. :(",
+      "range": {
+        "startLine": 157,
+        "startChar": 56,
+        "endLine": 157,
+        "endChar": 68
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
