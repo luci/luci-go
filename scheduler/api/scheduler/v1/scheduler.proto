@@ -75,6 +75,7 @@ message InvocationsReply {
   string next_cursor = 2;
 }
 
+
 // JobRef uniquely identifies a job.
 message JobRef {
   string project = 1;

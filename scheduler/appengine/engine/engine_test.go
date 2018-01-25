@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -656,13 +657,13 @@ func TestFullTriggeredFlow(t *testing.T) {
 			ctl.EmitTrigger(ctx, &internal.Trigger{
 				Id: "trg",
 				Payload: &internal.Trigger_Noop{
-					Noop: &internal.NoopTriggerData{Data: "note the trigger id"},
+					Noop: &api.NoopTrigger{Data: "note the trigger id"},
 				},
 			})
 			ctl.EmitTrigger(ctx, &internal.Trigger{
 				Id: "trg",
 				Payload: &internal.Trigger_Noop{
-					Noop: &internal.NoopTriggerData{Data: "different payload"},
+					Noop: &api.NoopTrigger{Data: "different payload"},
 				},
 			})
 

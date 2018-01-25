@@ -22,8 +22,6 @@ It has these top-level messages:
 	ScheduleTimersTask
 	TimerTask
 	Trigger
-	NoopTriggerData
-	GitilesTriggerData
 	TriggerList
 */
 package internal
