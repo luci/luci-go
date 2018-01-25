@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "7b17fc3c_9e4960be",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T03:30:36Z",
+      "side": 1,
+      "message": "replied in the new patchset",
+      "parentUuid": "fdb0682c_accdb75f",
+      "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5e85d0c_47a63e43",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 3
@@ -178,6 +196,24 @@
         "endLine": 106,
         "endChar": 67
       },
+      "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "21612a62_2d5c40dc",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T03:30:36Z",
+      "side": 1,
+      "message": "it is fine now",
+      "parentUuid": "1e8d79ba_cf6473ed",
       "revId": "33ab4af738462c84783894ca5187d3ec60db9333",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false

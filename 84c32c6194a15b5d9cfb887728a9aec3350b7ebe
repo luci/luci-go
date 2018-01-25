@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0ee70aee_86fd56ab",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-25T03:30:36Z",
+      "side": 1,
+      "message": "this technique requires the return values to be named:\n\n  func createPhysicalHost(....) (err error)\n\nthen err here is the returned error, no matter how it is returned",
+      "revId": "84c32c6194a15b5d9cfb887728a9aec3350b7ebe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
