@@ -201,3 +201,33 @@ func (s *DecoratedCrimson) ListPhysicalHosts(c context.Context, req *ListPhysica
 	}
 	return
 }
+
+func (s *DecoratedCrimson) CreateVM(c context.Context, req *CreateVMRequest) (rsp *VM, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "CreateVM", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.CreateVM(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "CreateVM", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedCrimson) ListVMs(c context.Context, req *ListVMsRequest) (rsp *ListVMsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ListVMs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ListVMs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ListVMs", rsp, err)
+	}
+	return
+}
