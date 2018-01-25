@@ -1,0 +1,46 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// A VM in the database.
+message VM {
+  // The name of this VM on the network. With VLAN ID, uniquely identifies this VM.
+  string name = 1;
+  // The VLAN this VM belongs to. With hostname, uniquely identifies this VM.
+  int64 vlan = 2;
+  // The physical host this VM is running on.
+  string host = 3;
+  // The operating system running on this VM.
+  string os = 4;
+  // A description of this VM.
+  string description = 5;
+  // The deployment ticket associated with this VM.
+  string deployment_ticket = 6;
+  // TODO(smut): Add IP address.
+}
+
+// A request to create a new VM in the database.
+message CreateVMRequest {
+  // The VM to create in the database.
+  VM vm = 1;
+}
+
+// A request to list VMs in the database.
+message ListVMsRequest {
+  // The names of VMs to get.
+  repeated string names = 1;
+  // The VLANs to filter retrieved VMs on.
+  repeated int64 vlans = 2;
+  // TODO(smut): Add the rest of the filters.
+}
+
+// A response containing a list of VMs in the database.
+message ListVMsResponse {
+  // The VMs matching this request.
+  repeated VM vms = 1;
+  // TODO(smut): Support page tokens.
+}
