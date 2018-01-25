@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/config/validation"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
-	"go.chromium.org/luci/scheduler/appengine/internal"
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
@@ -90,7 +90,7 @@ func TestTriggerBuild(t *testing.T) {
 			})
 			So(ctl.Triggers, ShouldHaveLength, 1)
 			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
-			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &internal.GitilesTriggerData{
+			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &api.GitilesTrigger{
 				Repo:     "https://a.googlesource.com/b.git",
 				Ref:      "refs/heads/master",
 				Revision: "deadbeef00",

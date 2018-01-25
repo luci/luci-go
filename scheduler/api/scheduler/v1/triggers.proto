@@ -1,0 +1,25 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package scheduler;
+
+
+// NoopTrigger is used by Scheduler integration tests to represent test
+// triggers.
+message NoopTrigger {
+  string data = 1;
+}
+
+
+// GitilesTrigger is emitted by sources that watch Gitiles and consumed by
+// Buildbucket tasks.
+//
+// Such triggers are emitted whenever the repository state changes.
+message GitilesTrigger {
+  string repo = 1;     // an URL of a repo that changed
+  string ref = 2;      // a ref that changed, in full, e.g "refs/heads/master"
+  string revision = 3; // a revision (SHA1 in hex) pointed to by the ref
+}
