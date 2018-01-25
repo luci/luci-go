@@ -47,7 +47,7 @@ type DatacentersTable struct {
 func (t *DatacentersTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT id, name, description
+		SELECT id, name, description, state
 		FROM datacenters
 	`)
 	if err != nil {
@@ -56,7 +56,7 @@ func (t *DatacentersTable) fetch(c context.Context) error {
 	defer rows.Close()
 	for rows.Next() {
 		dc := &Datacenter{}
-		if err := rows.Scan(&dc.Id, &dc.Name, &dc.Description); err != nil {
+		if err := rows.Scan(&dc.Id, &dc.Name, &dc.Description, &dc.State); err != nil {
 			return errors.Annotate(err, "failed to scan datacenter").Err()
 		}
 		t.current = append(t.current, dc)
@@ -66,7 +66,7 @@ func (t *DatacentersTable) fetch(c context.Context) error {
 
 // needsUpdate returns true if the given row needs to be updated to match the given config.
 func (*DatacentersTable) needsUpdate(row, cfg *Datacenter) bool {
-	return row.Description != cfg.Description
+	return row.Description != cfg.Description || row.State != cfg.State
 }
 
 // computeChanges computes the changes that need to be made to the datacenters in the database.
@@ -77,6 +77,7 @@ func (t *DatacentersTable) computeChanges(c context.Context, datacenters []*conf
 			Datacenter: config.Datacenter{
 				Name:        cfg.Name,
 				Description: cfg.Description,
+				State:       cfg.State,
 			},
 		}
 	}
@@ -116,8 +117,8 @@ func (t *DatacentersTable) add(c context.Context) error {
 
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO datacenters (name, description)
-		VALUES (?, ?)
+		INSERT INTO datacenters (name, description, state)
+		VALUES (?, ?, ?)
 	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
@@ -127,7 +128,7 @@ func (t *DatacentersTable) add(c context.Context) error {
 	// Add each datacenter to the database, and update the slice of datacenters with each addition.
 	for len(t.additions) > 0 {
 		dc := t.additions[0]
-		result, err := stmt.ExecContext(c, dc.Name, dc.Description)
+		result, err := stmt.ExecContext(c, dc.Name, dc.Description, dc.State)
 		if err != nil {
 			return errors.Annotate(err, "failed to add datacenter %q", dc.Name).Err()
 		}
@@ -196,7 +197,7 @@ func (t *DatacentersTable) update(c context.Context) error {
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
 		UPDATE datacenters
-		SET description = ?
+		SET description = ?, state = ?
 		WHERE id = ?
 	`)
 	if err != nil {
@@ -211,12 +212,13 @@ func (t *DatacentersTable) update(c context.Context) error {
 		for _, dc := range t.current {
 			if u, ok := updated[dc.Id]; ok {
 				dc.Description = u.Description
+				dc.State = u.State
 			}
 		}
 	}()
 	for len(t.updates) > 0 {
 		dc := t.updates[0]
-		if _, err := stmt.ExecContext(c, dc.Description, dc.Id); err != nil {
+		if _, err := stmt.ExecContext(c, dc.Description, dc.State, dc.Id); err != nil {
 			return errors.Annotate(err, "failed to update datacenter %q", dc.Name).Err()
 		}
 		updated[dc.Id] = dc
