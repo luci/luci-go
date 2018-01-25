@@ -29,7 +29,7 @@ type NIC struct {
 func (m *NIC) Reset()                    { *m = NIC{} }
 func (m *NIC) String() string            { return proto.CompactTextString(m) }
 func (*NIC) ProtoMessage()               {}
-func (*NIC) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*NIC) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 func (m *NIC) GetName() string {
 	if m != nil {
@@ -75,7 +75,7 @@ type CreateNICRequest struct {
 func (m *CreateNICRequest) Reset()                    { *m = CreateNICRequest{} }
 func (m *CreateNICRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateNICRequest) ProtoMessage()               {}
-func (*CreateNICRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (*CreateNICRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
 
 func (m *CreateNICRequest) GetNic() *NIC {
 	if m != nil {
@@ -95,7 +95,7 @@ type ListNICsRequest struct {
 func (m *ListNICsRequest) Reset()                    { *m = ListNICsRequest{} }
 func (m *ListNICsRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListNICsRequest) ProtoMessage()               {}
-func (*ListNICsRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (*ListNICsRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
 
 func (m *ListNICsRequest) GetNames() []string {
 	if m != nil {
@@ -120,7 +120,7 @@ type ListNICsResponse struct {
 func (m *ListNICsResponse) Reset()                    { *m = ListNICsResponse{} }
 func (m *ListNICsResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListNICsResponse) ProtoMessage()               {}
-func (*ListNICsResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3} }
+func (*ListNICsResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
 
 func (m *ListNICsResponse) GetNics() []*NIC {
 	if m != nil {
@@ -137,10 +137,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto", fileDescriptor4)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto", fileDescriptor3)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor3 = []byte{
 	// 279 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0xcf, 0x4a, 0xf4, 0x30,
 	0x14, 0xc5, 0xe9, 0x74, 0x3a, 0xf3, 0xcd, 0x9d, 0x0f, 0x1c, 0x82, 0x48, 0x70, 0x31, 0x96, 0xae,

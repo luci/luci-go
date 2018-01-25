@@ -33,8 +33,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestCreateHost(t *testing.T) {
-	Convey("createHost", t, func() {
+func TestCreatePhysicalHost(t *testing.T) {
+	Convey("createPhysicalHost", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -44,18 +44,18 @@ func TestCreateHost(t *testing.T) {
 		`
 
 		Convey("begin failed", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
 				Os:      "os",
 			}
 			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
-			So(createHost(c, host), ShouldErrLike, "Internal server error")
+			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("prepare failed", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -63,11 +63,11 @@ func TestCreateHost(t *testing.T) {
 			}
 			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt).WillReturnError(fmt.Errorf("error"))
-			So(createHost(c, host), ShouldErrLike, "Internal server error")
+			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("query failed", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -76,11 +76,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(fmt.Errorf("error"))
-			So(createHost(c, host), ShouldErrLike, "Internal server error")
+			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("duplicate host/VLAN", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -90,11 +90,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "duplicate host")
+			So(createPhysicalHost(c, host), ShouldErrLike, "duplicate host")
 		})
 
 		Convey("duplicate machine", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -104,11 +104,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'machine_id'"})
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "duplicate host for machine")
+			So(createPhysicalHost(c, host), ShouldErrLike, "duplicate host for machine")
 		})
 
 		Convey("invalid VLAN", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -118,11 +118,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'vlan_id' is null"})
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "unknown VLAN")
+			So(createPhysicalHost(c, host), ShouldErrLike, "unknown VLAN")
 		})
 
 		Convey("invalid machine", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -132,11 +132,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "unknown machine")
+			So(createPhysicalHost(c, host), ShouldErrLike, "unknown machine")
 		})
 
 		Convey("invalid operating system", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -146,11 +146,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'os_id' is null"})
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "unknown operating system")
+			So(createPhysicalHost(c, host), ShouldErrLike, "unknown operating system")
 		})
 
 		Convey("unexpected invalid", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -160,11 +160,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "Internal server error")
+			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("unexpected error", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -174,11 +174,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldErrLike, "Internal server error")
+			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("commit failed", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -188,11 +188,11 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
-			So(createHost(c, host), ShouldErrLike, "Internal server error")
+			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("ok", func() {
-			host := &crimson.Host{
+			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Vlan:    1,
 				Machine: "machine",
@@ -202,13 +202,13 @@ func TestCreateHost(t *testing.T) {
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit()
-			So(createHost(c, host), ShouldBeNil)
+			So(createPhysicalHost(c, host), ShouldBeNil)
 		})
 	})
 }
 
-func TestListHosts(t *testing.T) {
-	Convey("listHosts", t, func() {
+func TestListPhysicalHosts(t *testing.T) {
+	Convey("listPhysicalHosts", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
@@ -224,7 +224,7 @@ func TestListHosts(t *testing.T) {
 			names := stringset.NewFromSlice("host")
 			vlans := map[int64]struct{}{0: {}}
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			hosts, err := listHosts(c, names, vlans)
+			hosts, err := listPhysicalHosts(c, names, vlans)
 			So(err, ShouldErrLike, "failed to fetch hosts")
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -234,7 +234,7 @@ func TestListHosts(t *testing.T) {
 			names := stringset.NewFromSlice("host")
 			vlans := map[int64]struct{}{0: {}}
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			hosts, err := listHosts(c, names, vlans)
+			hosts, err := listPhysicalHosts(c, names, vlans)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -246,7 +246,7 @@ func TestListHosts(t *testing.T) {
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "")
 			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "")
-			hosts, err := listHosts(c, names, vlans)
+			hosts, err := listPhysicalHosts(c, names, vlans)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -259,9 +259,9 @@ func TestListHosts(t *testing.T) {
 			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "")
 			rows.AddRow("host 3", 3, "machine 3", "os 3", 3, "", "")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			hosts, err := listHosts(c, names, vlans)
+			hosts, err := listPhysicalHosts(c, names, vlans)
 			So(err, ShouldBeNil)
-			So(hosts, ShouldResemble, []*crimson.Host{
+			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
 				{
 					Name:    "host 1",
 					Vlan:    1,
@@ -286,9 +286,9 @@ func TestListHosts(t *testing.T) {
 			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "")
 			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			hosts, err := listHosts(c, names, vlans)
+			hosts, err := listPhysicalHosts(c, names, vlans)
 			So(err, ShouldBeNil)
-			So(hosts, ShouldResemble, []*crimson.Host{
+			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
 				{
 					Name:    "host 1",
 					Vlan:    1,
@@ -309,16 +309,16 @@ func TestListHosts(t *testing.T) {
 	})
 }
 
-func TestValidateHostForCreation(t *testing.T) {
+func TestValidatePhysicalHostForCreation(t *testing.T) {
 	t.Parallel()
 
 	Convey("host unspecified", t, func() {
-		err := validateHostForCreation(nil)
+		err := validatePhysicalHostForCreation(nil)
 		So(err, ShouldErrLike, "host specification is required")
 	})
 
 	Convey("hostname unspecified", t, func() {
-		err := validateHostForCreation(&crimson.Host{
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
 			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
@@ -327,7 +327,7 @@ func TestValidateHostForCreation(t *testing.T) {
 	})
 
 	Convey("VLAN unspecified", t, func() {
-		err := validateHostForCreation(&crimson.Host{
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
 			Name:    "hostname",
 			Machine: "machine",
 			Os:      "os",
@@ -336,7 +336,7 @@ func TestValidateHostForCreation(t *testing.T) {
 	})
 
 	Convey("VLAN negative", t, func() {
-		err := validateHostForCreation(&crimson.Host{
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
 			Name:    "hostname",
 			Vlan:    -1,
 			Machine: "machine",
@@ -346,7 +346,7 @@ func TestValidateHostForCreation(t *testing.T) {
 	})
 
 	Convey("machine unspecified", t, func() {
-		err := validateHostForCreation(&crimson.Host{
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
 			Name: "hostname",
 			Vlan: 1,
 			Os:   "os",
@@ -355,7 +355,7 @@ func TestValidateHostForCreation(t *testing.T) {
 	})
 
 	Convey("machine unspecified", t, func() {
-		err := validateHostForCreation(&crimson.Host{
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
 			Name: "hostname",
 			Vlan: 1,
 			Os:   "os",
@@ -364,7 +364,7 @@ func TestValidateHostForCreation(t *testing.T) {
 	})
 
 	Convey("operating system unspecified", t, func() {
-		err := validateHostForCreation(&crimson.Host{
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
 			Name:    "hostname",
 			Vlan:    1,
 			Machine: "machine",
@@ -373,7 +373,7 @@ func TestValidateHostForCreation(t *testing.T) {
 	})
 
 	Convey("ok", t, func() {
-		err := validateHostForCreation(&crimson.Host{
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
 			Name:    "hostname",
 			Vlan:    1,
 			Machine: "machine",
