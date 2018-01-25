@@ -39,8 +39,8 @@ func (*Service) ListDatacenters(c context.Context, req *crimson.ListDatacentersR
 func listDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT d.name, d.description
-		FROM datacenters d
+		SELECT name, description, state
+		FROM datacenters
 	`)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch datacenters").Err()
@@ -50,7 +50,7 @@ func listDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacen
 	var datacenters []*crimson.Datacenter
 	for rows.Next() {
 		dc := &crimson.Datacenter{}
-		if err = rows.Scan(&dc.Name, &dc.Description); err != nil {
+		if err = rows.Scan(&dc.Name, &dc.Description, &dc.State); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch datacenter").Err()
 		}
 		if matches(dc.Name, names) {
