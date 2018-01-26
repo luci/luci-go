@@ -49,11 +49,14 @@ type taskController struct {
 	manager task.Manager
 	request task.Request
 
-	saved    Invocation          // what have been given initially or saved in Save()
-	state    task.State          // state mutated by TaskManager
-	debugLog string              // mutated by DebugLog
-	timers   []*internal.Timer   // new timers, mutated by AddTimer
-	triggers []*internal.Trigger // new outgoing triggers, mutated by EmitTrigger
+	saved    Invocation        // what have been given initially or saved in Save()
+	state    task.State        // state mutated by TaskManager
+	debugLog string            // mutated by DebugLog
+	timers   []*internal.Timer // new timers, mutated by AddTimer
+
+	triggerTime  time.Time           // timestamp to put into outgoing triggers by default
+	triggerIndex int64               // incremented with each new emitted trigger
+	triggers     []*internal.Trigger // new outgoing triggers, mutated by EmitTrigger
 
 	consumedTimers stringset.Set // timers popped in consumeTimer
 }
@@ -223,7 +226,21 @@ func (ctl *taskController) EmitTrigger(ctx context.Context, trigger *internal.Tr
 	ctl.DebugLog("Emitting a trigger %s", trigger.Id)
 	trigger.JobId = ctl.JobID()
 	trigger.InvocationId = ctl.InvocationID()
-	trigger.Created = google.NewTimestamp(clock.Now(ctx))
+
+	// See docs for internal.Trigger proto. Tuple (created, order_in_batch) used
+	// for casual ordering of triggers emitted by an invocation. Callers of
+	// EmitTrigger are free to override this by supplying their own timestamp. In
+	// such case they also should provide order_in_batch too. Otherwise we build
+	// the tuple for them based on order of EmitTrigger calls.
+	if trigger.Created == nil {
+		if ctl.triggerTime.IsZero() {
+			ctl.triggerTime = clock.Now(ctx)
+		}
+		trigger.Created = google.NewTimestamp(ctl.triggerTime)
+		trigger.OrderInBatch = ctl.triggerIndex
+		ctl.triggerIndex++
+	}
+
 	ctl.triggers = append(ctl.triggers, trigger)
 }
 
