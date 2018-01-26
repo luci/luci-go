@@ -70,6 +70,30 @@
       "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca56eb76_24464e78",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T20:33:55Z",
+      "side": 1,
+      "message": "Fine, whatever. But it is pure paranoia. The input should be insane to \"accidentally\" wrap around and hit tiny 1516998440168458 +- 900000000 interval. And if it\u0027s malicious, we still don\u0027t care, since now+-15 is valid end result, even if it was produced through wrap-around.",
+      "parentUuid": "d08eb896_56da9b61",
+      "range": {
+        "startLine": 151,
+        "startChar": 21,
+        "endLine": 151,
+        "endChar": 38
+      },
+      "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
