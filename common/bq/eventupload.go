@@ -120,22 +120,16 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 			vPath := append(path, "")
 			for i := 0; i < len(elems); i++ {
 				vPath[len(vPath)-1] = strconv.Itoa(i)
-				elems[i], err = getValue(f.Index(i).Interface(), vPath)
+				elems[i], err = getValue(f.Index(i).Interface(), vPath, fi)
 				if err != nil {
-					return nil, err
+					return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
 				}
 			}
 			value = elems
-		} else if fi.Enum != "" {
-			stringer, ok := s.FieldByIndex(fi.structIndex).Interface().(fmt.Stringer)
-			if !ok {
-				return nil, fmt.Errorf("Could not convert enum value %s to string.", fi.Enum)
-			}
-			value = stringer.String()
 		} else {
-			value, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path)
+			value, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path, fi)
 			if err != nil {
-				return nil, err
+				return nil, errors.Annotate(err, "%s", fi.OrigName).Err()
 			}
 		}
 		rowMap[fi.OrigName] = bigquery.Value(value)
@@ -186,9 +180,15 @@ func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
 	return fields, nil
 }
 
-func getValue(value interface{}, path []string) (interface{}, error) {
+func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, error) {
 	var err error
-	if tspb, ok := value.(*timestamp.Timestamp); ok {
+	if fi.Enum != "" {
+		stringer, ok := value.(fmt.Stringer)
+		if !ok {
+			return nil, fmt.Errorf("could not convert enum value to string")
+		}
+		return stringer.String(), nil
+	} else if tspb, ok := value.(*timestamp.Timestamp); ok {
 		value, err = ptypes.Timestamp(tspb)
 		if err != nil {
 			return nil, fmt.Errorf("tried to write an invalid timestamp for [%+v] for field %s", tspb, strings.Join(path, "."))
