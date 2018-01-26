@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "950e7dd8_c1792cae",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T19:37:56Z",
+      "side": 1,
+      "message": "i think we forgot to check that vm slots is not negative",
+      "revId": "1a42f8fb90c612252ef646406c21b82513e8ca0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
