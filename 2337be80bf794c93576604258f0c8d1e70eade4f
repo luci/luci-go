@@ -16,6 +16,24 @@
       "revId": "2337be80bf794c93576604258f0c8d1e70eade4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0addc248_0844c729",
+        "filename": "machine-db/appengine/database/setup/migrations/001_initialize_datacenters.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:39:35Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "0cbcf258_5cff1d0d",
+      "revId": "2337be80bf794c93576604258f0c8d1e70eade4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03bb0cb3_77e64354",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:39:35Z",
+      "side": 1,
+      "message": "this function does not quite make sense to me\n\n- it is called ParseState, but it accepts a number and returns a string. Perhaps it is the GetState that should be renamed to ParseState\n- it accepts an int32, but immediately converts it to State. I think int32 conversation is caller\u0027s job and this function should be a method of State\n- FWIU this is the opposite of the function above. How about we define a new concept \"state name\" which is a string to be used for users. Then the following would make more sense to me:\n\n  // .... supports name prefixes ....\n  func ParseStateName(name string) (State, error)\n  func (s State) Name() string",
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "808f60ce_017a0b21",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:39:35Z",
+      "side": 1,
+      "message": "to make this truly inversion of the function above, this should be case State_STATE_UNSPECIFIED and default: should return something like \"invalid state\" or error.\n\ninvalid state is different from unspecified state",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 8
+      },
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95951250_87cd2d6e",
+        "filename": "machine-db/api/crimson/v1/datacenters.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:39:35Z",
+      "side": 1,
+      "message": "why is this not the State enum?",
+      "range": {
+        "startLine": 22,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 8
+      },
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0aaed211_dde793cf",
+        "filename": "machine-db/appengine/rpc/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:39:35Z",
+      "side": 1,
+      "message": "why not State type like you do in another file?",
+      "range": {
+        "startLine": 53,
+        "startChar": 12,
+        "endLine": 53,
+        "endChar": 17
+      },
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96c6eb63_0e69a90f",
+        "filename": "machine-db/appengine/rpc/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:39:35Z",
+      "side": 1,
+      "message": "this is the only place where ParseState is used. If use State enum, then we don\u0027t need this function (in this CL)",
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
