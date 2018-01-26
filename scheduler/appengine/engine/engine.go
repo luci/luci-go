@@ -61,6 +61,8 @@ import (
 var (
 	// ErrNoOwnerPermission indicates the caller is not a job owner.
 	ErrNoOwnerPermission = errors.New("no OWNER permission on a job")
+	// ErrNoTriggererPermission indicates the caller can not trigger a job.
+	ErrNoTriggererPermission = errors.New("no TRIGGERER permission on a job")
 	// ErrNoSuchJob indicates the job doesn't exist or not visible.
 	ErrNoSuchJob = errors.New("no such job")
 	// ErrNoSuchInvocation indicates the invocation doesn't exist or not visible.
@@ -826,6 +828,35 @@ func (e *engineImpl) getOwnedJob(c context.Context, jobID string) (*Job, error) 
 		return nil, err
 	case reader:
 		return nil, ErrNoOwnerPermission
+	default:
+		return nil, ErrNoSuchJob
+	}
+}
+
+// getTriggerableJob returns a job if the current caller can trigger it.
+//
+// Returns ErrNoTriggererPermission or ErrNoSuchJob otherwise (based on ACLs).
+func (e *engineImpl) getTriggerableJob(c context.Context, jobID string) (*Job, error) {
+	job, err := e.getJob(c, jobID)
+	if err != nil {
+		return nil, err
+	} else if job == nil {
+		return nil, ErrNoSuchJob
+	}
+
+	switch canTrigger, err := job.IsTriggerable(c); {
+	case err != nil:
+		return nil, err
+	case canTrigger:
+		return job, nil
+	}
+
+	// Can't trigger, but maybe reader? Give nicer error in such case.
+	switch reader, err := job.IsVisible(c); {
+	case err != nil:
+		return nil, err
+	case reader:
+		return nil, ErrNoTriggererPermission
 	default:
 		return nil, ErrNoSuchJob
 	}

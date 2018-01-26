@@ -12,8 +12,12 @@ message Acl {
   enum Role {
     // Can do read-only operations, such as listing invocations of a Job.
     READER = 0;
-    // Same as READER + can modify state of a Job or Invocation such as
-    // triggering or aborting them.
+    // Can emit triggers for a Job.
+    //
+    // Being TRIGGERER does NOT grant READER permission.
+    TRIGGERER = 2;
+    // Same as READER + TRIGGERER + can modify state of a Job or Invocation such
+    // as aborting them.
     // LUCI scheduler (this service) is an OWNER of each `Job` and `Trigger`, thus
     // `Trigger`s are allowed to trigger all `Job`s defined in the same
     // project, regardless of their respective ACLs.
@@ -117,6 +121,10 @@ message Trigger {
   bool disabled = 3;
 
   // List of access control rules for the Job.
+  //
+  // At least OWNER and READER roles must be defined either by acls or by
+  // acl_sets references.
+  //
   // The order does not matter.
   // There can be at most 32 different acls for a Job, including those from
   // acl_sets.
