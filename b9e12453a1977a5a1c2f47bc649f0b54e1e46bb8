@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ba23312f_faa8f37b",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T23:09:06Z",
+      "side": 1,
+      "message": "It screws up expectations. sqlmock isn\u0027t great.",
+      "parentUuid": "b39902a4_21eeea6f",
+      "range": {
+        "startLine": 107,
+        "startChar": 14,
+        "endLine": 107,
+        "endChar": 31
+      },
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8b9c8312_57a2285d",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "cbd20fb7_34942bd5",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T23:09:06Z",
+      "side": 1,
+      "message": "Done, but I don\u0027t like that we aren\u0027t even giving a hint about which entities need to be deleted. Frustrating user experience. Ideally we wouldn\u0027t even say NICs and physical hosts we\u0027d actually name the entity that needs to be deleted first. Unfortunately MySQL doesn\u0027t give us that much information.",
+      "parentUuid": "8b9c8312_57a2285d",
+      "range": {
+        "startLine": 120,
+        "startChar": 58,
+        "endLine": 120,
+        "endChar": 81
+      },
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53a9732e_c9a69282",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb1e87b9_ab9db7b4",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T23:09:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53a9732e_c9a69282",
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "3987d453_99725749",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T23:09:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f2ac1ac_5e5670bd",
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75913c46_56f6af6f",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -96,6 +180,24 @@
       "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b635310c_3df74719",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T23:09:06Z",
+      "side": 1,
+      "message": "Done, but it can\u0027t be applied everywhere because most request protos have fields which are slices and we still use stringlistflag to handle those. However, I did see your comment about refactoring our flags so that we could use []string directly, in which case yes we would be able to simplify all the subcommands in the future.",
+      "parentUuid": "75913c46_56f6af6f",
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
