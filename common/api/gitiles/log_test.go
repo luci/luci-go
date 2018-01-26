@@ -53,11 +53,10 @@ func TestPagingLog(t *testing.T) {
 			}
 			commits, err := PagingLog(ctx, c, req, 10)
 			So(err, ShouldBeNil)
-			So(reqs, ShouldHaveLength, 10)
+			So(reqs, ShouldHaveLength, 2)
 			So(reqs[0].FormValue("s"), ShouldEqual, "")
 			So(reqs[1].FormValue("s"), ShouldEqual, "next_cursor_value")
-			So(reqs[9].FormValue("s"), ShouldEqual, "next_cursor_value")
-			So(len(commits), ShouldEqual, 10)
+			So(len(commits), ShouldEqual, 2)
 			So(commits[0].Author.Name, ShouldEqual, "Author 1")
 			So(commits[1].Id, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
 		})
