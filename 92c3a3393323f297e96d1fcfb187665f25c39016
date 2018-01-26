@@ -94,6 +94,30 @@
       "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e303ae15_5c994aeb",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T22:12:55Z",
+      "side": 1,
+      "message": "1. thanks for follow up.\n2. yes, it\u0027s pure paranoia in code as is or if code is only ever copied/changed by smart Vadim. My concern is not so smart myself glancing at the code after some time adapting it to say nanoseconds here or elsewhere.",
+      "parentUuid": "ca56eb76_24464e78",
+      "range": {
+        "startLine": 151,
+        "startChar": 21,
+        "endLine": 151,
+        "endChar": 38
+      },
+      "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
