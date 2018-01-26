@@ -89,6 +89,14 @@ func TestACLsValidation(t *testing.T) {
 				So(ctx.Finalize(), ShouldErrLike,
 					"Job or Trigger must have READER acl set")
 			})
+			Convey("No TRIGGERER is OK", func() {
+				ValidateTaskACLs(ctx, nil, []string{},
+					[]*messages.Acl{
+						{Role: messages.Acl_OWNER, GrantedTo: "group:owners"},
+						{Role: messages.Acl_READER, GrantedTo: "group:readers"},
+					})
+				So(ctx.Finalize(), ShouldBeNil)
+			})
 		})
 
 		Convey("Without AclSets but with bad ACLs", func() {
@@ -114,7 +122,7 @@ func TestACLsValidation(t *testing.T) {
 			})
 			Convey("1 too many", func() {
 				aclSets := map[string][]*messages.Acl{
-					"public": {{Role: messages.Acl_READER, GrantedTo: "group:all"}},
+					"public": {{Role: messages.Acl_TRIGGERER, GrantedTo: "group:triggerers"}},
 				}
 				ValidateTaskACLs(ctx, aclSets, []string{"public"}, taskGrants)
 				So(ctx.Finalize(), ShouldErrLike, "Job or Trigger can have at most 32 acls, but 33 given")
@@ -133,10 +141,13 @@ func TestACLsValidation(t *testing.T) {
 			{Name: "private", Acls: []*messages.Acl{
 				{Role: messages.Acl_READER, GrantedTo: "group:internal"},
 			}},
+			{Name: "triggeres", Acls: []*messages.Acl{
+				{Role: messages.Acl_TRIGGERER, GrantedTo: "group:triggerers"},
+			}},
 		}
 		aclSets := ValidateACLSets(ctx, protoAclSets)
 		So(ctx.Finalize(), ShouldBeNil)
-		So(len(aclSets), ShouldEqual, 3)
+		So(len(aclSets), ShouldEqual, 4)
 
 		Convey("Bad acl_set reference in a task definition", func() {
 			valCtx := &validation.Context{Context: c}
@@ -167,6 +178,17 @@ func TestACLsValidation(t *testing.T) {
 				So(jobAcls.Owners, ShouldResemble, []string{"me@example.com"})
 				So(jobAcls.Readers, ShouldResemble, []string{"group:internal"})
 			})
+			Convey("ok3", func() {
+				jobAcls := ValidateTaskACLs(valCtx,
+					aclSets, []string{"public", "triggeres"},
+					[]*messages.Acl{
+						{Role: messages.Acl_TRIGGERER, GrantedTo: "triggerer@example.com"},
+					})
+				So(valCtx.Finalize(), ShouldBeNil)
+				So(jobAcls.Owners, ShouldResemble, []string{"group:owners"})
+				So(jobAcls.Triggerers, ShouldResemble, []string{"group:triggerers", "triggerer@example.com"})
+				So(jobAcls.Readers, ShouldResemble, []string{"group:all"})
+			})
 		})
 	})
 }
@@ -175,71 +197,72 @@ func TestAclsChecks(t *testing.T) {
 	t.Parallel()
 	ctx := gaetesting.TestingContext()
 
-	basicGroups := GrantsByRole{Owners: []string{"group:owners"}, Readers: []string{"group:readers"}}
+	is := func(is bool, err error) bool {
+		if err != nil {
+			panic(err)
+		}
+		return is
+	}
 
-	Convey("Admins are owners and readers", t, func() {
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity:       "user:admin@example.com",
-			IdentityGroups: []string{"administrators"},
-		})
-		yup, err := basicGroups.IsOwner(ctx)
-		So(err, ShouldBeNil)
-		So(yup, ShouldBeTrue)
-		yup, err = basicGroups.IsReader(ctx)
-		So(err, ShouldBeNil)
-		So(yup, ShouldBeTrue)
-	})
+	basicGroups := GrantsByRole{
+		Owners:     []string{"group:owners"},
+		Triggerers: []string{"group:triggerers"},
+		Readers:    []string{"group:readers"},
+	}
+
 	Convey("Owners", t, func() {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:owner@example.com",
 			IdentityGroups: []string{"owners"},
 		})
-		yup, err := basicGroups.IsReader(ctx)
-		So(err, ShouldBeNil)
-		So(yup, ShouldBeTrue)
-		yup, err = basicGroups.IsReader(ctx)
-		So(err, ShouldBeNil)
-		So(yup, ShouldBeTrue)
+		So(is(basicGroups.IsReader(ctx)), ShouldBeTrue)
+		So(is(basicGroups.IsTriggerer(ctx)), ShouldBeTrue)
+		So(is(basicGroups.IsOwner(ctx)), ShouldBeTrue)
 	})
 	Convey("Readers", t, func() {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:reader@example.com",
 			IdentityGroups: []string{"readers"},
 		})
-		nope, err := basicGroups.IsOwner(ctx)
-		So(err, ShouldBeNil)
-		So(nope, ShouldBeFalse)
-		yup, err := basicGroups.IsReader(ctx)
-		So(err, ShouldBeNil)
-		So(yup, ShouldBeTrue)
+		So(is(basicGroups.IsReader(ctx)), ShouldBeTrue)
+		So(is(basicGroups.IsTriggerer(ctx)), ShouldBeFalse)
+		So(is(basicGroups.IsOwner(ctx)), ShouldBeFalse)
+	})
+	Convey("Triggerers", t, func() {
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:       "user:triggerer@example.com",
+			IdentityGroups: []string{"triggerers"},
+		})
+		So(is(basicGroups.IsReader(ctx)), ShouldBeFalse)
+		So(is(basicGroups.IsTriggerer(ctx)), ShouldBeTrue)
+		So(is(basicGroups.IsOwner(ctx)), ShouldBeFalse)
 	})
 	Convey("By email", t, func() {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity:       "user:reader@example.com",
+			Identity:       "user:readers@example.com",
 			IdentityGroups: []string{"all"},
 		})
 		g := GrantsByRole{
 			Owners:  []string{"group:owners"},
-			Readers: []string{"group:some", "reader@example.com"},
+			Readers: []string{"group:all", "reader@example.com"},
 		}
-		nope, err := g.IsOwner(ctx)
-		So(err, ShouldBeNil)
-		So(nope, ShouldBeFalse)
-		yup, err := g.IsReader(ctx)
-		So(err, ShouldBeNil)
-		So(yup, ShouldBeTrue)
+		So(is(g.IsOwner(ctx)), ShouldBeFalse)
+		So(is(g.IsTriggerer(ctx)), ShouldBeFalse)
+		So(is(g.IsReader(ctx)), ShouldBeTrue)
 	})
 }
 
 func TestAclsEqual(t *testing.T) {
 	t.Parallel()
 	Convey("GrantsByRole.Equal", t, func() {
-		x1 := GrantsByRole{Readers: []string{"a"}, Owners: []string{"b", "c"}}
-		x2 := GrantsByRole{Readers: []string{"a"}, Owners: []string{"b", "c"}}
+		x1 := GrantsByRole{Readers: []string{"a"}, Owners: []string{"b", "c"}, Triggerers: []string{"t"}}
+		x2 := GrantsByRole{Readers: []string{"a"}, Owners: []string{"b", "c"}, Triggerers: []string{"t"}}
 		So(x1.Equal(&x2), ShouldBeTrue)
 		y := GrantsByRole{Readers: []string{"e", "g"}, Owners: []string{"b", "d"}}
+		yt := GrantsByRole{Readers: []string{"e", "g"}, Owners: []string{"b", "d"}, Triggerers: []string{"t"}}
 		z := GrantsByRole{Readers: []string{"e", "g"}, Owners: []string{"b", "c", "d"}}
 		So(x1.Equal(&y), ShouldBeFalse)
+		So(y.Equal(&yt), ShouldBeFalse)
 		So(y.Equal(&z), ShouldBeFalse)
 	})
 }

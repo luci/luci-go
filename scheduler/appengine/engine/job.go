@@ -171,6 +171,13 @@ func (e *Job) IsVisible(c context.Context) (bool, error) {
 	return e.Acls.IsReader(logging.SetField(c, "JobID", e.JobID))
 }
 
+// IsTriggerable checks if current identity has TRIGGERER access to this job.
+//
+// Returns only transient errors.
+func (e *Job) IsTriggerable(c context.Context) (bool, error) {
+	return e.Acls.IsTriggerer(logging.SetField(c, "JobID", e.JobID))
+}
+
 // IsOwned checks if current identity has OWNER access to this job.
 //
 // Returns only transient errors.
