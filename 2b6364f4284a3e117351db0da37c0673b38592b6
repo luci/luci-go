@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39b7b6e0_b8186b68",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T02:38:59Z",
+      "side": 1,
+      "message": "the same, the same",
+      "range": {
+        "startLine": 65,
+        "startChar": 25,
+        "endLine": 65,
+        "endChar": 61
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "276aaa76_29adf47d",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T02:38:59Z",
+      "side": 1,
+      "message": "nit: TODO(vadimsh) or TODO(tandrii). TODOs should have person to contact which may or may not be the person who\u0027ll actually implement this.",
+      "range": {
+        "startLine": 71,
+        "startChar": 5,
+        "endLine": 71,
+        "endChar": 10
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5656565_3b23aaac",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T02:38:59Z",
+      "side": 1,
+      "message": "do we actually need batches for existing use-case, or are you future-proofing?",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 29
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb020386_67501705",
+        "filename": "scheduler/api/scheduler/v1/triggers.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T02:38:59Z",
+      "side": 1,
+      "message": "nice",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 24
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "72a18689_f7f8341b",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T02:38:59Z",
+      "side": 1,
+      "message": "errors.New",
+      "range": {
+        "startLine": 214,
+        "startChar": 15,
+        "endLine": 214,
+        "endChar": 25
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5289864_d937167e",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T02:38:59Z",
+      "side": 1,
+      "message": "for my education: do we define const tags which are then passed to [luci]errors.New(), or do you have  smth else in mind?",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 20
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
