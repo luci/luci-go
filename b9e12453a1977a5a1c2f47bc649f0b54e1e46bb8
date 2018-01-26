@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b39902a4_21eeea6f",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:54:00Z",
+      "side": 1,
+      "message": "why do we need to prepare it if we run it only once? we can use db.ExecuteContext here, which is less code",
+      "range": {
+        "startLine": 107,
+        "startChar": 14,
+        "endLine": 107,
+        "endChar": 31
+      },
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b9c8312_57a2285d",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:54:00Z",
+      "side": 1,
+      "message": "the list of other tables referencing machine may change over time and this list would need to be synced. I am pretty sure we will forget to do that.\n\nlet\u0027s just say \"delete other entities referencing this machine first\" or something like that",
+      "range": {
+        "startLine": 120,
+        "startChar": 58,
+        "endLine": 120,
+        "endChar": 81
+      },
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53a9732e_c9a69282",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:54:00Z",
+      "side": 1,
+      "message": "nit:\n\n  switch rows, err :\u003d res.RowsAffected(); {\n    case err !\u003d nil:\n    case rows \u003d\u003d 0:\n   .....\n  }",
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f2ac1ac_5e5670bd",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:54:00Z",
+      "side": 1,
+      "message": "please move it to case 1",
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75913c46_56f6af6f",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:54:00Z",
+      "side": 1,
+      "message": "see my comment in another CL, consider reusing the request type here instead of duping its contents\n\nit seems this simplification can be applied to all crimson subcommands",
+      "revId": "b9e12453a1977a5a1c2f47bc649f0b54e1e46bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
