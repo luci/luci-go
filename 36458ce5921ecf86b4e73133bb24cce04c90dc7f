@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2d30acb_f16b5506",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T00:09:51Z",
+      "side": 1,
+      "message": "this actually looks ugly as sin in JSON :(\n\n{\n    \"batches\": [\n        {\n            \"jobs\": [\n                {\n                    \"project\": \"blah\",\n                    \"job\": \"job-name\"\n                }\n            ],\n            \"triggers\": [\n                {\n                    \"id\": \"zzz\",\n                    \"buildbucket\": {\n                        \"properties\": {\n                            \"abc\": \"def\",\n                            \"zzz\": 1,\n                            \"xyz\": [1, 2, 3]\n                        }\n                    }\n                }\n            ]\n        }\n    ]\n}\n\n(at least google.protobuf.Struct is represented as arbitrary JSON and not as list of key-value protos, as it is implemented internally).\n\nI hope we can wrap it a nicer recipe module.",
+      "range": {
+        "startLine": 99,
+        "startChar": 8,
+        "endLine": 99,
+        "endChar": 27
+      },
+      "revId": "36458ce5921ecf86b4e73133bb24cce04c90dc7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd82287e_5c04daee",
+        "filename": "scheduler/api/scheduler/v1/triggers.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T00:09:51Z",
+      "side": 1,
+      "message": "🤷\n\nI\u0027ve been told none of the tags or properties are required (other than builder_name, which scheduler sets itself). So who knows what can be here...\n\nDefault triggering policy will pick properties of the most recent trigger and pass them to buildbucket job :-/",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 27
+      },
+      "revId": "36458ce5921ecf86b4e73133bb24cce04c90dc7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
