@@ -44,6 +44,26 @@ func GetState(s string) (State, error) {
 	}
 }
 
+// ParseState returns a string given its integer representation.
+func ParseState(i int32) string {
+	switch State(i) {
+	case State_FREE:
+		return "free"
+	case State_PRERELEASE:
+		return "prerelease"
+	case State_SERVING:
+		return "serving"
+	case State_TEST:
+		return "test"
+	case State_REPAIR:
+		return "repair"
+	case State_DECOMMISSIONED:
+		return "decommissioned"
+	default:
+		return ""
+	}
+}
+
 // ValidateState validates the given state, allowing empty/unspecified state.
 func ValidateState(c *validation.Context, s string) {
 	if len(s) > 0 {

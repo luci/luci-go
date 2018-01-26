@@ -100,6 +100,23 @@ func TestGetStates(t *testing.T) {
 	})
 }
 
+func TestParseState(t *testing.T) {
+	t.Parallel()
+
+	Convey("ParseState", t, func() {
+		So(ParseState(int32(State_STATE_UNSPECIFIED)), ShouldEqual, "")
+		So(ParseState(int32(State_FREE)), ShouldEqual, "free")
+		So(ParseState(int32(State_PRERELEASE)), ShouldEqual, "prerelease")
+		So(ParseState(int32(State_SERVING)), ShouldEqual, "serving")
+		So(ParseState(int32(State_TEST)), ShouldEqual, "test")
+		So(ParseState(int32(State_REPAIR)), ShouldEqual, "repair")
+		So(ParseState(int32(State_DECOMMISSIONED)), ShouldEqual, "decommissioned")
+		So(ParseState(-1), ShouldEqual, "")
+		So(ParseState(0), ShouldEqual, "")
+		So(ParseState(7), ShouldEqual, "")
+	})
+}
+
 func TestValidateState(t *testing.T) {
 	t.Parallel()
 

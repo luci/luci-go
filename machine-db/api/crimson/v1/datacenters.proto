@@ -18,6 +18,8 @@ message Datacenter {
   string name = 1;
   // A description of this datacenter.
   string description = 2;
+  // The state of this datacenter.
+  string state = 3;
 }
 
 // ListDatacentersResponse is a response to a request to retrieve datacenters.

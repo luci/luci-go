@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
@@ -39,8 +40,8 @@ func (*Service) ListDatacenters(c context.Context, req *crimson.ListDatacentersR
 func listDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacenter, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT d.name, d.description
-		FROM datacenters d
+		SELECT name, description, state
+		FROM datacenters
 	`)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch datacenters").Err()
@@ -49,11 +50,13 @@ func listDatacenters(c context.Context, names stringset.Set) ([]*crimson.Datacen
 
 	var datacenters []*crimson.Datacenter
 	for rows.Next() {
+		var state int32
 		dc := &crimson.Datacenter{}
-		if err = rows.Scan(&dc.Name, &dc.Description); err != nil {
+		if err = rows.Scan(&dc.Name, &dc.Description, &state); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch datacenter").Err()
 		}
 		if matches(dc.Name, names) {
+			dc.State = common.ParseState(state)
 			datacenters = append(datacenters, dc)
 		}
 	}
