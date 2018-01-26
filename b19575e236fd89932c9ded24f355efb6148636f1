@@ -34,6 +34,24 @@
       "revId": "b19575e236fd89932c9ded24f355efb6148636f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cb01dc3_eda02c60",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:12:56Z",
+      "side": 1,
+      "message": "awesome! Thank you!\n\nand it seems it was about as easy as what you wanted",
+      "parentUuid": "a4c05573_7c1789ed",
+      "revId": "b19575e236fd89932c9ded24f355efb6148636f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
