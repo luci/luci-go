@@ -26,6 +26,8 @@ message TestMessage {
     }
 
     FOO foo = 6;
+
+    repeated FOO foo_repeated = 7;
 }
 
 message NestedTestMessage {
