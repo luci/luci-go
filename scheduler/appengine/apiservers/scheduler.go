@@ -137,6 +137,10 @@ func (s SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.Invo
 	})
 }
 
+func (s SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "Not implemented yet")
+}
+
 //// Private helpers.
 
 func runAction(ctx context.Context, jobRef *scheduler.JobRef, action func() error) (*empty.Empty, error) {
