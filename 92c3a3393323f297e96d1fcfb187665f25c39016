@@ -22,6 +22,30 @@
       "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c78439ed_586ed78a",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T19:52:21Z",
+      "side": 1,
+      "message": "We don\u0027t care, we check it is within [now-15min, now+15min]. They\u0027ll see error message \"your timestamp from 1977 is more than 15 min in the past\" (or something).",
+      "parentUuid": "1333632a_2de9590b",
+      "range": {
+        "startLine": 151,
+        "startChar": 21,
+        "endLine": 151,
+        "endChar": 38
+      },
+      "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
