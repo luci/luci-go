@@ -46,6 +46,30 @@
       "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d08eb896_56da9b61",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-26T20:18:34Z",
+      "side": 1,
+      "message": "Yes, if incorrect in.Timestamp times 1000 ends up outside of +-15 min, but it\u0027s not always so. To avoid accidentally working incorrect timestamp, i think a check abs(in.Timestamp) \u003c (1\u003c\u003c53) is in order.",
+      "parentUuid": "c78439ed_586ed78a",
+      "range": {
+        "startLine": 151,
+        "startChar": 21,
+        "endLine": 151,
+        "endChar": 38
+      },
+      "revId": "92c3a3393323f297e96d1fcfb187665f25c39016",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
