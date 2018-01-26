@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ec2dbe6_9a9aa552",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T20:52:23Z",
+      "side": 1,
+      "message": "strictly speaking same can be said for READERs",
+      "range": {
+        "startLine": 128,
+        "startChar": 1,
+        "endLine": 128,
+        "endChar": 61
+      },
+      "revId": "977335ef18156676ee06580621ec42c9453dd9a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c382f79_c1c77a0d",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 839,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T20:52:23Z",
+      "side": 1,
+      "message": "copy-pasta :(\n\nConsider single e.g\n\ngetJobForRole(ctx, \"project/job1\", \"TRIGGERER\") that returns ErrNoPermission instead of getOwnedJob and getTriggerableJob.\n\nOr maybe getJobForRole(ctx, \"project/job1\", (*Job).IsTriggerable) to reuse the implicit enum we already have (see https://golang.org/ref/spec#Method_expressions):\n\nfunc getFobForRole(...., check func(job *Job, c context.Context) (bool, error)) ... {\n  ...\n  check(job, c)\n}\n\nI think it is fine to return general ErrNoPermission. We\u0027ll need to fix errors to be more informative later anyway.",
+      "range": {
+        "startLine": 839,
+        "startChar": 21,
+        "endLine": 839,
+        "endChar": 38
+      },
+      "revId": "977335ef18156676ee06580621ec42c9453dd9a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "059596ef_80a55474",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T20:52:23Z",
+      "side": 1,
+      "message": "maybe it\u0027s time to switch to enums after all...\n\nfunc (e *Job) CallerHasRole(c context.Context, r acls.Role) (bool, error) {\n  return a.Acls.HasRole(..., r)\n}\n\nCopy-paste with no good reason.",
+      "range": {
+        "startLine": 166,
+        "startChar": 0,
+        "endLine": 186,
+        "endChar": 1
+      },
+      "revId": "977335ef18156676ee06580621ec42c9453dd9a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
