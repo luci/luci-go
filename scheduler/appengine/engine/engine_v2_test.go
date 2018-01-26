@@ -466,6 +466,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				JobId:        triggeringJob,
 				InvocationId: triggeringInvID,
 				Created:      google.NewTimestamp(epoch.Add(1 * time.Second)),
+				OrderInBatch: 1, // second call to EmitTrigger done by the invocation
 			}
 
 			// All the tasks we've just executed.

@@ -102,7 +102,22 @@ message EmitTriggersRequest {
     Trigger trigger = 1;
     repeated JobRef jobs = 2;
   }
+
+  // A trigger and jobs it should be delivered to.
+  //
+  // Order is important. Triggers that are listed earlier are considered older.
   repeated Batch batches = 1;
+
+  // An optional timestamp to use as trigger creation time, as unix timestamp in
+  // microseconds. Assigned by the server by default. If given, must be within
+  // +-15 min of the current time.
+  //
+  // Under some conditions triggers are ordered by timestamp of when they are
+  // created. By allowing the client to specify this timestamp, we make
+  // EmitTrigger RPC idempotent: if EmitTrigger call fails midway, the caller
+  // can retry it providing exact same timestamp to get the correct final order
+  // of the triggers.
+  int64 timestamp = 2;
 }
 
 // JobRef uniquely identifies a job.

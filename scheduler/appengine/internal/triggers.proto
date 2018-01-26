@@ -47,8 +47,29 @@ message Trigger {
 
   // Timestamp when the trigger was created.
   //
-  // Set by the engine, can't be overridden.
+  // Can be set by whoever emits the trigger if the trigger is based on some
+  // external event. If not provided, the engine will set it to the current
+  // time.
+  //
+  // Together with 'order_in_batch' used for weak ordering of triggers that
+  // aren't directly comparable (e.g. git commits from different repositories).
+  // This ordering shouldn't be considered reliable.
   google.protobuf.Timestamp created = 4;
+
+  // If a bunch of triggers were emitted at the same moment in time (for example
+  // through a single RPC or by a single invocation in a tight loop), a trigger
+  // with smaller 'order_in_batch' is considered to be older. Value of
+  // 'order_in_batch' for triggers with different 'created' timestamps are not
+  // comparable.
+  //
+  // Should be set by whoever emits the trigger if 'created' timestamp was
+  // supplied explicitly. Otherwise will be set by the engine based on the order
+  // of EmitTrigger calls done by the invocation.
+  //
+  // Together with 'order_in_batch' used for weak ordering of triggers that
+  // aren't directly comparable (e.g. git commits from different repositories).
+  // This ordering shouldn't be considered reliable.
+  int64 order_in_batch = 7;
 
   // User friendly name for this trigger that shows up in UI.
   //

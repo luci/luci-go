@@ -144,15 +144,31 @@ func (s SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.Invo
 }
 
 func (s SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*empty.Empty, error) {
+	// Optionally use client-provided time if it is within reasonable margins.
+	// This is needed to make EmitTriggers idempotent (when it emits a batch).
 	now := clock.Now(ctx)
+	if in.Timestamp != 0 {
+		ts := time.Unix(0, in.Timestamp*1000)
+		if ts.After(now.Add(15 * time.Minute)) {
+			return nil, status.Errorf(codes.InvalidArgument,
+				"the provided timestamp (%s) is more than 15 min in the future based on the server clock value %s",
+				ts, now)
+		}
+		if ts.Before(now.Add(-15 * time.Minute)) {
+			return nil, status.Errorf(codes.InvalidArgument,
+				"the provided timestamp (%s) is more than 15 min in the past based on the server clock value %s",
+				ts, now)
+		}
+		now = ts
+	}
 
 	// Build a mapping "jobID => list of triggers", convert public representation
 	// of a trigger into internal one.
 	triggersPerJob := map[string][]*internal.Trigger{}
-	for i, batch := range in.Batches {
-		tr, err := internalTrigger(batch.Trigger, now)
+	for index, batch := range in.Batches {
+		tr, err := internalTrigger(batch.Trigger, now, index)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad trigger #%d (%q) - %s", i, batch.Trigger.Id, err)
+			return nil, status.Errorf(codes.InvalidArgument, "bad trigger #%d (%q) - %s", index, batch.Trigger.Id, err)
 		}
 		for _, jobRef := range batch.Jobs {
 			jobId := getJobId(jobRef)
@@ -186,15 +202,16 @@ func getJobId(jobRef *scheduler.JobRef) string {
 	return jobRef.GetProject() + "/" + jobRef.GetJob()
 }
 
-func internalTrigger(t *scheduler.Trigger, now time.Time) (*internal.Trigger, error) {
+func internalTrigger(t *scheduler.Trigger, now time.Time, index int) (*internal.Trigger, error) {
 	if t.Id == "" {
 		return nil, fmt.Errorf("trigger id is required")
 	}
 	out := &internal.Trigger{
-		Id:      t.Id,
-		Created: google.NewTimestamp(now),
-		Title:   t.Title,
-		Url:     t.Url,
+		Id:           t.Id,
+		Created:      google.NewTimestamp(now),
+		OrderInBatch: int64(index),
+		Title:        t.Title,
+		Url:          t.Url,
 	}
 	if t.Payload != nil {
 		// Ugh...
