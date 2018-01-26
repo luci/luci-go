@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "e2efa548_f1b100f0",
+        "filename": "machine-db/client/cli/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T22:18:32Z",
+      "side": 1,
+      "message": "ah right, FlagSet, then my proposal is to change\n\n  package int32flag\n  type Flag int32\n  func (f Flag)....\n  func (f Flag)....\n\nto\n\n  package flags\n\n  func Int32(v \u0026int) flag.Value\n\nand then use it like\n\n  fs.Var(flags.Int32(\u0026cmd.host.VmSlots), \"slots\", \"..........\")",
+      "parentUuid": "cfffcd93_194e42fe",
+      "range": {
+        "startLine": 43,
+        "startChar": 18,
+        "endLine": 43,
+        "endChar": 41
+      },
+      "revId": "8a3df62e98490c591288f2f122a118d7cc140993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "42c4ac86_9731419e",
         "filename": "machine-db/client/cli/physical_hosts.go",
         "patchSetId": 1
