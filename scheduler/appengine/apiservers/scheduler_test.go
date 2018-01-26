@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/urlfetch"
@@ -427,6 +428,10 @@ func (f *fakeEngine) AbortInvocation(c context.Context, jobID string, invID int6
 
 func (f *fakeEngine) AbortJob(c context.Context, jobID string) error {
 	return f.abortJob(jobID)
+}
+
+func (f *fakeEngine) EmitTriggers(c context.Context, perJob map[string][]*internal.Trigger) error {
+	return nil
 }
 
 func (f *fakeEngine) GetVisibleInvocation(c context.Context, jobID string, invID int64) (*engine.Invocation, error) {

@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/tokens"
@@ -53,6 +54,9 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
+
+// TODO(vadimsh): Use annotated errors instead of constants, so they can have
+// more information.
 
 var (
 	// ErrNoOwnerPermission indicates the caller is not a job owner.
@@ -151,6 +155,14 @@ type Engine interface {
 	// Returns an object that can be waited on to grab a corresponding Invocation
 	// when it appears (if ever).
 	ForceInvocation(c context.Context, jobID string) (FutureInvocation, error)
+
+	// EmitTriggers puts one or more triggers into pending trigger queues of the
+	// specified jobs.
+	//
+	// If at least one job doesn't exist or the caller has no permission to
+	// trigger it, the entire call is aborted. Otherwise, the call is NOT
+	// transactional.
+	EmitTriggers(c context.Context, perJob map[string][]*internal.Trigger) error
 }
 
 // EngineInternal is a variant of engine API that skips ACL checks.
@@ -483,6 +495,46 @@ func (e *engineImpl) ForceInvocation(c context.Context, jobID string) (FutureInv
 	}
 
 	return future, nil
+}
+
+// EmitTriggers puts one or more triggers into pending trigger queues of the
+// specified jobs.
+//
+// Only v1 for now.
+func (e *engineImpl) EmitTriggers(c context.Context, perJob map[string][]*internal.Trigger) error {
+	// Make sure all jobs exist and the caller has necessary permissions to add
+	// triggers to their queues.
+	//
+	// TODO(vadimsh): This can be made faster with single GetMulti datastore RPC
+	// instead of a bunch of parallel Gets. But the expected number of perJob
+	// items is <10, so it probably doesn't matter.
+	err := parallel.FanOutIn(func(tasks chan<- func() error) {
+		for jobID := range perJob {
+			jobID := jobID
+			tasks <- func() error {
+				if e.isV2Job(jobID) {
+					return fmt.Errorf("v2 jobs are not supported yet")
+				}
+				// TODO(vadimsh): Use TRIGGERER role instead of OWNER.
+				_, err := e.getOwnedJob(c, jobID)
+				return err
+			}
+		}
+	})
+	if err != nil {
+		if merr, _ := err.(errors.MultiError); merr != nil {
+			return merr.First() // we want to return a recognized error, e.g. ErrNoSuchJob
+		}
+		return err
+	}
+
+	return parallel.FanOutIn(func(tasks chan<- func() error) {
+		for jobID, triggers := range perJob {
+			jobID := jobID
+			triggers := triggers
+			tasks <- func() error { return e.newTriggers(c, jobID, triggers) }
+		}
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////

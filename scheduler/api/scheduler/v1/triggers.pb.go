@@ -6,11 +6,205 @@ package scheduler
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import google_protobuf1 "github.com/golang/protobuf/ptypes/struct"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// Trigger can be emitted by triggering tasks (such as Gitiles tasks) or through
+// API and consumed by triggered tasks (such as Buildbucket tasks).
+type Trigger struct {
+	// Unique identifier of the trigger.
+	//
+	// It is used to deduplicate and hence provide idempotency for adding
+	// a trigger. Each job has an internal buffer with IDs of recent triggers it
+	// received. Triggers that have already been seen are silently skipped. The
+	// buffer is periodically cleaned, so old IDs can be potentially reused,
+	// though you should not rely on that.
+	//
+	// Must be provided by whoever emits the trigger. Can be anything at all, as
+	// long as it is unique.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Optional user friendly name for this trigger that shows up in Scheduler UI.
+	Title string `protobuf:"bytes,2,opt,name=title" json:"title,omitempty"`
+	// Optional HTTP link to display in Scheduler UI.
+	Url string `protobuf:"bytes,3,opt,name=url" json:"url,omitempty"`
+	// Actual trigger data. Its type defines how the trigger will be processed
+	// by the Scheduler, see corresponding protos.
+	//
+	// Types that are valid to be assigned to Payload:
+	//	*Trigger_Noop
+	//	*Trigger_Gitiles
+	//	*Trigger_Buildbucket
+	Payload isTrigger_Payload `protobuf_oneof:"payload"`
+}
+
+func (m *Trigger) Reset()                    { *m = Trigger{} }
+func (m *Trigger) String() string            { return proto.CompactTextString(m) }
+func (*Trigger) ProtoMessage()               {}
+func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+
+type isTrigger_Payload interface {
+	isTrigger_Payload()
+}
+
+type Trigger_Noop struct {
+	Noop *NoopTrigger `protobuf:"bytes,50,opt,name=noop,oneof"`
+}
+type Trigger_Gitiles struct {
+	Gitiles *GitilesTrigger `protobuf:"bytes,51,opt,name=gitiles,oneof"`
+}
+type Trigger_Buildbucket struct {
+	Buildbucket *BuildbucketTrigger `protobuf:"bytes,52,opt,name=buildbucket,oneof"`
+}
+
+func (*Trigger_Noop) isTrigger_Payload()        {}
+func (*Trigger_Gitiles) isTrigger_Payload()     {}
+func (*Trigger_Buildbucket) isTrigger_Payload() {}
+
+func (m *Trigger) GetPayload() isTrigger_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *Trigger) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Trigger) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+func (m *Trigger) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *Trigger) GetNoop() *NoopTrigger {
+	if x, ok := m.GetPayload().(*Trigger_Noop); ok {
+		return x.Noop
+	}
+	return nil
+}
+
+func (m *Trigger) GetGitiles() *GitilesTrigger {
+	if x, ok := m.GetPayload().(*Trigger_Gitiles); ok {
+		return x.Gitiles
+	}
+	return nil
+}
+
+func (m *Trigger) GetBuildbucket() *BuildbucketTrigger {
+	if x, ok := m.GetPayload().(*Trigger_Buildbucket); ok {
+		return x.Buildbucket
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Trigger) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Trigger_OneofMarshaler, _Trigger_OneofUnmarshaler, _Trigger_OneofSizer, []interface{}{
+		(*Trigger_Noop)(nil),
+		(*Trigger_Gitiles)(nil),
+		(*Trigger_Buildbucket)(nil),
+	}
+}
+
+func _Trigger_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Trigger)
+	// payload
+	switch x := m.Payload.(type) {
+	case *Trigger_Noop:
+		b.EncodeVarint(50<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Noop); err != nil {
+			return err
+		}
+	case *Trigger_Gitiles:
+		b.EncodeVarint(51<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Gitiles); err != nil {
+			return err
+		}
+	case *Trigger_Buildbucket:
+		b.EncodeVarint(52<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Buildbucket); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Trigger.Payload has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Trigger_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Trigger)
+	switch tag {
+	case 50: // payload.noop
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(NoopTrigger)
+		err := b.DecodeMessage(msg)
+		m.Payload = &Trigger_Noop{msg}
+		return true, err
+	case 51: // payload.gitiles
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(GitilesTrigger)
+		err := b.DecodeMessage(msg)
+		m.Payload = &Trigger_Gitiles{msg}
+		return true, err
+	case 52: // payload.buildbucket
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(BuildbucketTrigger)
+		err := b.DecodeMessage(msg)
+		m.Payload = &Trigger_Buildbucket{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Trigger_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Trigger)
+	// payload
+	switch x := m.Payload.(type) {
+	case *Trigger_Noop:
+		s := proto.Size(x.Noop)
+		n += proto.SizeVarint(50<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Trigger_Gitiles:
+		s := proto.Size(x.Gitiles)
+		n += proto.SizeVarint(51<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Trigger_Buildbucket:
+		s := proto.Size(x.Buildbucket)
+		n += proto.SizeVarint(52<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
 
 // NoopTrigger is used by Scheduler integration tests to represent test
 // triggers.
@@ -21,7 +215,7 @@ type NoopTrigger struct {
 func (m *NoopTrigger) Reset()                    { *m = NoopTrigger{} }
 func (m *NoopTrigger) String() string            { return proto.CompactTextString(m) }
 func (*NoopTrigger) ProtoMessage()               {}
-func (*NoopTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*NoopTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 func (m *NoopTrigger) GetData() string {
 	if m != nil {
@@ -43,7 +237,7 @@ type GitilesTrigger struct {
 func (m *GitilesTrigger) Reset()                    { *m = GitilesTrigger{} }
 func (m *GitilesTrigger) String() string            { return proto.CompactTextString(m) }
 func (*GitilesTrigger) ProtoMessage()               {}
-func (*GitilesTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*GitilesTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 func (m *GitilesTrigger) GetRepo() string {
 	if m != nil {
@@ -66,9 +260,43 @@ func (m *GitilesTrigger) GetRevision() string {
 	return ""
 }
 
+// BuildbucketTrigger is emitted by sources that request a build and consumed by
+// Buildbucket tasks.
+//
+// The trigger contains information to pass to the new Buildbucket build.
+//
+// Note: what builds to trigger is specified separately, either in the job
+// configuration (when one job triggers another) or via the API request
+// parameters (when triggering through public API).
+type BuildbucketTrigger struct {
+	Properties *google_protobuf1.Struct `protobuf:"bytes,1,opt,name=properties" json:"properties,omitempty"`
+	Tags       []string                 `protobuf:"bytes,2,rep,name=tags" json:"tags,omitempty"`
+}
+
+func (m *BuildbucketTrigger) Reset()                    { *m = BuildbucketTrigger{} }
+func (m *BuildbucketTrigger) String() string            { return proto.CompactTextString(m) }
+func (*BuildbucketTrigger) ProtoMessage()               {}
+func (*BuildbucketTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+
+func (m *BuildbucketTrigger) GetProperties() *google_protobuf1.Struct {
+	if m != nil {
+		return m.Properties
+	}
+	return nil
+}
+
+func (m *BuildbucketTrigger) GetTags() []string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
+
 func init() {
+	proto.RegisterType((*Trigger)(nil), "scheduler.Trigger")
 	proto.RegisterType((*NoopTrigger)(nil), "scheduler.NoopTrigger")
 	proto.RegisterType((*GitilesTrigger)(nil), "scheduler.GitilesTrigger")
+	proto.RegisterType((*BuildbucketTrigger)(nil), "scheduler.BuildbucketTrigger")
 }
 
 func init() {
@@ -76,16 +304,27 @@ func init() {
 }
 
 var fileDescriptor1 = []byte{
-	// 166 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8e, 0x31, 0xef, 0x82, 0x30,
-	0x10, 0x47, 0xc3, 0x9f, 0x7f, 0x8c, 0x9c, 0x89, 0x31, 0x9d, 0x88, 0x93, 0x32, 0x39, 0xd1, 0x18,
-	0x77, 0x57, 0x37, 0x07, 0xe2, 0x17, 0x40, 0x38, 0xcb, 0x25, 0xe0, 0x35, 0xd7, 0x96, 0xcf, 0x6f,
-	0xa8, 0x91, 0xb0, 0xbd, 0xdf, 0xbb, 0x37, 0x1c, 0x5c, 0x0d, 0x97, 0x4d, 0x27, 0x3c, 0x50, 0x18,
-	0x4a, 0x16, 0xa3, 0xfb, 0xd0, 0x90, 0x76, 0x4d, 0x87, 0x6d, 0xe8, 0x51, 0x74, 0x6d, 0x97, 0x6b,
-	0x3c, 0x6b, 0x2f, 0x64, 0x0c, 0x8a, 0x2b, 0xad, 0xb0, 0x67, 0x95, 0xcd, 0xc7, 0xe2, 0x08, 0x9b,
-	0x3b, 0xb3, 0x7d, 0x7c, 0x03, 0xa5, 0xe0, 0xbf, 0xad, 0x7d, 0x9d, 0x27, 0x87, 0xe4, 0x94, 0x55,
-	0x91, 0x8b, 0x0a, 0xb6, 0x37, 0xf2, 0xd4, 0xa3, 0x5b, 0x54, 0x82, 0x96, 0x7f, 0xd5, 0xc4, 0x6a,
-	0x07, 0xa9, 0xe0, 0x2b, 0xff, 0x8b, 0x6a, 0x42, 0xb5, 0x87, 0xb5, 0xe0, 0x48, 0x8e, 0xf8, 0x9d,
-	0xa7, 0x51, 0xcf, 0xfb, 0xb9, 0x8a, 0x8f, 0x5c, 0x3e, 0x01, 0x00, 0x00, 0xff, 0xff, 0x4f, 0x39,
-	0x03, 0x51, 0xca, 0x00, 0x00, 0x00,
+	// 341 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x91, 0x4d, 0x4e, 0xc3, 0x30,
+	0x10, 0x85, 0x49, 0x5a, 0x28, 0x9d, 0x48, 0x15, 0xb2, 0x10, 0x84, 0x0a, 0xa4, 0x92, 0x55, 0x17,
+	0xc8, 0x11, 0x2d, 0x88, 0x1d, 0x12, 0xdd, 0xc0, 0x8a, 0x45, 0xe0, 0x02, 0xf9, 0x71, 0x5d, 0x0b,
+	0xb7, 0x63, 0x39, 0x76, 0x25, 0xee, 0xcd, 0x01, 0x90, 0x9d, 0xb4, 0x0d, 0x62, 0xf7, 0xc6, 0xf3,
+	0xbe, 0xc9, 0xcb, 0x0c, 0x3c, 0x73, 0xa4, 0xe5, 0x4a, 0xe3, 0x5a, 0xd8, 0x35, 0x45, 0xcd, 0x53,
+	0x69, 0x4b, 0x91, 0xd6, 0xe5, 0x8a, 0x55, 0x56, 0x32, 0x9d, 0xe6, 0xaa, 0x5b, 0x6d, 0xef, 0x53,
+	0xa3, 0x05, 0xe7, 0x4c, 0xd7, 0x54, 0x69, 0x34, 0x48, 0x86, 0xfb, 0xe6, 0xf8, 0x9a, 0x23, 0x72,
+	0xc9, 0x52, 0xdf, 0x28, 0xec, 0x32, 0xad, 0x8d, 0xb6, 0xa5, 0x69, 0x8c, 0xc9, 0x4f, 0x00, 0x83,
+	0xcf, 0x86, 0x25, 0x23, 0x08, 0x45, 0x15, 0x07, 0x93, 0x60, 0x3a, 0xcc, 0x42, 0x51, 0x91, 0x73,
+	0x38, 0x36, 0xc2, 0x48, 0x16, 0x87, 0xfe, 0xa9, 0x29, 0xc8, 0x19, 0xf4, 0xac, 0x96, 0x71, 0xcf,
+	0xbf, 0x39, 0x49, 0xee, 0xa0, 0xbf, 0x41, 0x54, 0xf1, 0x6c, 0x12, 0x4c, 0xa3, 0xd9, 0x05, 0xdd,
+	0x7f, 0x9b, 0xbe, 0x23, 0xaa, 0x76, 0xfa, 0xdb, 0x51, 0xe6, 0x5d, 0xe4, 0x11, 0x06, 0x5c, 0x18,
+	0x21, 0x59, 0x1d, 0xcf, 0x3d, 0x70, 0xd5, 0x01, 0x5e, 0x9b, 0xce, 0x81, 0xd9, 0x79, 0xc9, 0x0b,
+	0x44, 0x85, 0x15, 0xb2, 0x2a, 0x6c, 0xf9, 0xc5, 0x4c, 0xfc, 0xe0, 0xd1, 0x9b, 0x0e, 0xba, 0x38,
+	0x74, 0x0f, 0x78, 0x97, 0x59, 0x0c, 0x61, 0xa0, 0xf2, 0x6f, 0x89, 0x79, 0x95, 0xdc, 0x42, 0xd4,
+	0xc9, 0x46, 0x08, 0xf4, 0xab, 0xdc, 0xe4, 0xed, 0xbf, 0x7b, 0x9d, 0x64, 0x30, 0xfa, 0x9b, 0xc6,
+	0xb9, 0x34, 0x53, 0xb8, 0x73, 0x39, 0xed, 0xb6, 0xa1, 0xd9, 0xb2, 0xdd, 0x90, 0x93, 0x64, 0x0c,
+	0xa7, 0x9a, 0x6d, 0x45, 0x2d, 0x70, 0xd3, 0x2e, 0x69, 0x5f, 0x27, 0x39, 0x90, 0xff, 0x31, 0xc9,
+	0x13, 0x80, 0xd2, 0xa8, 0x98, 0x36, 0x82, 0xd5, 0x7e, 0x7a, 0x34, 0xbb, 0xa4, 0xcd, 0xd9, 0xe8,
+	0xee, 0x6c, 0xf4, 0xc3, 0x9f, 0x2d, 0xeb, 0x58, 0x5d, 0x20, 0x93, 0xf3, 0x3a, 0x0e, 0x27, 0x3d,
+	0x17, 0xc8, 0xe9, 0xe2, 0xc4, 0x03, 0xf3, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x09, 0x8c, 0x7c,
+	0xb2, 0x42, 0x02, 0x00, 0x00,
 }

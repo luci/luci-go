@@ -4,9 +4,11 @@
 
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 package scheduler;
+
+import "google/protobuf/empty.proto";
+import "go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto";
+
 
 // Scheduler exposes public API of the Scheduler service.
 service Scheduler {
@@ -48,6 +50,26 @@ service Scheduler {
   //
   // Requires OWNER Job permission.
   rpc AbortInvocation(InvocationRef) returns (google.protobuf.Empty);
+
+  // EmitTriggers puts one or more triggers into pending trigger queues of the
+  // specified jobs.
+  //
+  // This eventually causes jobs to start executing. The scheduler may merge
+  // multiple triggers into one job execution, based on how the job is
+  // configured.
+  //
+  // If at least one job doesn't exist or the caller has no permission to
+  // trigger it, the entire request is aborted. Otherwise, the request is NOT
+  // transactional: if it fails midway (e.g by returning internal server error),
+  // some triggers may have been submitted and some may not. It is safe to retry
+  // the call, supplying the same trigger IDs. Triggers with the same IDs will
+  // be deduplicated. See Trigger message for more details.
+  //
+  // Requires OWNER Job permission.
+  //
+  // TODO(vadimsh): add new TRIGGERER role.
+  // TODO(vadimsh): deduplication doesn't work in v1.
+  rpc EmitTriggers(EmitTriggersRequest) returns (google.protobuf.Empty);
 }
 
 message JobsRequest {
@@ -73,6 +95,14 @@ message InvocationsRequest {
 message InvocationsReply {
   repeated Invocation invocations = 1;
   string next_cursor = 2;
+}
+
+message EmitTriggersRequest {
+  message Batch {
+    Trigger trigger = 1;
+    repeated JobRef jobs = 2;
+  }
+  repeated Batch batches = 1;
 }
 
 // JobRef uniquely identifies a job.

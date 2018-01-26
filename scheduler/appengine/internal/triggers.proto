@@ -24,6 +24,10 @@ import "go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto";
 
 // Trigger can be emitted by triggering tasks (such as Gitiles tasks) and
 // consumed by triggered tasks (such as Buildbucket tasks).
+//
+// This message is an internal representation of the trigger, as stored in
+// the datastore. See also triggers.Trigger for public representation used in
+// API calls.
 message Trigger {
   // Unique in time identifier of the trigger.
   //
@@ -60,6 +64,7 @@ message Trigger {
   oneof payload {
     scheduler.NoopTrigger noop = 50;
     scheduler.GitilesTrigger gitiles = 51;
+    scheduler.BuildbucketTrigger buildbucket = 52;
   }
 }
 
