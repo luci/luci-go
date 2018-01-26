@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e57ab46_90b5ccfc",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T22:39:51Z",
+      "side": 1,
+      "message": "I still think that this name could be improved, but not necessarily in this CL",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 13
+      },
+      "revId": "ebd08eb02428edb96c07b128aa5a44d84ddd541d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

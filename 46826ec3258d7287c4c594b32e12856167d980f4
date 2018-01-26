@@ -192,6 +192,24 @@
       "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03223907_e5829eb0",
+        "filename": "machine-db/appengine/rpc/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T22:39:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96c6eb63_0e69a90f",
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
