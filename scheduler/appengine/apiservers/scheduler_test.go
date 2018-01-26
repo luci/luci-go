@@ -429,6 +429,10 @@ func (f *fakeEngine) AbortJob(c context.Context, jobID string) error {
 	return f.abortJob(jobID)
 }
 
+func (f *fakeEngine) EmitTriggers(c context.Context, perJob map[string][]*internal.Trigger) error {
+	return nil
+}
+
 func (f *fakeEngine) GetVisibleInvocation(c context.Context, jobID string, invID int64) (*engine.Invocation, error) {
 	panic("not implemented")
 }
