@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cfffcd93_194e42fe",
+        "filename": "machine-db/client/cli/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T22:13:10Z",
+      "side": 1,
+      "message": "\u003ewhy not a simpler int flag and convert to int32 here\n\nBecause then that\u0027s two places to catch flag errors. On a 64-bit machine a user may pass something that doesn\u0027t fit into an int32, and if we use int then we won\u0027t catch it at flag parsing time, we\u0027ll catch it when trying to run the command.\n\n\u003eIf we have XXXVar functions\n\nI don\u0027t fully understand how they integrate with subcommands (I haven\u0027t really looked though). We\u0027re not calling flags.IntVar which we could simply substitute with common.CustomVar, we\u0027re calling subcommands.CommandRunBase.Flags.IntVar. How do we install our custom flags from luci-go into subcommands.CommandRunBase? Would we have to create our own LuciCommandRunBase that supports our custom flags?\n\nRefactoring our flags seems like a (small) project unto itself.",
+      "parentUuid": "0de7ef1d_e167d8dd",
+      "range": {
+        "startLine": 43,
+        "startChar": 18,
+        "endLine": 43,
+        "endChar": 41
+      },
+      "revId": "8a3df62e98490c591288f2f122a118d7cc140993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "42c4ac86_9731419e",
         "filename": "machine-db/client/cli/physical_hosts.go",
         "patchSetId": 1
