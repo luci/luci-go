@@ -148,6 +148,10 @@ func (s SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTri
 	// This is needed to make EmitTriggers idempotent (when it emits a batch).
 	now := clock.Now(ctx)
 	if in.Timestamp != 0 {
+		if in.Timestamp < 0 || in.Timestamp > (1<<53) {
+			return nil, status.Errorf(codes.InvalidArgument,
+				"the provided timestamp doesn't look like a valid number of microseconds since epoch")
+		}
 		ts := time.Unix(0, in.Timestamp*1000)
 		if ts.After(now.Add(15 * time.Minute)) {
 			return nil, status.Errorf(codes.InvalidArgument,
