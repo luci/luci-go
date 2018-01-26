@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0de7ef1d_e167d8dd",
+        "filename": "machine-db/client/cli/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T19:49:49Z",
+      "side": 1,
+      "message": "int32(c.vmSlots)\n\nstepping back: why not a simpler int flag and convert to int32 here?\n\ni think we either should use int flag, or add a _function_ (not type):\n\n  flag.Int32Var(\u0026c.host.VmSlots, .....)\n\nwhich leads me to the next thought:\n\ni suspect that those flag packages could be simpler. If we have XXXVar functions instead of `type XXX YYY`, then\n- we have 1 exported symbol per type in our flag package, which 4 times less\n- clients of our flag package can use more native types (e.g. []string), as opposed stringlistflag.Flag\n\ni know you didn\u0027t design our flag packages, but could you simplify all this?",
+      "range": {
+        "startLine": 43,
+        "startChar": 18,
+        "endLine": 43,
+        "endChar": 41
+      },
+      "revId": "8a3df62e98490c591288f2f122a118d7cc140993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42c4ac86_9731419e",
+        "filename": "machine-db/client/cli/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T19:49:49Z",
+      "side": 1,
+      "message": "with the suggestion above, you\u0027d be able to reuse ListPhysicalHostRequest in GetPhysicalHostCmd and bind existing variables into flags, which is what you do in createXXX cmds",
+      "revId": "8a3df62e98490c591288f2f122a118d7cc140993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
