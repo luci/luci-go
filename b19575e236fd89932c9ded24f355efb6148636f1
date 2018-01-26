@@ -16,6 +16,24 @@
       "revId": "b19575e236fd89932c9ded24f355efb6148636f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4c05573_7c1789ed",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T20:10:12Z",
+      "side": 1,
+      "message": "Yes. I looked at the existing recipes, they have a ton of \"configuration\" already. Moving it outside into luci-scheduler.cfg config would be complicated.",
+      "parentUuid": "0f321adc_453fc197",
+      "revId": "b19575e236fd89932c9ded24f355efb6148636f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
