@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "76fdc29e_06daf096",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T02:56:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39b7b6e0_b8186b68",
+      "range": {
+        "startLine": 65,
+        "startChar": 25,
+        "endLine": 65,
+        "endChar": 61
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "276aaa76_29adf47d",
         "filename": "scheduler/api/scheduler/v1/scheduler.proto",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "b310fb5d_451c1ed7",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T02:56:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "276aaa76_29adf47d",
+      "range": {
+        "startLine": 71,
+        "startChar": 5,
+        "endLine": 71,
+        "endChar": 10
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5656565_3b23aaac",
         "filename": "scheduler/api/scheduler/v1/scheduler.proto",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66a0e53d_8f720f15",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T02:56:43Z",
+      "side": 1,
+      "message": "We need to trigger a bunch of builders at once in existing use-cases. I guess I can simplify it a little bit by removing \u0027repeated\u0027 from triggers.",
+      "parentUuid": "a5656565_3b23aaac",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 29
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "7d08e1f4_918f37ef",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T02:56:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72a18689_f7f8341b",
+      "range": {
+        "startLine": 214,
+        "startChar": 15,
+        "endLine": 214,
+        "endChar": 25
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5289864_d937167e",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 3
@@ -137,6 +233,30 @@
       "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "270a68e2_7605d0e4",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-26T02:56:43Z",
+      "side": 1,
+      "message": "I\u0027ve been thinking maybe using https://chromium.googlesource.com/infra/luci/luci-go/+/master/grpc/grpcutil/errors.go#114",
+      "parentUuid": "a5289864_d937167e",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 20
+      },
+      "revId": "2b6364f4284a3e117351db0da37c0673b38592b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
