@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f321adc_453fc197",
+        "filename": "scheduler/api/scheduler/v1/scheduler.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T20:04:47Z",
+      "side": 1,
+      "message": "this looks like what i wanted and not what you wanted initially. Meaning, \"Linux builder\" build can specify \"Linux tester\" job ref here. Is this correct?",
+      "revId": "b19575e236fd89932c9ded24f355efb6148636f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
