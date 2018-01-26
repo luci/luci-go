@@ -15,14 +15,20 @@
 package apiservers
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/presentation"
 )
 
@@ -113,40 +119,67 @@ func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invoc
 //// Actions.
 
 func (s SchedulerServer) PauseJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
-	return runAction(ctx, in, func() error {
+	return runAction(ctx, func() error {
 		return s.Engine.PauseJob(ctx, getJobId(in))
 	})
 }
 
 func (s SchedulerServer) ResumeJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
-	return runAction(ctx, in, func() error {
+	return runAction(ctx, func() error {
 		return s.Engine.ResumeJob(ctx, getJobId(in))
 	})
 }
 
 func (s SchedulerServer) AbortJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
-	return runAction(ctx, in, func() error {
+	return runAction(ctx, func() error {
 		return s.Engine.AbortJob(ctx, getJobId(in))
 	})
 }
 
-func (s SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.InvocationRef) (
-	*empty.Empty, error) {
-	return runAction(ctx, in.GetJobRef(), func() error {
+func (s SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.InvocationRef) (*empty.Empty, error) {
+	return runAction(ctx, func() error {
 		return s.Engine.AbortInvocation(ctx, getJobId(in.GetJobRef()), in.GetInvocationId())
+	})
+}
+
+func (s SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*empty.Empty, error) {
+	now := clock.Now(ctx)
+
+	// Build a mapping "jobID => list of triggers", convert public representation
+	// of a trigger into internal one.
+	triggersPerJob := map[string][]*internal.Trigger{}
+	index := 0 // just for error messages
+	for _, batch := range in.Batches {
+		triggers := make([]*internal.Trigger, 0, len(batch.Triggers))
+		for _, tr := range batch.Triggers {
+			index++
+			t, err := internalTrigger(tr, now)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "bad trigger #%d (%q) - %s", index, tr.Id, err)
+			}
+			triggers = append(triggers, t)
+		}
+		for _, jobRef := range batch.Jobs {
+			jobId := getJobId(jobRef)
+			triggersPerJob[jobId] = append(triggersPerJob[jobId], triggers...)
+		}
+	}
+
+	return runAction(ctx, func() error {
+		return s.Engine.EmitTriggers(ctx, triggersPerJob)
 	})
 }
 
 //// Private helpers.
 
-func runAction(ctx context.Context, jobRef *scheduler.JobRef, action func() error) (*empty.Empty, error) {
+func runAction(ctx context.Context, action func() error) (*empty.Empty, error) {
 	switch err := action(); {
 	case err == nil:
 		return &empty.Empty{}, nil
 	case err == engine.ErrNoSuchJob:
 		return nil, status.Errorf(codes.NotFound, "no such job or no READ permission")
 	case err == engine.ErrNoOwnerPermission:
-		return nil, status.Errorf(codes.PermissionDenied, "no OWNER permission")
+		return nil, status.Errorf(codes.PermissionDenied, "no permission to execute the action")
 	case err == engine.ErrNoSuchInvocation:
 		return nil, status.Errorf(codes.NotFound, "no such invocation")
 	default:
@@ -156,4 +189,30 @@ func runAction(ctx context.Context, jobRef *scheduler.JobRef, action func() erro
 
 func getJobId(jobRef *scheduler.JobRef) string {
 	return jobRef.GetProject() + "/" + jobRef.GetJob()
+}
+
+func internalTrigger(t *scheduler.Trigger, now time.Time) (*internal.Trigger, error) {
+	if t.Id == "" {
+		return nil, fmt.Errorf("trigger id is required")
+	}
+	out := &internal.Trigger{
+		Id:      t.Id,
+		Created: google.NewTimestamp(now),
+		Title:   t.Title,
+		Url:     t.Url,
+	}
+	if t.Payload != nil {
+		// Ugh...
+		switch v := t.Payload.(type) {
+		case *scheduler.Trigger_Noop:
+			out.Payload = &internal.Trigger_Noop{Noop: v.Noop}
+		case *scheduler.Trigger_Gitiles:
+			out.Payload = &internal.Trigger_Gitiles{Gitiles: v.Gitiles}
+		case *scheduler.Trigger_Buildbucket:
+			out.Payload = &internal.Trigger_Buildbucket{Buildbucket: v.Buildbucket}
+		default:
+			return nil, fmt.Errorf("unrecognized trigger payload")
+		}
+	}
+	return out, nil
 }
