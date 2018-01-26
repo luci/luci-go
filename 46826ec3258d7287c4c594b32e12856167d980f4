@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b3d14883_43e2c923",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T22:37:14Z",
+      "side": 1,
+      "message": "Obsolete",
+      "parentUuid": "03bb0cb3_77e64354",
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "808f60ce_017a0b21",
         "filename": "machine-db/api/common/v1/prefixes.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7386e88_bfb693c8",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T22:37:14Z",
+      "side": 1,
+      "message": "Obsolete",
+      "parentUuid": "808f60ce_017a0b21",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 8
+      },
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "9f5faed4_c25aa87c",
+        "filename": "machine-db/api/crimson/v1/datacenters.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T22:37:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95951250_87cd2d6e",
+      "range": {
+        "startLine": 22,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 8
+      },
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0aaed211_dde793cf",
         "filename": "machine-db/appengine/rpc/datacenters.go",
         "patchSetId": 1
@@ -85,6 +151,30 @@
       "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a57839ed_0c8a5cf6",
+        "filename": "machine-db/appengine/rpc/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T22:37:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0aaed211_dde793cf",
+      "range": {
+        "startLine": 53,
+        "startChar": 12,
+        "endLine": 53,
+        "endChar": 17
+      },
+      "revId": "46826ec3258d7287c4c594b32e12856167d980f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
