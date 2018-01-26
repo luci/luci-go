@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0cbcf258_5cff1d0d",
+        "filename": "machine-db/appengine/database/setup/migrations/001_initialize_datacenters.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-26T00:29:52Z",
+      "side": 0,
+      "message": "In theory we should add a new up migration which first drops the varchar column then adds the int column, but in practice this is fine because nobody is using this service. This simplifies deployment of a new version because we skip adding the varchar state column that will never be used. It also simplifies the new down migration because we don\u0027t have to restore a useless varchar state column.",
+      "revId": "2337be80bf794c93576604258f0c8d1e70eade4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
