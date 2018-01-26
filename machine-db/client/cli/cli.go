@@ -106,6 +106,10 @@ func New(params *Parameters) *cli.Application {
 			addMachineCmd(),
 			deleteMachineCmd(),
 			getMachinesCmd(),
+
+			// Physical hosts.
+			addPhysicalHostCmd(),
+			getPhysicalHostsCmd(),
 		},
 	}
 }
