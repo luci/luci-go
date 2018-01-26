@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab0a13c8_dacaa6ef",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "nit: you don\u0027t have to start proto comments with the symbol name\nhttps://cloud.google.com/apis/design/documentation#resource_description\nsuggests something else",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 25
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2a0b10e_d106667f",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "incorrect",
+      "range": {
+        "startLine": 41,
+        "startChar": 7,
+        "endLine": 41,
+        "endChar": 15
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64effb95_110fd22c",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "not necessarily a part of this CL, but it seems that we could simplify host deletion Go code if we used CASCADE here",
+      "range": {
+        "startLine": 28,
+        "startChar": 63,
+        "endLine": 28,
+        "endChar": 71
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc5755aa_808da675",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "used only once, so no need to prepare it. Just call tx.ExecuteContext\n\nplease check other such calls throughout machine-db codebase",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 5
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f39c9b99_67c3dddf",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "please put each value on a separate line",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 121
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acc671b9_f67e4ada",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "e.g. here you don\u0027t prepare a statement here",
+      "range": {
+        "startLine": 141,
+        "startChar": 17,
+        "endLine": 141,
+        "endChar": 29
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "28122030_3edb55df",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "nit: let\u0027s use hv/hp for virtual/physical",
+      "range": {
+        "startLine": 142,
+        "startChar": 9,
+        "endLine": 142,
+        "endChar": 11
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06006b62_2c013816",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "h1.vlan_id",
+      "range": {
+        "startLine": 142,
+        "startChar": 18,
+        "endLine": 142,
+        "endChar": 22
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fadc7b3_224f8c4b",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-26T21:08:37Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 143,
+        "startChar": 61,
+        "endLine": 143,
+        "endChar": 69
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
