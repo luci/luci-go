@@ -16,12 +16,15 @@ package ui
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
@@ -183,6 +186,8 @@ type invocation struct {
 	RevisionURL      string
 	Definition       string
 	TriggeredBy      string
+	Properties       string
+	Tags             []string
 	IncomingTriggers []trigger
 	OutgoingTriggers []trigger
 	Started          string
@@ -251,6 +256,8 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		RevisionURL:      i.RevisionURL,
 		Definition:       taskToText(i.Task),
 		TriggeredBy:      triggeredBy,
+		Properties:       makeJSONFromProtoStruct(i.PropertiesRaw),
+		Tags:             i.Tags,
 		IncomingTriggers: makeTriggerList(j.now, i.IncomingTriggers),
 		OutgoingTriggers: makeTriggerList(j.now, i.OutgoingTriggers),
 		Started:          humanize.RelTime(i.Started, j.now, "ago", "from now"),
@@ -296,4 +303,43 @@ func makeTriggerList(now time.Time, getter func() ([]*internal.Trigger, error)) 
 		out[i] = makeTrigger(t, now)
 	}
 	return out
+}
+
+// makeJSONFromProtoStruct reformats serialized protobuf.Struct as JSON.
+//
+// If the blob is empty, returns empty string. If the blob is not valid proto
+// message, returns a string with error message instead. This is exclusively for
+// UI after all.
+func makeJSONFromProtoStruct(blob []byte) string {
+	if len(blob) == 0 {
+		return ""
+	}
+
+	// Binary proto => internal representation.
+	obj := structpb.Struct{}
+	if err := proto.Unmarshal(blob, &obj); err != nil {
+		return fmt.Sprintf("<not a valid protobuf.Struct - %s>", err)
+	}
+
+	// Internal representation => JSON. But JSONPB produces very ugly JSON when
+	// using Ident. So we are not done yet...
+	ugly, err := (&jsonpb.Marshaler{}).MarshalToString(&obj)
+	if err != nil {
+		return fmt.Sprintf("<failed to marshal to JSON - %s>", err)
+	}
+
+	// JSON => internal representation 2, sigh. Because there's no existing
+	// structpb.Struct => map converter and writing one just for the sake of
+	// JSON pretty printing is kind of annoying.
+	var obj2 map[string]interface{}
+	if err := json.Unmarshal([]byte(ugly), &obj2); err != nil {
+		return fmt.Sprintf("<internal error when unmarshaling JSON - %s>", err)
+	}
+
+	// Internal representation 2 => pretty (well, prettier) JSON.
+	pretty, err := json.MarshalIndent(obj2, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("<internal error when marshaling JSON - %s>", err)
+	}
+	return string(pretty)
 }
