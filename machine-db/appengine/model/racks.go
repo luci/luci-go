@@ -50,7 +50,7 @@ type RacksTable struct {
 func (t *RacksTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT id, name, description, datacenter_id
+		SELECT id, name, description, state, datacenter_id
 		FROM racks
 	`)
 	if err != nil {
@@ -59,7 +59,7 @@ func (t *RacksTable) fetch(c context.Context) error {
 	defer rows.Close()
 	for rows.Next() {
 		rack := &Rack{}
-		if err := rows.Scan(&rack.Id, &rack.Name, &rack.Description, &rack.DatacenterId); err != nil {
+		if err := rows.Scan(&rack.Id, &rack.Name, &rack.Description, &rack.State, &rack.DatacenterId); err != nil {
 			return errors.Annotate(err, "failed to scan rack").Err()
 		}
 		t.current = append(t.current, rack)
@@ -69,7 +69,7 @@ func (t *RacksTable) fetch(c context.Context) error {
 
 // needsUpdate returns true if the given row needs to be updated to match the given config.
 func (*RacksTable) needsUpdate(row, cfg *Rack) bool {
-	return row.Description != cfg.Description || row.DatacenterId != cfg.DatacenterId
+	return row.Description != cfg.Description || row.State != cfg.State || row.DatacenterId != cfg.DatacenterId
 }
 
 // computeChanges computes the changes that need to be made to the racks in the database.
@@ -85,6 +85,7 @@ func (t *RacksTable) computeChanges(c context.Context, datacenters []*config.Dat
 				Rack: config.Rack{
 					Name:        cfg.Name,
 					Description: cfg.Description,
+					State:       cfg.State,
 				},
 				DatacenterId: id,
 			}
@@ -129,8 +130,8 @@ func (t *RacksTable) add(c context.Context) error {
 
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO racks (name, description, datacenter_id)
-		VALUES (?, ?, ?)
+		INSERT INTO racks (name, description, state, datacenter_id)
+		VALUES (?, ?, ?, ?)
 	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
@@ -140,7 +141,7 @@ func (t *RacksTable) add(c context.Context) error {
 	// Add each rack to the database, and update the slice of racks with each addition.
 	for len(t.additions) > 0 {
 		rack := t.additions[0]
-		result, err := stmt.ExecContext(c, rack.Name, rack.Description, rack.DatacenterId)
+		result, err := stmt.ExecContext(c, rack.Name, rack.Description, rack.State, rack.DatacenterId)
 		if err != nil {
 			return errors.Annotate(err, "failed to add rack %q", rack.Name).Err()
 		}
@@ -209,7 +210,7 @@ func (t *RacksTable) update(c context.Context) error {
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
 		UPDATE racks
-		SET description = ?, datacenter_id = ?
+		SET description = ?, state = ?, datacenter_id = ?
 		WHERE id = ?
 	`)
 	if err != nil {
@@ -224,13 +225,14 @@ func (t *RacksTable) update(c context.Context) error {
 		for _, rack := range t.current {
 			if u, ok := updated[rack.Id]; ok {
 				rack.Description = u.Description
+				rack.State = u.State
 				rack.DatacenterId = u.DatacenterId
 			}
 		}
 	}()
 	for len(t.updates) > 0 {
 		rack := t.updates[0]
-		if _, err := stmt.ExecContext(c, rack.Description, rack.DatacenterId, rack.Id); err != nil {
+		if _, err := stmt.ExecContext(c, rack.Description, rack.State, rack.DatacenterId, rack.Id); err != nil {
 			return errors.Annotate(err, "failed to update rack %q", rack.Name).Err()
 		}
 		updated[rack.Id] = rack

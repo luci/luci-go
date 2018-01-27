@@ -39,8 +39,8 @@ It has these top-level messages:
 	ListPlatformsRequest
 	Platform
 	ListPlatformsResponse
-	ListRacksRequest
 	Rack
+	ListRacksRequest
 	ListRacksResponse
 	ListSwitchesRequest
 	Switch
