@@ -30,18 +30,41 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// GrantsByRole can answer questions who can READ and who OWNS the task.
+// Role allows certain actions on a Job or a Trigger.
+type Role string
+
+const (
+	// Reader role allows listing invocations and config of a job/trigger.
+	Reader = Role("READER")
+
+	// Triggerer role allows sending triggers to a job/trigger.
+	// Triggerer does NOT provide reader access, which should be granted
+	// separately if desired.
+	Triggerer = Role("TRIGGERER")
+
+	// Owner role provides full control of a job/trigger.
+	Owner = Role("OWNER")
+)
+
+// GrantsByRole can answer questions who can READ, TRIGGER, or who OWNs the task.
 type GrantsByRole struct {
-	Owners  []string `gae:",noindex"`
-	Readers []string `gae:",noindex"`
+	Owners     []string `gae:",noindex"`
+	Triggerers []string `gae:",noindex"`
+	Readers    []string `gae:",noindex"`
 }
 
-func (g *GrantsByRole) IsOwner(c context.Context) (bool, error) {
-	return hasGrant(c, g.Owners, groupsAdministrators)
-}
-
-func (g *GrantsByRole) IsReader(c context.Context) (bool, error) {
-	return hasGrant(c, g.Owners, g.Readers, groupsAdministrators)
+// CallerHasRole does what it says and returns only transient errors.
+func (g *GrantsByRole) CallerHasRole(c context.Context, role Role) (bool, error) {
+	switch role {
+	case Owner:
+		return hasGrant(c, g.Owners, groupsAdministrators)
+	case Triggerer:
+		return hasGrant(c, g.Owners, g.Triggerers, groupsAdministrators)
+	case Reader:
+		return hasGrant(c, g.Owners, g.Readers, groupsAdministrators)
+	default:
+		panic(errors.New("unknown role, bug in code"))
+	}
 }
 
 func (g *GrantsByRole) Equal(o *GrantsByRole) bool {
@@ -56,17 +79,17 @@ func (g *GrantsByRole) Equal(o *GrantsByRole) bool {
 		}
 		return true
 	}
-	return eqSlice(g.Owners, o.Owners) && eqSlice(g.Readers, o.Readers)
+	return eqSlice(g.Owners, o.Owners) && eqSlice(g.Triggerers, o.Triggerers) && eqSlice(g.Readers, o.Readers)
 }
 
-// AclSets are parsed and indexed `AclSet` of a project.
-type AclSets map[string][]*messages.Acl
+// Sets are parsed and indexed `AclSet` of a project.
+type Sets map[string][]*messages.Acl
 
-// ValidateACLSets validates list of AclSet of a project and returns AclSets.
+// ValidateACLSets validates list of AclSet of a project and returns Sets.
 //
 // Errors are returned via validation.Context.
-func ValidateACLSets(ctx *validation.Context, sets []*messages.AclSet) AclSets {
-	as := make(AclSets, len(sets))
+func ValidateACLSets(ctx *validation.Context, sets []*messages.AclSet) Sets {
+	as := make(Sets, len(sets))
 	reportedDups := stringset.New(len(sets))
 	for _, s := range sets {
 		_, isDup := as[s.Name]
@@ -98,7 +121,7 @@ func ValidateACLSets(ctx *validation.Context, sets []*messages.AclSet) AclSets {
 // ValidateTaskACLs validates task's ACLs and returns TaskAcls.
 //
 // Errors are returned via validation.Context.
-func ValidateTaskACLs(ctx *validation.Context, pSets AclSets, tSets []string, tAcls []*messages.Acl) *GrantsByRole {
+func ValidateTaskACLs(ctx *validation.Context, pSets Sets, tSets []string, tAcls []*messages.Acl) *GrantsByRole {
 	grantsLists := make([][]*messages.Acl, 0, 1+len(tSets))
 	ctx.Enter("acls")
 	validateGrants(ctx, tAcls)
@@ -114,14 +137,11 @@ func ValidateTaskACLs(ctx *validation.Context, pSets AclSets, tSets []string, tA
 	}
 	ctx.Exit()
 	mg := mergeGrants(grantsLists...)
-	if n := len(mg.Owners) + len(mg.Readers); n > maxGrantsPerJob {
+	if n := len(mg.Owners) + len(mg.Readers) + len(mg.Triggerers); n > maxGrantsPerJob {
 		ctx.Errorf("Job or Trigger can have at most %d acls, but %d given", maxGrantsPerJob, n)
 	}
 	if len(mg.Owners) == 0 {
 		ctx.Errorf("Job or Trigger must have OWNER acl set")
-	}
-	if len(mg.Readers) == 0 {
-		ctx.Errorf("Job or Trigger must have READER acl set")
 	}
 	return mg
 }
@@ -143,7 +163,7 @@ var (
 func validateGrants(ctx *validation.Context, gs []*messages.Acl) {
 	for _, g := range gs {
 		switch {
-		case g.GetRole() != messages.Acl_OWNER && g.GetRole() != messages.Acl_READER:
+		case g.GetRole() != messages.Acl_OWNER && g.GetRole() != messages.Acl_READER && g.GetRole() != messages.Acl_TRIGGERER:
 			ctx.Errorf("invalid role %q", g.GetRole())
 		case g.GetGrantedTo() == "":
 			ctx.Errorf("missing granted_to for role %s", g.GetRole())
@@ -166,8 +186,9 @@ func validateGrants(ctx *validation.Context, gs []*messages.Acl) {
 // mergeGrants merges valid grants into GrantsByRole, removing and sorting duplicates.
 func mergeGrants(grantsLists ...[]*messages.Acl) *GrantsByRole {
 	all := map[messages.Acl_Role]stringset.Set{
-		messages.Acl_OWNER:  stringset.New(maxGrantsPerJob),
-		messages.Acl_READER: stringset.New(maxGrantsPerJob),
+		messages.Acl_OWNER:     stringset.New(maxGrantsPerJob),
+		messages.Acl_TRIGGERER: stringset.New(maxGrantsPerJob),
+		messages.Acl_READER:    stringset.New(maxGrantsPerJob),
 	}
 	for _, grantsList := range grantsLists {
 		for _, g := range grantsList {
@@ -180,8 +201,9 @@ func mergeGrants(grantsLists ...[]*messages.Acl) *GrantsByRole {
 		return r
 	}
 	return &GrantsByRole{
-		Owners:  sortedSlice(all[messages.Acl_OWNER]),
-		Readers: sortedSlice(all[messages.Acl_READER]),
+		Owners:     sortedSlice(all[messages.Acl_OWNER]),
+		Triggerers: sortedSlice(all[messages.Acl_TRIGGERER]),
+		Readers:    sortedSlice(all[messages.Acl_READER]),
 	}
 }
 

@@ -118,10 +118,8 @@ func runJobAction(ctx *router.Context) {
 	e := config(c).Engine
 	jobID := projectID + "/" + jobName
 	future, err := e.ForceInvocation(c, jobID)
-	if err == engine.ErrNoOwnerPermission {
-		http.Error(w, "Forbidden", 403)
-		return
-	} else if err != nil {
+	if err != nil {
+		// TODO(tandrii): better message if user has READER access.
 		genericReply(err)
 		return
 	}
@@ -170,8 +168,6 @@ func handleJobAction(c *router.Context, cb func(string) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobName := c.Params.ByName("JobName")
 	switch err := cb(projectID + "/" + jobName); {
-	case err == engine.ErrNoOwnerPermission:
-		http.Error(c.Writer, "Forbidden", 403)
 	case err != nil:
 		panic(err)
 	default:

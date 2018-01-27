@@ -498,9 +498,8 @@ type SchedulerClient interface {
 	// the call, supplying the same trigger IDs. Triggers with the same IDs will
 	// be deduplicated. See Trigger message for more details.
 	//
-	// Requires OWNER Job permission.
+	// Requires TRIGGERER Job permission.
 	//
-	// TODO(vadimsh): add new TRIGGERER role.
 	// TODO(vadimsh): deduplication doesn't work in v1.
 	EmitTriggers(ctx context.Context, in *EmitTriggersRequest, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 }
@@ -696,9 +695,8 @@ type SchedulerServer interface {
 	// the call, supplying the same trigger IDs. Triggers with the same IDs will
 	// be deduplicated. See Trigger message for more details.
 	//
-	// Requires OWNER Job permission.
+	// Requires TRIGGERER Job permission.
 	//
-	// TODO(vadimsh): add new TRIGGERER role.
 	// TODO(vadimsh): deduplication doesn't work in v1.
 	EmitTriggers(context.Context, *EmitTriggersRequest) (*google_protobuf.Empty, error)
 }
