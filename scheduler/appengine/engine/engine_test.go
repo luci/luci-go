@@ -1128,7 +1128,7 @@ func TestAborts(t *testing.T) {
 			// Try to kill it w/o permission.
 			So(e.AbortInvocation(c, jobID, invID), ShouldNotBeNil) // No current identity.
 			So(e.AbortInvocation(ctxAnon, jobID, invID), ShouldResemble, ErrNoSuchJob)
-			So(e.AbortInvocation(ctxReader, jobID, invID), ShouldResemble, ErrNoOwnerPermission)
+			So(e.AbortInvocation(ctxReader, jobID, invID), ShouldResemble, ErrNoPermission)
 			// Now kill it.
 			So(e.AbortInvocation(ctxOwner, jobID, invID), ShouldBeNil)
 
@@ -1153,7 +1153,7 @@ func TestAborts(t *testing.T) {
 			// Try to kill it w/o permission.
 			So(e.AbortJob(c, jobID), ShouldNotBeNil) // No current identity.
 			So(e.AbortJob(ctxAnon, jobID), ShouldResemble, ErrNoSuchJob)
-			So(e.AbortJob(ctxReader, jobID), ShouldResemble, ErrNoOwnerPermission)
+			So(e.AbortJob(ctxReader, jobID), ShouldResemble, ErrNoPermission)
 			// Kill it.
 			So(e.AbortJob(ctxOwner, jobID), ShouldBeNil)
 
