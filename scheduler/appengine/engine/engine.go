@@ -1057,16 +1057,14 @@ func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []task.
 func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Request) (*Invocation, error) {
 	var inv *Invocation
 	err := runIsolatedTxn(c, func(c context.Context) (err error) {
-		inv, err = e.initInvocationID(c, job.JobID, &Invocation{
-			Started:             clock.Now(c).UTC(),
-			TriggeredBy:         req.TriggeredBy,
-			IncomingTriggersRaw: marshalTriggersList(req.IncomingTriggers),
-			Revision:            job.Revision,
-			RevisionURL:         job.RevisionURL,
-			Task:                job.Task,
-			TriggeredJobIDs:     job.TriggeredJobIDs,
-			Status:              task.StatusStarting,
-		})
+		inv, err = e.initInvocation(c, job.JobID, &Invocation{
+			Started:         clock.Now(c).UTC(),
+			Revision:        job.Revision,
+			RevisionURL:     job.RevisionURL,
+			Task:            job.Task,
+			TriggeredJobIDs: job.TriggeredJobIDs,
+			Status:          task.StatusStarting,
+		}, &req)
 		if err != nil {
 			return
 		}
@@ -1117,17 +1115,20 @@ func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task
 	return invs, nil
 }
 
-// initInvocationID allocates invocation ID and populates related fields of the
-// Invocation struct: ID, JobKey, JobID. It doesn't store the invocation in
-// the datastore.
+// initInvocation populates fields of Invocation struct.
 //
-// On success returns exact same 'inv' for convenience.
+// It allocates invocation ID and populates related fields: ID, JobKey, JobID.
+// It also copies data from given task.Request object into corresponding fields
+// of the invocation (so they can be indexed etc).
+//
+// On success returns exact same 'inv' for convenience. It doesn't Put it into
+// the datastore.
 //
 // Must be called within a transaction, since it verifies an allocated ID is
 // not used yet.
 //
 // Supports both v1 and v2 invocations.
-func (e *engineImpl) initInvocationID(c context.Context, jobID string, inv *Invocation) (*Invocation, error) {
+func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invocation, req *task.Request) (*Invocation, error) {
 	assertInTransaction(c)
 	isV2 := e.isV2Job(jobID)
 	var jobKey *ds.Key
@@ -1143,6 +1144,9 @@ func (e *engineImpl) initInvocationID(c context.Context, jobID string, inv *Invo
 		inv.JobID = jobID
 	} else {
 		inv.JobKey = jobKey
+	}
+	if req != nil {
+		putRequestIntoInv(inv, req)
 	}
 	return inv, nil
 }
@@ -1380,11 +1384,11 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 	err := runTxn(c, func(c context.Context) error {
 		now := clock.Now(c).UTC()
 		var initError error
-		inv, initError = e.initInvocationID(c, jobID, &Invocation{
+		inv, initError = e.initInvocation(c, jobID, &Invocation{
 			Started:  now,
 			Finished: now,
 			Status:   task.StatusOverrun,
-		})
+		}, nil)
 		if initError != nil {
 			return initError
 		}
@@ -1565,6 +1569,10 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		panic("must be v1 job")
 	}
 
+	// Figure out parameters of the invocation based on passed triggers.
+	req := requestFromTriggers(c, triggers)
+	req.TriggeredBy = triggeredBy
+
 	// Create new Invocation entity in StatusStarting state and associated it with
 	// Job entity.
 	//
@@ -1597,18 +1605,16 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			return errSkipPut
 		}
 		inv = Invocation{
-			Started:             clock.Now(c).UTC(),
-			InvocationNonce:     invocationNonce,
-			TriggeredBy:         triggeredBy,
-			IncomingTriggersRaw: marshalTriggersList(triggers),
-			Revision:            job.Revision,
-			RevisionURL:         job.RevisionURL,
-			Task:                job.Task,
-			TriggeredJobIDs:     job.TriggeredJobIDs,
-			RetryCount:          int64(retryCount),
-			Status:              task.StatusStarting,
+			Started:         clock.Now(c).UTC(),
+			InvocationNonce: invocationNonce,
+			Revision:        job.Revision,
+			RevisionURL:     job.RevisionURL,
+			Task:            job.Task,
+			TriggeredJobIDs: job.TriggeredJobIDs,
+			RetryCount:      int64(retryCount),
+			Status:          task.StatusStarting,
 		}
-		if _, err := e.initInvocationID(c, job.JobID, &inv); err != nil {
+		if _, err := e.initInvocation(c, job.JobID, &inv, &req); err != nil {
 			return err
 		}
 		inv.debugLog(c, "Invocation initiated (attempt %d)", retryCount+1)
@@ -2183,9 +2189,7 @@ func (e *engineImpl) triggeringPolicy(c context.Context, job *Job, triggers []*i
 	if len(job.ActiveInvocations) != 0 {
 		return nil, nil
 	}
-	return []task.Request{
-		{IncomingTriggers: triggers},
-	}, nil
+	return []task.Request{requestFromTriggers(c, triggers)}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
