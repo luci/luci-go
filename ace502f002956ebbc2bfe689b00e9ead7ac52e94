@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36702aae_42af89c3",
+        "filename": "scheduler/appengine/engine/request.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-27T00:21:34Z",
+      "side": 1,
+      "message": "this will be a home for the logic that currently lives in buildbucket task manager (next CL).",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 34,
+        "endChar": 12
+      },
+      "revId": "ace502f002956ebbc2bfe689b00e9ead7ac52e94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
