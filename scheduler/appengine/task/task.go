@@ -298,6 +298,35 @@ type State struct {
 // They are calculated from the pending triggers when the invocation is
 // initiated.
 type Request struct {
-	TriggeredBy      identity.Identity
+	// TriggeredBy contains ID of an end user that triggered this invocation (e.g
+	// through UI or API) or an empty string if it was triggered by the engine or
+	// it is a result of a multiple different triggers.
+	//
+	// Mostly FYI.
+	TriggeredBy identity.Identity
+
+	// IncomingTriggers is a list of all triggers consumed by this invocation.
+	//
+	// Task managers may use them, but they are encouraged to accept task
+	// parameters through Properties and Tags instead.
 	IncomingTriggers []*internal.Trigger
+
+	// Properties are arbitrary key-value pairs derived from the triggers by the
+	// triggering policy function and interpreted by the triggered task manager.
+	//
+	// Values may have arbitrary simple types (int64, string, lists and maps of
+	// the above). The entire structure should be JSON-serializable.
+	//
+	// TODO(vadimsh): Needs more structure :(
+	Properties map[string]interface{}
+
+	// Tags are arbitrary "<key>:<value>" pairs derived from the triggers by the
+	// triggering policy function.
+	//
+	// Primarily used for indexing and correlation of jobs/invocations with
+	// each other (including across different services). Task managers can pass
+	// them down the stack.
+	//
+	// TODO(vadimsh): Needs more structure :(
+	Tags []string
 }
