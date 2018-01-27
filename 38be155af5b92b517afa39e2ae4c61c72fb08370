@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "62b9ca76_a24249b9",
+        "filename": "common/flag/flag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T02:05:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d2cd56d1_3a8b48d4",
+      "range": {
+        "startLine": 16,
+        "startChar": 8,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "38be155af5b92b517afa39e2ae4c61c72fb08370",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "965df7d1_081e6a83",
         "filename": "common/flag/flag.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "38be155af5b92b517afa39e2ae4c61c72fb08370",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bb59f40_2d52a579",
+        "filename": "common/flag/flag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T02:05:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "965df7d1_081e6a83",
+      "revId": "38be155af5b92b517afa39e2ae4c61c72fb08370",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
