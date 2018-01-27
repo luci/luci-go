@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3938069e_a204934d",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab0a13c8_dacaa6ef",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 25
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2a0b10e_d106667f",
         "filename": "machine-db/api/crimson/v1/vms.proto",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e166b205_f82917c6",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2a0b10e_d106667f",
+      "range": {
+        "startLine": 41,
+        "startChar": 7,
+        "endLine": 41,
+        "endChar": 15
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2e9476c9_e4df8d0a",
+        "filename": "machine-db/appengine/database/setup/migrations/008_initialize_vms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "I\u0027ll change it when I do the deletion RPC.",
+      "parentUuid": "64effb95_110fd22c",
+      "range": {
+        "startLine": 28,
+        "startChar": 63,
+        "endLine": 28,
+        "endChar": 71
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc5755aa_808da675",
         "filename": "machine-db/appengine/rpc/vms.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "8db49651_86929b34",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "I think sqlmock may not like it, but tests for this seem okay so I\u0027ve made the change.",
+      "parentUuid": "dc5755aa_808da675",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 5
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f39c9b99_67c3dddf",
         "filename": "machine-db/appengine/rpc/vms.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fca0e025_43b36d64",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f39c9b99_67c3dddf",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 121
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -186,6 +306,54 @@
     },
     {
       "key": {
+        "uuid": "f7200042_8155707a",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28122030_3edb55df",
+      "range": {
+        "startLine": 142,
+        "startChar": 9,
+        "endLine": 142,
+        "endChar": 11
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cd278134_1a7ecccc",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06006b62_2c013816",
+      "range": {
+        "startLine": 142,
+        "startChar": 18,
+        "endLine": 142,
+        "endChar": 22
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4fadc7b3_224f8c4b",
         "filename": "machine-db/appengine/rpc/vms.go",
         "patchSetId": 1
@@ -206,6 +374,30 @@
       "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ab6fdfe_45ba686c",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-01-27T00:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fadc7b3_224f8c4b",
+      "range": {
+        "startLine": 143,
+        "startChar": 61,
+        "endLine": 143,
+        "endChar": 69
+      },
+      "revId": "ccce5d7453a7a361a42a34240208768fe0c3ba18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
