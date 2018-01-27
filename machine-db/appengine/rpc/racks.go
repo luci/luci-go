@@ -39,7 +39,7 @@ func (*Service) ListRacks(c context.Context, req *crimson.ListRacksRequest) (*cr
 func listRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.Rack, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT r.name, r.description, d.name
+		SELECT r.name, r.description, r.state, d.name
 		FROM racks r, datacenters d
 		WHERE r.datacenter_id = d.id
 	`)
@@ -51,7 +51,7 @@ func listRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.
 	var racks []*crimson.Rack
 	for rows.Next() {
 		rack := &crimson.Rack{}
-		if err = rows.Scan(&rack.Name, &rack.Description, &rack.Datacenter); err != nil {
+		if err = rows.Scan(&rack.Name, &rack.Description, &rack.State, &rack.Datacenter); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch rack").Err()
 		}
 		if matches(rack.Name, names) && matches(rack.Datacenter, datacenters) {

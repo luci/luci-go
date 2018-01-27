@@ -22,6 +22,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -34,8 +35,8 @@ func TestRacks(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `^SELECT id, name, description, datacenter_id FROM racks$`
-		columns := []string{"id", "name", "description", "datacenter_id"}
+		selectStmt := `^SELECT id, name, description, state, datacenter_id FROM racks$`
+		columns := []string{"id", "name", "description", "state", "datacenter_id"}
 		rows := sqlmock.NewRows(columns)
 		table := &RacksTable{}
 
@@ -54,8 +55,8 @@ func TestRacks(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			rows.AddRow(1, "rack 1", "description 1", 1)
-			rows.AddRow(2, "rack 2", "description 2", 2)
+			rows.AddRow(1, "rack 1", "description 1", common.State_FREE, 1)
+			rows.AddRow(2, "rack 2", "description 2", common.State_SERVING, 2)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*Rack{
@@ -63,6 +64,7 @@ func TestRacks(t *testing.T) {
 					Rack: config.Rack{
 						Name:        "rack 1",
 						Description: "description 1",
+						State:       common.State_FREE,
 					},
 					Id:           1,
 					DatacenterId: 1,
@@ -71,6 +73,7 @@ func TestRacks(t *testing.T) {
 					Rack: config.Rack{
 						Name:        "rack 2",
 						Description: "description 2",
+						State:       common.State_SERVING,
 					},
 					Id:           2,
 					DatacenterId: 2,
@@ -118,6 +121,7 @@ func TestRacks(t *testing.T) {
 						{
 							Name:        "rack 1",
 							Description: "description 1",
+							State:       common.State_FREE,
 						},
 					},
 				},
@@ -127,6 +131,7 @@ func TestRacks(t *testing.T) {
 						{
 							Name:        "rack 2",
 							Description: "description 2",
+							State:       common.State_SERVING,
 						},
 					},
 				},
@@ -139,6 +144,7 @@ func TestRacks(t *testing.T) {
 					Rack: config.Rack{
 						Name:        "rack 1",
 						Description: "description 1",
+						State:       common.State_FREE,
 					},
 					DatacenterId: table.datacenters[dcs[0].Name],
 				},
@@ -146,6 +152,7 @@ func TestRacks(t *testing.T) {
 					Rack: config.Rack{
 						Name:        "rack 2",
 						Description: "description 2",
+						State:       common.State_SERVING,
 					},
 					DatacenterId: table.datacenters[dcs[1].Name],
 				},
@@ -159,6 +166,7 @@ func TestRacks(t *testing.T) {
 				Rack: config.Rack{
 					Name:        "rack 1",
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id:           1,
 				DatacenterId: 1,
@@ -177,6 +185,7 @@ func TestRacks(t *testing.T) {
 						{
 							Name:        "rack 1",
 							Description: "new description",
+							State:       common.State_SERVING,
 						},
 					},
 				},
@@ -198,6 +207,7 @@ func TestRacks(t *testing.T) {
 					Rack: config.Rack{
 						Name:        dcs[0].Rack[0].Name,
 						Description: dcs[0].Rack[0].Description,
+						State:       dcs[0].Rack[0].State,
 					},
 					Id:           table.current[0].Id,
 					DatacenterId: table.datacenters[dcs[0].Name],
@@ -206,6 +216,7 @@ func TestRacks(t *testing.T) {
 					Rack: config.Rack{
 						Name:        dcs[1].Rack[0].Name,
 						Description: dcs[1].Rack[0].Description,
+						State:       dcs[1].Rack[0].State,
 					},
 					Id:           table.current[1].Id,
 					DatacenterId: table.datacenters[dcs[1].Name],
@@ -241,7 +252,7 @@ func TestRacks(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `^INSERT INTO racks \(name, description, datacenter_id\) VALUES \(\?, \?, \?\)$`
+		insertStmt := `^INSERT INTO racks \(name, description, state, datacenter_id\) VALUES \(\?, \?, \?, \?\)$`
 		table := &RacksTable{}
 
 		Convey("empty", func() {
@@ -378,7 +389,7 @@ func TestRacks(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		updateStmt := `^UPDATE racks SET description = \?, datacenter_id = \? WHERE id = \?$`
+		updateStmt := `^UPDATE racks SET description = \?, state = \?, datacenter_id = \? WHERE id = \?$`
 		table := &RacksTable{}
 
 		Convey("empty", func() {
@@ -393,6 +404,7 @@ func TestRacks(t *testing.T) {
 				Rack: config.Rack{
 					Name:        "rack",
 					Description: "new description",
+					State:       common.State_SERVING,
 				},
 				Id:           1,
 				DatacenterId: 2,
@@ -401,6 +413,7 @@ func TestRacks(t *testing.T) {
 				Rack: config.Rack{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id:           table.updates[0].Id,
 				DatacenterId: 1,
@@ -417,6 +430,7 @@ func TestRacks(t *testing.T) {
 				Rack: config.Rack{
 					Name:        "rack",
 					Description: "new description",
+					State:       common.State_SERVING,
 				},
 				Id:           1,
 				DatacenterId: 2,
@@ -425,6 +439,7 @@ func TestRacks(t *testing.T) {
 				Rack: config.Rack{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id:           table.updates[0].Id,
 				DatacenterId: 1,
@@ -442,6 +457,7 @@ func TestRacks(t *testing.T) {
 				Rack: config.Rack{
 					Name:        "rack",
 					Description: "new description",
+					State:       common.State_SERVING,
 				},
 				Id:           1,
 				DatacenterId: 2,
@@ -450,6 +466,7 @@ func TestRacks(t *testing.T) {
 				Rack: config.Rack{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id:           table.updates[0].Id,
 				DatacenterId: 1,
@@ -460,6 +477,7 @@ func TestRacks(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.current, ShouldHaveLength, 1)
 			So(table.current[0].Description, ShouldEqual, "new description")
+			So(table.current[0].State, ShouldEqual, common.State_SERVING)
 			So(table.current[0].DatacenterId, ShouldEqual, 2)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

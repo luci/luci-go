@@ -6,15 +6,9 @@ syntax = "proto3";
 
 package crimson;
 
-// ListRacksRequest is a request to retrieve racks.
-message ListRacksRequest {
-  // The names of racks to retrieve.
-  repeated string names = 1;
-  // The datacenters to filter retrieved racks on.
-  repeated string datacenters = 2;
-}
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// Rack describes a rack.
+// A rack in the database.
 message Rack {
   // The name of this rack. Uniquely identifies this rack.
   string name = 1;
@@ -22,9 +16,19 @@ message Rack {
   string description = 2;
   // The datacenter this rack belongs to.
   string datacenter = 3;
+  // The state of this rack.
+  common.State state = 4;
 }
 
-// ListRacksResponse is a response to a request to retrieve racks.
+// A request to list racks in the database.
+message ListRacksRequest {
+  // The names of racks to retrieve.
+  repeated string names = 1;
+  // The datacenters to filter retrieved racks on.
+  repeated string datacenters = 2;
+}
+
+// A response containing a list of racks in the database.
 message ListRacksResponse {
   // The racks matching the request.
   repeated Rack racks = 1;
