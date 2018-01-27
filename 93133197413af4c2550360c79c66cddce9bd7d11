@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa1b6973_cb8be063",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 798,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-27T03:04:12Z",
+      "side": 1,
+      "message": "We still need ErrNoPermission for jobs we can read, but can\u0027t act on, otherwise error messages will be _extremely_ confusing.\n\nIt\u0027s not necessary to have two different ErrNotOwner and ErrNotTriggerer though, single ErrNoPermissions is good enough.\n\nI think we can add a logic here:\n\nif !granted {\n  if role \u003d\u003d Reader {\n    return ErrNoSuchJob\n  }\n  visible, ... \u003d job.CallerHasRole(c, Reader)\n  if !visible {\n    return ErrNoSuchJob\n  }\n  return ErrNoPermission\n}",
+      "range": {
+        "startLine": 798,
+        "startChar": 11,
+        "endLine": 798,
+        "endChar": 23
+      },
+      "revId": "93133197413af4c2550360c79c66cddce9bd7d11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b977352d_ed4ac800",
+        "filename": "scheduler/appengine/ui/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-27T03:04:12Z",
+      "side": 1,
+      "message": "please do it in this CL",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 61
+      },
+      "revId": "93133197413af4c2550360c79c66cddce9bd7d11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
