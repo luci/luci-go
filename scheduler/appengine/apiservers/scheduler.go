@@ -193,7 +193,7 @@ func runAction(ctx context.Context, action func() error) (*empty.Empty, error) {
 		return &empty.Empty{}, nil
 	case err == engine.ErrNoSuchJob:
 		return nil, status.Errorf(codes.NotFound, "no such job or no READ permission")
-	case err == engine.ErrNoOwnerPermission:
+	case err == engine.ErrNoPermission:
 		return nil, status.Errorf(codes.PermissionDenied, "no permission to execute the action")
 	case err == engine.ErrNoSuchInvocation:
 		return nil, status.Errorf(codes.NotFound, "no such invocation")

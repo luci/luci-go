@@ -261,7 +261,7 @@ func TestJobActionsApi(t *testing.T) {
 
 		Convey("PermissionDenied", func() {
 			onAction := func(jobID string) error {
-				return engine.ErrNoOwnerPermission
+				return engine.ErrNoPermission
 			}
 			Convey("Pause", func() {
 				fakeEng.pauseJob = onAction
@@ -330,7 +330,7 @@ func TestAbortInvocationApi(t *testing.T) {
 
 		Convey("PermissionDenied", func() {
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {
-				return engine.ErrNoOwnerPermission
+				return engine.ErrNoPermission
 			}
 			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
 				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},

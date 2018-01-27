@@ -94,7 +94,7 @@ func handleInvAction(c *router.Context, cb func(string, int64) error) {
 		return
 	}
 	switch err := cb(projectID+"/"+jobName, invIDAsInt); {
-	case err == engine.ErrNoOwnerPermission:
+	case err == engine.ErrNoPermission:
 		http.Error(c.Writer, "Forbidden", 403)
 		return
 	case err != nil:

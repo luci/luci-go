@@ -164,18 +164,9 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
 }
 
-// IsVisible checks if current identity has READER access to this job.
-//
-// Returns only transient errors.
-func (e *Job) IsVisible(c context.Context) (bool, error) {
-	return e.Acls.IsReader(logging.SetField(c, "JobID", e.JobID))
-}
-
-// IsOwned checks if current identity has OWNER access to this job.
-//
-// Returns only transient errors.
-func (e *Job) IsOwned(c context.Context) (bool, error) {
-	return e.Acls.IsOwner(logging.SetField(c, "JobID", e.JobID))
+// CallerHasRole does what it says and returns only transient errors.
+func (e *Job) CallerHasRole(c context.Context, role acl.Role) (bool, error) {
+	return e.Acls.CallerHasRole(logging.SetField(c, "JobID", e.JobID), role)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

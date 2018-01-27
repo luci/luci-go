@@ -65,9 +65,8 @@ service Scheduler {
   // the call, supplying the same trigger IDs. Triggers with the same IDs will
   // be deduplicated. See Trigger message for more details.
   //
-  // Requires OWNER Job permission.
+  // Requires TRIGGERER Job permission.
   //
-  // TODO(vadimsh): add new TRIGGERER role.
   // TODO(vadimsh): deduplication doesn't work in v1.
   rpc EmitTriggers(EmitTriggersRequest) returns (google.protobuf.Empty);
 }

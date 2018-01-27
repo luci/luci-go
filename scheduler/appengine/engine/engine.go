@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/tokens"
 
+	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -59,8 +60,10 @@ import (
 // more information.
 
 var (
-	// ErrNoOwnerPermission indicates the caller is not a job owner.
-	ErrNoOwnerPermission = errors.New("no OWNER permission on a job")
+	// ErrNoPermission indicates the caller doesn't not have permission to perform
+	// desired action, depending on which either either OWNERS or TRIGGERER
+	// permission is required.
+	ErrNoPermission = errors.New("insufficient rights on a job")
 	// ErrNoSuchJob indicates the job doesn't exist or not visible.
 	ErrNoSuchJob = errors.New("no such job")
 	// ErrNoSuchInvocation indicates the invocation doesn't exist or not visible.
@@ -73,11 +76,11 @@ var (
 // A method returns errors.Transient if the error is non-fatal and the call
 // should be retried later. Any other error means that retry won't help.
 //
-// ACLs are enforced with the following implications:
+// ACLs are enforced with the following implication:
 //  * if caller lacks READER access to Jobs, methods behave as if Jobs do not
-//    exist.
-//  * if caller lacks OWNER access, calling mutating methods will result in
-//    ErrNoOwnerPermission (assuming caller has READER access, else see above).
+//	  exist.
+//  * if caller lacks TRIGGERER or OWNER access to Jobs, but has READER access,
+//    ErrNoPermission will be returned.
 //
 // Use EngineInternal if you need to skip ACL checks.
 type Engine interface {
@@ -307,18 +310,14 @@ func (e *engineImpl) GetVisibleProjectJobs(c context.Context, projectID string) 
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error) {
-	job, err := e.getJob(c, jobID)
-	if err != nil {
+	switch job, err := e.jobForRole(c, jobID, acl.Reader); {
+	case err != nil:
 		return nil, err
-	} else if job == nil || !job.Enabled {
+	case !job.Enabled:
 		return nil, ErrNoSuchJob
+	default:
+		return job, nil
 	}
-	if ok, err := job.IsVisible(c); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, ErrNoSuchJob
-	}
-	return job, nil
 }
 
 // ListVisibleInvocations returns invocations of a visible job, most recent
@@ -421,7 +420,7 @@ func (e *engineImpl) ResumeJob(c context.Context, jobID string) error {
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
 	// First, we check ACLs.
-	if _, err := e.getOwnedJob(c, jobID); err != nil {
+	if _, err := e.jobForRole(c, jobID, acl.Owner); err != nil {
 		return err
 	}
 
@@ -462,7 +461,7 @@ func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int64) error {
-	if _, err := e.getOwnedJob(c, jobID); err != nil {
+	if _, err := e.jobForRole(c, jobID, acl.Owner); err != nil {
 		return err
 	}
 	return e.abortInvocation(c, jobID, invID)
@@ -472,7 +471,7 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) ForceInvocation(c context.Context, jobID string) (FutureInvocation, error) {
-	if _, err := e.getOwnedJob(c, jobID); err != nil {
+	if _, err := e.jobForRole(c, jobID, acl.Triggerer); err != nil {
 		return nil, err
 	}
 
@@ -515,8 +514,7 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[string][]*intern
 				if e.isV2Job(jobID) {
 					return fmt.Errorf("v2 jobs are not supported yet")
 				}
-				// TODO(vadimsh): Use TRIGGERER role instead of OWNER.
-				_, err := e.getOwnedJob(c, jobID)
+				_, err := e.jobForRole(c, jobID, acl.Triggerer)
 				return err
 			}
 		}
@@ -802,10 +800,10 @@ func (e *engineImpl) getJob(c context.Context, jobID string) (*Job, error) {
 	}
 }
 
-// getOwnedJob returns a job if the current caller owns it.
+// jobForRole returns a job if the caller can act in given role on this job.
 //
-// Returns ErrNoOwnerPermission or ErrNoSuchJob otherwise (based on ACLs).
-func (e *engineImpl) getOwnedJob(c context.Context, jobID string) (*Job, error) {
+// Returns ErrNoSuchJob/ErrNoPermission otherwise (based on ACLs).
+func (e *engineImpl) jobForRole(c context.Context, jobID string, role acl.Role) (*Job, error) {
 	job, err := e.getJob(c, jobID)
 	if err != nil {
 		return nil, err
@@ -813,22 +811,25 @@ func (e *engineImpl) getOwnedJob(c context.Context, jobID string) (*Job, error) 
 		return nil, ErrNoSuchJob
 	}
 
-	switch owner, err := job.IsOwned(c); {
+	switch granted, err := job.CallerHasRole(c, role); {
 	case err != nil:
 		return nil, err
-	case owner:
+	case granted:
 		return job, nil
 	}
-
-	// Not owner, but maybe reader? Give nicer error in such case.
-	switch reader, err := job.IsVisible(c); {
-	case err != nil:
-		return nil, err
-	case reader:
-		return nil, ErrNoOwnerPermission
-	default:
-		return nil, ErrNoSuchJob
+	// Desired role has not been granted.
+	if role != acl.Reader {
+		// If user can read, we can return more informative error.
+		switch canRead, err := job.CallerHasRole(c, acl.Reader); {
+		case err != nil:
+			// While we can ignore this transient error and just return ErrNoSuchJob,
+			// it'd be inconsistent.
+			return nil, err
+		case canRead:
+			return nil, ErrNoPermission
+		}
 	}
+	return nil, ErrNoSuchJob
 }
 
 // getProjectJobs fetches from ds all enabled jobs belonging to a given
@@ -865,7 +866,7 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 		}
 		// TODO(tandrii): improve batch ACLs check here to take advantage of likely
 		// shared ACLs between most jobs of the same project.
-		if ok, err := job.IsVisible(c); err != nil {
+		if ok, err := job.CallerHasRole(c, acl.Reader); err != nil {
 			return nil, err
 		} else if ok {
 			filtered = append(filtered, job)
@@ -878,7 +879,7 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 func (e *engineImpl) setJobPausedFlag(c context.Context, jobID string, paused bool, who identity.Identity) error {
 	// First, we check ACLs outside of transaction. Yes, this allows for races
 	// between (un)pausing and ACLs changes but these races have no impact.
-	if _, err := e.getOwnedJob(c, jobID); err != nil {
+	if _, err := e.jobForRole(c, jobID, acl.Owner); err != nil {
 		return err
 	}
 	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
@@ -978,10 +979,7 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 		if err := ctl.onJobDisabled(c, job); err != nil {
 			return err
 		}
-		if err := ctl.onJobEnabled(c, job); err != nil {
-			return err
-		}
-		return nil
+		return ctl.onJobEnabled(c, job)
 	})
 }
 
