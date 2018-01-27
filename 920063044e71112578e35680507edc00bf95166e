@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "795aa95d_9032ab26",
+        "filename": "scheduler/appengine/engine/request.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-27T08:47:25Z",
+      "side": 1,
+      "message": "protobuf?",
+      "range": {
+        "startLine": 129,
+        "startChar": 68,
+        "endLine": 129,
+        "endChar": 72
+      },
+      "revId": "920063044e71112578e35680507edc00bf95166e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
