@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -37,11 +38,11 @@ func TestListSwitches(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT s.name, s.description, s.ports, r.name, d.name
+			^SELECT s.name, s.description, s.ports, s.state, r.name, d.name
 			FROM switches s, racks r, datacenters d
 			WHERE s.rack_id = r.id AND r.datacenter_id = d.id$
 		`
-		columns := []string{"s.name", "s.description", "s.ports", "r.name", "d.name"}
+		columns := []string{"s.name", "s.description", "s.ports", "s.state", "r.name", "d.name"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -70,8 +71,8 @@ func TestListSwitches(t *testing.T) {
 			names := stringset.NewFromSlice("switch")
 			racks := stringset.NewFromSlice("rack")
 			dcs := stringset.NewFromSlice("datacenter")
-			rows.AddRow("switch 1", "description 1", 10, "rack 1", "datacenter 1")
-			rows.AddRow("switch 2", "description 2", 20, "rack 2", "datacenter 2")
+			rows.AddRow("switch 1", "description 1", 10, common.State_FREE, "rack 1", "datacenter 1")
+			rows.AddRow("switch 2", "description 2", 20, common.State_SERVING, "rack 2", "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldBeNil)
@@ -83,10 +84,10 @@ func TestListSwitches(t *testing.T) {
 			names := stringset.NewFromSlice("switch 3", "switch 4")
 			racks := stringset.NewFromSlice("rack 3", "rack 4")
 			dcs := stringset.NewFromSlice("datacenter 2", "datacenter 3", "datacenter 4")
-			rows.AddRow("switch 1", "description 1", 10, "rack 1", "datacenter 1")
-			rows.AddRow("switch 2", "description 2", 20, "rack 2", "datacenter 2")
-			rows.AddRow("switch 3", "description 3", 30, "rack 3", "datacenter 3")
-			rows.AddRow("switch 4", "description 4", 40, "rack 4", "datacenter 4")
+			rows.AddRow("switch 1", "description 1", 10, common.State_FREE, "rack 1", "datacenter 1")
+			rows.AddRow("switch 2", "description 2", 20, common.State_SERVING, "rack 2", "datacenter 2")
+			rows.AddRow("switch 3", "description 3", 30, common.State_REPAIR, "rack 3", "datacenter 3")
+			rows.AddRow("switch 4", "description 4", 40, common.State_TEST, "rack 4", "datacenter 4")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldBeNil)
@@ -95,6 +96,7 @@ func TestListSwitches(t *testing.T) {
 					Name:        "switch 3",
 					Description: "description 3",
 					Ports:       30,
+					State:       common.State_REPAIR,
 					Rack:        "rack 3",
 					Datacenter:  "datacenter 3",
 				},
@@ -102,6 +104,7 @@ func TestListSwitches(t *testing.T) {
 					Name:        "switch 4",
 					Description: "description 4",
 					Ports:       40,
+					State:       common.State_TEST,
 					Rack:        "rack 4",
 					Datacenter:  "datacenter 4",
 				},
@@ -113,8 +116,8 @@ func TestListSwitches(t *testing.T) {
 			names := stringset.New(0)
 			racks := stringset.New(0)
 			dcs := stringset.New(0)
-			rows.AddRow("switch 1", "description 1", 10, "rack 1", "datacenter 1")
-			rows.AddRow("switch 2", "description 2", 20, "rack 2", "datacenter 2")
+			rows.AddRow("switch 1", "description 1", 10, common.State_FREE, "rack 1", "datacenter 1")
+			rows.AddRow("switch 2", "description 2", 20, common.State_SERVING, "rack 2", "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			switches, err := listSwitches(c, names, racks, dcs)
 			So(err, ShouldBeNil)
@@ -123,6 +126,7 @@ func TestListSwitches(t *testing.T) {
 					Name:        "switch 1",
 					Description: "description 1",
 					Ports:       10,
+					State:       common.State_FREE,
 					Rack:        "rack 1",
 					Datacenter:  "datacenter 1",
 				},
@@ -130,6 +134,7 @@ func TestListSwitches(t *testing.T) {
 					Name:        "switch 2",
 					Description: "description 2",
 					Ports:       20,
+					State:       common.State_SERVING,
 					Rack:        "rack 2",
 					Datacenter:  "datacenter 2",
 				},

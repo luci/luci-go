@@ -39,7 +39,7 @@ func (*Service) ListSwitches(c context.Context, req *crimson.ListSwitchesRequest
 func listSwitches(c context.Context, names, racks, datacenters stringset.Set) ([]*crimson.Switch, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT s.name, s.description, s.ports, r.name, d.name
+		SELECT s.name, s.description, s.ports, s.state, r.name, d.name
 		FROM switches s, racks r, datacenters d
 		WHERE s.rack_id = r.id
 			AND r.datacenter_id = d.id
@@ -52,7 +52,7 @@ func listSwitches(c context.Context, names, racks, datacenters stringset.Set) ([
 	var switches []*crimson.Switch
 	for rows.Next() {
 		s := &crimson.Switch{}
-		if err = rows.Scan(&s.Name, &s.Description, &s.Ports, &s.Rack, &s.Datacenter); err != nil {
+		if err = rows.Scan(&s.Name, &s.Description, &s.Ports, &s.State, &s.Rack, &s.Datacenter); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch switch").Err()
 		}
 		if matches(s.Name, names) && matches(s.Rack, racks) && matches(s.Datacenter, datacenters) {
