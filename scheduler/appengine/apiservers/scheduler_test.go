@@ -259,27 +259,6 @@ func TestJobActionsApi(t *testing.T) {
 		fakeEng, catalog := newTestEngine()
 		ss := SchedulerServer{fakeEng, catalog}
 
-		Convey("PermissionDenied", func() {
-			onAction := func(jobID string) error {
-				return engine.ErrNoOwnerPermission
-			}
-			Convey("Pause", func() {
-				fakeEng.pauseJob = onAction
-				_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-				s, ok := status.FromError(err)
-				So(ok, ShouldBeTrue)
-				So(s.Code(), ShouldEqual, codes.PermissionDenied)
-			})
-
-			Convey("Abort", func() {
-				fakeEng.abortJob = onAction
-				_, err := ss.AbortJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-				s, ok := status.FromError(err)
-				So(ok, ShouldBeTrue)
-				So(s.Code(), ShouldEqual, codes.PermissionDenied)
-			})
-		})
-
 		Convey("OK", func() {
 			onAction := func(jobID string) error {
 				So(jobID, ShouldEqual, "proj/job")
@@ -327,19 +306,6 @@ func TestAbortInvocationApi(t *testing.T) {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
 		ss := SchedulerServer{fakeEng, catalog}
-
-		Convey("PermissionDenied", func() {
-			fakeEng.abortInvocation = func(jobID string, invID int64) error {
-				return engine.ErrNoOwnerPermission
-			}
-			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
-				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
-				InvocationId: 12,
-			})
-			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.PermissionDenied)
-		})
 
 		Convey("OK", func() {
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {

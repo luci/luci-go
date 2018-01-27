@@ -94,10 +94,8 @@ func handleInvAction(c *router.Context, cb func(string, int64) error) {
 		return
 	}
 	switch err := cb(projectID+"/"+jobName, invIDAsInt); {
-	case err == engine.ErrNoOwnerPermission:
-		http.Error(c.Writer, "Forbidden", 403)
-		return
 	case err != nil:
+		// TODO(tandrii): better message if user has READER access.
 		panic(err)
 	default:
 		http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s/%s", projectID, jobName, invID), http.StatusFound)
