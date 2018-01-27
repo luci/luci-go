@@ -14,12 +14,14 @@ message VM {
   int64 vlan = 2;
   // The physical host this VM is running on.
   string host = 3;
+  // The VLAN this VM's physical host belongs to.
+  int64 host_vlan = 4;
   // The operating system running on this VM.
-  string os = 4;
+  string os = 5;
   // A description of this VM.
-  string description = 5;
+  string description = 6;
   // The deployment ticket associated with this VM.
-  string deployment_ticket = 6;
+  string deployment_ticket = 7;
   // TODO(smut): Add IP address.
 }
 
