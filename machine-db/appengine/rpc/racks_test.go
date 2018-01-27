@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -37,11 +38,11 @@ func TestListRacks(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT r.name, r.description, d.name
+			^SELECT r.name, r.description, r.state, d.name
 			FROM racks r, datacenters d
 			WHERE r.datacenter_id = d.id$
 		`
-		columns := []string{"r.name", "r.description", "d.name"}
+		columns := []string{"r.name", "r.description", "r.state", "d.name"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -67,8 +68,8 @@ func TestListRacks(t *testing.T) {
 		Convey("no matches", func() {
 			names := stringset.NewFromSlice("rack")
 			dcs := stringset.NewFromSlice("datacenter")
-			rows.AddRow("rack 1", "description 1", "datacenter 1")
-			rows.AddRow("rack 2", "description 2", "datacenter 2")
+			rows.AddRow("rack 1", "description 1", common.State_FREE, "datacenter 1")
+			rows.AddRow("rack 2", "description 2", common.State_SERVING, "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldBeNil)
@@ -79,9 +80,9 @@ func TestListRacks(t *testing.T) {
 		Convey("matches", func() {
 			names := stringset.NewFromSlice("rack 2", "rack 3")
 			dcs := stringset.NewFromSlice("datacenter 2", "datacenter 3")
-			rows.AddRow("rack 1", "description 1", "datacenter 1")
-			rows.AddRow("rack 2", "description 2", "datacenter 2")
-			rows.AddRow("rack 3", "description 3", "datacenter 3")
+			rows.AddRow("rack 1", "description 1", common.State_FREE, "datacenter 1")
+			rows.AddRow("rack 2", "description 2", common.State_SERVING, "datacenter 2")
+			rows.AddRow("rack 3", "description 3", common.State_REPAIR, "datacenter 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldBeNil)
@@ -89,11 +90,13 @@ func TestListRacks(t *testing.T) {
 				{
 					Name:        "rack 2",
 					Description: "description 2",
+					State:       common.State_SERVING,
 					Datacenter:  "datacenter 2",
 				},
 				{
 					Name:        "rack 3",
 					Description: "description 3",
+					State:       common.State_REPAIR,
 					Datacenter:  "datacenter 3",
 				},
 			})
@@ -103,8 +106,8 @@ func TestListRacks(t *testing.T) {
 		Convey("ok", func() {
 			names := stringset.New(0)
 			dcs := stringset.New(0)
-			rows.AddRow("rack 1", "description 1", "datacenter 1")
-			rows.AddRow("rack 2", "description 2", "datacenter 2")
+			rows.AddRow("rack 1", "description 1", common.State_FREE, "datacenter 1")
+			rows.AddRow("rack 2", "description 2", common.State_SERVING, "datacenter 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			racks, err := listRacks(c, names, dcs)
 			So(err, ShouldBeNil)
@@ -112,11 +115,13 @@ func TestListRacks(t *testing.T) {
 				{
 					Name:        "rack 1",
 					Description: "description 1",
+					State:       common.State_FREE,
 					Datacenter:  "datacenter 1",
 				},
 				{
 					Name:        "rack 2",
 					Description: "description 2",
+					State:       common.State_SERVING,
 					Datacenter:  "datacenter 2",
 				},
 			})
