@@ -108,7 +108,7 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 			?,
 			?
 		)
-	`, hostnameId, v.Host, v.Vlan, v.Os, v.Description, v.DeploymentTicket)
+	`, hostnameId, v.Host, v.HostVlan, v.Os, v.Description, v.DeploymentTicket)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -135,7 +135,7 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.VM, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT hv.name, hv.vlan_id, hp.name, o.name, vm.description, vm.deployment_ticket
+		SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, vm.description, vm.deployment_ticket
 		FROM vms vm, hostnames hv, physical_hosts p, hostnames hp, oses o
 		WHERE vm.hostname_id = hv.id
 			AND vm.physical_host_id = p.id
@@ -151,7 +151,7 @@ func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) (
 	var vms []*crimson.VM
 	for rows.Next() {
 		v := &crimson.VM{}
-		if err = rows.Scan(&v.Name, &v.Vlan, &v.Host, &v.Os, &v.Description, &v.DeploymentTicket); err != nil {
+		if err = rows.Scan(&v.Name, &v.Vlan, &v.Host, &v.HostVlan, &v.Os, &v.Description, &v.DeploymentTicket); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch VM").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.
@@ -173,6 +173,8 @@ func validateVMForCreation(v *crimson.VM) error {
 		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
 	case v.Host == "":
 		return status.Error(codes.InvalidArgument, "physical hostname is required and must be non-empty")
+	case v.HostVlan < 1:
+		return status.Error(codes.InvalidArgument, "host VLAN is required and must be positive")
 	case v.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
 	default:
