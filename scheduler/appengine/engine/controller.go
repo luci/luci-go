@@ -80,7 +80,7 @@ func controllerForInvocation(c context.Context, e *engineImpl, inv *Invocation) 
 	if err = ctl.populateState(); err != nil {
 		return ctl, fmt.Errorf("failed to construct task.State - %s", err)
 	}
-	if err = ctl.populateRequest(); err != nil {
+	if ctl.request, err = getRequestFromInv(&ctl.saved); err != nil {
 		return ctl, fmt.Errorf("failed to construct task.Request - %s", err)
 	}
 	return ctl, nil
@@ -92,19 +92,6 @@ func (ctl *taskController) populateState() error {
 		Status:   ctl.saved.Status,
 		ViewURL:  ctl.saved.ViewURL,
 		TaskData: append([]byte(nil), ctl.saved.TaskData...), // copy
-	}
-	return nil
-}
-
-// populateRequest populates 'request' using data in 'saved'.
-func (ctl *taskController) populateRequest() error {
-	triggers, err := ctl.saved.IncomingTriggers()
-	if err != nil {
-		return err
-	}
-	ctl.request = task.Request{
-		TriggeredBy:      ctl.saved.TriggeredBy,
-		IncomingTriggers: triggers,
 	}
 	return nil
 }
