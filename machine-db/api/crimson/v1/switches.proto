@@ -6,17 +6,9 @@ syntax = "proto3";
 
 package crimson;
 
-// ListSwitchesRequest is a request to retrieve switches.
-message ListSwitchesRequest {
-  // The names of switches to retrieve.
-  repeated string names = 1;
-  // The datacenters to filter retrieved switches on.
-  repeated string datacenters = 2;
-  // The racks to filter retrieved switches on.
-  repeated string racks = 3;
-}
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// Switch describes a switch.
+// A switch in the database.
 message Switch {
   // The name of this switch. Uniquely identifies this switch.
   string name = 1;
@@ -28,9 +20,21 @@ message Switch {
   string datacenter = 4;
   // The rack this switch belongs to.
   string rack = 5;
+  // The state of this switch.
+  common.State state = 6;
 }
 
-// ListSwitchesResponse is a response to a request to retrieve switches.
+// A request to list switches in the database.
+message ListSwitchesRequest {
+  // The names of switches to retrieve.
+  repeated string names = 1;
+  // The datacenters to filter retrieved switches on.
+  repeated string datacenters = 2;
+  // The racks to filter retrieved switches on.
+  repeated string racks = 3;
+}
+
+// A response containing a list of switches in the database.
 message ListSwitchesResponse {
   // The switches matching the request.
   repeated Switch switches = 1;

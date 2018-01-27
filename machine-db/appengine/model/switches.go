@@ -50,7 +50,7 @@ type SwitchesTable struct {
 func (t *SwitchesTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT id, name, description, ports, rack_id
+		SELECT id, name, description, ports, state, rack_id
 		FROM switches
 	`)
 	if err != nil {
@@ -59,7 +59,7 @@ func (t *SwitchesTable) fetch(c context.Context) error {
 	defer rows.Close()
 	for rows.Next() {
 		s := &Switch{}
-		if err := rows.Scan(&s.Id, &s.Name, &s.Description, &s.Ports, &s.RackId); err != nil {
+		if err := rows.Scan(&s.Id, &s.Name, &s.Description, &s.Ports, &s.State, &s.RackId); err != nil {
 			return errors.Annotate(err, "failed to scan switch").Err()
 		}
 		t.current = append(t.current, s)
@@ -69,7 +69,7 @@ func (t *SwitchesTable) fetch(c context.Context) error {
 
 // needsUpdate returns true if the given row needs to be updated to match the given config.
 func (*SwitchesTable) needsUpdate(row, cfg *Switch) bool {
-	return row.Ports != cfg.Ports || row.Description != cfg.Description || row.RackId != cfg.RackId
+	return row.Ports != cfg.Ports || row.Description != cfg.Description || row.State != cfg.State || row.RackId != cfg.RackId
 }
 
 // computeChanges computes the changes that need to be made to the switches in the database.
@@ -87,6 +87,7 @@ func (t *SwitchesTable) computeChanges(c context.Context, datacenters []*config.
 						Name:        cfg.Name,
 						Description: cfg.Description,
 						Ports:       cfg.Ports,
+						State:       cfg.State,
 					},
 					RackId: id,
 				}
@@ -134,8 +135,8 @@ func (t *SwitchesTable) add(c context.Context) error {
 
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO switches (name, description, ports, rack_id)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO switches (name, description, ports, state, rack_id)
+		VALUES (?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
@@ -145,7 +146,7 @@ func (t *SwitchesTable) add(c context.Context) error {
 	// Add each switch to the database, and update the slice of switches with each addition.
 	for len(t.additions) > 0 {
 		s := t.additions[0]
-		result, err := stmt.ExecContext(c, s.Name, s.Description, s.Ports, s.RackId)
+		result, err := stmt.ExecContext(c, s.Name, s.Description, s.Ports, s.State, s.RackId)
 		if err != nil {
 			return errors.Annotate(err, "failed to add switch %q", s.Name).Err()
 		}
@@ -214,7 +215,7 @@ func (t *SwitchesTable) update(c context.Context) error {
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
 		UPDATE switches
-		SET description = ?, ports = ?, rack_id = ?
+		SET description = ?, ports = ?, state = ?, rack_id = ?
 		WHERE id = ?
 	`)
 	if err != nil {
@@ -230,13 +231,14 @@ func (t *SwitchesTable) update(c context.Context) error {
 			if u, ok := updated[s.Id]; ok {
 				s.Description = u.Description
 				s.Ports = u.Ports
+				s.State = u.State
 				s.RackId = u.RackId
 			}
 		}
 	}()
 	for len(t.updates) > 0 {
 		s := t.updates[0]
-		if _, err := stmt.ExecContext(c, s.Description, s.Ports, s.RackId, s.Id); err != nil {
+		if _, err := stmt.ExecContext(c, s.Description, s.Ports, s.State, s.RackId, s.Id); err != nil {
 			return errors.Annotate(err, "failed to update switch %q", s.Name).Err()
 		}
 		updated[s.Id] = s

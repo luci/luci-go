@@ -22,6 +22,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -34,8 +35,8 @@ func TestSwitches(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `^SELECT id, name, description, ports, rack_id FROM switches$`
-		columns := []string{"id", "name", "description", "ports", "rack_id"}
+		selectStmt := `^SELECT id, name, description, ports, state, rack_id FROM switches$`
+		columns := []string{"id", "name", "description", "ports", "state", "rack_id"}
 		rows := sqlmock.NewRows(columns)
 		table := &SwitchesTable{}
 
@@ -54,8 +55,8 @@ func TestSwitches(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			rows.AddRow(1, "switch 1", "description 1", 10, 1)
-			rows.AddRow(2, "switch 2", "description 2", 20, 2)
+			rows.AddRow(1, "switch 1", "description 1", 10, common.State_FREE, 1)
+			rows.AddRow(2, "switch 2", "description 2", 20, common.State_SERVING, 2)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*Switch{
@@ -64,6 +65,7 @@ func TestSwitches(t *testing.T) {
 						Name:        "switch 1",
 						Description: "description 1",
 						Ports:       10,
+						State:       common.State_FREE,
 					},
 					Id:     1,
 					RackId: 1,
@@ -73,6 +75,7 @@ func TestSwitches(t *testing.T) {
 						Name:        "switch 2",
 						Description: "description 2",
 						Ports:       20,
+						State:       common.State_SERVING,
 					},
 					Id:     2,
 					RackId: 2,
@@ -129,11 +132,13 @@ func TestSwitches(t *testing.T) {
 									Name:        "switch 1",
 									Description: "description 1",
 									Ports:       10,
+									State:       common.State_FREE,
 								},
 								{
 									Name:        "switch 2",
 									Description: "description 2",
 									Ports:       20,
+									State:       common.State_SERVING,
 								},
 							},
 						},
@@ -144,6 +149,7 @@ func TestSwitches(t *testing.T) {
 									Name:        "switch 3",
 									Description: "description 3",
 									Ports:       30,
+									State:       common.State_REPAIR,
 								},
 							},
 						},
@@ -159,6 +165,7 @@ func TestSwitches(t *testing.T) {
 									Name:        "switch 4",
 									Description: "description 4",
 									Ports:       40,
+									State:       common.State_TEST,
 								},
 							},
 						},
@@ -175,6 +182,7 @@ func TestSwitches(t *testing.T) {
 						Name:        "switch 1",
 						Description: "description 1",
 						Ports:       10,
+						State:       common.State_FREE,
 					},
 					RackId: table.racks[dcs[0].Rack[0].Name],
 				},
@@ -183,6 +191,7 @@ func TestSwitches(t *testing.T) {
 						Name:        "switch 2",
 						Description: "description 2",
 						Ports:       20,
+						State:       common.State_SERVING,
 					},
 					RackId: table.racks[dcs[0].Rack[0].Name],
 				},
@@ -191,6 +200,7 @@ func TestSwitches(t *testing.T) {
 						Name:        "switch 3",
 						Description: "description 3",
 						Ports:       30,
+						State:       common.State_REPAIR,
 					},
 					RackId: table.racks[dcs[0].Rack[1].Name],
 				},
@@ -199,6 +209,7 @@ func TestSwitches(t *testing.T) {
 						Name:        "switch 4",
 						Description: "description 4",
 						Ports:       40,
+						State:       common.State_TEST,
 					},
 					RackId: table.racks[dcs[1].Rack[0].Name],
 				},
@@ -213,6 +224,7 @@ func TestSwitches(t *testing.T) {
 					Name:        "switch 1",
 					Description: "old description",
 					Ports:       10,
+					State:       common.State_FREE,
 				},
 				Id:     1,
 				RackId: 1,
@@ -235,6 +247,7 @@ func TestSwitches(t *testing.T) {
 									Name:        table.current[0].Name,
 									Description: "new description",
 									Ports:       20,
+									State:       common.State_SERVING,
 								},
 							},
 						},
@@ -259,6 +272,7 @@ func TestSwitches(t *testing.T) {
 						Name:        dcs[0].Rack[0].Switch[0].Name,
 						Description: dcs[0].Rack[0].Switch[0].Description,
 						Ports:       dcs[0].Rack[0].Switch[0].Ports,
+						State:       dcs[0].Rack[0].Switch[0].State,
 					},
 					Id:     table.current[0].Id,
 					RackId: table.racks[dcs[0].Rack[0].Name],
@@ -268,6 +282,7 @@ func TestSwitches(t *testing.T) {
 						Name:        dcs[0].Rack[1].Switch[0].Name,
 						Description: dcs[0].Rack[1].Switch[0].Description,
 						Ports:       dcs[0].Rack[1].Switch[0].Ports,
+						State:       dcs[0].Rack[1].Switch[0].State,
 					},
 					Id:     table.current[0].Id,
 					RackId: table.racks[dcs[0].Rack[1].Name],
@@ -303,7 +318,7 @@ func TestSwitches(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `^INSERT INTO switches \(name, description, ports, rack_id\) VALUES \(\?, \?, \?, \?\)$`
+		insertStmt := `^INSERT INTO switches \(name, description, ports, state, rack_id\) VALUES \(\?, \?, \?, \?, \?\)$`
 		table := &SwitchesTable{}
 
 		Convey("empty", func() {
@@ -440,7 +455,7 @@ func TestSwitches(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		updateStmt := `^UPDATE switches SET description = \?, ports = \?, rack_id = \? WHERE id = \?$`
+		updateStmt := `^UPDATE switches SET description = \?, ports = \?, state = \?, rack_id = \? WHERE id = \?$`
 		table := &SwitchesTable{}
 
 		Convey("empty", func() {
@@ -456,6 +471,7 @@ func TestSwitches(t *testing.T) {
 					Name:        "switch",
 					Description: "new description",
 					Ports:       20,
+					State:       common.State_SERVING,
 				},
 				Id:     1,
 				RackId: 2,
@@ -465,6 +481,7 @@ func TestSwitches(t *testing.T) {
 					Name:        table.updates[0].Name,
 					Description: "old description",
 					Ports:       10,
+					State:       common.State_FREE,
 				},
 				Id:     table.updates[0].Id,
 				RackId: 1,
@@ -482,6 +499,7 @@ func TestSwitches(t *testing.T) {
 					Name:        "switch",
 					Description: "new description",
 					Ports:       20,
+					State:       common.State_SERVING,
 				},
 				Id:     1,
 				RackId: 2,
@@ -491,6 +509,7 @@ func TestSwitches(t *testing.T) {
 					Name:        table.updates[0].Name,
 					Description: "old description",
 					Ports:       10,
+					State:       common.State_FREE,
 				},
 				Id:     table.updates[0].Id,
 				RackId: 1,
@@ -509,6 +528,7 @@ func TestSwitches(t *testing.T) {
 					Name:        "switch",
 					Description: "new description",
 					Ports:       20,
+					State:       common.State_SERVING,
 				},
 				Id:     1,
 				RackId: 2,
@@ -518,6 +538,7 @@ func TestSwitches(t *testing.T) {
 					Name:        table.updates[0].Name,
 					Description: "old description",
 					Ports:       10,
+					State:       common.State_FREE,
 				},
 				Id:     table.updates[0].Id,
 				RackId: 1,
@@ -529,6 +550,7 @@ func TestSwitches(t *testing.T) {
 			So(table.current, ShouldHaveLength, 1)
 			So(table.current[0].Description, ShouldEqual, "new description")
 			So(table.current[0].Ports, ShouldEqual, 20)
+			So(table.current[0].State, ShouldEqual, common.State_SERVING)
 			So(table.current[0].RackId, ShouldEqual, 2)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

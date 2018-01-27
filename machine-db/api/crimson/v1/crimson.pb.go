@@ -43,8 +43,8 @@ It has these top-level messages:
 	Rack
 	ListRacksRequest
 	ListRacksResponse
-	ListSwitchesRequest
 	Switch
+	ListSwitchesRequest
 	ListSwitchesResponse
 	ListVLANsRequest
 	VLAN
