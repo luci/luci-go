@@ -60,6 +60,30 @@
   </div>
   {{end}}
 
+  {{if .Inv.Properties}}
+  <h4>Incoming properties</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      <pre>{{.Inv.Properties}}</pre>
+    </div>
+  </div>
+  {{end}}
+
+  {{if .Inv.Tags}}
+  <h4>Incoming tags</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      <ul>
+        {{range .Inv.Tags}}
+        <li>
+          <span style="font-family:monospace;">{{.}}</span>
+        </li>
+        {{end}}
+      </ul>
+    </div>
+  </div>
+  {{end}}
+
   {{if .Inv.OutgoingTriggers}}
   <h4>Outgoing triggers</h4>
   <div class="row">
