@@ -22,7 +22,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
@@ -152,29 +154,52 @@ type taskData struct {
 
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
-	// At this point config is already validated by ValidateProtoMessage.
-	cfg := ctl.Task().(*messages.BuildbucketTask)
+	cfg := ctl.Task().(*messages.BuildbucketTask) // already validated
+	req := ctl.Request()
 
-	// Default set of tags.
+	// Join tags from all known sources. Note: no overriding here for now, tags
+	// with identical keys are allowed.
 	tags := utils.KVListFromMap(defaultTags(c, ctl, cfg)).Pack(':')
 	tags = append(tags, cfg.Tags...)
+	tags = append(tags, req.Tags...)
 
-	// Prepare parameters blob.
-	var params struct {
-		BuilderName string            `json:"builder_name"`
-		Properties  map[string]string `json:"properties"`
+	// Prepare properties for the build. Properties from the request override the
+	// ones in the config.
+	props := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value, len(cfg.Properties)+len(req.Properties.GetFields())),
 	}
-	params.BuilderName = cfg.Builder
-	params.Properties = make(map[string]string, len(cfg.Properties))
 	for _, kv := range utils.UnpackKVList(cfg.Properties, ':') {
-		params.Properties[kv.Key] = kv.Value
+		props.Fields[kv.Key] = strProtoValue(kv.Value)
 	}
-	if t := maybeGetTrigger(c, ctl); t != nil {
-		params.Properties["revision"] = t.revision
-		params.Properties["branch"] = t.ref
-		tags = append(tags, "buildset:"+t.buildset(), "gitiles_ref:"+t.ref)
+	for k, v := range req.Properties.GetFields() {
+		props.Fields[k] = v
 	}
-	paramsJSON, err := json.Marshal(&params)
+
+	// TODO(vadimsh): Remove this fallback once all servers are updated to supply
+	// req.Properties for gitiles triggers. Invocation triggered by old server
+	// code supply list of triggers, but no Properties or Tags. So build them
+	// right here. This is needed only to support in-flight invocations started
+	// when the server is being updated.
+	if req.Properties == nil {
+		if t := maybeGetTrigger(c, ctl); t != nil {
+			props.Fields["revision"] = strProtoValue(t.revision)
+			props.Fields["branch"] = strProtoValue(t.ref)
+			tags = append(tags, "buildset:"+t.buildset(), "gitiles_ref:"+t.ref)
+		}
+	}
+
+	// Prepare JSON blob for Buildbucket. encoding/json and jsonpb doesn't
+	// interoperate with each other, so stick with jsonpb for this.
+	paramsJSON, err := (&jsonpb.Marshaler{}).MarshalToString(&structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"builder_name": strProtoValue(cfg.Builder),
+			"properties": {
+				Kind: &structpb.Value_StructValue{
+					StructValue: props,
+				},
+			},
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to marshal parameters JSON - %s", err)
 	}
@@ -194,7 +219,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	request := bbapi.ApiPutRequestMessage{
 		Bucket:            cfg.Bucket,
 		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationNonce()),
-		ParametersJson:    string(paramsJSON),
+		ParametersJson:    paramsJSON,
 		Tags:              tags,
 		PubsubCallback: &bbapi.ApiPubSubCallbackMessage{
 			AuthToken: "...", // set a bit later, after printing this struct
@@ -403,6 +428,17 @@ func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r
 		ctl.State().Status = task.StatusFailed
 	}
 }
+
+func strProtoValue(s string) *structpb.Value {
+	return &structpb.Value{
+		Kind: &structpb.Value_StringValue{
+			StringValue: s,
+		},
+	}
+}
+
+// TODO(vadimsh): Remove this code once the fallback in LaunchTask is removed.
+// This code now lives in engine/request.go.
 
 func maybeGetTrigger(c context.Context, ctl task.Controller) *normalizedTrigger {
 	var prevTriggerID string

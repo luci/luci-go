@@ -180,6 +180,18 @@ type Invocation struct {
 	// Empty identity string if it was triggered by the service itself.
 	TriggeredBy identity.Identity
 
+	// PropertiesRaw is a blob with serialized task.Request.Properties supplied
+	// when the invocation was created.
+	//
+	// Task managers use it to prepare the parameters for tasks.
+	PropertiesRaw []byte `gae:",noindex"`
+
+	// Tags is a sorted list of indexed "key:value" pairs supplied via
+	// task.Request.Tags when the invocation was created.
+	//
+	// May be passed down the stack by task managers.
+	Tags []string
+
 	// IncomingTriggersRaw is a serialized list of triggers that the invocation
 	// consumed.
 	//
@@ -266,6 +278,8 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.Finished.Equal(other.Finished) &&
 		e.InvocationNonce == other.InvocationNonce &&
 		e.TriggeredBy == other.TriggeredBy &&
+		bytes.Equal(e.PropertiesRaw, other.PropertiesRaw) &&
+		equalSortedLists(e.Tags, other.Tags) &&
 		bytes.Equal(e.IncomingTriggersRaw, other.IncomingTriggersRaw) &&
 		bytes.Equal(e.OutgoingTriggersRaw, other.OutgoingTriggersRaw) &&
 		bytes.Equal(e.PendingTimersRaw, other.PendingTimersRaw) &&

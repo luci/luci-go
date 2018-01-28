@@ -1135,7 +1135,7 @@ func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invoca
 	}
 	invID, err := generateInvocationID(c, jobKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to generate invocation ID").Err()
 	}
 	inv.ID = invID
 	if isV2 {
@@ -1144,7 +1144,17 @@ func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invoca
 		inv.JobKey = jobKey
 	}
 	if req != nil {
-		putRequestIntoInv(inv, req)
+		if err := putRequestIntoInv(inv, req); err != nil {
+			return nil, errors.Annotate(err, "failed to serialize task request").Err()
+		}
+		if req.DebugLog != "" {
+			inv.DebugLog += "Debug output from the triage procedure:\n"
+			inv.DebugLog += "---------------------------------------\n"
+			inv.DebugLog += req.DebugLog
+			inv.DebugLog += "---------------------------------------\n\n"
+			inv.trimDebugLog() // in case it is HUGE
+			inv.DebugLog += "Debug output from the invocation itself:\n"
+		}
 	}
 	return inv, nil
 }

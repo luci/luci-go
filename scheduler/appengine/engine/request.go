@@ -15,48 +15,195 @@
 package engine
 
 import (
+	"sort"
+	"strings"
+
+	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
+
+	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/task/utils"
 )
 
 // TODO(vadimsh): This is temporary dumb logic until v2 is fully implemented.
 // This design most likely will change.
+
+// TODO(vadimsh): Needs more tests. Postponed until v2, since this file will
+// likely be largely rewritten.
+
+// requestBuilder is a task.Request in a process of being prepared.
+//
+// This type exists mostly to group a bunch of utility methods together.
+type requestBuilder struct {
+	task.Request
+
+	ctx context.Context // for logging
+}
 
 // requestFromTriggers examines zero or more triggers and derives a request for
 // new invocation based on them.
 //
 // Currently picks the values from most recent trigger and disregards properties
 // of the rest of them.
+//
+// TODO(vadimsh): Allow returning errors and handle them somehow? By skipping
+// "broken" triggers?
 func requestFromTriggers(c context.Context, t []*internal.Trigger) task.Request {
-	// TODO(vadimsh): Constructs Properties and Tags based on the most recent
-	// trigger.
-	return task.Request{
-		IncomingTriggers: t,
+	if len(t) == 0 {
+		// A force-triggered job, nowhere to derive Properties from.
+		return task.Request{}
 	}
+
+	req := requestBuilder{ctx: c}
+
+	// 't' is semantically a set. Sort triggers by the creation time, most recent
+	// last, so the task manager (and UI) sees them ordered already.
+	req.IncomingTriggers = append(req.IncomingTriggers, t...)
+	sort.Slice(req.IncomingTriggers, func(i, j int) bool {
+		return isTriggerOlder(req.IncomingTriggers[i], req.IncomingTriggers[j])
+	})
+
+	// Derive properties and tags from the most recent trigger for now.
+	newest := req.IncomingTriggers[len(req.IncomingTriggers)-1]
+	switch p := newest.Payload.(type) {
+	case *internal.Trigger_Noop:
+		req.prepareNoopRequest(p.Noop)
+	case *internal.Trigger_Gitiles:
+		req.prepareGitilesRequest(p.Gitiles)
+	case *internal.Trigger_Buildbucket:
+		req.prepareBuildbucketRequest(p.Buildbucket)
+	default:
+		req.debugLog("Unrecognized trigger payload of type %T, ignoring", p)
+	}
+
+	return req.Request
 }
 
 // putRequestIntoInv copies task.Request fields into Invocation.
 //
-// See getRequestFromInv for reverse.
-func putRequestIntoInv(inv *Invocation, req *task.Request) {
-	// TODO(vadimsh): Propagate req.Properties and req.Tags.
+// See getRequestFromInv for reverse. Fails only on serialization errors,
+// this should be rare.
+func putRequestIntoInv(inv *Invocation, req *task.Request) error {
+	var props []byte
+	if req.Properties != nil {
+		var err error
+		if props, err = proto.Marshal(req.Properties); err != nil {
+			return errors.Annotate(err, "can't marshal Properties").Err()
+		}
+	}
+
+	if err := utils.ValidateKVList("tag", req.Tags, ':'); err != nil {
+		return errors.Annotate(err, "rejecting bad tags").Err()
+	}
+	sortedTags := append([]string(nil), req.Tags...)
+	sort.Strings(sortedTags)
+
+	// Note: DebugLog is handled in a special way by initInvocation.
 	inv.TriggeredBy = req.TriggeredBy
 	inv.IncomingTriggersRaw = marshalTriggersList(req.IncomingTriggers)
+	inv.PropertiesRaw = props
+	inv.Tags = sortedTags
+	return nil
 }
 
 // getRequestFromInv constructs task.Request from Invocation fields.
 //
 // It is reverse of putRequestIntoInv. Fails only on deserialization errors,
 // this should be rare.
-func getRequestFromInv(inv *Invocation) (task.Request, error) {
-	triggers, err := inv.IncomingTriggers()
-	if err != nil {
-		return task.Request{}, err
+func getRequestFromInv(inv *Invocation) (r task.Request, err error) {
+	r.TriggeredBy = inv.TriggeredBy
+	if r.IncomingTriggers, err = inv.IncomingTriggers(); err != nil {
+		return r, errors.Annotate(err, "failed to deserialize incoming triggers").Err()
 	}
-	return task.Request{
-		TriggeredBy:      inv.TriggeredBy,
-		IncomingTriggers: triggers,
-	}, nil
+	if len(inv.PropertiesRaw) != 0 {
+		props := &structpb.Struct{}
+		if err = proto.Unmarshal(inv.PropertiesRaw, props); err != nil {
+			return r, errors.Annotate(err, "failed to deserialize properties").Err()
+		}
+		r.Properties = props
+	}
+	r.Tags = inv.Tags
+	return
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// requestBuilder methods
+
+func (r *requestBuilder) debugLog(format string, args ...interface{}) {
+	debugLog(r.ctx, &r.DebugLog, format, args...)
+}
+
+func (r *requestBuilder) prepareNoopRequest(t *scheduler.NoopTrigger) {
+	r.Properties = structFromMap(map[string]string{
+		"noop_trigger_data": t.Data, // for testing
+	})
+}
+
+func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
+	repo, err := gitiles.NormalizeRepoURL(t.Repo, false)
+	if err != nil {
+		r.debugLog("Bad repo URL %q in the trigger - %s", t.Repo, err)
+		return
+	}
+	commit := buildbucket.GitilesCommit{
+		Host:     repo.Host,
+		Project:  strings.TrimPrefix(repo.Path, "/"),
+		Revision: t.Revision,
+	}
+
+	r.Properties = structFromMap(map[string]string{
+		"revision": t.Revision,
+		"branch":   t.Ref,
+	})
+	r.Tags = []string{
+		"buildset:" + commit.String(),
+		"gitiles_ref:" + t.Ref,
+	}
+}
+
+func (r *requestBuilder) prepareBuildbucketRequest(t *scheduler.BuildbucketTrigger) {
+	r.Properties = t.Properties
+	r.Tags = t.Tags
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Utilities.
+
+// isTriggerOlder returns true if t1 is older than t2.
+//
+// Compares IDs in case of a tie.
+func isTriggerOlder(t1, t2 *internal.Trigger) bool {
+	ts1 := google.TimeFromProto(t1.Created)
+	ts2 := google.TimeFromProto(t2.Created)
+	switch {
+	case ts1.After(ts2):
+		return false
+	case ts2.After(ts1):
+		return true
+	default: // equal timestamps
+		if t1.OrderInBatch != t2.OrderInBatch {
+			return t1.OrderInBatch < t2.OrderInBatch
+		}
+		return t1.Id < t2.Id
+	}
+}
+
+func structFromMap(m map[string]string) *structpb.Struct {
+	out := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value, len(m)),
+	}
+	for k, v := range m {
+		out.Fields[k] = &structpb.Value{
+			Kind: &structpb.Value_StringValue{StringValue: v},
+		}
+	}
+	return out
 }

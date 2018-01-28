@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
@@ -314,11 +315,8 @@ type Request struct {
 	// Properties are arbitrary key-value pairs derived from the triggers by the
 	// triggering policy function and interpreted by the triggered task manager.
 	//
-	// Values may have arbitrary simple types (int64, string, lists and maps of
-	// the above). The entire structure should be JSON-serializable.
-	//
 	// TODO(vadimsh): Needs more structure :(
-	Properties map[string]interface{}
+	Properties *structpb.Struct
 
 	// Tags are arbitrary "<key>:<value>" pairs derived from the triggers by the
 	// triggering policy function.
@@ -329,4 +327,14 @@ type Request struct {
 	//
 	// TODO(vadimsh): Needs more structure :(
 	Tags []string
+
+	// DebugLog is optional multi-line string to put in the invocation debug log
+	// when it starts.
+	//
+	// It is used to report debug information (produced by the engine triggering
+	// guts) to the invocation debug log (visible via UI).
+	//
+	// This field is used internally by the engine. Task managers will never see
+	// it set.
+	DebugLog string
 }
