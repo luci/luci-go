@@ -164,9 +164,18 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
 }
 
-// CallerHasRole does what it says and returns only transient errors.
-func (e *Job) CallerHasRole(c context.Context, role acl.Role) (bool, error) {
-	return e.Acls.CallerHasRole(logging.SetField(c, "JobID", e.JobID), role)
+// CheckRole returns nil if the caller has the given role or ErrNoPermission
+// otherwise.
+//
+// May also return transient errors.
+func (e *Job) CheckRole(c context.Context, role acl.Role) error {
+	switch yep, err := e.Acls.CallerHasRole(logging.SetField(c, "JobID", e.JobID), role); {
+	case err != nil:
+		return err
+	case !yep:
+		return ErrNoPermission
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

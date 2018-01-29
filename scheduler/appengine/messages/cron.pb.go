@@ -43,12 +43,12 @@ const (
 	Acl_READER Acl_Role = 0
 	// Can emit triggers for a Job.
 	//
-	// Being TRIGGERER does NOT grant READER permission.
+	// Being TRIGGERER implicitly grants READER permission.
 	Acl_TRIGGERER Acl_Role = 2
 	// Same as READER + TRIGGERER + can modify state of a Job or Invocation such
 	// as aborting them.
-	// LUCI scheduler (this service) is an OWNER of each `Job` and `Trigger`, thus
-	// `Trigger`s are allowed to trigger all `Job`s defined in the same
+	// LUCI scheduler (this service) is an OWNER of each `Job` and `Trigger`,
+	// thus `Trigger`s are allowed to trigger all `Job`s defined in the same
 	// project, regardless of their respective ACLs.
 	Acl_OWNER Acl_Role = 1
 )

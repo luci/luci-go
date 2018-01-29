@@ -201,7 +201,7 @@ func init() {
 	api := prpc.Server{
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
-	scheduler.RegisterSchedulerServer(&api, apiservers.SchedulerServer{
+	scheduler.RegisterSchedulerServer(&api, &apiservers.SchedulerServer{
 		Engine:  globalEngine.PublicAPI(),
 		Catalog: globalCatalog,
 	})

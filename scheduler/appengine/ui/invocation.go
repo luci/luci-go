@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -35,37 +34,18 @@ func invocationPage(c *router.Context) {
 		return
 	}
 
-	var inv *engine.Invocation
-	var job *engine.Job
-	var err1, err2 error
-
-	eng := config(c.Context).Engine
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		inv, err1 = eng.GetVisibleInvocation(c.Context, projectID+"/"+jobName, invID)
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		job, err2 = eng.GetVisibleJob(c.Context, projectID+"/"+jobName)
-	}()
-	wg.Wait()
-
-	// panic on internal datastore errors to trigger HTTP 500.
-	switch {
-	case err2 == engine.ErrNoSuchJob:
-		http.Error(c.Writer, "No such job or no permission", http.StatusNotFound)
+	job := jobFromEngine(c, projectID, jobName)
+	if job == nil {
 		return
-	case err1 == engine.ErrNoSuchInvocation:
+	}
+
+	inv, err := config(c.Context).Engine.GetInvocation(c.Context, job, invID)
+	switch {
+	case err == engine.ErrNoSuchInvocation:
 		http.Error(c.Writer, "No such invocation", http.StatusNotFound)
 		return
-	case err1 != nil:
-		panic(err1)
-	case err2 != nil:
-		panic(err2)
+	case err != nil:
+		panic(err)
 	}
 
 	jobUI := makeJob(c.Context, job)
@@ -79,12 +59,12 @@ func invocationPage(c *router.Context) {
 // Actions.
 
 func abortInvocationAction(c *router.Context) {
-	handleInvAction(c, func(jobID string, invID int64) error {
-		return config(c.Context).Engine.AbortInvocation(c.Context, jobID, invID)
+	handleInvAction(c, func(job *engine.Job, invID int64) error {
+		return config(c.Context).Engine.AbortInvocation(c.Context, job, invID)
 	})
 }
 
-func handleInvAction(c *router.Context, cb func(string, int64) error) {
+func handleInvAction(c *router.Context, cb func(*engine.Job, int64) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobName := c.Params.ByName("JobName")
 	invID := c.Params.ByName("InvID")
@@ -93,7 +73,13 @@ func handleInvAction(c *router.Context, cb func(string, int64) error) {
 		http.Error(c.Writer, "Bad invocation ID", 400)
 		return
 	}
-	switch err := cb(projectID+"/"+jobName, invIDAsInt); {
+
+	job := jobFromEngine(c, projectID, jobName)
+	if job == nil {
+		return
+	}
+
+	switch err := cb(job, invIDAsInt); {
 	case err == engine.ErrNoPermission:
 		http.Error(c.Writer, "Forbidden", 403)
 		return

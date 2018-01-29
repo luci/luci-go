@@ -17,6 +17,7 @@ package apiservers
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -42,7 +43,7 @@ type SchedulerServer struct {
 var _ scheduler.SchedulerServer = (*SchedulerServer)(nil)
 
 // GetJobs fetches all jobs satisfying JobsRequest and visibility ACLs.
-func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest) (*scheduler.JobsReply, error) {
+func (s *SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest) (*scheduler.JobsReply, error) {
 	if in.GetCursor() != "" {
 		// Paging in GetJobs isn't implemented until we have enough jobs to care.
 		// Until then, not empty cursor implies no more jobs to return.
@@ -80,19 +81,22 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 	return &scheduler.JobsReply{Jobs: jobs, NextCursor: ""}, nil
 }
 
-func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.InvocationsRequest) (*scheduler.InvocationsReply, error) {
+func (s *SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.InvocationsRequest) (*scheduler.InvocationsReply, error) {
+	job, err := s.getJob(ctx, in.GetJobRef())
+	if err != nil {
+		return nil, err
+	}
+
 	pageSize := 50
 	if in.PageSize > 0 && int(in.PageSize) < pageSize {
 		pageSize = int(in.PageSize)
 	}
 
-	einvs, cursor, err := s.Engine.ListVisibleInvocations(ctx, getJobId(in.GetJobRef()), pageSize, in.GetCursor())
-	switch {
-	case err == engine.ErrNoSuchJob:
-		return nil, status.Errorf(codes.NotFound, "Job does not exist or no access")
-	case err != nil:
+	einvs, cursor, err := s.Engine.ListInvocations(ctx, job, pageSize, in.GetCursor())
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
 	}
+
 	invs := make([]*scheduler.Invocation, len(einvs))
 	for i, einv := range einvs {
 		invs[i] = &scheduler.Invocation{
@@ -119,31 +123,31 @@ func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invoc
 
 //// Actions.
 
-func (s SchedulerServer) PauseJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
-	return runAction(ctx, func() error {
-		return s.Engine.PauseJob(ctx, getJobId(in))
+func (s *SchedulerServer) PauseJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
+	return s.runAction(ctx, in, func(job *engine.Job) error {
+		return s.Engine.PauseJob(ctx, job)
 	})
 }
 
-func (s SchedulerServer) ResumeJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
-	return runAction(ctx, func() error {
-		return s.Engine.ResumeJob(ctx, getJobId(in))
+func (s *SchedulerServer) ResumeJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
+	return s.runAction(ctx, in, func(job *engine.Job) error {
+		return s.Engine.ResumeJob(ctx, job)
 	})
 }
 
-func (s SchedulerServer) AbortJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
-	return runAction(ctx, func() error {
-		return s.Engine.AbortJob(ctx, getJobId(in))
+func (s *SchedulerServer) AbortJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
+	return s.runAction(ctx, in, func(job *engine.Job) error {
+		return s.Engine.AbortJob(ctx, job)
 	})
 }
 
-func (s SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.InvocationRef) (*empty.Empty, error) {
-	return runAction(ctx, func() error {
-		return s.Engine.AbortInvocation(ctx, getJobId(in.GetJobRef()), in.GetInvocationId())
+func (s *SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.InvocationRef) (*empty.Empty, error) {
+	return s.runAction(ctx, in.GetJobRef(), func(job *engine.Job) error {
+		return s.Engine.AbortInvocation(ctx, job, in.GetInvocationId())
 	})
 }
 
-func (s SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*empty.Empty, error) {
+func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*empty.Empty, error) {
 	// Optionally use client-provided time if it is within reasonable margins.
 	// This is needed to make EmitTriggers idempotent (when it emits a batch).
 	now := clock.Now(ctx)
@@ -167,28 +171,77 @@ func (s SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTri
 	}
 
 	// Build a mapping "jobID => list of triggers", convert public representation
-	// of a trigger into internal one.
-	triggersPerJob := map[string][]*internal.Trigger{}
+	// of a trigger into internal one, validating them.
+	triggersPerJobID := map[string][]*internal.Trigger{}
 	for index, batch := range in.Batches {
 		tr, err := internalTrigger(batch.Trigger, now, index)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad trigger #%d (%q) - %s", index, batch.Trigger.Id, err)
 		}
 		for _, jobRef := range batch.Jobs {
-			jobId := getJobId(jobRef)
-			triggersPerJob[jobId] = append(triggersPerJob[jobId], tr)
+			jobId := jobRef.GetProject() + "/" + jobRef.GetJob()
+			triggersPerJobID[jobId] = append(triggersPerJobID[jobId], tr)
 		}
 	}
 
-	return runAction(ctx, func() error {
-		return s.Engine.EmitTriggers(ctx, triggersPerJob)
-	})
+	// Check jobs presence and READER ACLs.
+	jobIDs := make([]string, 0, len(triggersPerJobID))
+	for id := range triggersPerJobID {
+		jobIDs = append(jobIDs, id)
+	}
+	visible, err := s.Engine.GetVisibleJobBatch(ctx, jobIDs)
+	switch {
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
+	case len(visible) != len(jobIDs):
+		missing := make([]string, 0, len(jobIDs)-len(visible))
+		for _, j := range jobIDs {
+			if visible[j] == nil {
+				missing = append(missing, j)
+			}
+		}
+		return nil, status.Errorf(codes.NotFound,
+			"no such job or no READ permission: %s", strings.Join(missing, ", "))
+	}
+
+	// Submit the request to the Engine.
+	triggersPerJob := make(map[*engine.Job][]*internal.Trigger, len(visible))
+	for id, job := range visible {
+		triggersPerJob[job] = triggersPerJobID[id]
+	}
+	switch err = s.Engine.EmitTriggers(ctx, triggersPerJob); {
+	case err == engine.ErrNoPermission:
+		return nil, status.Errorf(codes.PermissionDenied, "no permission to execute the action")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
+	}
+
+	return &empty.Empty{}, nil
 }
 
 //// Private helpers.
 
-func runAction(ctx context.Context, action func() error) (*empty.Empty, error) {
-	switch err := action(); {
+// getJob fetches a job, checking READER ACL.
+//
+// Returns grpc errors that can be returned as is.
+func (s *SchedulerServer) getJob(ctx context.Context, ref *scheduler.JobRef) (*engine.Job, error) {
+	jobID := ref.GetProject() + "/" + ref.GetJob()
+	switch job, err := s.Engine.GetVisibleJob(ctx, jobID); {
+	case err == nil:
+		return job, nil
+	case err == engine.ErrNoSuchJob:
+		return nil, status.Errorf(codes.NotFound, "no such job or no READ permission")
+	default:
+		return nil, status.Errorf(codes.Internal, "internal error when fetching job: %s", err)
+	}
+}
+
+func (s *SchedulerServer) runAction(ctx context.Context, ref *scheduler.JobRef, action func(*engine.Job) error) (*empty.Empty, error) {
+	job, err := s.getJob(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+	switch err := action(job); {
 	case err == nil:
 		return &empty.Empty{}, nil
 	case err == engine.ErrNoSuchJob:
@@ -200,10 +253,6 @@ func runAction(ctx context.Context, action func() error) (*empty.Empty, error) {
 	default:
 		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
 	}
-}
-
-func getJobId(jobRef *scheduler.JobRef) string {
-	return jobRef.GetProject() + "/" + jobRef.GetJob()
 }
 
 func internalTrigger(t *scheduler.Trigger, now time.Time, index int) (*internal.Trigger, error) {

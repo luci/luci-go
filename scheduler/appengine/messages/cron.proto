@@ -14,12 +14,12 @@ message Acl {
     READER = 0;
     // Can emit triggers for a Job.
     //
-    // Being TRIGGERER does NOT grant READER permission.
+    // Being TRIGGERER implicitly grants READER permission.
     TRIGGERER = 2;
     // Same as READER + TRIGGERER + can modify state of a Job or Invocation such
     // as aborting them.
-    // LUCI scheduler (this service) is an OWNER of each `Job` and `Trigger`, thus
-    // `Trigger`s are allowed to trigger all `Job`s defined in the same
+    // LUCI scheduler (this service) is an OWNER of each `Job` and `Trigger`,
+    // thus `Trigger`s are allowed to trigger all `Job`s defined in the same
     // project, regardless of their respective ACLs.
     OWNER = 1;
   }

@@ -249,7 +249,7 @@ func TestAclsChecks(t *testing.T) {
 			IdentityGroups: []string{"triggerers"},
 		})
 		So(computeRoles(ctx, basicGroups), ShouldResemble, map[Role]bool{
-			Reader:    false,
+			Reader:    true,
 			Triggerer: true,
 			Owner:     false,
 		})
