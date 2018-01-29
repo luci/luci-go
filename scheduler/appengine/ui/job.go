@@ -19,17 +19,22 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	mc "go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+
+	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 )
 
 func jobPage(ctx *router.Context) {
 	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
+	e := config(c).Engine
 
 	projectID := p.ByName("ProjectID")
 	jobName := p.ByName("JobName")
@@ -40,9 +45,31 @@ func jobPage(ctx *router.Context) {
 		return
 	}
 
-	invs, nextCursor, err := config(c).Engine.ListInvocations(c, job, 50, cursor)
-	if err != nil {
-		panic(err)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	var invs []*engine.Invocation
+	var nextCursor string
+	var invErr error
+	go func() {
+		defer wg.Done()
+		invs, nextCursor, invErr = e.ListInvocations(c, job, 50, cursor)
+	}()
+
+	var triggers []*internal.Trigger
+	var triErr error
+	go func() {
+		defer wg.Done()
+		triggers, triErr = e.ListTriggers(c, job)
+	}()
+
+	wg.Wait()
+
+	switch {
+	case invErr != nil:
+		panic(errors.Annotate(invErr, "failed to fetch invocations").Err())
+	case triErr != nil:
+		panic(errors.Annotate(invErr, "failed to fetch triggers").Err())
 	}
 
 	// memcacheKey hashes cursor to reduce its length, since full cursor doesn't
@@ -81,10 +108,11 @@ func jobPage(ctx *router.Context) {
 	}
 
 	templates.MustRender(c, w, "pages/job.html", map[string]interface{}{
-		"Job":         jobUI,
-		"Invocations": invsUI,
-		"PrevCursor":  prevCursor,
-		"NextCursor":  nextCursor,
+		"Job":             jobUI,
+		"Invocations":     invsUI,
+		"PendingTriggers": makeTriggerList(jobUI.now, triggers),
+		"PrevCursor":      prevCursor,
+		"NextCursor":      nextCursor,
 	})
 }
 

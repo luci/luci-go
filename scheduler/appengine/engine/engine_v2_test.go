@@ -441,8 +441,8 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Eventually it runs the task which emits a bunch of triggers, which
-			// cause triggered job triage, which eventually results in a new
-			// invocation launch. At this point we stop and examine what we see.
+			// causes the triggered job triage. We stop right before it and examine
+			// what we see.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t1"})
 				So(ctl.Save(ctx), ShouldBeNil)
@@ -452,8 +452,8 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			}
 			tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 				ShouldStopBefore: func(t tqtesting.Task) bool {
-					task, ok := t.Payload.(*internal.LaunchInvocationsBatchTask)
-					return ok && task.Tasks[0].JobId == triggeredJob
+					_, ok := t.Payload.(*internal.TriageJobStateTask)
+					return ok
 				},
 			})
 			So(err, ShouldBeNil)
@@ -506,19 +506,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 					JobId:    triggeredJob,
 					Triggers: []*internal.Trigger{expectedTrigger2},
 				},
-
-				// Triggered job is getting triaged (because pending triggers).
-				&internal.TriageJobStateTask{
-					JobId: triggeredJob,
-				},
-
-				// Triggering job is getting triaged (because it has just finished).
-				&internal.TriageJobStateTask{
-					JobId: triggeringJob,
-				},
 			})
-
-			// At this point triggered job is just about to start.
 
 			// Triggering invocation has finished (with triggers recorded).
 			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID)
@@ -528,8 +516,16 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(outgoing, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 
-			// Now we resume the simulation. It will start the triggered invocation
-			// and run it.
+			// At this point triggered job's triage is about to start. Before it does,
+			// verify emitted trigger (sitting in the pending triggers set) is
+			// discoverable through ListTriggers.
+			tj, _ := e.getJob(c, triggeredJob)
+			triggers, err := e.ListTriggers(c, tj)
+			So(err, ShouldBeNil)
+			So(triggers, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+
+			// Resume the simulation to do the triages and start the triggered
+			// invocation.
 			var seen []*internal.Trigger
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				seen = ctl.Request().IncomingTriggers
@@ -541,6 +537,14 @@ func TestOneJobTriggersAnother(t *testing.T) {
 
 			// All the tasks we've just executed.
 			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				// Triggered job is getting triaged (because pending triggers).
+				&internal.TriageJobStateTask{
+					JobId: triggeredJob,
+				},
+				// Triggering job is getting triaged (because it has just finished).
+				&internal.TriageJobStateTask{
+					JobId: triggeringJob,
+				},
 				// The triggered job begins execution.
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeredJob, InvId: triggeredInvID}},

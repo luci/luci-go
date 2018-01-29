@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -67,9 +66,7 @@ func requestFromTriggers(c context.Context, t []*internal.Trigger) task.Request 
 	// 't' is semantically a set. Sort triggers by the creation time, most recent
 	// last, so the task manager (and UI) sees them ordered already.
 	req.IncomingTriggers = append(req.IncomingTriggers, t...)
-	sort.Slice(req.IncomingTriggers, func(i, j int) bool {
-		return isTriggerOlder(req.IncomingTriggers[i], req.IncomingTriggers[j])
-	})
+	sortTriggers(req.IncomingTriggers)
 
 	// Derive properties and tags from the most recent trigger for now.
 	newest := req.IncomingTriggers[len(req.IncomingTriggers)-1]
@@ -172,38 +169,4 @@ func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
 func (r *requestBuilder) prepareBuildbucketRequest(t *scheduler.BuildbucketTrigger) {
 	r.Properties = t.Properties
 	r.Tags = t.Tags
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Utilities.
-
-// isTriggerOlder returns true if t1 is older than t2.
-//
-// Compares IDs in case of a tie.
-func isTriggerOlder(t1, t2 *internal.Trigger) bool {
-	ts1 := google.TimeFromProto(t1.Created)
-	ts2 := google.TimeFromProto(t2.Created)
-	switch {
-	case ts1.After(ts2):
-		return false
-	case ts2.After(ts1):
-		return true
-	default: // equal timestamps
-		if t1.OrderInBatch != t2.OrderInBatch {
-			return t1.OrderInBatch < t2.OrderInBatch
-		}
-		return t1.Id < t2.Id
-	}
-}
-
-func structFromMap(m map[string]string) *structpb.Struct {
-	out := &structpb.Struct{
-		Fields: make(map[string]*structpb.Value, len(m)),
-	}
-	for k, v := range m {
-		out.Fields[k] = &structpb.Value{
-			Kind: &structpb.Value_StringValue{StringValue: v},
-		}
-	}
-	return out
 }
