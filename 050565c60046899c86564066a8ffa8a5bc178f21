@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0095a6d2_31c9a47f",
+        "filename": "common/flag/flag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-29T23:19:05Z",
+      "side": 1,
+      "message": "this file will grow fast. please split it into int32.go, int64slice.go, etc",
+      "revId": "050565c60046899c86564066a8ffa8a5bc178f21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
