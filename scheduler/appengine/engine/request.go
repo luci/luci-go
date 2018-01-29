@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -81,6 +82,7 @@ func requestFromTriggers(c context.Context, t []*internal.Trigger) task.Request 
 		req.debugLog("Unrecognized trigger payload of type %T, ignoring", p)
 	}
 
+	req.TriggeredBy = identity.Identity(newest.EmittedByUser)
 	return req.Request
 }
 
