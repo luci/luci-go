@@ -16,6 +16,7 @@ package apiservers
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/auth/identity"
 
@@ -160,9 +162,7 @@ func TestGetInvocationsApi(t *testing.T) {
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("Job not found", func() {
-			fakeEng.listVisibleInvocations = func(int, string) ([]*engine.Invocation, string, error) {
-				return nil, "", engine.ErrNoSuchJob
-			}
+			fakeEng.mockNoJob()
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
 				JobRef: &scheduler.JobRef{Project: "not", Job: "exists"},
 			})
@@ -172,7 +172,8 @@ func TestGetInvocationsApi(t *testing.T) {
 		})
 
 		Convey("DS error", func() {
-			fakeEng.listVisibleInvocations = func(int, string) ([]*engine.Invocation, string, error) {
+			fakeEng.mockJob("proj/job")
+			fakeEng.listInvocations = func(int, string) ([]*engine.Invocation, string, error) {
 				return nil, "", fmt.Errorf("ds error")
 			}
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
@@ -183,12 +184,9 @@ func TestGetInvocationsApi(t *testing.T) {
 			So(s.Code(), ShouldEqual, codes.Internal)
 		})
 
-		fakeEng.getVisibleJob = func(JobID string) (*engine.Job, error) {
-			return &engine.Job{JobID: "proj/job", ProjectID: "proj"}, nil
-		}
-
-		Convey("Emtpy with huge pagesize", func() {
-			fakeEng.listVisibleInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+		Convey("Empty with huge pagesize", func() {
+			fakeEng.mockJob("proj/job")
+			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
 				So(pageSize, ShouldEqual, 50)
 				So(cursor, ShouldEqual, "")
 				return nil, "", nil
@@ -205,7 +203,8 @@ func TestGetInvocationsApi(t *testing.T) {
 		Convey("Some with custom pagesize and cursor", func() {
 			started := time.Unix(123123123, 0).UTC()
 			finished := time.Unix(321321321, 0).UTC()
-			fakeEng.listVisibleInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+			fakeEng.mockJob("proj/job")
+			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
 				So(pageSize, ShouldEqual, 5)
 				So(cursor, ShouldEqual, "cursor")
 				return []*engine.Invocation{
@@ -254,64 +253,38 @@ func TestGetInvocationsApi(t *testing.T) {
 func TestJobActionsApi(t *testing.T) {
 	t.Parallel()
 
+	// Note: PauseJob/ResumeJob/AbortJob are implemented identically, so test only
+	// PauseJob.
+
 	Convey("works", t, func() {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("PermissionDenied", func() {
-			onAction := func(jobID string) error {
+			fakeEng.mockJob("proj/job")
+			fakeEng.pauseJob = func(jobID string) error {
 				return engine.ErrNoPermission
 			}
-			Convey("Pause", func() {
-				fakeEng.pauseJob = onAction
-				_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-				s, ok := status.FromError(err)
-				So(ok, ShouldBeTrue)
-				So(s.Code(), ShouldEqual, codes.PermissionDenied)
-			})
-
-			Convey("Abort", func() {
-				fakeEng.abortJob = onAction
-				_, err := ss.AbortJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-				s, ok := status.FromError(err)
-				So(ok, ShouldBeTrue)
-				So(s.Code(), ShouldEqual, codes.PermissionDenied)
-			})
+			_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.PermissionDenied)
 		})
 
 		Convey("OK", func() {
-			onAction := func(jobID string) error {
+			fakeEng.mockJob("proj/job")
+			fakeEng.pauseJob = func(jobID string) error {
 				So(jobID, ShouldEqual, "proj/job")
 				return nil
 			}
-
-			Convey("Pause", func() {
-				fakeEng.pauseJob = onAction
-				r, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-				So(err, ShouldBeNil)
-				So(r, ShouldResemble, &empty.Empty{})
-			})
-
-			Convey("Resume", func() {
-				fakeEng.resumeJob = onAction
-				r, err := ss.ResumeJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-				So(err, ShouldBeNil)
-				So(r, ShouldResemble, &empty.Empty{})
-			})
-
-			Convey("Abort", func() {
-				fakeEng.abortJob = onAction
-				r, err := ss.AbortJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-				So(err, ShouldBeNil)
-				So(r, ShouldResemble, &empty.Empty{})
-			})
+			r, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+			So(err, ShouldBeNil)
+			So(r, ShouldResemble, &empty.Empty{})
 		})
 
 		Convey("NotFound", func() {
-			fakeEng.pauseJob = func(jobID string) error {
-				return engine.ErrNoSuchJob
-			}
+			fakeEng.mockNoJob()
 			_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
 			s, ok := status.FromError(err)
 			So(ok, ShouldBeTrue)
@@ -329,6 +302,7 @@ func TestAbortInvocationApi(t *testing.T) {
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("PermissionDenied", func() {
+			fakeEng.mockJob("proj/job")
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {
 				return engine.ErrNoPermission
 			}
@@ -342,6 +316,7 @@ func TestAbortInvocationApi(t *testing.T) {
 		})
 
 		Convey("OK", func() {
+			fakeEng.mockJob("proj/job")
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {
 				So(jobID, ShouldEqual, "proj/job")
 				So(invID, ShouldEqual, 12)
@@ -355,7 +330,19 @@ func TestAbortInvocationApi(t *testing.T) {
 			So(r, ShouldResemble, &empty.Empty{})
 		})
 
-		Convey("Error", func() {
+		Convey("No job", func() {
+			fakeEng.mockNoJob()
+			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
+				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+				InvocationId: 12,
+			})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("No invocation", func() {
+			fakeEng.mockJob("proj/job")
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {
 				return engine.ErrNoSuchInvocation
 			}
@@ -387,15 +374,35 @@ func newTestEngine() (*fakeEngine, catalog.Catalog) {
 }
 
 type fakeEngine struct {
-	getVisibleJobs         func() ([]*engine.Job, error)
-	getVisibleProjectJobs  func(projectID string) ([]*engine.Job, error)
-	getVisibleJob          func(jobID string) (*engine.Job, error)
-	listVisibleInvocations func(pageSize int, cursor string) ([]*engine.Invocation, string, error)
+	getVisibleJobs        func() ([]*engine.Job, error)
+	getVisibleProjectJobs func(projectID string) ([]*engine.Job, error)
+	getVisibleJob         func(jobID string) (*engine.Job, error)
+	listInvocations       func(pageSize int, cursor string) ([]*engine.Invocation, string, error)
 
 	pauseJob        func(jobID string) error
 	resumeJob       func(jobID string) error
 	abortJob        func(jobID string) error
 	abortInvocation func(jobID string, invID int64) error
+}
+
+func (f *fakeEngine) mockJob(jobID string) *engine.Job {
+	j := &engine.Job{
+		JobID:     jobID,
+		ProjectID: strings.Split(jobID, "/")[0],
+	}
+	f.getVisibleJob = func(jobID string) (*engine.Job, error) {
+		if jobID == j.JobID {
+			return j, nil
+		}
+		return nil, engine.ErrNoSuchJob
+	}
+	return j
+}
+
+func (f *fakeEngine) mockNoJob() {
+	f.getVisibleJob = func(string) (*engine.Job, error) {
+		return nil, engine.ErrNoSuchJob
+	}
 }
 
 func (f *fakeEngine) GetVisibleJobs(c context.Context) ([]*engine.Job, error) {
@@ -410,35 +417,48 @@ func (f *fakeEngine) GetVisibleJob(c context.Context, jobID string) (*engine.Job
 	return f.getVisibleJob(jobID)
 }
 
-func (f *fakeEngine) ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*engine.Invocation, string, error) {
-	return f.listVisibleInvocations(pageSize, cursor)
+func (f *fakeEngine) GetVisibleJobBatch(c context.Context, jobIDs []string) (map[string]*engine.Job, error) {
+	out := map[string]*engine.Job{}
+	for _, id := range jobIDs {
+		switch job, err := f.GetVisibleJob(c, id); {
+		case err == nil:
+			out[id] = job
+		case err != engine.ErrNoSuchJob:
+			return nil, err
+		}
+	}
+	return out, nil
 }
 
-func (f *fakeEngine) PauseJob(c context.Context, jobID string) error {
-	return f.pauseJob(jobID)
+func (f *fakeEngine) ListInvocations(c context.Context, job *engine.Job, pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+	return f.listInvocations(pageSize, cursor)
 }
 
-func (f *fakeEngine) ResumeJob(c context.Context, jobID string) error {
-	return f.resumeJob(jobID)
+func (f *fakeEngine) PauseJob(c context.Context, job *engine.Job) error {
+	return f.pauseJob(job.JobID)
 }
 
-func (f *fakeEngine) AbortInvocation(c context.Context, jobID string, invID int64) error {
-	return f.abortInvocation(jobID, invID)
+func (f *fakeEngine) ResumeJob(c context.Context, job *engine.Job) error {
+	return f.resumeJob(job.JobID)
 }
 
-func (f *fakeEngine) AbortJob(c context.Context, jobID string) error {
-	return f.abortJob(jobID)
+func (f *fakeEngine) AbortInvocation(c context.Context, job *engine.Job, invID int64) error {
+	return f.abortInvocation(job.JobID, invID)
 }
 
-func (f *fakeEngine) EmitTriggers(c context.Context, perJob map[string][]*internal.Trigger) error {
+func (f *fakeEngine) AbortJob(c context.Context, job *engine.Job) error {
+	return f.abortJob(job.JobID)
+}
+
+func (f *fakeEngine) EmitTriggers(c context.Context, perJob map[*engine.Job][]*internal.Trigger) error {
 	return nil
 }
 
-func (f *fakeEngine) GetVisibleInvocation(c context.Context, jobID string, invID int64) (*engine.Invocation, error) {
+func (f *fakeEngine) GetInvocation(c context.Context, job *engine.Job, invID int64) (*engine.Invocation, error) {
 	panic("not implemented")
 }
 
-func (f *fakeEngine) ForceInvocation(c context.Context, jobID string) (engine.FutureInvocation, error) {
+func (f *fakeEngine) ForceInvocation(c context.Context, job *engine.Job) (engine.FutureInvocation, error) {
 	panic("not implemented")
 }
 

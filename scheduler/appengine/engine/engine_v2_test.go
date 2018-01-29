@@ -310,7 +310,9 @@ func TestForceInvocationV2(t *testing.T) {
 		Convey("happy path", func() {
 			const expectedInvID int64 = 9200093523825174512
 
-			futureInv, err := e.ForceInvocation(auth.WithState(c, asUserOne), "project/job-v2")
+			job, err := e.getJob(c, "project/job-v2")
+			So(err, ShouldBeNil)
+			futureInv, err := e.ForceInvocation(auth.WithState(c, asUserOne), job)
 			So(err, ShouldBeNil)
 
 			// Invocation ID is resolved right away.
@@ -318,8 +320,8 @@ func TestForceInvocationV2(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(invID, ShouldEqual, expectedInvID)
 
-			// It is marked as active in the job state.
-			job, err := e.getJob(c, "project/job-v2")
+			// It is now marked as active in the job state, refetch it to check.
+			job, err = e.getJob(c, "project/job-v2")
 			So(err, ShouldBeNil)
 			So(job.ActiveInvocations, ShouldResemble, []int64{invID})
 
@@ -391,7 +393,7 @@ func TestForceInvocationV2(t *testing.T) {
 
 			// The invocation is now in the list of finish invocations.
 			datastore.GetTestable(c).CatchupIndexes()
-			invs, _, _ := e.ListVisibleInvocations(auth.WithState(c, asUserOne), "project/job-v2", 100, "")
+			invs, _, _ := e.ListInvocations(auth.WithState(c, asUserOne), job, 100, "")
 			So(invs, ShouldResemble, []*Invocation{inv})
 		})
 	})
@@ -432,8 +434,10 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			const triggeringInvID int64 = 9200093523825174512
 			const triggeredInvID int64 = 9200093521728243376
 
-			// Force launch triggering job.
-			_, err := e.ForceInvocation(auth.WithState(c, asUserOne), triggeringJob)
+			// Force launch the triggering job.
+			job, err := e.getJob(c, triggeringJob)
+			So(err, ShouldBeNil)
+			_, err = e.ForceInvocation(auth.WithState(c, asUserOne), job)
 			So(err, ShouldBeNil)
 
 			// Eventually it runs the task which emits a bunch of triggers, which
@@ -590,7 +594,9 @@ func TestInvocationTimers(t *testing.T) {
 			const testInvID int64 = 9200093523825174512
 
 			// Force launch the job.
-			_, err := e.ForceInvocation(auth.WithState(c, asUserOne), testJobID)
+			job, err := e.getJob(c, testJobID)
+			So(err, ShouldBeNil)
+			_, err = e.ForceInvocation(auth.WithState(c, asUserOne), job)
 			So(err, ShouldBeNil)
 
 			// See handelTimer. Name of the timer => time since epoch.
