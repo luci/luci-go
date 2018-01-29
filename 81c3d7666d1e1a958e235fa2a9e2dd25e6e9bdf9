@@ -45,6 +45,30 @@
       "revId": "81c3d7666d1e1a958e235fa2a9e2dd25e6e9bdf9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f89816d_e0928ad8",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-29T06:37:10Z",
+      "side": 1,
+      "message": "no, it is a context value lookup, not expensive.\n\nThere\u0027s no context in this function (and it\u0027s not really needed). So need to pass the value explicitly.",
+      "parentUuid": "a34859ce_593f1b62",
+      "range": {
+        "startLine": 273,
+        "startChar": 17,
+        "endLine": 273,
+        "endChar": 29
+      },
+      "revId": "81c3d7666d1e1a958e235fa2a9e2dd25e6e9bdf9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
