@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
-	"go.chromium.org/luci/common/flag/int64listflag"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -77,7 +76,7 @@ func addPhysicalHostCmd() *subcommands.Command {
 type GetPhysicalHostsCmd struct {
 	subcommands.CommandRunBase
 	names stringlistflag.Flag
-	vlans int64listflag.Flag
+	vlans []int64
 }
 
 // Run runs the command to get physical hosts.
@@ -107,7 +106,7 @@ func getPhysicalHostsCmd() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPhysicalHostsCmd{}
 			cmd.Flags.Var(&cmd.names, "name", "Name of a physical host to filter by. Can be specified multiple times.")
-			cmd.Flags.Var(&cmd.vlans, "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.Int64Slice(&cmd.vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
 			return cmd
 		},
