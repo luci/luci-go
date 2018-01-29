@@ -47,6 +47,16 @@
     </div>
   </div>
 
+  {{if .PendingTriggers}}
+  <h4>Pending triggers</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      {{template "triggers-list" .PendingTriggers}}
+      <hr>
+    </div>
+  </div>
+  {{end}}
+
   <div class="row">
     <div class="col-sm-12">
       <table class="table table-condensed" id="invocations-table">

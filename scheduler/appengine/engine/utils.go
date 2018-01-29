@@ -16,10 +16,12 @@ package engine
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -28,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -173,6 +176,30 @@ func mutateTriggersList(blob *[]byte, cb func(*[]*internal.Trigger)) error {
 	return nil
 }
 
+// sortTriggers sorts the triggers by time, most recent last.
+func sortTriggers(t []*internal.Trigger) {
+	sort.Slice(t, func(i, j int) bool { return isTriggerOlder(t[i], t[j]) })
+}
+
+// isTriggerOlder returns true if t1 is older than t2.
+//
+// Compares IDs in case of a tie.
+func isTriggerOlder(t1, t2 *internal.Trigger) bool {
+	ts1 := google.TimeFromProto(t1.Created)
+	ts2 := google.TimeFromProto(t2.Created)
+	switch {
+	case ts1.After(ts2):
+		return false
+	case ts2.After(ts1):
+		return true
+	default: // equal timestamps
+		if t1.OrderInBatch != t2.OrderInBatch {
+			return t1.OrderInBatch < t2.OrderInBatch
+		}
+		return t1.Id < t2.Id
+	}
+}
+
 // marshalTimersList serializes list of timers.
 //
 // Panics on errors.
@@ -209,6 +236,19 @@ func mutateTimersList(blob *[]byte, cb func(*[]*internal.Timer)) error {
 	cb(&list)
 	*blob = marshalTimersList(list)
 	return nil
+}
+
+// structFromMap constructs protobuf.Struct with string keys and values.
+func structFromMap(m map[string]string) *structpb.Struct {
+	out := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value, len(m)),
+	}
+	for k, v := range m {
+		out.Fields[k] = &structpb.Value{
+			Kind: &structpb.Value_StringValue{StringValue: v},
+		}
+	}
+	return out
 }
 
 // opsCache "remembers" recently executed operations, and skips executing them

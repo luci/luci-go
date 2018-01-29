@@ -174,6 +174,10 @@ type Engine interface {
 	// If the caller has no permission to trigger at least one job, the entire
 	// call is aborted. Otherwise, the call is NOT transactional.
 	EmitTriggers(c context.Context, perJob map[*Job][]*internal.Trigger) error
+
+	// ListTriggers returns list of job's pending triggers sorted by time, most
+	// recent last.
+	ListTriggers(c context.Context, job *Job) ([]*internal.Trigger, error)
 }
 
 // EngineInternal is a variant of engine API that skips ACL checks.
@@ -549,6 +553,28 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal
 			tasks <- func() error { return e.newTriggers(c, jobID, triggers) }
 		}
 	})
+}
+
+// ListTriggers returns sorted list of job's pending triggers.
+//
+// Supports both v1 and v2.
+func (e *engineImpl) ListTriggers(c context.Context, job *Job) ([]*internal.Trigger, error) {
+	var triggers []*internal.Trigger
+	var err error
+
+	if e.isV2Job(job.JobID) {
+		// v2 implementation stores triggers in a dsset.
+		_, triggers, err = pendingTriggersSet(c, job.JobID).Triggers(c)
+	} else {
+		// v1 implementation stores triggers inside Job entity itself.
+		triggers, err = unmarshalTriggersList(job.State.PendingTriggersRaw)
+	}
+
+	if err != nil {
+		return nil, transient.Tag.Apply(err)
+	}
+	sortTriggers(triggers)
+	return triggers, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
