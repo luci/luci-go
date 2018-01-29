@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24c28ef5_fe0066b5",
+        "filename": "scheduler/appengine/engine/request.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-29T05:46:00Z",
+      "side": 0,
+      "message": "this is in utils.go now",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 13
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e797b427_edc1ae74",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-29T05:46:00Z",
+      "side": 0,
+      "message": "this is sortTriggers now and implemented through sort.Slice(...)",
+      "range": {
+        "startLine": 76,
+        "startChar": 5,
+        "endLine": 76,
+        "endChar": 19
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a95c5495_01e23318",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-29T05:46:00Z",
+      "side": 0,
+      "message": "this is part of triggersSet.Triggers() now",
+      "range": {
+        "startLine": 92,
+        "startChar": 5,
+        "endLine": 92,
+        "endChar": 25
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
