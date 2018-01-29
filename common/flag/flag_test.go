@@ -98,3 +98,73 @@ func TestInt32(t *testing.T) {
 		So(i, ShouldEqual, 2147483647)
 	})
 }
+
+func TestInt64SliceFlag(t *testing.T) {
+	t.Parallel()
+
+	Convey("one", t, func() {
+		var flag int64SliceFlag
+		So(flag.Set("1"), ShouldBeNil)
+		So(flag.Get(), ShouldResemble, []int64{1})
+		So(flag.String(), ShouldEqual, "1")
+	})
+
+	Convey("many", t, func() {
+		var flag int64SliceFlag
+		So(flag.Set("-1"), ShouldBeNil)
+		So(flag.Set("0"), ShouldBeNil)
+		So(flag.Set("1"), ShouldBeNil)
+		So(flag.Get(), ShouldResemble, []int64{-1, 0, 1})
+		So(flag.String(), ShouldEqual, "-1, 0, 1")
+	})
+
+	Convey("error", t, func() {
+		var flag int64SliceFlag
+		So(flag.Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
+		So(flag, ShouldBeEmpty)
+		So(flag, ShouldBeEmpty)
+		So(flag.Get(), ShouldBeEmpty)
+		So(flag.String(), ShouldBeEmpty)
+	})
+
+	Convey("mixed", t, func() {
+		var flag int64SliceFlag
+		So(flag.Set("-1"), ShouldBeNil)
+		So(flag.Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
+		So(flag.Set("1"), ShouldBeNil)
+		So(flag.Get(), ShouldResemble, []int64{-1, 1})
+		So(flag.String(), ShouldEqual, "-1, 1")
+	})
+}
+
+func TestInt64Slice(t *testing.T) {
+	t.Parallel()
+
+	Convey("one", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("1"), ShouldBeNil)
+		So(i, ShouldResemble, []int64{1})
+	})
+
+	Convey("many", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("-1"), ShouldBeNil)
+		So(Int64Slice(&i).Set("0"), ShouldBeNil)
+		So(Int64Slice(&i).Set("1"), ShouldBeNil)
+		So(i, ShouldResemble, []int64{-1, 0, 1})
+	})
+
+	Convey("error", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
+		So(i, ShouldBeEmpty)
+	})
+
+	Convey("mixed", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("-1"), ShouldBeNil)
+		So(Int64Slice(&i).Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
+		So(Int64Slice(&i).Set("1"), ShouldBeNil)
+		So(i, ShouldResemble, []int64{-1, 1})
+	})
+}

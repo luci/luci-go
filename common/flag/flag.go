@@ -18,6 +18,7 @@ package flag
 import (
 	"flag"
 	"strconv"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -48,4 +49,40 @@ func (f *int32Flag) Get() interface{} {
 // Int32 returns a flag.Value which reads flags into the given int32 pointer.
 func Int32(i *int32) flag.Value {
 	return (*int32Flag)(i)
+}
+
+// int64SliceFlag is a flag.Value implementation representing an []int64.
+type int64SliceFlag []int64
+
+// String returns a comma-separated string representation of the flag values.
+func (f int64SliceFlag) String() string {
+	s := make([]string, len(f))
+	for n, i := range f {
+		s[n] = strconv.FormatInt(i, 10)
+	}
+	return strings.Join(s, ", ")
+}
+
+// Set records seeing a flag value.
+func (f *int64SliceFlag) Set(val string) error {
+	i, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return errors.Reason("values must be 64-bit integers").Err()
+	}
+	*f = append(*f, i)
+	return nil
+}
+
+// Get retrieves the flag values.
+func (f int64SliceFlag) Get() interface{} {
+	r := make([]int64, len(f))
+	for n, i := range f {
+		r[n] = i
+	}
+	return r
+}
+
+// Int64Slice returns a flag.Value which reads flags into the given []int64 pointer.
+func Int64Slice(i *[]int64) flag.Value {
+	return (*int64SliceFlag)(i)
 }
