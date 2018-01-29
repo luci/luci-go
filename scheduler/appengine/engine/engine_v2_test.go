@@ -85,7 +85,7 @@ func TestEnqueueInvocations(t *testing.T) {
 				TriggeredBy: "user:a@example.com",
 				Status:      task.StatusStarting,
 				DebugLog: "[22:42:00.000] New invocation initialized\n" +
-					"[22:42:00.000] Manually triggered by user:a@example.com\n",
+					"[22:42:00.000] Triggered by user:a@example.com\n",
 			},
 			"user:b@example.com": {
 				JobID:       "project/job-v2",
@@ -93,7 +93,7 @@ func TestEnqueueInvocations(t *testing.T) {
 				TriggeredBy: "user:b@example.com",
 				Status:      task.StatusStarting,
 				DebugLog: "[22:42:00.000] New invocation initialized\n" +
-					"[22:42:00.000] Manually triggered by user:b@example.com\n",
+					"[22:42:00.000] Triggered by user:b@example.com\n",
 			},
 		})
 
@@ -338,7 +338,7 @@ func TestForceInvocationV2(t *testing.T) {
 				Task:            noopTaskBytes(),
 				Status:          task.StatusStarting,
 				DebugLog: "[22:42:00.000] New invocation initialized\n" +
-					"[22:42:00.000] Manually triggered by user:one@example.com\n",
+					"[22:42:00.000] Triggered by user:one@example.com\n",
 			})
 
 			// Eventually it runs the task, which then cleans up job state.
@@ -380,7 +380,7 @@ func TestForceInvocationV2(t *testing.T) {
 				Status:          task.StatusSucceeded,
 				MutationsCount:  2,
 				DebugLog: "[22:42:00.000] New invocation initialized\n" +
-					"[22:42:00.000] Manually triggered by user:one@example.com\n" +
+					"[22:42:00.000] Triggered by user:one@example.com\n" +
 					"[22:42:01.000] Starting the invocation (attempt 1)\n" +
 					"[22:42:01.000] Started!\n" +
 					"[22:42:01.000] Invocation finished in 1s with status SUCCEEDED\n",
