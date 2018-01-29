@@ -81,6 +81,10 @@ message Trigger {
   // Can be provided by whoever emits the trigger. Doesn't have to be unique.
   string url = 6;
 
+  // For triggers emitted through public API contains identity of a user who
+  // posted this trigger. Empty for triggers emitted by invocations.
+  string emitted_by_user = 8;
+
   // Actual trigger data that depends on type of the trigger.
   oneof payload {
     scheduler.NoopTrigger noop = 50;

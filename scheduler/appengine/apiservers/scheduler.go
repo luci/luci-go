@@ -25,8 +25,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
@@ -148,6 +151,8 @@ func (s *SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.Inv
 }
 
 func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTriggersRequest) (*empty.Empty, error) {
+	caller := auth.CurrentIdentity(ctx)
+
 	// Optionally use client-provided time if it is within reasonable margins.
 	// This is needed to make EmitTriggers idempotent (when it emits a batch).
 	now := clock.Now(ctx)
@@ -174,7 +179,7 @@ func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTr
 	// of a trigger into internal one, validating them.
 	triggersPerJobID := map[string][]*internal.Trigger{}
 	for index, batch := range in.Batches {
-		tr, err := internalTrigger(batch.Trigger, now, index)
+		tr, err := internalTrigger(batch.Trigger, now, caller, index)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad trigger #%d (%q) - %s", index, batch.Trigger.Id, err)
 		}
@@ -255,16 +260,17 @@ func (s *SchedulerServer) runAction(ctx context.Context, ref *scheduler.JobRef, 
 	}
 }
 
-func internalTrigger(t *scheduler.Trigger, now time.Time, index int) (*internal.Trigger, error) {
+func internalTrigger(t *scheduler.Trigger, now time.Time, who identity.Identity, index int) (*internal.Trigger, error) {
 	if t.Id == "" {
 		return nil, fmt.Errorf("trigger id is required")
 	}
 	out := &internal.Trigger{
-		Id:           t.Id,
-		Created:      google.NewTimestamp(now),
-		OrderInBatch: int64(index),
-		Title:        t.Title,
-		Url:          t.Url,
+		Id:            t.Id,
+		Created:       google.NewTimestamp(now),
+		OrderInBatch:  int64(index),
+		Title:         t.Title,
+		Url:           t.Url,
+		EmittedByUser: string(who),
 	}
 	if t.Payload != nil {
 		// Ugh...
