@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbcffbe9_1ca29a7c",
+        "filename": "scheduler/appengine/acl/acl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T06:47:34Z",
+      "side": 1,
+      "message": "i think proto also needs documenting, let me find it...",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 30
+      },
+      "revId": "3a26d3ce27f61d96157bf901b0c9298934c506b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
