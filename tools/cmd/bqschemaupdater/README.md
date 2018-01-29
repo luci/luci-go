@@ -17,6 +17,11 @@ If you don't see the correct project id, reach out to an
 [editor](https://pantheon.corp.google.com/iam-admin/iam) of that project to
 request access.
 
+Bqschemaupdater uses protoc found in $PATH.  Please make the latest
+[protobuf library](https://github.com/google/protobuf) available in $PATH.
+
+More information can be got with:
+
 ```
 bqschemaupdater --help
 ```
