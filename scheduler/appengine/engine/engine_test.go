@@ -528,7 +528,7 @@ func TestForceInvocation(t *testing.T) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
-		So(ds.Put(c, &Job{
+		job := &Job{
 			JobID:     "abc/1",
 			ProjectID: "abc",
 			Enabled:   true,
@@ -536,17 +536,18 @@ func TestForceInvocation(t *testing.T) {
 			Task:      noopTaskBytes(),
 			State:     JobState{State: JobStateSuspended},
 			Acls:      acl.GrantsByRole{Owners: []string{"one@example.com"}},
-		}), ShouldBeNil)
+		}
+		So(ds.Put(c, job), ShouldBeNil)
 
 		ctxOne := auth.WithState(c, &authtest.FakeState{Identity: "user:one@example.com"})
 		ctxTwo := auth.WithState(c, &authtest.FakeState{Identity: "user:two@example.com"})
 
 		// Only owner can trigger.
-		fut, err := e.ForceInvocation(ctxTwo, "abc/1")
-		So(err, ShouldEqual, ErrNoSuchJob)
+		fut, err := e.ForceInvocation(ctxTwo, job)
+		So(err, ShouldEqual, ErrNoPermission)
 
 		// Triggers something.
-		fut, err = e.ForceInvocation(ctxOne, "abc/1")
+		fut, err = e.ForceInvocation(ctxOne, job)
 		So(err, ShouldBeNil)
 		So(fut, ShouldNotBeNil)
 
@@ -872,21 +873,19 @@ func TestQueries(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
-		Convey("ListVisibleInvocations works", func() {
-			Convey("Anonymous can't see non-public job invocations", func() {
-				_, _, err := e.ListVisibleInvocations(ctxAnon, "abc/1", 2, "")
-				So(err, ShouldResemble, ErrNoSuchJob)
-			})
+		Convey("ListInvocations works", func() {
+			job, err := e.GetVisibleJob(ctxOne, "abc/1")
+			So(err, ShouldBeNil)
 
 			Convey("With paging", func() {
-				invs, cursor, err := e.ListVisibleInvocations(ctxOne, "abc/1", 2, "")
+				invs, cursor, err := e.ListInvocations(ctxOne, job, 2, "")
 				So(err, ShouldBeNil)
 				So(len(invs), ShouldEqual, 2)
 				So(invs[0].ID, ShouldEqual, 1)
 				So(invs[1].ID, ShouldEqual, 2)
 				So(cursor, ShouldNotEqual, "")
 
-				invs, cursor, err = e.ListVisibleInvocations(ctxOne, "abc/1", 2, cursor)
+				invs, cursor, err = e.ListInvocations(ctxOne, job, 2, cursor)
 				So(err, ShouldBeNil)
 				So(len(invs), ShouldEqual, 1)
 				So(invs[0].ID, ShouldEqual, 3)
@@ -895,20 +894,16 @@ func TestQueries(t *testing.T) {
 		})
 
 		Convey("GetInvocation works", func() {
-			Convey("Anonymous can't see non-public job invocation", func() {
-				_, err := e.GetVisibleInvocation(ctxAnon, "abc/1", 1)
-				So(err, ShouldResemble, ErrNoSuchInvocation)
-			})
+			job, err := e.GetVisibleJob(ctxOne, "abc/1")
+			So(err, ShouldBeNil)
 
 			Convey("NoSuchInvocation", func() {
-				_, err := e.GetVisibleInvocation(ctxAdmin, "missing/job", 1)
-				So(err, ShouldResemble, ErrNoSuchInvocation)
-				_, err = e.GetVisibleInvocation(ctxAdmin, "abc/1", 666) // Missing invocation.
+				_, err = e.GetInvocation(ctxOne, job, 666) // Missing invocation.
 				So(err, ShouldResemble, ErrNoSuchInvocation)
 			})
 
-			Convey("Reader sees", func() {
-				inv, err := e.GetVisibleInvocation(ctxOne, "abc/1", 1)
+			Convey("Existing invocation", func() {
+				inv, err := e.GetInvocation(ctxOne, job, 1)
 				So(inv, ShouldNotBeNil)
 				So(err, ShouldBeNil)
 			})
@@ -1081,9 +1076,7 @@ func TestAborts(t *testing.T) {
 	Convey("with mock invocation", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
-		ctxAnon := auth.WithState(c, &authtest.FakeState{
-			Identity: "anonymous:anonymous",
-		})
+
 		ctxReader := auth.WithState(c, &authtest.FakeState{
 			Identity:       "user:reader@example.com",
 			IdentityGroups: []string{"readers"},
@@ -1096,7 +1089,7 @@ func TestAborts(t *testing.T) {
 		// A job in "QUEUED" state (about to run an invocation).
 		const jobID = "abc/1"
 		const invNonce = int64(12345)
-		prepareQueuedJob(c, jobID, invNonce)
+		job := prepareQueuedJob(c, jobID, invNonce)
 
 		launchInv := func() int64 {
 			var invID int64
@@ -1126,11 +1119,9 @@ func TestAborts(t *testing.T) {
 			clock.Get(c).(testclock.TestClock).Add(1 * time.Hour)
 
 			// Try to kill it w/o permission.
-			So(e.AbortInvocation(c, jobID, invID), ShouldNotBeNil) // No current identity.
-			So(e.AbortInvocation(ctxAnon, jobID, invID), ShouldResemble, ErrNoSuchJob)
-			So(e.AbortInvocation(ctxReader, jobID, invID), ShouldResemble, ErrNoPermission)
+			So(e.AbortInvocation(ctxReader, job, invID), ShouldResemble, ErrNoPermission)
 			// Now kill it.
-			So(e.AbortInvocation(ctxOwner, jobID, invID), ShouldBeNil)
+			So(e.AbortInvocation(ctxOwner, job, invID), ShouldBeNil)
 
 			// It is dead.
 			inv, err := e.getInvocation(c, jobID, invID)
@@ -1151,11 +1142,9 @@ func TestAborts(t *testing.T) {
 			clock.Get(c).(testclock.TestClock).Add(8250 * time.Millisecond)
 
 			// Try to kill it w/o permission.
-			So(e.AbortJob(c, jobID), ShouldNotBeNil) // No current identity.
-			So(e.AbortJob(ctxAnon, jobID), ShouldResemble, ErrNoSuchJob)
-			So(e.AbortJob(ctxReader, jobID), ShouldResemble, ErrNoPermission)
+			So(e.AbortJob(ctxReader, job), ShouldResemble, ErrNoPermission)
 			// Kill it.
-			So(e.AbortJob(ctxOwner, jobID), ShouldBeNil)
+			So(e.AbortJob(ctxOwner, job), ShouldBeNil)
 
 			// It is dead.
 			inv, err := e.getInvocation(c, jobID, invID)
@@ -1171,17 +1160,13 @@ func TestAborts(t *testing.T) {
 		})
 
 		Convey("AbortJob kills queued invocation", func() {
-			So(e.AbortJob(ctxOwner, jobID), ShouldBeNil)
+			So(e.AbortJob(ctxOwner, job), ShouldBeNil)
 
 			// The job moved on with its life.
 			job, err := e.getJob(c, jobID)
 			So(err, ShouldBeNil)
 			So(job.State.State, ShouldEqual, JobStateSuspended)
 			So(job.State.InvocationID, ShouldEqual, 0)
-		})
-
-		Convey("AbortJob fails on non-existing job", func() {
-			So(e.AbortJob(ctxOwner, "not/exists"), ShouldResemble, ErrNoSuchJob)
 		})
 	})
 }
@@ -1435,17 +1420,16 @@ func sortedJobIds(jobs []*Job) []string {
 }
 
 // prepareQueuedJob makes datastore entries for a job in QUEUED state.
-func prepareQueuedJob(c context.Context, jobID string, invNonce int64) {
+func prepareQueuedJob(c context.Context, jobID string, invNonce int64) *Job {
 	taskBlob, err := proto.Marshal(&messages.TaskDefWrapper{
 		Noop: &messages.NoopTask{},
 	})
 	if err != nil {
 		panic(err)
 	}
-	chunks := strings.Split(jobID, "/")
-	err = ds.Put(c, &Job{
+	job := &Job{
 		JobID:     jobID,
-		ProjectID: chunks[0],
+		ProjectID: strings.Split(jobID, "/")[0],
 		Enabled:   true,
 		Acls:      acl.GrantsByRole{Owners: []string{"group:owners"}, Readers: []string{"group:readers"}},
 		Task:      taskBlob,
@@ -1454,10 +1438,12 @@ func prepareQueuedJob(c context.Context, jobID string, invNonce int64) {
 			State:           JobStateQueued,
 			InvocationNonce: invNonce,
 		},
-	})
+	}
+	err = ds.Put(c, job)
 	if err != nil {
 		panic(err)
 	}
+	return job
 }
 
 func noopTaskBytes() []byte {
