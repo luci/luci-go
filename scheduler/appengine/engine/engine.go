@@ -1089,7 +1089,7 @@ func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Re
 		inv.InvocationNonce = inv.ID
 		inv.debugLog(c, "New invocation initialized")
 		if req.TriggeredBy != "" {
-			inv.debugLog(c, "Manually triggered by %s", req.TriggeredBy)
+			inv.debugLog(c, "Triggered by %s", req.TriggeredBy)
 		}
 		return transient.Tag.Apply(ds.Put(c, inv))
 	})
@@ -1182,7 +1182,7 @@ func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invoca
 // Supports both v1 and v2 invocations.
 func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int64) error {
 	return e.withController(c, jobID, invID, "manual abort", func(c context.Context, ctl *taskController) error {
-		ctl.DebugLog("Invocation is manually aborted by %q", auth.CurrentUser(c))
+		ctl.DebugLog("Invocation is manually aborted by %s", auth.CurrentIdentity(c))
 		if err := ctl.manager.AbortTask(c, ctl); err != nil {
 			logging.WithError(err).Errorf(c, "Failed to abort the task")
 			return err
@@ -1594,7 +1594,9 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 
 	// Figure out parameters of the invocation based on passed triggers.
 	req := requestFromTriggers(c, triggers)
-	req.TriggeredBy = triggeredBy
+	if triggeredBy != "" {
+		req.TriggeredBy = triggeredBy
+	}
 
 	// Create new Invocation entity in StatusStarting state and associated it with
 	// Job entity.
@@ -1641,8 +1643,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			return err
 		}
 		inv.debugLog(c, "Invocation initiated (attempt %d)", retryCount+1)
-		if triggeredBy != "" {
-			inv.debugLog(c, "Manually triggered by %s", triggeredBy)
+		if req.TriggeredBy != "" {
+			inv.debugLog(c, "Triggered by %s", req.TriggeredBy)
 		}
 		if retryCount >= invocationRetryLimit {
 			logging.Errorf(c, "Too many attempts, giving up")

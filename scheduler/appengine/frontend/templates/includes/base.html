@@ -191,7 +191,7 @@ var postInvocationAction = function(btn, action) {
       {{.Title}}
     {{end}}
     </span>
-    {{if .RelTime}}({{.RelTime}}){{end}}
+    ({{.RelTime}}{{if .EmittedBy}} by <b>{{.EmittedBy}}</b>{{end}})
   </li>
   {{end}}
 </ul>

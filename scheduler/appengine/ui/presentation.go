@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -282,16 +283,18 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 
 // trigger is UI representation of internal.Trigger struct.
 type trigger struct {
-	Title   string
-	URL     string
-	RelTime string
+	Title     string
+	URL       string
+	RelTime   string
+	EmittedBy string
 }
 
 // makeTrigger builds UI presentation of some internal.Trigger.
 func makeTrigger(t *internal.Trigger, now time.Time) trigger {
 	out := trigger{
-		Title: t.Title,
-		URL:   t.Url,
+		Title:     t.Title,
+		URL:       t.Url,
+		EmittedBy: strings.TrimPrefix(t.EmittedByUser, "user:"),
 	}
 	if out.Title == "" {
 		out.Title = t.Id
