@@ -35,18 +35,12 @@ func jobPage(ctx *router.Context) {
 	jobName := p.ByName("JobName")
 	cursor := r.URL.Query().Get("c")
 
-	// Grab the job from the datastore.
-	job, err := config(c).Engine.GetVisibleJob(c, projectID+"/"+jobName)
-	switch {
-	case err == engine.ErrNoSuchJob:
-		http.Error(w, "No such job or no access to it", http.StatusNotFound)
+	job := jobFromEngine(ctx, projectID, jobName)
+	if job == nil {
 		return
-	case err != nil:
-		panic(err)
 	}
 
-	// Grab latest invocations from the datastore.
-	invs, nextCursor, err := config(c).Engine.ListVisibleInvocations(c, job.JobID, 50, cursor)
+	invs, nextCursor, err := config(c).Engine.ListInvocations(c, job, 50, cursor)
 	if err != nil {
 		panic(err)
 	}
@@ -99,9 +93,15 @@ func jobPage(ctx *router.Context) {
 
 func runJobAction(ctx *router.Context) {
 	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
+	e := config(c).Engine
 
 	projectID := p.ByName("ProjectID")
 	jobName := p.ByName("JobName")
+
+	job := jobFromEngine(ctx, projectID, jobName)
+	if job == nil {
+		return
+	}
 
 	// genericReply renders "we did something (or we failed to do something)"
 	// page, shown on error or if invocation is starting for too long.
@@ -113,19 +113,18 @@ func runJobAction(ctx *router.Context) {
 		})
 	}
 
-	// Enqueue new invocation request, and wait for corresponding invocation to
-	// appear. Give up if task queue or datastore indexes are lagging too much.
-	e := config(c).Engine
-	jobID := projectID + "/" + jobName
-	future, err := e.ForceInvocation(c, jobID)
-	if err == engine.ErrNoPermission {
+	// Enqueue new invocation request.
+	future, err := e.ForceInvocation(c, job)
+	switch {
+	case err == engine.ErrNoPermission:
 		http.Error(w, "Forbidden", 403)
 		return
-	} else if err != nil {
-		genericReply(err)
-		return
+	case err != nil:
+		panic(err)
 	}
 
+	// Wait for the corresponding invocation to appear. Give up if task queue or
+	// datastore indexes are lagging too much.
 	invID := int64(0)
 	deadline := clock.Now(c).Add(10 * time.Second)
 	for deadline.Sub(clock.Now(c)) > 0 {
@@ -149,27 +148,33 @@ func runJobAction(ctx *router.Context) {
 }
 
 func pauseJobAction(c *router.Context) {
-	handleJobAction(c, func(jobID string) error {
-		return config(c.Context).Engine.PauseJob(c.Context, jobID)
+	handleJobAction(c, func(job *engine.Job) error {
+		return config(c.Context).Engine.PauseJob(c.Context, job)
 	})
 }
 
 func resumeJobAction(c *router.Context) {
-	handleJobAction(c, func(jobID string) error {
-		return config(c.Context).Engine.ResumeJob(c.Context, jobID)
+	handleJobAction(c, func(job *engine.Job) error {
+		return config(c.Context).Engine.ResumeJob(c.Context, job)
 	})
 }
 
 func abortJobAction(c *router.Context) {
-	handleJobAction(c, func(jobID string) error {
-		return config(c.Context).Engine.AbortJob(c.Context, jobID)
+	handleJobAction(c, func(job *engine.Job) error {
+		return config(c.Context).Engine.AbortJob(c.Context, job)
 	})
 }
 
-func handleJobAction(c *router.Context, cb func(string) error) {
+func handleJobAction(c *router.Context, cb func(*engine.Job) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobName := c.Params.ByName("JobName")
-	switch err := cb(projectID + "/" + jobName); {
+
+	job := jobFromEngine(c, projectID, jobName)
+	if job == nil {
+		return
+	}
+
+	switch err := cb(job); {
 	case err == engine.ErrNoPermission:
 		http.Error(c.Writer, "Forbidden", 403)
 	case err != nil:
