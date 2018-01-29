@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ccb92206_e0b53930",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T05:59:57Z",
+      "side": 1,
+      "message": "👍 % TRIGGERER perm now requires READER to be useful -\u003e see public API comment.",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 64
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "25c7b28a_173334fa",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T05:59:57Z",
+      "side": 1,
+      "message": "READER",
+      "range": {
+        "startLine": 187,
+        "startChar": 28,
+        "endLine": 187,
+        "endChar": 32
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e650391_87941bda",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T05:59:57Z",
+      "side": 1,
+      "message": "In this new scheme of engine API, TRIGGERER permission becomes useless w/o READER one. So, we are backtracking on earlier use case of triggering internal jobs from public ones. This is probably fine, but I think we should automatically grant READER to users with TRIGGERER access.",
+      "range": {
+        "startLine": 203,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 72
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de97f41c_aad9eaa6",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T05:59:57Z",
+      "side": 1,
+      "message": "READER",
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47cef134_04439183",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T05:59:57Z",
+      "side": 1,
+      "message": "s/some/one\nif you don\u0027t like \"single\" (but why so?)",
+      "range": {
+        "startLine": 129,
+        "startChar": 26,
+        "endLine": 129,
+        "endChar": 30
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9580bfb1_3042b218",
+        "filename": "scheduler/appengine/ui/helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T05:59:57Z",
+      "side": 1,
+      "message": "READ, or maybe we should always use READER permission in all public errors s.t. it\u0027s easier to find what\u0027s the problem for the user?",
+      "range": {
+        "startLine": 33,
+        "startChar": 42,
+        "endLine": 33,
+        "endChar": 46
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
