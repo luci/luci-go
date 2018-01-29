@@ -76,9 +76,13 @@ var (
 // A method returns errors.Transient if the error is non-fatal and the call
 // should be retried later. Any other error means that retry won't help.
 //
+// The general pattern for doing something to a job is to get a reference to
+// it via GetVisibleJob() (this call checks READER access), and then pass *Job
+// to desired methods (which may additionally check for more permissions).
+//
 // ACLs are enforced with the following implication:
 //  * if caller lacks READER access to Jobs, methods behave as if Jobs do not
-//	  exist.
+//    exist.
 //  * if caller lacks TRIGGERER or OWNER access to Jobs, but has READER access,
 //    ErrNoPermission will be returned.
 //
@@ -102,11 +106,17 @@ type Engine interface {
 	//   * job isn't visible due to lack of READER access.
 	GetVisibleJob(c context.Context, jobID string) (*Job, error)
 
-	// ListVisibleInvocations returns invocations of a visible job, most recent
-	// first.
+	// GetVisibleJobBatch is like GetVisibleJob, except it operates on a batch of
+	// jobs at once.
 	//
-	// Returns invocations and a cursor string if there's more.
-	// Returns ErrNoSuchJob if job doesn't exist or isn't visible.
+	// Returns a mapping (jobID => *Job) with only visible jobs. If the check
+	// fails returns a transient error.
+	GetVisibleJobBatch(c context.Context, jobIDs []string) (map[string]*Job, error)
+
+	// ListInvocations returns invocations of a given job, most recent first.
+	//
+	// Returns invocations and a cursor string if there's more. Returns only
+	// transient errors.
 	//
 	// For v2 jobs, the listing includes only finished invocations and it is
 	// eventually consistent (i.e. very recently finished invocations may no be
@@ -114,13 +124,12 @@ type Engine interface {
 	//
 	// TODO(vadimsh): Expose an endpoint for fetching currently running
 	// invocations in a perfectly consistent way.
-	ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error)
+	ListInvocations(c context.Context, job *Job, pageSize int, cursor string) ([]*Invocation, string, error)
 
-	// GetVisibleInvocation returns single invocation of some job given its ID.
+	// GetInvocation returns an invocation of a given job.
 	//
-	// ErrNoSuchInvocation is returned if either job or invocation doesn't exist
-	// or job and hence invocation isn't visible.
-	GetVisibleInvocation(c context.Context, jobID string, invID int64) (*Invocation, error)
+	// ErrNoSuchInvocation is returned if the invocation doesn't exist.
+	GetInvocation(c context.Context, job *Job, invID int64) (*Invocation, error)
 
 	// PauseJob prevents new automatic invocations of a job.
 	//
@@ -130,14 +139,14 @@ type Engine interface {
 	// Manual invocations (via ForceInvocation) are still allowed. Does nothing if
 	// the job is already paused. Any pending or running invocations are still
 	// executed.
-	PauseJob(c context.Context, jobID string) error
+	PauseJob(c context.Context, job *Job) error
 
 	// ResumeJob resumes paused job. Does nothing if the job is not paused.
-	ResumeJob(c context.Context, jobID string) error
+	ResumeJob(c context.Context, job *Job) error
 
 	// AbortJob resets the job to scheduled state, aborting all currently pending
 	// or running invocations (if any).
-	AbortJob(c context.Context, jobID string) error
+	AbortJob(c context.Context, job *Job) error
 
 	// AbortInvocation forcefully moves the invocation to failed state.
 	//
@@ -149,7 +158,7 @@ type Engine interface {
 	// to missing PubSub notifications or other kinds of unexpected conditions.
 	//
 	// Does nothing if invocation is already in some final state.
-	AbortInvocation(c context.Context, jobID string, invID int64) error
+	AbortInvocation(c context.Context, job *Job, invID int64) error
 
 	// ForceInvocation launches job invocation right now if job isn't running now.
 	//
@@ -157,15 +166,14 @@ type Engine interface {
 	//
 	// Returns an object that can be waited on to grab a corresponding Invocation
 	// when it appears (if ever).
-	ForceInvocation(c context.Context, jobID string) (FutureInvocation, error)
+	ForceInvocation(c context.Context, job *Job) (FutureInvocation, error)
 
 	// EmitTriggers puts one or more triggers into pending trigger queues of the
 	// specified jobs.
 	//
-	// If at least one job doesn't exist or the caller has no permission to
-	// trigger it, the entire call is aborted. Otherwise, the call is NOT
-	// transactional.
-	EmitTriggers(c context.Context, perJob map[string][]*internal.Trigger) error
+	// If the caller has no permission to trigger at least one job, the entire
+	// call is aborted. Otherwise, the call is NOT transactional.
+	EmitTriggers(c context.Context, perJob map[*Job][]*internal.Trigger) error
 }
 
 // EngineInternal is a variant of engine API that skips ACL checks.
@@ -310,26 +318,53 @@ func (e *engineImpl) GetVisibleProjectJobs(c context.Context, projectID string) 
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error) {
-	switch job, err := e.jobForRole(c, jobID, acl.Reader); {
+	job, err := e.getJob(c, jobID)
+	switch {
 	case err != nil:
 		return nil, err
-	case !job.Enabled:
+	case job == nil || !job.Enabled:
 		return nil, ErrNoSuchJob
-	default:
-		return job, nil
 	}
+	if err := job.CheckRole(c, acl.Reader); err != nil {
+		if err == ErrNoPermission {
+			err = ErrNoSuchJob // pretend protected jobs don't exist
+		}
+		return nil, err
+	}
+	return job, nil
 }
 
-// ListVisibleInvocations returns invocations of a visible job, most recent
-// first.
+// GetVisibleJobBatch is like GetVisibleJob, except it operates on a batch of
+// jobs at once.
+//
+// Part of the public interface.
 //
 // Part of the public interface, checks ACLs.
+func (e *engineImpl) GetVisibleJobBatch(c context.Context, jobIDs []string) (map[string]*Job, error) {
+	// TODO(vadimsh): This can be parallelized to be single GetMulti RPC to fetch
+	// jobs and single filterForRole to check ACLs. In practice O(len(jobIDs)) is
+	// small, so there's no pressing need to do this.
+	visible := make(map[string]*Job, len(jobIDs))
+	for _, id := range jobIDs {
+		switch job, err := e.GetVisibleJob(c, id); {
+		case err == nil:
+			visible[id] = job
+		case err != ErrNoSuchJob:
+			return nil, err
+		}
+	}
+	return visible, nil
+}
+
+// ListInvocations returns invocations of a given job, most recent first.
+//
+// Part of the public interface.
 //
 // Supports both v1 and v2 invocations.
-func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error) {
-	if _, err := e.GetVisibleJob(c, jobID); err != nil {
-		return nil, "", err
-	}
+func (e *engineImpl) ListInvocations(c context.Context, job *Job, pageSize int, cursor string) ([]*Invocation, string, error) {
+	// Note: we don't really need full *Job here, but we enforce callers to get
+	// it, so they check ACLs (they are part of *Job).
+	jobID := job.JobID
 
 	if pageSize == 0 || pageSize > 500 {
 		pageSize = 500
@@ -378,51 +413,41 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 	return out, newCursor, nil
 }
 
-// GetVisibleInvocation returns single invocation of some job given its ID.
+// GetInvocation returns some invocation of a given job.
 //
-// Part of the public interface, checks ACLs.
+// Part of the public interface.
 //
 // Supports both v1 and v2 invocations.
-func (e *engineImpl) GetVisibleInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
-	switch _, err := e.GetVisibleJob(c, jobID); {
-	case err == ErrNoSuchJob:
-		return nil, ErrNoSuchInvocation
-	case err != nil:
-		return nil, err
-	}
-	switch inv, err := e.getInvocation(c, jobID, invID); {
-	case err != nil:
-		return nil, err
-	case inv == nil:
-		return nil, ErrNoSuchInvocation
-	default:
-		return inv, nil
-	}
+func (e *engineImpl) GetInvocation(c context.Context, job *Job, invID int64) (*Invocation, error) {
+	// Note: we want public API users to go through GetVisibleJob to check ACLs,
+	// thus usage of *Job, even though JobID string is sufficient in this case.
+	return e.getInvocation(c, job.JobID, invID)
 }
 
 // PauseJob prevents new automatic invocations of a job.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) PauseJob(c context.Context, jobID string) error {
-	return e.setJobPausedFlag(c, jobID, true, auth.CurrentIdentity(c))
+func (e *engineImpl) PauseJob(c context.Context, job *Job) error {
+	return e.setJobPausedFlag(c, job, true, auth.CurrentIdentity(c))
 }
 
 // ResumeJob resumes paused job. Does nothing if the job is not paused.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) ResumeJob(c context.Context, jobID string) error {
-	return e.setJobPausedFlag(c, jobID, false, auth.CurrentIdentity(c))
+func (e *engineImpl) ResumeJob(c context.Context, job *Job) error {
+	return e.setJobPausedFlag(c, job, false, auth.CurrentIdentity(c))
 }
 
 // AbortJob resets the job to scheduled state, aborting all currently pending
 // or running invocations (if any).
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
+func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
 	// First, we check ACLs.
-	if _, err := e.jobForRole(c, jobID, acl.Owner); err != nil {
+	if err := job.CheckRole(c, acl.Owner); err != nil {
 		return err
 	}
+	jobID := job.JobID
 
 	// Second, we switch the job to the default state and disassociate the running
 	// invocations (if any) from the job entity.
@@ -460,29 +485,29 @@ func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
 // AbortInvocation forcefully moves the invocation to failed state.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int64) error {
-	if _, err := e.jobForRole(c, jobID, acl.Owner); err != nil {
+func (e *engineImpl) AbortInvocation(c context.Context, job *Job, invID int64) error {
+	if err := job.CheckRole(c, acl.Owner); err != nil {
 		return err
 	}
-	return e.abortInvocation(c, jobID, invID)
+	return e.abortInvocation(c, job.JobID, invID)
 }
 
 // ForceInvocation launches job invocation right now if job isn't running now.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) ForceInvocation(c context.Context, jobID string) (FutureInvocation, error) {
-	if _, err := e.jobForRole(c, jobID, acl.Triggerer); err != nil {
+func (e *engineImpl) ForceInvocation(c context.Context, job *Job) (FutureInvocation, error) {
+	if err := job.CheckRole(c, acl.Triggerer); err != nil {
 		return nil, err
 	}
 
 	var noSuchJob bool
 	var future FutureInvocation
-	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) (err error) {
+	err := e.jobTxn(c, job.JobID, func(c context.Context, job *Job, isNew bool) (err error) {
 		if isNew || !job.Enabled {
 			noSuchJob = true
 			return errSkipPut
 		}
-		future, err = e.jobController(jobID).onJobForceInvocation(c, job)
+		future, err = e.jobController(job.JobID).onJobForceInvocation(c, job)
 		return err
 	})
 
@@ -500,35 +525,26 @@ func (e *engineImpl) ForceInvocation(c context.Context, jobID string) (FutureInv
 // specified jobs.
 //
 // Only v1 for now.
-func (e *engineImpl) EmitTriggers(c context.Context, perJob map[string][]*internal.Trigger) error {
-	// Make sure all jobs exist and the caller has necessary permissions to add
-	// triggers to their queues.
-	//
-	// TODO(vadimsh): This can be made faster with single GetMulti datastore RPC
-	// instead of a bunch of parallel Gets. But the expected number of perJob
-	// items is <10, so it probably doesn't matter.
-	err := parallel.FanOutIn(func(tasks chan<- func() error) {
-		for jobID := range perJob {
-			jobID := jobID
-			tasks <- func() error {
-				if e.isV2Job(jobID) {
-					return fmt.Errorf("v2 jobs are not supported yet")
-				}
-				_, err := e.jobForRole(c, jobID, acl.Triggerer)
-				return err
-			}
+func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal.Trigger) error {
+	// Make sure the caller has permissions to add triggers to all jobs.
+	jobs := make([]*Job, 0, len(perJob))
+	for j := range perJob {
+		if e.isV2Job(j.JobID) {
+			return fmt.Errorf("v2 jobs are not supported yet")
 		}
-	})
-	if err != nil {
-		if merr, _ := err.(errors.MultiError); merr != nil {
-			return merr.First() // we want to return a recognized error, e.g. ErrNoSuchJob
-		}
-		return err
+		jobs = append(jobs, j)
+	}
+	switch filtered, err := e.filterForRole(c, jobs, acl.Triggerer); {
+	case err != nil:
+		return errors.Annotate(err, "transient error when checking Triggerer role").Err()
+	case len(filtered) != len(jobs):
+		return ErrNoPermission // some jobs are not triggerable
 	}
 
+	// Actually trigger.
 	return parallel.FanOutIn(func(tasks chan<- func() error) {
-		for jobID, triggers := range perJob {
-			jobID := jobID
+		for job, triggers := range perJob {
+			jobID := job.JobID
 			triggers := triggers
 			tasks <- func() error { return e.newTriggers(c, jobID, triggers) }
 		}
@@ -800,38 +816,6 @@ func (e *engineImpl) getJob(c context.Context, jobID string) (*Job, error) {
 	}
 }
 
-// jobForRole returns a job if the caller can act in given role on this job.
-//
-// Returns ErrNoSuchJob/ErrNoPermission otherwise (based on ACLs).
-func (e *engineImpl) jobForRole(c context.Context, jobID string, role acl.Role) (*Job, error) {
-	job, err := e.getJob(c, jobID)
-	if err != nil {
-		return nil, err
-	} else if job == nil {
-		return nil, ErrNoSuchJob
-	}
-
-	switch granted, err := job.CallerHasRole(c, role); {
-	case err != nil:
-		return nil, err
-	case granted:
-		return job, nil
-	}
-	// Desired role has not been granted.
-	if role != acl.Reader {
-		// If user can read, we can return more informative error.
-		switch canRead, err := job.CallerHasRole(c, acl.Reader); {
-		case err != nil:
-			// While we can ignore this transient error and just return ErrNoSuchJob,
-			// it'd be inconsistent.
-			return nil, err
-		case canRead:
-			return nil, ErrNoPermission
-		}
-	}
-	return nil, ErrNoSuchJob
-}
-
 // getProjectJobs fetches from ds all enabled jobs belonging to a given
 // project.
 func (e *engineImpl) getProjectJobs(c context.Context, projectID string) (map[string]*Job, error) {
@@ -859,30 +843,40 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 		return nil, transient.Tag.Apply(err)
 	}
 	// Non-ancestor query used, need to recheck filters.
-	filtered := make([]*Job, 0, len(entities))
+	enabled := make([]*Job, 0, len(entities))
 	for _, job := range entities {
-		if !job.Enabled {
-			continue
+		if job.Enabled {
+			enabled = append(enabled, job)
 		}
-		// TODO(tandrii): improve batch ACLs check here to take advantage of likely
-		// shared ACLs between most jobs of the same project.
-		if ok, err := job.CallerHasRole(c, acl.Reader); err != nil {
-			return nil, err
-		} else if ok {
+	}
+	// Keep only ones visible to the caller.
+	return e.filterForRole(c, enabled, acl.Reader)
+}
+
+// filterForRole returns jobs for which caller has the given role.
+//
+// May return transient errors.
+func (e *engineImpl) filterForRole(c context.Context, jobs []*Job, role acl.Role) ([]*Job, error) {
+	// TODO(tandrii): improve batch ACLs check here to take advantage of likely
+	// shared ACLs between most jobs of the same project.
+	filtered := make([]*Job, 0, len(jobs))
+	for _, job := range jobs {
+		switch err := job.CheckRole(c, role); {
+		case err == nil:
 			filtered = append(filtered, job)
+		case err != ErrNoPermission:
+			return nil, err // a transient error when checking
 		}
 	}
 	return filtered, nil
 }
 
 // setJobPausedFlag is implementation of PauseJob/ResumeJob.
-func (e *engineImpl) setJobPausedFlag(c context.Context, jobID string, paused bool, who identity.Identity) error {
-	// First, we check ACLs outside of transaction. Yes, this allows for races
-	// between (un)pausing and ACLs changes but these races have no impact.
-	if _, err := e.jobForRole(c, jobID, acl.Owner); err != nil {
+func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, who identity.Identity) error {
+	if err := job.CheckRole(c, acl.Owner); err != nil {
 		return err
 	}
-	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	return e.jobTxn(c, job.JobID, func(c context.Context, job *Job, isNew bool) error {
 		switch {
 		case isNew || !job.Enabled:
 			return ErrNoSuchJob
@@ -895,7 +889,7 @@ func (e *engineImpl) setJobPausedFlag(c context.Context, jobID string, paused bo
 			logging.Warningf(c, "Job is resumed by %s", who)
 		}
 		job.Paused = paused
-		return e.jobController(jobID).onJobScheduleChange(c, job)
+		return e.jobController(job.JobID).onJobScheduleChange(c, job)
 	})
 }
 
@@ -986,9 +980,7 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 ////////////////////////////////////////////////////////////////////////////////
 // Invocations related methods.
 
-// getInvocation returns an existing invocation or nil.
-//
-// Doesn't check ACLs.
+// getInvocation returns an existing invocation or ErrNoSuchInvocation error.
 //
 // Supports both v1 and v2 invocations.
 func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
@@ -1003,11 +995,11 @@ func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64)
 			logging.Errorf(c,
 				"Invocation %d is associated with job %q, not %q. Treating it as missing.",
 				invID, inv.JobID, jobID)
-			return nil, nil
+			return nil, ErrNoSuchInvocation
 		}
 		return inv, nil
 	case err == ds.ErrNoSuchEntity:
-		return nil, nil
+		return nil, ErrNoSuchInvocation
 	default:
 		return nil, transient.Tag.Apply(err)
 	}
@@ -1533,9 +1525,6 @@ func (e *engineImpl) withController(c context.Context, jobID string, invID int64
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to fetch the invocation")
 		return err
-	case inv == nil:
-		logging.WithError(ErrNoSuchInvocation).Errorf(c, "No such invocation")
-		return ErrNoSuchInvocation
 	case inv.Status.Final():
 		logging.Infof(c, "Skipping %s, the invocation is in final state %q", action, inv.Status)
 		return nil

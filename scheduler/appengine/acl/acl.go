@@ -38,8 +38,8 @@ const (
 	Reader = Role("READER")
 
 	// Triggerer role allows sending triggers to a job/trigger.
-	// Triggerer does NOT provide reader access, which should be granted
-	// separately if desired.
+	//
+	// Implies read access.
 	Triggerer = Role("TRIGGERER")
 
 	// Owner role provides full control of a job/trigger.
@@ -61,7 +61,7 @@ func (g *GrantsByRole) CallerHasRole(c context.Context, role Role) (bool, error)
 	case Triggerer:
 		return hasGrant(c, g.Owners, g.Triggerers, groupsAdministrators)
 	case Reader:
-		return hasGrant(c, g.Owners, g.Readers, groupsAdministrators)
+		return hasGrant(c, g.Owners, g.Readers, g.Triggerers, groupsAdministrators)
 	default:
 		panic(errors.New("unknown role, bug in code"))
 	}
