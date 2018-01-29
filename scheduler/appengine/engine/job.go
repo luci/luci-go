@@ -26,6 +26,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
@@ -253,4 +254,26 @@ func (s *triggersSet) Add(c context.Context, triggers []*internal.Trigger) error
 		})
 	}
 	return s.Set.Add(c, items)
+}
+
+// Triggers returns all triggers in the set, in no particular order.
+//
+// Returns the original dsset listing (that can be used later with BeginPop or
+// CleanupGarbage), as well as the actual deserialized set of triggers.
+func (s *triggersSet) Triggers(c context.Context) (*dsset.Listing, []*internal.Trigger, error) {
+	l, err := s.Set.List(c)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := make([]*internal.Trigger, len(l.Items))
+	for i, item := range l.Items {
+		out[i] = &internal.Trigger{}
+		if err := proto.Unmarshal(item.Value, out[i]); err != nil {
+			return nil, nil, errors.Annotate(err, "failed to unmarshal trigger").Err()
+		}
+		if out[i].Id != item.ID {
+			return nil, nil, fmt.Errorf("trigger ID in the body (%q) doesn't match item ID %q", out[i].Id, item.ID)
+		}
+	}
+	return l, out, nil
 }

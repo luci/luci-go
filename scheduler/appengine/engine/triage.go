@@ -15,15 +15,11 @@
 package engine
 
 import (
-	"fmt"
-	"sort"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
@@ -67,41 +63,9 @@ type triageOp struct {
 
 	triggersSet   *triggersSet
 	triggersList  *dsset.Listing
-	readyTriggers sortedTriggers // same as triggersList, but deserialized and sorted
+	readyTriggers []*internal.Trigger // same as triggersList, but deserialized and sorted
 
 	garbage dsset.Garbage // collected inside the transaction, cleaned outside
-}
-
-// sortedTriggers is a list of triggers sorted by timestamp and ID.
-type sortedTriggers []*internal.Trigger
-
-func (s sortedTriggers) Len() int      { return len(s) }
-func (s sortedTriggers) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s sortedTriggers) Less(i, j int) bool {
-	return sortby.Chain{
-		func(i, j int) bool {
-			return google.TimeFromProto(s[i].Created).Before(google.TimeFromProto(s[j].Created))
-		},
-		func(i, j int) bool { return s[i].Id < s[j].Id },
-	}.Use(i, j)
-}
-
-// deserializeTriggers deserializes and sorts triggers fetched from a dsset.
-//
-// Returns an error if it least one deserialization failed.
-func deserializeTriggers(items []dsset.Item) (sortedTriggers, error) {
-	out := make(sortedTriggers, len(items))
-	for i, item := range items {
-		out[i] = &internal.Trigger{}
-		if err := proto.Unmarshal(item.Value, out[i]); err != nil {
-			return nil, err
-		}
-		if out[i].Id != item.ID {
-			return nil, fmt.Errorf("trigger ID in the body %q doesn't match item ID %q", out[i].Id, item.ID)
-		}
-	}
-	sort.Sort(out)
-	return out, nil
 }
 
 // prepare fetches all pending triggers and events from dsset structs.
@@ -116,15 +80,11 @@ func (op *triageOp) prepare(c context.Context) error {
 	var triggersErr error
 	go func() {
 		defer wg.Done()
-		op.triggersList, triggersErr = op.triggersSet.List(c)
+		op.triggersList, op.readyTriggers, triggersErr = op.triggersSet.Triggers(c)
 		if triggersErr != nil {
 			logging.WithError(triggersErr).Errorf(c, "Failed to grab a set of pending triggers")
-			return
-		}
-		op.readyTriggers, triggersErr = deserializeTriggers(op.triggersList.Items)
-		if triggersErr != nil {
-			logging.WithError(triggersErr).Errorf(c, "Failed to deserialize pending triggers")
-			return
+		} else {
+			sortTriggers(op.readyTriggers)
 		}
 	}()
 

@@ -454,6 +454,10 @@ func (f *fakeEngine) EmitTriggers(c context.Context, perJob map[*engine.Job][]*i
 	return nil
 }
 
+func (f *fakeEngine) ListTriggers(c context.Context, job *engine.Job) ([]*internal.Trigger, error) {
+	panic("not implemented")
+}
+
 func (f *fakeEngine) GetInvocation(c context.Context, job *engine.Job, invID int64) (*engine.Invocation, error) {
 	panic("not implemented")
 }

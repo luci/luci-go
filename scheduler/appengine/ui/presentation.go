@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/sortby"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 
@@ -247,6 +248,15 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		duration = "1 second" // "now" looks weird for durations
 	}
 
+	incTriggers, err := i.IncomingTriggers()
+	if err != nil {
+		panic(errors.Annotate(err, "failed to deserialize incoming triggers").Err())
+	}
+	outTriggers, err := i.OutgoingTriggers()
+	if err != nil {
+		panic(errors.Annotate(err, "failed to deserialize outgoing triggers").Err())
+	}
+
 	return &invocation{
 		ProjectID:        j.ProjectID,
 		JobName:          j.JobName,
@@ -258,8 +268,8 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		TriggeredBy:      triggeredBy,
 		Properties:       makeJSONFromProtoStruct(i.PropertiesRaw),
 		Tags:             i.Tags,
-		IncomingTriggers: makeTriggerList(j.now, i.IncomingTriggers),
-		OutgoingTriggers: makeTriggerList(j.now, i.OutgoingTriggers),
+		IncomingTriggers: makeTriggerList(j.now, incTriggers),
+		OutgoingTriggers: makeTriggerList(j.now, outTriggers),
 		Started:          humanize.RelTime(i.Started, j.now, "ago", "from now"),
 		Duration:         duration,
 		Status:           string(status),
@@ -293,11 +303,7 @@ func makeTrigger(t *internal.Trigger, now time.Time) trigger {
 }
 
 // makeTriggerList builds UI presentation of a bunch of triggers.
-func makeTriggerList(now time.Time, getter func() ([]*internal.Trigger, error)) []trigger {
-	list, err := getter()
-	if err != nil {
-		return nil
-	}
+func makeTriggerList(now time.Time, list []*internal.Trigger) []trigger {
 	out := make([]trigger, len(list))
 	for i, t := range list {
 		out[i] = makeTrigger(t, now)
