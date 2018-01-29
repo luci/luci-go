@@ -43,12 +43,12 @@ func cmdF2J(defaultAuthOpts auth.Options) *subcommands.Command {
 		UsageLine: cmdF2JUsage,
 		ShortDesc: cmdF2JDesc,
 		LongDesc: `Converts a message from flagpb format to JSON format.
-It is convenient for switching from flag format in "rpc call" to json format
+It is convenient for switching from flag format in "prpc call" to json format
 once a command line becomes unreadable.
 
 Example:
 
-  $ rpc fmt f2j :8080 helloworld.HelloRequest -name Lucy
+  $ prpc fmt f2j :8080 helloworld.HelloRequest -name Lucy
   {
     "name: "Lucy"
   }
