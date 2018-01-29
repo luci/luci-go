@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "9ba9b02b_507d435b",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-29T06:51:37Z",
+      "side": 1,
+      "message": "PEEKER approach SGTM, though given that it increases complexity, let\u0027s wait until V8 actually needs this (do I get it right that they are fine with buildbucket for this?)",
+      "parentUuid": "5cd18b4e_b0caf157",
+      "range": {
+        "startLine": 203,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 72
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de97f41c_aad9eaa6",
         "filename": "scheduler/appengine/apiservers/scheduler.go",
         "patchSetId": 2
