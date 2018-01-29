@@ -33,7 +33,7 @@ type Machine struct {
 func (m *Machine) Reset()                    { *m = Machine{} }
 func (m *Machine) String() string            { return proto.CompactTextString(m) }
 func (*Machine) ProtoMessage()               {}
-func (*Machine) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*Machine) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 func (m *Machine) GetName() string {
 	if m != nil {
@@ -93,7 +93,7 @@ type CreateMachineRequest struct {
 func (m *CreateMachineRequest) Reset()                    { *m = CreateMachineRequest{} }
 func (m *CreateMachineRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateMachineRequest) ProtoMessage()               {}
-func (*CreateMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (*CreateMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
 
 func (m *CreateMachineRequest) GetMachine() *Machine {
 	if m != nil {
@@ -111,7 +111,7 @@ type DeleteMachineRequest struct {
 func (m *DeleteMachineRequest) Reset()                    { *m = DeleteMachineRequest{} }
 func (m *DeleteMachineRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeleteMachineRequest) ProtoMessage()               {}
-func (*DeleteMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (*DeleteMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
 
 func (m *DeleteMachineRequest) GetName() string {
 	if m != nil {
@@ -129,7 +129,7 @@ type ListMachinesRequest struct {
 func (m *ListMachinesRequest) Reset()                    { *m = ListMachinesRequest{} }
 func (m *ListMachinesRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListMachinesRequest) ProtoMessage()               {}
-func (*ListMachinesRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (*ListMachinesRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
 
 func (m *ListMachinesRequest) GetNames() []string {
 	if m != nil {
@@ -147,7 +147,7 @@ type ListMachinesResponse struct {
 func (m *ListMachinesResponse) Reset()                    { *m = ListMachinesResponse{} }
 func (m *ListMachinesResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListMachinesResponse) ProtoMessage()               {}
-func (*ListMachinesResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (*ListMachinesResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
 
 func (m *ListMachinesResponse) GetMachines() []*Machine {
 	if m != nil {
@@ -165,10 +165,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto", fileDescriptor3)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor3 = []byte{
 	// 315 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x91, 0x4f, 0x4f, 0xf2, 0x40,
 	0x10, 0x87, 0xd3, 0x97, 0x3f, 0x85, 0xe1, 0xc2, 0xbb, 0xf6, 0xb0, 0xd1, 0x83, 0xa4, 0x27, 0x02,

@@ -1,0 +1,15 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// A request to delete a physical or virtual host from the database.
+message DeleteHostRequest {
+  // The name of the host to delete.
+  string name = 1;
+  // The VLAN the host belongs to.
+  int64 vlan = 2;
+}

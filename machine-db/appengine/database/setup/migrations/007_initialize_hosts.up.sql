@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS physical_hosts (
 	-- The deployment ticket associated with this physical host.
 	deployment_ticket varchar(255),
 	PRIMARY KEY (id),
-	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE RESTRICT,
+	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE CASCADE,
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
 	FOREIGN KEY (os_id) REFERENCES oses (id) ON DELETE RESTRICT,
 	UNIQUE (hostname_id),

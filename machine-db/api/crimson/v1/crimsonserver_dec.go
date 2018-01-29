@@ -248,3 +248,18 @@ func (s *DecoratedCrimson) ListVMs(c context.Context, req *ListVMsRequest) (rsp 
 	}
 	return
 }
+
+func (s *DecoratedCrimson) DeleteHost(c context.Context, req *DeleteHostRequest) (rsp *google_protobuf.Empty, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "DeleteHost", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.DeleteHost(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "DeleteHost", rsp, err)
+	}
+	return
+}

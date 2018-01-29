@@ -32,7 +32,7 @@ type Switch struct {
 func (m *Switch) Reset()                    { *m = Switch{} }
 func (m *Switch) String() string            { return proto.CompactTextString(m) }
 func (*Switch) ProtoMessage()               {}
-func (*Switch) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
+func (*Switch) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
 
 func (m *Switch) GetName() string {
 	if m != nil {
@@ -89,7 +89,7 @@ type ListSwitchesRequest struct {
 func (m *ListSwitchesRequest) Reset()                    { *m = ListSwitchesRequest{} }
 func (m *ListSwitchesRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListSwitchesRequest) ProtoMessage()               {}
-func (*ListSwitchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
+func (*ListSwitchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{1} }
 
 func (m *ListSwitchesRequest) GetNames() []string {
 	if m != nil {
@@ -121,7 +121,7 @@ type ListSwitchesResponse struct {
 func (m *ListSwitchesResponse) Reset()                    { *m = ListSwitchesResponse{} }
 func (m *ListSwitchesResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListSwitchesResponse) ProtoMessage()               {}
-func (*ListSwitchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
+func (*ListSwitchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{2} }
 
 func (m *ListSwitchesResponse) GetSwitches() []*Switch {
 	if m != nil {
@@ -137,10 +137,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor8)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor9)
 }
 
-var fileDescriptor8 = []byte{
+var fileDescriptor9 = []byte{
 	// 294 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x51, 0xc1, 0x4e, 0xc4, 0x20,
 	0x10, 0x0d, 0xbb, 0xdb, 0xea, 0xb2, 0x51, 0x13, 0xdc, 0x03, 0xf1, 0x60, 0x9a, 0x7a, 0x69, 0x62,

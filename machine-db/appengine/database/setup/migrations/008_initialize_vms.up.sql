@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS vms (
 	-- The deployment ticket associated with this VM.
 	deployment_ticket varchar(255),
 	PRIMARY KEY (id),
-	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE RESTRICT,
+	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE CASCADE,
 	FOREIGN KEY (physical_host_id) REFERENCES physical_hosts (id) ON DELETE RESTRICT,
 	FOREIGN KEY (os_id) REFERENCES oses (id) ON DELETE RESTRICT,
 	UNIQUE (hostname_id)
