@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	userAgent = "luci-rpc"
+	userAgent = "luci-prpc"
 )
 
 var logCfg = gologger.LoggerConfig{
@@ -56,7 +56,7 @@ type exitCode struct {
 
 func (e *exitCode) Error() string { return e.err.Error() }
 
-// cmdRun is a base of all rpc subcommands.
+// cmdRun is a base of all prpc subcommands.
 // It defines some common flags, such as logging and auth, and useful methods.
 type cmdRun struct {
 	subcommands.CommandRunBase
@@ -124,8 +124,8 @@ func (r *cmdRun) done(err error) int {
 
 func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 	return &cli.Application{
-		Name:  "rpc",
-		Title: "Remote Procedure Call CLI",
+		Name:  "prpc",
+		Title: "Provisional Remote Procedure Call CLI",
 		Context: func(ctx context.Context) context.Context {
 			return logCfg.Use(ctx)
 		},

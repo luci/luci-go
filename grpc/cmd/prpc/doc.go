@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command rpc can make RPCs to pRPC servers and display their description.
+// Command prpc can make RPCs to pRPC servers and display their description.
 //
 // Subcommand call
 //
@@ -20,7 +20,7 @@
 // at a specified server in a special format (defaults to json) and
 // prints the response back to stdout.
 //
-//  $ echo '{"name": "Lucy"}' | rpc call :8080 helloworld.Greeter.SayHello
+//  $ echo '{"name": "Lucy"}' | prpc call :8080 helloworld.Greeter.SayHello
 //  {
 //          "message": "Hello Lucy"
 //  }
@@ -30,13 +30,13 @@
 // show subcommand resolves a name and describes the referenced entity
 // in proto-like syntax. If name is not specified, lists available services.
 //
-//  $ rpc show :8080
+//  $ prpc show :8080
 //  helloworld.Greeter
 //  discovery.Discovery
 //
 // Show a service:
 //
-//  $ rpc show :8080 helloworld.Greeter
+//  $ prpc show :8080 helloworld.Greeter
 //  // The greeting service definition.
 //  service Greeter {
 //          // Sends a greeting
@@ -45,7 +45,7 @@
 //
 // Show a method:
 //
-//  $ rpc show :8080 helloworld.Greeter.SayHello
+//  $ prpc show :8080 helloworld.Greeter.SayHello
 //  // The greeting service definition.
 //  service Greeter {
 //          // Sends a greeting
@@ -64,7 +64,7 @@
 //
 // Show a type:
 //
-//  $ rpc show :8080 helloworld.HelloReply
+//  $ prpc show :8080 helloworld.HelloReply
 //  // The response message containing the greetings
 //  message HelloReply {
 //          string message = 1;
