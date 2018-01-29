@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "cb4fa256_492562da",
+        "filename": "scheduler/appengine/apiservers/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-29T23:14:24Z",
+      "side": 1,
+      "message": "Yes, they are using buildbucket current for cross-master triggers.\n\n(And I don\u0027t think PEEKER approach increases complexity very much. The PEEKER role will actually be hidden, we won\u0027t need to expose it in the config).",
+      "parentUuid": "9ba9b02b_507d435b",
+      "range": {
+        "startLine": 203,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 72
+      },
+      "revId": "76d40cf364202b36ecd806ec2ca2ea98a1164c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de97f41c_aad9eaa6",
         "filename": "scheduler/appengine/apiservers/scheduler.go",
         "patchSetId": 2
