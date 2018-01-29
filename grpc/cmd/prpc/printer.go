@@ -127,7 +127,7 @@ func (p *printer) Service(service *descriptor.ServiceDescriptorProto, methodInde
 func (p *printer) Method(method *descriptor.MethodDescriptorProto) {
 	p.MaybeLeadingComments(method)
 	p.Printf(
-		"rpc %s(%s) returns (%s) {};\n",
+		"prpc %s(%s) returns (%s) {};\n",
 		method.GetName(),
 		p.shorten(method.GetInputType()),
 		p.shorten(method.GetOutputType()),

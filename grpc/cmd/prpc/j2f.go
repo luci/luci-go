@@ -41,7 +41,7 @@ func cmdJ2F(defaultAuthOpts auth.Options) *subcommands.Command {
 
 Example:
 
-  $ echo '{"name": "Lucy"}' | rpc fmt j2f
+  $ echo '{"name": "Lucy"}' | prpc fmt j2f
   -name Lucy
 
 See also f2j subcommand.`,
