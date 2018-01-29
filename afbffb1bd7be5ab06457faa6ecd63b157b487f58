@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13818c5f_57aa62f3",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1185,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-01-29T06:16:21Z",
+      "side": 0,
+      "message": "this is mostly unrelated to this CL. Just remembered to fix it. It displays struct guts, not very pretty.",
+      "range": {
+        "startLine": 1185,
+        "startChar": 49,
+        "endLine": 1185,
+        "endChar": 74
+      },
+      "revId": "afbffb1bd7be5ab06457faa6ecd63b157b487f58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
