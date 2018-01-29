@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2018 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package int64listflag
+package flag
 
 import (
 	"testing"
@@ -21,40 +21,72 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestInt64ListFlag(t *testing.T) {
+func TestInt64SliceFlag(t *testing.T) {
+	t.Parallel()
+
 	Convey("one", t, func() {
-		flag := Flag{}
+		var flag int64SliceFlag
 		So(flag.Set("1"), ShouldBeNil)
-		So(flag, ShouldHaveLength, 1)
-		So(flag[0], ShouldEqual, 1)
+		So(flag.Get(), ShouldResemble, []int64{1})
 		So(flag.String(), ShouldEqual, "1")
 	})
 
 	Convey("many", t, func() {
-		flag := Flag{}
+		var flag int64SliceFlag
 		So(flag.Set("-1"), ShouldBeNil)
 		So(flag.Set("0"), ShouldBeNil)
 		So(flag.Set("1"), ShouldBeNil)
-		So(flag, ShouldHaveLength, 3)
-		So(flag[0], ShouldEqual, -1)
-		So(flag[1], ShouldEqual, 0)
-		So(flag[2], ShouldEqual, 1)
+		So(flag.Get(), ShouldResemble, []int64{-1, 0, 1})
 		So(flag.String(), ShouldEqual, "-1, 0, 1")
 	})
 
 	Convey("error", t, func() {
-		flag := Flag{}
+		var flag int64SliceFlag
 		So(flag.Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
 		So(flag, ShouldBeEmpty)
+		So(flag, ShouldBeEmpty)
+		So(flag.Get(), ShouldBeEmpty)
 		So(flag.String(), ShouldBeEmpty)
 	})
 
 	Convey("mixed", t, func() {
-		flag := Flag{}
+		var flag int64SliceFlag
 		So(flag.Set("-1"), ShouldBeNil)
 		So(flag.Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
 		So(flag.Set("1"), ShouldBeNil)
-		So(flag, ShouldHaveLength, 2)
+		So(flag.Get(), ShouldResemble, []int64{-1, 1})
 		So(flag.String(), ShouldEqual, "-1, 1")
+	})
+}
+
+func TestInt64Slice(t *testing.T) {
+	t.Parallel()
+
+	Convey("one", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("1"), ShouldBeNil)
+		So(i, ShouldResemble, []int64{1})
+	})
+
+	Convey("many", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("-1"), ShouldBeNil)
+		So(Int64Slice(&i).Set("0"), ShouldBeNil)
+		So(Int64Slice(&i).Set("1"), ShouldBeNil)
+		So(i, ShouldResemble, []int64{-1, 0, 1})
+	})
+
+	Convey("error", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
+		So(i, ShouldBeEmpty)
+	})
+
+	Convey("mixed", t, func() {
+		var i []int64
+		So(Int64Slice(&i).Set("-1"), ShouldBeNil)
+		So(Int64Slice(&i).Set("0x00"), ShouldErrLike, "values must be 64-bit integers")
+		So(Int64Slice(&i).Set("1"), ShouldBeNil)
+		So(i, ShouldResemble, []int64{-1, 1})
 	})
 }
