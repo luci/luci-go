@@ -144,7 +144,7 @@ func buildbucketClient(c context.Context) (*bbapi.Service, error) {
 func buildNumber(b *buildbucket.Build) (int, error) {
 	address := b.Tags.Get("build_address")
 	if address == "" {
-		return 0, errors.Reason("no build_address", b.ID).Err()
+		return 0, errors.Reason("no build_address in build %d", b.ID).Err()
 	}
 
 	// address format is "<bucket>/<builder>/<buildnumber>"
