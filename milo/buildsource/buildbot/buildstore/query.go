@@ -177,6 +177,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 		q.Cursor = ""
 	}
 
+	c, _ = clock.WithDeadline(c, time.Minute)
 	bb, err := buildbucketClient(c)
 	if err != nil {
 		return nil, err
