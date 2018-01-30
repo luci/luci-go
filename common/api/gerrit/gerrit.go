@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -572,9 +573,9 @@ func (c *Client) SetReview(ctx context.Context, changeID string, revisionID stri
 	return &resp, nil
 }
 
-func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) (int, error) {
+func (c *Client) get(ctx context.Context, urlPath string, query url.Values, result interface{}) (int, error) {
 	u := c.gerritURL
-	u.Path = path
+	u.Opaque = "//" + path.Join(u.Host, urlPath)
 	u.RawQuery = query.Encode()
 	r, err := ctxhttp.Get(ctx, c.httpClient, u.String())
 	if err != nil {
@@ -592,13 +593,13 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 	return r.StatusCode, parseResponse(r.Body, result)
 }
 
-func (c *Client) post(ctx context.Context, path string, data interface{}, result interface{}) (int, error) {
+func (c *Client) post(ctx context.Context, urlPath string, data interface{}, result interface{}) (int, error) {
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(data); err != nil {
 		return 200, err
 	}
 	u := c.gerritURL
-	u.Path = path
+	u.Opaque = "//" + path.Join(u.Host, urlPath)
 	r, err := ctxhttp.Post(ctx, c.httpClient, u.String(), contentType, &buffer)
 	if err != nil {
 		return 0, transient.Tag.Apply(err)
