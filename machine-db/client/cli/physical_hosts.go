@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
-	"go.chromium.org/luci/common/flag/stringlistflag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -75,19 +74,14 @@ func addPhysicalHostCmd() *subcommands.Command {
 // GetPhysicalHostsCmd is the command to get physical hosts.
 type GetPhysicalHostsCmd struct {
 	subcommands.CommandRunBase
-	names stringlistflag.Flag
-	vlans []int64
+	req crimson.ListPhysicalHostsRequest
 }
 
 // Run runs the command to get physical hosts.
 func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.ListPhysicalHostsRequest{
-		Names: c.names,
-		Vlans: c.vlans,
-	}
 	client := getClient(ctx)
-	resp, err := client.ListPhysicalHosts(ctx, req)
+	resp, err := client.ListPhysicalHosts(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -105,8 +99,8 @@ func getPhysicalHostsCmd() *subcommands.Command {
 		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPhysicalHostsCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a physical host to filter by. Can be specified multiple times.")
-			cmd.Flags.Var(flag.Int64Slice(&cmd.vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a physical host to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
 			return cmd
 		},

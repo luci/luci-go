@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -30,17 +30,14 @@ import (
 // GetPlatformsCmd is the command to get platforms.
 type GetPlatformsCmd struct {
 	subcommands.CommandRunBase
-	names stringlistflag.Flag
+	req crimson.ListPlatformsRequest
 }
 
 // Run runs the command to get platforms.
 func (c *GetPlatformsCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.ListPlatformsRequest{
-		Names: c.names,
-	}
 	client := getClient(ctx)
-	resp, err := client.ListPlatforms(ctx, req)
+	resp, err := client.ListPlatforms(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -58,7 +55,7 @@ func getPlatformsCmd() *subcommands.Command {
 		LongDesc:  "Retrieves platforms matching the given names, or all platforms if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPlatformsCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a platform to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a platform to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}

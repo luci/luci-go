@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -30,17 +30,14 @@ import (
 // GetDatacentersCmd is the command to get datacenters.
 type GetDatacentersCmd struct {
 	subcommands.CommandRunBase
-	names stringlistflag.Flag
+	req crimson.ListDatacentersRequest
 }
 
 // Run runs the command to get datacenters.
 func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.ListDatacentersRequest{
-		Names: c.names,
-	}
 	client := getClient(ctx)
-	resp, err := client.ListDatacenters(ctx, req)
+	resp, err := client.ListDatacenters(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -58,7 +55,7 @@ func getDatacentersCmd() *subcommands.Command {
 		LongDesc:  "Retrieves datacenters matching the given names, or all datacenters if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDatacentersCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a datacenter to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}

@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
-	"go.chromium.org/luci/common/flag/stringlistflag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -31,19 +30,14 @@ import (
 // GetVLANsCmd is the command to get VLANs.
 type GetVLANsCmd struct {
 	subcommands.CommandRunBase
-	ids     []int64
-	aliases stringlistflag.Flag
+	req crimson.ListVLANsRequest
 }
 
 // Run runs the command to get VLANs.
 func (c *GetVLANsCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.ListVLANsRequest{
-		Ids:     c.ids,
-		Aliases: c.aliases,
-	}
 	client := getClient(ctx)
-	resp, err := client.ListVLANs(ctx, req)
+	resp, err := client.ListVLANs(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -61,8 +55,8 @@ func getVLANsCmd() *subcommands.Command {
 		LongDesc:  "Retrieves VLANs matching the given IDs or aliases, or all VLANs if IDs and aliases are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVLANsCmd{}
-			cmd.Flags.Var(flag.Int64Slice(&cmd.ids), "id", "ID of a VLAN to filter by. Can be specified multiple times.")
-			cmd.Flags.Var(&cmd.aliases, "alias", "Alias of a VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Ids), "id", "ID of a VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Aliases), "alias", "Alias of a VLAN to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}
