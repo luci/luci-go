@@ -574,7 +574,7 @@ func (c *Client) SetReview(ctx context.Context, changeID string, revisionID stri
 
 func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) (int, error) {
 	u := c.gerritURL
-	u.Path = path
+	u.Opaque = "//" + u.Host + "/" + path
 	u.RawQuery = query.Encode()
 	r, err := ctxhttp.Get(ctx, c.httpClient, u.String())
 	if err != nil {
@@ -598,7 +598,7 @@ func (c *Client) post(ctx context.Context, path string, data interface{}, result
 		return 200, err
 	}
 	u := c.gerritURL
-	u.Path = path
+	u.Opaque = "//" + u.Host + "/" + path
 	r, err := ctxhttp.Post(ctx, c.httpClient, u.String(), contentType, &buffer)
 	if err != nil {
 		return 0, transient.Tag.Apply(err)
