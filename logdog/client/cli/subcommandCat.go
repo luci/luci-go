@@ -182,10 +182,11 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string, _ su
 func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, addr *types.StreamAddr) error {
 	// Pull stream information.
 	f := coord.Stream(addr.Project, addr.Path).Fetcher(c, &fetcher.Options{
-		Index:       types.MessageIndex(cmd.index),
-		Count:       cmd.count,
-		BufferCount: cmd.fetchSize,
-		BufferBytes: int64(cmd.fetchBytes),
+		Index:                 types.MessageIndex(cmd.index),
+		Count:                 cmd.count,
+		BufferCount:           cmd.fetchSize,
+		BufferBytes:           int64(cmd.fetchBytes),
+		RequireCompleteStream: true,
 	})
 
 	rend := renderer.Renderer{
