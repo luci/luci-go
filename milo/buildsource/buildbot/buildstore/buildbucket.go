@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -123,7 +124,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 }
 
 func buildbucketClient(c context.Context) (*bbapi.Service, error) {
-	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	t, err := auth.GetRPCTransport(context.WithTimeout(c, time.Minute), auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
