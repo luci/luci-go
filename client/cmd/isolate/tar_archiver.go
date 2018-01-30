@@ -19,6 +19,7 @@ import (
 	"crypto/sha1"
 	"io"
 	"os"
+	"sort"
 
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/isolated"
@@ -40,12 +41,15 @@ type ItemBundle struct {
 // ShardItems shards the provided items into ItemBundles, using the provided
 // threshold as the maximum size the resultant tars should be.
 //
-// ShardItems does not access the filesystem to determine
+// ShardItems does not access the filesystem.
 func ShardItems(items []*Item, threshold int64) []*ItemBundle {
 	var (
 		bundles []*ItemBundle
 		bundle  *ItemBundle
 	)
+
+	// For deterministic isolated hashes, sort the items by path.
+	sort.Sort(itemByPath(items))
 
 	for len(items) > 0 {
 		bundle, items = oneBundle(items, threshold)
@@ -117,4 +121,17 @@ func (b *ItemBundle) writeTar(w io.Writer) error {
 		}
 	}
 	return tw.Close()
+}
+
+// itemByPath implements sort.Interface through path-based comparison.
+type itemByPath []*Item
+
+func (s itemByPath) Len() int {
+	return len(s)
+}
+func (s itemByPath) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s itemByPath) Less(i, j int) bool {
+	return s[i].RelPath < s[j].RelPath
 }

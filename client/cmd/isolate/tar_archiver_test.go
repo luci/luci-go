@@ -49,23 +49,26 @@ func TestItemBundle(t *testing.T) {
 		})
 
 		Convey("multi bundle", func() {
-			r, err := runShardItems([]int64{100, 200, 300, 400, 500, 2000}, 5000)
+			r, err := runShardItems([]int64{100, 200, 2001, 300, 301, 400, 999}, 5000)
 			So(err, ShouldBeNil)
 			So(r, ShouldResemble, &shards{
-				bundles: []int{3, 2, 1},
+				bundles: []int{2, 2, 3},
 				sizes: []int64{
-					1024 + 1024 + 1024 + 1024,
-					1024 + 1024 + 1024,
-					1024 + 2560,
+					1024 + 1024 + 1024,        // 100, 200
+					1024 + 1024 + 2560,        // 2001, 300
+					1024 + 1024 + 1024 + 1536, // 301, 400, 999
 				},
 				digests: []isolated.HexDigest{
-					"003afa69f9b267a2cf267cc5ff715968cb05354b",
-					"7f8cedcc12dc7ddcbe0849a46628b2748f5e84aa",
-					"e4a390dbfa081e564fe61368bac77bb9ef30a4e7",
+					"49a8a345680b6f38f2f2d5e9fa300032d5dbdbe7",
+					"f0599edd049997209916283326d29736c9ee469e",
+					"81d9424320838c562d81fa22be81512f26eacffd",
 				},
 			})
-			// TODO(tandrii): check determinism irrespective of order of sizes (aka
-			// items in a list).
+			Convey("doesn't depend on order of tarred items", func() {
+				r2, err := runShardItems([]int64{2001, 100, 300, 999, 200, 400, 301}, 5000)
+				So(err, ShouldBeNil)
+				So(r2, ShouldResemble, r)
+			})
 		})
 
 		Convey("file below boundary", func() {
@@ -97,11 +100,11 @@ func TestItemBundle(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(r, ShouldResemble, &shards{
 				bundles: []int{1, 1, 1},
-				sizes:   []int64{6656, 7680, 6144},
+				sizes:   []int64{6144, 6656, 7680},
 				digests: []isolated.HexDigest{
+					"1f576aa4d44aea793c751bf03de2d513a2dd65eb",
 					"2cd4cb7a965d9ca34cbb692e3885f7074f28a4a4",
 					"925b04df322c98d013b470727df5644644d93e70",
-					"1f576aa4d44aea793c751bf03de2d513a2dd65eb",
 				},
 			})
 		})
