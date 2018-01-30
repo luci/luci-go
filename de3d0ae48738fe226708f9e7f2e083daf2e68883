@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ba80c13_0e9b768c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-01-30T03:15:13Z",
+      "side": 1,
+      "message": "FTR, usage of this should be strongly discouraged -- i filed an internal Gerrit bug to that this is in fact not unique :(",
+      "range": {
+        "startLine": 9,
+        "startChar": 40,
+        "endLine": 9,
+        "endChar": 71
+      },
+      "revId": "de3d0ae48738fe226708f9e7f2e083daf2e68883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
