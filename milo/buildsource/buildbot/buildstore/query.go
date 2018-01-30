@@ -177,6 +177,11 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 		q.Cursor = ""
 	}
 
+	// Note: GAE classic uses the context deadline from when the roundtripper is
+	// created (I.E. in the buildbucketClient() call) whereas Go and GAE flex uses
+	// the deadline on request.  We're creating the context with deadline here so
+	// that it covers both cases.
+	c, _ = clock.WithDeadline(c, time.Minute)
 	bb, err := buildbucketClient(c)
 	if err != nil {
 		return nil, err
