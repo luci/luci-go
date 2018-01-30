@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -123,7 +124,9 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 }
 
 func buildbucketClient(c context.Context) (*bbapi.Service, error) {
-	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	// GAE classic uses this context for urlfetch timeouts.
+	cc, _ := context.WithTimeout(c, time.Minute)
+	t, err := auth.GetRPCTransport(cc, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
