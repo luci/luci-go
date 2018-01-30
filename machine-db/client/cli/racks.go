@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -30,19 +30,14 @@ import (
 // GetRacksCmd is the command to get racks.
 type GetRacksCmd struct {
 	subcommands.CommandRunBase
-	names       stringlistflag.Flag
-	datacenters stringlistflag.Flag
+	req crimson.ListRacksRequest
 }
 
 // Run runs the command to get racks.
 func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.ListRacksRequest{
-		Names:       c.names,
-		Datacenters: c.datacenters,
-	}
 	client := getClient(ctx)
-	resp, err := client.ListRacks(ctx, req)
+	resp, err := client.ListRacks(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -60,8 +55,8 @@ func getRacksCmd() *subcommands.Command {
 		LongDesc:  "Retrieves racks matching the given names and dcs, or all racks if names and dcs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetRacksCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a rack to filter by. Can be specified multiple times.")
-			cmd.Flags.Var(&cmd.datacenters, "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a rack to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}

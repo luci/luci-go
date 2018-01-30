@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -30,21 +30,14 @@ import (
 // GetSwitchesCmd is the command to get switches.
 type GetSwitchesCmd struct {
 	subcommands.CommandRunBase
-	names       stringlistflag.Flag
-	racks       stringlistflag.Flag
-	datacenters stringlistflag.Flag
+	req crimson.ListSwitchesRequest
 }
 
 // Run runs the command to get switches.
 func (c *GetSwitchesCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.ListSwitchesRequest{
-		Names:       c.names,
-		Racks:       c.racks,
-		Datacenters: c.datacenters,
-	}
 	client := getClient(ctx)
-	resp, err := client.ListSwitches(ctx, req)
+	resp, err := client.ListSwitches(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -62,9 +55,9 @@ func getSwitchesCmd() *subcommands.Command {
 		LongDesc:  "Retrieves switches matching the given names, racks and dcs, or all switches if names, racks, and dcs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetSwitchesCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of a switch to filter by. Can be specified multiple times.")
-			cmd.Flags.Var(&cmd.racks, "rack", "Name of a rack to filter by. Can be specified multiple times.")
-			cmd.Flags.Var(&cmd.datacenters, "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a switch to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}

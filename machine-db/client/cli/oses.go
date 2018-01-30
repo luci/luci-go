@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
@@ -30,17 +30,14 @@ import (
 // GetOSesCmd is the command to get operating systems.
 type GetOSesCmd struct {
 	subcommands.CommandRunBase
-	names stringlistflag.Flag
+	req crimson.ListOSesRequest
 }
 
 // Run runs the command to get operating systems.
 func (c *GetOSesCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(app, c, env)
-	req := &crimson.ListOSesRequest{
-		Names: c.names,
-	}
 	client := getClient(ctx)
-	resp, err := client.ListOSes(ctx, req)
+	resp, err := client.ListOSes(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
@@ -58,7 +55,7 @@ func getOSesCmd() *subcommands.Command {
 		LongDesc:  "Retrieves operating systems matching the given names, or all operating systems if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetOSesCmd{}
-			cmd.Flags.Var(&cmd.names, "name", "Name of an operating system to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of an operating system to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}
