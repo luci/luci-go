@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c6821ef6_0f534068",
+        "filename": "client/cmd/isolate/tar_archiver.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-01-30T00:36:41Z",
+      "side": 1,
+      "message": "is this really worth not inlining?",
+      "revId": "85268ce34cae3f2587d3b5d804b29b79b49e2e7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6735716_dbc4a5a8",
+        "filename": "client/cmd/isolate/tar_archiver.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-01-30T00:36:41Z",
+      "side": 1,
+      "message": "I don\u0027t think it matters at all latency wise in the greater scheme of things. The tarfile size is in the low thousand at most. So I\u0027d vote to remove the comment, as it makes it sound like it\u0027s important.",
+      "revId": "85268ce34cae3f2587d3b5d804b29b79b49e2e7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
