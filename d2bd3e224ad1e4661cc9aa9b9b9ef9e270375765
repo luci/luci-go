@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ece690bf_a7e16c76",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-31T23:37:00Z",
+      "side": 1,
+      "message": "why not request? i think we can embed underlying requests in all commands because so far our commands map to RPCs 1:1. I think it would be simpler than way for such commands",
+      "revId": "d2bd3e224ad1e4661cc9aa9b9b9ef9e270375765",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eedbffc_81b3d0de",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-31T23:37:00Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 62,
+        "startChar": 85,
+        "endLine": 62,
+        "endChar": 89
+      },
+      "revId": "d2bd3e224ad1e4661cc9aa9b9b9ef9e270375765",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
