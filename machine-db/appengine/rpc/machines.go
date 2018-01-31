@@ -97,7 +97,7 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 	return nil
 }
 
-// deleteMachine deletes an existing machine in the database.
+// deleteMachine deletes an existing machine from the database.
 func deleteMachine(c context.Context, name string) error {
 	if name == "" {
 		return status.Error(codes.InvalidArgument, "machine name is required and must be non-empty")
