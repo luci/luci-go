@@ -43,6 +43,8 @@ service Crimson {
 
   // Creates a new NIC in the database.
   rpc CreateNIC(CreateNICRequest) returns (NIC);
+  // Deletes a NIC from the database.
+  rpc DeleteNIC(DeleteNICRequest) returns (google.protobuf.Empty);
   // Lists NICs in the database.
   rpc ListNICs(ListNICsRequest) returns (ListNICsResponse);
 

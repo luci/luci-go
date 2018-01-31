@@ -174,6 +174,21 @@ func (s *DecoratedCrimson) CreateNIC(c context.Context, req *CreateNICRequest) (
 	return
 }
 
+func (s *DecoratedCrimson) DeleteNIC(c context.Context, req *DeleteNICRequest) (rsp *google_protobuf.Empty, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "DeleteNIC", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.DeleteNIC(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "DeleteNIC", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) ListNICs(c context.Context, req *ListNICsRequest) (rsp *ListNICsResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {

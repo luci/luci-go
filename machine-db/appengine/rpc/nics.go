@@ -17,13 +17,14 @@ package rpc
 import (
 	"strings"
 
-	"github.com/go-sql-driver/mysql"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/VividCortex/mysqlerr"
+	"github.com/go-sql-driver/mysql"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -41,7 +42,15 @@ func (*Service) CreateNIC(c context.Context, req *crimson.CreateNICRequest) (*cr
 	return req.Nic, nil
 }
 
-// ListNICes handles a request to list NICs.
+// DeleteNIC handles a request to delete an existing network interface.
+func (*Service) DeleteNIC(c context.Context, req *crimson.DeleteNICRequest) (*empty.Empty, error) {
+	if err := deleteNIC(c, req.Name, req.Machine); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
+}
+
+// ListNICs handles a request to list network interfaces.
 func (*Service) ListNICs(c context.Context, req *crimson.ListNICsRequest) (*crimson.ListNICsResponse, error) {
 	nics, err := listNICs(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Machines...))
 	if err != nil {
@@ -52,7 +61,7 @@ func (*Service) ListNICs(c context.Context, req *crimson.ListNICsRequest) (*crim
 	}, nil
 }
 
-// createNIC creates a new NIC in the database. Returns a gRPC error if unsuccessful.
+// createNIC creates a new NIC in the database.
 func createNIC(c context.Context, n *crimson.NIC) error {
 	if err := validateNICForCreation(n); err != nil {
 		return err
@@ -100,6 +109,39 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
 	}
 	return nil
+}
+
+// deleteNIC deletes an existing NIC from the database.
+func deleteNIC(c context.Context, name, machine string) error {
+	switch {
+	case name == "":
+		return status.Error(codes.InvalidArgument, "NIC name is required and must be non-empty")
+	case machine == "":
+		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
+	}
+
+	db := database.Get(c)
+	stmt, err := db.PrepareContext(c, `
+		DELETE FROM nics WHERE name = ? AND machine_id = (SELECT id FROM machines WHERE name = ?)
+	`)
+	if err != nil {
+		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
+	}
+	res, err := stmt.ExecContext(c, name, machine)
+	if err != nil {
+		return internalError(c, errors.Annotate(err, "failed to delete NIC").Err())
+	}
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
+	case rows == 0:
+		return status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", name, machine)
+	case rows == 1:
+		return nil
+	default:
+		// Shouldn't happen because name is unique in the database.
+		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+	}
 }
 
 // listNICs returns a slice of NICs in the database.

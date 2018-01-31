@@ -205,6 +205,40 @@ func TestCreateNIC(t *testing.T) {
 	})
 }
 
+func TestDeleteNIC(t *testing.T) {
+	Convey("deleteNIC", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		deleteStmt := `
+			^DELETE FROM nics WHERE name = \? AND machine_id = \(SELECT id FROM machines WHERE name = \?\)$
+		`
+
+		Convey("prepare failed", func() {
+			m.ExpectPrepare(deleteStmt).WillReturnError(fmt.Errorf("error"))
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "Internal server error")
+		})
+
+		Convey("query failed", func() {
+			m.ExpectPrepare(deleteStmt)
+			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnError(fmt.Errorf("error"))
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "Internal server error")
+		})
+
+		Convey("invalid", func() {
+			m.ExpectPrepare(deleteStmt)
+			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 0))
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "unknown NIC")
+		})
+
+		Convey("ok", func() {
+			m.ExpectPrepare(deleteStmt)
+			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			So(deleteNIC(c, "eth0", "machine"), ShouldBeNil)
+		})
+	})
+}
+
 func TestListNICs(t *testing.T) {
 	Convey("listNICs", t, func() {
 		db, m, _ := sqlmock.New()

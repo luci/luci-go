@@ -40,7 +40,7 @@ func (*Service) DeleteHost(c context.Context, req *crimson.DeleteHostRequest) (*
 	return &empty.Empty{}, nil
 }
 
-// deleteHost deletes an existing host in the database.
+// deleteHost deletes an existing host from the database.
 func deleteHost(c context.Context, name string, vlan int64) error {
 	switch {
 	case name == "":
