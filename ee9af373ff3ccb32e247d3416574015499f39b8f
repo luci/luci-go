@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3723037f_e0aaeaec",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-31T19:27:39Z",
+      "side": 1,
+      "message": "this is a breaking change and must be behind a flag at least\n\nbacking up a bit: would passing -timestamp flag solve your problem?",
+      "range": {
+        "startLine": 9,
+        "startChar": 27,
+        "endLine": 9,
+        "endChar": 43
+      },
+      "revId": "ee9af373ff3ccb32e247d3416574015499f39b8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
