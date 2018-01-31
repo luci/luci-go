@@ -20,7 +20,7 @@ request access.
 Bqschemaupdater uses protoc found in $PATH.  Please make the latest
 [protobuf library](https://github.com/google/protobuf) available in $PATH.
 
-More information can be got with:
+More information can be had with:
 
 ```
 bqschemaupdater --help
