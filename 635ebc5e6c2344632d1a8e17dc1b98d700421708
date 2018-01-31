@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1bd77070_3456efa7",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-31T23:29:01Z",
+      "side": 0,
+      "message": "why? i think it was correct?",
+      "range": {
+        "startLine": 55,
+        "startChar": 48,
+        "endLine": 55,
+        "endChar": 85
+      },
+      "revId": "635ebc5e6c2344632d1a8e17dc1b98d700421708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1e941dc_89c5106b",
+        "filename": "machine-db/api/crimson/v1/nics.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-31T23:29:01Z",
+      "side": 1,
+      "message": "high level, not for this CL:\n\ndo you think it makes sense to define messages for IDs of objects? e.g. NICID which has machine and name, HostID, etc. It might reduce some dup, make it more clear what is ID of a resource, and allow accepting a list of resource ids, e.g. `repeated NICId nics` or `repeated HostID hosts`",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "f57fd2b27db4fe04b19fe4f089fd0e6ab50337b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5aa8712c_ced433f5",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-31T23:29:01Z",
+      "side": 1,
+      "message": "nit: from\n?",
+      "range": {
+        "startLine": 114,
+        "startChar": 37,
+        "endLine": 114,
+        "endChar": 39
+      },
+      "revId": "f57fd2b27db4fe04b19fe4f089fd0e6ab50337b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "557a5c7e_9b02325a",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-01-31T23:29:01Z",
+      "side": 1,
+      "message": "perhaps you could make a helper than prepares+executes a sql query\napplies to entire code base, not for this CL",
+      "range": {
+        "startLine": 124,
+        "startChar": 17,
+        "endLine": 133,
+        "endChar": 2
+      },
+      "revId": "f57fd2b27db4fe04b19fe4f089fd0e6ab50337b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
