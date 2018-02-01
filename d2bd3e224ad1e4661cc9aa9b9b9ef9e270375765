@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c256ea7a_eef5616c",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:35:33Z",
+      "side": 1,
+      "message": "crimson.CreateNICRequest doesn\u0027t contain a crimson.NIC, it contains a pointer to one. If we put crimson.CreateNICRequest here then we have to remember to initialize the request\u0027s Nic pointer somewhere near line 61. Either option seems about the same to me. We already achieved the main goal of eliminating duplicate field names with the flag refactor, but I can change this across the board if you prefer in another CL.",
+      "parentUuid": "ece690bf_a7e16c76",
+      "revId": "d2bd3e224ad1e4661cc9aa9b9b9ef9e270375765",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3eedbffc_81b3d0de",
         "filename": "machine-db/client/cli/nics.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "d2bd3e224ad1e4661cc9aa9b9b9ef9e270375765",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4dadc03_2b4d1752",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:35:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3eedbffc_81b3d0de",
+      "range": {
+        "startLine": 62,
+        "startChar": 85,
+        "endLine": 62,
+        "endChar": 89
+      },
+      "revId": "d2bd3e224ad1e4661cc9aa9b9b9ef9e270375765",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
