@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d021ee9d_39dac152",
+        "filename": "machine-db/api/crimson/v1/oses.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-01T00:45:19Z",
+      "side": 1,
+      "message": "state of an OS, not tied to any host, does not make sense to me",
+      "revId": "4ba85a12f516930414b34c6436043eab65e8c37e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "135c98f0_7e1642b7",
+        "filename": "machine-db/api/crimson/v1/platforms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-01T00:45:19Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "4ba85a12f516930414b34c6436043eab65e8c37e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
