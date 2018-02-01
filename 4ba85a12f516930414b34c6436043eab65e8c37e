@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "ace8d043_4dbd6174",
+        "filename": "machine-db/api/crimson/v1/oses.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-01T01:06:45Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "608e1519_9f491c20",
+      "revId": "4ba85a12f516930414b34c6436043eab65e8c37e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "135c98f0_7e1642b7",
         "filename": "machine-db/api/crimson/v1/platforms.proto",
         "patchSetId": 1
