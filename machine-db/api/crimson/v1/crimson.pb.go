@@ -33,15 +33,15 @@ It has these top-level messages:
 	DeleteNICRequest
 	ListNICsRequest
 	ListNICsResponse
-	ListOSesRequest
 	OS
+	ListOSesRequest
 	ListOSesResponse
 	PhysicalHost
 	CreatePhysicalHostRequest
 	ListPhysicalHostsRequest
 	ListPhysicalHostsResponse
-	ListPlatformsRequest
 	Platform
+	ListPlatformsRequest
 	ListPlatformsResponse
 	Rack
 	ListRacksRequest
@@ -49,8 +49,8 @@ It has these top-level messages:
 	Switch
 	ListSwitchesRequest
 	ListSwitchesResponse
-	ListVLANsRequest
 	VLAN
+	ListVLANsRequest
 	ListVLANsResponse
 	VM
 	CreateVMRequest

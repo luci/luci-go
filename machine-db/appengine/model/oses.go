@@ -47,7 +47,7 @@ type OSesTable struct {
 func (t *OSesTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT id, name, description
+		SELECT id, name, description, state
 		FROM oses
 	`)
 	if err != nil {
@@ -56,7 +56,7 @@ func (t *OSesTable) fetch(c context.Context) error {
 	defer rows.Close()
 	for rows.Next() {
 		os := &OS{}
-		if err := rows.Scan(&os.Id, &os.Name, &os.Description); err != nil {
+		if err := rows.Scan(&os.Id, &os.Name, &os.Description, &os.State); err != nil {
 			return errors.Annotate(err, "failed to scan operating system").Err()
 		}
 		t.current = append(t.current, os)
@@ -66,7 +66,7 @@ func (t *OSesTable) fetch(c context.Context) error {
 
 // needsUpdate returns true if the given row needs to be updated to match the given config.
 func (*OSesTable) needsUpdate(row, cfg *OS) bool {
-	return row.Description != cfg.Description
+	return row.Description != cfg.Description || row.State != cfg.State
 }
 
 // computeChanges computes the changes that need to be made to the operating systems in the database.
@@ -77,6 +77,7 @@ func (t *OSesTable) computeChanges(c context.Context, oses []*config.OS) {
 			OS: config.OS{
 				Name:        cfg.Name,
 				Description: cfg.Description,
+				State:       cfg.State,
 			},
 		}
 	}
@@ -116,8 +117,8 @@ func (t *OSesTable) add(c context.Context) error {
 
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO oses (name, description)
-		VALUES (?, ?)
+		INSERT INTO oses (name, description, state)
+		VALUES (?, ?, ?)
 	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
@@ -127,7 +128,7 @@ func (t *OSesTable) add(c context.Context) error {
 	// Add each operating system to the database, and update the slice of operating systems with each addition.
 	for len(t.additions) > 0 {
 		os := t.additions[0]
-		result, err := stmt.ExecContext(c, os.Name, os.Description)
+		result, err := stmt.ExecContext(c, os.Name, os.Description, os.State)
 		if err != nil {
 			return errors.Annotate(err, "failed to add operating system %q", os.Name).Err()
 		}
@@ -196,7 +197,7 @@ func (t *OSesTable) update(c context.Context) error {
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
 		UPDATE oses
-		SET description = ?
+		SET description = ?, state = ?
 		WHERE id = ?
 	`)
 	if err != nil {
@@ -211,12 +212,13 @@ func (t *OSesTable) update(c context.Context) error {
 		for _, os := range t.current {
 			if u, ok := updated[os.Id]; ok {
 				os.Description = u.Description
+				os.State = u.State
 			}
 		}
 	}()
 	for len(t.updates) > 0 {
 		os := t.updates[0]
-		if _, err := stmt.ExecContext(c, os.Description, os.Id); err != nil {
+		if _, err := stmt.ExecContext(c, os.Description, os.State, os.Id); err != nil {
 			return errors.Annotate(err, "failed to update operating system %q", os.Name).Err()
 		}
 		updated[os.Id] = os

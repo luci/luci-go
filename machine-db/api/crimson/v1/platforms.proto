@@ -6,21 +6,25 @@ syntax = "proto3";
 
 package crimson;
 
-// ListPlatformsRequest is a request to retrieve platforms.
-message ListPlatformsRequest {
-  // The names of platforms to retrieve.
-  repeated string names = 1;
-}
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// Platform describes a platform.
+// A platform in the database.
 message Platform {
   // The name of this platform. Uniquely identifies this platform.
   string name = 1;
   // A description of this platform.
   string description = 2;
+  // The state of this platform.
+  common.State state = 3;
 }
 
-// ListPlatformsResponse is a response to a request to retrieve platforms.
+// A request to list platforms in the database.
+message ListPlatformsRequest {
+  // The names of platforms to retrieve.
+  repeated string names = 1;
+}
+
+// A response containing a list of platforms in the database.
 message ListPlatformsResponse {
   // The platforms matching the request.
   repeated Platform platforms = 1;
