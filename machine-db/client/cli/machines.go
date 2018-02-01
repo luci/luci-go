@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
@@ -66,6 +67,7 @@ func addMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.Var(common.StateFlag(&cmd.machine.State), "state", "The state of this machine.")
 			return cmd
 		},
 	}
