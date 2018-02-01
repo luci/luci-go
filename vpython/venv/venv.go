@@ -33,12 +33,12 @@ import (
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/spec"
 	"go.chromium.org/luci/vpython/venv/assets"
-	"go.chromium.org/luci/vpython/wheel"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 )
@@ -689,46 +689,73 @@ func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425T
 	return tags, nil
 }
 
+// findWheels identifies all wheel files in the immediate directory dir and
+// returns their absolute paths.
+func findWheels(dir string) ([]string, error) {
+	matches, err := filepath.Glob(filepath.Join(dir, "*.whl"))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to list wheel directory: %s", dir).Err()
+	}
+
+	paths := make([]string, 0, len(matches))
+	for _, match := range matches {
+		switch st, err := os.Stat(match); {
+		case err != nil:
+			return nil, errors.Annotate(err, "failed to stat wheel: %s", match).Err()
+
+		case st.IsDir():
+			// Ignore directories.
+			continue
+
+		default:
+			// A ".whl" file.
+			paths = append(paths, match)
+		}
+	}
+	return paths, nil
+}
+
 func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env []string) error {
 	// Identify all downloaded wheels and parse them.
-	wheels, err := wheel.ScanDir(pkgDir)
+	wheels, err := findWheels(pkgDir)
 	if err != nil {
 		return errors.Annotate(err, "failed to load wheels").Err()
 	}
 
-	// Build a "wheel" requirements file.
-	reqPath := filepath.Join(bootstrapDir, "requirements.txt")
-	logging.Debugf(c, "Rendering requirements file to: %s", reqPath)
-	if err := wheel.WriteRequirementsFile(reqPath, wheels); err != nil {
-		return errors.Annotate(err, "failed to render requirements file").Err()
-	}
-
-	// We use "--isolated", which disables "PIP_" environment variable
-	// configuration overrides that we set up in "isolatedSetupEnvironment".
-	// Therefore, we append flag equivalents.
-	//
-	// See pipIsolateOptions.
-	pythonCmd := []string{
+	// We use the wheel module directly to install the wheels. We don't need pip
+	// to do any dependency resolution or calculation.
+	pythonCmdBase := []string{
 		"install",
-		"--isolated",
-		"--compile",
-		"--no-index",
-		"--find-links", pkgDir,
-		"--requirement", reqPath,
-	}
-	for _, opt := range pipIsolateOptions {
-		pythonCmd = append(pythonCmd, opt.installFlag)
+		"--force", // We know better than wheel
 	}
 
-	cmd := e.Interpreter().IsolatedCommand(c,
-		python.ModuleTarget{Module: "pip"},
-		pythonCmd...)
-	cmd.Env = env
-	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
-	if err := cmd.Run(); err != nil {
-		dumpOutput(c, logging.Error)
+	// Since the 'install' process here is really just 'unzip using pure-python
+	// unzip', parallelization yields a large speedup.
+	err = parallel.WorkPool(4, func(ch chan<- func() error) {
+		for _, whl := range wheels {
+			whl := whl
+			ch <- func() error {
+				cmdLine := make([]string, len(pythonCmdBase)+1)
+				copy(cmdLine, pythonCmdBase)
+				cmdLine[len(cmdLine)-1] = whl
+
+				cmd := e.Interpreter().IsolatedCommand(c,
+					python.ModuleTarget{Module: "wheel"},
+					cmdLine...)
+				cmd.Env = env
+				dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
+				if err := cmd.Run(); err != nil {
+					dumpOutput(c, logging.Error)
+					return errors.Annotate(err, "failed to install %q", whl).Err()
+				}
+				return nil
+			}
+		}
+	})
+	if err != nil {
 		return errors.Annotate(err, "failed to install wheels").Err()
 	}
+
 	return nil
 }
 
