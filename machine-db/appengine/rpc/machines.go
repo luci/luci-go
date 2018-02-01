@@ -70,13 +70,13 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 	// By setting machines.platform_id and machines.rack_id NOT NULL when setting up the database, we can avoid checking if the given
 	// platform and rack are valid. MySQL will turn up NULL for their column values which will be rejected as an error.
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO machines (name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket)
-		VALUES (?, (SELECT id FROM platforms WHERE name = ?), (SELECT id FROM racks WHERE name = ?), ?, ?, ?, ?)
+		INSERT INTO machines (name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket, state)
+		VALUES (?, (SELECT id FROM platforms WHERE name = ?), (SELECT id FROM racks WHERE name = ?), ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
 	}
-	_, err = stmt.ExecContext(c, m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket)
+	_, err = stmt.ExecContext(c, m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -138,7 +138,7 @@ func deleteMachine(c context.Context, name string) error {
 func listMachines(c context.Context, names stringset.Set) ([]*crimson.Machine, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket
+		SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
 		FROM machines m, platforms p, racks r
 		WHERE m.platform_id = p.id
 			AND m.rack_id = r.id
@@ -151,7 +151,16 @@ func listMachines(c context.Context, names stringset.Set) ([]*crimson.Machine, e
 	var machines []*crimson.Machine
 	for rows.Next() {
 		m := &crimson.Machine{}
-		if err = rows.Scan(&m.Name, &m.Platform, &m.Rack, &m.Description, &m.AssetTag, &m.ServiceTag, &m.DeploymentTicket); err != nil {
+		if err = rows.Scan(
+			&m.Name,
+			&m.Platform,
+			&m.Rack,
+			&m.Description,
+			&m.AssetTag,
+			&m.ServiceTag,
+			&m.DeploymentTicket,
+			&m.State,
+		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch machine").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.

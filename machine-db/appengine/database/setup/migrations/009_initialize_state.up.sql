@@ -1,4 +1,4 @@
--- Copyright 2017 The LUCI Authors.
+-- Copyright 2018 The LUCI Authors.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
 -- Required fields are not enforced by this schema.
 -- The Machine Database will enforce any such constraints.
 
-ALTER TABLE switches DROP COLUMN state;
-ALTER TABLE racks DROP COLUMN state;
-ALTER TABLE datacenters DROP COLUMN state;
+ALTER TABLE datacenters ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE racks ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE switches ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE oses ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE platforms ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE vlans ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE machines ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE physical_hosts ADD COLUMN state tinyint DEFAULT 0;
+ALTER TABLE vms ADD COLUMN state tinyint DEFAULT 0;

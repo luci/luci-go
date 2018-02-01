@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -39,8 +40,8 @@ func TestCreateMachine(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		insertStmt := `
-			^INSERT INTO machines \(name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket\)
-			VALUES \(\?, \(SELECT id FROM platforms WHERE name = \?\), \(SELECT id FROM racks WHERE name = \?\), \?, \?, \?, \?\)$
+			^INSERT INTO machines \(name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket, state\)
+			VALUES \(\?, \(SELECT id FROM platforms WHERE name = \?\), \(SELECT id FROM racks WHERE name = \?\), \?, \?, \?, \?, \?\)$
 		`
 
 		Convey("prepare failed", func() {
@@ -60,7 +61,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 			}
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(fmt.Errorf("error"))
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(fmt.Errorf("error"))
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
 
@@ -71,7 +72,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 			}
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
 			So(createMachine(c, machine), ShouldErrLike, "duplicate machine")
 		})
 
@@ -82,7 +83,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 			}
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
 			So(createMachine(c, machine), ShouldErrLike, "unknown platform")
 		})
 
@@ -93,7 +94,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 			}
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
 			So(createMachine(c, machine), ShouldErrLike, "unknown rack")
 		})
 
@@ -104,7 +105,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 			}
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
 
@@ -115,7 +116,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 			}
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
 
@@ -126,7 +127,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 			}
 			m.ExpectPrepare(insertStmt)
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnResult(sqlmock.NewResult(1, 1))
 			So(createMachine(c, machine), ShouldBeNil)
 		})
 	})
@@ -178,11 +179,11 @@ func TestListMachines(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket
+			^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
 			FROM machines m, platforms p, racks r
 			WHERE m.platform_id = p.id AND m.rack_id = r.id$
 		`
-		columns := []string{"m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket"}
+		columns := []string{"m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -206,8 +207,8 @@ func TestListMachines(t *testing.T) {
 		Convey("no matches", func() {
 			names := stringset.NewFromSlice("machine")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "")
-			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "")
+			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
+			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
 			machines, err := listMachines(c, names)
 			So(err, ShouldBeNil)
 			So(machines, ShouldBeEmpty)
@@ -216,9 +217,9 @@ func TestListMachines(t *testing.T) {
 
 		Convey("matches", func() {
 			names := stringset.NewFromSlice("machine 2", "machine 3")
-			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "")
-			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "")
-			rows.AddRow("machine 3", "platform 3", "rack 3", "description 3", "", "", "")
+			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
+			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
+			rows.AddRow("machine 3", "platform 3", "rack 3", "description 3", "", "", "", common.State_REPAIR)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			machines, err := listMachines(c, names)
 			So(err, ShouldBeNil)
@@ -228,12 +229,14 @@ func TestListMachines(t *testing.T) {
 					Platform:    "platform 2",
 					Rack:        "rack 2",
 					Description: "description 2",
+					State:       common.State_SERVING,
 				},
 				{
 					Name:        "machine 3",
 					Platform:    "platform 3",
 					Rack:        "rack 3",
 					Description: "description 3",
+					State:       common.State_REPAIR,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -241,8 +244,8 @@ func TestListMachines(t *testing.T) {
 
 		Convey("ok", func() {
 			names := stringset.New(0)
-			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "")
-			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "")
+			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
+			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			machines, err := listMachines(c, names)
 			So(err, ShouldBeNil)
@@ -258,6 +261,7 @@ func TestListMachines(t *testing.T) {
 					Platform:    "platform 2",
 					Rack:        "rack 2",
 					Description: "description 2",
+					State:       common.State_SERVING,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
