@@ -22,6 +22,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -34,8 +35,8 @@ func TestVLANs(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `^SELECT id, alias FROM vlans$`
-		columns := []string{"id", "alias"}
+		selectStmt := `^SELECT id, alias, state FROM vlans$`
+		columns := []string{"id", "alias", "state"}
 		rows := sqlmock.NewRows(columns)
 		table := &VLANsTable{}
 
@@ -54,8 +55,8 @@ func TestVLANs(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			rows.AddRow(1, "vlan 1")
-			rows.AddRow(2, "vlan 2")
+			rows.AddRow(1, "vlan 1", common.State_FREE)
+			rows.AddRow(2, "vlan 2", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*VLAN{
@@ -63,12 +64,14 @@ func TestVLANs(t *testing.T) {
 					VLAN: config.VLAN{
 						Id:    1,
 						Alias: "vlan 1",
+						State: common.State_FREE,
 					},
 				},
 				{
 					VLAN: config.VLAN{
 						Id:    2,
 						Alias: "vlan 2",
+						State: common.State_SERVING,
 					},
 				},
 			})
@@ -92,10 +95,12 @@ func TestVLANs(t *testing.T) {
 				{
 					Id:    1,
 					Alias: "vlan 1",
+					State: common.State_FREE,
 				},
 				{
 					Id:    2,
 					Alias: "vlan 2",
+					State: common.State_SERVING,
 				},
 			}
 			table.computeChanges(c, vlans)
@@ -104,12 +109,14 @@ func TestVLANs(t *testing.T) {
 					VLAN: config.VLAN{
 						Id:    1,
 						Alias: "vlan 1",
+						State: common.State_FREE,
 					},
 				},
 				{
 					VLAN: config.VLAN{
 						Id:    2,
 						Alias: "vlan 2",
+						State: common.State_SERVING,
 					},
 				},
 			})
@@ -122,12 +129,14 @@ func TestVLANs(t *testing.T) {
 				VLAN: config.VLAN{
 					Id:    1,
 					Alias: "old alias",
+					State: common.State_FREE,
 				},
 			})
 			vlans := []*config.VLAN{
 				{
 					Id:    table.current[0].Id,
 					Alias: "new alias",
+					State: common.State_SERVING,
 				},
 			}
 			table.computeChanges(c, vlans)
@@ -138,6 +147,7 @@ func TestVLANs(t *testing.T) {
 					VLAN: config.VLAN{
 						Id:    table.current[0].Id,
 						Alias: vlans[0].Alias,
+						State: vlans[0].State,
 					},
 				},
 			})
@@ -167,7 +177,7 @@ func TestVLANs(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `^INSERT INTO vlans \(id, alias\) VALUES \(\?, \?\)$`
+		insertStmt := `^INSERT INTO vlans \(id, alias, state\) VALUES \(\?, \?, \?\)$`
 		table := &VLANsTable{}
 
 		Convey("empty", func() {
@@ -294,7 +304,7 @@ func TestVLANs(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		updateStmt := `^UPDATE vlans SET alias = \? WHERE id = \?$`
+		updateStmt := `^UPDATE vlans SET alias = \?, state = \? WHERE id = \?$`
 		table := &VLANsTable{}
 
 		Convey("empty", func() {
@@ -309,12 +319,14 @@ func TestVLANs(t *testing.T) {
 				VLAN: config.VLAN{
 					Id:    1,
 					Alias: "new alias",
+					State: common.State_SERVING,
 				},
 			})
 			table.current = append(table.current, &VLAN{
 				VLAN: config.VLAN{
 					Id:    table.updates[0].Id,
 					Alias: "old alias",
+					State: common.State_FREE,
 				},
 			})
 			m.ExpectPrepare(updateStmt).WillReturnError(fmt.Errorf("error"))
@@ -329,12 +341,14 @@ func TestVLANs(t *testing.T) {
 				VLAN: config.VLAN{
 					Id:    1,
 					Alias: "new alias",
+					State: common.State_SERVING,
 				},
 			})
 			table.current = append(table.current, &VLAN{
 				VLAN: config.VLAN{
 					Id:    table.updates[0].Id,
 					Alias: "old alias",
+					State: common.State_FREE,
 				},
 			})
 			m.ExpectPrepare(updateStmt)
@@ -350,12 +364,14 @@ func TestVLANs(t *testing.T) {
 				VLAN: config.VLAN{
 					Id:    1,
 					Alias: "new alias",
+					State: common.State_SERVING,
 				},
 			})
 			table.current = append(table.current, &VLAN{
 				VLAN: config.VLAN{
 					Id:    table.updates[0].Id,
 					Alias: "old alias",
+					State: common.State_FREE,
 				},
 			})
 			m.ExpectPrepare(updateStmt)
@@ -364,6 +380,7 @@ func TestVLANs(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.current, ShouldHaveLength, 1)
 			So(table.current[0].Alias, ShouldEqual, "new alias")
+			So(table.current[0].State, ShouldEqual, common.State_SERVING)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})

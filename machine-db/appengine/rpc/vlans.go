@@ -44,7 +44,7 @@ func (*Service) ListVLANs(c context.Context, req *crimson.ListVLANsRequest) (*cr
 func listVLANs(c context.Context, ids map[int64]struct{}, aliases stringset.Set) ([]*crimson.VLAN, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT v.id, v.alias
+		SELECT v.id, v.alias, v.state
 		FROM vlans v
 	`)
 	if err != nil {
@@ -55,7 +55,7 @@ func listVLANs(c context.Context, ids map[int64]struct{}, aliases stringset.Set)
 	var vlans []*crimson.VLAN
 	for rows.Next() {
 		vlan := &crimson.VLAN{}
-		if err = rows.Scan(&vlan.Id, &vlan.Alias); err != nil {
+		if err = rows.Scan(&vlan.Id, &vlan.Alias, &vlan.State); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch VLAN").Err()
 		}
 		// VLAN may match either the given IDs or aliases.

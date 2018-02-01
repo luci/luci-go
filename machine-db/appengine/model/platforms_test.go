@@ -22,6 +22,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -34,8 +35,8 @@ func TestPlatforms(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `^SELECT id, name, description FROM platforms$`
-		columns := []string{"id", "name", "description"}
+		selectStmt := `^SELECT id, name, description, state FROM platforms$`
+		columns := []string{"id", "name", "description", "state"}
 		rows := sqlmock.NewRows(columns)
 		table := &PlatformsTable{}
 
@@ -54,8 +55,8 @@ func TestPlatforms(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			rows.AddRow(1, "platform 1", "description 1")
-			rows.AddRow(2, "platform 2", "description 2")
+			rows.AddRow(1, "platform 1", "description 1", common.State_FREE)
+			rows.AddRow(2, "platform 2", "description 2", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*Platform{
@@ -63,6 +64,7 @@ func TestPlatforms(t *testing.T) {
 					Platform: config.Platform{
 						Name:        "platform 1",
 						Description: "description 1",
+						State:       common.State_FREE,
 					},
 					Id: 1,
 				},
@@ -70,6 +72,7 @@ func TestPlatforms(t *testing.T) {
 					Platform: config.Platform{
 						Name:        "platform 2",
 						Description: "description 2",
+						State:       common.State_SERVING,
 					},
 					Id: 2,
 				},
@@ -94,10 +97,12 @@ func TestPlatforms(t *testing.T) {
 				{
 					Name:        "platform 1",
 					Description: "description 1",
+					State:       common.State_FREE,
 				},
 				{
 					Name:        "platform 2",
 					Description: "description 2",
+					State:       common.State_SERVING,
 				},
 			}
 			table.computeChanges(c, platforms)
@@ -106,12 +111,14 @@ func TestPlatforms(t *testing.T) {
 					Platform: config.Platform{
 						Name:        "platform 1",
 						Description: "description 1",
+						State:       common.State_FREE,
 					},
 				},
 				{
 					Platform: config.Platform{
 						Name:        "platform 2",
 						Description: "description 2",
+						State:       common.State_SERVING,
 					},
 				},
 			})
@@ -124,6 +131,7 @@ func TestPlatforms(t *testing.T) {
 				Platform: config.Platform{
 					Name:        "platform",
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id: 1,
 			})
@@ -131,6 +139,7 @@ func TestPlatforms(t *testing.T) {
 				{
 					Name:        table.current[0].Name,
 					Description: "new description",
+					State:       common.State_SERVING,
 				},
 			}
 			table.computeChanges(c, platforms)
@@ -141,6 +150,7 @@ func TestPlatforms(t *testing.T) {
 					Platform: config.Platform{
 						Name:        table.current[0].Name,
 						Description: platforms[0].Description,
+						State:       platforms[0].State,
 					},
 					Id: table.current[0].Id,
 				},
@@ -173,7 +183,7 @@ func TestPlatforms(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `^INSERT INTO platforms \(name, description\) VALUES \(\?, \?\)$`
+		insertStmt := `^INSERT INTO platforms \(name, description, state\) VALUES \(\?, \?, \?\)$`
 		table := &PlatformsTable{}
 
 		Convey("empty", func() {
@@ -306,7 +316,7 @@ func TestPlatforms(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		updateStmt := `^UPDATE platforms SET description = \? WHERE id = \?$`
+		updateStmt := `^UPDATE platforms SET description = \?, state = \? WHERE id = \?$`
 		table := &PlatformsTable{}
 
 		Convey("empty", func() {
@@ -321,6 +331,7 @@ func TestPlatforms(t *testing.T) {
 				Platform: config.Platform{
 					Name:        "platform",
 					Description: "new description",
+					State:       common.State_SERVING,
 				},
 				Id: 1,
 			})
@@ -328,6 +339,7 @@ func TestPlatforms(t *testing.T) {
 				Platform: config.Platform{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id: table.updates[0].Id,
 			})
@@ -343,6 +355,7 @@ func TestPlatforms(t *testing.T) {
 				Platform: config.Platform{
 					Name:        "platform",
 					Description: "new description",
+					State:       common.State_SERVING,
 				},
 				Id: 1,
 			})
@@ -350,6 +363,7 @@ func TestPlatforms(t *testing.T) {
 				Platform: config.Platform{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id: table.updates[0].Id,
 			})
@@ -366,6 +380,7 @@ func TestPlatforms(t *testing.T) {
 				Platform: config.Platform{
 					Name:        "platform",
 					Description: "new description",
+					State:       common.State_SERVING,
 				},
 				Id: 1,
 			})
@@ -373,6 +388,7 @@ func TestPlatforms(t *testing.T) {
 				Platform: config.Platform{
 					Name:        table.updates[0].Name,
 					Description: "old description",
+					State:       common.State_FREE,
 				},
 				Id: table.updates[0].Id,
 			})
@@ -382,6 +398,7 @@ func TestPlatforms(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.current, ShouldHaveLength, 1)
 			So(table.current[0].Description, ShouldEqual, "new description")
+			So(table.current[0].State, ShouldEqual, common.State_SERVING)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})

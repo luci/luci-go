@@ -6,15 +6,9 @@ syntax = "proto3";
 
 package crimson;
 
-// ListVLANsRequest is a request to retrieve VLANs.
-message ListVLANsRequest {
-  // The IDs of VLANs to retrieve.
-  repeated int64 ids = 1;
-  // The aliases of VLANs to retrieve.
-  repeated string aliases = 2;
-}
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// VLAN describes a VLAN.
+// A VLAN in the database.
 message VLAN {
   // The ID of this VLAN. Uniquely identifies this VLAN.
   int64 id = 1;
@@ -22,9 +16,19 @@ message VLAN {
   string alias = 2;
   // A description of this VLAN.
   string description = 3;
+  // The state of this VLAN.
+  common.State state = 4;
 }
 
-// ListVLANsResponse is a response to a request to retrieve VLANs.
+// A request to list VLANs in the database.
+message ListVLANsRequest {
+  // The IDs of VLANs to retrieve.
+  repeated int64 ids = 1;
+  // The aliases of VLANs to retrieve.
+  repeated string aliases = 2;
+}
+
+// A response containing a list of VLANs in the database.
 message ListVLANsResponse {
   // The VLANs matching the request.
   repeated VLAN vlans = 1;

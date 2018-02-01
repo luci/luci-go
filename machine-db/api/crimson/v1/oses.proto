@@ -6,21 +6,25 @@ syntax = "proto3";
 
 package crimson;
 
-// ListOSesRequest is a request to retrieve operating systems.
-message ListOSesRequest {
-  // The names of operating systems to retrieve.
-  repeated string names = 1;
-}
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// OS describes an operating system.
+// An operating system in the database.
 message OS {
   // The name of this operating system. Uniquely identifies this operating system.
   string name = 1;
   // A description of this operating system.
   string description = 2;
+  // The state of this operating system.
+  common.State state = 3;
 }
 
-// ListOSesResponse is a response to a request to retrieve operating systems.
+// A request to list operating systems in the database.
+message ListOSesRequest {
+  // The names of operating systems to retrieve.
+  repeated string names = 1;
+}
+
+// A response containing a list of operating systems in the database.
 message ListOSesResponse {
   // The operating systems matching the request.
   repeated OS oses = 1;

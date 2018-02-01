@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -37,10 +38,10 @@ func TestListVLANs(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT v.id, v.alias
+			^SELECT v.id, v.alias, v.state
 			FROM vlans v$
 		`
-		columns := []string{"v.id", "v.alias"}
+		columns := []string{"v.id", "v.alias", "v.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -66,8 +67,8 @@ func TestListVLANs(t *testing.T) {
 		Convey("no matches", func() {
 			ids := map[int64]struct{}{0: {}}
 			aliases := stringset.NewFromSlice("vlan")
-			rows.AddRow(1, "vlan 1")
-			rows.AddRow(2, "vlan 2")
+			rows.AddRow(1, "vlan 1", common.State_FREE)
+			rows.AddRow(2, "vlan 2", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
@@ -78,9 +79,9 @@ func TestListVLANs(t *testing.T) {
 		Convey("matches", func() {
 			ids := map[int64]struct{}{2: {}}
 			aliases := stringset.NewFromSlice("vlan 3")
-			rows.AddRow(1, "vlan 1")
-			rows.AddRow(2, "vlan 2")
-			rows.AddRow(3, "vlan 3")
+			rows.AddRow(1, "vlan 1", common.State_FREE)
+			rows.AddRow(2, "vlan 2", common.State_SERVING)
+			rows.AddRow(3, "vlan 3", common.State_REPAIR)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
@@ -88,10 +89,12 @@ func TestListVLANs(t *testing.T) {
 				{
 					Id:    2,
 					Alias: "vlan 2",
+					State: common.State_SERVING,
 				},
 				{
 					Id:    3,
 					Alias: "vlan 3",
+					State: common.State_REPAIR,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -100,9 +103,9 @@ func TestListVLANs(t *testing.T) {
 		Convey("no IDs", func() {
 			ids := make(map[int64]struct{}, 0)
 			aliases := stringset.NewFromSlice("vlan 3")
-			rows.AddRow(1, "vlan 1")
-			rows.AddRow(2, "vlan 2")
-			rows.AddRow(3, "vlan 3")
+			rows.AddRow(1, "vlan 1", common.State_FREE)
+			rows.AddRow(2, "vlan 2", common.State_SERVING)
+			rows.AddRow(3, "vlan 3", common.State_REPAIR)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
@@ -110,6 +113,7 @@ func TestListVLANs(t *testing.T) {
 				{
 					Id:    3,
 					Alias: "vlan 3",
+					State: common.State_REPAIR,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -118,9 +122,9 @@ func TestListVLANs(t *testing.T) {
 		Convey("no aliases", func() {
 			ids := map[int64]struct{}{2: {}}
 			aliases := stringset.New(0)
-			rows.AddRow(1, "vlan 1")
-			rows.AddRow(2, "vlan 2")
-			rows.AddRow(3, "vlan 3")
+			rows.AddRow(1, "vlan 1", common.State_FREE)
+			rows.AddRow(2, "vlan 2", common.State_SERVING)
+			rows.AddRow(3, "vlan 3", common.State_REPAIR)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
@@ -128,6 +132,7 @@ func TestListVLANs(t *testing.T) {
 				{
 					Id:    2,
 					Alias: "vlan 2",
+					State: common.State_SERVING,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -136,8 +141,8 @@ func TestListVLANs(t *testing.T) {
 		Convey("ok", func() {
 			ids := make(map[int64]struct{}, 0)
 			aliases := stringset.New(0)
-			rows.AddRow(1, "vlan 1")
-			rows.AddRow(2, "vlan 2")
+			rows.AddRow(1, "vlan 1", common.State_FREE)
+			rows.AddRow(2, "vlan 2", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
@@ -145,10 +150,12 @@ func TestListVLANs(t *testing.T) {
 				{
 					Id:    1,
 					Alias: "vlan 1",
+					State: common.State_FREE,
 				},
 				{
 					Id:    2,
 					Alias: "vlan 2",
+					State: common.State_SERVING,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
