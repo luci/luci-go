@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "608e1519_9f491c20",
+        "filename": "machine-db/api/crimson/v1/oses.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:53:45Z",
+      "side": 1,
+      "message": "Not every state makes sense, but some seem fine to me. Usage of an OS as a whole could be in a TEST state to indicate the OS is only being used for testing, it could be in a PRERELEASE state to indicate the OS is being prepped for wide usage, it could be in a DECOMMISSIONED state to indicate the OS is deprecated.",
+      "parentUuid": "d021ee9d_39dac152",
+      "revId": "4ba85a12f516930414b34c6436043eab65e8c37e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "135c98f0_7e1642b7",
         "filename": "machine-db/api/crimson/v1/platforms.proto",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2018-02-01T00:45:19Z",
       "side": 1,
       "message": "same here",
+      "revId": "4ba85a12f516930414b34c6436043eab65e8c37e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "040be74d_fbefe278",
+        "filename": "machine-db/api/crimson/v1/platforms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:53:45Z",
+      "side": 1,
+      "message": "Same response s/OS/platform/.",
+      "parentUuid": "135c98f0_7e1642b7",
       "revId": "4ba85a12f516930414b34c6436043eab65e8c37e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
