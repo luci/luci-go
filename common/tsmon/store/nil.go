@@ -37,9 +37,6 @@ func IsNilStore(s Store) bool {
 
 type nilStore struct{}
 
-func (nilStore) Register(m types.Metric)   {}
-func (nilStore) Unregister(m types.Metric) {}
-
 func (nilStore) DefaultTarget() types.Target     { return nil }
 func (nilStore) SetDefaultTarget(t types.Target) {}
 
