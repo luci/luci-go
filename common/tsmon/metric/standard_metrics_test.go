@@ -45,90 +45,50 @@ func TestStandardMetrics(t *testing.T) {
 	Convey("UpdateHTTPMetrics updates client metrics", t, func() {
 		c := makeContext()
 		name, client := "test_name", "test_client"
-		d, err := requestBytesMetric.Get(c, name, client)
-		So(d, ShouldBeNil)
-		So(err, ShouldBeNil)
-		d, err = responseBytesMetric.Get(c, name, client)
-		So(d, ShouldBeNil)
-		So(err, ShouldBeNil)
-		d, err = requestDurationsMetric.Get(c, name, client)
-		So(d, ShouldBeNil)
-		So(err, ShouldBeNil)
-		v, errV := responseStatusMetric.Get(c, 200, name, client)
-		So(v, ShouldEqual, 0)
-		So(errV, ShouldBeNil)
+		So(requestBytesMetric.Get(c, name, client), ShouldBeNil)
+		So(responseBytesMetric.Get(c, name, client), ShouldBeNil)
+		So(requestDurationsMetric.Get(c, name, client), ShouldBeNil)
+		So(responseStatusMetric.Get(c, 200, name, client), ShouldEqual, 0)
 
 		UpdateHTTPMetrics(c, name, client, 200, dur, 123, 321)
-		d, err = requestBytesMetric.Get(c, name, client)
-		So(d.Sum(), ShouldEqual, 123)
-		So(err, ShouldBeNil)
-		d, err = responseBytesMetric.Get(c, name, client)
-		So(d.Sum(), ShouldEqual, 321)
-		So(err, ShouldBeNil)
-		d, err = requestDurationsMetric.Get(c, name, client)
-		So(d.Sum(), ShouldEqual, durMillis)
-		So(err, ShouldBeNil)
-		v, errV = responseStatusMetric.Get(c, 200, name, client)
-		So(v, ShouldEqual, 1)
-		So(err, ShouldBeNil)
+
+		So(requestBytesMetric.Get(c, name, client).Sum(), ShouldEqual, 123)
+		So(responseBytesMetric.Get(c, name, client).Sum(), ShouldEqual, 321)
+		So(requestDurationsMetric.Get(c, name, client).Sum(), ShouldEqual, durMillis)
+		So(responseStatusMetric.Get(c, 200, name, client), ShouldEqual, 1)
 	})
 
 	Convey("UpdateServerMetrics updates server metrics", t, func() {
 		c := makeContext()
 		code, name, isRobot := 200, "test_client", false
-		d, err := serverDurationsMetric.Get(c, code, name, isRobot)
-		So(d, ShouldBeNil)
-		So(err, ShouldBeNil)
-		d, err = serverRequestBytesMetric.Get(c, code, name, isRobot)
-		So(d, ShouldBeNil)
-		So(err, ShouldBeNil)
-		d, err = serverResponseBytesMetric.Get(c, code, name, isRobot)
-		So(d, ShouldBeNil)
-		So(err, ShouldBeNil)
-		v, errV := serverResponseStatusMetric.Get(c, code, name, isRobot)
-		So(v, ShouldEqual, 0)
-		So(err, ShouldBeNil)
+
+		So(serverDurationsMetric.Get(c, code, name, isRobot), ShouldBeNil)
+		So(serverRequestBytesMetric.Get(c, code, name, isRobot), ShouldBeNil)
+		So(serverResponseBytesMetric.Get(c, code, name, isRobot), ShouldBeNil)
+		So(serverResponseStatusMetric.Get(c, code, name, isRobot), ShouldEqual, 0)
 
 		Convey("for a robot user agent", func() {
-
 			isRobot = true
 			userAgent := "I am a GoogleBot."
 
 			UpdateServerMetrics(c, name, code, dur, 123, 321, userAgent)
 
-			d, err = serverDurationsMetric.Get(c, code, name, isRobot)
-			So(d.Sum(), ShouldEqual, durMillis)
-			So(err, ShouldBeNil)
-			d, err = serverRequestBytesMetric.Get(c, code, name, isRobot)
-			So(d.Sum(), ShouldEqual, 123)
-			So(err, ShouldBeNil)
-			d, err = serverResponseBytesMetric.Get(c, code, name, isRobot)
-			So(d.Sum(), ShouldEqual, 321)
-			So(err, ShouldBeNil)
-			v, errV = serverResponseStatusMetric.Get(c, code, name, isRobot)
-			So(v, ShouldEqual, 1)
-			So(err, ShouldBeNil)
+			So(serverDurationsMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, durMillis)
+			So(serverRequestBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 123)
+			So(serverResponseBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 321)
+			So(serverResponseStatusMetric.Get(c, code, name, isRobot), ShouldEqual, 1)
 		})
 
 		Convey("for a non-robot user agent", func() {
-
 			isRobot = false
 			userAgent := "I am a human."
 
 			UpdateServerMetrics(c, name, code, dur, 123, 321, userAgent)
 
-			d, err = serverDurationsMetric.Get(c, code, name, isRobot)
-			So(d.Sum(), ShouldEqual, durMillis)
-			So(err, ShouldBeNil)
-			d, err = serverRequestBytesMetric.Get(c, code, name, isRobot)
-			So(d.Sum(), ShouldEqual, 123)
-			So(err, ShouldBeNil)
-			d, err = serverResponseBytesMetric.Get(c, code, name, isRobot)
-			So(d.Sum(), ShouldEqual, 321)
-			So(err, ShouldBeNil)
-			v, errV = serverResponseStatusMetric.Get(c, code, name, isRobot)
-			So(v, ShouldEqual, 1)
-			So(err, ShouldBeNil)
+			So(serverDurationsMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, durMillis)
+			So(serverRequestBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 123)
+			So(serverResponseBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 321)
+			So(serverResponseStatusMetric.Get(c, code, name, isRobot), ShouldEqual, 1)
 		})
 	})
 }

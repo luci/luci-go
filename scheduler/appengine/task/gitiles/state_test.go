@@ -137,9 +137,5 @@ func TestLoadSaveCompression(t *testing.T) {
 
 // getSentMetric returns sent value or nil if value wasn't sent.
 func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
-	v, err := tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)
-	if err != nil {
-		panic(err)
-	}
-	return v
+	return tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)
 }

@@ -20,12 +20,14 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 type inMemoryStore struct {
@@ -48,10 +50,10 @@ type metricData struct {
 	lock  sync.Mutex
 }
 
-func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time.Time) (*types.CellData, error) {
+func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time.Time) *types.CellData {
 	fieldVals, err := field.Canonicalize(m.Fields, fieldVals)
 	if err != nil {
-		return nil, err
+		panic(err) // bad field types, can only happen if the code is wrong
 	}
 
 	key := cellKey{fieldValuesHash: field.Hash(fieldVals)}
@@ -64,14 +66,14 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 		for _, cell := range cells {
 			if reflect.DeepEqual(fieldVals, cell.FieldVals) &&
 				reflect.DeepEqual(t, cell.Target) {
-				return cell, nil
+				return cell
 			}
 		}
 	}
 
 	cell := &types.CellData{fieldVals, t, resetTime, nil}
 	m.cells[key] = append(cells, cell)
-	return cell, nil
+	return cell
 }
 
 // NewInMemory creates a new metric store that holds metric data in this
@@ -123,7 +125,7 @@ func (s *inMemoryStore) SetDefaultTarget(t types.Target) {
 }
 
 // Get returns the value for a given metric cell.
-func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error) {
+func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}) interface{} {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
@@ -132,20 +134,7 @@ func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.Value, nil
-}
-
-// Set writes the value into the given metric cell.
-func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error {
-	if resetTime.IsZero() {
-		resetTime = clock.Now(ctx)
-	}
-	return s.set(h, resetTime, fieldVals, target.Get(ctx), value)
+	return m.get(fieldVals, target.Get(ctx), resetTime).Value
 }
 
 func isLessThan(a, b interface{}) bool {
@@ -161,48 +150,47 @@ func isLessThan(a, b interface{}) bool {
 	return false
 }
 
-func (s *inMemoryStore) set(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, value interface{}) error {
-	m := s.getOrCreateData(h)
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	c, err := m.get(fieldVals, t, resetTime)
-	if err != nil {
-		return err
-	}
-
-	if m.ValueType.IsCumulative() && isLessThan(value, c.Value) {
-		return fmt.Errorf("attempted to set cumulative metric %s to %v, which is lower than the previous value %v",
-			h.Info().Name, value, c.Value)
-	}
-
-	c.Value = value
-	return nil
-}
-
-// Incr increments the value in a given metric cell by the given delta.
-func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error {
+// Set writes the value into the given metric cell.
+func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	return s.incr(h, resetTime, fieldVals, target.Get(ctx), delta)
-}
+	t := target.Get(ctx)
 
-func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, delta interface{}) error {
 	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, t, resetTime)
-	if err != nil {
-		return err
+	c := m.get(fieldVals, t, resetTime)
+
+	if m.ValueType.IsCumulative() && isLessThan(value, c.Value) {
+		logging.Errorf(ctx,
+			"Attempted to set cumulative metric %q to %v, which is lower than the previous value %v",
+			h.Info().Name, value, c.Value)
+		return
 	}
+
+	c.Value = value
+}
+
+// Incr increments the value in a given metric cell by the given delta.
+func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) {
+	if resetTime.IsZero() {
+		resetTime = clock.Now(ctx)
+	}
+	t := target.Get(ctx)
+
+	m := s.getOrCreateData(h)
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	c := m.get(fieldVals, t, resetTime)
 
 	switch m.ValueType {
 	case types.CumulativeDistributionType:
 		d, ok := delta.(float64)
 		if !ok {
-			return fmt.Errorf("Incr got a delta of unsupported type (%v)", delta)
+			panic(fmt.Errorf("Incr got a delta of unsupported type (%v)", delta))
 		}
 		v, ok := c.Value.(*distribution.Distribution)
 		if !ok {
@@ -226,11 +214,8 @@ func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []in
 		}
 
 	default:
-		return fmt.Errorf("attempted to increment non-cumulative metric %s by %v",
-			m.Name, delta)
+		panic(fmt.Errorf("attempted to increment non-cumulative metric %s by %v", m.Name, delta))
 	}
-
-	return nil
 }
 
 // GetAll efficiently returns all cells in the store.

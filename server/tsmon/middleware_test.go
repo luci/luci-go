@@ -50,15 +50,11 @@ func TestMiddleware(t *testing.T) {
 
 	incrMetric := func(c *router.Context) {
 		So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
-		So(tsmon.Store(c.Context).Incr(c.Context, testMetric, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		tsmon.Store(c.Context).Incr(c.Context, testMetric, time.Time{}, []interface{}{}, int64(1))
 	}
 
 	readMetric := func(c context.Context) interface{} {
-		value, err := tsmon.Store(c).Get(c, testMetric, time.Time{}, []interface{}{})
-		if err != nil {
-			panic(err)
-		}
-		return value
+		return tsmon.Store(c).Get(c, testMetric, time.Time{}, []interface{}{})
 	}
 
 	Convey("With fakes", t, func() {

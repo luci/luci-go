@@ -15,16 +15,16 @@
 package store
 
 import (
-	"errors"
 	"time"
 
-	"go.chromium.org/luci/common/tsmon/types"
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 // NewNilStore creates a metric store that completely ignores all metrics.
 //
-// It's setters are noop, and getters always return errors.
+// It's setters are noop, and getters return nil.
 func NewNilStore() Store {
 	return nilStore{}
 }
@@ -40,16 +40,14 @@ type nilStore struct{}
 func (nilStore) DefaultTarget() types.Target     { return nil }
 func (nilStore) SetDefaultTarget(t types.Target) {}
 
-func (nilStore) Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error) {
-	return nil, errors.New("not implemented")
-}
-
-func (nilStore) Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error {
+func (nilStore) Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) interface{} {
 	return nil
 }
 
-func (nilStore) Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error {
-	return nil
+func (nilStore) Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) {
+}
+
+func (nilStore) Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) {
 }
 
 func (nilStore) GetAll(ctx context.Context) []types.Cell {

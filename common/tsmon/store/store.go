@@ -27,9 +27,9 @@ type Store interface {
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
-	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
-	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error
-	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error
+	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) interface{}
+	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{})
+	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{})
 
 	GetAll(c context.Context) []types.Cell
 

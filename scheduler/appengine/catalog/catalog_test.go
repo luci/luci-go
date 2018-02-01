@@ -406,18 +406,12 @@ func testContext() context.Context {
 }
 
 func getConfiguredProjectValue(ctx context.Context, project string) bool {
-	metricValue, err := tsmon.GetState(ctx).S.Get(ctx, metricConfigValid, time.Time{}, []interface{}{project})
-	if err != nil {
-		panic(err)
-	}
+	metricValue := tsmon.GetState(ctx).S.Get(ctx, metricConfigValid, time.Time{}, []interface{}{project})
 	return metricValue.(bool)
 }
 
 func getConfiguredJobsValue(ctx context.Context, project, status string) int64 {
-	metricValue, err := tsmon.GetState(ctx).S.Get(ctx, metricConfigJobs, time.Time{}, []interface{}{project, status})
-	if err != nil {
-		panic(err)
-	}
+	metricValue := tsmon.GetState(ctx).S.Get(ctx, metricConfigJobs, time.Time{}, []interface{}{project, status})
 	return metricValue.(int64)
 }
 
