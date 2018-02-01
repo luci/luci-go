@@ -24,24 +24,19 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
-	"go.chromium.org/luci/common/tsmon/store/storetest"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var testMetric = metric.NewCounter("test_metric", "", nil)
+
 func TestMiddleware(t *testing.T) {
 	t.Parallel()
-
-	metric := &storetest.FakeMetric{
-		types.MetricInfo{"m", "", []field.Field{}, types.CumulativeIntType},
-		types.MetricMetadata{},
-	}
 
 	runMiddlware := func(c context.Context, state *State, cb func(*router.Context)) {
 		rec := httptest.NewRecorder()
@@ -55,11 +50,11 @@ func TestMiddleware(t *testing.T) {
 
 	incrMetric := func(c *router.Context) {
 		So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
-		So(tsmon.Store(c.Context).Incr(c.Context, metric, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		So(tsmon.Store(c.Context).Incr(c.Context, testMetric, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 	}
 
 	readMetric := func(c context.Context) interface{} {
-		value, err := tsmon.Store(c).Get(c, metric, time.Time{}, []interface{}{})
+		value, err := tsmon.Store(c).Get(c, testMetric, time.Time{}, []interface{}{})
 		if err != nil {
 			panic(err)
 		}
@@ -69,7 +64,6 @@ func TestMiddleware(t *testing.T) {
 	Convey("With fakes", t, func() {
 		c, clock := buildTestContext()
 		state, monitor, allocator := buildTestState()
-		tsmon.Register(c, metric)
 
 		Convey("Pings TaskNumAllocator and waits for number", func() {
 			So(allocator.instanceIDs, ShouldHaveLength, 0)

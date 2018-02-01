@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -43,37 +42,6 @@ func Store(c context.Context) store.Store {
 // endpoints.  Defaults to a nil monitor, but changed by InitializeFromFlags.
 func Monitor(c context.Context) monitor.Monitor {
 	return GetState(c).M
-}
-
-// Register is called by metric objects to register themselves.  This will panic
-// if another metric with the same name is already registered.
-func Register(c context.Context, m types.Metric) {
-	state := GetState(c)
-	state.RegisteredMetricsLock.Lock()
-	defer state.RegisteredMetricsLock.Unlock()
-
-	if _, ok := state.RegisteredMetrics[m.Info().Name]; ok {
-		panic(fmt.Sprintf("A metric with the name '%s' was already registered", m.Info().Name))
-	}
-
-	state.RegisteredMetrics[m.Info().Name] = m
-
-	if Store(c) != nil {
-		Store(c).Register(m)
-	}
-}
-
-// Unregister is called by metric objects to unregister themselves.
-func Unregister(c context.Context, m types.Metric) {
-	state := GetState(c)
-	state.RegisteredMetricsLock.Lock()
-	defer state.RegisteredMetricsLock.Unlock()
-
-	delete(state.RegisteredMetrics, m.Info().Name)
-
-	if Store(c) != nil {
-		Store(c).Unregister(m)
-	}
 }
 
 // SetStore changes the global metric store.  All metrics that were registered

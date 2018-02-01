@@ -83,17 +83,6 @@ func NewInMemory(defaultTarget types.Target) Store {
 	}
 }
 
-// Register does nothing.
-func (s *inMemoryStore) Register(m types.Metric) {}
-
-// Unregister removes the metric (along with all its values) from the store.
-func (s *inMemoryStore) Unregister(h types.Metric) {
-	s.dataLock.Lock()
-	defer s.dataLock.Unlock()
-
-	delete(s.data, h.Info().Name)
-}
-
 func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 	s.dataLock.RLock()
 	d, ok := s.data[m.Info().Name]

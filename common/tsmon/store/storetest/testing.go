@@ -38,9 +38,6 @@ import (
 //
 // It is a copy of store.Store interface to break module dependency cycle.
 type Store interface {
-	Register(m types.Metric)
-	Unregister(m types.Metric)
-
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
@@ -187,7 +184,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 
 					// Value should be nil initially.
 					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
@@ -227,7 +223,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 
 					// Values should be nil initially.
 					v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
@@ -289,7 +284,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 					opts.RegistrationFinished(s)
 
 					// Do the set with a fixed time.
@@ -338,7 +332,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 					opts.RegistrationFinished(s)
 
 					// Create a context with a different target.
@@ -396,7 +389,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 						types.MetricInfo{"m", "", []field.Field{}, test.typ},
 						types.MetricMetadata{}}
 					s := opts.Factory()
-					s.Register(m)
 
 					// Set the bigger value.
 					So(s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[1]), ShouldBeNil)
@@ -425,7 +417,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 
 					// Value should be nil initially.
 					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
@@ -471,7 +462,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 
 					// Values should be nil initially.
 					v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
@@ -529,7 +519,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 					opts.RegistrationFinished(s)
 
 					// Do the incr with a fixed time.
@@ -571,7 +560,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					s := opts.Factory()
-					s.Register(m)
 					opts.RegistrationFinished(s)
 
 					// Create a context with a different target.
@@ -623,9 +611,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		baz := &FakeMetric{
 			types.MetricInfo{"baz", "", []field.Field{field.String("f")}, types.NonCumulativeFloatType},
 			types.MetricMetadata{}}
-		s.Register(foo)
-		s.Register(bar)
-		s.Register(baz)
 		opts.RegistrationFinished(s)
 
 		// Add test records. We increment the test clock each time so that the added
@@ -733,7 +718,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			m := &FakeMetric{
 				types.MetricInfo{"m", "", []field.Field{}, types.CumulativeIntType},
 				types.MetricMetadata{}}
-			s.Register(m)
 
 			wg := sync.WaitGroup{}
 			f := func(n int) {
@@ -761,7 +745,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			m := &FakeMetric{
 				types.MetricInfo{"m", "", []field.Field{}, types.NonCumulativeIntType},
 				types.MetricMetadata{}}
-			s.Register(m)
 			opts.RegistrationFinished(s)
 
 			t := target.Task{ServiceName: "foo"}

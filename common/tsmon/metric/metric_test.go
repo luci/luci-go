@@ -17,9 +17,10 @@ package metric
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -30,9 +31,11 @@ func makeContext() context.Context {
 }
 
 func TestMetrics(t *testing.T) {
+	t.Parallel()
+
 	Convey("Int", t, func() {
 		c := makeContext()
-		m := NewIntIn(c, "foo", "description", nil)
+		m := NewInt("int", "description", nil)
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, 0)
@@ -51,12 +54,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, 42, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewIntIn(c, "foo", "description", nil) }, ShouldPanic)
+		So(func() { NewInt("int", "description", nil) }, ShouldPanic)
 	})
 
 	Convey("Counter", t, func() {
 		c := makeContext()
-		m := NewCounterIn(c, "foo", "description", nil)
+		m := NewCounter("counter", "description", nil)
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, 0)
@@ -76,12 +79,12 @@ func TestMetrics(t *testing.T) {
 		So(v, ShouldEqual, 5)
 		So(err, ShouldBeNil)
 
-		So(func() { NewCounterIn(c, "foo", "description", nil) }, ShouldPanic)
+		So(func() { NewCounter("counter", "description", nil) }, ShouldPanic)
 	})
 
 	Convey("Float", t, func() {
 		c := makeContext()
-		m := NewFloatIn(c, "foo", "description", nil)
+		m := NewFloat("float", "description", nil)
 
 		v, err := m.Get(c)
 		So(v, ShouldAlmostEqual, 0.0)
@@ -100,12 +103,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, 42.3, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewFloatIn(c, "foo", "description", nil) }, ShouldPanic)
+		So(func() { NewFloat("float", "description", nil) }, ShouldPanic)
 	})
 
 	Convey("FloatCounter", t, func() {
 		c := makeContext()
-		m := NewFloatCounterIn(c, "foo", "description", nil)
+		m := NewFloatCounter("float_counter", "description", nil)
 
 		v, err := m.Get(c)
 		So(v, ShouldAlmostEqual, 0.0)
@@ -125,12 +128,12 @@ func TestMetrics(t *testing.T) {
 		So(v, ShouldAlmostEqual, 5.3)
 		So(err, ShouldBeNil)
 
-		So(func() { NewFloatCounterIn(c, "foo", "description", nil) }, ShouldPanic)
+		So(func() { NewFloatCounter("float_counter", "description", nil) }, ShouldPanic)
 	})
 
 	Convey("String", t, func() {
 		c := makeContext()
-		m := NewStringIn(c, "foo", "description", nil)
+		m := NewString("string", "description", nil)
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, "")
@@ -149,12 +152,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, "hello", "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewStringIn(c, "foo", "description", nil) }, ShouldPanic)
+		So(func() { NewString("string", "description", nil) }, ShouldPanic)
 	})
 
 	Convey("Bool", t, func() {
 		c := makeContext()
-		m := NewBoolIn(c, "foo", "description", nil)
+		m := NewBool("bool", "description", nil)
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, false)
@@ -173,12 +176,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, true, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewBoolIn(c, "foo", "description", nil) }, ShouldPanic)
+		So(func() { NewBool("bool", "description", nil) }, ShouldPanic)
 	})
 
 	Convey("CumulativeDistribution", t, func() {
 		c := makeContext()
-		m := NewCumulativeDistributionIn(c, "foo", "description", nil, distribution.FixedWidthBucketer(10, 20))
+		m := NewCumulativeDistribution("cumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
 
 		v, err := m.Get(c)
 		So(v, ShouldBeNil)
@@ -202,12 +205,12 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { NewCumulativeDistributionIn(c, "foo", "description", nil, m.Bucketer()) }, ShouldPanic)
+		So(func() { NewCumulativeDistribution("cumul_dist", "description", nil, m.Bucketer()) }, ShouldPanic)
 	})
 
 	Convey("NonCumulativeDistribution", t, func() {
 		c := makeContext()
-		m := NewNonCumulativeDistributionIn(c, "foo", "description", nil, distribution.FixedWidthBucketer(10, 20))
+		m := NewNonCumulativeDistribution("noncumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
 
 		v, err := m.Get(c)
 		So(v, ShouldBeNil)
@@ -233,6 +236,6 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { NewNonCumulativeDistributionIn(c, "foo", "description", nil, m.Bucketer()) }, ShouldPanic)
+		So(func() { NewNonCumulativeDistribution("noncumul_dist", "description", nil, m.Bucketer()) }, ShouldPanic)
 	})
 }

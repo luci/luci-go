@@ -27,12 +27,6 @@ type Fake struct {
 	DT    types.Target
 }
 
-// Register does nothing.
-func (s *Fake) Register(types.Metric) {}
-
-// Unregister does nothing.
-func (s *Fake) Unregister(types.Metric) {}
-
 // DefaultTarget returns DT.
 func (s *Fake) DefaultTarget() types.Target { return s.DT }
 
@@ -56,9 +50,6 @@ func (s *Fake) Incr(context.Context, types.Metric, time.Time, []interface{}, int
 
 // GetAll returns the pre-set list of cells.
 func (s *Fake) GetAll(context.Context) []types.Cell { return s.Cells }
-
-// ResetForUnittest does nothing.
-func (s *Fake) ResetForUnittest() {}
 
 // Reset does nothing.
 func (s *Fake) Reset(context.Context, types.Metric) {}

@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/registry"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -34,9 +35,6 @@ type State struct {
 	M       monitor.Monitor
 	Flusher *autoFlusher
 
-	RegisteredMetrics     map[string]types.Metric
-	RegisteredMetricsLock sync.RWMutex
-
 	CallbacksMutex               sync.RWMutex
 	Callbacks                    []Callback
 	GlobalCallbacks              []GlobalCallback
@@ -46,39 +44,16 @@ type State struct {
 // SetStore changes the metric store.  All metrics that were registered with
 // the old store will be re-registered on the new store.
 func (state *State) SetStore(s store.Store) {
-	oldStore := state.S
-	if s == oldStore {
-		return
-	}
-
-	state.RegisteredMetricsLock.RLock()
-	defer state.RegisteredMetricsLock.RUnlock()
-
-	// Register metrics on the new store.
-	for _, m := range state.RegisteredMetrics {
-		s.Register(m)
-	}
-
 	state.S = s
-
-	// Unregister metrics from the old store.
-	if oldStore != nil {
-		for _, m := range state.RegisteredMetrics {
-			oldStore.Unregister(m)
-		}
-	}
 }
 
 // ResetCumulativeMetrics resets only cumulative metrics.
 func (state *State) ResetCumulativeMetrics(c context.Context) {
-	state.RegisteredMetricsLock.RLock()
-	defer state.RegisteredMetricsLock.RUnlock()
-
-	for _, m := range state.RegisteredMetrics {
+	registry.Iter(func(m types.Metric) {
 		if m.Info().ValueType.IsCumulative() {
 			state.S.Reset(c, m)
 		}
-	}
+	})
 }
 
 // RunGlobalCallbacks runs all registered global callbacks that produce global
@@ -194,9 +169,8 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 	s := &store.Fake{}
 	m := &monitor.Fake{}
 	return WithState(c, &State{
-		S:                            s,
-		M:                            m,
-		RegisteredMetrics:            map[string]types.Metric{},
+		S: s,
+		M: m,
 		InvokeGlobalCallbacksOnFlush: true,
 	}), s, m
 }
@@ -206,9 +180,8 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 func WithDummyInMemory(c context.Context) (context.Context, *monitor.Fake) {
 	m := &monitor.Fake{}
 	return WithState(c, &State{
-		S:                            store.NewInMemory(&target.Task{}),
-		M:                            m,
-		RegisteredMetrics:            map[string]types.Metric{},
+		S: store.NewInMemory(&target.Task{}),
+		M: m,
 		InvokeGlobalCallbacksOnFlush: true,
 	}), m
 }
@@ -224,9 +197,8 @@ var (
 // Monitor.
 func NewState() *State {
 	return &State{
-		S:                            store.NewNilStore(),
-		M:                            monitor.NewNilMonitor(),
-		RegisteredMetrics:            map[string]types.Metric{},
+		S: store.NewNilStore(),
+		M: monitor.NewNilMonitor(),
 		InvokeGlobalCallbacksOnFlush: true,
 	}
 }

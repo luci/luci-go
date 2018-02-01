@@ -24,9 +24,6 @@ import (
 
 // A Store is responsible for handling all metric data.
 type Store interface {
-	Register(m types.Metric)
-	Unregister(m types.Metric)
-
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
