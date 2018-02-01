@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fcf10b94_a0c12ef1",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 704,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-01T02:06:12Z",
+      "side": 1,
+      "message": "in L749 you use %q without colon. inconsistent. i prefer %q.\n\nsame for L697",
+      "range": {
+        "startLine": 704,
+        "startChar": 57,
+        "endLine": 704,
+        "endChar": 61
+      },
+      "revId": "83b5e582e75bafa80ac4a4e7a8098ac941a1bb0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d005827_22de07c5",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 727,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-01T02:06:12Z",
+      "side": 1,
+      "message": "now that this variable is essentially a const, it does not provide a lot of value. if inlined, you don\u0027t need L739",
+      "range": {
+        "startLine": 727,
+        "startChar": 1,
+        "endLine": 727,
+        "endChar": 14
+      },
+      "revId": "83b5e582e75bafa80ac4a4e7a8098ac941a1bb0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
