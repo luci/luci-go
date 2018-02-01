@@ -1329,21 +1329,13 @@ func newTestContext(now time.Time) context.Context {
 
 // getSentMetric returns sent value or nil if value wasn't sent.
 func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
-	v, err := tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)
-	if err != nil {
-		panic(err)
-	}
-	return v
+	return tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)
 }
 
 // getSentDistrValue returns the value that was added to distribuition after
 // ensuring there was exactly 1 value sent.
 func getSentDistrValue(c context.Context, m types.Metric, fieldVals ...interface{}) float64 {
-	v := getSentMetric(c, m, fieldVals...)
-	if v == nil {
-		panic(errors.New("nothing was sent"))
-	}
-	switch d, ok := v.(*distribution.Distribution); {
+	switch d, ok := getSentMetric(c, m, fieldVals...).(*distribution.Distribution); {
 	case !ok:
 		panic(errors.New("not a distribuition"))
 	case d.Count() != 1:

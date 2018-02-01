@@ -187,11 +187,7 @@ func StatsHandler(c context.Context) error {
 	}
 	now := clock.Now(c)
 	for _, m := range masters {
-		err := allMasterTimer.Set(c, now.Sub(m.Modified).Seconds(), m.Name)
-		if err != nil {
-			logging.WithError(err).Errorf(c, "failed to send last_updated metric for %s", m.Name)
-			// Try the next one anyways.
-		}
+		allMasterTimer.Set(c, now.Sub(m.Modified).Seconds(), m.Name)
 	}
 	return nil
 }

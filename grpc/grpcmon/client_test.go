@@ -41,12 +41,10 @@ func TestUnaryClientInterceptor(t *testing.T) {
 		// Run the call with the interceptor.
 		NewUnaryClientInterceptor(nil)(c, "/service/method", nil, nil, nil, invoker)
 
-		count, err := memStore.Get(c, grpcClientCount, time.Time{}, []interface{}{"/service/method", 0})
-		So(err, ShouldBeNil)
+		count := memStore.Get(c, grpcClientCount, time.Time{}, []interface{}{"/service/method", 0})
 		So(count, ShouldEqual, 1)
 
-		duration, err := memStore.Get(c, grpcClientDuration, time.Time{}, []interface{}{"/service/method", 0})
-		So(err, ShouldBeNil)
+		duration := memStore.Get(c, grpcClientDuration, time.Time{}, []interface{}{"/service/method", 0})
 		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
 	})
 }

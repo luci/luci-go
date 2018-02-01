@@ -245,13 +245,8 @@ func (u *Uploader) getCounter() metric.Counter {
 }
 
 func (u *Uploader) updateUploads(ctx context.Context, count int64, status string) {
-	uploads := u.getCounter()
-	if uploads == nil || count == 0 {
-		return
-	}
-	err := uploads.Add(ctx, count, status)
-	if err != nil {
-		logging.WithError(err).Errorf(ctx, "eventupload: metric.Counter.Add failed")
+	if uploads := u.getCounter(); uploads != nil && count != 0 {
+		uploads.Add(ctx, count, status)
 	}
 }
 

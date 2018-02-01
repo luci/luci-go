@@ -34,18 +34,16 @@ func (s *Fake) DefaultTarget() types.Target { return s.DT }
 func (s *Fake) SetDefaultTarget(types.Target) {}
 
 // Get does nothing.
-func (s *Fake) Get(context.Context, types.Metric, time.Time, []interface{}) (interface{}, error) {
-	return nil, nil
+func (s *Fake) Get(context.Context, types.Metric, time.Time, []interface{}) interface{} {
+	return nil
 }
 
 // Set does nothing.
-func (s *Fake) Set(context.Context, types.Metric, time.Time, []interface{}, interface{}) error {
-	return nil
+func (s *Fake) Set(context.Context, types.Metric, time.Time, []interface{}, interface{}) {
 }
 
 // Incr does nothing.
-func (s *Fake) Incr(context.Context, types.Metric, time.Time, []interface{}, interface{}) error {
-	return nil
+func (s *Fake) Incr(context.Context, types.Metric, time.Time, []interface{}, interface{}) {
 }
 
 // GetAll returns the pre-set list of cells.
