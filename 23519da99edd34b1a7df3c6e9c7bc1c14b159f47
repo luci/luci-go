@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "faf7208e_9807a29f",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 735,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-01T22:55:34Z",
+      "side": 1,
+      "message": "Thought: could use runtime.NumCpu?",
+      "range": {
+        "startLine": 735,
+        "startChar": 25,
+        "endLine": 735,
+        "endChar": 26
+      },
+      "revId": "23519da99edd34b1a7df3c6e9c7bc1c14b159f47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dabad6d6_9aac6fd8",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 743,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-01T22:55:34Z",
+      "side": 1,
+      "message": "nit: I\u0027d still debug-level log the output even on success.\nnit: Note the wheel that failed in the output message(s).",
+      "range": {
+        "startLine": 742,
+        "startChar": 4,
+        "endLine": 743,
+        "endChar": 36
+      },
+      "revId": "23519da99edd34b1a7df3c6e9c7bc1c14b159f47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
