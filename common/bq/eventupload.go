@@ -233,19 +233,19 @@ func (u *Uploader) batchSize() int {
 	}
 }
 
-func (u *Uploader) getCounter(ctx context.Context) metric.Counter {
+func (u *Uploader) getCounter() metric.Counter {
 	u.initMetricOnce.Do(func() {
 		if u.UploadsMetricName != "" {
 			desc := "Upload attempts; status is 'success' or 'failure'"
 			field := field.String("status")
-			u.uploads = metric.NewCounterIn(ctx, u.UploadsMetricName, desc, nil, field)
+			u.uploads = metric.NewCounter(u.UploadsMetricName, desc, nil, field)
 		}
 	})
 	return u.uploads
 }
 
 func (u *Uploader) updateUploads(ctx context.Context, count int64, status string) {
-	uploads := u.getCounter(ctx)
+	uploads := u.getCounter()
 	if uploads == nil || count == 0 {
 		return
 	}

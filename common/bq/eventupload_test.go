@@ -24,7 +24,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/bq/testdata"
-	"go.chromium.org/luci/common/tsmon"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -59,12 +58,11 @@ func ShouldHavePut(actual interface{}, expected ...interface{}) string {
 
 func TestMetric(t *testing.T) {
 	t.Parallel()
-	ctx := tsmon.WithState(context.Background(), tsmon.NewState())
 	u := Uploader{}
 	u.UploadsMetricName = "fakeCounter"
 	Convey("Test metric creation", t, func() {
 		Convey("Expect uploads metric was created", func() {
-			_ = u.getCounter(ctx) // To actually create the metric
+			_ = u.getCounter() // To actually create the metric
 			So(u.uploads.Info().Name, ShouldEqual, "fakeCounter")
 		})
 	})
