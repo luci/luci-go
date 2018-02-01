@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "fbbc1e7c_b09cca48",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-01T00:47:50Z",
+      "side": 1,
+      "message": "it\u0027s fine",
+      "parentUuid": "c256ea7a_eef5616c",
+      "revId": "d2bd3e224ad1e4661cc9aa9b9b9ef9e270375765",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3eedbffc_81b3d0de",
         "filename": "machine-db/client/cli/nics.go",
         "patchSetId": 1
