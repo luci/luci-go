@@ -53,6 +53,7 @@ type Int interface {
 // Counter is a cumulative integer metric.
 type Counter interface {
 	Int
+
 	Add(c context.Context, n int64, fieldVals ...interface{}) error
 }
 
@@ -67,6 +68,7 @@ type Float interface {
 // FloatCounter is a cumulative floating-point metric.
 type FloatCounter interface {
 	Float
+
 	Add(c context.Context, n float64, fieldVals ...interface{}) error
 }
 
@@ -97,52 +99,8 @@ type NonCumulativeDistribution interface {
 // CumulativeDistribution is a cumulative-distribution-valued metric.
 type CumulativeDistribution interface {
 	NonCumulativeDistribution
+
 	Add(c context.Context, v float64, fieldVals ...interface{}) error
-}
-
-// CallbackInt is a non-cumulative integer gauge metric whose values can only be
-// set from a callback.  Use tsmon.RegisterCallback to add a callback to set the
-// metric's values.
-type CallbackInt interface {
-	types.Metric
-
-	Set(ctx context.Context, v int64, fieldVals ...interface{}) error
-}
-
-// CallbackFloat is a non-cumulative floating-point gauge metric whose values
-// can only be set from a callback.  Use tsmon.RegisterCallback to add a
-// callback to set the metric's values.
-type CallbackFloat interface {
-	types.Metric
-
-	Set(ctx context.Context, v float64, fieldVals ...interface{}) error
-}
-
-// CallbackString is a string-valued metric whose values can only be set from a
-// callback.  Use tsmon.RegisterCallback to add a callback to set the metric's
-// values.
-type CallbackString interface {
-	types.Metric
-
-	Set(ctx context.Context, v string, fieldVals ...interface{}) error
-}
-
-// CallbackBool is a boolean-valued metric whose values can only be set from a
-// callback.  Use tsmon.RegisterCallback to add a callback to set the metric's
-// values.
-type CallbackBool interface {
-	types.Metric
-
-	Set(ctx context.Context, v bool, fieldVals ...interface{}) error
-}
-
-// CallbackDistribution is a non-cumulative-distribution-valued  metric whose
-// values can only be set from a callback.  Use tsmon.RegisterCallback to add a
-// callback to set the metric's values.
-type CallbackDistribution interface {
-	types.DistributionMetric
-
-	Set(ctx context.Context, d *distribution.Distribution, fieldVals ...interface{}) error
 }
 
 // NewInt returns a new non-cumulative integer gauge metric.  This will panic if
@@ -343,61 +301,6 @@ func NewNonCumulativeDistributionIn(c context.Context, name string, description 
 	}
 	tsmon.Register(c, m)
 	return m
-}
-
-// NewCallbackInt returns a new integer metric whose value is populated by a
-// callback at collection time.
-func NewCallbackInt(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackInt {
-	return NewInt(name, description, metadata, fields...)
-}
-
-// NewCallbackFloat returns a new float metric whose value is populated by a
-// callback at collection time.
-func NewCallbackFloat(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackFloat {
-	return NewFloat(name, description, metadata, fields...)
-}
-
-// NewCallbackString returns a new string metric whose value is populated by a
-// callback at collection time.
-func NewCallbackString(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackString {
-	return NewString(name, description, metadata, fields...)
-}
-
-// NewCallbackBool returns a new bool metric whose value is populated by a
-// callback at collection time.
-func NewCallbackBool(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackBool {
-	return NewBool(name, description, metadata, fields...)
-}
-
-// NewCallbackDistribution returns a new distribution metric whose value is
-// populated by a callback at collection time.
-func NewCallbackDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CallbackDistribution {
-	return NewNonCumulativeDistribution(name, description, metadata, bucketer, fields...)
-}
-
-// NewCallbackIntIn is like NewCallbackInt but registers in a given context.
-func NewCallbackIntIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackInt {
-	return NewIntIn(c, name, description, metadata, fields...)
-}
-
-// NewCallbackFloatIn is like NewCallbackFloat but registers in a given context.
-func NewCallbackFloatIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackFloat {
-	return NewFloatIn(c, name, description, metadata, fields...)
-}
-
-// NewCallbackStringIn is like NewCallbackString but registers in a given context.
-func NewCallbackStringIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackString {
-	return NewStringIn(c, name, description, metadata, fields...)
-}
-
-// NewCallbackBoolIn is like NewCallbackBool but registers in a given context.
-func NewCallbackBoolIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackBool {
-	return NewBoolIn(c, name, description, metadata, fields...)
-}
-
-// NewCallbackDistributionIn is like NewCallbackDistribution but registers in a given context.
-func NewCallbackDistributionIn(c context.Context, name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CallbackDistribution {
-	return NewNonCumulativeDistributionIn(c, name, description, metadata, bucketer, fields...)
 }
 
 // genericGet is a convenience function that tries to get a metric value from
