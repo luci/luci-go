@@ -17,13 +17,25 @@ package common
 import (
 	"testing"
 
-	"golang.org/x/net/context"
-
-	"go.chromium.org/luci/common/config/validation"
-
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestState(t *testing.T) {
+	t.Parallel()
+
+	Convey("Name", t, func() {
+		So(State(-1).Name(), ShouldEqual, "invalid state")
+		So(State(0).Name(), ShouldEqual, "")
+		So(State_STATE_UNSPECIFIED.Name(), ShouldEqual, "")
+		So(State_FREE.Name(), ShouldEqual, "free")
+		So(State_PRERELEASE.Name(), ShouldEqual, "prerelease")
+		So(State_SERVING.Name(), ShouldEqual, "serving")
+		So(State_TEST.Name(), ShouldEqual, "test")
+		So(State_REPAIR.Name(), ShouldEqual, "repair")
+		So(State_DECOMMISSIONED.Name(), ShouldEqual, "decommissioned")
+	})
+}
 
 func TestGetStates(t *testing.T) {
 	t.Parallel()
@@ -97,28 +109,5 @@ func TestGetStates(t *testing.T) {
 		s, err = GetState("FrEe")
 		So(err, ShouldBeNil)
 		So(s, ShouldEqual, State_FREE)
-	})
-}
-
-func TestValidateState(t *testing.T) {
-	t.Parallel()
-
-	Convey("ValidateState", t, func() {
-		context := &validation.Context{Context: context.Background()}
-
-		Convey("empty", func() {
-			ValidateState(context, "")
-			So(context.Finalize(), ShouldBeNil)
-		})
-
-		Convey("invalid", func() {
-			ValidateState(context, "invalid state")
-			So(context.Finalize(), ShouldErrLike, "invalid state")
-		})
-
-		Convey("ok", func() {
-			ValidateState(context, "free")
-			So(context.Finalize(), ShouldBeNil)
-		})
 	})
 }

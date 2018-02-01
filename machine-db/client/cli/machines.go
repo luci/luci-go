@@ -66,6 +66,7 @@ func addMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.Var(StateFlag(&cmd.machine.State), "state", "The state of this machine.")
 			return cmd
 		},
 	}
