@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8e6dbf07_ec036072",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-01T20:06:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41834cac_461cd603",
+      "range": {
+        "startLine": 10,
+        "startChar": 8,
+        "endLine": 10,
+        "endChar": 10
+      },
+      "revId": "848861f7a2922d45cec0c46a864923ed00a08195",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f4b2728_649df49a",
         "filename": "common/tsmon/context.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "deb06280_07d9925e",
+        "filename": "common/tsmon/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-01T20:06:51Z",
+      "side": 1,
+      "message": "This will be removed in some later CL.",
+      "parentUuid": "1f4b2728_649df49a",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 12
+      },
+      "revId": "848861f7a2922d45cec0c46a864923ed00a08195",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "27dc0d06_0f831fd4",
         "filename": "common/tsmon/context.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "848861f7a2922d45cec0c46a864923ed00a08195",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d655a318_8a57010f",
+        "filename": "common/tsmon/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-01T20:06:51Z",
+      "side": 1,
+      "message": "Iter, whatever.",
+      "parentUuid": "27dc0d06_0f831fd4",
+      "range": {
+        "startLine": 52,
+        "startChar": 10,
+        "endLine": 52,
+        "endChar": 19
+      },
+      "revId": "848861f7a2922d45cec0c46a864923ed00a08195",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
