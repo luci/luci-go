@@ -17,11 +17,32 @@ package common
 import (
 	"strings"
 
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 )
 
-// GetState returns a State given its human-readable representation. Supports prefix matching.
+// Name returns a string which can be used as the human-readable representation expected by GetState.
+func (s State) Name() string {
+	switch s {
+	case State_STATE_UNSPECIFIED:
+		return ""
+	case State_FREE:
+		return "free"
+	case State_PRERELEASE:
+		return "prerelease"
+	case State_SERVING:
+		return "serving"
+	case State_TEST:
+		return "test"
+	case State_REPAIR:
+		return "repair"
+	case State_DECOMMISSIONED:
+		return "decommissioned"
+	default:
+		return "invalid state"
+	}
+}
+
+// GetState returns a State given its name. Supports prefix matching.
 func GetState(s string) (State, error) {
 	lower := strings.ToLower(s)
 	switch {
@@ -44,11 +65,7 @@ func GetState(s string) (State, error) {
 	}
 }
 
-// ValidateState validates the given state, allowing empty/unspecified state.
-func ValidateState(c *validation.Context, s string) {
-	if len(s) > 0 {
-		if _, err := GetState(s); err != nil {
-			c.Errorf("invalid state %q", s)
-		}
-	}
+// ValidStateNames returns a slice of valid state names.
+func ValidStateNames() []string {
+	return []string{"free", "prerelease", "serving", "test", "repair", "decommissioned"}
 }
