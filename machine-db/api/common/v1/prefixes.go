@@ -21,6 +21,28 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// Name returns a string which can be used as the human-readable representation expected by GetState.
+func (s State) Name() string {
+	switch s {
+	case State_STATE_UNSPECIFIED:
+		return ""
+	case State_FREE:
+		return "free"
+	case State_PRERELEASE:
+		return "prerelease"
+	case State_SERVING:
+		return "serving"
+	case State_TEST:
+		return "test"
+	case State_REPAIR:
+		return "repair"
+	case State_DECOMMISSIONED:
+		return "decommissioned"
+	default:
+		return "invalid state"
+	}
+}
+
 // GetState returns a State given its human-readable representation. Supports prefix matching.
 func GetState(s string) (State, error) {
 	lower := strings.ToLower(s)
@@ -42,6 +64,11 @@ func GetState(s string) (State, error) {
 	default:
 		return -1, errors.Reason("string %q did not match any known state", s).Err()
 	}
+}
+
+// ValidStates returns a slice of valid human-readable representations supported by GetState.
+func ValidStates() []string {
+	return []string{"free", "prerelease", "serving", "test", "repair", "decommissioned"}
 }
 
 // ValidateState validates the given state, allowing empty/unspecified state.
