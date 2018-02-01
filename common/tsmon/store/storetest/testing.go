@@ -41,9 +41,9 @@ type Store interface {
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
-	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
-	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error
-	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error
+	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) interface{}
+	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{})
+	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{})
 
 	GetAll(c context.Context) []types.Cell
 
@@ -82,11 +82,10 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		bucketer *distribution.Bucketer
 
 		values           []interface{}
-		wantSetSuccess   bool
 		wantSetValidator func(interface{}, interface{})
 
 		deltas            []interface{}
-		wantIncrSuccess   bool
+		wantIncrPanic     bool
 		wantIncrValue     interface{}
 		wantIncrValidator func(interface{})
 
@@ -96,8 +95,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			typ:                types.CumulativeIntType,
 			values:             makeInterfaceSlice(int64(3), int64(4)),
 			deltas:             makeInterfaceSlice(int64(3), int64(4)),
-			wantSetSuccess:     true,
-			wantIncrSuccess:    true,
 			wantIncrValue:      int64(7),
 			wantStartTimestamp: true,
 		},
@@ -105,18 +102,14 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			typ:                types.CumulativeFloatType,
 			values:             makeInterfaceSlice(float64(3.2), float64(4.3)),
 			deltas:             makeInterfaceSlice(float64(3.2), float64(4.3)),
-			wantSetSuccess:     true,
-			wantIncrSuccess:    true,
 			wantIncrValue:      float64(7.5),
 			wantStartTimestamp: true,
 		},
 		{
-			typ:             types.CumulativeDistributionType,
-			bucketer:        distribution.DefaultBucketer,
-			values:          makeInterfaceSlice(distOne, distTwo),
-			deltas:          makeInterfaceSlice(float64(3.2), float64(5.3)),
-			wantSetSuccess:  true,
-			wantIncrSuccess: true,
+			typ:      types.CumulativeDistributionType,
+			bucketer: distribution.DefaultBucketer,
+			values:   makeInterfaceSlice(distOne, distTwo),
+			deltas:   makeInterfaceSlice(float64(3.2), float64(5.3)),
 			wantIncrValidator: func(v interface{}) {
 				d := v.(*distribution.Distribution)
 				So(d.Buckets(), ShouldResemble, []int64{0, 0, 0, 1, 1})
@@ -124,26 +117,23 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			wantStartTimestamp: true,
 		},
 		{
-			typ:             types.NonCumulativeIntType,
-			values:          makeInterfaceSlice(int64(3), int64(4)),
-			deltas:          makeInterfaceSlice(int64(3), int64(4)),
-			wantSetSuccess:  true,
-			wantIncrSuccess: false,
+			typ:           types.NonCumulativeIntType,
+			values:        makeInterfaceSlice(int64(3), int64(4)),
+			deltas:        makeInterfaceSlice(int64(3), int64(4)),
+			wantIncrPanic: true,
 		},
 		{
-			typ:             types.NonCumulativeFloatType,
-			values:          makeInterfaceSlice(float64(3.2), float64(4.3)),
-			deltas:          makeInterfaceSlice(float64(3.2), float64(4.3)),
-			wantSetSuccess:  true,
-			wantIncrSuccess: false,
+			typ:           types.NonCumulativeFloatType,
+			values:        makeInterfaceSlice(float64(3.2), float64(4.3)),
+			deltas:        makeInterfaceSlice(float64(3.2), float64(4.3)),
+			wantIncrPanic: true,
 		},
 		{
-			typ:             types.NonCumulativeDistributionType,
-			bucketer:        distribution.DefaultBucketer,
-			values:          makeInterfaceSlice(distOne, distTwo),
-			deltas:          makeInterfaceSlice(float64(3.2), float64(5.3)),
-			wantSetSuccess:  true,
-			wantIncrSuccess: false,
+			typ:           types.NonCumulativeDistributionType,
+			bucketer:      distribution.DefaultBucketer,
+			values:        makeInterfaceSlice(distOne, distTwo),
+			deltas:        makeInterfaceSlice(float64(3.2), float64(5.3)),
+			wantIncrPanic: true,
 			wantSetValidator: func(got, want interface{}) {
 				// The distribution might be serialized/deserialized and lose sums and
 				// counts.
@@ -152,18 +142,16 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			},
 		},
 		{
-			typ:             types.StringType,
-			values:          makeInterfaceSlice("hello", "world"),
-			deltas:          makeInterfaceSlice("hello", "world"),
-			wantSetSuccess:  true,
-			wantIncrSuccess: false,
+			typ:           types.StringType,
+			values:        makeInterfaceSlice("hello", "world"),
+			deltas:        makeInterfaceSlice("hello", "world"),
+			wantIncrPanic: true,
 		},
 		{
-			typ:             types.BoolType,
-			values:          makeInterfaceSlice(true, false),
-			deltas:          makeInterfaceSlice(true, false),
-			wantSetSuccess:  true,
-			wantIncrSuccess: false,
+			typ:           types.BoolType,
+			values:        makeInterfaceSlice(true, false),
+			deltas:        makeInterfaceSlice(true, false),
+			wantIncrPanic: true,
 		},
 	}
 
@@ -186,23 +174,16 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Value should be nil initially.
-					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
+					v := s.Get(ctx, m, time.Time{}, []interface{}{})
 					So(v, ShouldBeNil)
 
 					// Set and get the value.
-					err = s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0])
-					if !test.wantSetSuccess {
-						So(err, ShouldNotBeNil)
+					s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0])
+					v = s.Get(ctx, m, time.Time{}, []interface{}{})
+					if test.wantSetValidator != nil {
+						test.wantSetValidator(v, test.values[0])
 					} else {
-						So(err, ShouldBeNil)
-						v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-						So(err, ShouldBeNil)
-						if test.wantSetValidator != nil {
-							test.wantSetValidator(v, test.values[0])
-						} else {
-							So(v, ShouldEqual, test.values[0])
-						}
+						So(v, ShouldEqual, test.values[0])
 					}
 				})
 			}
@@ -225,37 +206,23 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Values should be nil initially.
-					v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-					So(err, ShouldBeNil)
+					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
 					So(v, ShouldBeNil)
-					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-					So(err, ShouldBeNil)
+					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
 					So(v, ShouldBeNil)
 
 					// Set and get the values.
-					err = s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
-					if !test.wantSetSuccess {
-						So(err, ShouldNotBeNil)
-					} else {
-						So(err, ShouldBeNil)
-					}
+					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
+					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), test.values[1])
 
-					err = s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), test.values[1])
-					if !test.wantSetSuccess {
-						So(err, ShouldNotBeNil)
-						return
-					}
-					So(err, ShouldBeNil)
-
-					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-					So(err, ShouldBeNil)
+					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
 						So(v, ShouldEqual, test.values[0])
 					}
-					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-					So(err, ShouldBeNil)
+
+					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
@@ -267,10 +234,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 		Convey("With a fixed reset time", func() {
 			for i, test := range tests {
-				if !test.wantSetSuccess {
-					continue
-				}
-
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
@@ -288,10 +251,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Do the set with a fixed time.
 					t := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
-					So(s.Set(ctx, m, t, []interface{}{}, test.values[0]), ShouldBeNil)
+					s.Set(ctx, m, t, []interface{}{}, test.values[0])
 
-					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
+					v := s.Get(ctx, m, time.Time{}, []interface{}{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
@@ -315,10 +277,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 		Convey("With a target set in the context", func() {
 			for i, test := range tests {
-				if !test.wantSetSuccess {
-					continue
-				}
-
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
@@ -340,20 +298,18 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Set the first value on the default target, second value on the
 					// different target.
-					So(s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0]), ShouldBeNil)
-					So(s.Set(ctxWithTarget, m, time.Time{}, []interface{}{}, test.values[1]), ShouldBeNil)
+					s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0])
+					s.Set(ctxWithTarget, m, time.Time{}, []interface{}{}, test.values[1])
 
 					// Get should return different values for different contexts.
-					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
+					v := s.Get(ctx, m, time.Time{}, []interface{}{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
 						So(v, ShouldEqual, test.values[0])
 					}
 
-					v, err = s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
+					v = s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
@@ -391,10 +347,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Set the bigger value.
-					So(s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[1]), ShouldBeNil)
+					s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[1])
+					So(s.Get(ctx, m, time.Time{}, []interface{}{}), ShouldResemble, test.values[1])
 
-					// Setting the smaller value should fail.
-					So(s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0]), ShouldNotBeNil)
+					// Setting the smaller value should be ignored.
+					s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0])
+					So(s.Get(ctx, m, time.Time{}, []interface{}{}), ShouldResemble, test.values[1])
 				})
 			}
 		})
@@ -419,25 +377,21 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Value should be nil initially.
-					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
+					v := s.Get(ctx, m, time.Time{}, []interface{}{})
 					So(v, ShouldBeNil)
 
 					// Increment the metric.
 					for _, delta := range test.deltas {
-						err = s.Incr(ctx, m, time.Time{}, []interface{}{}, delta)
-
-						if !test.wantIncrSuccess {
-							So(err, ShouldNotBeNil)
+						call := func() { s.Incr(ctx, m, time.Time{}, []interface{}{}, delta) }
+						if test.wantIncrPanic {
+							So(call, ShouldPanic)
 						} else {
-							So(err, ShouldBeNil)
+							call()
 						}
 					}
 
 					// Get the final value.
-					v, err = s.Get(ctx, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
-
+					v = s.Get(ctx, m, time.Time{}, []interface{}{})
 					if test.wantIncrValue != nil {
 						So(v, ShouldEqual, test.wantIncrValue)
 					} else if test.wantIncrValidator != nil {
@@ -464,28 +418,23 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Values should be nil initially.
-					v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-					So(err, ShouldBeNil)
+					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
 					So(v, ShouldBeNil)
-					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-					So(err, ShouldBeNil)
+					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
 					So(v, ShouldBeNil)
 
 					// Increment one cell.
 					for _, delta := range test.deltas {
-						err = s.Incr(ctx, m, time.Time{}, makeInterfaceSlice("one"), delta)
-
-						if !test.wantIncrSuccess {
-							So(err, ShouldNotBeNil)
+						call := func() { s.Incr(ctx, m, time.Time{}, makeInterfaceSlice("one"), delta) }
+						if test.wantIncrPanic {
+							So(call, ShouldPanic)
 						} else {
-							So(err, ShouldBeNil)
+							call()
 						}
 					}
 
 					// Get the final value.
-					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-					So(err, ShouldBeNil)
-
+					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
 					if test.wantIncrValue != nil {
 						So(v, ShouldEqual, test.wantIncrValue)
 					} else if test.wantIncrValidator != nil {
@@ -493,8 +442,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					// Another cell should still be nil.
-					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-					So(err, ShouldBeNil)
+					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
 					So(v, ShouldBeNil)
 				})
 			}
@@ -502,7 +450,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 		Convey("With a fixed reset time", func() {
 			for i, test := range tests {
-				if !test.wantIncrSuccess {
+				if test.wantIncrPanic {
 					continue
 				}
 
@@ -523,7 +471,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Do the incr with a fixed time.
 					t := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
-					So(s.Incr(ctx, m, t, []interface{}{}, test.deltas[0]), ShouldBeNil)
+					s.Incr(ctx, m, t, []interface{}{}, test.deltas[0])
 
 					// Check the time in the Cell is the same.
 					all := s.GetAll(ctx)
@@ -542,7 +490,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 		Convey("With a target set in the context", func() {
 			for i, test := range tests {
-				if !test.wantIncrSuccess {
+				if test.wantIncrPanic {
 					continue
 				}
 
@@ -568,14 +516,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Incr the first delta on the default target, second delta on the
 					// different target.
-					So(s.Incr(ctx, m, time.Time{}, []interface{}{}, test.deltas[0]), ShouldBeNil)
-					So(s.Incr(ctxWithTarget, m, time.Time{}, []interface{}{}, test.deltas[1]), ShouldBeNil)
+					s.Incr(ctx, m, time.Time{}, []interface{}{}, test.deltas[0])
+					s.Incr(ctxWithTarget, m, time.Time{}, []interface{}{}, test.deltas[1])
 
 					// Get should return different values for different contexts.
-					v1, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
-					v2, err := s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
-					So(err, ShouldBeNil)
+					v1 := s.Get(ctx, m, time.Time{}, []interface{}{})
+					v2 := s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
 					So(v1, ShouldNotEqual, v2)
 
 					// The targets should be set in the Cells.
@@ -626,7 +572,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			{baz, makeInterfaceSlice("three"), 1.23},
 			{baz, makeInterfaceSlice("four"), 4.56},
 		} {
-			So(s.Set(ctx, m.metric, time.Time{}, m.fieldvals, m.value), ShouldBeNil)
+			s.Set(ctx, m.metric, time.Time{}, m.fieldvals, m.value)
 			tc.Add(time.Second)
 		}
 
@@ -723,7 +669,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			f := func(n int) {
 				defer wg.Done()
 				for i := 0; i < numIterations; i++ {
-					c.So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+					s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1))
 				}
 			}
 
@@ -733,9 +679,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			}
 			wg.Wait()
 
-			val, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+			val := s.Get(ctx, m, time.Time{}, []interface{}{})
 			So(val, ShouldEqual, numIterations*numGoroutines)
-			So(err, ShouldBeNil)
 		})
 	})
 
@@ -750,15 +695,13 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			t := target.Task{ServiceName: "foo"}
 			ctxWithTarget := target.Set(ctx, &t)
 
-			So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-			So(s.Set(ctxWithTarget, m, time.Time{}, []interface{}{}, int64(43)), ShouldBeNil)
+			s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42))
+			s.Set(ctxWithTarget, m, time.Time{}, []interface{}{}, int64(43))
 
-			val, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-			So(err, ShouldBeNil)
+			val := s.Get(ctx, m, time.Time{}, []interface{}{})
 			So(val, ShouldEqual, 42)
 
-			val, err = s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
-			So(err, ShouldBeNil)
+			val = s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
 			So(val, ShouldEqual, 43)
 
 			all := s.GetAll(ctx)
