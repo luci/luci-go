@@ -22,6 +22,30 @@
       "revId": "635ebc5e6c2344632d1a8e17dc1b98d700421708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2543481_4c202e61",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:20:15Z",
+      "side": 0,
+      "message": "I dunno, most places don\u0027t have this comment so I started removing it from the few places that do for consistency. E.g. listNICs can return a gRPC error too but it doesn\u0027t have this comment. Same for list* functions in this directory.",
+      "parentUuid": "1bd77070_3456efa7",
+      "range": {
+        "startLine": 55,
+        "startChar": 48,
+        "endLine": 55,
+        "endChar": 85
+      },
+      "revId": "635ebc5e6c2344632d1a8e17dc1b98d700421708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

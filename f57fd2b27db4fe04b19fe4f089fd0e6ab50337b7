@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0c769b6c_6871182d",
+        "filename": "machine-db/api/crimson/v1/nics.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:20:15Z",
+      "side": 1,
+      "message": "Possibly, I\u0027m not sure. There are some cases where entities are uniquely identified by multiple IDs. For example NICs have unique (name, machine) pairs and also unique MAC addresses. It could be possible in the future to refer to NICs by either one. I\u0027m not yet sure whether users will prefer one, the other, or the option to use either. Without encapsulating the identifying fields into an ID message I can change them more easily since they\u0027re just comments.\n\nWorth considering though.",
+      "parentUuid": "a1e941dc_89c5106b",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "f57fd2b27db4fe04b19fe4f089fd0e6ab50337b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5aa8712c_ced433f5",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "cf1e70e6_7dfec161",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:20:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5aa8712c_ced433f5",
+      "range": {
+        "startLine": 114,
+        "startChar": 37,
+        "endLine": 114,
+        "endChar": 39
+      },
+      "revId": "f57fd2b27db4fe04b19fe4f089fd0e6ab50337b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "557a5c7e_9b02325a",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "f57fd2b27db4fe04b19fe4f089fd0e6ab50337b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d371ae4_7814a49c",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-01T00:20:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "557a5c7e_9b02325a",
+      "range": {
+        "startLine": 124,
+        "startChar": 17,
+        "endLine": 133,
+        "endChar": 2
+      },
+      "revId": "f57fd2b27db4fe04b19fe4f089fd0e6ab50337b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
