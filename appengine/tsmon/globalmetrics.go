@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	defaultVersion = metric.NewCallbackString(
+	defaultVersion = metric.NewString(
 		"appengine/default_version",
 		"Name of the version currently marked as default.",
 		nil)
