@@ -45,6 +45,98 @@
       "revId": "83b5e582e75bafa80ac4a4e7a8098ac941a1bb0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db621898_4f348c0c",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 734,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-01T04:28:46Z",
+      "side": 1,
+      "message": "4? Why not just let \u0027er rip and FanOutIn?",
+      "range": {
+        "startLine": 734,
+        "startChar": 25,
+        "endLine": 734,
+        "endChar": 26
+      },
+      "revId": "83b5e582e75bafa80ac4a4e7a8098ac941a1bb0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd82e17b_0171d38b",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 740,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-01T04:28:46Z",
+      "side": 1,
+      "message": "/sadface\n\nI\u0027d prefer just allocating capacity and using \"append\" for clarity:\ncmdLine :\u003d make([]string, 0, len(pythonCmdBase)+1)\ncmdLine \u003d append(cmdLine, pythonCmdBase...)\ncmdLine \u003d append(cmdLine, whl)\n\nOr even nest the first two for more conciseness:\ncmdLine :\u003d append(make([]string, 0, len(pythonCmdBase)+1), pythonCmdBase...)",
+      "range": {
+        "startLine": 738,
+        "startChar": 4,
+        "endLine": 740,
+        "endChar": 33
+      },
+      "revId": "83b5e582e75bafa80ac4a4e7a8098ac941a1bb0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "102fb50a_10817acb",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 743,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-01T04:28:46Z",
+      "side": 1,
+      "message": "Yay",
+      "range": {
+        "startLine": 743,
+        "startChar": 12,
+        "endLine": 743,
+        "endChar": 41
+      },
+      "revId": "83b5e582e75bafa80ac4a4e7a8098ac941a1bb0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fc7102f5_bd96a900",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 746,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-01T04:28:46Z",
+      "side": 1,
+      "message": "This will potentially interleave output, which sucks. Perhaps \"attachOutputForLogging\" should have a form that takes a bytes.Buffer?",
+      "range": {
+        "startLine": 746,
+        "startChar": 18,
+        "endLine": 746,
+        "endChar": 40
+      },
+      "revId": "83b5e582e75bafa80ac4a4e7a8098ac941a1bb0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
