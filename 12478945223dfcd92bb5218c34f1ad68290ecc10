@@ -169,6 +169,24 @@
       "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02df4f1b_8978e16f",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:26:22Z",
+      "side": 1,
+      "message": "It\u0027s outside the scope of this CL because it\u0027s optional server-side. I\u0027ll send a followup after.",
+      "parentUuid": "d88b3901_42e2ab2f",
+      "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

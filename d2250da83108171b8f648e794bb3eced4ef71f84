@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9cef6b46_69f7854b",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:26:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2044c9cb_039218e8",
+      "range": {
+        "startLine": 46,
+        "startChar": 38,
+        "endLine": 46,
+        "endChar": 67
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21300295_741148ad",
         "filename": "machine-db/api/common/v1/prefixes.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d036656a_9e1e8402",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:26:22Z",
+      "side": 1,
+      "message": "Not necessarily because this supports prefix matching full names.",
+      "parentUuid": "21300295_741148ad",
+      "range": {
+        "startLine": 47,
+        "startChar": 14,
+        "endLine": 47,
+        "endChar": 15
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "cdd76e3e_ec43a371",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:26:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5490735_2deadf7a",
+      "range": {
+        "startLine": 69,
+        "startChar": 40,
+        "endLine": 69,
+        "endChar": 92
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d9ecc3b_7762b384",
         "filename": "machine-db/api/common/v1/prefixes.go",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26389985_188a8235",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:26:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d9ecc3b_7762b384",
+      "range": {
+        "startLine": 70,
+        "startChar": 5,
+        "endLine": 70,
+        "endChar": 16
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "7b629a27_50468114",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:26:22Z",
+      "side": 1,
+      "message": "This is not actually used anywhere, I\u0027ll just remove it for now.",
+      "parentUuid": "1c452a16_c6cc08f3",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 75,
+        "endChar": 18
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba524efc_585311a0",
         "filename": "machine-db/client/cli/flags.go",
         "patchSetId": 2
@@ -137,6 +257,30 @@
       "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a35e67a_37627612",
+        "filename": "machine-db/client/cli/flags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:26:22Z",
+      "side": 1,
+      "message": "Prefer to have this helper for consistency.",
+      "parentUuid": "ba524efc_585311a0",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 1
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
