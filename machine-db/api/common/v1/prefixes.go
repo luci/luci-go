@@ -65,7 +65,7 @@ func GetState(s string) (State, error) {
 	}
 }
 
-// ValidStateNames returns a slice of valid state names.
-func ValidStateNames() []string {
-	return []string{"free", "prerelease", "serving", "test", "repair", "decommissioned"}
+// ValidStates returns a slice of valid states.
+func ValidStates() []State {
+	return []State{State_FREE, State_PRERELEASE, State_SERVING, State_TEST, State_REPAIR, State_DECOMMISSIONED}
 }

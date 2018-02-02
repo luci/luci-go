@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
@@ -182,6 +183,8 @@ func validateMachineForCreation(m *crimson.Machine) error {
 		return status.Error(codes.InvalidArgument, "platform is required and must be non-empty")
 	case m.Rack == "":
 		return status.Error(codes.InvalidArgument, "rack is required and must be non-empty")
+	case m.State == common.State_STATE_UNSPECIFIED:
+		return status.Error(codes.InvalidArgument, "state is required")
 	default:
 		return nil
 	}
