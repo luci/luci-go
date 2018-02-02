@@ -119,6 +119,11 @@ func New(params *Parameters) *cli.Application {
 			getPhysicalHostsCmd(),
 			{},
 
+			// Virtual hosts.
+			addVMCmd(),
+			getVMsCmd(),
+			{},
+
 			// Physical and virtual hosts.
 			deleteHostCmd(),
 		},
