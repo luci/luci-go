@@ -22,6 +22,30 @@
       "revId": "785c7cc4f3f1f1e338b763ea9daf36ac19013da8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11ff9421_18577b48",
+        "filename": "machine-db/client/cli/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:16:27Z",
+      "side": 1,
+      "message": "Why? That may be undesired behavior. I\u0027d prefer the user be explicit about each flag, which would demonstrate the user\u0027s understanding of what\u0027s going to happen when this command is run. I don\u0027t like hidden defaults, I prefer obvious defaults like \"\", 0, or false. Based on the spreadsheets, users don\u0027t need the host vlan to match the vlan anyway, the VMs I spot-checked all have different VLANs than their ESX host.",
+      "parentUuid": "2eba01ef_4b3f057a",
+      "range": {
+        "startLine": 65,
+        "startChar": 92,
+        "endLine": 65,
+        "endChar": 100
+      },
+      "revId": "785c7cc4f3f1f1e338b763ea9daf36ac19013da8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
