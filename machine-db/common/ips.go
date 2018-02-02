@@ -45,3 +45,15 @@ func IPv4Range(block string) (IPv4, int64, error) {
 	ones, _ := subnet.Mask.Size()
 	return IPv4(binary.BigEndian.Uint32(ipv4)), 1 << uint32(32-ones), nil
 }
+
+// ParseIPv4 returns an IPv4 address from the given string.
+func ParseIPv4(s string) (IPv4, error) {
+	ip := net.ParseIP(s)
+	if ip != nil {
+		ip = ip.To4()
+	}
+	if ip == nil {
+		return 0, errors.Reason("invalid IPv4 address %q", s).Err()
+	}
+	return IPv4(binary.BigEndian.Uint32(ip)), nil
+}

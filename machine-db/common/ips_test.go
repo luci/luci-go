@@ -65,3 +65,30 @@ func TestIPv4Range(t *testing.T) {
 		So(length, ShouldEqual, 256)
 	})
 }
+
+func TestParseIPv4(t *testing.T) {
+	t.Parallel()
+
+	Convey("IPv64", t, func() {
+		_, err := ParseIPv4("2001:db8:a0b:12f0::1")
+		So(err, ShouldErrLike, "invalid IPv4 address")
+	})
+
+	Convey("min", t, func() {
+		ip, err := ParseIPv4("0.0.0.0")
+		So(err, ShouldBeNil)
+		So(ip, ShouldEqual, 0)
+	})
+
+	Convey("max", t, func() {
+		ip, err := ParseIPv4("255.255.255.255")
+		So(err, ShouldBeNil)
+		So(ip, ShouldEqual, IPv4(uint32(4294967295)))
+	})
+
+	Convey("ok", t, func() {
+		ip, err := ParseIPv4("127.0.0.1")
+		So(err, ShouldBeNil)
+		So(ip, ShouldEqual, IPv4(2130706433))
+	})
+}
