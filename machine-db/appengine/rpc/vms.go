@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/common"
 )
 
 // CreateVM handles a request to create a new VM.
@@ -60,6 +61,10 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 	if err := validateVMForCreation(v); err != nil {
 		return err
 	}
+	ip, err := common.ParseIPv4(v.Ipv4)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", v.Ipv4)
+	}
 	tx, err := database.Begin(c)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
@@ -72,30 +77,9 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 		}
 	}()
 
-	// TODO(smut): Check that the provided IP address is unassigned.
-
-	// By setting hostnames.vlan_id as both FOREIGN KEY and NOT NULL when setting up the database,
-	// we can avoid checking if the given VLAN is valid. MySQL will ensure the given VLAN exists.
-	res, err := tx.ExecContext(c, `
-		INSERT INTO hostnames (name, vlan_id)
-		VALUES (?, ?)
-	`, v.Name, v.Vlan)
+	hostnameId, err := assignHostnameAndIP(c, tx, v.Name, v.Vlan, ip)
 	if err != nil {
-		switch e, ok := err.(*mysql.MySQLError); {
-		case !ok:
-			// Type assertion failed.
-		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'name'"):
-			// e.g. "Error 1062: Duplicate entry 'hostname-vlanId' for key 'name'".
-			return status.Errorf(codes.AlreadyExists, "duplicate hostname %q for VLAN %d", v.Name, v.Vlan)
-		case e.Number == mysqlerr.ER_NO_REFERENCED_ROW_2 && strings.Contains(e.Message, "`vlan_id`"):
-			// e.g. "Error 1452: Cannot add or update a child row: a foreign key constraint fails (FOREIGN KEY (`vlan_id`) REFERENCES `vlans` (`id`))".
-			return status.Errorf(codes.NotFound, "unknown VLAN %d", v.Vlan)
-		}
-		return internalError(c, errors.Annotate(err, "failed to create hostname").Err())
-	}
-	hostnameId, err := res.LastInsertId()
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to fetch hostname").Err())
+		return err
 	}
 
 	// vms.hostname_id, vms.physical_host_id, and vms.os_id are NOT NULL as above.
@@ -123,8 +107,6 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 		return internalError(c, errors.Annotate(err, "failed to create VM").Err())
 	}
 
-	// TODO(smut): Assign the provided IP address.
-
 	if err := tx.Commit(); err != nil {
 		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
 	}
@@ -135,14 +117,14 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.VM, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, vm.description, vm.deployment_ticket
-		FROM vms vm, hostnames hv, physical_hosts p, hostnames hp, oses o
-		WHERE vm.hostname_id = hv.id
-			AND vm.physical_host_id = p.id
+		SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4
+		FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
+		WHERE v.hostname_id = hv.id
+			AND v.physical_host_id = p.id
 			AND p.hostname_id = hp.id
-			AND vm.os_id = o.id
+			AND v.os_id = o.id
+			AND i.hostname_id = hv.id
 	`)
-	// TODO(smut): Fetch the assigned IP address.
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch VMs").Err()
 	}
@@ -151,11 +133,13 @@ func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) (
 	var vms []*crimson.VM
 	for rows.Next() {
 		v := &crimson.VM{}
-		if err = rows.Scan(&v.Name, &v.Vlan, &v.Host, &v.HostVlan, &v.Os, &v.Description, &v.DeploymentTicket); err != nil {
+		var ipv4 common.IPv4
+		if err = rows.Scan(&v.Name, &v.Vlan, &v.Host, &v.HostVlan, &v.Os, &v.Description, &v.DeploymentTicket, &ipv4); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch VM").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.
 		if _, ok := vlans[v.Vlan]; matches(v.Name, names) && (ok || len(vlans) == 0) {
+			v.Ipv4 = ipv4.String()
 			vms = append(vms, v)
 		}
 	}

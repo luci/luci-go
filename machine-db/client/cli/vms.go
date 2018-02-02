@@ -64,6 +64,7 @@ func addVMCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.vm.Host, "host", "", "The physical host backing this host. Required and must be the name of a physical host returned by get-hosts.")
 			cmd.Flags.Int64Var(&cmd.vm.HostVlan, "hvlan", 0, "The VLAN the physical host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.StringVar(&cmd.vm.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
+			cmd.Flags.StringVar(&cmd.vm.Ipv4, "ipv4", "", "The IPv4 address assigned to this host. Required and must exist on the same VLAN.")
 			cmd.Flags.StringVar(&cmd.vm.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.vm.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
 			return cmd

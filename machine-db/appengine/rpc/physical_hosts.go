@@ -77,56 +77,13 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 		}
 	}()
 
-	// TODO(smut): Check that the provided IP address is unassigned.
-
-	// By setting hostnames.vlan_id as both FOREIGN KEY and NOT NULL when setting up the database,
-	// we can avoid checking if the given VLAN is valid. MySQL will ensure the given VLAN exists.
-	res, err := tx.ExecContext(c, `
-		INSERT INTO hostnames (name, vlan_id)
-		VALUES (?, ?)
-	`, h.Name, h.Vlan)
+	hostnameId, err := assignHostnameAndIP(c, tx, h.Name, h.Vlan, ip)
 	if err != nil {
-		switch e, ok := err.(*mysql.MySQLError); {
-		case !ok:
-			// Type assertion failed.
-		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'name'"):
-			// e.g. "Error 1062: Duplicate entry 'hostname-vlanId' for key 'name'".
-			return status.Errorf(codes.AlreadyExists, "duplicate hostname %q for VLAN %d", h.Name, h.Vlan)
-		case e.Number == mysqlerr.ER_NO_REFERENCED_ROW_2 && strings.Contains(e.Message, "`vlan_id`"):
-			// e.g. "Error 1452: Cannot add or update a child row: a foreign key constraint fails (FOREIGN KEY (`vlan_id`) REFERENCES `vlans` (`id`))".
-			return status.Errorf(codes.NotFound, "unknown VLAN %d", h.Vlan)
-		}
-		return internalError(c, errors.Annotate(err, "failed to create hostname").Err())
-	}
-	hostnameId, err := res.LastInsertId()
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to fetch hostname").Err())
-	}
-
-	res, err = tx.ExecContext(c, `
-		UPDATE ips
-		SET hostname_id = ?
-		WHERE ipv4 = ?
-			AND vlan_id = ?
-			AND hostname_id IS NULL
-	`, hostnameId, ip, h.Vlan)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to assign IP address").Err())
-	}
-	switch rows, err := res.RowsAffected(); {
-	case err != nil:
-		return internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
-	case rows == 0:
-		return status.Errorf(codes.NotFound, "ensure IP address %q for VLAN %d exists and is free first", h.Ipv4, h.Vlan)
-	case rows == 1:
-		// Ok.
-	default:
-		// Shouldn't happen because IP address is unique per VLAN in the database.
-		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+		return err
 	}
 
 	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
-	res, err = tx.ExecContext(c, `
+	_, err = tx.ExecContext(c, `
 		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket)
 		VALUES (
 			?,
@@ -154,8 +111,6 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 		return internalError(c, errors.Annotate(err, "failed to create physical host").Err())
 	}
 
-	// TODO(smut): Assign the provided IP address.
-
 	if err := tx.Commit(); err != nil {
 		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
 	}
@@ -174,7 +129,6 @@ func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]s
 			AND p.os_id = o.id
 			AND i.hostname_id = h.id
 	`)
-	// TODO(smut): Fetch the assigned IP address.
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch physical hosts").Err()
 	}
