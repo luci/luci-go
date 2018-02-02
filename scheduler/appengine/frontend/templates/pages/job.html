@@ -8,6 +8,12 @@
 .underline {
   text-decoration: underline !important;
 }
+
+#invocations-table td.text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
 {{template "job-action-scripts" .}}
 {{end}}
@@ -62,11 +68,11 @@
       <table class="table table-condensed" id="invocations-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Started</th>
-            <th>Triggered by</th>
-            <th>Duration</th>
-            <th>Status</th>
+            <th class="col-lg-2">ID</th>
+            <th class="col-lg-2">Started</th>
+            <th class="col-lg-3">Triggered by</th>
+            <th class="col-lg-2">Duration</th>
+            <th class="col-lg-2">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -74,7 +80,7 @@
           <tr class="{{.RowClass}}">
             <td><a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}/{{.InvID}}">{{.InvID}}</a></td>
             <td>{{.Started}}</td>
-            <td>{{.TriggeredBy}}</td>
+            <td class="text" title="{{.TriggeredBy}}">{{.TriggeredBy}}</td>
             <td>{{.Duration}}</td>
             <td>
             {{if .ViewURL}}
