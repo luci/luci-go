@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39372bdd_749aa6e2",
+        "filename": "luci_config/OWNERS",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-02T18:15:46Z",
+      "side": 1,
+      "message": "add tandrii@chromium.org too.",
+      "revId": "87b0e3a0b8b39f2a92cb86805def596431e4d647",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
