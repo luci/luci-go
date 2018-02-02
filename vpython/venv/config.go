@@ -35,7 +35,7 @@ import (
 
 // EnvironmentVersion is an environment version string. It must advance each
 // time the layout of a VirtualEnv environment changes.
-const EnvironmentVersion = "v3"
+const EnvironmentVersion = "v4"
 
 const siteCustomizePy = "sitecustomize.py"
 
