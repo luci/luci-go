@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"database/sql"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -30,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/common"
 )
 
 // DeleteHost handles a request to delete an existing host.
@@ -77,5 +79,55 @@ func deleteHost(c context.Context, name string, vlan int64) error {
 	default:
 		// Shouldn't happen because name is unique in the database.
 		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+	}
+}
+
+// assignHostnameAndIP assigns the given hostname and IP address using the given transaction.
+// The caller must commit or roll back the transaction appropriately.
+func assignHostnameAndIP(c context.Context, tx *sql.Tx, hostname string, vlan int64, ipv4 common.IPv4) (int64, error) {
+	// By setting hostnames.vlan_id as both FOREIGN KEY and NOT NULL when setting up the database,
+	// we can avoid checking if the given VLAN is valid. MySQL will ensure the given VLAN exists.
+	res, err := tx.ExecContext(c, `
+		INSERT INTO hostnames (name, vlan_id)
+		VALUES (?, ?)
+	`, hostname, vlan)
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'name'"):
+			// e.g. "Error 1062: Duplicate entry 'hostname-vlanId' for key 'name'".
+			return 0, status.Errorf(codes.AlreadyExists, "duplicate hostname %q for VLAN %d", hostname, vlan)
+		case e.Number == mysqlerr.ER_NO_REFERENCED_ROW_2 && strings.Contains(e.Message, "`vlan_id`"):
+			// e.g. "Error 1452: Cannot add or update a child row: a foreign key constraint fails (FOREIGN KEY (`vlan_id`) REFERENCES `vlans` (`id`))".
+			return 0, status.Errorf(codes.NotFound, "unknown VLAN %d", vlan)
+		}
+		return 0, internalError(c, errors.Annotate(err, "failed to create hostname").Err())
+	}
+	hostnameId, err := res.LastInsertId()
+	if err != nil {
+		return 0, internalError(c, errors.Annotate(err, "failed to fetch hostname").Err())
+	}
+
+	res, err = tx.ExecContext(c, `
+		UPDATE ips
+		SET hostname_id = ?
+		WHERE ipv4 = ?
+			AND vlan_id = ?
+			AND hostname_id IS NULL
+	`, hostnameId, ipv4, vlan)
+	if err != nil {
+		return 0, internalError(c, errors.Annotate(err, "failed to assign IP address").Err())
+	}
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return 0, internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
+	case rows == 0:
+		return 0, status.Errorf(codes.NotFound, "ensure IP address %q for VLAN %d exists and is free first", ipv4, vlan)
+	case rows == 1:
+		return hostnameId, nil
+	default:
+		// Shouldn't happen because IP address is unique per VLAN in the database.
+		return 0, internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
 	}
 }
