@@ -44,7 +44,7 @@ var (
 	MemHeapSys     = metric.NewInt("go/mem/heap_sys", "Bytes obtained from system.", &types.MetricMetadata{types.Bytes})
 	MemHeapIdle    = metric.NewInt("go/mem/heap_idle", "Bytes in idle spans.", &types.MetricMetadata{types.Bytes})
 	MemHeapInuse   = metric.NewInt("go/mem/heap_in_use", "Bytes in non-idle span.", &types.MetricMetadata{types.Bytes})
-	MemHeapObjects = metric.NewCounter("go/mem/heap_objects", "total number of allocated objects.", nil)
+	MemHeapObjects = metric.NewInt("go/mem/heap_objects", "Total number of allocated objects.", nil)
 	MemStackInuse  = metric.NewInt("go/mem/stack_in_use", "Bytes used by stack allocator.", &types.MetricMetadata{types.Bytes})
 	MemStackSys    = metric.NewInt("go/mem/stack_in_sys", "Bytes allocated to stack allocator.", &types.MetricMetadata{types.Bytes})
 	MemMSpanInuse  = metric.NewInt("go/mem/mspan_in_use", "Bytes used by mspan structures.", &types.MetricMetadata{types.Bytes})
