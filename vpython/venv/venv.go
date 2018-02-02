@@ -17,7 +17,6 @@ package venv
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -734,7 +733,6 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env 
 	//
 	// TODO: Maybe intern the wheel extraction logic natively? It's not super
 	// complicated, but it's not trivial either.
-	fmt.Println("I HAZ", runtime.NumCPU())
 	err = parallel.WorkPool(runtime.NumCPU(), func(ch chan<- func() error) {
 		for _, whl := range wheels {
 			whl := whl
