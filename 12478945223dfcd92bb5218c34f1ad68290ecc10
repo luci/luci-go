@@ -151,6 +151,24 @@
       "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d88b3901_42e2ab2f",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:15:47Z",
+      "side": 1,
+      "message": "i think it is better to be conservative by default and relax later, because relaxing a restriction is easier",
+      "parentUuid": "1b1e4764_9d21f2c9",
+      "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

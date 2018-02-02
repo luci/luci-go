@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2044c9cb_039218e8",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:15:47Z",
+      "side": 1,
+      "message": "name.\n\nterm \"state name\" is essentially defined in Name() above, so let\u0027s reuse a term rather giving a definition each time",
+      "range": {
+        "startLine": 46,
+        "startChar": 38,
+        "endLine": 46,
+        "endChar": 67
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21300295_741148ad",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:15:47Z",
+      "side": 1,
+      "message": "name",
+      "range": {
+        "startLine": 47,
+        "startChar": 14,
+        "endLine": 47,
+        "endChar": 15
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5490735_2deadf7a",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:15:47Z",
+      "side": 1,
+      "message": "state names",
+      "range": {
+        "startLine": 69,
+        "startChar": 40,
+        "endLine": 69,
+        "endChar": 92
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d9ecc3b_7762b384",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:15:47Z",
+      "side": 1,
+      "message": "consider ValidStateNames",
+      "range": {
+        "startLine": 70,
+        "startChar": 5,
+        "endLine": 70,
+        "endChar": 16
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c452a16_c6cc08f3",
+        "filename": "machine-db/api/common/v1/prefixes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:15:47Z",
+      "side": 1,
+      "message": "ValidateStateName",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 75,
+        "endChar": 18
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba524efc_585311a0",
+        "filename": "machine-db/client/cli/flags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:15:47Z",
+      "side": 1,
+      "message": "optional: this is not used outside of the package, so strictly speaking, it is not necessary. The command in another file could inline this func",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 1
+      },
+      "revId": "d2250da83108171b8f648e794bb3eced4ef71f84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
