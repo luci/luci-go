@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/common"
 )
 
 // CreatePhysicalHost handles a request to create a new physical host.
@@ -60,6 +61,10 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 	if err := validatePhysicalHostForCreation(h); err != nil {
 		return err
 	}
+	ip, err := common.ParseIPv4(h.Ipv4)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", h.Ipv4)
+	}
 	tx, err := database.Begin(c)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
@@ -76,15 +81,10 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 
 	// By setting hostnames.vlan_id as both FOREIGN KEY and NOT NULL when setting up the database,
 	// we can avoid checking if the given VLAN is valid. MySQL will ensure the given VLAN exists.
-	stmt, err := tx.PrepareContext(c, `
+	res, err := tx.ExecContext(c, `
 		INSERT INTO hostnames (name, vlan_id)
 		VALUES (?, ?)
-	`)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
-	}
-	res, err := stmt.ExecContext(c, h.Name, h.Vlan)
-	stmt.Close()
+	`, h.Name, h.Vlan)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -103,16 +103,40 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 		return internalError(c, errors.Annotate(err, "failed to fetch hostname").Err())
 	}
 
-	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
-	stmt, err = tx.PrepareContext(c, `
-		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket)
-		VALUES (?, (SELECT id FROM machines WHERE name = ?), (SELECT id FROM oses WHERE name = ?), ?, ?, ?)
-	`)
+	res, err = tx.ExecContext(c, `
+		UPDATE ips
+		SET hostname_id = ?
+		WHERE ipv4 = ?
+			AND vlan_id = ?
+			AND hostname_id IS NULL
+	`, hostnameId, ip, h.Vlan)
 	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
+		return internalError(c, errors.Annotate(err, "failed to assign IP address").Err())
 	}
-	_, err = stmt.ExecContext(c, hostnameId, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
-	stmt.Close()
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
+	case rows == 0:
+		return status.Errorf(codes.NotFound, "ensure IP address %q for VLAN %d exists and is free first", h.Ipv4, h.Vlan)
+	case rows == 1:
+		// Ok.
+	default:
+		// Shouldn't happen because IP address is unique per VLAN in the database.
+		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+	}
+
+	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
+	res, err = tx.ExecContext(c, `
+		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket)
+		VALUES (
+			?,
+			(SELECT id FROM machines WHERE name = ?),
+			(SELECT id FROM oses WHERE name = ?),
+			?,
+			?,
+			?
+		)
+	`, hostnameId, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -142,12 +166,13 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.PhysicalHost, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket
-		FROM physical_hosts p, hostnames h, vlans v, machines m, oses o
+		SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+		FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 		WHERE p.hostname_id = h.id
 			AND h.vlan_id = v.id
 			AND p.machine_id = m.id
 			AND p.os_id = o.id
+			AND i.hostname_id = h.id
 	`)
 	// TODO(smut): Fetch the assigned IP address.
 	if err != nil {
@@ -158,11 +183,13 @@ func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]s
 	var hosts []*crimson.PhysicalHost
 	for rows.Next() {
 		h := &crimson.PhysicalHost{}
-		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket); err != nil {
+		var ipv4 common.IPv4
+		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket, &ipv4); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.
 		if _, ok := vlans[h.Vlan]; matches(h.Name, names) && (ok || len(vlans) == 0) {
+			h.Ipv4 = ipv4.String()
 			hosts = append(hosts, h)
 		}
 	}
@@ -182,6 +209,8 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 	case h.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
+	case h.VmSlots < 0:
+		return status.Error(codes.InvalidArgument, "VM slots must be non-negative")
 	default:
 		return nil
 	}

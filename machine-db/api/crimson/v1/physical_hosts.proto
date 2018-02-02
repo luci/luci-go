@@ -15,14 +15,15 @@ message PhysicalHost {
   // The machine backing this host.
   string machine = 3;
   // The operating system backing this host.
-  string os = 5;
+  string os = 4;
   // The number of VMs which can be deployed on this host.
-  int32 vm_slots = 6;
+  int32 vm_slots = 5;
   // A description of this host.
-  string description = 7;
+  string description = 6;
   // The deployment ticket associated with this host.
-  string deployment_ticket = 8;
-  // TODO(smut): Add IP address.
+  string deployment_ticket = 7;
+  // The IPv4 address associated with this host.
+  string ipv4 = 8;
 }
 
 // CreatePhysicalHostRequest is a request to create a new physical host in the database.
