@@ -5,6 +5,11 @@
 .underline {
   text-decoration: underline !important;
 }
+.ellipsis-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
 {{template "invocation-action-scripts" .}}
 {{end}}
@@ -20,14 +25,16 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-sm-3"><b>Status:</b>
+    <div class="col-sm-2"><b>Status:</b>
       {{if .Inv.ViewURL}}
         <a href="{{.Inv.ViewURL}}" target="_blank" class="underline label {{.Inv.LabelClass}}">{{.Inv.Status}}</a>
       {{else}}
         <span class="label {{.Inv.LabelClass}}">{{.Inv.Status}}</span>
       {{end}}
     </div>
-    <div class="col-sm-3"><b>Triggered by:</b> {{.Inv.TriggeredBy}}</div>
+    <div class="col-sm-4 ellipsis-text" title="Triggered By: {{.Inv.TriggeredBy}}">
+      <b>Triggered by:</b> {{.Inv.TriggeredBy}}
+    </div>
     <div class="col-sm-3"><b>Duration:</b> {{.Inv.Duration}}</div>
     <div class="col-sm-3"><b>Actions:</b>{{template "invocation-action-buttons" .Inv}}</div>
   </div>
