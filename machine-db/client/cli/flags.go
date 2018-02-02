@@ -16,7 +16,6 @@ package cli
 
 import (
 	"flag"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -30,7 +29,7 @@ type stateFlag common.State
 func (f *stateFlag) Set(s string) error {
 	i, err := common.GetState(s)
 	if err != nil {
-		return errors.Reason("value must be a valid state: %s", strings.Join(common.ValidStateNames(), ", ")).Err()
+		return errors.Reason("value must be a valid state returned by get-states").Err()
 	}
 	*f = stateFlag(i)
 	return nil

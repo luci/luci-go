@@ -54,7 +54,7 @@ func (c *AddMachineCmd) Run(app subcommands.Application, args []string, env subc
 // addMachineCmd returns a command to add a machine.
 func addMachineCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-machine -name name -plat platform -rack rack [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>]",
+		UsageLine: "add-machine -name <name> -plat <platform> -rack <rack> -state <state> [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a machine",
 		LongDesc:  "Adds a machine to the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -62,11 +62,11 @@ func addMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.Name, "name", "", "The name of the machine. Required and must be unique within the database.")
 			cmd.Flags.StringVar(&cmd.machine.Platform, "plat", "", "The platform type this machine is. Required and must be the name of a platform returned by get-platforms.")
 			cmd.Flags.StringVar(&cmd.machine.Rack, "rack", "", "The rack this machine belongs to. Required and must be the name of a rack returned by get-racks.")
+			cmd.Flags.Var(StateFlag(&cmd.machine.State), "state", "The state of this machine. Required and must be the name of a state returned by get-states.")
 			cmd.Flags.StringVar(&cmd.machine.Description, "desc", "", "A description of this machine.")
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
-			cmd.Flags.Var(StateFlag(&cmd.machine.State), "state", "The state of this machine.")
 			return cmd
 		},
 	}
@@ -96,7 +96,7 @@ func (c *DeleteMachineCmd) Run(app subcommands.Application, args []string, env s
 // deleteMachineCmd returns a command to delete a machine.
 func deleteMachineCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "del-machine -name name",
+		UsageLine: "del-machine -name <name>",
 		ShortDesc: "deletes a machine",
 		LongDesc:  "Deletes a machine from the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -127,7 +127,7 @@ func (c *GetMachinesCmd) Run(app subcommands.Application, args []string, env sub
 	return 0
 }
 
-// getMachineCmd returns a command to get machines.
+// getMachinesCmd returns a command to get machines.
 func getMachinesCmd() *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-machines [-name <name>]...",

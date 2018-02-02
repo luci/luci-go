@@ -49,6 +49,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt).WillReturnError(fmt.Errorf("error"))
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
@@ -59,6 +60,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(fmt.Errorf("error"))
@@ -70,6 +72,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
@@ -81,6 +84,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
@@ -92,6 +96,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
@@ -103,6 +108,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
@@ -114,6 +120,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
@@ -125,6 +132,7 @@ func TestCreateMachine(t *testing.T) {
 				Name:     "name",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_FREE,
 			}
 			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -281,14 +289,16 @@ func TestValidateMachineForCreation(t *testing.T) {
 		err := validateMachineForCreation(&crimson.Machine{
 			Platform: "platform",
 			Rack:     "rack",
+			State:    common.State_FREE,
 		})
 		So(err, ShouldErrLike, "machine name is required and must be non-empty")
 	})
 
 	Convey("platform unspecified", t, func() {
 		err := validateMachineForCreation(&crimson.Machine{
-			Name: "name",
-			Rack: "rack",
+			Name:  "name",
+			Rack:  "rack",
+			State: common.State_FREE,
 		})
 		So(err, ShouldErrLike, "platform is required and must be non-empty")
 	})
@@ -297,8 +307,18 @@ func TestValidateMachineForCreation(t *testing.T) {
 		err := validateMachineForCreation(&crimson.Machine{
 			Name:     "name",
 			Platform: "platform",
+			State:    common.State_FREE,
 		})
 		So(err, ShouldErrLike, "rack is required and must be non-empty")
+	})
+
+	Convey("state unspecified", t, func() {
+		err := validateMachineForCreation(&crimson.Machine{
+			Name:     "name",
+			Platform: "platform",
+			Rack:     "rack",
+		})
+		So(err, ShouldErrLike, "state is required")
 	})
 
 	Convey("ok", t, func() {
@@ -306,6 +326,7 @@ func TestValidateMachineForCreation(t *testing.T) {
 			Name:     "name",
 			Platform: "platform",
 			Rack:     "rack",
+			State:    common.State_FREE,
 		})
 		So(err, ShouldBeNil)
 	})
