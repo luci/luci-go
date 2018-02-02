@@ -126,6 +126,10 @@ func New(params *Parameters) *cli.Application {
 
 			// Physical and virtual hosts.
 			deleteHostCmd(),
+			{},
+
+			// States.
+			getStatesCmd(),
 		},
 	}
 }
