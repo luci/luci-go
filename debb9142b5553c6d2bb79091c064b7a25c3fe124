@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "75293e30_e8c352e3",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:37:47Z",
+      "side": 1,
+      "message": "Copied this format from nics.go which also calls common.ParseMAC48 once in createNIC after calling validateNICForCreation. I\u0027ll send another CL to fix both, because I\u0027m not sure what approach would be best.\n\nWhat approach would you take if in the future it turned out there were multiple fields like this that need to be validated and also converted? Would you have validate* return all of them, or double parse all of them? I couldn\u0027t decide what I liked better.",
+      "parentUuid": "a309df31_68e621d9",
+      "range": {
+        "startLine": 64,
+        "startChar": 12,
+        "endLine": 64,
+        "endChar": 36
+      },
+      "revId": "debb9142b5553c6d2bb79091c064b7a25c3fe124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1fdac1a5_27315c90",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "debb9142b5553c6d2bb79091c064b7a25c3fe124",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47c50e12_4db1f473",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-02T22:37:47Z",
+      "side": 1,
+      "message": "Yeah I thought it was the case, but tests seem okay. I\u0027ll take another pass over the rest of the code at some point.",
+      "parentUuid": "1fdac1a5_27315c90",
+      "range": {
+        "startLine": 84,
+        "startChar": 16,
+        "endLine": 84,
+        "endChar": 27
+      },
+      "revId": "debb9142b5553c6d2bb79091c064b7a25c3fe124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
