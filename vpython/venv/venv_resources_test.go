@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
+	"go.chromium.org/luci/vpython/wheel"
 )
 
 const testDataDir = "test_data"
@@ -133,10 +134,10 @@ func (tl *testingLoader) withCacheLock(t *testing.T, fn func() error) error {
 
 func (tl *testingLoader) ensureWheels(ctx context.Context, t *testing.T, py *python.Interpreter, tdir string) error {
 	var err error
-	if tl.pantsWheelPath, err = tl.buildWheelLocked(t, py, "pants-1.2-py2.py3-none-any.whl", "pants", tdir); err != nil {
+	if tl.pantsWheelPath, err = tl.buildWheelLocked(t, py, "pants-1.2-py2.py3-none-any.whl", tdir); err != nil {
 		return err
 	}
-	if tl.shirtWheelPath, err = tl.buildWheelLocked(t, py, "shirt-3.14-py2.py3-none-any.whl", "shirt", tdir); err != nil {
+	if tl.shirtWheelPath, err = tl.buildWheelLocked(t, py, "shirt-3.14-py2.py3-none-any.whl", tdir); err != nil {
 		return err
 	}
 	return nil
@@ -174,10 +175,14 @@ func (tl *testingLoader) installPackage(name, root string) error {
 	}
 }
 
-func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, name, distribution, outDir string) (string, error) {
+func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, name, outDir string) (string, error) {
 	ctx := context.Background()
+	w, err := wheel.ParseName(name)
+	if err != nil {
+		return "", errors.Annotate(err, "failed to parse wheel name %q", name).Err()
+	}
 
-	outWheelPath := filepath.Join(outDir, name)
+	outWheelPath := filepath.Join(outDir, w.String())
 	switch _, err := os.Stat(outWheelPath); {
 	case err == nil:
 		t.Logf("Using cached wheel for %q: %s", name, outWheelPath)
@@ -191,7 +196,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		return "", errors.Annotate(err, "failed to stat wheel path [%s]", outWheelPath).Err()
 	}
 
-	srcDir := filepath.Join(testDataDir, distribution+".src")
+	srcDir := filepath.Join(testDataDir, w.Distribution+".src")
 
 	// Create a bootstrap wheel-generating VirtualEnv!
 	cfg := Config{
@@ -213,7 +218,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 	// Build the wheel in a temporary directory, then copy it into outDir. This
 	// will stop wheel builds from stepping on each other or inheriting each
 	// others' state accidentally.
-	err := testfs.WithTempDir(t, "vpython_venv_wheel", func(tdir string) error {
+	err = testfs.WithTempDir(t, "vpython_venv_wheel", func(tdir string) error {
 		buildDir := filepath.Join(tdir, "build")
 		if err := filesystem.MakeDirs(buildDir); err != nil {
 			return err
@@ -247,7 +252,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 
 		// Assert that the expected wheel file was generated, and copy it into
 		// outDir.
-		wheelPath := filepath.Join(distDir, name)
+		wheelPath := filepath.Join(distDir, w.String())
 		if _, err := os.Stat(wheelPath); err != nil {
 			return errors.Annotate(err, "failed to generate wheel").Err()
 		}
