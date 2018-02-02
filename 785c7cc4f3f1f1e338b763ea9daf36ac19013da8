@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2eba01ef_4b3f057a",
+        "filename": "machine-db/client/cli/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:09:10Z",
+      "side": 1,
+      "message": "please default to -vlan value",
+      "range": {
+        "startLine": 65,
+        "startChar": 92,
+        "endLine": 65,
+        "endChar": 100
+      },
+      "revId": "785c7cc4f3f1f1e338b763ea9daf36ac19013da8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
