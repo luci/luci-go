@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "79f45210_8524f650",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e37478b9_65681506",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 15
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "844d8b33_59dfb648",
         "filename": "cipd/api/cipd/v1/cas.proto",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "11400f355044184f02616340df61dd663aed7eee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1e96fa3_5083929b",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "Done, though ObjectRef is not a resource and it looks weird at the end of the file, so I moved it after service definition, before method messages.",
+      "parentUuid": "844d8b33_59dfb648",
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "c1907ac6_352e537d",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a8240cd_d51d23f2",
+      "range": {
+        "startLine": 50,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 18
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0dd312e7_cd9fcf0d",
         "filename": "cipd/appengine/impl/cas/cas.go",
         "patchSetId": 2
@@ -79,6 +145,24 @@
       "revId": "11400f355044184f02616340df61dd663aed7eee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2960e55_acfaafe2",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "I did consider it and found it unnecessaryly \"smart\". Its one line either way.",
+      "parentUuid": "0dd312e7_cd9fcf0d",
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "68c9c28b_cae20b28",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "ff117e89_45d38ea6",
+      "range": {
+        "startLine": 58,
+        "startChar": 92,
+        "endLine": 58,
+        "endChar": 101
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "317aa4ee_8116583f",
         "filename": "cipd/appengine/impl/cas/hash.go",
         "patchSetId": 2
@@ -125,6 +233,30 @@
       "revId": "11400f355044184f02616340df61dd663aed7eee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf992659_83172f39",
+        "filename": "cipd/appengine/impl/cas/hash.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "Done, though this 100 nanoseconds aren\u0027t really important...",
+      "parentUuid": "317aa4ee_8116583f",
+      "range": {
+        "startLine": 28,
+        "startChar": 21,
+        "endLine": 28,
+        "endChar": 38
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "0b7b4798_5f74cff9",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b41bab9_c1f705c1",
+      "range": {
+        "startLine": 50,
+        "startChar": 24,
+        "endLine": 50,
+        "endChar": 30
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3557e1cc_ca530c69",
         "filename": "cipd/appengine/impl/cas/signed_urls.go",
         "patchSetId": 2
@@ -171,6 +327,30 @@
       "revId": "11400f355044184f02616340df61dd663aed7eee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c292b7f_6b2af291",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "No, I want it to panic. Otherwise all functions in a call stack keep revalidating same stuff over and over again. It is just cumbersome to write.",
+      "parentUuid": "3557e1cc_ca530c69",
+      "range": {
+        "startLine": 52,
+        "startChar": 12,
+        "endLine": 52,
+        "endChar": 18
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "ef58a0a4_0968ebbf",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "For https://chrome-infra-packages.appspot.com/client?platform\u003dlinux-amd64\u0026version\u003dlatest\n\nThis link serves a redirect to Google Cloud Storage. The file name there is SHA1. We \"rewrite\" it to \u0027cipd\u0027 using content-disposition header to make browser download as \u0027cipd\u0027",
+      "parentUuid": "ceedab38_af2ac809",
+      "range": {
+        "startLine": 53,
+        "startChar": 73,
+        "endLine": 54,
+        "endChar": 63
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a59984b_291d0d4e",
         "filename": "cipd/appengine/impl/cas/signed_urls.go",
         "patchSetId": 2
@@ -217,6 +421,30 @@
       "revId": "11400f355044184f02616340df61dd663aed7eee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e09f789b_00d3a279",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "No, it can\u0027t. I\u0027d rather use fmt.Fprintf consistently for all.",
+      "parentUuid": "2a59984b_291d0d4e",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 12
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -243,6 +471,30 @@
     },
     {
       "key": {
+        "uuid": "0e818289_ad2e1a8a",
+        "filename": "cipd/appengine/impl/settings/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c9b6069_506e0699",
+      "range": {
+        "startLine": 77,
+        "startChar": 8,
+        "endLine": 77,
+        "endChar": 12
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "478a2805_83fd9b6c",
         "filename": "cipd/appengine/impl/settings/settings.go",
         "patchSetId": 2
@@ -263,6 +515,30 @@
       "revId": "11400f355044184f02616340df61dd663aed7eee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c32373cc_7488f003",
+        "filename": "cipd/appengine/impl/settings/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-02T00:31:57Z",
+      "side": 1,
+      "message": "No, StorageGSPath is already validated not to end with /.",
+      "parentUuid": "478a2805_83fd9b6c",
+      "range": {
+        "startLine": 79,
+        "startChar": 8,
+        "endLine": 79,
+        "endChar": 23
+      },
+      "revId": "11400f355044184f02616340df61dd663aed7eee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
