@@ -66,10 +66,15 @@ Run the following to setup the code review tool and create your first review:
     # https://chromium-review.googlesource.com/new-password
     # and follow instructions.
 
-    git cl upload -s -r john.doe@example.com
-    # This will upload your change to Gerrit and ask john.doe for review.
+    git cl upload -s --r-owners
+    # This will upload your change to Gerrit and pick a random owner (as defined
+    # in the OWNERS file) for review.
     # Wait for approval and submit your code through Commit Queue.
     # Commit queue will test your change on multiple platforms and land it
     # automatically.
+
+    # Once you get a review with comments, you can do additional commits to your
+    # feature branch, and then upload again to update the review in gerrit.
+    $ git cl upload
 
 Use `git cl help` and `git cl help <cmd>` for more details.
