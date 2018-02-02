@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc1da8b4_3dd22baf",
+        "filename": "machine-db/api/common/v1/flag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T01:45:57Z",
+      "side": 1,
+      "message": "why this file is in the api dir? i think it is rather cli-specific",
+      "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc5b511b_88d432cf",
+        "filename": "machine-db/api/common/v1/flag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T01:45:57Z",
+      "side": 1,
+      "message": "if i were a user seeing this message, I\u0027d wonder what valid states are",
+      "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f7dc997_d97195ef",
+        "filename": "machine-db/api/common/v1/flag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T01:45:57Z",
+      "side": 1,
+      "message": "i think this logic is the opposite of GetState and belongs to GetState\u0027s file",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 38,
+        "endChar": 7
+      },
+      "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab9fa144_d5fc8756",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T01:45:57Z",
+      "side": 1,
+      "message": "are you sure we want to allow unspecified machine state? i suspect labs always know the machine state",
+      "revId": "12478945223dfcd92bb5218c34f1ad68290ecc10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
