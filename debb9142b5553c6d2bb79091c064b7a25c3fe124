@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a309df31_68e621d9",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:37:11Z",
+      "side": 1,
+      "message": "this is a validation too. maybe return ip address from validatePhysicalHostForCreation or just parse twice, not a big deal",
+      "range": {
+        "startLine": 64,
+        "startChar": 12,
+        "endLine": 64,
+        "endChar": 36
+      },
+      "revId": "debb9142b5553c6d2bb79091c064b7a25c3fe124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fdac1a5_27315c90",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:37:11Z",
+      "side": 1,
+      "message": "in a previous CL i interpreted your comment as you cannot use {tx,db}.ExecContext directly.\nI am glad you actually can. Do you plan to update other parts of code, too, eventually?",
+      "range": {
+        "startLine": 84,
+        "startChar": 16,
+        "endLine": 84,
+        "endChar": 27
+      },
+      "revId": "debb9142b5553c6d2bb79091c064b7a25c3fe124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62feb245_954ec4ec",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-02T19:37:11Z",
+      "side": 1,
+      "message": "perhaps this wouldn\u0027t be as easy with host names and vlans in hosts and vlans tables, like i suggested earlier. I didn\u0027t see this use case, but I see it now",
+      "range": {
+        "startLine": 108,
+        "startChar": 6,
+        "endLine": 108,
+        "endChar": 17
+      },
+      "revId": "debb9142b5553c6d2bb79091c064b7a25c3fe124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
