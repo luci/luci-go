@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "93425990_eef5acff",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-03T01:05:15Z",
+      "side": 1,
+      "message": "i think i\u0027d double parse them. Returning them is micro-optimization, essentially, which is generally ok, unless it complicates code like in this case.",
+      "parentUuid": "75293e30_e8c352e3",
+      "range": {
+        "startLine": 64,
+        "startChar": 12,
+        "endLine": 64,
+        "endChar": 36
+      },
+      "revId": "debb9142b5553c6d2bb79091c064b7a25c3fe124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1fdac1a5_27315c90",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 1
