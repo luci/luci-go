@@ -122,7 +122,7 @@ func (r *cmdRun) done(err error) int {
 	return 0
 }
 
-func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
+func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 	return &cli.Application{
 		Name:  "prpc",
 		Title: "Provisional Remote Procedure Call CLI",
@@ -132,9 +132,14 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 		Commands: []*subcommands.Command{
 			cmdCall(defaultAuthOpts),
 			cmdShow(defaultAuthOpts),
-			cmdFmt(defaultAuthOpts),
+
+			{ /* spacer */ },
+
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
+
+			{ /* spacer */ },
+
 			subcommands.CmdHelp,
 		},
 	}
@@ -142,6 +147,6 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 
 func main() {
 	mathrand.SeedRandomly()
-	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	app := getApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, os.Args[1:]))
 }
