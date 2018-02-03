@@ -35,7 +35,7 @@ type VM struct {
 func (m *VM) Reset()                    { *m = VM{} }
 func (m *VM) String() string            { return proto.CompactTextString(m) }
 func (*VM) ProtoMessage()               {}
-func (*VM) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{0} }
+func (*VM) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{0} }
 
 func (m *VM) GetName() string {
 	if m != nil {
@@ -102,7 +102,7 @@ type CreateVMRequest struct {
 func (m *CreateVMRequest) Reset()                    { *m = CreateVMRequest{} }
 func (m *CreateVMRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateVMRequest) ProtoMessage()               {}
-func (*CreateVMRequest) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{1} }
+func (*CreateVMRequest) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{1} }
 
 func (m *CreateVMRequest) GetVm() *VM {
 	if m != nil {
@@ -122,7 +122,7 @@ type ListVMsRequest struct {
 func (m *ListVMsRequest) Reset()                    { *m = ListVMsRequest{} }
 func (m *ListVMsRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListVMsRequest) ProtoMessage()               {}
-func (*ListVMsRequest) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{2} }
+func (*ListVMsRequest) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{2} }
 
 func (m *ListVMsRequest) GetNames() []string {
 	if m != nil {
@@ -147,7 +147,7 @@ type ListVMsResponse struct {
 func (m *ListVMsResponse) Reset()                    { *m = ListVMsResponse{} }
 func (m *ListVMsResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListVMsResponse) ProtoMessage()               {}
-func (*ListVMsResponse) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{3} }
+func (*ListVMsResponse) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{3} }
 
 func (m *ListVMsResponse) GetVms() []*VM {
 	if m != nil {
@@ -164,10 +164,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor11)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor12)
 }
 
-var fileDescriptor11 = []byte{
+var fileDescriptor12 = []byte{
 	// 313 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x91, 0xcb, 0x6a, 0xf3, 0x30,
 	0x10, 0x85, 0xb1, 0x9c, 0xab, 0x02, 0xc9, 0xff, 0x8b, 0x2e, 0x04, 0xa5, 0x60, 0xbc, 0x32, 0x94,
