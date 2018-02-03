@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "abfbcde2_6b513c52",
+        "filename": "grpc/cmd/prpc/call.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-03T00:48:13Z",
+      "side": 1,
+      "message": "as a user, if i were looking for a default of this flag, i\u0027d expect to find it in the flag doc, not command doc. Let\u0027s move the default format to here",
+      "revId": "433e8c0cf3b75852f93aa5a405bbd5f7523e7f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0757b7b5_be36cbf9",
+        "filename": "grpc/cmd/prpc/format.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-03T00:48:13Z",
+      "side": 1,
+      "message": "before, this wasn\u0027t the only usage of formatFlagPB.\nnow, this is the only usage of formatFlagJSONPB. Why was this un-inlined? \ni think it should be consistent with binary and text",
+      "range": {
+        "startLine": 31,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 27
+      },
+      "revId": "433e8c0cf3b75852f93aa5a405bbd5f7523e7f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
