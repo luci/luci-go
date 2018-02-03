@@ -12,6 +12,9 @@ It has these top-level messages:
 	ObjectRef
 	GetObjectURLRequest
 	ObjectURL
+	BeginUploadRequest
+	FinishUploadRequest
+	UploadOperation
 */
 package api
 
@@ -61,6 +64,36 @@ func (x HashAlgo) String() string {
 	return proto.EnumName(HashAlgo_name, int32(x))
 }
 func (HashAlgo) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+type UploadStatus int32
+
+const (
+	UploadStatus_UPLOAD_STATUS_UNSPECIFIED UploadStatus = 0
+	UploadStatus_UPLOAD_OP_UPLOADING       UploadStatus = 1
+	UploadStatus_UPLOAD_OP_VERIFYING       UploadStatus = 2
+	UploadStatus_UPLOAD_OP_PUBLISHED       UploadStatus = 3
+	UploadStatus_UPLOAD_OP_ERROR           UploadStatus = 4
+)
+
+var UploadStatus_name = map[int32]string{
+	0: "UPLOAD_STATUS_UNSPECIFIED",
+	1: "UPLOAD_OP_UPLOADING",
+	2: "UPLOAD_OP_VERIFYING",
+	3: "UPLOAD_OP_PUBLISHED",
+	4: "UPLOAD_OP_ERROR",
+}
+var UploadStatus_value = map[string]int32{
+	"UPLOAD_STATUS_UNSPECIFIED": 0,
+	"UPLOAD_OP_UPLOADING":       1,
+	"UPLOAD_OP_VERIFYING":       2,
+	"UPLOAD_OP_PUBLISHED":       3,
+	"UPLOAD_OP_ERROR":           4,
+}
+
+func (x UploadStatus) String() string {
+	return proto.EnumName(UploadStatus_name, int32(x))
+}
+func (UploadStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 // A reference to an object in the content-addressable storage.
 type ObjectRef struct {
@@ -138,11 +171,153 @@ func (m *ObjectURL) GetSignedUrl() string {
 	return ""
 }
 
+type BeginUploadRequest struct {
+	// A reference to the object the client wants to put in the storage, if known.
+	//
+	// If such object already exists, RPC will finish with ALREADY_EXISTS status
+	// right away.
+	//
+	// If this field is missing (in case the client doesn't know the hash yet),
+	// the client MUST supply hash_algo field, to let the backend know what
+	// hashing algorithm it should use for calculating object's hash.
+	//
+	// The calculated hash will be returned back to the client as party of
+	// UploadOperation ('object' field) by FinishUpload call.
+	Object *ObjectRef `protobuf:"bytes,1,opt,name=object" json:"object,omitempty"`
+	// An algorithm to use to derive object's name during uploads when the final
+	// hash of the object is not yet known.
+	//
+	// Optional if 'object' is present.
+	//
+	// If both 'object' and 'hash_algo' are present, 'object.hash_algo' MUST match
+	// 'hash_algo'.
+	HashAlgo HashAlgo `protobuf:"varint,2,opt,name=hash_algo,json=hashAlgo,enum=cipd.HashAlgo" json:"hash_algo,omitempty"`
+}
+
+func (m *BeginUploadRequest) Reset()                    { *m = BeginUploadRequest{} }
+func (m *BeginUploadRequest) String() string            { return proto.CompactTextString(m) }
+func (*BeginUploadRequest) ProtoMessage()               {}
+func (*BeginUploadRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *BeginUploadRequest) GetObject() *ObjectRef {
+	if m != nil {
+		return m.Object
+	}
+	return nil
+}
+
+func (m *BeginUploadRequest) GetHashAlgo() HashAlgo {
+	if m != nil {
+		return m.HashAlgo
+	}
+	return HashAlgo_HASH_ALGO_UNSPECIFIED
+}
+
+type FinishUploadRequest struct {
+	// An identifier of an upload operation returned by BeginUpload RPC.
+	UploadOperationId string `protobuf:"bytes,1,opt,name=upload_operation_id,json=uploadOperationId" json:"upload_operation_id,omitempty"`
+	// If set, instructs Storage to skip the hash verification and just assume the
+	// uploaded object has the given hash.
+	//
+	// This is used internally by the service as an optimization for cases when
+	// it trusts the uploaded data (for example, when it upload it itself).
+	//
+	// External callers are denied usage of this field. Attempt to use it results
+	// in PERMISSION_DENIED.
+	ForceHash *ObjectRef `protobuf:"bytes,2,opt,name=force_hash,json=forceHash" json:"force_hash,omitempty"`
+}
+
+func (m *FinishUploadRequest) Reset()                    { *m = FinishUploadRequest{} }
+func (m *FinishUploadRequest) String() string            { return proto.CompactTextString(m) }
+func (*FinishUploadRequest) ProtoMessage()               {}
+func (*FinishUploadRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *FinishUploadRequest) GetUploadOperationId() string {
+	if m != nil {
+		return m.UploadOperationId
+	}
+	return ""
+}
+
+func (m *FinishUploadRequest) GetForceHash() *ObjectRef {
+	if m != nil {
+		return m.ForceHash
+	}
+	return nil
+}
+
+type UploadOperation struct {
+	// An opaque string that identifies this upload operation.
+	//
+	// It acts as a temporary authorization token for FinishUpload RPC. Treat it
+	// as a secret.
+	OperationId string `protobuf:"bytes,1,opt,name=operation_id,json=operationId" json:"operation_id,omitempty"`
+	// URL the client should use in Google Storage Resumable Upload protocol to
+	// upload the object's body.
+	//
+	// No authentication is require to upload data to this URL, so it also should
+	// be treated as a secret.
+	UploadUrl string `protobuf:"bytes,2,opt,name=upload_url,json=uploadUrl" json:"upload_url,omitempty"`
+	// Status of the upload operation.
+	Status UploadStatus `protobuf:"varint,3,opt,name=status,enum=cipd.UploadStatus" json:"status,omitempty"`
+	// For UPLOAD_OP_PUBLISHED status, the reference to the published object.
+	//
+	// This is in particular useful for uploads when the hash of the object is not
+	// known until the upload is finished.
+	Object *ObjectRef `protobuf:"bytes,4,opt,name=object" json:"object,omitempty"`
+	// For UPLOAD_OP_ERROR status, a human readable error message.
+	ErrorMessage string `protobuf:"bytes,5,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+}
+
+func (m *UploadOperation) Reset()                    { *m = UploadOperation{} }
+func (m *UploadOperation) String() string            { return proto.CompactTextString(m) }
+func (*UploadOperation) ProtoMessage()               {}
+func (*UploadOperation) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *UploadOperation) GetOperationId() string {
+	if m != nil {
+		return m.OperationId
+	}
+	return ""
+}
+
+func (m *UploadOperation) GetUploadUrl() string {
+	if m != nil {
+		return m.UploadUrl
+	}
+	return ""
+}
+
+func (m *UploadOperation) GetStatus() UploadStatus {
+	if m != nil {
+		return m.Status
+	}
+	return UploadStatus_UPLOAD_STATUS_UNSPECIFIED
+}
+
+func (m *UploadOperation) GetObject() *ObjectRef {
+	if m != nil {
+		return m.Object
+	}
+	return nil
+}
+
+func (m *UploadOperation) GetErrorMessage() string {
+	if m != nil {
+		return m.ErrorMessage
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*ObjectRef)(nil), "cipd.ObjectRef")
 	proto.RegisterType((*GetObjectURLRequest)(nil), "cipd.GetObjectURLRequest")
 	proto.RegisterType((*ObjectURL)(nil), "cipd.ObjectURL")
+	proto.RegisterType((*BeginUploadRequest)(nil), "cipd.BeginUploadRequest")
+	proto.RegisterType((*FinishUploadRequest)(nil), "cipd.FinishUploadRequest")
+	proto.RegisterType((*UploadOperation)(nil), "cipd.UploadOperation")
 	proto.RegisterEnum("cipd.HashAlgo", HashAlgo_name, HashAlgo_value)
+	proto.RegisterEnum("cipd.UploadStatus", UploadStatus_name, UploadStatus_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -160,6 +335,44 @@ type StorageClient interface {
 	//
 	// Returns NOT_FOUND status code if there's no such object.
 	GetObjectURL(ctx context.Context, in *GetObjectURLRequest, opts ...grpc.CallOption) (*ObjectURL, error)
+	// Initiates an upload operation.
+	//
+	// Once the upload is initiated the client is responsible for uploading the
+	// object to the temporary location (provided via 'upload_url' which should be
+	// used as an upload URL in Google Storage Resumable Upload protocol) and
+	// finishing the upload with a call to FinishUpload, which will launch
+	// the verification of the object's hash on the server side.
+	//
+	// If the client knows the hash of the object it wants to upload already, it
+	// can provide it via 'object' field. In that case Storage may reply right
+	// away that such object already exists by retuning ALREADY_EXISTS status
+	// code.
+	//
+	// If the client doesn't know the hash yet (perhaps if the object's body is
+	// generated on the fly), it still can open an upload operation and start
+	// streaming the data. When finalizing the upload the backend will calculate
+	// and return the resulting hash of the object.
+	//
+	// An UploadOperation returned by this method contains tokens that grant
+	// direct upload access to whoever possesses them, so it should be treated as
+	// a secret. See UploadOperation for more info.
+	BeginUpload(ctx context.Context, in *BeginUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error)
+	// Finishes the pending upload operation, returning its new status.
+	//
+	// Clients are expected to finish Google Storage Resumable protocol first
+	// before calling FinishUpload. Failure to do so will cause the upload
+	// operation to end up in ERROR state.
+	//
+	// This call is idempotent and it is expected that clients will keep polling
+	// it if they want to wait for the server to verify the hash of the uploaded
+	// object.
+	//
+	// Returns NOT_FOUND if the provided upload operation doesn't exist.
+	//
+	// Errors related to the uploaded file body are communicated through 'status'
+	// field of the upload operation, since they are not directly related to this
+	// RPC call, but rather to the upload operation itself.
+	FinishUpload(ctx context.Context, in *FinishUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error)
 }
 type storagePRPCClient struct {
 	client *prpc.Client
@@ -172,6 +385,24 @@ func NewStoragePRPCClient(client *prpc.Client) StorageClient {
 func (c *storagePRPCClient) GetObjectURL(ctx context.Context, in *GetObjectURLRequest, opts ...grpc.CallOption) (*ObjectURL, error) {
 	out := new(ObjectURL)
 	err := c.client.Call(ctx, "cipd.Storage", "GetObjectURL", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storagePRPCClient) BeginUpload(ctx context.Context, in *BeginUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error) {
+	out := new(UploadOperation)
+	err := c.client.Call(ctx, "cipd.Storage", "BeginUpload", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storagePRPCClient) FinishUpload(ctx context.Context, in *FinishUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error) {
+	out := new(UploadOperation)
+	err := c.client.Call(ctx, "cipd.Storage", "FinishUpload", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +426,24 @@ func (c *storageClient) GetObjectURL(ctx context.Context, in *GetObjectURLReques
 	return out, nil
 }
 
+func (c *storageClient) BeginUpload(ctx context.Context, in *BeginUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error) {
+	out := new(UploadOperation)
+	err := grpc.Invoke(ctx, "/cipd.Storage/BeginUpload", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storageClient) FinishUpload(ctx context.Context, in *FinishUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error) {
+	out := new(UploadOperation)
+	err := grpc.Invoke(ctx, "/cipd.Storage/FinishUpload", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Storage service
 
 type StorageServer interface {
@@ -202,6 +451,44 @@ type StorageServer interface {
 	//
 	// Returns NOT_FOUND status code if there's no such object.
 	GetObjectURL(context.Context, *GetObjectURLRequest) (*ObjectURL, error)
+	// Initiates an upload operation.
+	//
+	// Once the upload is initiated the client is responsible for uploading the
+	// object to the temporary location (provided via 'upload_url' which should be
+	// used as an upload URL in Google Storage Resumable Upload protocol) and
+	// finishing the upload with a call to FinishUpload, which will launch
+	// the verification of the object's hash on the server side.
+	//
+	// If the client knows the hash of the object it wants to upload already, it
+	// can provide it via 'object' field. In that case Storage may reply right
+	// away that such object already exists by retuning ALREADY_EXISTS status
+	// code.
+	//
+	// If the client doesn't know the hash yet (perhaps if the object's body is
+	// generated on the fly), it still can open an upload operation and start
+	// streaming the data. When finalizing the upload the backend will calculate
+	// and return the resulting hash of the object.
+	//
+	// An UploadOperation returned by this method contains tokens that grant
+	// direct upload access to whoever possesses them, so it should be treated as
+	// a secret. See UploadOperation for more info.
+	BeginUpload(context.Context, *BeginUploadRequest) (*UploadOperation, error)
+	// Finishes the pending upload operation, returning its new status.
+	//
+	// Clients are expected to finish Google Storage Resumable protocol first
+	// before calling FinishUpload. Failure to do so will cause the upload
+	// operation to end up in ERROR state.
+	//
+	// This call is idempotent and it is expected that clients will keep polling
+	// it if they want to wait for the server to verify the hash of the uploaded
+	// object.
+	//
+	// Returns NOT_FOUND if the provided upload operation doesn't exist.
+	//
+	// Errors related to the uploaded file body are communicated through 'status'
+	// field of the upload operation, since they are not directly related to this
+	// RPC call, but rather to the upload operation itself.
+	FinishUpload(context.Context, *FinishUploadRequest) (*UploadOperation, error)
 }
 
 func RegisterStorageServer(s prpc.Registrar, srv StorageServer) {
@@ -226,6 +513,42 @@ func _Storage_GetObjectURL_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Storage_BeginUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BeginUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServer).BeginUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Storage/BeginUpload",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServer).BeginUpload(ctx, req.(*BeginUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Storage_FinishUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FinishUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServer).FinishUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Storage/FinishUpload",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServer).FinishUpload(ctx, req.(*FinishUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Storage_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.Storage",
 	HandlerType: (*StorageServer)(nil),
@@ -233,6 +556,14 @@ var _Storage_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetObjectURL",
 			Handler:    _Storage_GetObjectURL_Handler,
+		},
+		{
+			MethodName: "BeginUpload",
+			Handler:    _Storage_BeginUpload_Handler,
+		},
+		{
+			MethodName: "FinishUpload",
+			Handler:    _Storage_FinishUpload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -242,25 +573,41 @@ var _Storage_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/cas.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 318 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x90, 0xdb, 0x4b, 0xc3, 0x30,
-	0x14, 0xc6, 0xad, 0xce, 0xb9, 0x1e, 0x65, 0xce, 0x88, 0xb0, 0x09, 0xc2, 0xd8, 0x8b, 0x63, 0x83,
-	0x96, 0xcd, 0x37, 0xdf, 0xaa, 0xbb, 0x74, 0x50, 0x9c, 0xa4, 0x14, 0xc1, 0x97, 0x92, 0xb5, 0x59,
-	0x12, 0xcd, 0x96, 0xda, 0x8b, 0xee, 0xcf, 0x97, 0xf5, 0x22, 0x0a, 0xbe, 0x1d, 0x7e, 0x27, 0x7c,
-	0xe7, 0xfb, 0x05, 0x4c, 0xa6, 0x8c, 0x80, 0xc7, 0x6a, 0x23, 0xb2, 0x8d, 0xa1, 0x62, 0x66, 0xca,
-	0x2c, 0x10, 0x66, 0x20, 0xa2, 0xd0, 0x24, 0x51, 0x39, 0x7c, 0x8e, 0xcc, 0x80, 0x24, 0x46, 0x14,
-	0xab, 0x54, 0xa1, 0xda, 0x1e, 0xf5, 0x5e, 0x40, 0x5f, 0xae, 0xde, 0x68, 0x90, 0x62, 0xba, 0x46,
-	0x43, 0xd0, 0x39, 0x49, 0xb8, 0x4f, 0x24, 0x53, 0x6d, 0xad, 0xab, 0xf5, 0x9b, 0xe3, 0xa6, 0xb1,
-	0x7f, 0x66, 0xd8, 0x24, 0xe1, 0x96, 0x64, 0x0a, 0x37, 0x78, 0x39, 0xa1, 0x1b, 0x00, 0x4e, 0x77,
-	0x7e, 0x28, 0x18, 0x4d, 0xd2, 0xf6, 0x61, 0x57, 0xeb, 0xeb, 0x58, 0xe7, 0x74, 0x37, 0xc9, 0x41,
-	0xef, 0x1d, 0x2e, 0xe7, 0x34, 0x2d, 0xb2, 0x3d, 0xec, 0x60, 0xfa, 0x91, 0xd1, 0x24, 0x45, 0xb7,
-	0x50, 0x57, 0x39, 0xcb, 0xf3, 0x4f, 0xc7, 0xe7, 0x45, 0xfe, 0x4f, 0x07, 0x5c, 0xae, 0xd1, 0x10,
-	0x2e, 0x42, 0xf5, 0xb5, 0x95, 0x8a, 0x84, 0xfe, 0x5a, 0x48, 0xba, 0x25, 0x1b, 0x5a, 0x5e, 0x69,
-	0x55, 0x8b, 0x59, 0xc9, 0x7b, 0x83, 0xca, 0xc2, 0xc3, 0xce, 0xbe, 0x58, 0x22, 0xd8, 0x96, 0x86,
-	0x7e, 0x16, 0xcb, 0xfc, 0x8c, 0x8e, 0xf5, 0x82, 0x78, 0xb1, 0x1c, 0x98, 0xd0, 0xa8, 0x6c, 0x50,
-	0x07, 0xae, 0x6c, 0xcb, 0xb5, 0x7d, 0xcb, 0x99, 0x2f, 0x7d, 0xef, 0xc9, 0x7d, 0x9e, 0x3e, 0x2e,
-	0x66, 0x8b, 0xe9, 0xa4, 0x75, 0x80, 0x1a, 0x50, 0x73, 0x6d, 0x6b, 0xd4, 0xd2, 0xc6, 0x53, 0x38,
-	0x71, 0x53, 0x15, 0x13, 0x46, 0xd1, 0x3d, 0x9c, 0xfd, 0x96, 0x42, 0x9d, 0xa2, 0xfd, 0x3f, 0xa2,
-	0xd7, 0x7f, 0xc4, 0x3c, 0xec, 0x3c, 0x1c, 0xbf, 0x1e, 0x91, 0x48, 0xac, 0xea, 0xf9, 0xef, 0xdf,
-	0x7d, 0x07, 0x00, 0x00, 0xff, 0xff, 0x96, 0x86, 0x8c, 0x40, 0xb0, 0x01, 0x00, 0x00,
+	// 573 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x41, 0x6f, 0xd3, 0x30,
+	0x18, 0x25, 0x5b, 0x37, 0x96, 0x6f, 0x65, 0xeb, 0x5c, 0x4d, 0x74, 0x93, 0x26, 0x8d, 0x72, 0x60,
+	0xea, 0xa4, 0x54, 0x1b, 0x37, 0x0e, 0x88, 0x8c, 0xb6, 0x6b, 0xa4, 0xb2, 0x54, 0xce, 0x02, 0x82,
+	0x8b, 0xe5, 0x25, 0x6e, 0xe2, 0x91, 0xc6, 0xc1, 0x49, 0x60, 0x7f, 0x82, 0xdf, 0xc5, 0x89, 0xff,
+	0x84, 0xe2, 0xa4, 0x2c, 0x85, 0xb2, 0x03, 0x37, 0xeb, 0xbd, 0xaf, 0xef, 0xbd, 0x3c, 0x7f, 0x2e,
+	0xf4, 0x03, 0x61, 0x78, 0xa1, 0x14, 0x73, 0x9e, 0xcf, 0x0d, 0x21, 0x83, 0x7e, 0x94, 0x7b, 0xbc,
+	0xef, 0xf1, 0xc4, 0xef, 0xd3, 0xa4, 0x3a, 0x7c, 0x3d, 0xeb, 0x7b, 0x34, 0x35, 0x12, 0x29, 0x32,
+	0x81, 0x1a, 0x05, 0xd4, 0xfd, 0x00, 0xba, 0x7d, 0x73, 0xcb, 0xbc, 0x0c, 0xb3, 0x19, 0x3a, 0x05,
+	0x3d, 0xa4, 0x69, 0x48, 0x68, 0x14, 0x88, 0x8e, 0x76, 0xac, 0x9d, 0xec, 0x9c, 0xef, 0x18, 0xc5,
+	0x98, 0x31, 0xa6, 0x69, 0x68, 0x46, 0x81, 0xc0, 0x5b, 0x61, 0x75, 0x42, 0x47, 0x00, 0x21, 0xbb,
+	0x23, 0x3e, 0x0f, 0x58, 0x9a, 0x75, 0xd6, 0x8e, 0xb5, 0x13, 0x1d, 0xeb, 0x21, 0xbb, 0x1b, 0x28,
+	0xa0, 0xfb, 0x19, 0xda, 0x97, 0x2c, 0x2b, 0xb5, 0x5d, 0x3c, 0xc1, 0xec, 0x4b, 0xce, 0xd2, 0x0c,
+	0xbd, 0x80, 0x4d, 0xa1, 0x30, 0xa5, 0xbf, 0x7d, 0xbe, 0x5b, 0xea, 0xff, 0xce, 0x80, 0x2b, 0x1a,
+	0x9d, 0xc2, 0x9e, 0x2f, 0xbe, 0xc5, 0x91, 0xa0, 0x3e, 0x99, 0xf1, 0x88, 0xc5, 0x74, 0xce, 0x2a,
+	0x97, 0xd6, 0x82, 0x18, 0x55, 0x78, 0xb7, 0xb7, 0xf8, 0x0a, 0x17, 0x4f, 0x8a, 0x60, 0x29, 0x0f,
+	0x62, 0xe6, 0x93, 0x5c, 0x46, 0xca, 0x46, 0xc7, 0x7a, 0x89, 0xb8, 0x32, 0xea, 0xde, 0x02, 0xba,
+	0x60, 0x01, 0x8f, 0xdd, 0xa4, 0x90, 0xf8, 0x8f, 0x5c, 0xb5, 0x8e, 0xd6, 0x1e, 0xee, 0xa8, 0x9b,
+	0x43, 0x7b, 0xc4, 0x63, 0x9e, 0x86, 0xcb, 0x66, 0x06, 0xb4, 0x73, 0x05, 0x10, 0x91, 0x30, 0x49,
+	0x33, 0x2e, 0x62, 0xc2, 0xfd, 0x2a, 0xea, 0x5e, 0x49, 0xd9, 0x0b, 0xc6, 0xf2, 0x91, 0x01, 0x30,
+	0x13, 0xd2, 0x63, 0xa4, 0x10, 0x56, 0xa6, 0x2b, 0x02, 0xea, 0x6a, 0xa4, 0x08, 0xd1, 0xfd, 0xa9,
+	0xc1, 0xae, 0xbb, 0xac, 0x82, 0x9e, 0x41, 0x73, 0x85, 0xd9, 0xb6, 0xa8, 0xd9, 0x1c, 0x01, 0x54,
+	0xb1, 0x8a, 0xe2, 0xaa, 0x1b, 0x2d, 0x11, 0x57, 0x46, 0xa8, 0x07, 0x9b, 0x69, 0x46, 0xb3, 0x3c,
+	0xed, 0xac, 0xab, 0xcf, 0x46, 0x65, 0x82, 0xd2, 0xc8, 0x51, 0x0c, 0xae, 0x26, 0x6a, 0x75, 0x36,
+	0x1e, 0xae, 0xf3, 0x39, 0x3c, 0x61, 0x52, 0x0a, 0x49, 0xe6, 0x2c, 0x4d, 0x69, 0xc0, 0x3a, 0x1b,
+	0xca, 0xb6, 0xa9, 0xc0, 0x77, 0x25, 0xd6, 0xeb, 0xc3, 0xd6, 0xa2, 0x5c, 0x74, 0x00, 0xfb, 0x63,
+	0xd3, 0x19, 0x13, 0x73, 0x72, 0x69, 0x13, 0xf7, 0xca, 0x99, 0x0e, 0xdf, 0x5a, 0x23, 0x6b, 0x38,
+	0x68, 0x3d, 0x42, 0x5b, 0xd0, 0x70, 0xc6, 0xe6, 0x59, 0x4b, 0xeb, 0x7d, 0xd7, 0xa0, 0x59, 0xcf,
+	0x85, 0x8e, 0xe0, 0xc0, 0x9d, 0x4e, 0x6c, 0x73, 0x40, 0x9c, 0x6b, 0xf3, 0xda, 0x75, 0xfe, 0xf8,
+	0xe5, 0x53, 0x68, 0x57, 0xb4, 0x3d, 0x25, 0xe5, 0xc9, 0xba, 0xba, 0x6c, 0x69, 0xcb, 0xc4, 0xfb,
+	0x21, 0xb6, 0x46, 0x1f, 0x0b, 0x62, 0x6d, 0x99, 0x98, 0xba, 0x17, 0x13, 0xcb, 0x19, 0x0f, 0x07,
+	0xad, 0x75, 0xd4, 0x86, 0xdd, 0x7b, 0x62, 0x88, 0xb1, 0x8d, 0x5b, 0x8d, 0xf3, 0x1f, 0x1a, 0x3c,
+	0x76, 0x32, 0x21, 0x69, 0xc0, 0xd0, 0x2b, 0x68, 0xd6, 0x1f, 0x06, 0x3a, 0x28, 0xab, 0x59, 0xf1,
+	0x58, 0x0e, 0x97, 0x5a, 0x2b, 0x66, 0x5f, 0xc3, 0x76, 0x6d, 0x77, 0x51, 0xa7, 0xe4, 0xff, 0x5e,
+	0xe7, 0xc3, 0xfd, 0xfa, 0xdd, 0xdc, 0x2f, 0xc1, 0x1b, 0x68, 0xd6, 0xf7, 0x71, 0xe1, 0xbd, 0x62,
+	0x47, 0xff, 0xa1, 0x70, 0xb1, 0xf1, 0x69, 0x9d, 0x26, 0xfc, 0x66, 0x53, 0xfd, 0x87, 0xbc, 0xfc,
+	0x15, 0x00, 0x00, 0xff, 0xff, 0x90, 0xa8, 0xbe, 0xb8, 0x76, 0x04, 0x00, 0x00,
 }
