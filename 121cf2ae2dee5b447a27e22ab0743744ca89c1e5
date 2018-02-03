@@ -22,6 +22,30 @@
       "revId": "121cf2ae2dee5b447a27e22ab0743744ca89c1e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a901acd_2c696c54",
+        "filename": "grpc/cmd/prpc/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-02-03T00:40:50Z",
+      "side": 1,
+      "message": ":)",
+      "parentUuid": "f97cb7ca_0b63879e",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 20
+      },
+      "revId": "121cf2ae2dee5b447a27e22ab0743744ca89c1e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
