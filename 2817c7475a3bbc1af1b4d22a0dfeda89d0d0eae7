@@ -16,6 +16,29 @@
       "revId": "2817c7475a3bbc1af1b4d22a0dfeda89d0d0eae7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "081abfd9_7be4b317",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-03T01:42:05Z",
+      "side": 1,
+      "message": "this piece is identical to the one in for physical machines. I think it can be extracted to a separate func and reused in two places",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 125,
+        "endChar": 0
+      },
+      "revId": "2817c7475a3bbc1af1b4d22a0dfeda89d0d0eae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
