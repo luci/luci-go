@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7e1cb48_fbda99ae",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-03T00:54:57Z",
+      "side": 1,
+      "message": "Will fix this later with physical_hosts.go and nics.go once a solution is agreed to. See https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/898492/1/machine-db/appengine/rpc/physical_hosts.go#64.",
+      "revId": "2817c7475a3bbc1af1b4d22a0dfeda89d0d0eae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
