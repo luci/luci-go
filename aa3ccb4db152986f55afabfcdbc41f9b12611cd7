@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "75afcb69_a212448d",
+        "filename": "machine-db/client/cli/states.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-03T00:42:37Z",
+      "side": 1,
+      "message": "this is the only usage. Let\u0027s generalize it to ValidStates() and print .Name() below, unless you plan to use specifically a slice of names in the future",
+      "range": {
+        "startLine": 38,
+        "startChar": 31,
+        "endLine": 38,
+        "endChar": 46
+      },
+      "revId": "aa3ccb4db152986f55afabfcdbc41f9b12611cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa743092_1e472225",
+        "filename": "machine-db/client/cli/states.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-03T00:42:37Z",
+      "side": 1,
+      "message": "this might be more than you need, e.g. printing a stack. As a user, i\u0027d expect something brief like \"nope, no such state\" as opposed to a call stack, which would scare me. Can we just fmt.Println(err) here?",
+      "revId": "aa3ccb4db152986f55afabfcdbc41f9b12611cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
