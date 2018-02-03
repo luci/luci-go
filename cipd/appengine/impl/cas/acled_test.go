@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -44,6 +46,9 @@ func TestACLDecorator(t *testing.T) {
 	}
 	ctx := auth.WithState(context.Background(), state)
 
+	noForceRef := &api.FinishUploadRequest{}
+	withForceRef := &api.FinishUploadRequest{ForceRef: &api.ObjectRef{}}
+
 	var cases = []struct {
 		method  string
 		caller  identity.Identity
@@ -53,10 +58,22 @@ func TestACLDecorator(t *testing.T) {
 		{"GetObjectURL", anon, nil, false},
 		{"GetObjectURL", someone, nil, false},
 		{"GetObjectURL", admin, nil, true},
+
+		{"BeginUpload", anon, nil, false},
+		{"BeginUpload", someone, nil, false},
+		{"BeginUpload", admin, nil, true},
+
+		{"FinishUpload", anon, noForceRef, true},
+		{"FinishUpload", someone, noForceRef, true},
+		{"FinishUpload", admin, noForceRef, true},
+
+		{"FinishUpload", anon, withForceRef, false},
+		{"FinishUpload", someone, withForceRef, false},
+		{"FinishUpload", admin, withForceRef, false},
 	}
 
-	for _, cs := range cases {
-		Convey(fmt.Sprintf("%s by %s", cs.method, cs.caller), t, func() {
+	for idx, cs := range cases {
+		Convey(fmt.Sprintf("%d - %s by %s", idx, cs.method, cs.caller), t, func() {
 			state.Identity = cs.caller
 			_, err := aclPrelude(ctx, cs.method, cs.request)
 			if cs.allowed {
