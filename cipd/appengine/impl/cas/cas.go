@@ -82,3 +82,17 @@ func (s *storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest
 	}
 	return &api.ObjectURL{SignedUrl: url}, nil
 }
+
+// BeginUpload implements the corresponding RPC method, see the proto doc.
+func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) (resp *api.UploadOperation, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented")
+}
+
+// FinishUpload implements the corresponding RPC method, see the proto doc.
+func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest) (resp *api.UploadOperation, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented")
+}
