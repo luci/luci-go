@@ -155,7 +155,7 @@ type ConsoleGroup struct {
 	Title *Link
 
 	// Consoles is the list of console summaries contained without this group.
-	Consoles []ConsoleSummary
+	Consoles []*ConsoleSummary
 }
 
 // ConsoleHeader represents the header of a console view, containing a set of links,
@@ -248,7 +248,7 @@ type BuilderRef struct {
 	Builder *model.BuilderSummary
 }
 
-// Name returns the last component of ID (which is the Builder Name).
+// BuilderName returns the last component of ID (which is the Builder Name).
 func (br *BuilderRef) BuilderName() string {
 	comp := strings.Split(br.ID, "/")
 	return comp[len(comp)-1]
