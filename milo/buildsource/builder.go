@@ -26,6 +26,19 @@ import (
 //   buildbot/master/builder
 type BuilderID string
 
+// BuilderIDsFromStrings converts a slice of strings to builder IDs (no
+// checking)
+func BuilderIDsFromStrings(names []string) []BuilderID {
+	if len(names) == 0 {
+		return nil
+	}
+	ret := make([]BuilderID, 0, len(names))
+	for i, n := range names {
+		ret[i] = BuilderID(n)
+	}
+	return ret
+}
+
 // Split breaks the BuilderID into pieces.
 //   - backend is either 'buildbot' or 'buildbucket'
 //   - backendGroup is either the bucket or master name
