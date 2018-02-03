@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "08d79709_6f73bdac",
+        "filename": "machine-db/client/cli/states.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-03T01:07:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75afcb69_a212448d",
+      "range": {
+        "startLine": 38,
+        "startChar": 31,
+        "endLine": 38,
+        "endChar": 46
+      },
+      "revId": "aa3ccb4db152986f55afabfcdbc41f9b12611cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa743092_1e472225",
         "filename": "machine-db/client/cli/states.go",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2018-02-03T00:42:37Z",
       "side": 1,
       "message": "this might be more than you need, e.g. printing a stack. As a user, i\u0027d expect something brief like \"nope, no such state\" as opposed to a call stack, which would scare me. Can we just fmt.Println(err) here?",
+      "revId": "aa3ccb4db152986f55afabfcdbc41f9b12611cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6deafa85_a169f6c7",
+        "filename": "machine-db/client/cli/states.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-03T01:07:07Z",
+      "side": 1,
+      "message": "How about just printing nothing and returning 1, in classic Unix style? If the user sees no output from -prefix \u003cwhatever\u003e it should be clear that no state matches the given prefix.",
+      "parentUuid": "fa743092_1e472225",
       "revId": "aa3ccb4db152986f55afabfcdbc41f9b12611cd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
