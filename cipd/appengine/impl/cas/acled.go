@@ -32,29 +32,31 @@ import (
 func Public() api.StorageServer {
 	return &api.DecoratedStorage{
 		Service: Internal(),
-
-		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-			acl, ok := perMethodACL[methodName]
-			if !ok {
-				panic(fmt.Sprintf("method %q is not defined in perMethodACL", methodName))
-			}
-			if acl.group != "*" {
-				switch yep, err := auth.IsMember(c, acl.group); {
-				case err != nil:
-					logging.WithError(err).Errorf(c, "IsMember(%q) failed", acl.group)
-					return nil, status.Errorf(codes.Internal, "failed to check ACL")
-				case !yep:
-					return nil, status.Errorf(codes.PermissionDenied, "not allowed")
-				}
-			}
-			if acl.check != nil {
-				if err := acl.check(c, req); err != nil {
-					return nil, err
-				}
-			}
-			return c, nil
-		},
+		Prelude: aclPrelude,
 	}
+}
+
+// aclPrelude is called before each RPC to check ACLs.
+func aclPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	acl, ok := perMethodACL[methodName]
+	if !ok {
+		panic(fmt.Sprintf("method %q is not defined in perMethodACL", methodName))
+	}
+	if acl.group != "*" {
+		switch yep, err := auth.IsMember(c, acl.group); {
+		case err != nil:
+			logging.WithError(err).Errorf(c, "IsMember(%q) failed", acl.group)
+			return nil, status.Errorf(codes.Internal, "failed to check ACL")
+		case !yep:
+			return nil, status.Errorf(codes.PermissionDenied, "not allowed")
+		}
+	}
+	if acl.check != nil {
+		if err := acl.check(c, req); err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
 }
 
 // perMethodACL defines a group to check when authorizing an RPC call plus a
@@ -65,5 +67,5 @@ var perMethodACL = map[string]struct {
 	group string
 	check func(c context.Context, req proto.Message) error
 }{
-// TODO
+	"GetObjectURL": {"administrators", nil},
 }

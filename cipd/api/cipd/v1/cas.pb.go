@@ -9,6 +9,9 @@ It is generated from these files:
 	go.chromium.org/luci/cipd/api/cipd/v1/repo.proto
 
 It has these top-level messages:
+	ObjectRef
+	GetObjectURLRequest
+	ObjectURL
 */
 package api
 
@@ -34,6 +37,114 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+// Supported hashing algorithms used by the content-addressable storage.
+//
+// Literal names are important, since they are used to construct Google Storage
+// paths internally.
+type HashAlgo int32
+
+const (
+	HashAlgo_HASH_ALGO_UNSPECIFIED HashAlgo = 0
+	HashAlgo_SHA1                  HashAlgo = 1
+)
+
+var HashAlgo_name = map[int32]string{
+	0: "HASH_ALGO_UNSPECIFIED",
+	1: "SHA1",
+}
+var HashAlgo_value = map[string]int32{
+	"HASH_ALGO_UNSPECIFIED": 0,
+	"SHA1":                  1,
+}
+
+func (x HashAlgo) String() string {
+	return proto.EnumName(HashAlgo_name, int32(x))
+}
+func (HashAlgo) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+// A reference to an object in the content-addressable storage.
+type ObjectRef struct {
+	HashAlgo  HashAlgo `protobuf:"varint,1,opt,name=hash_algo,json=hashAlgo,enum=cipd.HashAlgo" json:"hash_algo,omitempty"`
+	HexDigest string   `protobuf:"bytes,2,opt,name=hex_digest,json=hexDigest" json:"hex_digest,omitempty"`
+}
+
+func (m *ObjectRef) Reset()                    { *m = ObjectRef{} }
+func (m *ObjectRef) String() string            { return proto.CompactTextString(m) }
+func (*ObjectRef) ProtoMessage()               {}
+func (*ObjectRef) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+func (m *ObjectRef) GetHashAlgo() HashAlgo {
+	if m != nil {
+		return m.HashAlgo
+	}
+	return HashAlgo_HASH_ALGO_UNSPECIFIED
+}
+
+func (m *ObjectRef) GetHexDigest() string {
+	if m != nil {
+		return m.HexDigest
+	}
+	return ""
+}
+
+type GetObjectURLRequest struct {
+	// A reference to the object the client wants to fetch.
+	Object *ObjectRef `protobuf:"bytes,1,opt,name=object" json:"object,omitempty"`
+	// If present, the returned URL will be served with Content-Disposition header
+	// that includes the given filename. It makes browsers save the file under the
+	// given name.
+	DownloadFilename string `protobuf:"bytes,2,opt,name=download_filename,json=downloadFilename" json:"download_filename,omitempty"`
+}
+
+func (m *GetObjectURLRequest) Reset()                    { *m = GetObjectURLRequest{} }
+func (m *GetObjectURLRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetObjectURLRequest) ProtoMessage()               {}
+func (*GetObjectURLRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *GetObjectURLRequest) GetObject() *ObjectRef {
+	if m != nil {
+		return m.Object
+	}
+	return nil
+}
+
+func (m *GetObjectURLRequest) GetDownloadFilename() string {
+	if m != nil {
+		return m.DownloadFilename
+	}
+	return ""
+}
+
+type ObjectURL struct {
+	// A signed HTTPS URL to the object's body.
+	//
+	// Fetching it doesn't require authentication. Expires after some unspecified
+	// short amount of time. It is expected that callers will use it immediately.
+	//
+	// The URL isn't guaranteed to have any particular internal structure. Do not
+	// attempt to parse it.
+	SignedUrl string `protobuf:"bytes,1,opt,name=signed_url,json=signedUrl" json:"signed_url,omitempty"`
+}
+
+func (m *ObjectURL) Reset()                    { *m = ObjectURL{} }
+func (m *ObjectURL) String() string            { return proto.CompactTextString(m) }
+func (*ObjectURL) ProtoMessage()               {}
+func (*ObjectURL) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *ObjectURL) GetSignedUrl() string {
+	if m != nil {
+		return m.SignedUrl
+	}
+	return ""
+}
+
+func init() {
+	proto.RegisterType((*ObjectRef)(nil), "cipd.ObjectRef")
+	proto.RegisterType((*GetObjectURLRequest)(nil), "cipd.GetObjectURLRequest")
+	proto.RegisterType((*ObjectURL)(nil), "cipd.ObjectURL")
+	proto.RegisterEnum("cipd.HashAlgo", HashAlgo_name, HashAlgo_value)
+}
+
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
@@ -45,6 +156,10 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Storage service
 
 type StorageClient interface {
+	// Produces a signed URL that can be used to fetch an object.
+	//
+	// Returns NOT_FOUND status code if there's no such object.
+	GetObjectURL(ctx context.Context, in *GetObjectURLRequest, opts ...grpc.CallOption) (*ObjectURL, error)
 }
 type storagePRPCClient struct {
 	client *prpc.Client
@@ -52,6 +167,15 @@ type storagePRPCClient struct {
 
 func NewStoragePRPCClient(client *prpc.Client) StorageClient {
 	return &storagePRPCClient{client}
+}
+
+func (c *storagePRPCClient) GetObjectURL(ctx context.Context, in *GetObjectURLRequest, opts ...grpc.CallOption) (*ObjectURL, error) {
+	out := new(ObjectURL)
+	err := c.client.Call(ctx, "cipd.Storage", "GetObjectURL", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type storageClient struct {
@@ -62,31 +186,81 @@ func NewStorageClient(cc *grpc.ClientConn) StorageClient {
 	return &storageClient{cc}
 }
 
+func (c *storageClient) GetObjectURL(ctx context.Context, in *GetObjectURLRequest, opts ...grpc.CallOption) (*ObjectURL, error) {
+	out := new(ObjectURL)
+	err := grpc.Invoke(ctx, "/cipd.Storage/GetObjectURL", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Storage service
 
 type StorageServer interface {
+	// Produces a signed URL that can be used to fetch an object.
+	//
+	// Returns NOT_FOUND status code if there's no such object.
+	GetObjectURL(context.Context, *GetObjectURLRequest) (*ObjectURL, error)
 }
 
 func RegisterStorageServer(s prpc.Registrar, srv StorageServer) {
 	s.RegisterService(&_Storage_serviceDesc, srv)
 }
 
+func _Storage_GetObjectURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetObjectURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServer).GetObjectURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Storage/GetObjectURL",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServer).GetObjectURL(ctx, req.(*GetObjectURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Storage_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.Storage",
 	HandlerType: (*StorageServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetObjectURL",
+			Handler:    _Storage_GetObjectURL_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto",
 }
 
 func init() { proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/cas.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 95 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0x4f, 0xcf, 0xd7, 0x4b,
-	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
-	0xd4, 0x4f, 0xce, 0x2c, 0x48, 0xd1, 0x4f, 0x2c, 0x80, 0x32, 0xca, 0x0c, 0xf5, 0x93, 0x13, 0x8b,
-	0xf5, 0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0x58, 0x40, 0x42, 0x46, 0x9c, 0x5c, 0xec, 0xc1, 0x25,
-	0xf9, 0x45, 0x89, 0xe9, 0xa9, 0x4e, 0xac, 0x51, 0xcc, 0x89, 0x05, 0x99, 0x49, 0x6c, 0x60, 0x69,
-	0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x24, 0xac, 0xec, 0x61, 0x51, 0x00, 0x00, 0x00,
+	// 318 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x90, 0xdb, 0x4b, 0xc3, 0x30,
+	0x14, 0xc6, 0xad, 0xce, 0xb9, 0x1e, 0x65, 0xce, 0x88, 0xb0, 0x09, 0xc2, 0xd8, 0x8b, 0x63, 0x83,
+	0x96, 0xcd, 0x37, 0xdf, 0xaa, 0xbb, 0x74, 0x50, 0x9c, 0xa4, 0x14, 0xc1, 0x97, 0x92, 0xb5, 0x59,
+	0x12, 0xcd, 0x96, 0xda, 0x8b, 0xee, 0xcf, 0x97, 0xf5, 0x22, 0x0a, 0xbe, 0x1d, 0x7e, 0x27, 0x7c,
+	0xe7, 0xfb, 0x05, 0x4c, 0xa6, 0x8c, 0x80, 0xc7, 0x6a, 0x23, 0xb2, 0x8d, 0xa1, 0x62, 0x66, 0xca,
+	0x2c, 0x10, 0x66, 0x20, 0xa2, 0xd0, 0x24, 0x51, 0x39, 0x7c, 0x8e, 0xcc, 0x80, 0x24, 0x46, 0x14,
+	0xab, 0x54, 0xa1, 0xda, 0x1e, 0xf5, 0x5e, 0x40, 0x5f, 0xae, 0xde, 0x68, 0x90, 0x62, 0xba, 0x46,
+	0x43, 0xd0, 0x39, 0x49, 0xb8, 0x4f, 0x24, 0x53, 0x6d, 0xad, 0xab, 0xf5, 0x9b, 0xe3, 0xa6, 0xb1,
+	0x7f, 0x66, 0xd8, 0x24, 0xe1, 0x96, 0x64, 0x0a, 0x37, 0x78, 0x39, 0xa1, 0x1b, 0x00, 0x4e, 0x77,
+	0x7e, 0x28, 0x18, 0x4d, 0xd2, 0xf6, 0x61, 0x57, 0xeb, 0xeb, 0x58, 0xe7, 0x74, 0x37, 0xc9, 0x41,
+	0xef, 0x1d, 0x2e, 0xe7, 0x34, 0x2d, 0xb2, 0x3d, 0xec, 0x60, 0xfa, 0x91, 0xd1, 0x24, 0x45, 0xb7,
+	0x50, 0x57, 0x39, 0xcb, 0xf3, 0x4f, 0xc7, 0xe7, 0x45, 0xfe, 0x4f, 0x07, 0x5c, 0xae, 0xd1, 0x10,
+	0x2e, 0x42, 0xf5, 0xb5, 0x95, 0x8a, 0x84, 0xfe, 0x5a, 0x48, 0xba, 0x25, 0x1b, 0x5a, 0x5e, 0x69,
+	0x55, 0x8b, 0x59, 0xc9, 0x7b, 0x83, 0xca, 0xc2, 0xc3, 0xce, 0xbe, 0x58, 0x22, 0xd8, 0x96, 0x86,
+	0x7e, 0x16, 0xcb, 0xfc, 0x8c, 0x8e, 0xf5, 0x82, 0x78, 0xb1, 0x1c, 0x98, 0xd0, 0xa8, 0x6c, 0x50,
+	0x07, 0xae, 0x6c, 0xcb, 0xb5, 0x7d, 0xcb, 0x99, 0x2f, 0x7d, 0xef, 0xc9, 0x7d, 0x9e, 0x3e, 0x2e,
+	0x66, 0x8b, 0xe9, 0xa4, 0x75, 0x80, 0x1a, 0x50, 0x73, 0x6d, 0x6b, 0xd4, 0xd2, 0xc6, 0x53, 0x38,
+	0x71, 0x53, 0x15, 0x13, 0x46, 0xd1, 0x3d, 0x9c, 0xfd, 0x96, 0x42, 0x9d, 0xa2, 0xfd, 0x3f, 0xa2,
+	0xd7, 0x7f, 0xc4, 0x3c, 0xec, 0x3c, 0x1c, 0xbf, 0x1e, 0x91, 0x48, 0xac, 0xea, 0xf9, 0xef, 0xdf,
+	0x7d, 0x07, 0x00, 0x00, 0xff, 0xff, 0x96, 0x86, 0x8c, 0x40, 0xb0, 0x01, 0x00, 0x00,
 }
