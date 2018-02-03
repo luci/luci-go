@@ -22,7 +22,8 @@ message VM {
   string description = 6;
   // The deployment ticket associated with this VM.
   string deployment_ticket = 7;
-  // TODO(smut): Add IP address.
+  // The IPv4 address associated with this host.
+  string ipv4 = 8;
 }
 
 // A request to create a new VM in the database.

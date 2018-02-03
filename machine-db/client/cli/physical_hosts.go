@@ -63,7 +63,7 @@ func addPhysicalHostCmd() *subcommands.Command {
 			cmd.Flags.Int64Var(&cmd.host.Vlan, "vlan", 0, "The VLAN this host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
-			cmd.Flags.StringVar(&cmd.host.Ipv4, "ipv4", "", "The IPv4 address assigned to this host. Required and must be exist on the same VLAN.")
+			cmd.Flags.StringVar(&cmd.host.Ipv4, "ipv4", "", "The IPv4 address assigned to this host. Required and must exist on the same VLAN.")
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
