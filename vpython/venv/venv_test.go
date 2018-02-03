@@ -187,11 +187,9 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 		Convey(`Testing Setup`, func() {
 			config.FailIfLocked = true
 			err := With(c, config, func(c context.Context, v *Env) error {
-				testScriptTarget := python.ScriptTarget{
-					Path: filepath.Join(testDataDir, "setup_check.py"),
-				}
+				testScriptPath := filepath.Join(testDataDir, "setup_check.py")
 				checkOut := filepath.Join(tdir, "output.json")
-				cmd := v.Interpreter().IsolatedCommand(c, testScriptTarget, "--json-output", checkOut)
+				cmd := v.Interpreter().IsolatedCommand(c, testScriptPath, "--json-output", checkOut)
 				So(cmd.Run(), ShouldBeNil)
 
 				var m setupCheckManifest
