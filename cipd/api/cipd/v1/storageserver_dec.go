@@ -21,3 +21,18 @@ type DecoratedStorage struct {
 	// returns.
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
+
+func (s *DecoratedStorage) GetObjectURL(c context.Context, req *GetObjectURLRequest) (rsp *ObjectURL, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetObjectURL", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetObjectURL(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetObjectURL", rsp, err)
+	}
+	return
+}

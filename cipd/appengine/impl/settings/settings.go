@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )
 
@@ -70,6 +71,12 @@ func Get(ctx context.Context) (*Settings, error) {
 			Tag(grpcutil.InternalTag).Err()
 	}
 	return s, nil
+}
+
+// ObjectPath constructs a path to the object in the Google Storage, starting
+// from StorageGSPath root.
+func (s *Settings) ObjectPath(obj *api.ObjectRef) string {
+	return s.StorageGSPath + "/" + obj.HashAlgo.String() + "/" + obj.HexDigest
 }
 
 type settingsPage struct {
