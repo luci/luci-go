@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/common"
@@ -81,4 +82,49 @@ func (s *storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest
 		return nil, errors.Annotate(err, "failed to get signed URL").Err()
 	}
 	return &api.ObjectURL{SignedUrl: url}, nil
+}
+
+// BeginUpload implements the corresponding RPC method, see the proto doc.
+func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) (resp *api.UploadOperation, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	// Either Object or HashAlgo should be given. If both are, algos must match.
+	var hashAlgo api.HashAlgo
+	var hexDigest string
+	if r.Object != nil {
+		if err := ValidateObjectRef(r.Object); err != nil {
+			return nil, errors.Annotate(err, "bad 'object'").Err()
+		}
+		if r.HashAlgo != 0 && r.HashAlgo != r.Object.HashAlgo {
+			return nil, errors.Reason("'hash_algo' and 'object.hash_algo' do not match").
+				Tag(grpcutil.InvalidArgumentTag).Err()
+		}
+		hashAlgo = r.Object.HashAlgo
+		hexDigest = r.Object.HexDigest
+	} else if err := ValidateHashAlgo(r.HashAlgo); err != nil {
+		return nil, errors.Annotate(err, "bad 'hash_algo'").Err()
+	} else {
+		hashAlgo = r.HashAlgo
+	}
+
+	// TODO(vadimsh): Implement.
+	_ = hashAlgo
+	_ = hexDigest
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented")
+}
+
+// FinishUpload implements the corresponding RPC method, see the proto doc.
+func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest) (resp *api.UploadOperation, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	if r.ForceHash != nil {
+		if err := ValidateObjectRef(r.ForceHash); err != nil {
+			return nil, errors.Annotate(err, "bad 'force_hash' field").Err()
+		}
+	}
+
+	// TODO(vadimsh): Implement.
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
