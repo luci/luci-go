@@ -28,7 +28,7 @@ type Rack struct {
 func (m *Rack) Reset()                    { *m = Rack{} }
 func (m *Rack) String() string            { return proto.CompactTextString(m) }
 func (*Rack) ProtoMessage()               {}
-func (*Rack) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
+func (*Rack) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
 
 func (m *Rack) GetName() string {
 	if m != nil {
@@ -69,7 +69,7 @@ type ListRacksRequest struct {
 func (m *ListRacksRequest) Reset()                    { *m = ListRacksRequest{} }
 func (m *ListRacksRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListRacksRequest) ProtoMessage()               {}
-func (*ListRacksRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
+func (*ListRacksRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{1} }
 
 func (m *ListRacksRequest) GetNames() []string {
 	if m != nil {
@@ -94,7 +94,7 @@ type ListRacksResponse struct {
 func (m *ListRacksResponse) Reset()                    { *m = ListRacksResponse{} }
 func (m *ListRacksResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListRacksResponse) ProtoMessage()               {}
-func (*ListRacksResponse) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
+func (*ListRacksResponse) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{2} }
 
 func (m *ListRacksResponse) GetRacks() []*Rack {
 	if m != nil {
@@ -110,10 +110,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor8)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor9)
 }
 
-var fileDescriptor8 = []byte{
+var fileDescriptor9 = []byte{
 	// 256 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0xc1, 0x4e, 0xc4, 0x20,
 	0x14, 0x45, 0xc3, 0x4c, 0x47, 0x33, 0x6f, 0xa2, 0x51, 0xe2, 0x82, 0xb8, 0x30, 0x4d, 0xdd, 0x74,

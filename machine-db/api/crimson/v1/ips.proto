@@ -1,0 +1,32 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// An IP address in the database.
+message IP {
+  // The IPv4 address. Uniquely identifies this IP address.
+  string ipv4 = 1;
+  // The VLAN this IP address belongs to.
+  int64 vlan = 2;
+  // The hostname this IP address is assigned to.
+  string hostname = 3;
+}
+
+// A request to list free IP addresses in the database.
+message ListFreeIPsRequest {
+  // The VLAN to list free IP addresses on.
+  int64 vlan = 1;
+  // The maximum number of free IP addresses to return, or 0 to let the server decide.
+  int32 page_size = 2;
+}
+
+// A response containing a list of IP addresses in the database.
+message ListIPsResponse {
+  // The IP addresses matching this request.
+  repeated IP ips = 1;
+  // TODO(smut): Support page tokens.
+}
