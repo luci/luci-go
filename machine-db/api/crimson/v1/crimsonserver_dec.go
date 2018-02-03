@@ -39,6 +39,21 @@ func (s *DecoratedCrimson) ListDatacenters(c context.Context, req *ListDatacente
 	return
 }
 
+func (s *DecoratedCrimson) ListFreeIPs(c context.Context, req *ListFreeIPsRequest) (rsp *ListIPsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ListFreeIPs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ListFreeIPs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ListFreeIPs", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) ListOSes(c context.Context, req *ListOSesRequest) (rsp *ListOSesResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
