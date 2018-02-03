@@ -16,7 +16,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -27,23 +26,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/client/flagpb"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 )
 
 const (
-	cmdCallUsage = `call [flags] <server> <service>.<method> [input message flags]
+	cmdCallUsage = `call [flags] <server> <service>.<method>
 
   server: host ("example.com") or port for localhost (":8080").
   service: full name of a service, e.g. "pkg.service"
   method: name of the method.
-  input message flags: the input message in flagpb format.
-    Ignored if format is json/binary/text, in which case input message is read
-    from stdin.
-    See also fmt subcommand.
 `
 
 	cmdCallDesc = "calls a service method."
@@ -54,15 +47,14 @@ func cmdCall(defaultAuthOpts auth.Options) *subcommands.Command {
 		UsageLine: cmdCallUsage,
 		ShortDesc: cmdCallDesc,
 		LongDesc: `Calls a service method.
-Unless format is "flag" (default), the input message is read from stdin`,
+The input message is read from stdin (defaulting to JSONPB)`,
 		CommandRun: func() subcommands.CommandRun {
 			c := &callRun{
-				format: formatFlagPB,
+				format: formatFlagJSONPB,
 			}
 			c.registerBaseFlags(defaultAuthOpts)
 			c.Flags.Var(&c.format, "format", fmt.Sprintf(
-				`Message format. Valid values: %s. `+
-					`If format is "flag" (default), the output format is text; otherwise output format is same.`,
+				`Message format. Valid values: %s. Indicates both input and output format. The default is json.`,
 				formatFlagMap.Choices()))
 			return c
 		},
@@ -127,31 +119,6 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) e
 	var inf, outf prpc.Format
 	var message []byte
 	switch req.format {
-
-	case formatFlagPB:
-		serverDesc, err := loadDescription(c, client)
-		if err != nil {
-			logging.WithError(err).Errorf(c, "Failed to load description.")
-			return err
-		}
-
-		desc, err := serverDesc.resolveInputMessage(req.service, req.method)
-		if err != nil {
-			return err
-		}
-
-		resolver := flagpb.NewResolver(serverDesc.Description)
-		flagMsg, err := flagpb.UnmarshalUntyped(req.messageFlags, desc, resolver)
-		if err != nil {
-			return err
-		}
-
-		message, err = json.Marshal(flagMsg)
-		if err != nil {
-			return err
-		}
-		inf = prpc.FormatJSONPB
-		outf = prpc.FormatText
 
 	default:
 		var buf bytes.Buffer
