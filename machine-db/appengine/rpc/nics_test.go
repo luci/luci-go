@@ -375,6 +375,17 @@ func TestValidateNICForCreation(t *testing.T) {
 		})
 		So(err, ShouldErrLike, "MAC address is required and must be non-empty")
 	})
+
+	Convey("MAC address invalid", t, func() {
+		err := validateNICForCreation(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "asdf",
+			Switch:     "switch",
+		})
+		So(err, ShouldErrLike, "invalid MAC-48 address")
+	})
+
 	Convey("switch unspecified", t, func() {
 		err := validateNICForCreation(&crimson.NIC{
 			Name:       "eth0",

@@ -61,10 +61,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 	if err := validatePhysicalHostForCreation(h); err != nil {
 		return err
 	}
-	ip, err := common.ParseIPv4(h.Ipv4)
-	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", h.Ipv4)
-	}
+	ip, _ := common.ParseIPv4(h.Ipv4)
 	tx, err := database.Begin(c)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
@@ -163,9 +160,15 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 	case h.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
+	case h.Ipv4 == "":
+		return status.Error(codes.InvalidArgument, "IPv4 address is required and must be non-empty")
 	case h.VmSlots < 0:
 		return status.Error(codes.InvalidArgument, "VM slots must be non-negative")
 	default:
+		_, err := common.ParseIPv4(h.Ipv4)
+		if err != nil {
+			return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", h.Ipv4)
+		}
 		return nil
 	}
 }
