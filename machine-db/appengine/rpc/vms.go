@@ -61,10 +61,7 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 	if err := validateVMForCreation(v); err != nil {
 		return err
 	}
-	ip, err := common.ParseIPv4(v.Ipv4)
-	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", v.Ipv4)
-	}
+	ip, _ := common.ParseIPv4(v.Ipv4)
 	tx, err := database.Begin(c)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
@@ -161,7 +158,13 @@ func validateVMForCreation(v *crimson.VM) error {
 		return status.Error(codes.InvalidArgument, "host VLAN is required and must be positive")
 	case v.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
+	case v.Ipv4 == "":
+		return status.Error(codes.InvalidArgument, "IPv4 address is required and must be non-empty")
 	default:
+		_, err := common.ParseIPv4(v.Ipv4)
+		if err != nil {
+			return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", v.Ipv4)
+		}
 		return nil
 	}
 }

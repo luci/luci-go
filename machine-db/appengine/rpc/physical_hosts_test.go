@@ -59,17 +59,6 @@ func TestCreatePhysicalHost(t *testing.T) {
 			WHERE ipv4 = \? AND vlan_id = \? AND hostname_id IS NULL
 		`
 
-		Convey("invalid IPv4", func() {
-			host := &crimson.PhysicalHost{
-				Name:    "host",
-				Vlan:    1,
-				Machine: "machine",
-				Os:      "os",
-				Ipv4:    "127.0.0.1/20",
-			}
-			So(createPhysicalHost(c, host), ShouldErrLike, "invalid IPv4 address")
-		})
-
 		Convey("begin failed", func() {
 			host := &crimson.PhysicalHost{
 				Name:    "host",
@@ -375,6 +364,7 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
+			Ipv4:    "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "hostname is required and must be non-empty")
 	})
@@ -384,6 +374,7 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Name:    "hostname",
 			Machine: "machine",
 			Os:      "os",
+			Ipv4:    "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "VLAN is required and must be positive")
 	})
@@ -394,6 +385,7 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Vlan:    -1,
 			Machine: "machine",
 			Os:      "os",
+			Ipv4:    "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "VLAN is required and must be positive")
 	})
@@ -403,6 +395,7 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Name: "hostname",
 			Vlan: 1,
 			Os:   "os",
+			Ipv4: "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "machine is required and must be non-empty")
 	})
@@ -412,8 +405,30 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Name:    "hostname",
 			Vlan:    1,
 			Machine: "machine",
+			Ipv4:    "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "operating system is required and must be non-empty")
+	})
+
+	Convey("IPv4 address unspecified", t, func() {
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+		})
+		So(err, ShouldErrLike, "IPv4 address is required and must be non-empty")
+	})
+
+	Convey("IPv4 address invalid", t, func() {
+		err := validatePhysicalHostForCreation(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			Ipv4:    "127.0.0.1/20",
+		})
+		So(err, ShouldErrLike, "invalid IPv4 address")
 	})
 
 	Convey("VM slots negative", t, func() {
@@ -422,6 +437,7 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
+			Ipv4:    "127.0.0.1",
 			VmSlots: -1,
 		})
 		So(err, ShouldErrLike, "VM slots must be non-negative")
@@ -433,6 +449,7 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
+			Ipv4:    "127.0.0.1",
 		})
 		So(err, ShouldBeNil)
 	})

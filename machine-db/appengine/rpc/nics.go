@@ -66,10 +66,7 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 	if err := validateNICForCreation(n); err != nil {
 		return err
 	}
-	mac, err := common.ParseMAC48(n.MacAddress)
-	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid MAC-48 address %q", n.MacAddress)
-	}
+	mac, _ := common.ParseMAC48(n.MacAddress)
 	tx, err := database.Begin(c)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
@@ -188,6 +185,10 @@ func validateNICForCreation(n *crimson.NIC) error {
 	case n.Switch == "":
 		return status.Error(codes.InvalidArgument, "switch is required and must be non-empty")
 	default:
+		_, err := common.ParseMAC48(n.MacAddress)
+		if err != nil {
+			return status.Errorf(codes.InvalidArgument, "invalid MAC-48 address %q", n.MacAddress)
+		}
 		return nil
 	}
 }

@@ -371,6 +371,7 @@ func TestValidateVMForCreation(t *testing.T) {
 			Host:     "host",
 			HostVlan: 10,
 			Os:       "os",
+			Ipv4:     "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "hostname is required and must be non-empty")
 	})
@@ -381,6 +382,7 @@ func TestValidateVMForCreation(t *testing.T) {
 			Host:     "host",
 			HostVlan: 10,
 			Os:       "os",
+			Ipv4:     "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "VLAN is required and must be positive")
 	})
@@ -392,6 +394,7 @@ func TestValidateVMForCreation(t *testing.T) {
 			Host:     "host",
 			HostVlan: 10,
 			Os:       "os",
+			Ipv4:     "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "VLAN is required and must be positive")
 	})
@@ -402,6 +405,7 @@ func TestValidateVMForCreation(t *testing.T) {
 			Vlan:     1,
 			HostVlan: 10,
 			Os:       "os",
+			Ipv4:     "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "physical hostname is required and must be non-empty")
 	})
@@ -412,6 +416,7 @@ func TestValidateVMForCreation(t *testing.T) {
 			Vlan: 1,
 			Host: "host",
 			Os:   "os",
+			Ipv4: "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "host VLAN is required and must be positive")
 	})
@@ -423,6 +428,7 @@ func TestValidateVMForCreation(t *testing.T) {
 			Host:     "host",
 			HostVlan: -10,
 			Os:       "os",
+			Ipv4:     "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "host VLAN is required and must be positive")
 	})
@@ -433,8 +439,32 @@ func TestValidateVMForCreation(t *testing.T) {
 			Vlan:     1,
 			Host:     "host",
 			HostVlan: 10,
+			Ipv4:     "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "operating system is required and must be non-empty")
+	})
+
+	Convey("IPv4 address unspecified", t, func() {
+		err := validateVMForCreation(&crimson.VM{
+			Name:     "vm",
+			Vlan:     1,
+			Host:     "host",
+			HostVlan: 10,
+			Os:       "os",
+		})
+		So(err, ShouldErrLike, "IPv4 address is required and must be non-empty")
+	})
+
+	Convey("IPv4 address invalid", t, func() {
+		err := validateVMForCreation(&crimson.VM{
+			Name:     "vm",
+			Vlan:     1,
+			Host:     "host",
+			HostVlan: 10,
+			Os:       "os",
+			Ipv4:     "127.0.0.1/20",
+		})
+		So(err, ShouldErrLike, "invalid IPv4 address")
 	})
 
 	Convey("ok", t, func() {
@@ -444,6 +474,7 @@ func TestValidateVMForCreation(t *testing.T) {
 			Host:     "host",
 			HostVlan: 10,
 			Os:       "os",
+			Ipv4:     "127.0.0.1",
 		})
 		So(err, ShouldBeNil)
 	})
