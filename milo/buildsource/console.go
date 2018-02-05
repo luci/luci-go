@@ -188,8 +188,18 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 		})
 	}
 	if err := datastore.Get(c, bs); err != nil {
+		me := err.(errors.MultiError)
+		lme := errors.NewLazyMultiError(len(me))
+		for i, ierr := range me {
+			if ierr == datastore.ErrNoSuchEntity {
+				ierr = nil  // ignore ErrNoSuchEntity
+				bs[i] = nil // nil out the BuilderSummary, want to skip this below
+			}
+			lme.Assign(i, ierr)
+		}
+
 		// Return an error only if we encouter an error other than datastore.ErrNoSuchEntity.
-		if err = common.ReplaceNSEWith(err.(errors.MultiError), nil); err != nil {
+		if err := lme.Get(); err != nil {
 			return nil, err
 		}
 	}
@@ -197,6 +207,10 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 	// Now we have the mapping from BuilderID -> summary, and ALL THE DATA, map
 	// the data back into the summaries.
 	for _, summary := range bs {
+		if summary == nil { // We got ErrNoSuchEntity above
+			continue
+		}
+
 		for cid, curSummary := range columns[BuilderID(summary.BuilderID)] {
 			cons := consoles[cid]
 
