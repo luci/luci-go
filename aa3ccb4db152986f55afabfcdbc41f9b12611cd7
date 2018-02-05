@@ -81,6 +81,24 @@
       "revId": "aa3ccb4db152986f55afabfcdbc41f9b12611cd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d05bad5b_8697dfd9",
+        "filename": "machine-db/client/cli/states.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-05T23:33:29Z",
+      "side": 1,
+      "message": "sg",
+      "parentUuid": "6deafa85_a169f6c7",
+      "revId": "aa3ccb4db152986f55afabfcdbc41f9b12611cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
