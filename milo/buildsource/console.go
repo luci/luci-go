@@ -200,6 +200,12 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 		for cid, curSummary := range columns[BuilderID(summary.BuilderID)] {
 			cons := consoles[cid]
 
+			// If this builder summary doesn't actually exist (i.e. no builds run yet),
+			// skip it.
+			if summary.LastFinishedCreated.IsZero() {
+				continue
+			}
+
 			// If this console doesn't show experimental builds, skip all summaries of
 			// experimental builds.
 			if !cons.IncludeExperimentalBuilds && summary.LastFinishedExperimental {
