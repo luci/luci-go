@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -118,7 +117,7 @@ type ConsolePreview map[BuilderID]*model.BuildSummary
 //
 // projectID is the project being served in the current request.
 func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID, projectID string) (
-	map[common.ConsoleID]ui.ConsoleSummary, error) {
+	map[common.ConsoleID]*ui.ConsoleSummary, error) {
 
 	// Get the console definitions and builders, then rearrange them into console summaries.
 	defs, err := common.GetConsoles(c, consoleIDs)
@@ -128,59 +127,95 @@ func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID
 	return GetConsoleSummariesFromDefs(c, defs, projectID)
 }
 
-// GetConsoleSummariesFromDefs returns a list of console summaries from the datastore
-// using a slice of console definitions as input.
+// GetConsoleSummariesFromDefs returns a map of consoleID -> summary from the
+// datastore using a slice of console definitions as input.
 //
-// This list of console summaries directly corresponds to the input list of
-// console definition entities.
-//
-// This expects all builders in all defs coming from the same projectID.
-func GetConsoleSummariesFromDefs(c context.Context, defs []*common.Console, projectID string) (map[common.ConsoleID]ui.ConsoleSummary, error) {
-	builders := stringset.New(len(defs) * 10) // We'll start with approx 10 builders per console.
-	for _, def := range defs {
-		for _, builder := range def.Builders {
-			builders.Add(builder)
+// This expects all builders in all consoles coming from the same projectID.
+func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Console, projectID string) (
+	map[common.ConsoleID]*ui.ConsoleSummary, error) {
+
+	// Maps consoleID -> console config definition.
+	consoles := make(map[common.ConsoleID]*config.Console, len(consoleEnts))
+
+	// Maps the BuilderID to the per-console pointer-to-summary in the summaries
+	// map. Note that builders with multiple builderIDs in the same console will
+	// all map to the same BuilderSummary.
+	columns := map[BuilderID]map[common.ConsoleID]*model.BuilderSummary{}
+
+	// The return result.
+	summaries := map[common.ConsoleID]*ui.ConsoleSummary{}
+
+	for _, ent := range consoleEnts {
+		cid := ent.ConsoleID()
+		consoles[cid] = &ent.Def
+
+		summaries[cid] = &ui.ConsoleSummary{
+			Builders: make([]*model.BuilderSummary, len(ent.Def.Builders)),
+			Name: ui.NewLink(
+				ent.ID,
+				fmt.Sprintf("/p/%s/g/%s/console", ent.ProjectID(), ent.ID),
+				fmt.Sprintf("Console %s in project %s", ent.ID, ent.ProjectID()),
+			),
+		}
+		// Some builders might not have any builds yet, but we still want an (empty)
+		// bubble to show up here.
+		for i := range summaries[cid].Builders {
+			summaries[cid].Builders[i] = &model.BuilderSummary{}
+		}
+
+		for i, column := range ent.Def.Builders {
+			for _, rawName := range column.Name {
+				name := BuilderID(rawName)
+				// Find/populate the BuilderID -> {console: summary}
+				colMap, ok := columns[name]
+				if !ok {
+					colMap = map[common.ConsoleID]*model.BuilderSummary{}
+					columns[name] = colMap
+				}
+
+				colMap[cid] = summaries[cid].Builders[i]
+			}
 		}
 	}
-	bs := make([]*model.BuilderSummary, 0, builders.Len())
-	builders.Iter(func(builderID string) bool {
+
+	// Now grab ALL THE DATA.
+	bs := make([]*model.BuilderSummary, 0, len(columns))
+	for builderID := range columns {
 		bs = append(bs, &model.BuilderSummary{
-			BuilderID: builderID,
+			BuilderID: string(builderID),
 			// TODO: change builder ID format to include project id.
 			ProjectID: projectID,
 		})
-		return true
-	})
+	}
 	if err := datastore.Get(c, bs); err != nil {
 		// Return an error only if we encouter an error other than datastore.ErrNoSuchEntity.
 		if err = common.ReplaceNSEWith(err.(errors.MultiError), nil); err != nil {
 			return nil, err
 		}
 	}
-	// Rearrange the result into a map, for easy access later.
-	bsMap := make(map[string]*model.BuilderSummary, len(bs))
-	for _, b := range bs {
-		bsMap[b.BuilderID] = b
+
+	// Now we have the mapping from BuilderID -> summary, and ALL THE DATA, map
+	// the data back into the summaries.
+	for _, summary := range bs {
+		for cid, curSummary := range columns[BuilderID(summary.BuilderID)] {
+			cons := consoles[cid]
+
+			// If this console doesn't show experimental builds, skip all summaries of
+			// experimental builds.
+			if !cons.IncludeExperimentalBuilds && summary.LastFinishedExperimental {
+				continue
+			}
+
+			// If the new summary's build was created before the current summary's
+			// build, skip it.
+			if summary.LastFinishedCreated.Before((*curSummary).LastFinishedCreated) {
+				continue
+			}
+
+			// Looks like this is the best summary for this slot so far, so save it.
+			*curSummary = *summary
+		}
 	}
 
-	// Now rearrange the builders into their respective consoles
-	summaries := make(map[common.ConsoleID]ui.ConsoleSummary, len(defs))
-	for _, def := range defs {
-		ariaLabel := fmt.Sprintf("Console %s in project %s", def.ID, def.ProjectID())
-		summary := ui.ConsoleSummary{
-			Builders: make([]*model.BuilderSummary, len(def.Builders)),
-			Name: ui.NewLink(
-				def.ID, fmt.Sprintf("/p/%s/g/%s/console", def.ProjectID(), def.ID), ariaLabel),
-		}
-		for i, builderID := range def.Builders {
-			if builder, ok := bsMap[builderID]; ok {
-				summary.Builders[i] = builder
-			} else {
-				// This should never happen.
-				panic(fmt.Sprintf("%s disappeared somehow", builderID))
-			}
-		}
-		summaries[def.ConsoleID()] = summary
-	}
 	return summaries, nil
 }

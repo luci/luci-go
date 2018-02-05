@@ -124,7 +124,7 @@ func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Categ
 // extractBuilderSummaries extracts the builder summaries for the current console
 // out of the console summary map.
 func extractBuilderSummaries(
-	id common.ConsoleID, summaries map[common.ConsoleID]ui.ConsoleSummary) map[string]*model.BuilderSummary {
+	id common.ConsoleID, summaries map[common.ConsoleID]*ui.ConsoleSummary) map[string]*model.BuilderSummary {
 
 	consoleSummary, ok := summaries[id]
 	if !ok {
@@ -139,7 +139,7 @@ func extractBuilderSummaries(
 
 // getConsoleGroups extracts the console summaries for all header summaries
 // out of the summaries map into console groups for the header.
-func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]ui.ConsoleSummary) []ui.ConsoleGroup {
+func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]*ui.ConsoleSummary) []ui.ConsoleGroup {
 	if def == nil || len(def.GetConsoleGroups()) == 0 {
 		// No header, no console groups.
 		return nil
@@ -147,7 +147,7 @@ func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]ui.Cons
 	groups := def.GetConsoleGroups()
 	consoleGroups := make([]ui.ConsoleGroup, len(groups))
 	for i, group := range groups {
-		groupSummaries := make([]ui.ConsoleSummary, len(group.ConsoleIds))
+		groupSummaries := make([]*ui.ConsoleSummary, len(group.ConsoleIds))
 		for j, id := range group.ConsoleIds {
 			cid, err := common.ParseConsoleID(id)
 			if err != nil {
@@ -227,7 +227,7 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 //
 // projectID is the project being served in the current request.
 func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header, projectID string) (
-	map[common.ConsoleID]ui.ConsoleSummary, error) {
+	map[common.ConsoleID]*ui.ConsoleSummary, error) {
 
 	var ids []common.ConsoleID
 	var err error
@@ -250,7 +250,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 	var header *ui.ConsoleHeader
 	var rows []*buildsource.ConsoleRow
 	var commits []ui.Commit
-	var consoleSummaries map[common.ConsoleID]ui.ConsoleSummary
+	var consoleSummaries map[common.ConsoleID]*ui.ConsoleSummary
 	// Get 3 things in parallel:
 	// 1. The console header (except for summaries)
 	// 2. The console header summaries + this console's builders summaries.
@@ -317,7 +317,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 	}, nil
 }
 
-func consolePreview(c context.Context, summaries ui.ConsoleSummary, def *config.Console) (*ui.Console, error) {
+func consolePreview(c context.Context, summaries *ui.ConsoleSummary, def *config.Console) (*ui.Console, error) {
 	builderSummaries := make(map[string]*model.BuilderSummary, len(summaries.Builders))
 	for _, b := range summaries.Builders {
 		builderSummaries[b.BuilderID] = b
@@ -434,16 +434,16 @@ func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]ui.Oncal
 
 // consoleHeaderGroupIDs extracts the console group IDs out of the header config.
 func consoleHeaderGroupIDs(project string, config []*config.ConsoleSummaryGroup) ([]common.ConsoleID, error) {
-	consoleIDSet := map[common.ConsoleID]bool{}
+	consoleIDSet := map[common.ConsoleID]struct{}{}
 	for _, group := range config {
 		for _, id := range group.ConsoleIds {
 			// TODO(hinoka): Implement proper ACL checking, which will allow cross-project
 			// console headers.  The following will be swapped out for an ACL check.
-			if cid, err := validateConsoleID(id, project); err != nil {
+			cid, err := validateConsoleID(id, project)
+			if err != nil {
 				return nil, err
-			} else {
-				consoleIDSet[cid] = true
 			}
+			consoleIDSet[cid] = struct{}{}
 		}
 	}
 	consoleIDs := make([]common.ConsoleID, 0, len(consoleIDSet))
@@ -685,7 +685,7 @@ func consoleTestData() []common.TestBundle {
 						ConsoleGroups: []ui.ConsoleGroup{
 							{
 								Title: ui.NewLink("bah", "something2", ""),
-								Consoles: []ui.ConsoleSummary{
+								Consoles: []*ui.ConsoleSummary{
 									{
 										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
@@ -703,7 +703,7 @@ func consoleTestData() []common.TestBundle {
 								},
 							},
 							{
-								Consoles: []ui.ConsoleSummary{
+								Consoles: []*ui.ConsoleSummary{
 									{
 										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{

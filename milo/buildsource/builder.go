@@ -109,6 +109,7 @@ func (b BuilderID) SelfLink(project string) string {
 	return model.BuilderIDLink(string(b), project)
 }
 
+// Buildbot returns true iff this BuilderID originates from a buildbot builder.
 func (b BuilderID) Buildbot() bool {
 	return strings.HasPrefix(string(b), "buildbot/")
 }

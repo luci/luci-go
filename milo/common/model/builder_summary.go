@@ -50,6 +50,10 @@ type BuilderSummary struct {
 	// the builder.
 	LastFinishedBuildID string
 
+	// LastFinishedExperimental indicates if the last build on this builder was
+	// marked as experimental.
+	LastFinishedExperimental bool
+
 	// Ignore unrecognized fields and strip in future writes.
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
@@ -116,8 +120,9 @@ func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
 	// Overwrite previous value of ProjectID in case a builder has moved to
 	// another project.
 	builder.ProjectID = build.ProjectID
-	builder.LastFinishedCreated = build.Created
-	builder.LastFinishedStatus = build.Summary.Status
 	builder.LastFinishedBuildID = build.BuildID
+	builder.LastFinishedCreated = build.Created
+	builder.LastFinishedExperimental = build.Experimental
+	builder.LastFinishedStatus = build.Summary.Status
 	return datastore.Put(c, builder)
 }
