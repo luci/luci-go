@@ -84,27 +84,46 @@ var (
 func TestResolvePythonInterpreter(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Resolving a Python interpreter`, t, func() {
-		c := testContext()
+	// This test is run for each resolved Python interpreter found on the host
+	// system.
+	testPythonInterpreter := func(c C, ctx context.Context, ri *resolvedInterpreter, vers string) {
 		cfg := Config{}
-		s := vpython.Spec{}
+		s := vpython.Spec{
+			PythonVersion: vers,
+		}
+
+		c.Convey(`Can resolve interpreter version`, func() {
+			So(cfg.resolvePythonInterpreter(ctx, &s), ShouldBeNil)
+			So(cfg.Python, ShouldEqual, ri.py.Python)
+
+			vers, err := python.ParseVersion(s.PythonVersion)
+			So(err, ShouldBeNil)
+			So(vers.IsSatisfiedBy(ri.version), ShouldBeTrue)
+		})
+
+		c.Convey(`Can resolve Runtime information`, func() {
+			var r vpython.Runtime
+			err := fillRuntime(ctx, ri.py, &r)
+			So(err, ShouldBeNil)
+			So(r.Path, ShouldNotEqual, "")
+			So(r.Prefix, ShouldNotEqual, "")
+			So(r.Hash, ShouldNotEqual, "")
+		})
+
+		c.Convey(fmt.Sprintf(`Fails when Python 9999 is requested, but a Python %s interpreter is forced.`, vers), func() {
+			cfg.Python = ri.py.Python
+			s.PythonVersion = "9999"
+			So(cfg.resolvePythonInterpreter(ctx, &s), ShouldErrLike, "doesn't match specification")
+		})
+	}
+
+	Convey(`Resolving a Python interpreter`, t, func() {
+		ctx := testContext()
 
 		// Tests to run if we have Python 2.7 installed.
 		if python27 != nil {
-			Convey(`When Python 2.7 is requested, it gets resolved.`, func() {
-				s.PythonVersion = "2.7"
-				So(cfg.resolvePythonInterpreter(c, &s), ShouldBeNil)
-				So(cfg.Python, ShouldEqual, python27.py.Python)
-
-				vers, err := python.ParseVersion(s.PythonVersion)
-				So(err, ShouldBeNil)
-				So(vers.IsSatisfiedBy(python27.version), ShouldBeTrue)
-			})
-
-			Convey(`Fails when Python 9999 is requested, but a Python 2 interpreter is forced.`, func() {
-				cfg.Python = python27.py.Python
-				s.PythonVersion = "9999"
-				So(cfg.resolvePythonInterpreter(c, &s), ShouldErrLike, "doesn't match specification")
+			Convey(`When Python 2.7 is requested`, func(c C) {
+				testPythonInterpreter(c, ctx, python27, "2.7")
 			})
 		}
 
@@ -112,7 +131,9 @@ func TestResolvePythonInterpreter(t *testing.T) {
 		if pythonGeneric != nil && python27 != nil {
 			// Our generic Python resolves to a known version, so we can proceed.
 			Convey(`When no Python version is specified, spec resolves to generic.`, func() {
-				So(cfg.resolvePythonInterpreter(c, &s), ShouldBeNil)
+				cfg := Config{}
+				s := vpython.Spec{}
+				So(cfg.resolvePythonInterpreter(ctx, &s), ShouldBeNil)
 				So(cfg.Python, ShouldEqual, pythonGeneric.py.Python)
 
 				vers, err := python.ParseVersion(s.PythonVersion)
@@ -123,20 +144,8 @@ func TestResolvePythonInterpreter(t *testing.T) {
 
 		// Tests to run if we have Python 3 installed.
 		if python3 != nil {
-			Convey(`When Python 3 is requested, it gets resolved.`, func() {
-				s.PythonVersion = "3"
-				So(cfg.resolvePythonInterpreter(c, &s), ShouldBeNil)
-				So(cfg.Python, ShouldEqual, python3.py.Python)
-
-				vers, err := python.ParseVersion(s.PythonVersion)
-				So(err, ShouldBeNil)
-				So(vers.IsSatisfiedBy(python3.version), ShouldBeTrue)
-			})
-
-			Convey(`Fails when Python 9999 is requested, but a Python 3 interpreter is forced.`, func() {
-				cfg.Python = python3.py.Python
-				s.PythonVersion = "9999"
-				So(cfg.resolvePythonInterpreter(c, &s), ShouldErrLike, "doesn't match specification")
+			Convey(`When Python 3 is requested`, func(c C) {
+				testPythonInterpreter(c, ctx, python3, "3")
 			})
 		}
 	})
