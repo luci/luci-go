@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1cb6bfbf_746f2622",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-06T01:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68bb8704_a3f5c35b",
+      "range": {
+        "startLine": 293,
+        "startChar": 3,
+        "endLine": 293,
+        "endChar": 17
+      },
+      "revId": "09f6294752b1a850e67833e0fd6cf985595e6bd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee2e4753_c5a3e7cb",
         "filename": "vpython/venv/venv_test.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "09f6294752b1a850e67833e0fd6cf985595e6bd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae944f06_6a2b44e5",
+        "filename": "vpython/venv/venv_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-06T01:53:41Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ee2e4753_c5a3e7cb",
+      "range": {
+        "startLine": 145,
+        "startChar": 11,
+        "endLine": 145,
+        "endChar": 42
+      },
+      "revId": "09f6294752b1a850e67833e0fd6cf985595e6bd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
