@@ -273,7 +273,12 @@ func (bds *boundDatastore) WithoutTransaction() context.Context {
 	return withDatastoreTransaction(bds, nil)
 }
 
-func (bds *boundDatastore) CurrentTransaction() ds.Transaction { return bds.transaction }
+func (bds *boundDatastore) CurrentTransaction() ds.Transaction {
+	if bds.transaction == nil {
+		return nil
+	}
+	return bds.transaction
+}
 
 func (bds *boundDatastore) Constraints() ds.Constraints { return constraints.DS() }
 
