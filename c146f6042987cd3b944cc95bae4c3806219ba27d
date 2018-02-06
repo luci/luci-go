@@ -39,6 +39,48 @@
       "revId": "c146f6042987cd3b944cc95bae4c3806219ba27d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d1bdd4c_25a54c91",
+        "filename": "machine-db/api/crimson/v1/ips.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-06T23:52:10Z",
+      "side": 1,
+      "message": "I agree that it probably doesn\u0027t make sense to let users type IP addresses here. CIDR is probably also not necessary. Basically, it would probably suffice to have one argument here which is VLAN and that would enumerate all IP addresses in the VLAN.\n\nIn fact, if we add IP address filters to the host RPCs, then this can probably be replaced with a much simpler ListFreeIPs { int64 vlan } RPC which lists all IP addresses in the given VLAN which have no hostname.\n\nWhat do you think?",
+      "parentUuid": "b2c37195_61f82705",
+      "revId": "c146f6042987cd3b944cc95bae4c3806219ba27d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b195e36d_79592425",
+        "filename": "machine-db/api/crimson/v1/ips.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-06T23:52:10Z",
+      "side": 1,
+      "message": "There probably should be IP address filtering in host RPCs. The use case here is that users need to be able to enumerate all IP addresses in a VLAN and find one that has no associated hostname (i.e. find one that is free). That IP address can then be used in an add-host or add-vm command.",
+      "parentUuid": "548e4d44_661920d3",
+      "range": {
+        "startLine": 22,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 28
+      },
+      "revId": "c146f6042987cd3b944cc95bae4c3806219ba27d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
