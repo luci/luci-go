@@ -22,8 +22,8 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
-	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/errors"
 )
 

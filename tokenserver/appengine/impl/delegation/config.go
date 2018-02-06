@@ -20,7 +20,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"

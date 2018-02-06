@@ -47,7 +47,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 
-	"go.chromium.org/luci/common/auth/internal/localsrv"
+	"go.chromium.org/luci/auth/integration/internal/localsrv"
 )
 
 // Server runs a local server that handles requests to token_uri.

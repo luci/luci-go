@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"

@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 	cloudkms "google.golang.org/api/cloudkms/v1"
 
-	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

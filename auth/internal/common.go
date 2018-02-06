@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package internal contains code used internally by common/auth.
+// Package internal contains code used internally by auth/integration.
 package internal
 
 import (

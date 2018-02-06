@@ -29,7 +29,7 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/common/auth/localauth/rpcs"
+	"go.chromium.org/luci/auth/integration/localauth/rpcs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/lucictx"
@@ -49,7 +49,7 @@ type luciContextTokenProvider struct {
 // It requires LUCI_CONTEXT["local_auth"] to be present in the 'ctx'. It's a
 // description of how to locate and contact the local auth server.
 //
-// See common/auth/localauth package for the implementation of the server.
+// See auth/integration/localauth package for the implementation of the server.
 func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
 	localAuth := lucictx.GetLocalAuth(ctx)
 	switch {

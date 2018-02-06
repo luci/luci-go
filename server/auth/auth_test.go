@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/authdb"

@@ -23,9 +23,9 @@ import (
 
 	cloudkms "google.golang.org/api/cloudkms/v1"
 
-	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
-	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging/gologger"

@@ -30,8 +30,8 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/auth/localauth/rpcs"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/integration/localauth/rpcs"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/lucictx"
 
-	"go.chromium.org/luci/common/auth/internal/localsrv"
+	"go.chromium.org/luci/auth/integration/internal/localsrv"
 )
 
 // TokenGenerator produces access tokens.
@@ -206,9 +206,9 @@ var methodRe = regexp.MustCompile(`^/rpc/LuciLocalAuthService\.([a-zA-Z0-9_]+)$`
 
 // minTokenLifetime is a lifetime of tokens requested through TokenGenerator.
 //
-// Must be larger than 'minAcceptedLifetime' in common/auth, or weird things
-// may happen if local_auth server is used as a basis for some common/auth
-// Authenticator.
+// Must be larger than 'minAcceptedLifetime' in the auth package, or weird
+// things may happen if local_auth server is used as a basis for some
+// auth.Authenticator.
 const minTokenLifetime = 3 * time.Minute
 
 // handle is called by http.Server in a separate goroutine to handle a request.

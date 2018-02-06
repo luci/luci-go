@@ -24,10 +24,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolated"
-	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolatedclient"
 )

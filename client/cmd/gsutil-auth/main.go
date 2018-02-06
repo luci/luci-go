@@ -30,9 +30,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/client/authcli"
-	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/auth/gsutil"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/auth/integration/gsutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"

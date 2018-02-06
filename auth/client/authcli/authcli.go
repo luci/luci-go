@@ -98,8 +98,8 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/auth/localauth"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/integration/localauth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
@@ -364,7 +364,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {
-			fmt.Fprintln(os.Stderr, "Not logged in. Run 'authutil login'.")
+			fmt.Fprintln(os.Stderr, "Not logged in. Run 'luci-auth login'.")
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}
@@ -404,8 +404,9 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 // LUCI authentication context for a process tree.
 //
 // This is an advanced command and shouldn't be usually embedded into binaries.
-// It is primarily used by 'authutil' program. It exists to simplify development
-// and debugging of programs that rely on LUCI authentication context.
+// It is primarily used by 'luci-auth' program. It exists to simplify
+// development and debugging of programs that rely on LUCI authentication
+// context.
 func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
 	return SubcommandContextWithParams(CommandParams{Name: name, AuthOptions: opts})
 }
@@ -453,7 +454,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	// 'args' specify a subcommand to run. Prepare *exec.Cmd.
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Specify a command to run:\n  authutil context [flags] [--] <bin> [args]")
+		fmt.Fprintln(os.Stderr, "Specify a command to run:\n  auth-util context [flags] [--] <bin> [args]")
 		return ExitCodeInvalidInput
 	}
 	bin := args[0]
@@ -518,6 +519,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	// default). To avoid confusion where it comes from, we name it 'authutil'.
 	// Most tools should not care how it is named, as long as it is specified as
 	// 'default_account_id' in LUCI_CONTEXT["local_auth"].
+	// TODO(crbug.com/809645): Rename this to luci-auth?
 	srv := &localauth.Server{
 		TokenGenerators: map[string]localauth.TokenGenerator{
 			"authutil": gen,

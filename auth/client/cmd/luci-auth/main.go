@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command authutil can be used to interact with OAuth2 token cache on disk.
+// Command luci-auth can be used to interact with OAuth2 token cache on disk.
 //
 // It hardcodes chrome-infra specific defaults.
 //
-// Use "go.chromium.org/luci/client/authcli/authutil" package to implement
+// Use "go.chromium.org/luci/auth/client/luci_auth" package to implement
 // a binary with different defaults.
 package main
 
@@ -25,7 +25,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/client/authcli/authutil"
+	"go.chromium.org/luci/auth/client/luci_auth"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -33,6 +33,6 @@ import (
 
 func main() {
 	mathrand.SeedRandomly()
-	app := authutil.GetApplication(chromeinfra.DefaultAuthOptions())
+	app := luci_auth.GetApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, nil))
 }
