@@ -273,8 +273,12 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	}
 	logging.Debugf(c, "Parsed command-line %v: %#v", args, a.opts.CommandLine)
 
-	// If we're bypassing "vpython", run Python directly.
+	// If we're bypassing "vpython", run Python directly. Subcommands ('toolMode')
+	// turn into noops.
 	if a.Bypass {
+		if a.toolMode {
+			return nil
+		}
 		return a.runDirect(c, a.opts.CommandLine, &lp)
 	}
 
