@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b2c37195_61f82705",
+        "filename": "machine-db/api/crimson/v1/ips.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-06T14:45:13Z",
+      "side": 1,
+      "message": "would it be more convenient to accept CIDR here? I doubt users will type in IP addresses",
+      "revId": "c146f6042987cd3b944cc95bae4c3806219ba27d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "548e4d44_661920d3",
+        "filename": "machine-db/api/crimson/v1/ips.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-06T14:45:13Z",
+      "side": 1,
+      "message": "what use case is this supposed to cover? \n\nsay I want to know the host that an ip address is assigned to. The response gives me the machine name, but does not tell if it is virtual or physical, so I cannot load more info. Would it more convenient to have ip address filtering in host RPCs?\n\nnote that we currently do not have an RPC that supports both virtual and physical hosts. This CL adds a common RPC, but it is scoped to ip addresses. What about host names?",
+      "range": {
+        "startLine": 22,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 28
+      },
+      "revId": "c146f6042987cd3b944cc95bae4c3806219ba27d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
