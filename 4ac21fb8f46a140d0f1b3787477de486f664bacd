@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "433d958a_ff383a89",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-06T02:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "454c58fb_b00ffa65",
+      "range": {
+        "startLine": 27,
+        "startChar": 2,
+        "endLine": 27,
+        "endChar": 45
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3669110_d1aa78a1",
         "filename": "client/cmd/cloudkms/encrypt.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c264638_79ef17db",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-06T02:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3669110_d1aa78a1",
+      "range": {
+        "startLine": 56,
+        "startChar": 21,
+        "endLine": 56,
+        "endChar": 29
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ee3d6506_4ae7595c",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-06T02:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc172a07_e83c3f26",
+      "range": {
+        "startLine": 77,
+        "startChar": 34,
+        "endLine": 77,
+        "endChar": 36
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3e2d5856_fc8e1be3",
         "filename": "client/cmd/cloudkms/encrypt.go",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "e9f7fb6b_a255dfef",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-06T02:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e2d5856_fc8e1be3",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 2
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67958cc3_8cf98258",
         "filename": "client/cmd/cloudkms/encrypt.go",
         "patchSetId": 3
@@ -114,6 +210,30 @@
       "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a37cebc_48173688",
+        "filename": "client/cmd/cloudkms/encrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-06T02:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67958cc3_8cf98258",
+      "range": {
+        "startLine": 108,
+        "startChar": 21,
+        "endLine": 108,
+        "endChar": 85
+      },
+      "revId": "4ac21fb8f46a140d0f1b3787477de486f664bacd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
