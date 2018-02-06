@@ -15,7 +15,12 @@
 package venv
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -182,15 +187,14 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
 		return nil, errors.Annotate(err, "failed to resolve system Python interpreter").Err()
 	}
-	e.Runtime.Path = cfg.si.Python
-	e.Runtime.Version = e.Spec.PythonVersion
 
-	var err error
-	if e.Runtime.Hash, err = cfg.si.Hash(); err != nil {
+	e.Runtime = &vpython.Runtime{
+		Version: e.Spec.PythonVersion,
+	}
+	if err := fillRuntime(c, cfg.si, e.Runtime); err != nil {
 		return nil, err
 	}
-	logging.Debugf(c, "Resolved system Python runtime (%s @ %s): %s",
-		e.Runtime.Version, e.Runtime.Hash, e.Runtime.Path)
+	logging.Debugf(c, "Resolved system Python runtime: %#s", e.Runtime)
 
 	// Ensure that our base directory exists.
 	if err := filesystem.MakeDirs(cfg.BaseDir); err != nil {
@@ -285,3 +289,62 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 }
 
 func (cfg *Config) systemInterpreter() *python.Interpreter { return cfg.si }
+
+// fillRuntime returns the runtime information of the specified interpreter.
+//
+// Identifying this information requires the interpreter to be run.
+func fillRuntime(c context.Context, i *python.Interpreter, r *vpython.Runtime) error {
+	// JSON fields correspond to "vpython.Runtime" fields.
+	const script = `` +
+		`import json, sys;` +
+		`json.dump({` +
+		`'path': sys.executable,` +
+		`'prefix': sys.prefix,` +
+		`}, sys.stdout)`
+
+	// Probe the runtime information.
+	var stdout, stderr bytes.Buffer
+	cmd := i.IsolatedCommand(c, python.CommandTarget{Command: script})
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to get runtime information:\n%s", stderr.Bytes())
+		return errors.Annotate(err, "failed to get runtime information").Err()
+	}
+
+	if err := json.Unmarshal(stdout.Bytes(), r); err != nil {
+		return errors.Annotate(err, "could not unmarshal output: %q", stdout.Bytes()).Err()
+	}
+
+	// "sys.executable" is allowed to be None. If it is, use the Python
+	// interpreter path.
+	//
+	// Resolve it to an absolute path. "sys.executable" says that it must be one,
+	// but we'll enforce it just to be sure.
+	if r.Path == "" {
+		r.Path = i.Python
+	}
+	if err := filesystem.AbsPath(&r.Path); err != nil {
+		return err
+	}
+
+	var err error
+	if r.Hash, err = hashPath(r.Path); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func hashPath(path string) (string, error) {
+	fd, err := os.Open(path)
+	if err != nil {
+		return "", errors.Annotate(err, "failed to open interpreter").Err()
+	}
+	defer fd.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, fd); err != nil {
+		return "", errors.Annotate(err, "failed to read [%s] for hashing", path).Err()
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}

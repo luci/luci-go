@@ -15,10 +15,6 @@
 package python
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"io"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -40,12 +36,6 @@ type Interpreter struct {
 	// on the first GetVersion call.
 	cachedVersion   *Version
 	cachedVersionMu sync.Mutex
-
-	// cachedHash is the cached SHA256 hash string of the interpreter's binary
-	// contents. It is populated once, protected by cachedHashOnce.
-	cachedHash     string
-	cachedHashErr  error
-	cachedHashOnce sync.Once
 
 	// testCommandHook, if not nil, is called on generated Command results prior
 	// to returning them.
@@ -107,32 +97,6 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 
 	i.cachedVersion = &v
 	return
-}
-
-// Hash returns the SHA256 hash string of this interpreter.
-//
-// The hash value is cached; if called multiple times, the cached value will
-// be returned.
-func (i *Interpreter) Hash() (string, error) {
-	hashInterpreter := func(path string) (string, error) {
-		fd, err := os.Open(i.Python)
-		if err != nil {
-			return "", errors.Annotate(err, "failed to open interpreter").Err()
-		}
-		defer fd.Close()
-
-		hash := sha256.New()
-		if _, err := io.Copy(hash, fd); err != nil {
-			return "", errors.Annotate(err, "failed to read [%s] for hashing", path).Err()
-		}
-
-		return hex.EncodeToString(hash.Sum(nil)), nil
-	}
-
-	i.cachedHashOnce.Do(func() {
-		i.cachedHash, i.cachedHashErr = hashInterpreter(i.Python)
-	})
-	return i.cachedHash, i.cachedHashErr
 }
 
 // ParseVersionOutput parses a Version out of the output of a "--version" Python
