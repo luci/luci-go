@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/milo/api/config"
@@ -157,13 +158,13 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 				fmt.Sprintf("Console %s in project %s", ent.ID, ent.ProjectID()),
 			),
 		}
-		// Some builders might not have any builds yet, but we still want an (empty)
-		// bubble to show up here.
-		for i := range summaries[cid].Builders {
-			summaries[cid].Builders[i] = &model.BuilderSummary{}
-		}
 
 		for i, column := range ent.Def.Builders {
+			s := &model.BuilderSummary{
+				BuilderID: column.Name[0],
+				ProjectID: projectID,
+			}
+			summaries[cid].Builders[i] = s
 			for _, rawName := range column.Name {
 				name := BuilderID(rawName)
 				// Find/populate the BuilderID -> {console: summary}
@@ -173,7 +174,7 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 					columns[name] = colMap
 				}
 
-				colMap[cid] = summaries[cid].Builders[i]
+				colMap[cid] = s
 			}
 		}
 	}
@@ -192,6 +193,7 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 		lme := errors.NewLazyMultiError(len(me))
 		for i, ierr := range me {
 			if ierr == datastore.ErrNoSuchEntity {
+				logging.Infof(c, "Missing builder: %s", bs[i].BuilderID)
 				ierr = nil  // ignore ErrNoSuchEntity
 				bs[i] = nil // nil out the BuilderSummary, want to skip this below
 			}
