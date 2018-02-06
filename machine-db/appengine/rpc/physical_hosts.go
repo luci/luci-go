@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
+	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 	"go.chromium.org/luci/machine-db/common"
@@ -84,16 +85,17 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 
 	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
 	_, err = tx.ExecContext(c, `
-		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket)
+		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket, state)
 		VALUES (
 			?,
 			(SELECT id FROM machines WHERE name = ?),
 			(SELECT id FROM oses WHERE name = ?),
 			?,
 			?,
+			?,
 			?
 		)
-	`, hostnameId, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
+	`, hostnameId, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket, h.State)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -121,7 +123,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.PhysicalHost, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+		SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, h.state
 		FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 		WHERE p.hostname_id = h.id
 			AND h.vlan_id = v.id
@@ -138,7 +140,17 @@ func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]s
 	for rows.Next() {
 		h := &crimson.PhysicalHost{}
 		var ipv4 common.IPv4
-		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket, &ipv4); err != nil {
+		if err = rows.Scan(
+			&h.Name,
+			&h.Vlan,
+			&h.Machine,
+			&h.Os,
+			&h.VmSlots,
+			&h.Description,
+			&h.DeploymentTicket,
+			&ipv4,
+			&h.State,
+		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.
@@ -163,6 +175,8 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 	case h.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
+	case h.State == states.State_STATE_UNSPECIFIED:
+		return status.Error(codes.InvalidArgument, "state is required")
 	case h.VmSlots < 0:
 		return status.Error(codes.InvalidArgument, "VM slots must be non-negative")
 	default:
