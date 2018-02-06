@@ -101,6 +101,15 @@ func TestResolvePythonInterpreter(t *testing.T) {
 				So(vers.IsSatisfiedBy(python27.version), ShouldBeTrue)
 			})
 
+			Convey(`Can resolve Runtime information`, func() {
+				var r vpython.Runtime
+				err := fillRuntime(c, python27.py, &r)
+				So(err, ShouldBeNil)
+				So(r.Path, ShouldNotEqual, "")
+				So(r.Prefix, ShouldNotEqual, "")
+				So(r.Hash, ShouldNotEqual, "")
+			})
+
 			Convey(`Fails when Python 9999 is requested, but a Python 2 interpreter is forced.`, func() {
 				cfg.Python = python27.py.Python
 				s.PythonVersion = "9999"
@@ -131,6 +140,15 @@ func TestResolvePythonInterpreter(t *testing.T) {
 				vers, err := python.ParseVersion(s.PythonVersion)
 				So(err, ShouldBeNil)
 				So(vers.IsSatisfiedBy(python3.version), ShouldBeTrue)
+			})
+
+			Convey(`Can resolve Runtime information`, func() {
+				var r vpython.Runtime
+				err := fillRuntime(c, python3.py, &r)
+				So(err, ShouldBeNil)
+				So(r.Path, ShouldNotEqual, "")
+				So(r.Prefix, ShouldNotEqual, "")
+				So(r.Hash, ShouldNotEqual, "")
 			})
 
 			Convey(`Fails when Python 9999 is requested, but a Python 3 interpreter is forced.`, func() {

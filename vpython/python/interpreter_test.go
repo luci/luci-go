@@ -56,14 +56,6 @@ func TestInterpreter(t *testing.T) {
 			Python: self,
 		}
 
-		Convey(`Testing hash`, func() {
-			hash, err := i.Hash()
-			So(err, ShouldBeNil)
-			So(hash, ShouldNotEqual, "")
-
-			t.Logf("Calculated interpreter hash: %s", hash)
-		})
-
 		Convey(`Testing IsolatedCommand`, func() {
 			cmd := i.IsolatedCommand(c, NoTarget{}, "foo", "bar")
 			So(cmd.Args, ShouldResemble, []string{self, "-B", "-E", "-s", "foo", "bar"})
