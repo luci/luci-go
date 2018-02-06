@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/user"
 
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"

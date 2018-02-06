@@ -22,7 +22,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"

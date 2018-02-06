@@ -25,7 +25,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )

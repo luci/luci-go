@@ -30,8 +30,8 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"go.chromium.org/luci/appengine/gaesettings"
-	"go.chromium.org/luci/client/authcli"
-	commonAuth "go.chromium.org/luci/common/auth"
+	commonAuth "go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/config/impl/filesystem"
 	"go.chromium.org/luci/common/errors"

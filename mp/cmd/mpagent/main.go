@@ -29,8 +29,8 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 
+	"go.chromium.org/luci/auth"
 	machine "go.chromium.org/luci/common/api/machine_provider/machine/v1"
-	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

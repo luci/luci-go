@@ -20,7 +20,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/tsmon"
@@ -87,7 +87,7 @@ func InstrumentTransport(ctx context.Context, base http.RoundTripper, client str
 }
 
 func init() {
-	// We use init hook to break module dependency cycle: common/auth can't import
-	// tsmon module directly.
+	// We use init hook to break module dependency cycle: auth can't import tsmon
+	// module directly.
 	auth.SetMonitoringInstrumentation(InstrumentTransport)
 }

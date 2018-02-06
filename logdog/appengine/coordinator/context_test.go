@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"

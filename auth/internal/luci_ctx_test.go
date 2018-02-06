@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/common/auth/localauth/rpcs"
+	"go.chromium.org/luci/auth/integration/localauth/rpcs"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/lucictx"
 

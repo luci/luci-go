@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"

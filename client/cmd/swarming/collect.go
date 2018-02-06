@@ -30,8 +30,8 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/clock"
 )
 

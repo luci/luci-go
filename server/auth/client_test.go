@@ -26,8 +26,8 @@ import (
 	"golang.org/x/oauth2"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/delegation"
 )
 

@@ -20,8 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/auth/localauth"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/integration/localauth"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/lucictx"
 

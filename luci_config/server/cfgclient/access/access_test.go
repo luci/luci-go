@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"

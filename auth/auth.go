@@ -45,7 +45,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 
-	"go.chromium.org/luci/common/auth/internal"
+	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/iam"
@@ -149,8 +149,8 @@ const (
 	//     ports). Useful for bringing up sub-contexts, in particular in
 	//     combination with ActAsServiceAcccount ("sudo" mode) or for tests.
 	//
-	// See common/auth/localauth package for the implementation of the server side
-	// of the protocol.
+	// See auth/integration/localauth package for the implementation of the server
+	// side of the protocol.
 	LUCIContextMethod Method = "LUCIContextMethod"
 )
 

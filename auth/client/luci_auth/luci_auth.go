@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package authutil
+package luci_auth
 
 import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/client/authcli"
-	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
-// GetApplication returns cli.Application that implements 'authutil'.
+// GetApplication returns cli.Application that implements 'luci-auth'.
 //
 // It does NOT hardcode any default values. Defaults are hardcoded in
 // corresponding 'main' package.
 func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 	return &cli.Application{
-		Name:  "authutil",
+		Name:  "luci-auth",
 		Title: "LUCI Authentication Utility",
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)

@@ -26,8 +26,8 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 
-	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/internal"

@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/auth"
 )
 
 // NewFlexibleGenerator constructs TokenGenerator that can generate tokens with

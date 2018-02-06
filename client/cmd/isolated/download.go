@@ -24,9 +24,9 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
-	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 )

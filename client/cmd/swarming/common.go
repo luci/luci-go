@@ -24,11 +24,11 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/lhttp"

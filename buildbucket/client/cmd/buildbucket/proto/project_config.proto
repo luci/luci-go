@@ -71,7 +71,7 @@ message Swarming {
   message Builder {
     message CipdPackage {
       // A template of a full CIPD package name, e.g
-      // "infra/tools/authutil/${platform}". This can be parametrized using
+      // "infra/tools/luci-auth/${platform}". This can be parametrized using
       // ${platform} and ${os_ver} parameters, where ${platform} will be
       // expanded into "<os>-<architecture>" and ${os_ver} will be expanded to
       // OS version name.

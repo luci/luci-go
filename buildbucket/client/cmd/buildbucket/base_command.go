@@ -23,8 +23,8 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/client/authcli"
-	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 )

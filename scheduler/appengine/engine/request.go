@@ -22,9 +22,9 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"

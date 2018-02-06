@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/common/auth/identity"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth"
 

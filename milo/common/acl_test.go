@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
-	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/logging/gologger"

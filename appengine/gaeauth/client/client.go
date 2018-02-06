@@ -27,7 +27,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 
-	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"

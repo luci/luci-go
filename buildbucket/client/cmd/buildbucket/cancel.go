@@ -19,7 +19,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 )
 
