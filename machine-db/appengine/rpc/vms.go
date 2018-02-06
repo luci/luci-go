@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
+	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 	"go.chromium.org/luci/machine-db/common"
@@ -81,15 +82,16 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 
 	// vms.hostname_id, vms.physical_host_id, and vms.os_id are NOT NULL as above.
 	_, err = tx.ExecContext(c, `
-		INSERT INTO vms (hostname_id, physical_host_id, os_id, description, deployment_ticket)
+		INSERT INTO vms (hostname_id, physical_host_id, os_id, description, deployment_ticket, state)
 		VALUES (
 			?,
 			(SELECT p.id FROM physical_hosts p, hostnames h WHERE p.hostname_id = h.id AND h.name = ? AND h.vlan_id = ?),
 			(SELECT id FROM oses WHERE name = ?),
 			?,
+			?,
 			?
 		)
-	`, hostnameId, v.Host, v.HostVlan, v.Os, v.Description, v.DeploymentTicket)
+	`, hostnameId, v.Host, v.HostVlan, v.Os, v.Description, v.DeploymentTicket, v.State)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -114,7 +116,7 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.VM, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4
+		SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
 		FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
 		WHERE v.hostname_id = hv.id
 			AND v.physical_host_id = p.id
@@ -131,7 +133,17 @@ func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) (
 	for rows.Next() {
 		v := &crimson.VM{}
 		var ipv4 common.IPv4
-		if err = rows.Scan(&v.Name, &v.Vlan, &v.Host, &v.HostVlan, &v.Os, &v.Description, &v.DeploymentTicket, &ipv4); err != nil {
+		if err = rows.Scan(
+			&v.Name,
+			&v.Vlan,
+			&v.Host,
+			&v.HostVlan,
+			&v.Os,
+			&v.Description,
+			&v.DeploymentTicket,
+			&ipv4,
+			&v.State,
+		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch VM").Err()
 		}
 		// TODO(smut): use the database to filter rather than fetching all entries.
@@ -160,6 +172,8 @@ func validateVMForCreation(v *crimson.VM) error {
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
 	case v.Ipv4 == "":
 		return status.Error(codes.InvalidArgument, "IPv4 address is required and must be non-empty")
+	case v.State == states.State_STATE_UNSPECIFIED:
+		return status.Error(codes.InvalidArgument, "state is required")
 	default:
 		_, err := common.ParseIPv4(v.Ipv4)
 		if err != nil {
