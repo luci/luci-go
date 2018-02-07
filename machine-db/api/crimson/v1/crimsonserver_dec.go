@@ -219,6 +219,21 @@ func (s *DecoratedCrimson) ListNICs(c context.Context, req *ListNICsRequest) (rs
 	return
 }
 
+func (s *DecoratedCrimson) UpdateNIC(c context.Context, req *UpdateNICRequest) (rsp *NIC, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "UpdateNIC", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.UpdateNIC(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "UpdateNIC", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) CreatePhysicalHost(c context.Context, req *CreatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
