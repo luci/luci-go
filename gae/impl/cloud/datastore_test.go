@@ -253,6 +253,8 @@ func TestDatastore(t *testing.T) {
 					{"$kind": mkp("Test"), "$id": mkp("bar"), "FooBar": mkp(true)},
 					{"$kind": mkp("Test"), "$id": mkp("baz")},
 					{"$kind": mkp("Test"), "$id": mkp("qux")},
+					{"$kind": mkp("Test"), "$id": mkp("quux"), "$parent": mkp(ds.MakeKey(c, "Test", "baz"))},
+					{"$kind": mkp("Test"), "$id": mkp("quuz"), "$parent": mkp(ds.MakeKey(c, "Test", "baz"))},
 				}), ShouldBeNil)
 
 				q := ds.NewQuery("Test")
@@ -274,8 +276,22 @@ func TestDatastore(t *testing.T) {
 					So(ds.GetAll(c, q, &results), ShouldBeNil)
 
 					So(results, ShouldResemble, []ds.PropertyMap{
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))},
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))},
 						{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)},
 						{"$key": mkpNI(ds.MakeKey(c, "Test", "qux"))},
+					})
+				})
+
+				Convey(`Can query for entities whose ancestor is "baz".`, func() {
+					var results []ds.PropertyMap
+					q := ds.NewQuery("Test").Ancestor(ds.MakeKey(c, "Test", "baz"))
+					So(ds.GetAll(c, q, &results), ShouldBeNil)
+
+					So(results, ShouldResemble, []ds.PropertyMap{
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz"))},
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))},
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))},
 					})
 				})
 

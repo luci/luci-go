@@ -305,8 +305,10 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 
 	// Equality filters.
 	for field, props := range fq.EqFilters() {
-		for _, prop := range props {
-			nq = nq.Filter(fmt.Sprintf("%s =", field), nativeFilter(prop))
+		if field != "__ancestor__" {
+			for _, prop := range props {
+				nq = nq.Filter(fmt.Sprintf("%s =", field), nativeFilter(prop))
+			}
 		}
 	}
 
