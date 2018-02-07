@@ -70,14 +70,10 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 	db := database.Get(c)
 	// By setting machines.platform_id and machines.rack_id NOT NULL when setting up the database, we can avoid checking if the given
 	// platform and rack are valid. MySQL will turn up NULL for their column values which will be rejected as an error.
-	stmt, err := db.PrepareContext(c, `
+	_, err := db.ExecContext(c, `
 		INSERT INTO machines (name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket, state)
 		VALUES (?, (SELECT id FROM platforms WHERE name = ?), (SELECT id FROM racks WHERE name = ?), ?, ?, ?, ?, ?)
-	`)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
-	}
-	_, err = stmt.ExecContext(c, m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
+	`, m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -105,13 +101,9 @@ func deleteMachine(c context.Context, name string) error {
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, `
+	res, err := db.ExecContext(c, `
 		DELETE FROM machines WHERE name = ?
-	`)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
-	}
-	res, err := stmt.ExecContext(c, name)
+	`, name)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:

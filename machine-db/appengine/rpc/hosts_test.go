@@ -39,31 +39,22 @@ func TestDeleteHost(t *testing.T) {
 			^DELETE FROM hostnames WHERE name = \? AND vlan_id = \?$
 		`
 
-		Convey("prepare failed", func() {
-			m.ExpectPrepare(deleteStmt).WillReturnError(fmt.Errorf("error"))
-			So(deleteHost(c, "host", 1), ShouldErrLike, "Internal server error")
-		})
-
 		Convey("query failed", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnError(fmt.Errorf("error"))
 			So(deleteHost(c, "host", 1), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("referenced", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_ROW_IS_REFERENCED_2, Message: "`physical_host_id`"})
 			So(deleteHost(c, "host", 1), ShouldErrLike, "delete entities referencing this host first")
 		})
 
 		Convey("invalid", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnResult(sqlmock.NewResult(1, 0))
 			So(deleteHost(c, "host", 1), ShouldErrLike, "unknown host")
 		})
 
 		Convey("ok", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnResult(sqlmock.NewResult(1, 1))
 			So(deleteHost(c, "host", 1), ShouldBeNil)
 		})

@@ -67,21 +67,14 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 		return err
 	}
 	mac, _ := common.ParseMAC48(n.MacAddress)
-	tx, err := database.Begin(c)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
-	}
+	db := database.Get(c)
 
 	// By setting nics.machine_id NOT NULL when setting up the database, we can avoid checking if the given machine is
 	// valid. MySQL will turn up NULL for its column values which will be rejected as an error.
-	stmt, err := tx.PrepareContext(c, `
+	_, err := db.ExecContext(c, `
 		INSERT INTO nics (name, machine_id, mac_address, switch_id, switchport)
 		VALUES (?, (SELECT id FROM machines WHERE name = ?), ?, (SELECT id FROM switches WHERE name = ?), ?)
-	`)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
-	}
-	_, err = stmt.ExecContext(c, n.Name, n.Machine, mac, n.Switch, n.Switchport)
+	`, n.Name, n.Machine, mac, n.Switch, n.Switchport)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -101,10 +94,6 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 		}
 		return internalError(c, errors.Annotate(err, "failed to create NIC").Err())
 	}
-
-	if err := tx.Commit(); err != nil {
-		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
-	}
 	return nil
 }
 
@@ -118,13 +107,9 @@ func deleteNIC(c context.Context, name, machine string) error {
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, `
+	res, err := db.ExecContext(c, `
 		DELETE FROM nics WHERE name = ? AND machine_id = (SELECT id FROM machines WHERE name = ?)
-	`)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
-	}
-	res, err := stmt.ExecContext(c, name, machine)
+	`, name, machine)
 	if err != nil {
 		return internalError(c, errors.Annotate(err, "failed to delete NIC").Err())
 	}
