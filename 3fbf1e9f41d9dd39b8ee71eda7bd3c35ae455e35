@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce59b179_c04d4645",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T00:31:04Z",
+      "side": 1,
+      "message": "nit: note this basically the main function of this command, so ideally it does not have specifics like generating a URL to the proto file, so either this logic is extracted to a separate func, or we keep auxiliary variables to the minimum.\n\nlet\u0027s use td.Description here, then you don\u0027t need s variable.\nalso let\u0027s inline q, then you don\u0027t have q variable.",
+      "range": {
+        "startLine": 141,
+        "startChar": 1,
+        "endLine": 141,
+        "endChar": 2
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d048bf03_9f3615d6",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T00:31:04Z",
+      "side": 1,
+      "message": "this part of the string will be pretty long (URL), so it would be hard to see \"Table description: %s\" part. Please put \\n after first %s",
+      "range": {
+        "startLine": 143,
+        "startChar": 32,
+        "endLine": 143,
+        "endChar": 35
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcfc0d3c_3d13cfc3",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T00:31:04Z",
+      "side": 1,
+      "message": "dead code",
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84a5ae9a_8d9b04a7",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T00:31:04Z",
+      "side": 1,
+      "message": "it might be unclear what is doc here. This tool lives in a different repo. Please use absolute https://chromium.googlesource.com/infra/infra/+/master/doc/bigquery_tables.md",
+      "range": {
+        "startLine": 175,
+        "startChar": 73,
+        "endLine": 175,
+        "endChar": 76
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "607c7d94_e2950db9",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T00:31:04Z",
+      "side": 1,
+      "message": "we know if we created a new table. Specifically, dateFromTableDe knows it. Let\u0027s export that knowledge from dateFromTableDe and print this line conditionally",
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b9cc841_18fd9f5b",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T00:31:04Z",
+      "side": 1,
+      "message": "Println",
+      "range": {
+        "startLine": 175,
+        "startChar": 5,
+        "endLine": 175,
+        "endChar": 11
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
