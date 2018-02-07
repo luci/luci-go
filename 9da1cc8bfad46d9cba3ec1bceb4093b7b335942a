@@ -16,6 +16,24 @@
       "revId": "9da1cc8bfad46d9cba3ec1bceb4093b7b335942a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "713e86cb_f83c1a8d",
+        "filename": "cipd/appengine/impl/testutil/gs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-07T20:29:20Z",
+      "side": 1,
+      "message": "ErrGoogleStorage looks like an error variable https://github.com/golang/go/wiki/Errors#naming.\n\nI think NoopGoogleStorage is good enough, since the implementation doesn\u0027t do anything.",
+      "parentUuid": "569b5e4f_50f8d6c8",
+      "revId": "9da1cc8bfad46d9cba3ec1bceb4093b7b335942a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
