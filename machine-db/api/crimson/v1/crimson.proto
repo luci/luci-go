@@ -50,6 +50,8 @@ service Crimson {
   rpc DeleteNIC(DeleteNICRequest) returns (google.protobuf.Empty);
   // Lists NICs in the database.
   rpc ListNICs(ListNICsRequest) returns (ListNICsResponse);
+  // Updates a NIC in the database.
+  rpc UpdateNIC(UpdateNICRequest) returns (NIC);
 
   // Creates a new physical host in the database.
   rpc CreatePhysicalHost(CreatePhysicalHostRequest) returns (PhysicalHost);
