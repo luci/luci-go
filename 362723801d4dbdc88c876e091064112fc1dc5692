@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f402ec50_d1d02e86",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-07T01:33:22Z",
+      "side": 1,
+      "message": "is it still plaintext for decrypt?",
+      "range": {
+        "startLine": 113,
+        "startChar": 27,
+        "endLine": 113,
+        "endChar": 41
+      },
+      "revId": "362723801d4dbdc88c876e091064112fc1dc5692",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbd0f84a_e6375afd",
+        "filename": "client/cmd/cloudkms/decrypt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-07T01:33:22Z",
+      "side": 1,
+      "message": "ciphertext?",
+      "range": {
+        "startLine": 60,
+        "startChar": 21,
+        "endLine": 60,
+        "endChar": 32
+      },
+      "revId": "362723801d4dbdc88c876e091064112fc1dc5692",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
