@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d4dd383_43d4068d",
+        "filename": "machine-db/api/crimson/v1/ips.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T01:20:44Z",
+      "side": 1,
+      "message": "should be int32\nhttps://cloud.google.com/apis/design/standard_fields",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 24,
+        "endChar": 7
+      },
+      "revId": "82f542b248a15307945e7005f6049cbb52470b5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
