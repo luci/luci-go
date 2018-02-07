@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e27b2030_519055a4",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-07T23:56:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "861723ec_059f3cc1",
+      "revId": "26f9e6ea87da1fc16cbf90313392076aa654641e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78b07b9b_688441ea",
         "filename": "cipd/api/cipd/v1/cas.proto",
         "patchSetId": 6
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "9b0e8558_f2a5bafb",
+        "filename": "cipd/api/cipd/v1/cas.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-07T23:56:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78b07b9b_688441ea",
+      "range": {
+        "startLine": 187,
+        "startChar": 26,
+        "endLine": 187,
+        "endChar": 33
+      },
+      "revId": "26f9e6ea87da1fc16cbf90313392076aa654641e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73a53fc3_c3a5cba5",
         "filename": "cipd/appengine/impl/cas/acled.go",
         "patchSetId": 6
@@ -53,6 +95,30 @@
       "writtenOn": "2018-02-07T14:26:29Z",
       "side": 1,
       "message": "is this temporarily?",
+      "range": {
+        "startLine": 77,
+        "startChar": 19,
+        "endLine": 77,
+        "endChar": 33
+      },
+      "revId": "26f9e6ea87da1fc16cbf90313392076aa654641e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6ba9dea_98dd60c7",
+        "filename": "cipd/appengine/impl/cas/acled.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-07T23:56:23Z",
+      "side": 1,
+      "message": "No. Any specific concerns you have?",
+      "parentUuid": "73a53fc3_c3a5cba5",
       "range": {
         "startLine": 77,
         "startChar": 19,
