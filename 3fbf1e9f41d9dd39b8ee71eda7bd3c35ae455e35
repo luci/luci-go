@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7a5bfcf4_599c300d",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T16:56:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce59b179_c04d4645",
+      "range": {
+        "startLine": 141,
+        "startChar": 1,
+        "endLine": 141,
+        "endChar": 2
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d048bf03_9f3615d6",
         "filename": "tools/cmd/bqschemaupdater/main.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "6736d2ba_c627012d",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T16:56:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d048bf03_9f3615d6",
+      "range": {
+        "startLine": 143,
+        "startChar": 32,
+        "endLine": 143,
+        "endChar": 35
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dcfc0d3c_3d13cfc3",
         "filename": "tools/cmd/bqschemaupdater/main.go",
         "patchSetId": 7
@@ -62,6 +110,24 @@
       "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d54f84cf_d5d85330",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T16:56:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dcfc0d3c_3d13cfc3",
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -125,6 +191,72 @@
       "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bae65e06_b85d9ab1",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T16:56:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84a5ae9a_8d9b04a7",
+      "range": {
+        "startLine": 175,
+        "startChar": 73,
+        "endLine": 175,
+        "endChar": 76
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cf2dda56_9ca8dbdc",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T16:56:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b9cc841_18fd9f5b",
+      "range": {
+        "startLine": 175,
+        "startChar": 5,
+        "endLine": 175,
+        "endChar": 11
+      },
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6a71dbf7_c8259dbe",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T16:56:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "607c7d94_e2950db9",
+      "revId": "3fbf1e9f41d9dd39b8ee71eda7bd3c35ae455e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
