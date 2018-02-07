@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
+
+	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )
 
 const (
@@ -45,13 +47,6 @@ var signedURLsCache = layered.Cache{
 	Unmarshal:       func(blob []byte) (interface{}, error) { return string(blob), nil },
 }
 
-// signerGS is a subset of gs.GoogleStorage interface used by getSignedURL.
-//
-// To simplify mocking in tests.
-type signerGS interface {
-	Exists(c context.Context, path string) (exists bool, err error)
-}
-
 // getSignedURL returns a signed URL that can be used to fetch the given file.
 //
 // 'gsPath' should have form '/bucket/path' or the call will panic. 'filename',
@@ -66,7 +61,7 @@ type signerGS interface {
 //
 // On failures returns grpc-annotated errors. In particular, if the requested
 // file is missing, returns NotFound grpc-annotated error.
-func getSignedURL(c context.Context, gsPath, filename string, signer signerFactory, gs signerGS) (string, error) {
+func getSignedURL(c context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
 	cached, err := signedURLsCache.GetOrCreate(c, gsPath, func() (interface{}, time.Duration, error) {
 		switch yes, err := gs.Exists(c, gsPath); {
 		case err != nil:
