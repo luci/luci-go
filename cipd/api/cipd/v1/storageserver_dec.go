@@ -36,3 +36,33 @@ func (s *DecoratedStorage) GetObjectURL(c context.Context, req *GetObjectURLRequ
 	}
 	return
 }
+
+func (s *DecoratedStorage) BeginUpload(c context.Context, req *BeginUploadRequest) (rsp *UploadOperation, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "BeginUpload", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.BeginUpload(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "BeginUpload", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedStorage) FinishUpload(c context.Context, req *FinishUploadRequest) (rsp *UploadOperation, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "FinishUpload", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.FinishUpload(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "FinishUpload", rsp, err)
+	}
+	return
+}
