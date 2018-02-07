@@ -20,6 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
@@ -300,6 +302,163 @@ func TestListNICs(t *testing.T) {
 	})
 }
 
+func TestUpdateNICs(t *testing.T) {
+	Convey("createNIC", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		selectStmt := `
+			^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
+			FROM nics n, machines m, switches s
+			WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?\) AND m.name IN \(\?\)$
+		`
+		columns := []string{"n.name", "m.machine", "n.mac_address", "s.name", "s.switchport"}
+		rows := sqlmock.NewRows(columns)
+
+		Convey("update MAC address", func() {
+			updateStmt := `
+				^UPDATE nics
+				SET mac_address = \?
+				WHERE name = \? AND machine_id = \(SELECT id FROM machines WHERE name = \?\)$
+			`
+			nic := &crimson.NIC{
+				Name:       "eth0",
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"mac_address",
+				},
+			}
+			rows.AddRow(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(common.MaxMAC48, nic.Name, nic.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			nic, err := updateNIC(c, nic, mask)
+			So(err, ShouldBeNil)
+			So(nic, ShouldResemble, &crimson.NIC{
+				Name:       nic.Name,
+				Machine:    nic.Machine,
+				MacAddress: nic.MacAddress,
+				Switch:     nic.Switch,
+				Switchport: nic.Switchport,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("update switch", func() {
+			updateStmt := `
+				^UPDATE nics
+				SET switch_id = \(SELECT id FROM switches WHERE name = \?\)
+				WHERE name = \? AND machine_id = \(SELECT id FROM machines WHERE name = \?\)$
+			`
+			nic := &crimson.NIC{
+				Name:       "eth0",
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"switch",
+				},
+			}
+			rows.AddRow(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(nic.Switch, nic.Name, nic.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			nic, err := updateNIC(c, nic, mask)
+			So(err, ShouldBeNil)
+			So(nic, ShouldResemble, &crimson.NIC{
+				Name:       nic.Name,
+				Machine:    nic.Machine,
+				MacAddress: nic.MacAddress,
+				Switch:     nic.Switch,
+				Switchport: nic.Switchport,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("update switchport", func() {
+			updateStmt := `
+				^UPDATE nics
+				SET switchport = \?
+				WHERE name = \? AND machine_id = \(SELECT id FROM machines WHERE name = \?\)$
+			`
+			nic := &crimson.NIC{
+				Name:       "eth0",
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"switchport",
+				},
+			}
+			rows.AddRow(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(nic.Switchport, nic.Name, nic.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			nic, err := updateNIC(c, nic, mask)
+			So(err, ShouldBeNil)
+			So(nic, ShouldResemble, &crimson.NIC{
+				Name:       nic.Name,
+				Machine:    nic.Machine,
+				MacAddress: nic.MacAddress,
+				Switch:     nic.Switch,
+				Switchport: nic.Switchport,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("ok", func() {
+			updateStmt := `
+				^UPDATE nics
+				SET mac_address = \?, switch_id = \(SELECT id FROM switches WHERE name = \?\), switchport = \?
+				WHERE name = \? AND machine_id = \(SELECT id FROM machines WHERE name = \?\)$
+			`
+			nic := &crimson.NIC{
+				Name:       "eth0",
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"mac_address",
+					"switch",
+					"switchport",
+				},
+			}
+			rows.AddRow(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(common.MaxMAC48, nic.Switch, nic.Switchport, nic.Name, nic.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			nic, err := updateNIC(c, nic, mask)
+			So(err, ShouldBeNil)
+			So(nic, ShouldResemble, &crimson.NIC{
+				Name:       nic.Name,
+				Machine:    nic.Machine,
+				MacAddress: nic.MacAddress,
+				Switch:     nic.Switch,
+				Switchport: nic.Switchport,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+	})
+}
+
 func TestValidateNICForCreation(t *testing.T) {
 	t.Parallel()
 
@@ -313,6 +472,7 @@ func TestValidateNICForCreation(t *testing.T) {
 			Machine:    "machine",
 			MacAddress: "ff:ff:ff:ff:ff:ff",
 			Switch:     "switch",
+			Switchport: 1,
 		})
 		So(err, ShouldErrLike, "NIC name is required and must be non-empty")
 	})
@@ -322,15 +482,17 @@ func TestValidateNICForCreation(t *testing.T) {
 			Name:       "eth0",
 			MacAddress: "ff:ff:ff:ff:ff:ff",
 			Switch:     "switch",
+			Switchport: 1,
 		})
 		So(err, ShouldErrLike, "machine is required and must be non-empty")
 	})
 
 	Convey("MAC address unspecified", t, func() {
 		err := validateNICForCreation(&crimson.NIC{
-			Name:    "eth0",
-			Machine: "machine",
-			Switch:  "switch",
+			Name:       "eth0",
+			Machine:    "machine",
+			Switch:     "switch",
+			Switchport: 1,
 		})
 		So(err, ShouldErrLike, "MAC address is required and must be non-empty")
 	})
@@ -339,8 +501,9 @@ func TestValidateNICForCreation(t *testing.T) {
 		err := validateNICForCreation(&crimson.NIC{
 			Name:       "eth0",
 			Machine:    "machine",
-			MacAddress: "asdf",
+			MacAddress: "01:02:03:04:05:06:07:08",
 			Switch:     "switch",
+			Switchport: 1,
 		})
 		So(err, ShouldErrLike, "invalid MAC-48 address")
 	})
@@ -350,8 +513,30 @@ func TestValidateNICForCreation(t *testing.T) {
 			Name:       "eth0",
 			MacAddress: "ff:ff:ff:ff:ff:ff",
 			Machine:    "machine",
+			Switchport: 1,
 		})
 		So(err, ShouldErrLike, "switch is required and must be non-empty")
+	})
+
+	Convey("switchport unspecified", t, func() {
+		err := validateNICForCreation(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+		})
+		So(err, ShouldErrLike, "switchport must be positive")
+	})
+
+	Convey("switchport negative", t, func() {
+		err := validateNICForCreation(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: -1,
+		})
+		So(err, ShouldErrLike, "switchport must be positive")
 	})
 
 	Convey("ok", t, func() {
@@ -360,6 +545,238 @@ func TestValidateNICForCreation(t *testing.T) {
 			Machine:    "machine",
 			MacAddress: "ff:ff:ff:ff:ff:ff",
 			Switch:     "switch",
+			Switchport: 1,
+		})
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestValidateNICForUpdate(t *testing.T) {
+	t.Parallel()
+
+	Convey("NIC unspecified", t, func() {
+		err := validateNICForUpdate(nil, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "NIC specification is required")
+	})
+
+	Convey("name unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "NIC name is required and must be non-empty")
+	})
+
+	Convey("machine unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "machine is required and must be non-empty")
+	})
+
+	Convey("mask unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, nil)
+		So(err, ShouldErrLike, "update mask is required")
+	})
+
+	Convey("no paths", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{})
+		So(err, ShouldErrLike, "at least one update mask path is required")
+	})
+
+	Convey("unexpected name", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"name",
+			},
+		})
+		So(err, ShouldErrLike, "NIC name cannot be updated")
+	})
+
+	Convey("unexpected machine", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+			},
+		})
+		So(err, ShouldErrLike, "machine cannot be updated")
+	})
+
+	Convey("MAC address unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "MAC address is required and must be non-empty")
+	})
+
+	Convey("MAC address invalid", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "01:02:03:04:05:06:07:08",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "invalid MAC-48 address")
+	})
+
+	Convey("switch unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "switch is required and must be non-empty")
+	})
+
+	Convey("switchport unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "switchport must be positive")
+	})
+
+	Convey("switchport negative", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: -1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "switchport must be positive")
+	})
+
+	Convey("invalid path", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"unknown",
+			},
+		})
+		So(err, ShouldErrLike, "invalid update mask path")
+	})
+
+	Convey("duplicate path", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+				"mac_address",
+			},
+		})
+		So(err, ShouldErrLike, "duplicate update mask path")
+	})
+
+	Convey("ok", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
 		})
 		So(err, ShouldBeNil)
 	})
