@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "569b5e4f_50f8d6c8",
+        "filename": "cipd/appengine/impl/testutil/gs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T05:25:46Z",
+      "side": 1,
+      "message": "ErrGoogleStorage might be a better name, because it either panics or returns an error",
+      "revId": "9da1cc8bfad46d9cba3ec1bceb4093b7b335942a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
