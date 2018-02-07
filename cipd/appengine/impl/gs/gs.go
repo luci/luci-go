@@ -34,6 +34,8 @@ import (
 
 // GoogleStorage is a wrapper over raw Google Cloud Storage JSON API.
 //
+// Use Get() to grab an implementation.
+//
 // Uses service's own service account for authentication.
 //
 // All paths are expected to be in format "/<bucket>/<object>", methods would
@@ -46,7 +48,66 @@ import (
 //
 // Retries on transient errors internally a bunch of times. Logs all calls to
 // the info log.
-type GoogleStorage struct {
+type GoogleStorage interface {
+	// Exists checks whether given Google Storage file exists.
+	Exists(c context.Context, path string) (exists bool, err error)
+
+	// Copy copies a file at 'src' to 'dst'.
+	//
+	// Applies ifSourceGenerationMatch and ifGenerationMatch preconditions if
+	// srcGen or dstGen are non-negative. See Google Storage docs:
+	// https://cloud.google.com/storage/docs/json_api/v1/objects/copy
+	Copy(c context.Context, dst string, dstGen int64, src string, srcGen int64) error
+
+	// Delete removes a file.
+	//
+	// Missing file is not an error.
+	Delete(c context.Context, path string) error
+
+	// Publish implements conditional copy operation with some caveats, making it
+	// useful for moving uploaded files from a temporary storage area after they
+	// have been verified, ensuring they are not modified during this process.
+	//
+	// 'src' will be copied to 'dst' only if source generation number matches
+	// 'srcGen'. If 'srcGen' is negative, the generation check is not performed.
+	// Also assumes 'dst' is ether missing, or already contains data matching 'src'
+	// (so 'dst' should usually be a content-addressed path). This allows the
+	// conditional move operation to be safely retried even if it failed midway
+	// before.
+	//
+	// Note that it keeps 'src' intact. Use Delete to get rid of it when necessary.
+	// Google Storage doesn't have atomic "move" operation.
+	Publish(c context.Context, dst, src string, srcGen int64) error
+
+	// StartUpload opens a new resumable upload session to a given path.
+	//
+	// Returns an URL to use in Resumable Upload protocol. It contains uploadId that
+	// acts as an authentication token, treat the URL as a secret.
+	//
+	// The upload protocol is finished by the CIPD client, and so it's not
+	// implemented here.
+	StartUpload(c context.Context, path string) (uploadURL string, err error)
+
+	// Reader returns an io.ReaderAt implementation to read contents of a file at
+	// a specific generation (if 'gen' is positive) or at the current live
+	// generation (if 'gen' is zero or negative).
+	Reader(c context.Context, path string, gen int64) (Reader, error)
+}
+
+// Reader can read chunks of a Google Storage file.
+//
+// Use GoogleStorage.Reader to get the reader.
+type Reader interface {
+	io.ReaderAt
+
+	// Size is the total file size.
+	Size() int64
+	// Generation is generation number of the content we are reading.
+	Generation() int64
+}
+
+// impl is actual implementation of GoogleStorage using real API.
+type impl struct {
 	c context.Context
 
 	testingTransport http.RoundTripper // used in tests to mock the transport
@@ -66,12 +127,11 @@ type GoogleStorage struct {
 // outlive it. Each individual method still accepts a context though, which
 // can be a derivative of the root context (for example to provide custom
 // per-method deadline or logging fields).
-func Get(c context.Context) *GoogleStorage {
-	return &GoogleStorage{c: c}
+func Get(c context.Context) GoogleStorage {
+	return &impl{c: c}
 }
 
-// init lazily initializes GoogleStorage.
-func (gs *GoogleStorage) init() error {
+func (gs *impl) init() error {
 	gs.o.Do(func() {
 		var err error
 
@@ -97,8 +157,7 @@ func (gs *GoogleStorage) init() error {
 	return gs.err
 }
 
-// Exists checks whether given Google Storage file exists.
-func (gs *GoogleStorage) Exists(c context.Context, path string) (exists bool, err error) {
+func (gs *impl) Exists(c context.Context, path string) (exists bool, err error) {
 	logging.Infof(c, "gs: Exists(path=%q)", path)
 	if err := gs.init(); err != nil {
 		return false, err
@@ -117,12 +176,7 @@ func (gs *GoogleStorage) Exists(c context.Context, path string) (exists bool, er
 	}
 }
 
-// Copy copies a file at 'src' to 'dst'.
-//
-// Applies ifSourceGenerationMatch and ifGenerationMatch preconditions if
-// srcGen or dstGen are non-negative. See Google Storage docs:
-// https://cloud.google.com/storage/docs/json_api/v1/objects/copy
-func (gs *GoogleStorage) Copy(c context.Context, dst string, dstGen int64, src string, srcGen int64) error {
+func (gs *impl) Copy(c context.Context, dst string, dstGen int64, src string, srcGen int64) error {
 	logging.Infof(c, "gs: Copy(dst=%q, dstGen=%d, src=%q, srcGen=%d)", dst, dstGen, src, srcGen)
 	if err := gs.init(); err != nil {
 		return err
@@ -141,10 +195,7 @@ func (gs *GoogleStorage) Copy(c context.Context, dst string, dstGen int64, src s
 	return withRetry(c, func() error { _, err := call.Do(); return err })
 }
 
-// Delete removes a file.
-//
-// Missing file is not an error.
-func (gs *GoogleStorage) Delete(c context.Context, path string) error {
+func (gs *impl) Delete(c context.Context, path string) error {
 	logging.Infof(c, "gs: Delete(path=%q)", path)
 	if err := gs.init(); err != nil {
 		return err
@@ -158,20 +209,7 @@ func (gs *GoogleStorage) Delete(c context.Context, path string) error {
 	return err
 }
 
-// Publish implements conditional copy operation with some caveats, making it
-// useful for moving uploaded files from a temporary storage area after they
-// have been verified, ensuring they are not modified during this process.
-//
-// 'src' will be copied to 'dst' only if source generation number matches
-// 'srcGen'. If 'srcGen' is negative, the generation check is not performed.
-// Also assumes 'dst' is ether missing, or already contains data matching 'src'
-// (so 'dst' should usually be a content-addressed path). This allows the
-// conditional move operation to be safely retried even if it failed midway
-// before.
-//
-// Note that it keeps 'src' intact. Use Delete to get rid of it when necessary.
-// Google Storage doesn't have atomic "move" operation.
-func (gs *GoogleStorage) Publish(c context.Context, dst, src string, srcGen int64) error {
+func (gs *impl) Publish(c context.Context, dst, src string, srcGen int64) error {
 	switch err := gs.Copy(c, dst, -1, src, srcGen); {
 	case StatusCode(err) == http.StatusNotFound:
 		// 'src' is missing. Maybe we attempted to publish already and this is a
@@ -200,14 +238,7 @@ func (gs *GoogleStorage) Publish(c context.Context, dst, src string, srcGen int6
 	}
 }
 
-// StartUpload opens a new resumable upload session to a given path.
-//
-// Returns an URL to use in Resumable Upload protocol. It contains uploadId that
-// acts as an authentication token, treat the URL as a secret.
-//
-// The upload protocol is finished by the CIPD client, and so it's not
-// implemented here.
-func (gs *GoogleStorage) StartUpload(c context.Context, path string) (uploadURL string, err error) {
+func (gs *impl) StartUpload(c context.Context, path string) (uploadURL string, err error) {
 	logging.Infof(c, "gs: StartUpload(path=%q)", path)
 	if err := gs.init(); err != nil {
 		return "", err
@@ -267,7 +298,7 @@ func (gs *GoogleStorage) StartUpload(c context.Context, path string) (uploadURL 
 // Reader returns an io.ReaderAt implementation to read contents of a file at
 // a specific generation (if 'gen' is positive) or at the current live
 // generation (if 'gen' is zero or negative).
-func (gs *GoogleStorage) Reader(c context.Context, path string, gen int64) (*Reader, error) {
+func (gs *impl) Reader(c context.Context, path string, gen int64) (Reader, error) {
 	logging.Infof(c, "gs: Reader(path=%q, gen=%d)", path, gen)
 	if err := gs.init(); err != nil {
 		return nil, err
@@ -288,32 +319,24 @@ func (gs *GoogleStorage) Reader(c context.Context, path string, gen int64) (*Rea
 	// Carry on reading from the resolved generation. That way we are not
 	// concerned with concurrent changes that may be happening to the file while
 	// we are reading it.
-	return &Reader{c, gs, path, int64(obj.Size), obj.Generation}, nil
+	return &readerImpl{c, gs, path, int64(obj.Size), obj.Generation}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Reader can read chunks of a Google Storage file.
-//
-// Use GoogleStorage.Reader to get the reader.
-type Reader struct {
+// readerImpl implements Reader using real APIs.
+type readerImpl struct {
 	c    context.Context
-	gs   *GoogleStorage
+	gs   *impl
 	path string
 	size int64
 	gen  int64
 }
 
-// Size is the total file size.
-func (r *Reader) Size() int64 { return r.size }
+func (r *readerImpl) Size() int64       { return r.size }
+func (r *readerImpl) Generation() int64 { return r.gen }
 
-// Generation is generation number of the content we are reading.
-func (r *Reader) Generation() int64 { return r.gen }
-
-// ReadAt reads len(p) bytes into p starting at offset off in the underlying
-// input source. It returns the number of bytes read (0 <= n <= len(p)) and any
-// error encountered.
-func (r *Reader) ReadAt(p []byte, off int64) (n int, err error) {
+func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	toRead := int64(len(p))
 	if off+toRead > r.size {
 		toRead = r.size - off

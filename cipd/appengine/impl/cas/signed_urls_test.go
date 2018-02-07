@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
@@ -120,6 +121,8 @@ func TestGetSignedURL(t *testing.T) {
 }
 
 type mockedSignerGS struct {
+	testutil.NoopGoogleStorage
+
 	exists bool
 	calls  int
 }

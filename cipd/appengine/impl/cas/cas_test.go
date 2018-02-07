@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,7 +43,7 @@ func TestGetObjectURL(t *testing.T) {
 		settings: func(c context.Context) (*settings.Settings, error) {
 			return &settings.Settings{StorageGSPath: "/bucket/path"}, nil
 		},
-		getSignedURL: func(c context.Context, gsPath, filename string, signer signerFactory, gs signerGS) (string, error) {
+		getSignedURL: func(c context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
 			return "http//signed.example.com" + gsPath + "?f=" + filename, signErr
 		},
 	}
