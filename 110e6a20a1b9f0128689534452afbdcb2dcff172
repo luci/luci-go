@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "74a5f558_4422593f",
+        "filename": "common/bq/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15508e5f_5670a8ad",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70556c13_31dfcfd6",
         "filename": "tools/cmd/bqschemaupdater/README.md",
         "patchSetId": 5
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "e82cac8c_ce3265eb",
+        "filename": "tools/cmd/bqschemaupdater/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "70556c13_31dfcfd6",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20f3c5a8_675b3fad",
         "filename": "tools/cmd/bqschemaupdater/main.go",
         "patchSetId": 5
@@ -50,6 +86,24 @@
       "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88621c25_3d3e94b3",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "20f3c5a8_675b3fad",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -73,6 +127,30 @@
       "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85caca8d_7e413fcd",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "783e1ae9_d490ffd6",
+      "range": {
+        "startLine": 127,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 2
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -122,6 +200,54 @@
     },
     {
       "key": {
+        "uuid": "4644daab_4ace1546",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f5ba5c62_549b812b",
+      "range": {
+        "startLine": 130,
+        "startChar": 17,
+        "endLine": 130,
+        "endChar": 53
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ad3ee71a_ffeb06ea",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "19a73ba7_659f9ef8",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 9
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58a7ff02_156c83fe",
         "filename": "tools/cmd/bqschemaupdater/main.go",
         "patchSetId": 5
@@ -136,6 +262,24 @@
       "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a5cca82_8820da54",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "58a7ff02_156c83fe",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -162,6 +306,30 @@
     },
     {
       "key": {
+        "uuid": "56ff5011_12959a23",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "56e48fdb_d995f62c",
+      "range": {
+        "startLine": 143,
+        "startChar": 38,
+        "endLine": 143,
+        "endChar": 42
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8b6666c1_ceb273cf",
         "filename": "tools/cmd/bqschemaupdater/main.go",
         "patchSetId": 5
@@ -176,6 +344,24 @@
       "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a614d08_f469ce77",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8b6666c1_ceb273cf",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -202,6 +388,30 @@
     },
     {
       "key": {
+        "uuid": "25ada482_bdd1a2f5",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b4e2bd32_7d1bf5e1",
+      "range": {
+        "startLine": 149,
+        "startChar": 9,
+        "endLine": 149,
+        "endChar": 12
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef68ab1a_1ee916be",
         "filename": "tools/cmd/bqschemaupdater/main.go",
         "patchSetId": 5
@@ -216,6 +426,24 @@
       "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fde5bc85_309ac23b",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ef68ab1a_1ee916be",
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -239,6 +467,30 @@
       "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aeff8964_526aed88",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-07T00:15:36Z",
+      "side": 1,
+      "message": "Ah, thanks. I can see the utility of knowing descutil better. Thanks!",
+      "parentUuid": "a8580666_3065c480",
+      "range": {
+        "startLine": 157,
+        "startChar": 56,
+        "endLine": 157,
+        "endChar": 68
+      },
+      "revId": "110e6a20a1b9f0128689534452afbdcb2dcff172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
