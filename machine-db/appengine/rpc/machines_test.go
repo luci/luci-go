@@ -44,17 +44,6 @@ func TestCreateMachine(t *testing.T) {
 			VALUES \(\?, \(SELECT id FROM platforms WHERE name = \?\), \(SELECT id FROM racks WHERE name = \?\), \?, \?, \?, \?, \?\)$
 		`
 
-		Convey("prepare failed", func() {
-			machine := &crimson.Machine{
-				Name:     "name",
-				Platform: "platform",
-				Rack:     "rack",
-				State:    common.State_FREE,
-			}
-			m.ExpectPrepare(insertStmt).WillReturnError(fmt.Errorf("error"))
-			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
-		})
-
 		Convey("query failed", func() {
 			machine := &crimson.Machine{
 				Name:     "name",
@@ -62,7 +51,6 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(fmt.Errorf("error"))
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
@@ -74,7 +62,6 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
 			So(createMachine(c, machine), ShouldErrLike, "duplicate machine")
 		})
@@ -86,7 +73,6 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
 			So(createMachine(c, machine), ShouldErrLike, "unknown platform")
 		})
@@ -98,7 +84,6 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
 			So(createMachine(c, machine), ShouldErrLike, "unknown rack")
 		})
@@ -110,7 +95,6 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
@@ -122,7 +106,6 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
 			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
 		})
@@ -134,7 +117,6 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectPrepare(insertStmt)
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnResult(sqlmock.NewResult(1, 1))
 			So(createMachine(c, machine), ShouldBeNil)
 		})
@@ -150,31 +132,22 @@ func TestDeleteMachine(t *testing.T) {
 			^DELETE FROM machines WHERE name = \?$
 		`
 
-		Convey("prepare failed", func() {
-			m.ExpectPrepare(deleteStmt).WillReturnError(fmt.Errorf("error"))
-			So(deleteMachine(c, "machine"), ShouldErrLike, "Internal server error")
-		})
-
 		Convey("query failed", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnError(fmt.Errorf("error"))
 			So(deleteMachine(c, "machine"), ShouldErrLike, "Internal server error")
 		})
 
 		Convey("referenced", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_ROW_IS_REFERENCED_2, Message: "`machine_id`"})
 			So(deleteMachine(c, "machine"), ShouldErrLike, "delete entities referencing this machine first")
 		})
 
 		Convey("invalid", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnResult(sqlmock.NewResult(1, 0))
 			So(deleteMachine(c, "machine"), ShouldErrLike, "unknown machine")
 		})
 
 		Convey("ok", func() {
-			m.ExpectPrepare(deleteStmt)
 			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnResult(sqlmock.NewResult(1, 1))
 			So(deleteMachine(c, "machine"), ShouldBeNil)
 		})

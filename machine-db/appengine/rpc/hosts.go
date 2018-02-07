@@ -52,13 +52,9 @@ func deleteHost(c context.Context, name string, vlan int64) error {
 	}
 
 	db := database.Get(c)
-	stmt, err := db.PrepareContext(c, `
+	res, err := db.ExecContext(c, `
 		DELETE FROM hostnames WHERE name = ? AND vlan_id = ?
-	`)
-	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
-	}
-	res, err := stmt.ExecContext(c, name, vlan)
+	`, name, vlan)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
