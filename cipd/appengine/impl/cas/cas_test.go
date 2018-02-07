@@ -110,3 +110,57 @@ func TestGetObjectURL(t *testing.T) {
 		So(err, ShouldErrLike, "internal")
 	})
 }
+
+func TestBeginUpload(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	impl := storageImpl{}
+
+	Convey("Bad object", t, func() {
+		_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
+			Object: &api.ObjectRef{
+				HashAlgo: 1234,
+			},
+		})
+		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(err, ShouldErrLike, "bad 'object'")
+	})
+
+	Convey("Bad hash_algo", t, func() {
+		_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
+			HashAlgo: 1234,
+		})
+		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(err, ShouldErrLike, "bad 'hash_algo'")
+	})
+
+	Convey("Mismatch in hash_algo", t, func() {
+		_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
+			Object: &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: strings.Repeat("a", 40),
+			},
+			HashAlgo: 2,
+		})
+		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(err, ShouldErrLike, "'hash_algo' and 'object.hash_algo' do not match")
+	})
+}
+
+func TestFinishUpload(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	impl := storageImpl{}
+
+	Convey("Bad force_hash", t, func() {
+		_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
+			ForceHash: &api.ObjectRef{
+				HashAlgo: 1234,
+			},
+		})
+		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(err, ShouldErrLike, "bad 'force_hash' field")
+	})
+}

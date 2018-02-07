@@ -28,12 +28,52 @@ option go_package = "api";
 // Most of the Storage service API is used internally by the backend and
 // corresponding RPC methods are ACLed only to admins, with exception of
 // FinishUpload that is allowed to be used directly by clients to finalize
-// upload sessions started by the backend.
+// upload operations started by the backend.
 service Storage {
   // Produces a signed URL that can be used to fetch an object.
   //
   // Returns NOT_FOUND status code if there's no such object.
   rpc GetObjectURL(GetObjectURLRequest) returns (ObjectURL);
+
+  // Initiates an upload operation.
+  //
+  // Once the upload is initiated the client is responsible for uploading the
+  // object to the temporary location (provided via 'upload_url' which should be
+  // used as an upload URL in Google Storage Resumable Upload protocol) and
+  // finishing the upload with a call to FinishUpload, which will launch
+  // the verification of the object's hash on the server side.
+  //
+  // If the client knows the hash of the object it wants to upload already, it
+  // can provide it via 'object' field. In that case Storage may reply right
+  // away that such object already exists by retuning ALREADY_EXISTS status
+  // code.
+  //
+  // If the client doesn't know the hash yet (perhaps if the object's body is
+  // generated on the fly), it still can open an upload operation and start
+  // streaming the data. When finalizing the upload the backend will calculate
+  // and return the resulting hash of the object.
+  //
+  // An UploadOperation returned by this method contains tokens that grant
+  // direct upload access to whoever possesses them, so it should be treated as
+  // a secret. See UploadOperation for more info.
+  rpc BeginUpload(BeginUploadRequest) returns (UploadOperation);
+
+  // Finishes the pending upload operation, returning its new status.
+  //
+  // Clients are expected to finish Google Storage Resumable protocol first
+  // before calling FinishUpload. Failure to do so will cause the upload
+  // operation to end up in ERROR state.
+  //
+  // This call is idempotent and it is expected that clients will keep polling
+  // it if they want to wait for the server to verify the hash of the uploaded
+  // object.
+  //
+  // Returns NOT_FOUND if the provided upload operation doesn't exist.
+  //
+  // Errors related to the uploaded file body are communicated through 'status'
+  // field of the upload operation, since they are not directly related to this
+  // RPC call, but rather to the upload operation itself.
+  rpc FinishUpload(FinishUploadRequest) returns (UploadOperation);
 }
 
 
@@ -77,4 +117,86 @@ message ObjectURL {
   // The URL isn't guaranteed to have any particular internal structure. Do not
   // attempt to parse it.
   string signed_url = 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+enum UploadStatus {
+  UPLOAD_STATUS_UNSPECIFIED = 0;
+
+  UPLOADING = 1;  // the data is being uploaded now
+  VERIFYING = 2;  // the object's hash is being verified now
+  PUBLISHED = 3;  // the object has been published in the CAS
+  ERRORED   = 4;  // there were fatal errors during the finalization
+}
+
+
+message BeginUploadRequest {
+  // A reference to the object the client wants to put in the storage, if known.
+  //
+  // If such object already exists, RPC will finish with ALREADY_EXISTS status
+  // right away.
+  //
+  // If this field is missing (in case the client doesn't know the hash yet),
+  // the client MUST supply hash_algo field, to let the backend know what
+  // hashing algorithm it should use for calculating object's hash.
+  //
+  // The calculated hash will be returned back to the client as part of
+  // UploadOperation ('object' field) by FinishUpload call.
+  ObjectRef object = 1;
+
+  // An algorithm to use to derive object's name during uploads when the final
+  // hash of the object is not yet known.
+  //
+  // Optional if 'object' is present.
+  //
+  // If both 'object' and 'hash_algo' are present, 'object.hash_algo' MUST match
+  // 'hash_algo'.
+  HashAlgo hash_algo = 2;
+}
+
+
+message FinishUploadRequest {
+  // An identifier of an upload operation returned by BeginUpload RPC.
+  string upload_operation_id = 1;
+
+  // If set, instructs Storage to skip the hash verification and just assume the
+  // uploaded object has the given hash.
+  //
+  // This is used internally by the service as an optimization for cases when
+  // it trusts the uploaded data (for example, when it upload it itself).
+  //
+  // External callers are denied usage of this field. Attempt to use it results
+  // in PERMISSION_DENIED.
+  ObjectRef force_hash = 2;
+}
+
+
+message UploadOperation {
+  // An opaque string that identifies this upload operation.
+  //
+  // It acts as a temporary authorization token for FinishUpload RPC. Treat it
+  // as a secret.
+  string operation_id = 1;
+
+  // URL the client should use in Google Storage Resumable Upload protocol to
+  // upload the object's body.
+  //
+  // No authentication is required to upload data to this URL, so it also should
+  // be treated as a secret.
+  string upload_url = 2;
+
+  // Status of the upload operation.
+  UploadStatus status = 3;
+
+  // For PUBLISHED status, the reference to the published object.
+  //
+  // This is in particular useful for uploads when the hash of the object is not
+  // known until the upload is finished.
+  ObjectRef object = 4;
+
+  // For ERRORED status, a human readable error message.
+  string error_message = 5;
 }
