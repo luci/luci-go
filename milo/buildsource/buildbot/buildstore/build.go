@@ -95,7 +95,7 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 		return nil, err
 	}
 
-	bucket, err := BucketOf(c, master, builder)
+	bucket, err := BucketOf(c, master)
 	switch {
 	case err != nil:
 		return nil, err

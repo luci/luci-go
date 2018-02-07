@@ -45,8 +45,8 @@ func EmulationEnabled(c context.Context) bool {
 }
 
 var bucketCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(1024),
-	GlobalNamespace: "bucket_of_builder",
+	ProcessLRUCache: caching.RegisterLRUCache(128),
+	GlobalNamespace: "bucket_of_master",
 	Marshal: func(item interface{}) ([]byte, error) {
 		return []byte(item.(string)), nil
 	},
@@ -55,17 +55,15 @@ var bucketCache = layered.Cache{
 	},
 }
 
-// BucketOf returns LUCI bucket that the given buildbot builder is migrating to.
-// Returns "" bucket if it is unknown.
-func BucketOf(c context.Context, master, builder string) (string, error) {
-	key := fmt.Sprintf("%s/%s", master, builder)
-	v, err := bucketCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
+// BucketOf returns LUCI bucket that the given buildbot master is migrating to.
+// Returns "" if it is unknown.
+func BucketOf(c context.Context, master string) (string, error) {
+	v, err := bucketCache.GetOrCreate(c, master, func() (v interface{}, exp time.Duration, err error) {
 		transport, err := auth.GetRPCTransport(c, auth.AsSelf)
 		if err != nil {
 			return nil, 0, err
 		}
-		u := fmt.Sprintf("https://luci-migration.appspot.com/masters/%s/builders/%s?format=json",
-			url.PathEscape(master), url.PathEscape(builder))
+		u := fmt.Sprintf("https://luci-migration.appspot.com/masters/%s/?format=json", url.PathEscape(master))
 		var bucket string
 		err = retry.Retry(c, retry.Default, func() error {
 			res, err := ctxhttp.Get(c, &http.Client{Transport: transport}, u)
@@ -89,7 +87,7 @@ func BucketOf(c context.Context, master, builder string) (string, error) {
 
 			bucket = body.Bucket
 			return nil
-		}, retry.LogCallback(c, "luci-migration-get-builder"))
+		}, retry.LogCallback(c, "luci-migration-get-master"))
 
 		if err != nil {
 			return nil, 0, err

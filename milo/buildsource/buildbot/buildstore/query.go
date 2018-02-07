@@ -182,10 +182,10 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 		return nil, err
 	}
 
-	bucket, err := BucketOf(c, q.Master, q.Builder)
+	bucket, err := BucketOf(c, q.Master)
 	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "could not get bucket of %q:%q", q.Master, q.Builder).Err()
+		return nil, errors.Annotate(err, "could not get bucket of %q", q.Master).Err()
 	case bucket == "":
 		return nil, nil
 	}
