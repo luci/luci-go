@@ -33,7 +33,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGoogleStorage(t *testing.T) {
+func TestImpl(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocked service", t, func(c C) {
@@ -107,7 +107,7 @@ func TestGoogleStorage(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		gs := &GoogleStorage{
+		gs := &impl{
 			c:                ctx,
 			testingTransport: http.DefaultTransport,
 			testingBasePath:  srv.URL,

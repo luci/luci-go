@@ -46,7 +46,7 @@ func Internal() api.StorageServer {
 type storageImpl struct {
 	// Mocking points for tests. See Internal() for real implementations.
 	settings     func(c context.Context) (*settings.Settings, error)
-	getSignedURL func(c context.Context, gsPath, filename string, signer signerFactory, gs signerGS) (string, error)
+	getSignedURL func(c context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error)
 }
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.
