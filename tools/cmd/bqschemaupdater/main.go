@@ -1,6 +1,16 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package main
 
@@ -9,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -52,7 +63,12 @@ func updateFromTableDef(ctx context.Context, ts tableStore, td tableDef) error {
 				Expiration: td.PartitioningExpiration,
 			}
 		}
-		return ts.createTable(ctx, td.DataSetID, td.TableID, md)
+		err := ts.createTable(ctx, td.DataSetID, td.TableID, md)
+		if err != nil {
+			return err
+		}
+		log.Println("Created a new table... please update the documentation in https://chromium.googlesource.com/infra/infra/+/master/doc/bigquery_tables.md or the internal equivalent.")
+		return nil
 	case err != nil:
 		return err
 	}
@@ -96,7 +112,7 @@ func parseFlags() (*flags, error) {
 	case *table == "":
 		return nil, fmt.Errorf("-table is required")
 	case f.messageName == "":
-		return nil, fmt.Errorf("-message is required")
+		return nil, fmt.Errorf("-message is required (the name must contain the proto package name)")
 	}
 	if parts := strings.Split(*table, "."); len(parts) == 3 {
 		f.ProjectID = parts[0]
@@ -125,6 +141,11 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "could not derive schema from message %q at path %q", flags.messageName, flags.protoDir).Err()
 	}
+	file, _, _ := descutil.Resolve(desc, flags.messageName)
+	td.Description = fmt.Sprintf(
+		"Proto: https://cs.chromium.org/%s\nTable Description:\n%s",
+		url.PathEscape(fmt.Sprintf("%s file:%s", flags.messageName, file.GetName())),
+		td.Description)
 
 	// Create an Authenticator and use it for BigQuery operations.
 	authOpts := chromeinfra.DefaultAuthOptions()
