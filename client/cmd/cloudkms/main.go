@@ -48,6 +48,7 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
+			cmdDecrypt(defaultAuthOpts),
 			cmdEncrypt(defaultAuthOpts),
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),

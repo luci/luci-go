@@ -28,13 +28,13 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-func doEncrypt(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error) {
-	// Set up request, encoding plaintext as base64.
-	req := cloudkms.EncryptRequest{
-		Plaintext: base64.StdEncoding.EncodeToString(input),
+func doDecrypt(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error) {
+	// Set up request, using the ciphertext directly (should already be base64 encoded).
+	req := cloudkms.DecryptRequest{
+		Ciphertext: string(input),
 	}
 
-	var resp *cloudkms.EncryptResponse
+	var resp *cloudkms.DecryptResponse
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		var err error
 		resp, err = service.
@@ -42,7 +42,7 @@ func doEncrypt(ctx context.Context, service *cloudkms.Service, input []byte, key
 			Locations.
 			KeyRings.
 			CryptoKeys.
-			Encrypt(keyPath, &req).Context(ctx).Do()
+			Decrypt(keyPath, &req).Context(ctx).Do()
 		return err
 	}, func(err error, d time.Duration) {
 		logging.Warningf(ctx, "Transient error while making request, retrying in %s...", d)
@@ -50,20 +50,20 @@ func doEncrypt(ctx context.Context, service *cloudkms.Service, input []byte, key
 	if err != nil {
 		return nil, err
 	}
-	return []byte(resp.Ciphertext), nil
+	return base64.StdEncoding.DecodeString(resp.Plaintext)
 }
 
-func cmdEncrypt(authOpts auth.Options) *subcommands.Command {
+func cmdDecrypt(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "encrypt <options> <path>",
-		ShortDesc: "encrypts some plaintext",
-		LongDesc: `Uploads a plaintext for encryption by cloudkms.
+		UsageLine: "decrypt <options> <path>",
+		ShortDesc: "decrypts some ciphertext that was previously encrypted using a key in cloudkms",
+		LongDesc: `Uploads a ciphertext for decryption by cloudkms.
 
 <path> refers to the path to the crypto key. e.g. <project>/<location>/<keyRing>/<cryptoKey>`,
 		CommandRun: func() subcommands.CommandRun {
-			c := cryptRun{doRequest: doEncrypt}
+			c := cryptRun{doRequest: doDecrypt}
 			c.commonFlags.Init(authOpts)
-			c.Flags.StringVar(&c.input, "input", "", "Path to read in plaintext from (use '-' for stdin). Data cannot be larger than 64KiB.")
+			c.Flags.StringVar(&c.input, "input", "", "Path to read in ciphertext from (use '-' for stdin).")
 			return &c
 		},
 	}
