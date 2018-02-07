@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b9415ff7_621a6e62",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T18:18:49Z",
+      "side": 1,
+      "message": "nit: Created\n\nby this time, the table is already created",
+      "range": {
+        "startLine": 70,
+        "startChar": 15,
+        "endLine": 70,
+        "endChar": 23
+      },
+      "revId": "493e4bc0b0864c167c89ce166288d00611e4f385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9930fd8_a4340503",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T18:18:49Z",
+      "side": 1,
+      "message": "nit: \\n",
+      "range": {
+        "startLine": 145,
+        "startChar": 84,
+        "endLine": 145,
+        "endChar": 85
+      },
+      "revId": "493e4bc0b0864c167c89ce166288d00611e4f385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86b2c921_dab84424",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-07T18:18:49Z",
+      "side": 1,
+      "message": "nit: put fmt.Sprintf args on different lines for readability",
+      "range": {
+        "startLine": 145,
+        "startChar": 18,
+        "endLine": 145,
+        "endChar": 29
+      },
+      "revId": "493e4bc0b0864c167c89ce166288d00611e4f385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
