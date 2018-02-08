@@ -325,18 +325,17 @@ func (m *memcacheImpl) Increment(key string, delta int64, initialValue *uint64) 
 	defer m.data.lock.Unlock()
 
 	cur := uint64(0)
-	if initialValue == nil {
-		curItm, err := m.data.retrieveLocked(now, key)
-		if err != nil {
-			return 0, err
-		}
-		if len(curItm.value) != 8 {
-			return 0, errors.New("memcache Increment: got invalid current value")
-		}
-		cur = binary.LittleEndian.Uint64(curItm.value)
-	} else {
+	switch item, err := m.data.retrieveLocked(now, key); {
+	case err == mc.ErrCacheMiss && initialValue != nil:
 		cur = *initialValue
+	case err != nil:
+		return 0, err
+	case len(item.value) != 8:
+		return 0, errors.New("memcache Increment: got invalid current value")
+	default:
+		cur = binary.LittleEndian.Uint64(item.value)
 	}
+
 	if delta < 0 {
 		if uint64(-delta) > cur {
 			cur = 0

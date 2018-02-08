@@ -133,6 +133,12 @@ func TestMemcache(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(val, ShouldEqual, 9)
 
+				Convey("Increment again", func() {
+					val, err = mc.Increment(c, "num", 7, 2)
+					So(err, ShouldBeNil)
+					So(val, ShouldEqual, 16)
+				})
+
 				Convey("IncrementExisting", func() {
 					val, err := mc.IncrementExisting(c, "num", -2)
 					So(err, ShouldBeNil)
