@@ -516,15 +516,14 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 
 	// We currently always setup a context with one account (which is also
-	// default). To avoid confusion where it comes from, we name it 'authutil'.
+	// default). To avoid confusion where it comes from, we name it 'luci-auth'.
 	// Most tools should not care how it is named, as long as it is specified as
 	// 'default_account_id' in LUCI_CONTEXT["local_auth"].
-	// TODO(crbug.com/809645): Rename this to luci-auth?
 	srv := &localauth.Server{
 		TokenGenerators: map[string]localauth.TokenGenerator{
-			"authutil": gen,
+			"luci-auth": gen,
 		},
-		DefaultAccountID: "authutil",
+		DefaultAccountID: "luci-auth",
 	}
 
 	// Bind to the local port and start serving.
