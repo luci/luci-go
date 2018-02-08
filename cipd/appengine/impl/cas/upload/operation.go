@@ -23,8 +23,10 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )
 
 // Operation is a datastore entity that represents an upload.
@@ -94,4 +96,14 @@ func (op *Operation) Advance(c context.Context, cb func(context.Context, *Operat
 		return nil, errors.Annotate(err, "failed to update the upload operation").Err()
 	}
 	return fresh, nil
+}
+
+// Finish deletes the temporary file and then calls Advance to move the
+// operation into some final state.
+func (op *Operation) Finish(c context.Context, gs gs.GoogleStorage, cb func(context.Context, *Operation) error) (*Operation, error) {
+	if err := gs.Delete(c, op.TempGSPath); err != nil {
+		return nil, errors.Annotate(err, "failed to remove temporary google storage file").
+			Tag(transient.Tag).Err()
+	}
+	return op.Advance(c, cb)
 }
