@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3e65c51_ec2dbdbf",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "should have been a separate CL",
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7eeed965_d010b430",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "err error\n\nbecause of the defer below",
+      "range": {
+        "startLine": 171,
+        "startChar": 93,
+        "endLine": 171,
+        "endChar": 98
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eca8035b_5601b73f",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "generate or compose",
+      "range": {
+        "startLine": 190,
+        "startChar": 63,
+        "endLine": 190,
+        "endChar": 70
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e08812f_92852477",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "affected rows",
+      "range": {
+        "startLine": 210,
+        "startChar": 69,
+        "endLine": 210,
+        "endChar": 73
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "875d28f6_765e389d",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "this overwrites what we\u0027ve just fetched\n\nWhy deal with a separate nic variable anyway?\nWhy not reuse the existing variable and return it?",
+      "range": {
+        "startLine": 242,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 24
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7f65711_4199b862",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "please dedup with listNICs:\n\ntype queryable interface {\n  QueryContext(ctx context.Context, query string, args ...interface{}) (*Rows, error)\n}\n// it is implemented by sql.Conn, sql.DB, sql.Stmt and sql.Tx\n\n\nfunc queryNICs(c context.Context, db queryable, names, machines []string) ([]*crimson.NIC, error) {\n  // use squirrel to generate WHERE dynamically\n  // run the query using db.QueryContext\n  // parse rows to nics and return\n}\n\nthen we could use queryNICs in both listNICs and here.",
+      "range": {
+        "startLine": 220,
+        "startChar": 0,
+        "endLine": 245,
+        "endChar": 0
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "514cf6c8_c7640179",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "note that this part is not specific to NICs. You might want to extract it to a separate validateUpdateMask if you plan to add more Update* RPCs later.",
+      "range": {
+        "startLine": 286,
+        "startChar": 1,
+        "endLine": 289,
+        "endChar": 79
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d942f491_37e1c40d",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "for a user, it might be not obvious wdym by filter. Consider \"update mask path\"",
+      "range": {
+        "startLine": 289,
+        "startChar": 59,
+        "endLine": 289,
+        "endChar": 65
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b54479a1_e67340e2",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T17:17:41Z",
+      "side": 1,
+      "message": "3 looks magical and adds an avoidable assumption about the number of fields\n\ni don\u0027t see how this is necessary. The default case below covers unexpected paths. Dupes are probably not important.",
+      "range": {
+        "startLine": 290,
+        "startChar": 0,
+        "endLine": 291,
+        "endChar": 97
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
