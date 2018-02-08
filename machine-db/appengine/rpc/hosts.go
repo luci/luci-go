@@ -74,7 +74,7 @@ func deleteHost(c context.Context, name string, vlan int64) error {
 		return nil
 	default:
 		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
 }
 
@@ -124,6 +124,6 @@ func assignHostnameAndIP(c context.Context, tx *sql.Tx, hostname string, vlan in
 		return hostnameId, nil
 	default:
 		// Shouldn't happen because IP address is unique per VLAN in the database.
-		return 0, internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+		return 0, internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
 }

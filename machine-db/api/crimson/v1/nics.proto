@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
+import "google/protobuf/field_mask.proto";
+
 // A network interface in the database.
 message NIC {
   // The name of this NIC. With machine, uniquely identifies this NIC.
@@ -48,4 +50,12 @@ message ListNICsResponse {
   // The NICs matching this request.
   repeated NIC nics = 1;
   // TODO(smut): Support page tokens.
+}
+
+// A request to update a NIC in the database.
+message UpdateNICRequest {
+  // The NIC to update in the database.
+  NIC nic = 1;
+  // The fields to update in the NIC.
+  google.protobuf.FieldMask update_mask = 2;
 }

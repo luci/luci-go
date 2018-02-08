@@ -20,9 +20,11 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
@@ -59,6 +61,15 @@ func (*Service) ListNICs(c context.Context, req *crimson.ListNICsRequest) (*crim
 	return &crimson.ListNICsResponse{
 		Nics: nics,
 	}, nil
+}
+
+// UpdateNIC handles a request to update an existing network interface.
+func (*Service) UpdateNIC(c context.Context, req *crimson.UpdateNICRequest) (*crimson.NIC, error) {
+	nic, err := updateNIC(c, req.Nic, req.UpdateMask)
+	if err != nil {
+		return nil, err
+	}
+	return nic, err
 }
 
 // createNIC creates a new NIC in the database.
@@ -122,7 +133,7 @@ func deleteNIC(c context.Context, name, machine string) error {
 		return nil
 	default:
 		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
 }
 
@@ -156,6 +167,89 @@ func listNICs(c context.Context, names stringset.Set, machines stringset.Set) ([
 	return nics, nil
 }
 
+// updateNIC updates an existing NIC in the database.
+func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (*crimson.NIC, error) {
+	if err := validateNICForUpdate(n, mask); err != nil {
+		return nil, err
+	}
+	stmt := squirrel.Update("nics")
+	for _, path := range mask.Paths {
+		switch path {
+		case "mac_address":
+			mac, _ := common.ParseMAC48(n.MacAddress)
+			stmt = stmt.Set("mac_address", mac)
+		case "switch":
+			stmt = stmt.Set("switch_id", squirrel.Expr("(SELECT id FROM switches WHERE name = ?)", n.Switch))
+		case "switchport":
+			stmt = stmt.Set("switchport", n.Switchport)
+		}
+	}
+	stmt = stmt.Where("name = ?", n.Name).Where("machine_id = (SELECT id FROM machines WHERE name = ?)", n.Machine)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to prepare statement").Err())
+	}
+
+	tx, err := database.Begin(c)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+	}
+	defer func() {
+		if err != nil {
+			if e := tx.Rollback(); e != nil {
+				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
+			}
+		}
+	}()
+	res, err := tx.ExecContext(c, query, args...)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to update NIC").Err())
+	}
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
+	case rows == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", n.Name, n.Machine)
+	case rows == 1:
+		// Ok.
+	default:
+		// Shouldn't happen because name is unique in the database.
+		return nil, internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
+	}
+
+	rows, err := tx.QueryContext(c, `
+		SELECT n.mac_address, s.name, n.switchport
+		FROM nics n, switches s
+		WHERE n.name = ?
+			AND n.machine_id = (SELECT id FROM machines WHERE name = ?)
+			AND n.switch_id = s.id
+	`, n.Name, n.Machine)
+	switch {
+	case err != nil:
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch NICs").Err())
+	// NIC name and machine pair is unique, so use if instead of for.
+	case !rows.Next():
+		rows.Close()
+		return nil, internalError(c, errors.Reason("failed to fetch NIC").Err())
+	}
+	nic := &crimson.NIC{}
+	var mac48 common.MAC48
+	if err = rows.Scan(&mac48, &nic.Switch, &nic.Switchport); err != nil {
+		rows.Close()
+		return nil, errors.Annotate(err, "failed to fetch NIC").Err()
+	}
+	rows.Close()
+	nic.Name = n.Name
+	nic.Machine = n.Machine
+	nic.MacAddress = mac48.String()
+
+	if err := tx.Commit(); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	}
+	// TODO(smut): Return the NIC.
+	return nic, nil
+}
+
 // validateNICForCreation validates a NIC for creation.
 func validateNICForCreation(n *crimson.NIC) error {
 	switch {
@@ -169,6 +263,8 @@ func validateNICForCreation(n *crimson.NIC) error {
 		return status.Error(codes.InvalidArgument, "MAC address is required and must be non-empty")
 	case n.Switch == "":
 		return status.Error(codes.InvalidArgument, "switch is required and must be non-empty")
+	case n.Switchport < 1:
+		return status.Error(codes.InvalidArgument, "switchport must be positive")
 	default:
 		_, err := common.ParseMAC48(n.MacAddress)
 		if err != nil {
@@ -176,4 +272,49 @@ func validateNICForCreation(n *crimson.NIC) error {
 		}
 		return nil
 	}
+}
+
+// validateNICForUpdate validates a NIC for update.
+func validateNICForUpdate(n *crimson.NIC, mask *field_mask.FieldMask) error {
+	switch {
+	case n == nil:
+		return status.Error(codes.InvalidArgument, "NIC specification is required")
+	case n.Name == "":
+		return status.Error(codes.InvalidArgument, "NIC name is required and must be non-empty")
+	case n.Machine == "":
+		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
+	case mask == nil:
+		return status.Error(codes.InvalidArgument, "update mask is required")
+	case len(mask.Paths) == 0:
+		return status.Error(codes.InvalidArgument, "at least one filter is required")
+	case len(mask.Paths) > 3:
+		return status.Errorf(codes.InvalidArgument, "unexpected number of filters %d", len(mask.Paths))
+	}
+	for _, path := range mask.Paths {
+		switch path {
+		case "name":
+			return status.Error(codes.InvalidArgument, "NIC name cannot be updated, delete and create a new NIC instead")
+		case "machine":
+			return status.Error(codes.InvalidArgument, "machine cannot be updated, delete and create a new NIC instead")
+		case "mac_address":
+			if n.MacAddress == "" {
+				return status.Error(codes.InvalidArgument, "MAC address is required and must be non-empty")
+			}
+			_, err := common.ParseMAC48(n.MacAddress)
+			if err != nil {
+				return status.Errorf(codes.InvalidArgument, "invalid MAC-48 address %q", n.MacAddress)
+			}
+		case "switch":
+			if n.Switch == "" {
+				return status.Error(codes.InvalidArgument, "switch is required and must be non-empty")
+			}
+		case "switchport":
+			if n.Switchport < 1 {
+				return status.Error(codes.InvalidArgument, "switchport must be positive")
+			}
+		default:
+			return status.Errorf(codes.InvalidArgument, "invalid filter %q", path)
+		}
+	}
+	return nil
 }

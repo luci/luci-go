@@ -123,7 +123,7 @@ func deleteMachine(c context.Context, name string) error {
 		return nil
 	default:
 		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
 }
 
