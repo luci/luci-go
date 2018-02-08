@@ -22,6 +22,30 @@
       "revId": "ee9af373ff3ccb32e247d3416574015499f39b8f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e83c3ace_7f0d291d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1125980
+      },
+      "writtenOn": "2018-02-08T00:39:20Z",
+      "side": 1,
+      "message": "\u003e this is a breaking change and must be behind a flag at least\n\nAre you aware of any clients that rely on the existing behaviour? If there aren\u0027t many, maybe we should introduce a -wait flag (off by default) and have those clients pass it.\n\n\u003e backing up a bit: would passing -timestamp flag solve your problem?\n\nI don\u0027t follow. It looks like this flag is for controlling the timestamp format and wouldn\u0027t help with my problem.",
+      "parentUuid": "3723037f_e0aaeaec",
+      "range": {
+        "startLine": 9,
+        "startChar": 27,
+        "endLine": 9,
+        "endChar": 43
+      },
+      "revId": "ee9af373ff3ccb32e247d3416574015499f39b8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
