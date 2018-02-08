@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "ed9415a6_f7cc6b45",
+        "filename": "cipd/appengine/impl/cas/upload/id.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-08T00:11:37Z",
+      "side": 1,
+      "message": "Actually I remembered that I made RPC just return generic NotFound error in this case (you\u0027ll see in followup CL).",
+      "parentUuid": "24f79806_36ae29d0",
+      "range": {
+        "startLine": 71,
+        "startChar": 67,
+        "endLine": 71,
+        "endChar": 77
+      },
+      "revId": "c8ddd37f30cc86438bf66e98fbb60839f9f42a1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d45929eb_441c72da",
         "filename": "cipd/appengine/impl/cas/upload/operation.go",
         "patchSetId": 4
