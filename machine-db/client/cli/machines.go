@@ -130,12 +130,15 @@ func (c *GetMachinesCmd) Run(app subcommands.Application, args []string, env sub
 // getMachinesCmd returns a command to get machines.
 func getMachinesCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-machines [-name <name>]...",
+		UsageLine: "get-machines [-name <name>]... [-plat <plat>]... [-rack <rack>]... [-state <state>]",
 		ShortDesc: "retrieves machines",
-		LongDesc:  "Retrieves machines matching the given names, or all machines if names are omitted.",
+		LongDesc:  "Retrieves machines matching the given names, platforms, racks, and states, or all machines if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetMachinesCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a machine to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Platforms), "plat", "Name of a platform to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
 			return cmd
 		},

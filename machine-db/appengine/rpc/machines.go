@@ -52,7 +52,7 @@ func (*Service) DeleteMachine(c context.Context, req *crimson.DeleteMachineReque
 
 // ListMachines handles a request to list machines.
 func (*Service) ListMachines(c context.Context, req *crimson.ListMachinesRequest) (*crimson.ListMachinesResponse, error) {
-	machines, err := listMachines(c, database.Get(c), req.Names)
+	machines, err := listMachines(c, database.Get(c), req)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -128,11 +128,14 @@ func deleteMachine(c context.Context, name string) error {
 }
 
 // listMachines returns a slice of machines in the database.
-func listMachines(c context.Context, q database.QueryerContext, names []string) ([]*crimson.Machine, error) {
+func listMachines(c context.Context, q database.QueryerContext, req *crimson.ListMachinesRequest) ([]*crimson.Machine, error) {
 	stmt := squirrel.Select("m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state").
 		From("machines m, platforms p, racks r").
 		Where("m.platform_id = p.id").Where("m.rack_id = r.id")
-	stmt = selectInString(stmt, "m.name", names)
+	stmt = selectInString(stmt, "m.name", req.Names)
+	stmt = selectInString(stmt, "p.name", req.Platforms)
+	stmt = selectInString(stmt, "r.name", req.Racks)
+	stmt = selectInState(stmt, "m.state", req.States)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())

@@ -21,8 +21,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/Masterminds/squirrel"
-
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
@@ -61,32 +59,6 @@ func isAuthorized(c context.Context) (bool, error) {
 // An empty set matches all strings.
 func matches(s string, set stringset.Set) bool {
 	return set.Has(s) || set.Len() == 0
-}
-
-// selectInInt64 returns the given SELECT modified with a WHERE IN clause.
-// expr is the left-hand side of the IN operator, values is the right-hand side. No-op if values is empty.
-func selectInInt64(b squirrel.SelectBuilder, expr string, values []int64) squirrel.SelectBuilder {
-	if len(values) == 0 {
-		return b
-	}
-	args := make([]interface{}, len(values))
-	for i, val := range values {
-		args[i] = val
-	}
-	return b.Where(expr+" IN ("+squirrel.Placeholders(len(args))+")", args...)
-}
-
-// selectInString returns the given SELECT modified with a WHERE IN clause.
-// expr is the left-hand side of the IN operator, values is the right-hand side. No-op if values is empty.
-func selectInString(b squirrel.SelectBuilder, expr string, values []string) squirrel.SelectBuilder {
-	if len(values) == 0 {
-		return b
-	}
-	args := make([]interface{}, len(values))
-	for i, val := range values {
-		args[i] = val
-	}
-	return b.Where(expr+" IN ("+squirrel.Placeholders(len(args))+")", args...)
 }
 
 // NewServer returns a new Crimson RPC server.
