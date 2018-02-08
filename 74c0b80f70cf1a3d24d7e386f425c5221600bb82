@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a98af6db_125c306e",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-08T23:29:03Z",
+      "side": 1,
+      "message": "Fixes this error:\n/work_dir/go.chromium.org/luci/machine-db/appengine/rpc/nics.go:56: cannot use database.Get(c) (type *sql.DB) as type database.QueryerContext in argument to listNICs:\n\t*sql.DB does not implement database.QueryerContext (wrong type for QueryContext method)\n\t\thave QueryContext(\"context\".Context, string, ...interface {}) (*sql.Rows, error)\n\t\twant QueryContext(\"golang.org/x/net/context\".Context, string, ...interface {}) (*sql.Rows, error)\n2018/02/08 15:05:56 go-app-builder: build timing: 213×compile (3m11.372s total), 0×link (0s total)",
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c3e86e0_8878d32b",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-08T23:29:03Z",
+      "side": 1,
+      "message": "This name comes from https://golang.org/pkg/database/sql/driver/#QueryerContext.",
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
