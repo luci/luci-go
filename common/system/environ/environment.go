@@ -143,6 +143,18 @@ func (e *Env) Remove(k string) bool {
 	return false
 }
 
+// RemoveMatch iterates over all keys and values in the environment, invoking
+// the callback function, fn, for each key/value pair. If fn returns true, the
+// key is removed from the environment.
+func (e *Env) RemoveMatch(fn func(k, v string) bool) {
+	e.iterate(func(realKey, k, v string) bool {
+		if fn(k, v) {
+			delete(e.env, realKey)
+		}
+		return true
+	})
+}
+
 // Update adds all key/value from other to the current environment. If there is
 // a duplicate key, the value from other will overwrite the value from e.
 //
@@ -233,16 +245,28 @@ func (e Env) Clone() Env {
 	return clone
 }
 
+// Internal iteration function. Invokes cb for every entry in the environment.
+// If the callback returns false, iteration stops.
+//
+// It is safe to mutate the environment map during iteration.
+//
+// realKey is the real, normalized map key. envKey and envValue are the split
+// map value.
+func (e *Env) iterate(cb func(realKey, envKey, envValue string) bool) {
+	for k, v := range e.env {
+		envKey, envValue := Split(v)
+		if !cb(k, envKey, envValue) {
+			break
+		}
+	}
+}
+
 // Iter iterates through all of the key/value pairs in Env and invokes the
 // supplied callback, cb, for each element.
 //
 // If the callback returns false, iteration will stop immediately.
 func (e Env) Iter(cb func(k, v string) bool) {
-	for _, v := range e.env {
-		if !cb(Split(v)) {
-			break
-		}
-	}
+	e.iterate(func(_, k, v string) bool { return cb(k, v) })
 }
 
 // Split splits the supplied environment variable value into a key/value pair.
