@@ -46,6 +46,29 @@
       "revId": "ee9af373ff3ccb32e247d3416574015499f39b8f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea039f49_b35bda3e",
+        "filename": "logdog/client/cli/subcommandCat.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-02-08T00:46:58Z",
+      "side": 1,
+      "message": "I think this needs to be controlled by a flag; the previous behavior would be roughly equivalent to cat\u0027ing a pipe which isn\u0027t closed yet. The new behavior will abort immediately if the pipe is still open. Both of these have valid use cases.",
+      "range": {
+        "startLine": 189,
+        "startChar": 2,
+        "endLine": 189,
+        "endChar": 29
+      },
+      "revId": "ee9af373ff3ccb32e247d3416574015499f39b8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
