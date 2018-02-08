@@ -15,6 +15,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/machine-db/appengine/settings"
 	"go.chromium.org/luci/server/router"
-
-	"golang.org/x/net/context"
 )
 
 // The open database connection is intended to be reused and shared by multiple concurrent requests,
@@ -47,6 +46,12 @@ var db *sql.DB
 
 // dbKey is the key the context value withDatabaseConnection uses to store the db pointer.
 var dbKey = "db"
+
+// QueryerContext defines an interface which supports QueryContext calls.
+// Implemented by sql.Conn, sql.DB, sql.Stmt, sql.Tx.
+type QueryerContext interface {
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+}
 
 // getDatabaseConnection returns a pointer to the open database connection, creating it if necessary.
 func getDatabaseConnection(c context.Context) (*sql.DB, error) {

@@ -173,54 +173,69 @@ func TestListNICs(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `
-			^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
-			FROM nics n, machines m, switches s
-			WHERE n.machine_id = m.id AND n.switch_id = s.id$
-		`
 		columns := []string{"n.name", "m.name", "n.mac_address", "s.name", "s.switchport"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
+			selectStmt := `
+				^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
+				FROM nics n, machines m, switches s
+				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?\) AND m.name IN \(\?\)$
+			`
 			names := stringset.NewFromSlice("eth0")
 			machines := stringset.NewFromSlice("machine")
-			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			nics, err := listNICs(c, names, machines)
+			m.ExpectQuery(selectStmt).WithArgs("eth0", "machine").WillReturnError(fmt.Errorf("error"))
+			nics, err := listNICs(c, db, names, machines)
 			So(err, ShouldErrLike, "failed to fetch NICs")
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("empty", func() {
+			selectStmt := `
+				^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
+				FROM nics n, machines m, switches s
+				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?\) AND m.name IN \(\?\)$
+			`
 			names := stringset.NewFromSlice("eth0")
 			machines := stringset.NewFromSlice("machine")
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			nics, err := listNICs(c, names, machines)
+			m.ExpectQuery(selectStmt).WithArgs("eth0", "machine").WillReturnRows(rows)
+			nics, err := listNICs(c, db, names, machines)
 			So(err, ShouldBeNil)
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("no matches", func() {
+			selectStmt := `
+				^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
+				FROM nics n, machines m, switches s
+				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?\) AND m.name IN \(\?\)$
+			`
 			names := stringset.NewFromSlice("eth0")
 			machines := stringset.NewFromSlice("machines")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			rows.AddRow("eth0", "machine", 0, "switch", 0)
 			rows.AddRow("eth1", "machine", 1, "switch", 1)
-			nics, err := listNICs(c, names, machines)
+			nics, err := listNICs(c, db, names, machines)
 			So(err, ShouldBeNil)
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("matches", func() {
+			selectStmt := `
+				^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
+				FROM nics n, machines m, switches s
+				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?,\?\) AND m.name IN \(\?\)$
+			`
 			names := stringset.NewFromSlice("eth1", "eth2")
 			machines := stringset.NewFromSlice("machine 1")
 			rows.AddRow("eth0", "machine 0", 0, "switch", 0)
 			rows.AddRow("eth1", "machine 1", 1, "switch", 1)
 			rows.AddRow("eth2", "machine 1", common.MaxMAC48, "switch", 2)
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			nics, err := listNICs(c, names, machines)
+			m.ExpectQuery(selectStmt).WithArgs("eth1", "eth2", "machine 1").WillReturnRows(rows)
+			nics, err := listNICs(c, db, names, machines)
 			So(err, ShouldBeNil)
 			So(nics, ShouldResemble, []*crimson.NIC{
 				{
@@ -242,12 +257,17 @@ func TestListNICs(t *testing.T) {
 		})
 
 		Convey("ok", func() {
+			selectStmt := `
+				^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
+				FROM nics n, machines m, switches s
+				WHERE n.machine_id = m.id AND n.switch_id = s.id$
+			`
 			names := stringset.New(0)
 			machines := stringset.New(0)
 			rows.AddRow("eth0", "machine", 0, "switch", 0)
 			rows.AddRow("eth1", "machine", 1, "switch", 1)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			nics, err := listNICs(c, names, machines)
+			nics, err := listNICs(c, db, names, machines)
 			So(err, ShouldBeNil)
 			So(nics, ShouldResemble, []*crimson.NIC{
 				{
