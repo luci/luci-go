@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e7441286_8a33521c",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-08T00:03:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6158161_84fde391",
+      "range": {
+        "startLine": 141,
+        "startChar": 46,
+        "endLine": 141,
+        "endChar": 55
+      },
+      "revId": "c8ddd37f30cc86438bf66e98fbb60839f9f42a1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "554db1df_c56e222c",
         "filename": "cipd/appengine/impl/cas/upload/id.go",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "24f79806_36ae29d0",
+        "filename": "cipd/appengine/impl/cas/upload/id.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-08T00:03:44Z",
+      "side": 1,
+      "message": "This particular error actually should never happen (because WrapOpID produces valid tokens, and we have just checked that the HMAC is correct, therefore the token was produced by WrapOpID and must have an integer there). \n\nEven if it does, there\u0027s nothing secret there. \u0027token\u0027 contains id in plain text already, it is not encrypted.",
+      "parentUuid": "554db1df_c56e222c",
+      "range": {
+        "startLine": 71,
+        "startChar": 67,
+        "endLine": 71,
+        "endChar": 77
+      },
+      "revId": "c8ddd37f30cc86438bf66e98fbb60839f9f42a1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d45929eb_441c72da",
         "filename": "cipd/appengine/impl/cas/upload/operation.go",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "c8ddd37f30cc86438bf66e98fbb60839f9f42a1e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50705279_5d8ee0d2",
+        "filename": "cipd/appengine/impl/cas/upload/operation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-08T00:03:44Z",
+      "side": 1,
+      "message": "I\u0027ll do this if it becomes necessary, don\u0027t want to needlessly complicate call sites.",
+      "parentUuid": "d45929eb_441c72da",
+      "range": {
+        "startLine": 90,
+        "startChar": 20,
+        "endLine": 90,
+        "endChar": 38
+      },
+      "revId": "c8ddd37f30cc86438bf66e98fbb60839f9f42a1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
