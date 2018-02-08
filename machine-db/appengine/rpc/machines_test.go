@@ -166,37 +166,41 @@ func TestListMachines(t *testing.T) {
 				FROM machines m, platforms p, racks r
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
 			`
-			names := []string{"machine"}
-			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnError(fmt.Errorf("error"))
-			machines, err := listMachines(c, db, names)
+			req := &crimson.ListMachinesRequest{
+				Names: []string{"machine"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0]).WillReturnError(fmt.Errorf("error"))
+			machines, err := listMachines(c, db, req)
 			So(err, ShouldErrLike, "failed to fetch machines")
 			So(machines, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("no names", func() {
+		Convey("empty request", func() {
 			selectStmt := `
 				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
 				FROM machines m, platforms p, racks r
 				WHERE m.platform_id = p.id AND m.rack_id = r.id$
 			`
-			names := []string{}
+			req := &crimson.ListMachinesRequest{}
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			machines, err := listMachines(c, db, names)
+			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
 			So(machines, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("empty", func() {
+		Convey("empty response", func() {
 			selectStmt := `
 				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
 				FROM machines m, platforms p, racks r
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
 			`
-			names := []string{"machine"}
-			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnRows(rows)
-			machines, err := listMachines(c, db, names)
+			req := &crimson.ListMachinesRequest{
+				Names: []string{"machine"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0]).WillReturnRows(rows)
+			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
 			So(machines, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -208,21 +212,23 @@ func TestListMachines(t *testing.T) {
 				FROM machines m, platforms p, racks r
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?,\?\)$
 			`
-			names := []string{"machine 1", "machine 2"}
-			rows.AddRow(names[0], "platform 1", "rack 1", "description 1", "", "", "", 0)
-			rows.AddRow(names[1], "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
-			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1]).WillReturnRows(rows)
-			machines, err := listMachines(c, db, names)
+			req := &crimson.ListMachinesRequest{
+				Names: []string{"machine 1", "machine 2"},
+			}
+			rows.AddRow(req.Names[0], "platform 1", "rack 1", "description 1", "", "", "", 0)
+			rows.AddRow(req.Names[1], "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Names[1]).WillReturnRows(rows)
+			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
 			So(machines, ShouldResemble, []*crimson.Machine{
 				{
-					Name:        names[0],
+					Name:        req.Names[0],
 					Platform:    "platform 1",
 					Rack:        "rack 1",
 					Description: "description 1",
 				},
 				{
-					Name:        names[1],
+					Name:        req.Names[1],
 					Platform:    "platform 2",
 					Rack:        "rack 2",
 					Description: "description 2",
@@ -238,11 +244,11 @@ func TestListMachines(t *testing.T) {
 				FROM machines m, platforms p, racks r
 				WHERE m.platform_id = p.id AND m.rack_id = r.id$
 			`
-			names := []string{}
+			req := &crimson.ListMachinesRequest{}
 			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
 			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			machines, err := listMachines(c, db, names)
+			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
 			So(machines, ShouldResemble, []*crimson.Machine{
 				{

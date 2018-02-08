@@ -16,6 +16,7 @@ package cli
 
 import (
 	"flag"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -43,4 +44,31 @@ func (f *stateFlag) String() string {
 // StateFlag returns a flag.Value which reads flag values into the given *common.State.
 func StateFlag(s *common.State) flag.Value {
 	return (*stateFlag)(s)
+}
+
+// stateSliceFlag is a []common.State which implements the flag.Value interface.
+type stateSliceFlag []common.State
+
+// Set appends a new state to this flag, preserving any existing states.
+func (f *stateSliceFlag) Set(s string) error {
+	i, err := common.GetState(s)
+	if err != nil {
+		return errors.Reason("value must be a valid state returned by get-states").Err()
+	}
+	*f = append(*f, i)
+	return nil
+}
+
+// String returns a comma-separated string representation of flag.
+func (f *stateSliceFlag) String() string {
+	s := make([]string, len(*f))
+	for i, j := range *f {
+		s[i] = j.Name()
+	}
+	return strings.Join(s, ", ")
+}
+
+// StateSliceFlag returns a flag.Value which appends flag values to the given *[]common.State.
+func StateSliceFlag(s *[]common.State) flag.Value {
+	return (*stateSliceFlag)(s)
 }

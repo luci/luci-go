@@ -66,3 +66,82 @@ func TestStateFlag(t *testing.T) {
 		So(state, ShouldEqual, common.State_DECOMMISSIONED)
 	})
 }
+
+func TestStateSliceFlag(t *testing.T) {
+	t.Parallel()
+
+	Convey("stateSliceFlag", t, func() {
+		var flag stateSliceFlag
+		So(flag.Set("invalid state"), ShouldErrLike, "value must be a valid state")
+		So(flag.String(), ShouldEqual, "")
+		So(flag.Set(""), ShouldBeNil)
+		So(flag.String(), ShouldEqual, "")
+		So(flag.Set("free"), ShouldBeNil)
+		So(flag.String(), ShouldEqual, ", free")
+		So(flag.Set("prerelease"), ShouldBeNil)
+		So(flag.String(), ShouldEqual, ", free, prerelease")
+		So(flag.Set("serving"), ShouldBeNil)
+		So(flag.String(), ShouldEqual, ", free, prerelease, serving")
+		So(flag.Set("test"), ShouldBeNil)
+		So(flag.String(), ShouldEqual, ", free, prerelease, serving, test")
+		So(flag.Set("repair"), ShouldBeNil)
+		So(flag.String(), ShouldEqual, ", free, prerelease, serving, test, repair")
+		So(flag.Set("decommissioned"), ShouldBeNil)
+		So(flag.String(), ShouldEqual, ", free, prerelease, serving, test, repair, decommissioned")
+	})
+
+	Convey("StateSliceFlag", t, func() {
+		var states []common.State
+		So(StateSliceFlag(&states).Set("invalid state"), ShouldErrLike, "value must be a valid state")
+		So(states, ShouldBeNil)
+		So(StateSliceFlag(&states).Set(""), ShouldBeNil)
+		So(states, ShouldResemble, []common.State{
+			common.State_STATE_UNSPECIFIED,
+		})
+		So(StateSliceFlag(&states).Set("free"), ShouldBeNil)
+		So(states, ShouldResemble, []common.State{
+			common.State_STATE_UNSPECIFIED,
+			common.State_FREE,
+		})
+		So(StateSliceFlag(&states).Set("prerelease"), ShouldBeNil)
+		So(states, ShouldResemble, []common.State{
+			common.State_STATE_UNSPECIFIED,
+			common.State_FREE,
+			common.State_PRERELEASE,
+		})
+		So(StateSliceFlag(&states).Set("serving"), ShouldBeNil)
+		So(states, ShouldResemble, []common.State{
+			common.State_STATE_UNSPECIFIED,
+			common.State_FREE,
+			common.State_PRERELEASE,
+			common.State_SERVING,
+		})
+		So(StateSliceFlag(&states).Set("test"), ShouldBeNil)
+		So(states, ShouldResemble, []common.State{
+			common.State_STATE_UNSPECIFIED,
+			common.State_FREE,
+			common.State_PRERELEASE,
+			common.State_SERVING,
+			common.State_TEST,
+		})
+		So(StateSliceFlag(&states).Set("repair"), ShouldBeNil)
+		So(states, ShouldResemble, []common.State{
+			common.State_STATE_UNSPECIFIED,
+			common.State_FREE,
+			common.State_PRERELEASE,
+			common.State_SERVING,
+			common.State_TEST,
+			common.State_REPAIR,
+		})
+		So(StateSliceFlag(&states).Set("decommissioned"), ShouldBeNil)
+		So(states, ShouldResemble, []common.State{
+			common.State_STATE_UNSPECIFIED,
+			common.State_FREE,
+			common.State_PRERELEASE,
+			common.State_SERVING,
+			common.State_TEST,
+			common.State_REPAIR,
+			common.State_DECOMMISSIONED,
+		})
+	})
+}

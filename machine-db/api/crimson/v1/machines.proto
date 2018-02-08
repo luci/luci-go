@@ -44,6 +44,12 @@ message DeleteMachineRequest {
 message ListMachinesRequest {
   // The names of machines to get.
   repeated string names = 1;
+  // The platforms to filter returned machines on.
+  repeated string platforms = 2;
+  // The racks to filter returned machines on.
+  repeated string racks = 3;
+  // The states to filter returned machines on.
+  repeated common.State states = 4;
   // TODO(smut): Add the rest of the filters.
 }
 
