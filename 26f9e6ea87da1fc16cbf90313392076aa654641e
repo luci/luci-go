@@ -128,6 +128,30 @@
       "revId": "26f9e6ea87da1fc16cbf90313392076aa654641e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9563252_265d00fc",
+        "filename": "cipd/appengine/impl/cas/acled.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-08T18:41:47Z",
+      "side": 1,
+      "message": "i missed the point of the comment",
+      "parentUuid": "b6ba9dea_98dd60c7",
+      "range": {
+        "startLine": 77,
+        "startChar": 19,
+        "endLine": 77,
+        "endChar": 33
+      },
+      "revId": "26f9e6ea87da1fc16cbf90313392076aa654641e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
