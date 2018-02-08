@@ -42,7 +42,7 @@ const (
 type Build struct {
 	// fields set at the build creation time, immutable.
 
-	ID           int64
+	ID           int64 `json:"id"`
 	CreationTime time.Time
 	CreatedBy    identity.Identity
 	Project      string
