@@ -61,6 +61,18 @@ func matches(s string, set stringset.Set) bool {
 	return set.Has(s) || set.Len() == 0
 }
 
+// stringSliceToInterfaceSlice converts the given []string to []interface.
+func stringSliceToInterfaceSlice(s []string) []interface{} {
+	if len(s) == 0 {
+		return nil
+	}
+	slice := make([]interface{}, len(s))
+	for i, j := range s {
+		slice[i] = j
+	}
+	return slice
+}
+
 // NewServer returns a new Crimson RPC server.
 func NewServer() crimson.CrimsonServer {
 	return &crimson.DecoratedCrimson{

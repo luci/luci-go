@@ -23,10 +23,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -52,7 +52,7 @@ func (*Service) DeleteNIC(c context.Context, req *crimson.DeleteNICRequest) (*em
 
 // ListNICs handles a request to list network interfaces.
 func (*Service) ListNICs(c context.Context, req *crimson.ListNICsRequest) (*crimson.ListNICsResponse, error) {
-	nics, err := listNICs(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Machines...))
+	nics, err := listNICs(c, database.Get(c), req.Names, req.Machines)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -115,31 +115,40 @@ func deleteNIC(c context.Context, name, machine string) error {
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
-		return internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
+		return internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", name, machine)
 	case rows == 1:
 		return nil
 	default:
 		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
 }
 
 // listNICs returns a slice of NICs in the database.
-func listNICs(c context.Context, names stringset.Set, machines stringset.Set) ([]*crimson.NIC, error) {
-	db := database.Get(c)
-	rows, err := db.QueryContext(c, `
-		SELECT n.name, m.name, n.mac_address, s.name, n.switchport
-		FROM nics n, machines m, switches s
-		WHERE n.machine_id = m.id
-			AND n.switch_id = s.id
-	`)
+func listNICs(c context.Context, q database.QueryerContext, names, machines []string) ([]*crimson.NIC, error) {
+	stmt := squirrel.Select("n.name", "m.name", "n.mac_address", "s.name", "n.switchport").
+		From("nics n, machines m, switches s").
+		Where("n.machine_id = m.id").Where("n.switch_id = s.id")
+	args := stringSliceToInterfaceSlice(names)
+	if len(args) > 0 {
+		stmt = stmt.Where("n.name IN ("+squirrel.Placeholders(len(args))+")", args...)
+	}
+	args = stringSliceToInterfaceSlice(machines)
+	if len(args) > 0 {
+		stmt = stmt.Where("m.name IN ("+squirrel.Placeholders(len(args))+")", args...)
+	}
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch NICs").Err()
 	}
 	defer rows.Close()
-
 	var nics []*crimson.NIC
 	for rows.Next() {
 		n := &crimson.NIC{}
@@ -147,11 +156,8 @@ func listNICs(c context.Context, names stringset.Set, machines stringset.Set) ([
 		if err = rows.Scan(&n.Name, &n.Machine, &mac48, &n.Switch, &n.Switchport); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch NIC").Err()
 		}
-		// TODO(smut): use the database to filter rather than fetching all entries.
-		if matches(n.Name, names) && matches(n.Machine, machines) {
-			n.MacAddress = mac48.String()
-			nics = append(nics, n)
-		}
+		n.MacAddress = mac48.String()
+		nics = append(nics, n)
 	}
 	return nics, nil
 }
