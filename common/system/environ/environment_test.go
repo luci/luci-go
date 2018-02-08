@@ -162,12 +162,28 @@ func TestEnvironmentManipulation(t *testing.T) {
 				"novalue":    "",
 			})
 
-			buildMap := make(map[string]string)
-			env.Iter(func(k, v string) bool {
-				buildMap[k] = v
-				return true
+			Convey(`Can perform iteration`, func() {
+				buildMap := make(map[string]string)
+				env.Iter(func(k, v string) bool {
+					buildMap[k] = v
+					return true
+				})
+				So(env.Map(), ShouldResemble, buildMap)
 			})
-			So(env.Map(), ShouldResemble, buildMap)
+
+			Convey(`Can have elements removed through iteration`, func() {
+				env.RemoveMatch(func(k, v string) bool {
+					switch k {
+					case "PYTHONPATH", "novalue":
+						return true
+					default:
+						return false
+					}
+				})
+				So(env.Map(), ShouldResemble, map[string]string{
+					"http_proxy": "http://example.com",
+				})
+			})
 		})
 
 		Convey(`Can update its values.`, func() {

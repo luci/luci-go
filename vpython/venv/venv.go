@@ -789,13 +789,22 @@ func (e *Env) isolatedSetupEnvironment(bootstrapDir string) environ.Env {
 	env := e.Config.SetupEnv.Clone()
 	python.IsolateEnvironment(&env, false)
 
-	// Remove all "PIP_" environment variable overrides. See:
-	// https://pip.pypa.io/en/stable/user_guide/#environment-variables
-	e.Config.SetupEnv.Iter(func(k, v string) bool {
-		if strings.HasPrefix(k, "PIP_") {
-			env.Remove(k)
+	env.RemoveMatch(func(k, v string) bool {
+		// Remove all VIRTUALENV_* environment variables. These can influence
+		// VirtualEnv behavior, and we want to control that.
+		//
+		// https://virtualenv.pypa.io/en/stable/reference/#environment-variables
+		if strings.HasPrefix(k, "VIRTUALENV_") || strings.HasPrefix(k, "VIRTUAL_ENV_") {
+			return true
 		}
-		return true
+
+		// Remove all "PIP_" environment variable overrides. See:
+		// https://pip.pypa.io/en/stable/user_guide/#environment-variables
+		if strings.HasPrefix(k, "PIP_") {
+			return true
+		}
+
+		return false
 	})
 
 	// Use a temporary HOME directory.
