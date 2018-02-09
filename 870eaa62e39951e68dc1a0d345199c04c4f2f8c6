@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4ee8706_8f0366f7",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T22:50:11Z",
+      "side": 1,
+      "message": "it would be better with generics, but maybe having two functions instead of one generic one is still better than copy-pasting this code over and over\n\n  func selectStrIn(builder squirrel.SelectBuilder, expr string, values []string) squirrel.SelectBuilder\n  func updateStrIn(builder squirrel.UpdateBuilder, expr string, values []string) squirrel.UpdateBuilder\n\nand then here\n\n  if len(names) \u003e 0 {\n    stmt \u003d selectStrIn(stmt, \"m,name\", names)\n  }\n\nor even make functions noop if values is empty. Then the if statement is not needed",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 2
+      },
+      "revId": "870eaa62e39951e68dc1a0d345199c04c4f2f8c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
