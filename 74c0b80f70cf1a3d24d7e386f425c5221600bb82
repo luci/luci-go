@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "d77e7e37_1a217be3",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T02:23:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de2c1135_0989824e",
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c3e86e0_8878d32b",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -95,6 +113,30 @@
     },
     {
       "key": {
+        "uuid": "276588b9_8fca5c73",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T02:23:17Z",
+      "side": 1,
+      "message": "Good call, done.",
+      "parentUuid": "1ce8dcf7_a56833e7",
+      "range": {
+        "startLine": 137,
+        "startChar": 20,
+        "endLine": 137,
+        "endChar": 35
+      },
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0388a60_1c114eae",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -115,6 +157,30 @@
       "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9672323_00367345",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T02:23:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0388a60_1c114eae",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 139,
+        "endChar": 3
+      },
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
