@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "de2c1135_0989824e",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T01:55:22Z",
+      "side": 1,
+      "message": "this adds a bit of inconsistency. I am afraid it screw something else somehow. Consider scoping this change only to QueryerContext by moving the latter to a separate file and using \"context\" only there.",
+      "parentUuid": "a98af6db_125c306e",
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7c3e86e0_8878d32b",
         "filename": "machine-db/appengine/database/database.go",
         "patchSetId": 1
@@ -30,6 +48,70 @@
       "writtenOn": "2018-02-08T23:29:03Z",
       "side": 1,
       "message": "This name comes from https://golang.org/pkg/database/sql/driver/#QueryerContext.",
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f2c16bd_8a41d5db",
+        "filename": "machine-db/appengine/database/database.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T01:55:22Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7c3e86e0_8878d32b",
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ce8dcf7_a56833e7",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T01:55:22Z",
+      "side": 1,
+      "message": "now there is no point in accepting a stringset parameter. Let\u0027s accept a slice",
+      "range": {
+        "startLine": 137,
+        "startChar": 20,
+        "endLine": 137,
+        "endChar": 35
+      },
+      "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0388a60_1c114eae",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T01:55:22Z",
+      "side": 1,
+      "message": "please dedup\n\n  func foo(s []string) []interface\n\nI think you will reuse it in other squirrel queries later\n\ni wish Go had generics. I\u0027d suggest\n\n  func whereIn\u003cS Wherer, V\u003e(stmt S, expr string, values []V) S",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 139,
+        "endChar": 3
+      },
       "revId": "74c0b80f70cf1a3d24d7e386f425c5221600bb82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
