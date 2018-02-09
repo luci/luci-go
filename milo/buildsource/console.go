@@ -59,7 +59,9 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 		}
 	}
 
-	// Maps BuilderID -> Column BuilderID (see ConsoleRow).
+	// IMPORTANT: Maps BuilderID -> Column BuilderID (see ConsoleRow comments).
+	// This is indexed based off the first builder name, even if the second
+	// builder name is the one we end up using.
 	columnMap := map[string]BuilderID{}
 	for _, b := range console.Builders {
 		columnID := b.Name[0]
