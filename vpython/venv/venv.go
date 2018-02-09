@@ -307,7 +307,7 @@ func (e *Env) ensure(c context.Context, blocking bool) (err error) {
 			}
 
 		default:
-			return errors.Annotate(err, "failed to create VirtualEnv").Err()
+			return errors.Annotate(err, "failed to ensure VirtualEnv").Err()
 		}
 	}
 }
@@ -605,7 +605,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 	dumpOutput = attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
 		dumpOutput(c, logging.Error)
-		return errors.Annotate(err, "failed to create VirtualEnv").Err()
+		return errors.Annotate(err, "failed to make VirtualEnv relocatable").Err()
 	}
 
 	return nil
@@ -816,6 +816,9 @@ func (e *Env) isolatedSetupEnvironment(bootstrapDir string) environ.Env {
 	// It has the nice side-effect of catching some potential artifacts that can
 	// be generated. There probably won't be any, but if they are, they will be
 	// cleaned up now.
+	//
+	// This also eliminates the default VirutalEnv configuration file, which is
+	// located relative to $HOME.
 	env.Set("HOME", bootstrapDir)
 
 	// Set some basic "pip" options to override any "pip" configuration.
@@ -936,9 +939,8 @@ func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) f
 
 	// Do not dump any additional error output.
 	return func(c context.Context, l logging.Level) {
-		if buf.Len() > 0 {
-			logging.Logf(c, logging.Error, "Process output:\n%s", buf.Bytes())
-		}
+		logging.Logf(c, l, "Command (cwd=%s): %s\nProcess output:\n%s\nEnvironment:\n%s",
+			cmd.Dir, cmd.Args, buf.Bytes(), strings.Join(cmd.Env, "\n"))
 	}
 }
 
