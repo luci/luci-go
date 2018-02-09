@@ -24,8 +24,6 @@ import (
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
-
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -250,67 +248,94 @@ func TestListPhysicalHosts(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `
-			^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
-			FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-			WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id$
-		`
 		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
-			names := stringset.NewFromSlice("host")
-			vlans := map[int64]struct{}{0: {}}
-			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			hosts, err := listPhysicalHosts(c, names, vlans)
+			selectStmt := `
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
+				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
+			`
+			names := []string{"host"}
+			vlans := []int64{0}
+			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnError(fmt.Errorf("error"))
+			hosts, err := listPhysicalHosts(c, db, names, vlans)
 			So(err, ShouldErrLike, "failed to fetch physical hosts")
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
+		Convey("no names", func() {
+			selectStmt := `
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
+				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND v.id IN \(\?\)$
+			`
+			names := []string{}
+			vlans := []int64{0}
+			m.ExpectQuery(selectStmt).WithArgs(vlans[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			So(err, ShouldBeNil)
+			So(hosts, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("no vlans", func() {
+			selectStmt := `
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
+				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\)$
+			`
+			names := []string{"host"}
+			vlans := []int64{}
+			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			So(err, ShouldBeNil)
+			So(hosts, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
 		Convey("empty", func() {
-			names := stringset.NewFromSlice("host")
-			vlans := map[int64]struct{}{0: {}}
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, names, vlans)
+			selectStmt := `
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
+				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
+			`
+			names := []string{"host"}
+			vlans := []int64{0}
+			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, names, vlans)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("no matches", func() {
-			names := stringset.NewFromSlice("host")
-			vlans := map[int64]struct{}{0: {}}
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "", 1)
-			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "", 2)
-			hosts, err := listPhysicalHosts(c, names, vlans)
-			So(err, ShouldBeNil)
-			So(hosts, ShouldBeEmpty)
-			So(m.ExpectationsWereMet(), ShouldBeNil)
-		})
-
-		Convey("matches", func() {
-			names := stringset.NewFromSlice("host 1", "host 2")
-			vlans := map[int64]struct{}{1: {}, 2: {}}
-			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "", 1)
-			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "", 2)
-			rows.AddRow("host 3", 3, "machine 3", "os 3", 3, "", "", 3)
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, names, vlans)
+		Convey("non-empty", func() {
+			selectStmt := `
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
+				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?,\?\) AND v.id IN \(\?\)$
+			`
+			names := []string{"host 1", "host 2"}
+			vlans := []int64{0}
+			rows.AddRow(names[0], vlans[0], "machine 1", "os 1", 1, "", "", 1)
+			rows.AddRow(names[1], vlans[0], "machine 2", "os 2", 2, "", "", 2)
+			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1], vlans[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, names, vlans)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
 				{
-					Name:    "host 1",
-					Vlan:    1,
+					Name:    names[0],
+					Vlan:    vlans[0],
 					Machine: "machine 1",
 					Os:      "os 1",
 					VmSlots: 1,
 					Ipv4:    "0.0.0.1",
 				},
 				{
-					Name:    "host 2",
-					Vlan:    2,
+					Name:    names[1],
+					Vlan:    vlans[0],
 					Machine: "machine 2",
 					Os:      "os 2",
 					VmSlots: 2,
@@ -321,12 +346,17 @@ func TestListPhysicalHosts(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			names := stringset.New(0)
-			vlans := map[int64]struct{}{}
+			selectStmt := `
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
+				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id$
+			`
+			names := []string{}
+			vlans := []int64{}
 			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "", 1)
 			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "", 2)
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, names, vlans)
+			m.ExpectQuery(selectStmt).WithArgs().WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, names, vlans)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
 				{

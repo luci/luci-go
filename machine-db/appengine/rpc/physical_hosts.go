@@ -22,10 +22,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -43,11 +43,7 @@ func (*Service) CreatePhysicalHost(c context.Context, req *crimson.CreatePhysica
 
 // ListPhysicalHosts handles a request to list physical hosts.
 func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHostsRequest) (*crimson.ListPhysicalHostsResponse, error) {
-	vlans := make(map[int64]struct{}, len(req.Vlans))
-	for _, vlan := range req.Vlans {
-		vlans[vlan] = struct{}{}
-	}
-	hosts, err := listPhysicalHosts(c, stringset.NewFromSlice(req.Names...), vlans)
+	hosts, err := listPhysicalHosts(c, database.Get(c), req.Names, req.Vlans)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -115,22 +111,26 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 }
 
 // listPhysicalHosts returns a slice of physical hosts in the database.
-func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.PhysicalHost, error) {
-	db := database.Get(c)
-	rows, err := db.QueryContext(c, `
-		SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
-		FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-		WHERE p.hostname_id = h.id
-			AND h.vlan_id = v.id
-			AND p.machine_id = m.id
-			AND p.os_id = o.id
-			AND i.hostname_id = h.id
-	`)
+func listPhysicalHosts(c context.Context, q database.QueryerContext, names []string, vlans []int64) ([]*crimson.PhysicalHost, error) {
+	stmt := squirrel.Select("h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4").
+		From("physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i").
+		Where("p.hostname_id = h.id").
+		Where("h.vlan_id = v.id").
+		Where("p.machine_id = m.id").
+		Where("p.os_id = o.id").
+		Where("i.hostname_id = h.id")
+	stmt = selectInString(stmt, "h.name", names)
+	stmt = selectInInt64(stmt, "v.id", vlans)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch physical hosts").Err()
 	}
 	defer rows.Close()
-
 	var hosts []*crimson.PhysicalHost
 	for rows.Next() {
 		h := &crimson.PhysicalHost{}
@@ -138,11 +138,8 @@ func listPhysicalHosts(c context.Context, names stringset.Set, vlans map[int64]s
 		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket, &ipv4); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 		}
-		// TODO(smut): use the database to filter rather than fetching all entries.
-		if _, ok := vlans[h.Vlan]; matches(h.Name, names) && (ok || len(vlans) == 0) {
-			h.Ipv4 = ipv4.String()
-			hosts = append(hosts, h)
-		}
+		h.Ipv4 = ipv4.String()
+		hosts = append(hosts, h)
 	}
 	return hosts, nil
 }
