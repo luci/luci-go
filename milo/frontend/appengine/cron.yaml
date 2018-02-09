@@ -11,3 +11,6 @@ cron:
  - description: Send app specific metrics
    url: /internal/cron/stats
    schedule: every 1 minutes
+ - description: LUCI Config datastore cache periodic refresh
+   url: /admin/config/cache/manager
+   schedule: every 10 mins
