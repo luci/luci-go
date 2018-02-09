@@ -71,7 +71,7 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 		}
 	}()
 
-	hostnameId, err := assignHostnameAndIP(c, tx, v.Name, v.Vlan, ip)
+	hostnameId, err := assignHostnameAndIP(c, tx, v.Name, ip)
 	if err != nil {
 		return err
 	}
@@ -169,8 +169,8 @@ func validateVMForCreation(v *crimson.VM) error {
 		return status.Error(codes.InvalidArgument, "VM specification is required")
 	case v.Name == "":
 		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
-	case v.Vlan < 1:
-		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
+	case v.Vlan != 0:
+		return status.Error(codes.InvalidArgument, "VLAN must not be specified, use IP address instead")
 	case v.Host == "":
 		return status.Error(codes.InvalidArgument, "physical hostname is required and must be non-empty")
 	case v.HostVlan < 1:

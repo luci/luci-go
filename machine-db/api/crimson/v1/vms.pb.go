@@ -18,6 +18,7 @@ type VM struct {
 	// The name of this VM on the network. With VLAN ID, uniquely identifies this VM.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// The VLAN this VM belongs to. With hostname, uniquely identifies this VM.
+	// When creating a VM, omit this field. It will be inferred from the IPv4 address.
 	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
 	// The physical host this VM is running on.
 	Host string `protobuf:"bytes,3,opt,name=host" json:"host,omitempty"`

@@ -11,6 +11,7 @@ message PhysicalHost {
   // The name of this host on the network. With VLAN ID, uniquely identifies this host.
   string name = 1;
   // The VLAN this host belongs to. With hostname, uniquely identifies this host.
+  // When creating a host, omit this field. It will be inferred from the IPv4 address.
   int64 vlan = 2;
   // The machine backing this host.
   string machine = 3;
