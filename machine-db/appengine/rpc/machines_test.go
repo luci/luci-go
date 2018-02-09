@@ -24,8 +24,6 @@ import (
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
-
 	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -159,76 +157,92 @@ func TestListMachines(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `
-			^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-			FROM machines m, platforms p, racks r
-			WHERE m.platform_id = p.id AND m.rack_id = r.id$
-		`
 		columns := []string{"m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
-			names := stringset.NewFromSlice("machine")
-			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			machines, err := listMachines(c, names)
+			selectStmt := `
+				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
+			`
+			names := []string{"machine"}
+			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnError(fmt.Errorf("error"))
+			machines, err := listMachines(c, db, names)
 			So(err, ShouldErrLike, "failed to fetch machines")
 			So(machines, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
+		Convey("no names", func() {
+			selectStmt := `
+				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r
+				WHERE m.platform_id = p.id AND m.rack_id = r.id$
+			`
+			names := []string{}
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			machines, err := listMachines(c, db, names)
+			So(err, ShouldBeNil)
+			So(machines, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
 		Convey("empty", func() {
-			names := stringset.NewFromSlice("machine")
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			machines, err := listMachines(c, names)
+			selectStmt := `
+				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
+			`
+			names := []string{"machine"}
+			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnRows(rows)
+			machines, err := listMachines(c, db, names)
 			So(err, ShouldBeNil)
 			So(machines, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("no matches", func() {
-			names := stringset.NewFromSlice("machine")
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
-			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
-			machines, err := listMachines(c, names)
-			So(err, ShouldBeNil)
-			So(machines, ShouldBeEmpty)
-			So(m.ExpectationsWereMet(), ShouldBeNil)
-		})
-
-		Convey("matches", func() {
-			names := stringset.NewFromSlice("machine 2", "machine 3")
-			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
-			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
-			rows.AddRow("machine 3", "platform 3", "rack 3", "description 3", "", "", "", common.State_REPAIR)
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			machines, err := listMachines(c, names)
+		Convey("non-empty", func() {
+			selectStmt := `
+				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?,\?\)$
+			`
+			names := []string{"machine 1", "machine 2"}
+			rows.AddRow(names[0], "platform 1", "rack 1", "description 1", "", "", "", 0)
+			rows.AddRow(names[1], "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
+			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1]).WillReturnRows(rows)
+			machines, err := listMachines(c, db, names)
 			So(err, ShouldBeNil)
 			So(machines, ShouldResemble, []*crimson.Machine{
 				{
-					Name:        "machine 2",
+					Name:        names[0],
+					Platform:    "platform 1",
+					Rack:        "rack 1",
+					Description: "description 1",
+				},
+				{
+					Name:        names[1],
 					Platform:    "platform 2",
 					Rack:        "rack 2",
 					Description: "description 2",
 					State:       common.State_SERVING,
-				},
-				{
-					Name:        "machine 3",
-					Platform:    "platform 3",
-					Rack:        "rack 3",
-					Description: "description 3",
-					State:       common.State_REPAIR,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			names := stringset.New(0)
+			selectStmt := `
+				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r
+				WHERE m.platform_id = p.id AND m.rack_id = r.id$
+			`
+			names := []string{}
 			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
 			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			machines, err := listMachines(c, names)
+			machines, err := listMachines(c, db, names)
 			So(err, ShouldBeNil)
 			So(machines, ShouldResemble, []*crimson.Machine{
 				{
