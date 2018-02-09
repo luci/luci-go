@@ -71,9 +71,9 @@ type Console struct {
 	FaviconURL string
 }
 
-// ConsoleSummary represents the summary of a console, including its name and the latest
+// BuilderSummaryGroup represents the summary of a console, including its name and the latest
 // status of each of its builders.
-type ConsoleSummary struct {
+type BuilderSummaryGroup struct {
 	// Name is a Link that contains the name of the console as well as a relative URL
 	// to the console's page.
 	Name *Link
@@ -155,7 +155,7 @@ type ConsoleGroup struct {
 	Title *Link
 
 	// Consoles is the list of console summaries contained without this group.
-	Consoles []*ConsoleSummary
+	Consoles []*BuilderSummaryGroup
 }
 
 // ConsoleHeader represents the header of a console view, containing a set of links,

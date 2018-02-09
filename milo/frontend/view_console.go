@@ -104,29 +104,41 @@ func validateConsoleID(consoleID, project string) (cid common.ConsoleID, err err
 	return
 }
 
-// builderRefFactory is called by the assembling function (I.E. the thing
-// that builds the columns tree).  Names is both of the builder names in the
-// console def.  Idx is the index of the builder that we actually want to use.
-type builderRefFactory func(idx int, names []string, shortname string) *ui.BuilderRef
+// columnSummaryFn is called by buildTreeFromDef.
+//
+// columnIdx is the index of the current column we're processing. This
+// corresponds to one of the Builder messages in the Console config proto
+// message.
+//
+// This function should return a BuilderSummary and []BuildSummary for the
+// specified console column.
+type columnSummaryFn func(columnIdx int) (*model.BuilderSummary, []*model.BuildSummary)
 
-func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Category, int) {
+func buildTreeFromDef(def *config.Console, getColumnSummaries columnSummaryFn) (*ui.Category, int) {
 	// Build console table tree from builders.
 	categoryTree := ui.NewCategory("")
 	depth := 0
-	for i, b := range def.Builders {
-		builderRef := factory(i, b.Name, b.ShortName)
-		categories := b.ParseCategory()
+	for columnIdx, builderMsg := range def.Builders {
+		ref := &ui.BuilderRef{
+			ShortName: builderMsg.ShortName,
+		}
+		ref.Builder, ref.Build = getColumnSummaries(columnIdx)
+		if ref.Builder != nil {
+			// TODO(iannucci): This is redundant; use Builder.BuilderID directly.
+			ref.ID = ref.Builder.BuilderID
+		}
+		categories := builderMsg.ParseCategory()
 		if len(categories) > depth {
 			depth = len(categories)
 		}
-		categoryTree.AddBuilder(categories, builderRef)
+		categoryTree.AddBuilder(categories, ref)
 	}
 	return categoryTree, depth
 }
 
 // getConsoleGroups extracts the console summaries for all header summaries
 // out of the summaries map into console groups for the header.
-func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]*ui.ConsoleSummary) []ui.ConsoleGroup {
+func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]*ui.BuilderSummaryGroup) []ui.ConsoleGroup {
 	if def == nil || len(def.GetConsoleGroups()) == 0 {
 		// No header, no console groups.
 		return nil
@@ -134,7 +146,7 @@ func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]*ui.Con
 	groups := def.GetConsoleGroups()
 	consoleGroups := make([]ui.ConsoleGroup, len(groups))
 	for i, group := range groups {
-		groupSummaries := make([]*ui.ConsoleSummary, len(group.ConsoleIds))
+		groupSummaries := make([]*ui.BuilderSummaryGroup, len(group.ConsoleIds))
 		for j, id := range group.ConsoleIds {
 			cid, err := common.ParseConsoleID(id)
 			if err != nil {
@@ -206,12 +218,12 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	return rows, commits, nil
 }
 
-// summaries fetches all of the console summaries in the header, in addition
+// summaries fetches all of the builder summaries in the header, in addition
 // to the ones for the current console.
 //
 // projectID is the project being served in the current request.
 func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header, projectID string) (
-	map[common.ConsoleID]*ui.ConsoleSummary, error) {
+	map[common.ConsoleID]*ui.BuilderSummaryGroup, error) {
 
 	var ids []common.ConsoleID
 	var err error
@@ -221,7 +233,7 @@ func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header
 		}
 	}
 	ids = append(ids, consoleID)
-	return buildsource.GetConsoleSummariesFromIDs(c, ids, projectID)
+	return buildsource.GetBuilderSummaryGroups(c, ids, projectID)
 }
 
 func console(c context.Context, project, id string, limit int) (*ui.Console, error) {
@@ -234,7 +246,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 	var header *ui.ConsoleHeader
 	var rows []*buildsource.ConsoleRow
 	var commits []ui.Commit
-	var consoleSummaries map[common.ConsoleID]*ui.ConsoleSummary
+	var builderSummaries map[common.ConsoleID]*ui.BuilderSummaryGroup
 	// Get 3 things in parallel:
 	// 1. The console header (except for summaries)
 	// 2. The console header summaries + this console's builders summaries.
@@ -249,7 +261,7 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 		}
 		ch <- func() (err error) {
 			defer logTimer(c, "summaries")()
-			consoleSummaries, err = summaries(c, consoleID, def.Header, project)
+			builderSummaries, err = summaries(c, consoleID, def.Header, project)
 			return
 		}
 		ch <- func() (err error) {
@@ -264,31 +276,18 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 	// Reassemble builder summaries into both the current console
 	// and also the header.
 	if header != nil {
-		header.ConsoleGroups = getConsoleGroups(def.Header, consoleSummaries)
+		header.ConsoleGroups = getConsoleGroups(def.Header, builderSummaries)
 	}
 
 	// Reassemble the builder summaries and rows into the categoryTree.
-	categoryTree, depth := buildTreeFromDef(def, func(idx int, ids []string, shortname string) *ui.BuilderRef {
-		// Group together all builds for this builder.
+	categoryTree, depth := buildTreeFromDef(def, func(columnIdx int) (*model.BuilderSummary, []*model.BuildSummary) {
 		builds := make([]*model.BuildSummary, len(commits))
-		// This is ids[0] because in row, we index based off the first defined
-		// builderID in the console def, even if we pull a different builder
-		// from the datastore.  Basically, it's the canonical ID for what we call
-		// this column.
-		columnBuilderID := buildsource.BuilderID(ids[0])
-
-		for row := 0; row < len(commits); row++ {
-			if summaries := rows[row].Builds[columnBuilderID]; len(summaries) > 0 {
+		for row := range commits {
+			if summaries := rows[row].Builds[columnIdx]; len(summaries) > 0 {
 				builds[row] = summaries[0]
 			}
 		}
-		builder := consoleSummaries[consoleID].Builders[idx]
-		return &ui.BuilderRef{
-			ID:        builder.BuilderID,
-			ShortName: shortname,
-			Build:     builds,
-			Builder:   builder,
-		}
+		return builderSummaries[consoleID].Builders[columnIdx], builds
 	})
 
 	return &ui.Console{
@@ -302,14 +301,9 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 	}, nil
 }
 
-func consolePreview(c context.Context, summaries *ui.ConsoleSummary, def *config.Console) (*ui.Console, error) {
-	categoryTree, depth := buildTreeFromDef(def, func(idx int, names []string, shortname string) *ui.BuilderRef {
-		builder := summaries.Builders[idx]
-		return &ui.BuilderRef{
-			ID:        builder.BuilderID,
-			ShortName: shortname,
-			Builder:   builder,
-		}
+func consolePreview(c context.Context, summaries *ui.BuilderSummaryGroup, def *config.Console) (*ui.Console, error) {
+	categoryTree, depth := buildTreeFromDef(def, func(columnIdx int) (*model.BuilderSummary, []*model.BuildSummary) {
+		return summaries.Builders[columnIdx], nil
 	})
 	return &ui.Console{
 		Name:       def.Name,
@@ -663,7 +657,7 @@ func consoleTestData() []common.TestBundle {
 						ConsoleGroups: []ui.ConsoleGroup{
 							{
 								Title: ui.NewLink("bah", "something2", ""),
-								Consoles: []*ui.ConsoleSummary{
+								Consoles: []*ui.BuilderSummaryGroup{
 									{
 										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
@@ -681,7 +675,7 @@ func consoleTestData() []common.TestBundle {
 								},
 							},
 							{
-								Consoles: []*ui.ConsoleSummary{
+								Consoles: []*ui.BuilderSummaryGroup{
 									{
 										Name: ui.NewLink("hurrah", "something2", ""),
 										Builders: []*model.BuilderSummary{
