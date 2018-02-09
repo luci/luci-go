@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2118fbd_8adf9de1",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T22:42:49Z",
+      "side": 1,
+      "message": "how can this happen in the same transaction? we\u0027ve successfully updated the row earlier. This looks like at least an internal error to me",
+      "revId": "e01747d8d5f80fb35e83d3799099f9fe3bf9d926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0990a29_a9181005",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T22:42:49Z",
+      "side": 1,
+      "message": "outdated?",
+      "range": {
+        "startLine": 242,
+        "startChar": 1,
+        "endLine": 242,
+        "endChar": 31
+      },
+      "revId": "e01747d8d5f80fb35e83d3799099f9fe3bf9d926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

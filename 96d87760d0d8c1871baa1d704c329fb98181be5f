@@ -410,6 +410,30 @@
       "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa2e8d45_0d7c9828",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T22:42:49Z",
+      "side": 1,
+      "message": "right",
+      "parentUuid": "c54cd7b0_e8c0f2fc",
+      "range": {
+        "startLine": 290,
+        "startChar": 0,
+        "endLine": 291,
+        "endChar": 97
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
