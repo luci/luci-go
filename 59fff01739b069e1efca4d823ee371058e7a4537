@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "372c1c13_cee8a11f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-02-09T02:58:23Z",
+      "side": 1,
+      "message": "move to front of factory call",
+      "range": {
+        "startLine": 114,
+        "startChar": 43,
+        "endLine": 114,
+        "endChar": 46
+      },
+      "revId": "59fff01739b069e1efca4d823ee371058e7a4537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a09b1ad3_e7267bcb",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-02-09T02:58:23Z",
+      "side": 1,
+      "message": "name columnBuilderID (and maybe ref comment on ConsoleRow object)",
+      "range": {
+        "startLine": 274,
+        "startChar": 2,
+        "endLine": 274,
+        "endChar": 11
+      },
+      "revId": "59fff01739b069e1efca4d823ee371058e7a4537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
