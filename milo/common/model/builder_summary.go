@@ -65,6 +65,9 @@ func (b *BuilderSummary) LastFinishedBuildIDLink() string {
 
 // SelfLink returns a link to the associated builder.
 func (b *BuilderSummary) SelfLink() string {
+	if b == nil {
+		return InvalidBuilderIDURL
+	}
 	return BuilderIDLink(b.BuilderID, b.ProjectID)
 }
 
