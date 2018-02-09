@@ -23,10 +23,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/common/v1"
@@ -52,7 +52,7 @@ func (*Service) DeleteMachine(c context.Context, req *crimson.DeleteMachineReque
 
 // ListMachines handles a request to list machines.
 func (*Service) ListMachines(c context.Context, req *crimson.ListMachinesRequest) (*crimson.ListMachinesResponse, error) {
-	machines, err := listMachines(c, stringset.NewFromSlice(req.Names...))
+	machines, err := listMachines(c, database.Get(c), req.Names)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -116,31 +116,33 @@ func deleteMachine(c context.Context, name string) error {
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
-		return internalError(c, errors.Annotate(err, "failed to fetch rows").Err())
+		return internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "unknown machine %q", name)
 	case rows == 1:
 		return nil
 	default:
 		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Annotate(err, "unexpected number of affected rows %d", rows).Err())
+		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
 }
 
 // listMachines returns a slice of machines in the database.
-func listMachines(c context.Context, names stringset.Set) ([]*crimson.Machine, error) {
-	db := database.Get(c)
-	rows, err := db.QueryContext(c, `
-		SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-		FROM machines m, platforms p, racks r
-		WHERE m.platform_id = p.id
-			AND m.rack_id = r.id
-	`)
+func listMachines(c context.Context, q database.QueryerContext, names []string) ([]*crimson.Machine, error) {
+	stmt := squirrel.Select("m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state").
+		From("machines m, platforms p, racks r").
+		Where("m.platform_id = p.id").Where("m.rack_id = r.id")
+	stmt = selectInString(stmt, "m.name", names)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch machines").Err()
 	}
 	defer rows.Close()
-
 	var machines []*crimson.Machine
 	for rows.Next() {
 		m := &crimson.Machine{}
@@ -156,10 +158,7 @@ func listMachines(c context.Context, names stringset.Set) ([]*crimson.Machine, e
 		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch machine").Err()
 		}
-		// TODO(smut): use the database to filter rather than fetching all entries.
-		if matches(m.Name, names) {
-			machines = append(machines, m)
-		}
+		machines = append(machines, m)
 	}
 	return machines, nil
 }

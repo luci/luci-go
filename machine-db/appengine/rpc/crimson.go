@@ -21,6 +21,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Masterminds/squirrel"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
@@ -61,16 +63,17 @@ func matches(s string, set stringset.Set) bool {
 	return set.Has(s) || set.Len() == 0
 }
 
-// stringSliceToInterfaceSlice converts the given []string to []interface.
-func stringSliceToInterfaceSlice(s []string) []interface{} {
-	if len(s) == 0 {
-		return nil
+// selectInString returns the given SELECT modified with a WHERE IN clause.
+// expr is the left-hand side of the IN operator, values is the right-hand side. No-op if values is empty.
+func selectInString(b squirrel.SelectBuilder, expr string, values []string) squirrel.SelectBuilder {
+	if len(values) == 0 {
+		return b
 	}
-	slice := make([]interface{}, len(s))
-	for i, j := range s {
-		slice[i] = j
+	args := make([]interface{}, len(values))
+	for i, val := range values {
+		args[i] = val
 	}
-	return slice
+	return b.Where(expr+" IN ("+squirrel.Placeholders(len(args))+")", args...)
 }
 
 // NewServer returns a new Crimson RPC server.
