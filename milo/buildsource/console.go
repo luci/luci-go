@@ -34,17 +34,14 @@ import (
 
 // ConsoleRow is one row of a particular console.
 //
-// It has the git commit for the row, as well as a mapping of BuilderID to any
-// BuildSummaries which reported using this commit.
+// It has the git commit for the row, as well as a mapping of column index to
+// the Builds associated with it for this commit.
 //
-// For Builder definitions which had more than one BuilderID assoaciated with
-// them, they're indexed by the first BuilderID in the console's definition. So
-// if the Console has a Builder with name: "A", and name: "B", only "A" will
-// show up the Builds map (but if you look at the []BuildSummary, you'll see
-// builds from both "A" and "B").
+// Builds is a map since most commit rows have a small subset of the available
+// builders.
 type ConsoleRow struct {
 	Commit string
-	Builds map[BuilderID][]*model.BuildSummary
+	Builds map[int][]*model.BuildSummary
 }
 
 // GetConsoleRows returns a row-oriented collection of BuildSummary
@@ -59,15 +56,11 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 		}
 	}
 
-	// IMPORTANT: Maps BuilderID -> Column BuilderID (see ConsoleRow comments).
-	// This is indexed based off the first builder name, even if the second
-	// builder name is the one we end up using.
-	columnMap := map[string]BuilderID{}
-	for _, b := range console.Builders {
-		columnID := b.Name[0]
-		columnMap[columnID] = BuilderID(columnID)
-		for _, n := range b.Name[1:] {
-			columnMap[n] = BuilderID(columnID)
+	// Maps all builderIDs in a column to a single column index
+	columnMap := map[string]int{}
+	for i, b := range console.Builders {
+		for _, n := range b.Name {
+			columnMap[n] = i
 		}
 	}
 
@@ -94,7 +87,7 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 					}
 					if i, ok := columnMap[bs.BuilderID]; ok {
 						if r.Builds == nil {
-							r.Builds = map[BuilderID][]*model.BuildSummary{}
+							r.Builds = map[int][]*model.BuildSummary{}
 						}
 						r.Builds[i] = append(r.Builds[i], bs)
 					}
