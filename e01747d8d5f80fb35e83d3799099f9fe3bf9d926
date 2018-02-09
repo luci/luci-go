@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "01fd9bdb_bf7df79e",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T23:30:02Z",
+      "side": 1,
+      "message": "No idea how this would happen. For now I made it an internal error by merging it with the default case. Having not used MySQL much I\u0027ve been putting in extra checks like this.",
+      "parentUuid": "a2118fbd_8adf9de1",
+      "revId": "e01747d8d5f80fb35e83d3799099f9fe3bf9d926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0990a29_a9181005",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "e01747d8d5f80fb35e83d3799099f9fe3bf9d926",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4656c0d3_594377dd",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T23:30:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0990a29_a9181005",
+      "range": {
+        "startLine": 242,
+        "startChar": 1,
+        "endLine": 242,
+        "endChar": 31
+      },
+      "revId": "e01747d8d5f80fb35e83d3799099f9fe3bf9d926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
