@@ -13,6 +13,7 @@ message VM {
   // The name of this VM on the network. With VLAN ID, uniquely identifies this VM.
   string name = 1;
   // The VLAN this VM belongs to. With hostname, uniquely identifies this VM.
+  // When creating a VM, omit this field. It will be inferred from the IPv4 address.
   int64 vlan = 2;
   // The physical host this VM is running on.
   string host = 3;

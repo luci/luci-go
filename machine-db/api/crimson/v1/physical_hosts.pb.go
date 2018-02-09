@@ -17,6 +17,7 @@ type PhysicalHost struct {
 	// The name of this host on the network. With VLAN ID, uniquely identifies this host.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// The VLAN this host belongs to. With hostname, uniquely identifies this host.
+	// When creating a host, omit this field. It will be inferred from the IPv4 address.
 	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
 	// The machine backing this host.
 	Machine string `protobuf:"bytes,3,opt,name=machine" json:"machine,omitempty"`

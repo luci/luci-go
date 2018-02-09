@@ -70,7 +70,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 		}
 	}()
 
-	hostnameId, err := assignHostnameAndIP(c, tx, h.Name, h.Vlan, ip)
+	hostnameId, err := assignHostnameAndIP(c, tx, h.Name, ip)
 	if err != nil {
 		return err
 	}
@@ -151,8 +151,8 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		return status.Error(codes.InvalidArgument, "physical host specification is required")
 	case h.Name == "":
 		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
-	case h.Vlan < 1:
-		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
+	case h.Vlan != 0:
+		return status.Error(codes.InvalidArgument, "VLAN must not be specified, use IP address instead")
 	case h.Machine == "":
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 	case h.Os == "":
