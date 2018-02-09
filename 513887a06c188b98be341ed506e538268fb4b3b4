@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f8692257_44061af4",
+        "filename": "milo/buildsource/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-09T03:47:47Z",
+      "side": 1,
+      "message": "Add: The column index is defined by the order of the builder in the console definition.",
+      "revId": "513887a06c188b98be341ed506e538268fb4b3b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6232c48d_c2071a12",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-09T03:47:47Z",
+      "side": 1,
+      "message": "column index of the requested builder in the current console we\u0027re processing.",
+      "revId": "513887a06c188b98be341ed506e538268fb4b3b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be366237_3a852f2a",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-09T03:47:47Z",
+      "side": 1,
+      "message": "for the builder in the builder in the specified console.",
+      "revId": "513887a06c188b98be341ed506e538268fb4b3b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
