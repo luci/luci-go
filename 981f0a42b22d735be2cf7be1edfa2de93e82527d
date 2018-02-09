@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f532988e_c04e64ec",
+        "filename": "milo/common/config.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T20:33:45Z",
+      "side": 1,
+      "message": "wouldn\u0027t this exclude all buildbot builders?\n\nsame below",
+      "revId": "981f0a42b22d735be2cf7be1edfa2de93e82527d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29f6ae10_6fabb0aa",
+        "filename": "milo/common/config.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T20:33:45Z",
+      "side": 1,
+      "message": "i think this adds same builder many times",
+      "revId": "981f0a42b22d735be2cf7be1edfa2de93e82527d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6374a0e8_57f7dbe7",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 505,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T20:33:45Z",
+      "side": 1,
+      "message": "map iteration order is deterministic\n\nlet\u0027s preserve the order by adding to consoleIDs in L500 if we didn\u0027t see cid before",
+      "range": {
+        "startLine": 505,
+        "startChar": 18,
+        "endLine": 505,
+        "endChar": 30
+      },
+      "revId": "981f0a42b22d735be2cf7be1edfa2de93e82527d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "328aa9cb_950efb6d",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 525,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T20:33:45Z",
+      "side": 1,
+      "message": "return common.GetConsoles(c, ids)",
+      "range": {
+        "startLine": 521,
+        "startChar": 1,
+        "endLine": 525,
+        "endChar": 17
+      },
+      "revId": "981f0a42b22d735be2cf7be1edfa2de93e82527d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efa05cfd_5343a00b",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 541,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-09T20:33:45Z",
+      "side": 1,
+      "message": "this may leave some cons empty? maybe we should accept a pointer to the slice of consoles and also exclude consoles where we filtered out all builders",
+      "revId": "981f0a42b22d735be2cf7be1edfa2de93e82527d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
