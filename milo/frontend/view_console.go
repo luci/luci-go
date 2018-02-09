@@ -104,14 +104,17 @@ func validateConsoleID(consoleID, project string) (cid common.ConsoleID, err err
 	return
 }
 
-type builderRefFactory func(name, shortname string) *ui.BuilderRef
+// builderRefFactory is called by the assembling function (I.E. the thing
+// that builds the columns tree).  Names is both of the builder names in the
+// console def.  Idx is the index of the builder that we actually want to use.
+type builderRefFactory func(idx int, names []string, shortname string) *ui.BuilderRef
 
 func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Category, int) {
 	// Build console table tree from builders.
 	categoryTree := ui.NewCategory("")
 	depth := 0
-	for _, b := range def.Builders {
-		builderRef := factory(b.Name[0], b.ShortName)
+	for i, b := range def.Builders {
+		builderRef := factory(i, b.Name, b.ShortName)
 		categories := b.ParseCategory()
 		if len(categories) > depth {
 			depth = len(categories)
@@ -119,22 +122,6 @@ func buildTreeFromDef(def *config.Console, factory builderRefFactory) (*ui.Categ
 		categoryTree.AddBuilder(categories, builderRef)
 	}
 	return categoryTree, depth
-}
-
-// extractBuilderSummaries extracts the builder summaries for the current console
-// out of the console summary map.
-func extractBuilderSummaries(
-	id common.ConsoleID, summaries map[common.ConsoleID]*ui.ConsoleSummary) map[string]*model.BuilderSummary {
-
-	consoleSummary, ok := summaries[id]
-	if !ok {
-		return nil
-	}
-	builderSummaries := make(map[string]*model.BuilderSummary, len(consoleSummary.Builders))
-	for _, builder := range consoleSummary.Builders {
-		builderSummaries[builder.BuilderID] = builder
-	}
-	return builderSummaries
 }
 
 // getConsoleGroups extracts the console summaries for all header summaries
@@ -281,22 +268,23 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 	}
 
 	// Reassemble the builder summaries and rows into the categoryTree.
-	builderSummaries := extractBuilderSummaries(consoleID, consoleSummaries)
-	categoryTree, depth := buildTreeFromDef(def, func(id, shortname string) *ui.BuilderRef {
+	categoryTree, depth := buildTreeFromDef(def, func(idx int, ids []string, shortname string) *ui.BuilderRef {
 		// Group together all builds for this builder.
 		builds := make([]*model.BuildSummary, len(commits))
-		builderID := buildsource.BuilderID(id)
+		// This is ids[0] because in row, we index based off the first defined
+		// builderID in the console def, even if we pull a different builder
+		// from the datastore.  Basically, it's the canonical ID for what we call
+		// this column.
+		columnBuilderID := buildsource.BuilderID(ids[0])
+
 		for row := 0; row < len(commits); row++ {
-			if summaries := rows[row].Builds[builderID]; len(summaries) > 0 {
+			if summaries := rows[row].Builds[columnBuilderID]; len(summaries) > 0 {
 				builds[row] = summaries[0]
 			}
 		}
-		builder, ok := builderSummaries[id]
-		if !ok {
-			logging.Warningf(c, "could not find builder summary for %s", id)
-		}
+		builder := consoleSummaries[consoleID].Builders[idx]
 		return &ui.BuilderRef{
-			ID:        id,
+			ID:        builder.BuilderID,
 			ShortName: shortname,
 			Build:     builds,
 			Builder:   builder,
@@ -315,17 +303,10 @@ func console(c context.Context, project, id string, limit int) (*ui.Console, err
 }
 
 func consolePreview(c context.Context, summaries *ui.ConsoleSummary, def *config.Console) (*ui.Console, error) {
-	builderSummaries := make(map[string]*model.BuilderSummary, len(summaries.Builders))
-	for _, b := range summaries.Builders {
-		builderSummaries[b.BuilderID] = b
-	}
-	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *ui.BuilderRef {
-		builder, ok := builderSummaries[name]
-		if !ok {
-			logging.Warningf(c, "could not find builder summary for %s", name)
-		}
+	categoryTree, depth := buildTreeFromDef(def, func(idx int, names []string, shortname string) *ui.BuilderRef {
+		builder := summaries.Builders[idx]
 		return &ui.BuilderRef{
-			ID:        name,
+			ID:        builder.BuilderID,
 			ShortName: shortname,
 			Builder:   builder,
 		}
