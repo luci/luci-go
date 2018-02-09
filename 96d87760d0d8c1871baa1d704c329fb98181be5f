@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ca529345_574fe050",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c3e65c51_ec2dbdbf",
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7eeed965_d010b430",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b61623b_85d25c2a",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7eeed965_d010b430",
+      "range": {
+        "startLine": 171,
+        "startChar": 93,
+        "endLine": 171,
+        "endChar": 98
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "d55b3b89_2081feb9",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eca8035b_5601b73f",
+      "range": {
+        "startLine": 190,
+        "startChar": 63,
+        "endLine": 190,
+        "endChar": 70
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e08812f_92852477",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -85,6 +151,30 @@
       "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cd45c55_7f68e258",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e08812f_92852477",
+      "range": {
+        "startLine": 210,
+        "startChar": 69,
+        "endLine": 210,
+        "endChar": 73
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "08576c91_dbf3a420",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "I\u0027m not sure what you mean. How does it overwrite what was fetched? We only fetched mac_address, switch, and switchport. We didn\u0027t need to fetch name or machine because those were given as input by the user to identify the NIC to edit in the first place, so we set those here now.\n\nAs for just using n, it depends whether it\u0027s okay to modify input arguments. Since this function is private to the package I\u0027m inclined to think it\u0027s okay.",
+      "parentUuid": "875d28f6_765e389d",
+      "range": {
+        "startLine": 242,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 24
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e7f65711_4199b862",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -131,6 +245,30 @@
       "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42f97552_7a3ed69d",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/910096",
+      "parentUuid": "e7f65711_4199b862",
+      "range": {
+        "startLine": 220,
+        "startChar": 0,
+        "endLine": 245,
+        "endChar": 0
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +318,54 @@
     },
     {
       "key": {
+        "uuid": "fd83df43_fc1c1d41",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d942f491_37e1c40d",
+      "range": {
+        "startLine": 289,
+        "startChar": 59,
+        "endLine": 289,
+        "endChar": 65
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f8a88708_d6cd2ed8",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "514cf6c8_c7640179",
+      "range": {
+        "startLine": 286,
+        "startChar": 1,
+        "endLine": 289,
+        "endChar": 79
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b54479a1_e67340e2",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -200,6 +386,30 @@
       "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c54cd7b0_e8c0f2fc",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-09T04:01:03Z",
+      "side": 1,
+      "message": "Done, but I think dupes actually do matter because they will affect query building.",
+      "parentUuid": "b54479a1_e67340e2",
+      "range": {
+        "startLine": 290,
+        "startChar": 0,
+        "endLine": 291,
+        "endChar": 97
+      },
+      "revId": "96d87760d0d8c1871baa1d704c329fb98181be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
