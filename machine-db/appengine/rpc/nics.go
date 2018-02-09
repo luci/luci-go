@@ -131,14 +131,8 @@ func listNICs(c context.Context, q database.QueryerContext, names, machines []st
 	stmt := squirrel.Select("n.name", "m.name", "n.mac_address", "s.name", "n.switchport").
 		From("nics n, machines m, switches s").
 		Where("n.machine_id = m.id").Where("n.switch_id = s.id")
-	args := stringSliceToInterfaceSlice(names)
-	if len(args) > 0 {
-		stmt = stmt.Where("n.name IN ("+squirrel.Placeholders(len(args))+")", args...)
-	}
-	args = stringSliceToInterfaceSlice(machines)
-	if len(args) > 0 {
-		stmt = stmt.Where("m.name IN ("+squirrel.Placeholders(len(args))+")", args...)
-	}
+	stmt = selectInString(stmt, "n.name", names)
+	stmt = selectInString(stmt, "m.name", machines)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
