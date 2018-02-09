@@ -15,39 +15,61 @@
 package cas
 
 import (
+	"encoding/hex"
 	"fmt"
+	"io"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/common"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 )
 
+// readBufferSize is size of a buffer used to read Google Storage files.
+//
+// Larger values mean fewer Google Storage RPC calls, but more memory usage.
+const readBufferSize = 4 * 1024 * 1024
+
 // Internal returns non-ACLed implementation of cas.StorageService.
 //
 // It can be used internally by the backend. Assumes ACL checks are already
 // done.
 func Internal() api.StorageServer {
-	return &storageImpl{
-		getGS:        gs.Get,
-		settings:     settings.Get,
-		getSignedURL: getSignedURL,
-	}
+	return impl
 }
 
-// storageImpl implements api.StorageServer.
+// impl is the actual real implementation of api.StorageServer.
+var impl = &storageImpl{
+	getGS:        gs.Get,
+	settings:     settings.Get,
+	getSignedURL: getSignedURL,
+}
+
+func init() {
+	// See queue.yaml for "verify-upload" task queue definition.
+	common.TQ.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
+		return impl.verifyUploadTask(c, m.(*tasks.VerifyUpload))
+	}, "verify-upload", nil)
+}
+
+// storageImpl implements api.StorageServer and task queue handlers.
 //
 // Doesn't do any ACL checks.
 type storageImpl struct {
@@ -197,7 +219,255 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 		}
 	}
 
-	// TODO(vadimsh): Implement.
+	// Verify HMAC of the upload operation ID.
+	opID, err := upload.UnwrapOpID(c, r.UploadOperationId, auth.CurrentIdentity(c))
+	if err != nil {
+		if transient.Tag.In(err) {
+			return nil, errors.Annotate(err, "failed to check HMAC on upload_operation_id").Err()
+		}
+		return nil, errors.Reason("no such upload operation").
+			InternalReason("HMAC check failed - %s", err).
+			Tag(grpcutil.NotFoundTag).Err()
+	}
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented")
+	// Grab the corresponding operation and inspect its status.
+	op := upload.Operation{ID: opID}
+	switch err := datastore.Get(c, &op); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, errors.Reason("no such upload operation").
+			Tag(grpcutil.NotFoundTag).Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch the upload operation").
+			Tag(grpcutil.InternalTag).Err()
+	case op.Status != api.UploadStatus_UPLOADING:
+		// Nothing to do if the operation is already closed or being verified.
+		return op.ToProto(r.UploadOperationId), nil
+	}
+
+	// If the forced hash is provided by the (trusted) caller, we are almost done.
+	// Just need to move the temp file to its final location based on this hash
+	// and close the operation.
+	if r.ForceHash != nil {
+		mutated, err := s.finishAndForcedHash(c, &op, r.ForceHash)
+		if err != nil {
+			return nil, err
+		}
+		return mutated.ToProto(r.UploadOperationId), nil
+	}
+
+	// Otherwise start the hash verification task, see verifyUploadTask below.
+	mutated, err := op.Advance(c, func(c context.Context, op *upload.Operation) error {
+		op.Status = api.UploadStatus_VERIFYING
+		return common.TQ.AddTask(c, &tq.Task{
+			Payload: &tasks.VerifyUpload{UploadOperationId: opID},
+			Title:   fmt.Sprintf("%d", opID),
+		})
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to start the verification task").
+			Tag(grpcutil.InternalTag).Err()
+	}
+	return mutated.ToProto(r.UploadOperationId), nil
+}
+
+// finishAndForcedHash finalizes uploads that use ForceHash field.
+//
+// It publishes the object immediately, skipping the verification.
+func (s *storageImpl) finishAndForcedHash(c context.Context, op *upload.Operation, hash *api.ObjectRef) (*upload.Operation, error) {
+	gs := s.getGS(c)
+	cfg, err := s.settings(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// Try to move the object into the final location. This may fail
+	// transiently, in which case we ask the client to retry, or fatally, in
+	// which case we close the upload operation with an error.
+	pubErr := gs.Publish(c, cfg.ObjectPath(hash), op.TempGSPath, -1)
+	if transient.Tag.In(pubErr) {
+		return nil, errors.Annotate(pubErr, "failed to publish the object").
+			Tag(grpcutil.InternalTag).Err()
+	}
+
+	// Try to remove the leftover garbage. See maybeDelete doc for possible
+	// caveats.
+	if err := s.maybeDelete(c, gs, op.TempGSPath); err != nil {
+		return nil, err
+	}
+
+	// Set the status of the operation based on whether we published the file
+	// or not.
+	return op.Advance(c, func(_ context.Context, op *upload.Operation) error {
+		if pubErr != nil {
+			op.Status = api.UploadStatus_ERRORED
+			op.Error = fmt.Sprintf("Failed to publish the object - %s", pubErr)
+		} else {
+			op.Status = api.UploadStatus_PUBLISHED
+			op.HashAlgo = hash.HashAlgo
+			op.HexDigest = hash.HexDigest
+		}
+		return nil
+	})
+}
+
+// verifyUploadTask verifies data uploaded by a user and closes the upload
+// operation based on the result.
+//
+// Returning a transient error here causes the task queue service to retry the
+// task.
+func (s *storageImpl) verifyUploadTask(c context.Context, task *tasks.VerifyUpload) (err error) {
+	op := &upload.Operation{ID: task.UploadOperationId}
+	switch err := datastore.Get(c, op); {
+	case err == datastore.ErrNoSuchEntity:
+		return errors.Reason("no such upload operation %d", op.ID).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch upload operation %d", op.ID).
+			Tag(transient.Tag).Err()
+	case op.Status != api.UploadStatus_VERIFYING:
+		logging.Infof(c, "The upload operation %d is not pending verification anymore (status = %s)", op.ID, op.Status)
+		return nil
+	}
+
+	gs := s.getGS(c)
+	cfg, err := s.settings(c)
+	if err != nil {
+		return err
+	}
+
+	// If the destination file exists already, we are done. This may happen on
+	// a task retry or if the file was uploaded concurrently by someone else.
+	// Otherwise we still need to verify the temp file, and then move it into
+	// the final location.
+	if op.HexDigest != "" {
+		exists, err := gs.Exists(c, cfg.ObjectPath(&api.ObjectRef{
+			HashAlgo:  op.HashAlgo,
+			HexDigest: op.HexDigest,
+		}))
+		switch {
+		case err != nil:
+			return errors.Annotate(err, "failed to check the presence of the destination file").
+				Tag(transient.Tag).Err()
+		case exists:
+			if err := s.maybeDelete(c, gs, op.TempGSPath); err != nil {
+				return err
+			}
+			_, err = op.Advance(c, func(_ context.Context, op *upload.Operation) error {
+				op.Status = api.UploadStatus_PUBLISHED
+				return nil
+			})
+			return err
+		}
+	}
+
+	verifiedHexDigest := "" // set after the successful hash verification below
+
+	defer func() {
+		if err != nil {
+			logging.Errorf(c, "Verification error - %s", err)
+		}
+
+		// On transient errors don't touch the temp file or the operation, we need
+		// them for retries.
+		if transient.Tag.In(err) {
+			return
+		}
+
+		// Update the status of the operation based on 'err'. If Advance fails
+		// itself, return a transient error to make sure 'verifyUploadTask' is
+		// retried.
+		_, opErr := op.Advance(c, func(_ context.Context, op *upload.Operation) error {
+			if err != nil {
+				op.Status = api.UploadStatus_ERRORED
+				op.Error = fmt.Sprintf("Verification failed - %s", err)
+			} else {
+				op.Status = api.UploadStatus_PUBLISHED
+				op.HexDigest = verifiedHexDigest
+			}
+			return nil
+		})
+		if opErr != nil {
+			err = opErr // override the error returned by the task
+			return
+		}
+
+		// Best effort deletion of the temporary file. We do it here, after updating
+		// the operation, to avoid retrying the expensive verification procedure
+		// just because Delete is flaky. Having a little garbage in the temporary
+		// directory doesn't hurt (it is marked with operation ID and timestamp,
+		// so we can always clean it up offline).
+		if delErr := gs.Delete(c, op.TempGSPath); delErr != nil {
+			logging.WithError(delErr).Errorf(c,
+				"Failed to remove temporary Google Storage file, it is dead garbage now: %s", op.TempGSPath)
+		}
+	}()
+
+	hash, err := NewHash(op.HashAlgo)
+	if err != nil {
+		return err
+	}
+
+	// Prepare reading the most recent generation of the uploaded temporary file.
+	r, err := gs.Reader(c, op.TempGSPath, 0)
+	if err != nil {
+		return errors.Annotate(err, "failed to start reading Google Storage file").Err()
+	}
+
+	// Pick large buffer to reduce number of Google Storage RPC calls. Don't
+	// allocate more than necessary though.
+	fileSize := r.Size()
+	bufSize := readBufferSize
+	if fileSize < int64(bufSize) {
+		bufSize = int(fileSize)
+	}
+
+	// Feed the file to the hasher.
+	_, err = io.CopyBuffer(hash, io.NewSectionReader(r, 0, fileSize), make([]byte, bufSize))
+	if err != nil {
+		return errors.Annotate(err, "failed to read Google Storage file").Err()
+	}
+	verifiedHexDigest = hex.EncodeToString(hash.Sum(nil))
+
+	// If we know the expected hash, verify it matches what we have calculated.
+	if op.HexDigest != "" && op.HexDigest != verifiedHexDigest {
+		return errors.Reason("expected %s to be %s, got %s", op.HashAlgo, op.HexDigest, verifiedHexDigest).Err()
+	}
+
+	// The verification was successful, move the temp file (at the generation we
+	// have just verified) to the final location. If the file was modified after
+	// we have verified it (has different generation number), Publish fails:
+	// clients must not modify uploads after calling FinishUpload, this is
+	// sneaky behavior. Regardless of the outcome of this operation, the upload
+	// operation is closed in the defer above.
+	err = gs.Publish(c, cfg.ObjectPath(&api.ObjectRef{
+		HashAlgo:  op.HashAlgo,
+		HexDigest: verifiedHexDigest,
+	}), op.TempGSPath, r.Generation())
+	if err != nil {
+		return errors.Annotate(err, "failed to publish the verified file").Err()
+	}
+	return nil
+}
+
+// maybeDelete is called to delete temporary file when finishing an upload.
+//
+// If this fails transiently, we ask the client (or the task queue) to retry the
+// corresponding RPC (by returning transient errors), so the file is deleted
+// eventually. It means Publish may be called again too, but it is idempotent,
+// so it is fine.
+//
+// If Delete fails fatally, we are in a tough position, since we did publish the
+// file already, so the upload operation is technically successful and marking
+// it as failed is a lie. So we log and ignore fatal Delete errors. They should
+// not happen anyway.
+//
+// Thus, this function returns either nil or a transient error.
+func (s *storageImpl) maybeDelete(c context.Context, gs gs.GoogleStorage, path string) error {
+	switch err := gs.Delete(c, path); {
+	case transient.Tag.In(err):
+		return errors.Annotate(err, "transient error when removing temporary Google Storage file").
+			Tag(grpcutil.InternalTag).Err()
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Failed to remove temporary Google Storage file, it is dead garbage now: %s", path)
+	}
+	return nil
 }
