@@ -33,32 +33,85 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 )
 
-// Log makes a (cached) call to gitiles to obtain up to 100 commits for
-// the given repo host (e.g. "chromium.googlesource.com"), project
-// (e.g. "chromium/src") and commitish (e.g. "refs/heads/master").
+// Log returns ancestors commits of the given repository
+// host (e.g. "chromium.googlesource.scom"), project (e.g. "chromium/src") and
+// descendant committish (e.g. "refs/heads/master" or commit hash).
 //
-// If committish is a commit hash, min specifies minimum number of ancestor
-// commits to return.
-// If <=0, 50 is used. Panics if min > 100.
+// Limit specifies the number of commits to return.
+// If limit<=0, 50 is used.
 // Setting a lower value increases cache hit probability.
 //
 // Returns an error if a client factory is not installed in c. See UseFactory.
-func Log(c context.Context, host, project, commitish string, min int) ([]*gitpb.Commit, error) {
-	switch {
-	case min <= 0:
-		min = 50
-	case min > 100:
-		panic("min cannot be > 100")
+func Log(c context.Context, host, project, commitish string, limit int) ([]*gitpb.Commit, error) {
+	if limit <= 0 {
+		limit = 50
 	}
 
-	l := &logReq{
-		host:            host,
-		project:         project,
-		commitish:       commitish,
-		commitishIsHash: gitHash.MatchString(commitish),
-		min:             min,
+	var commits []*gitpb.Commit
+	remaining := limit // defined as (limit - len(commits))
+	// add appends page to commits and updates remaining.
+	// If page starts with commits' last commit, page's first commit
+	// is skipped.
+	add := func(page []*gitpb.Commit) {
+		switch {
+		case len(commits) == 0:
+			commits = page
+		case len(page) == 0:
+		default:
+			if page[0].Id != commits[len(commits)-1].Id {
+				panic(fmt.Sprintf(
+					"pages are not contiguous; want page start %q, got %q",
+					commits[len(commits)-1].Id, page[0].Id))
+			}
+			commits = append(commits, page[1:]...)
+		}
+		remaining = limit - len(commits)
 	}
-	return l.call(c)
+
+	req := &logReq{
+		host:      host,
+		project:   project,
+		commitish: commitish,
+		min:       100,
+	}
+
+	for remaining > 100 {
+		// We need to fetch >100 commits, but one logReq can handle only 100.
+		// Call it in a loop.
+		switch page, err := req.call(c); {
+		case err != nil:
+			return commits, err
+		case len(page) < 100:
+			// This can happen iff there are no more commits.
+			add(page)
+			return commits, nil
+		case len(page) > 100:
+			panic("impossible: logReq.call() returned >100 commits")
+		default:
+			// There may be more commits.
+			// Continue from the last fetched commit.
+			req.commitish = page[len(page)-1].Id
+			add(page)
+			if remaining == 0 {
+				panic("impossible: remaining reached 0")
+			}
+		}
+	}
+
+	// last page. One logReq.call() can handle the rest.
+	req.min = remaining
+	page, err := req.call(c)
+	if err != nil {
+		return commits, err
+	}
+	add(page)
+
+	// we may end up with more than we were asked for because
+	// gitReq's parameter is minimum, not limit.
+	if len(commits) > limit {
+		commits = commits[:limit]
+	}
+	return commits, nil
 }
 
 // possible values for "result" field of logCounter metric below.
@@ -106,6 +159,10 @@ type logReq struct {
 }
 
 func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
+	if l.min < 1 || l.min > 100 {
+		panic(fmt.Sprintf("invalid min %d", l.min))
+	}
+
 	c = logging.SetFields(c, logging.Fields{
 		"host":      l.host,
 		"project":   l.project,
@@ -205,6 +262,10 @@ func (l *logReq) readCache(c context.Context) (cacheResult string, commits []*gi
 				e = l.mkCache(c, descendant)
 				// cacheResult is not set => continue the loop.
 			default:
+				// TODO(nodir): if we need commits C200..C100, but we have
+				// C200->C250 here (C250 entry has C250..C150), instead of
+				// discarding cache, reuse C200..C150 from C250 and fetch
+				// C150..C50.
 				logging.Debugf(c, "distance at key %q is too large", e.Key())
 				cacheResult = cacheMiss
 			}
