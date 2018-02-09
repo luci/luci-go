@@ -34,17 +34,16 @@ import (
 
 // ConsoleRow is one row of a particular console.
 //
-// It has the git commit for the row, as well as a mapping of BuilderID to any
-// BuildSummaries which reported using this commit.
+// It has the git commit for the row, as well as a mapping of column index to
+// the Builds associated with it for this commit. The columns are defined by the
+// order of the Builder messages in the Console config message (one column per
+// Builder message).
 //
-// For Builder definitions which had more than one BuilderID assoaciated with
-// them, they're indexed by the first BuilderID in the console's definition. So
-// if the Console has a Builder with name: "A", and name: "B", only "A" will
-// show up the Builds map (but if you look at the []BuildSummary, you'll see
-// builds from both "A" and "B").
+// Builds is a map since most commit rows have a small subset of the available
+// builders.
 type ConsoleRow struct {
 	Commit string
-	Builds map[BuilderID][]*model.BuildSummary
+	Builds map[int][]*model.BuildSummary
 }
 
 // GetConsoleRows returns a row-oriented collection of BuildSummary
@@ -59,15 +58,11 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 		}
 	}
 
-	// IMPORTANT: Maps BuilderID -> Column BuilderID (see ConsoleRow comments).
-	// This is indexed based off the first builder name, even if the second
-	// builder name is the one we end up using.
-	columnMap := map[string]BuilderID{}
-	for _, b := range console.Builders {
-		columnID := b.Name[0]
-		columnMap[columnID] = BuilderID(columnID)
-		for _, n := range b.Name[1:] {
-			columnMap[n] = BuilderID(columnID)
+	// Maps all builderIDs to the indexes of the columns it appears in.
+	columnMap := map[string][]int{}
+	for columnIdx, b := range console.Builders {
+		for _, name := range b.Name {
+			columnMap[name] = append(columnMap[name], columnIdx)
 		}
 	}
 
@@ -92,11 +87,13 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 					if bs.Experimental && !console.IncludeExperimentalBuilds {
 						return
 					}
-					if i, ok := columnMap[bs.BuilderID]; ok {
+					if columnIdxs, ok := columnMap[bs.BuilderID]; ok {
 						if r.Builds == nil {
-							r.Builds = map[BuilderID][]*model.BuildSummary{}
+							r.Builds = map[int][]*model.BuildSummary{}
 						}
-						r.Builds[i] = append(r.Builds[i], bs)
+						for _, columnIdx := range columnIdxs {
+							r.Builds[columnIdx] = append(r.Builds[columnIdx], bs)
+						}
 					}
 				})
 			}
@@ -112,15 +109,15 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 // with only the builder's latest build.
 type ConsolePreview map[BuilderID]*model.BuildSummary
 
-// GetConsoleSummariesFromIDs returns a list of console summaries from the datastore
+// GetBuilderSummaryGroups returns a list of console summaries from the datastore
 // using a slice of console IDs as input.
 //
 // This list of console summaries directly corresponds to the input list of
 // console IDs.
 //
 // projectID is the project being served in the current request.
-func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID, projectID string) (
-	map[common.ConsoleID]*ui.ConsoleSummary, error) {
+func GetBuilderSummaryGroups(c context.Context, consoleIDs []common.ConsoleID, projectID string) (
+	map[common.ConsoleID]*ui.BuilderSummaryGroup, error) {
 
 	// Get the console definitions and builders, then rearrange them into console summaries.
 	defs, err := common.GetConsoles(c, consoleIDs)
@@ -135,7 +132,7 @@ func GetConsoleSummariesFromIDs(c context.Context, consoleIDs []common.ConsoleID
 //
 // This expects all builders in all consoles coming from the same projectID.
 func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Console, projectID string) (
-	map[common.ConsoleID]*ui.ConsoleSummary, error) {
+	map[common.ConsoleID]*ui.BuilderSummaryGroup, error) {
 
 	// Maps consoleID -> console config definition.
 	consoles := make(map[common.ConsoleID]*config.Console, len(consoleEnts))
@@ -143,16 +140,16 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 	// Maps the BuilderID to the per-console pointer-to-summary in the summaries
 	// map. Note that builders with multiple builderIDs in the same console will
 	// all map to the same BuilderSummary.
-	columns := map[BuilderID]map[common.ConsoleID]*model.BuilderSummary{}
+	columns := map[BuilderID]map[common.ConsoleID][]*model.BuilderSummary{}
 
 	// The return result.
-	summaries := map[common.ConsoleID]*ui.ConsoleSummary{}
+	summaries := map[common.ConsoleID]*ui.BuilderSummaryGroup{}
 
 	for _, ent := range consoleEnts {
 		cid := ent.ConsoleID()
 		consoles[cid] = &ent.Def
 
-		summaries[cid] = &ui.ConsoleSummary{
+		summaries[cid] = &ui.BuilderSummaryGroup{
 			Builders: make([]*model.BuilderSummary, len(ent.Def.Builders)),
 			Name: ui.NewLink(
 				ent.ID,
@@ -172,11 +169,11 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 				// Find/populate the BuilderID -> {console: summary}
 				colMap, ok := columns[name]
 				if !ok {
-					colMap = map[common.ConsoleID]*model.BuilderSummary{}
+					colMap = map[common.ConsoleID][]*model.BuilderSummary{}
 					columns[name] = colMap
 				}
 
-				colMap[cid] = s
+				colMap[cid] = append(colMap[cid], s)
 			}
 		}
 	}
@@ -208,14 +205,14 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 		}
 	}
 
-	// Now we have the mapping from BuilderID -> summary, and ALL THE DATA, map
+	// Now we have the mapping from BuilderID -> summaries, and ALL THE DATA, map
 	// the data back into the summaries.
 	for _, summary := range bs {
 		if summary == nil { // We got ErrNoSuchEntity above
 			continue
 		}
 
-		for cid, curSummary := range columns[BuilderID(summary.BuilderID)] {
+		for cid, curSummaries := range columns[BuilderID(summary.BuilderID)] {
 			cons := consoles[cid]
 
 			// If this console doesn't show experimental builds, skip all summaries of
@@ -224,14 +221,16 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 				continue
 			}
 
-			// If the new summary's build was created before the current summary's
-			// build, skip it.
-			if summary.LastFinishedCreated.Before((*curSummary).LastFinishedCreated) {
-				continue
-			}
+			for _, curSummary := range curSummaries {
+				// If the new summary's build was created before the current summary's
+				// build, skip it.
+				if summary.LastFinishedCreated.Before((*curSummary).LastFinishedCreated) {
+					continue
+				}
 
-			// Looks like this is the best summary for this slot so far, so save it.
-			*curSummary = *summary
+				// Looks like this is the best summary for this slot so far, so save it.
+				*curSummary = *summary
+			}
 		}
 	}
 
