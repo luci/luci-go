@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "23575a79_7e851695",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-09T20:22:55Z",
+      "side": 1,
+      "message": "this rename doesn\u0027t make sense to me -- map value type is ConsoleSummary, so what\u0027s wrong with old name?\nor is ConsoleSummary type itself badly named?",
+      "range": {
+        "startLine": 249,
+        "startChar": 5,
+        "endLine": 249,
+        "endChar": 13
+      },
+      "revId": "20cc6eb8a69faa111678b09d49370eb2feb781b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
