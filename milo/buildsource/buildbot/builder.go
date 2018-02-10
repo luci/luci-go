@@ -138,7 +138,8 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 		return nil, err
 	}
 	result := &ui.Builder{
-		Name: builderName,
+		Name:         builderName,
+		HasBlamelist: true,
 	}
 	master, err := buildstore.GetMaster(c, masterName, false)
 	if err != nil {

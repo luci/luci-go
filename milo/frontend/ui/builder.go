@@ -68,6 +68,10 @@ type Builder struct {
 	// Name of the builder
 	Name string
 
+	// Indicates that this Builder should render a blamelist for each build.
+	// This is only supported for Buildbot (crbug.com/807846)
+	HasBlamelist bool
+
 	// Warning text, if any.
 	Warning string
 
