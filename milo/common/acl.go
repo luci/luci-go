@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	accessProto "go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/access"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
@@ -44,15 +45,20 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	case admin:
 		return true, nil
 	}
+
 	// Get the project, because that's where the ACLs lie.
 	err := access.Check(
 		c, backend.AsUser,
 		cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(project)))
-	switch err {
-	case nil:
+	innerError := errors.Unwrap(err)
+
+	switch {
+	case err == nil:
 		return true, nil
-	case access.ErrNoAccess:
+	case err == access.ErrNoAccess:
 		return false, nil
+	case innerError == cfgclient.ErrNoConfig:
+		return false, CodeNotFound.Tag().Apply(err)
 	default:
 		return false, err
 	}
