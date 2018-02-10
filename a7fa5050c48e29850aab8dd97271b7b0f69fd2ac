@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7dc5585a_57e695ef",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-10T01:18:38Z",
+      "side": 1,
+      "message": "maybe break two separate lines too, up to you",
+      "range": {
+        "startLine": 113,
+        "startChar": 25,
+        "endLine": 113,
+        "endChar": 26
+      },
+      "revId": "a7fa5050c48e29850aab8dd97271b7b0f69fd2ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
