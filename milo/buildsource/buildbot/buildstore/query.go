@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/milo/common"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -205,11 +204,10 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	msgs, err := search.Fetch(q.Limit, nil)
 	switch apiErr, _ := err.(*googleapi.Error); {
 	case apiErr != nil && apiErr.Code == http.StatusForbidden:
-		return nil, errors.Annotate(
-			err,
-			"%q does not have access to bucket %q",
+		logging.Warningf(c, "%q does not have access to bucket %q. Returning 0 builds.",
 			auth.CurrentIdentity(c),
-			bucket).Tag(common.CodeNoAccess).Err()
+			bucket)
+		return nil, nil
 	case err != nil:
 		return nil, errors.Annotate(err, "searching on buildbucket").Err()
 	}
