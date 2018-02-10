@@ -133,7 +133,9 @@
         <th>Revision</th>
         <th>Result</th>
         <th>Build #</th>
-        <th>Changes</th>
+        {{ if .Builder.HasBlamelist }}
+          <th>Changes</th>
+        {{ end }}
         <th>Info</th>
       </tr>
 
@@ -154,24 +156,26 @@
             <td> {{ .Status.String }} </td>
           {{ end }}
           <td>{{ .Link.HTML }}</td>
-          <td class="left">
-            {{ $nb := len .Blame }}
-            {{ if lt $nb 4 }}
-              {{ range $i, $c := .Blame }}
-                {{ if gt $i 0 }},{{ end }}
-                {{ if .Changelist }}
-                  {{ .Changelist.HTML }}
-                  {{ if .AuthorEmail }}
-                    by {{ .AuthorEmail }}
+          {{ if .Builder.HasBlamelist }}
+            <td class="left">
+              {{ $nb := len .Blame }}
+              {{ if lt $nb 4 }}
+                {{ range $i, $c := .Blame }}
+                  {{ if gt $i 0 }},{{ end }}
+                  {{ if .Changelist }}
+                    {{ .Changelist.HTML }}
+                    {{ if .AuthorEmail }}
+                      by {{ .AuthorEmail }}
+                    {{ end }}
+                  {{ else }}
+                    (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
                   {{ end }}
-                {{ else }}
-                  (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
                 {{ end }}
+              {{ else }}
+                ({{ $nb }} changes)
               {{ end }}
-            {{ else }}
-              ({{ $nb }} changes)
-            {{ end }}
-          </td>
+            </td>
+          {{ end }}
           <td class="left">
             {{ range $i, $value := .Text }}
               {{ if gt $i 0 }}<br>{{ end }}
