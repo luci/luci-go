@@ -24,6 +24,9 @@
 {{end}}
 
 {{define "body"}}
+
+{{ $hasBlamelist := .Builder.HasBlamelist }}
+
 <h1>Builder <a href="{{ pagedURL .Request -1 "EMPTY" }}">{{.Builder.Name}}</a></h1>
 
 <div class="prelude">
@@ -132,9 +135,9 @@
         <th>Duration</th>
         <th>Revision</th>
         <th>Result</th>
-        <th>Build #</th>
+        <th>Build #</th>{{ if $hasBlamelist }}
         <th>Changes</th>
-        <th>Info</th>
+        {{ end }}<th>Info</th>
       </tr>
 
       {{ range .Builder.FinishedBuilds }}
@@ -154,24 +157,26 @@
             <td> {{ .Status.String }} </td>
           {{ end }}
           <td>{{ .Link.HTML }}</td>
-          <td class="left">
-            {{ $nb := len .Blame }}
-            {{ if lt $nb 4 }}
-              {{ range $i, $c := .Blame }}
-                {{ if gt $i 0 }},{{ end }}
-                {{ if .Changelist }}
-                  {{ .Changelist.HTML }}
-                  {{ if .AuthorEmail }}
-                    by {{ .AuthorEmail }}
+          {{ if $hasBlamelist }}
+            <td class="left">
+              {{ $nb := len .Blame }}
+              {{ if lt $nb 4 }}
+                {{ range $i, $c := .Blame }}
+                  {{ if gt $i 0 }},{{ end }}
+                  {{ if .Changelist }}
+                    {{ .Changelist.HTML }}
+                    {{ if .AuthorEmail }}
+                      by {{ .AuthorEmail }}
+                    {{ end }}
+                  {{ else }}
+                    (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
                   {{ end }}
-                {{ else }}
-                  (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
                 {{ end }}
+              {{ else }}
+                ({{ $nb }} changes)
               {{ end }}
-            {{ else }}
-              ({{ $nb }} changes)
-            {{ end }}
-          </td>
+            </td>
+          {{ end }}
           <td class="left">
             {{ range $i, $value := .Text }}
               {{ if gt $i 0 }}<br>{{ end }}

@@ -173,7 +173,8 @@ func buildbotBuilderTestData() []common.TestBundle {
 			Description: "Basic Test no builds",
 			Data: templates.Args{
 				"Builder": &ui.Builder{
-					Name: "Sample Builder",
+					Name:         "Sample Builder",
+					HasBlamelist: true,
 				},
 			},
 		},
@@ -181,7 +182,8 @@ func buildbotBuilderTestData() []common.TestBundle {
 			Description: "Basic Test with builds",
 			Data: templates.Args{
 				"Builder": &ui.Builder{
-					Name: "Sample Builder",
+					Name:         "Sample Builder",
+					HasBlamelist: true,
 					MachinePool: &ui.MachinePool{
 						Total:        15,
 						Disconnected: 13,

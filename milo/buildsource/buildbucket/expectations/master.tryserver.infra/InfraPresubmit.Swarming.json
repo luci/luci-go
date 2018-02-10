@@ -1,5 +1,6 @@
 {
   "Name": "InfraPresubmit.Swarming",
+  "HasBlamelist": false,
   "Warning": "",
   "CurrentBuilds": [
     {
