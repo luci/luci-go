@@ -101,6 +101,14 @@ func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder
 	sort.Slice(builder.Groups, func(i, j int) bool {
 		return builder.Groups[i].Label < builder.Groups[j].Label
 	})
+
+	for _, b := range builder.FinishedBuilds {
+		if len(b.Blame) > 0 {
+			builder.HasBlamelist = true
+			break
+		}
+	}
+
 	return builder, nil
 }
 
