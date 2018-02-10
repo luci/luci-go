@@ -68,6 +68,24 @@ func TestACL(t *testing.T) {
 				})
 
 			})
+
+			Convey("admin@google.com wants to...", func() {
+				c = auth.WithState(c, &authtest.FakeState{
+					Identity:       "user:alicebob@google.com",
+					IdentityGroups: []string{"administrators", "googlers", "all"},
+				})
+				Convey("Read private project", func() {
+					ok, err := IsAllowed(c, "secret")
+					So(ok, ShouldEqual, true)
+					So(err, ShouldBeNil)
+				})
+				Convey("Read un/misconfigured project", func() {
+					ok, err := IsAllowed(c, "misconfigured")
+					So(ok, ShouldEqual, true)
+					So(err, ShouldBeNil)
+				})
+			})
+
 			Convey("alicebob@google.com wants to...", func() {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
@@ -77,6 +95,12 @@ func TestACL(t *testing.T) {
 					ok, err := IsAllowed(c, "secret")
 					So(ok, ShouldEqual, true)
 					So(err, ShouldBeNil)
+				})
+				Convey("Read un/misconfigured project", func() {
+					ok, err := IsAllowed(c, "misconfigured")
+					So(ok, ShouldEqual, false)
+					So(err, ShouldNotBeNil)
+					So(ErrorTag.In(err), ShouldEqual, CodeNotFound)
 				})
 			})
 
@@ -217,5 +241,8 @@ var aclConfgs = map[string]memcfg.ConfigSet{
 	},
 	"projects/opensource": {
 		"project.cfg": publicProjectCfg,
+	},
+	"project/misconfigured": {
+		"probject.cfg": secretProjectCfg,
 	},
 }
