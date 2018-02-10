@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f75eaad0_8ae768f2",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-10T00:21:04Z",
+      "side": 1,
+      "message": "nit: i think it would be more readable if each Where was on its own line",
+      "revId": "e481a7a78f33497949dbbe20c90663648ed3f693",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
