@@ -15,6 +15,8 @@
 package rpc
 
 import (
+	"database/sql"
+
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc/codes"
@@ -47,6 +49,39 @@ func (*Service) ListFreeIPs(c context.Context, req *crimson.ListFreeIPsRequest) 
 	return &crimson.ListIPsResponse{
 		Ips: ips,
 	}, nil
+}
+
+// getIP returns an IP address in the database.
+func getIP(c context.Context, q database.QueryerContext, ipv4 common.IPv4) (*crimson.IP, error) {
+	rows, err := q.QueryContext(c, `
+		SELECT i.ipv4, i.vlan_id, h.name
+		FROM ips i
+		LEFT OUTER JOIN hostnames h
+			ON i.hostname_id = h.id
+		WHERE i.ipv4 = ?
+	`, ipv4)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch IP address").Err())
+	}
+	defer rows.Close()
+
+	// We only expect one result because IPv4 is unique in the database.
+	if !rows.Next() {
+		return nil, status.Errorf(codes.NotFound, "unknown IPv4 address %q", ipv4)
+	}
+	ip := &crimson.IP{}
+	var hostname sql.NullString
+	if err = rows.Scan(&ipv4, &ip.Vlan, &hostname); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch IP address").Err())
+	}
+	if hostname.Valid {
+		ip.Hostname = hostname.String
+	}
+	ip.Ipv4 = ipv4.String()
+	if rows.Next() {
+		return nil, internalError(c, errors.Annotate(err, "unexpected number of rows").Err())
+	}
+	return ip, nil
 }
 
 // listFreeIPs returns a slice of free IP addresses in the database.
