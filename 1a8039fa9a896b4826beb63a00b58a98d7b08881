@@ -22,6 +22,30 @@
       "revId": "1a8039fa9a896b4826beb63a00b58a98d7b08881",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd9d8f21_edfbc0e7",
+        "filename": "milo/common/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-02-10T01:21:54Z",
+      "side": 1,
+      "message": "Neat!",
+      "parentUuid": "e06742b8_bc6562ac",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 2
+      },
+      "revId": "1a8039fa9a896b4826beb63a00b58a98d7b08881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
