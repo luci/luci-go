@@ -24,8 +24,6 @@ import (
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
-
 	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -270,67 +268,94 @@ func TestListVMs(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `
-			^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
-			FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
-			WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id$
-		`
 		columns := []string{"hv.name", "hv.vlan_id", "hp.name", "hp.vlan_id", "o.name", "vm.description", "vm.deployment_ticket", "i.ipv4", "v.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
-			names := stringset.NewFromSlice("vm")
-			vlans := map[int64]struct{}{0: {}}
-			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			vms, err := listVMs(c, names, vlans)
+			selectStmt := `
+				^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
+				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
+				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\) AND hv.vlan_id IN \(\?\)$
+			`
+			names := []string{"vm"}
+			vlans := []int64{0}
+			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnError(fmt.Errorf("error"))
+			vms, err := listVMs(c, db, names, vlans)
 			So(err, ShouldErrLike, "failed to fetch VMs")
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
+		Convey("no names", func() {
+			selectStmt := `
+				^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
+				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
+				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.vlan_id IN \(\?\)$
+			`
+			names := []string{}
+			vlans := []int64{0}
+			m.ExpectQuery(selectStmt).WithArgs(vlans[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, names, vlans)
+			So(err, ShouldBeNil)
+			So(vms, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("no vlans", func() {
+			selectStmt := `
+				^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
+				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
+				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\)$
+			`
+			names := []string{"vm"}
+			vlans := []int64{}
+			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, names, vlans)
+			So(err, ShouldBeNil)
+			So(vms, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
 		Convey("empty", func() {
-			names := stringset.NewFromSlice("vm")
-			vlans := map[int64]struct{}{0: {}}
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vms, err := listVMs(c, names, vlans)
+			selectStmt := `
+				^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
+				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
+				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\) AND hv.vlan_id IN \(\?\)$
+			`
+			names := []string{"vm"}
+			vlans := []int64{0}
+			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, names, vlans)
 			So(err, ShouldBeNil)
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("no matches", func() {
-			names := stringset.NewFromSlice("vm")
-			vlans := map[int64]struct{}{0: {}}
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			rows.AddRow("vm 1", 1, "host 1", 10, "os 1", "", "", 1, 0)
-			rows.AddRow("vm 2", 2, "host 2", 20, "os 2", "", "", 2, common.State_SERVING)
-			vms, err := listVMs(c, names, vlans)
-			So(err, ShouldBeNil)
-			So(vms, ShouldBeEmpty)
-			So(m.ExpectationsWereMet(), ShouldBeNil)
-		})
-
-		Convey("matches", func() {
-			names := stringset.NewFromSlice("vm 1", "vm 2")
-			vlans := map[int64]struct{}{1: {}, 2: {}}
-			rows.AddRow("vm 1", 1, "host 1", 10, "os 1", "", "", 1, 0)
-			rows.AddRow("vm 2", 2, "host 2", 20, "os 2", "", "", 2, common.State_SERVING)
-			rows.AddRow("vm 3", 3, "host 3", 30, "os 3", "", "", 3, common.State_REPAIR)
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vms, err := listVMs(c, names, vlans)
+		Convey("non-empty", func() {
+			selectStmt := `
+				^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
+				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
+				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?,\?\) AND hv.vlan_id IN \(\?\)$
+			`
+			names := []string{"vm 1", "vm 2"}
+			vlans := []int64{0}
+			rows.AddRow(names[0], vlans[0], "host 1", 10, "os 1", "", "", 1, 0)
+			rows.AddRow(names[1], vlans[0], "host 2", 20, "os 2", "", "", 2, common.State_SERVING)
+			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1], vlans[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, names, vlans)
 			So(err, ShouldBeNil)
 			So(vms, ShouldResemble, []*crimson.VM{
 				{
-					Name:     "vm 1",
-					Vlan:     1,
+					Name:     names[0],
+					Vlan:     vlans[0],
 					Host:     "host 1",
 					HostVlan: 10,
 					Os:       "os 1",
 					Ipv4:     "0.0.0.1",
 				},
 				{
-					Name:     "vm 2",
-					Vlan:     2,
+					Name:     names[1],
+					Vlan:     vlans[0],
 					Host:     "host 2",
 					HostVlan: 20,
 					Os:       "os 2",
@@ -342,12 +367,17 @@ func TestListVMs(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			names := stringset.New(0)
-			vlans := map[int64]struct{}{}
+			selectStmt := `
+				^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
+				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
+				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id$
+			`
+			names := []string{}
+			vlans := []int64{}
 			rows.AddRow("vm 1", 1, "host 1", 10, "os 1", "", "", 1, 0)
 			rows.AddRow("vm 2", 2, "host 2", 20, "os 2", "", "", 2, common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vms, err := listVMs(c, names, vlans)
+			vms, err := listVMs(c, db, names, vlans)
 			So(err, ShouldBeNil)
 			So(vms, ShouldResemble, []*crimson.VM{
 				{

@@ -22,10 +22,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	states "go.chromium.org/luci/machine-db/api/common/v1"
@@ -44,11 +44,7 @@ func (*Service) CreateVM(c context.Context, req *crimson.CreateVMRequest) (*crim
 
 // ListVMs handles a request to list VMs.
 func (*Service) ListVMs(c context.Context, req *crimson.ListVMsRequest) (*crimson.ListVMsResponse, error) {
-	vlans := make(map[int64]struct{}, len(req.Vlans))
-	for _, vlan := range req.Vlans {
-		vlans[vlan] = struct{}{}
-	}
-	vms, err := listVMs(c, stringset.NewFromSlice(req.Names...), vlans)
+	vms, err := listVMs(c, database.Get(c), req.Names, req.Vlans)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -98,7 +94,7 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'physical_host_id'"):
 			// e.g. "Error 1048: Column 'physical_host_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", v.Host, v.Vlan)
+			return status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", v.Host, v.HostVlan)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
@@ -113,22 +109,36 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 }
 
 // listVMs returns a slice of VMs in the database.
-func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) ([]*crimson.VM, error) {
-	db := database.Get(c)
-	rows, err := db.QueryContext(c, `
-		SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
-		FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
-		WHERE v.hostname_id = hv.id
-			AND v.physical_host_id = p.id
-			AND p.hostname_id = hp.id
-			AND v.os_id = o.id
-			AND i.hostname_id = hv.id
-	`)
+func listVMs(c context.Context, q database.QueryerContext, names []string, vlans []int64) ([]*crimson.VM, error) {
+	stmt := squirrel.Select(
+		"hv.name",
+		"hv.vlan_id",
+		"hp.name",
+		"hp.vlan_id",
+		"o.name",
+		"v.description",
+		"v.deployment_ticket",
+		"i.ipv4",
+		"v.state",
+	)
+	stmt = stmt.From("vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i").
+		Where("v.hostname_id = hv.id").
+		Where("v.physical_host_id = p.id").
+		Where("p.hostname_id = hp.id").
+		Where("v.os_id = o.id").
+		Where("i.hostname_id = hv.id")
+	stmt = selectInString(stmt, "hv.name", names)
+	stmt = selectInInt64(stmt, "hv.vlan_id", vlans)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch VMs").Err()
 	}
 	defer rows.Close()
-
 	var vms []*crimson.VM
 	for rows.Next() {
 		v := &crimson.VM{}
@@ -146,11 +156,8 @@ func listVMs(c context.Context, names stringset.Set, vlans map[int64]struct{}) (
 		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch VM").Err()
 		}
-		// TODO(smut): use the database to filter rather than fetching all entries.
-		if _, ok := vlans[v.Vlan]; matches(v.Name, names) && (ok || len(vlans) == 0) {
-			v.Ipv4 = ipv4.String()
-			vms = append(vms, v)
-		}
+		v.Ipv4 = ipv4.String()
+		vms = append(vms, v)
 	}
 	return vms, nil
 }
