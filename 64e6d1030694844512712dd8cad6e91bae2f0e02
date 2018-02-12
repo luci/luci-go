@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a496b20_a8c3984a",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-12T22:49:43Z",
+      "side": 1,
+      "message": "please update the proto too",
+      "revId": "64e6d1030694844512712dd8cad6e91bae2f0e02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
