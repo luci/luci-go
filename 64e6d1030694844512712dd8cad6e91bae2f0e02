@@ -16,6 +16,24 @@
       "revId": "64e6d1030694844512712dd8cad6e91bae2f0e02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b63fa2d_4d6be12a",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-12T23:49:13Z",
+      "side": 1,
+      "message": "The protos still need Vlan fields so that we can include the information when returning a PhysicalHost/VM. We want the server to infer VLAN from IP address, but when returning data to the users we shouldn\u0027t make them infer it too.",
+      "parentUuid": "5a496b20_a8c3984a",
+      "revId": "64e6d1030694844512712dd8cad6e91bae2f0e02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
