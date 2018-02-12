@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b83c34a_daccaeb6",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-12T22:35:15Z",
+      "side": 1,
+      "message": "states",
+      "range": {
+        "startLine": 51,
+        "startChar": 9,
+        "endLine": 51,
+        "endChar": 14
+      },
+      "revId": "ff51f2eabc9666e64b584a0c58023ccc6f8ee27b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10696346_0feaf88c",
+        "filename": "machine-db/appengine/rpc/machines_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-12T22:35:15Z",
+      "side": 1,
+      "message": "nit: i assume you don\u0027t just pass nils to make L174 more readable? If the parameter list is getting too long (and looks like it will only grow), perhaps it is easier to a pass one struct. You already have the struct: that\u0027s the request itself. FWIW i don\u0027t see a problem in something that is not ListMachines() to call listMachines and pass ListMachinesRequest there, as long as listMachines is package-internal func",
+      "range": {
+        "startLine": 170,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 29
+      },
+      "revId": "ff51f2eabc9666e64b584a0c58023ccc6f8ee27b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cc9d547_cbcb4576",
+        "filename": "machine-db/client/cli/flags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-12T22:35:15Z",
+      "side": 1,
+      "message": "it seems j is already common.State",
+      "range": {
+        "startLine": 66,
+        "startChar": 9,
+        "endLine": 66,
+        "endChar": 24
+      },
+      "revId": "ff51f2eabc9666e64b584a0c58023ccc6f8ee27b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
