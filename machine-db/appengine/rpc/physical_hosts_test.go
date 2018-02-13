@@ -24,6 +24,7 @@ import (
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
+	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -56,6 +57,11 @@ func TestCreatePhysicalHost(t *testing.T) {
 			SET hostname_id = \?
 			WHERE ipv4 = \? AND hostname_id IS NULL
 		`
+		updateMachineStmt := `
+			UPDATE machines
+			SET state = \?
+			WHERE name = \?
+		`
 
 		Convey("invalid IPv4", func() {
 			host := &crimson.PhysicalHost{
@@ -63,6 +69,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1/20",
+				State:   common.State_SERVING,
 			}
 			So(createPhysicalHost(c, host), ShouldErrLike, "invalid IPv4 address")
 		})
@@ -73,6 +80,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
 			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
@@ -84,6 +92,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'vlan_id'"})
@@ -97,6 +106,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
@@ -110,6 +120,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -125,6 +136,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -140,6 +152,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -155,6 +168,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -170,6 +184,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -185,6 +200,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -200,6 +216,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "os",
 				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -210,7 +227,24 @@ func TestCreatePhysicalHost(t *testing.T) {
 			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
-		Convey("ok", func() {
+		Convey("update failed", func() {
+			host := &crimson.PhysicalHost{
+				Name:    "host",
+				Machine: "machine",
+				Os:      "os",
+				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
+			}
+			m.ExpectBegin()
+			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Machine).WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
+		})
+
+		Convey("no state", func() {
 			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Machine: "machine",
@@ -224,6 +258,23 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectCommit()
 			So(createPhysicalHost(c, host), ShouldBeNil)
 		})
+
+		Convey("ok", func() {
+			host := &crimson.PhysicalHost{
+				Name:    "host",
+				Machine: "machine",
+				Os:      "os",
+				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
+			}
+			m.ExpectBegin()
+			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectCommit()
+			So(createPhysicalHost(c, host), ShouldBeNil)
+		})
 	})
 }
 
@@ -232,12 +283,12 @@ func TestListPhysicalHosts(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4"}
+		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
 			`
@@ -252,7 +303,7 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("no names", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND v.id IN \(\?\)$
 			`
@@ -267,7 +318,7 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("no vlans", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\)$
 			`
@@ -282,7 +333,7 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("empty", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
 			`
@@ -297,14 +348,14 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("non-empty", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?,\?\) AND v.id IN \(\?\)$
 			`
 			names := []string{"host 1", "host 2"}
 			vlans := []int64{0}
-			rows.AddRow(names[0], vlans[0], "machine 1", "os 1", 1, "", "", 1)
-			rows.AddRow(names[1], vlans[0], "machine 2", "os 2", 2, "", "", 2)
+			rows.AddRow(names[0], vlans[0], "machine 1", "os 1", 1, "", "", 1, 0)
+			rows.AddRow(names[1], vlans[0], "machine 2", "os 2", 2, "", "", 2, common.State_SERVING)
 			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1], vlans[0]).WillReturnRows(rows)
 			hosts, err := listPhysicalHosts(c, db, names, vlans)
 			So(err, ShouldBeNil)
@@ -324,6 +375,7 @@ func TestListPhysicalHosts(t *testing.T) {
 					Os:      "os 2",
 					VmSlots: 2,
 					Ipv4:    "0.0.0.2",
+					State:   common.State_SERVING,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -331,14 +383,14 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("ok", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4
+				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id$
 			`
 			names := []string{}
 			vlans := []int64{}
-			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "", 1)
-			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "", 2)
+			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "", 1, 0)
+			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "", 2, common.State_SERVING)
 			m.ExpectQuery(selectStmt).WithArgs().WillReturnRows(rows)
 			hosts, err := listPhysicalHosts(c, db, names, vlans)
 			So(err, ShouldBeNil)
@@ -358,6 +410,7 @@ func TestListPhysicalHosts(t *testing.T) {
 					Os:      "os 2",
 					VmSlots: 2,
 					Ipv4:    "0.0.0.2",
+					State:   common.State_SERVING,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
