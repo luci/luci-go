@@ -15,9 +15,9 @@
 package cli
 
 import (
-	"fmt"
+	"encoding/csv"
+	"os"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -30,7 +30,8 @@ import (
 // GetDatacentersCmd is the command to get datacenters.
 type GetDatacentersCmd struct {
 	subcommands.CommandRunBase
-	req crimson.ListDatacentersRequest
+	req     crimson.ListDatacentersRequest
+	headers bool
 }
 
 // Run runs the command to get datacenters.
@@ -42,8 +43,17 @@ func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env 
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	if len(resp.Datacenters) > 0 {
+		w := csv.NewWriter(os.Stdout)
+		w.Comma = '\t'
+		defer w.Flush()
+		if c.headers {
+			w.Write([]string{"Name", "Description"})
+		}
+		for _, dc := range resp.Datacenters {
+			w.Write([]string{dc.Name, dc.Description})
+		}
+	}
 	return 0
 }
 
@@ -56,6 +66,7 @@ func getDatacentersCmd() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDatacentersCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
 			return cmd
 		},
 	}
