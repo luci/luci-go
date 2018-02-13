@@ -16,6 +16,24 @@
       "revId": "a1c0b9042c46d8561817c5b5085aabe50b505283",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0687f3f_1374a05b",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-13T21:59:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abcb7805_57acf7f4",
+      "revId": "a1c0b9042c46d8561817c5b5085aabe50b505283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
