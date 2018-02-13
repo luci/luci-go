@@ -155,6 +155,20 @@ type BuildSummary struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+// GetBuildName returns an abridged version of the BuildID meant for human
+// consumption.  Currently, this is always the last token of the BuildID.
+func (bs *BuildSummary) GetBuildName() string {
+	if bs == nil {
+		return ""
+	}
+	li := strings.LastIndex(bs.BuildID, "/")
+	if li == -1 {
+		return ""
+	}
+	// Don't include the "/", therefore li+1.
+	return bs.BuildID[li+1:]
+}
+
 // GetConsoleNames extracts the "<project>/<console>" names from the
 // BuildSummary's current ManifestKeys.
 func (bs *BuildSummary) GetConsoleNames() ([]string, error) {

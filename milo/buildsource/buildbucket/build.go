@@ -163,10 +163,10 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 	return nil
 }
 
-// getRespBuild fetches the full build state from Swarming and LogDog if
+// getUIBuild fetches the full build state from Swarming and LogDog if
 // available, otherwise returns an empty "pending build".
-func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*ui.MiloBuild, error) {
-	// TODO(nodir,hinoka): squash getRespBuild with toMiloBuild.
+func getUIBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*ui.MiloBuild, error) {
+	// TODO(nodir,hinoka): squash getUIBuild with toMiloBuild.
 
 	// TODO(nodir,hinoka,iannucci): use annotations directly without fetching swarming task
 	ret, err := sID.Get(c)
@@ -180,6 +180,9 @@ func getRespBuild(c context.Context, build *model.BuildSummary, sID *swarming.Bu
 			logging.WithError(err).Warningf(c, "dropping blamelist; access is unauthorized")
 		case err != nil:
 			return nil, err
+		}
+		if buildName := build.GetBuildName(); buildName != "" {
+			ret.Summary.Label = buildName
 		}
 	}
 
@@ -210,7 +213,7 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	if err != nil {
 		return nil, err
 	}
-	return getRespBuild(c, bs, sID)
+	return getUIBuild(c, bs, sID)
 }
 
 func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {
