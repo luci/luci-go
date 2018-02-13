@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2b8df880_7d6cd4c4",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-13T00:02:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b83c34a_daccaeb6",
+      "range": {
+        "startLine": 51,
+        "startChar": 9,
+        "endLine": 51,
+        "endChar": 14
+      },
+      "revId": "ff51f2eabc9666e64b584a0c58023ccc6f8ee27b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "10696346_0feaf88c",
         "filename": "machine-db/appengine/rpc/machines_test.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "148d00cb_e4b23ad9",
+        "filename": "machine-db/appengine/rpc/machines_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-13T00:02:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10696346_0feaf88c",
+      "range": {
+        "startLine": 170,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 29
+      },
+      "revId": "ff51f2eabc9666e64b584a0c58023ccc6f8ee27b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9cc9d547_cbcb4576",
         "filename": "machine-db/client/cli/flags.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "ff51f2eabc9666e64b584a0c58023ccc6f8ee27b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f04898f5_a9a1682b",
+        "filename": "machine-db/client/cli/flags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-13T00:02:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cc9d547_cbcb4576",
+      "range": {
+        "startLine": 66,
+        "startChar": 9,
+        "endLine": 66,
+        "endChar": 24
+      },
+      "revId": "ff51f2eabc9666e64b584a0c58023ccc6f8ee27b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
