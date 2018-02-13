@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "857bc7bf_dfcb559e",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-13T14:10:29Z",
+      "side": 1,
+      "message": "note that this logic is not specific to buildbucket, but is being added in buildbucket package.\nThis is because the abstractions used here do not work well",
+      "revId": "35b03cdc5e0b7b138860b2c009011b0d844c0301",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
