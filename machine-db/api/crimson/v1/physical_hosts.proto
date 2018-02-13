@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
+
 // A physical host in the database.
 message PhysicalHost {
   // The name of this host on the network. With VLAN ID, uniquely identifies this host.
@@ -25,6 +27,8 @@ message PhysicalHost {
   string deployment_ticket = 7;
   // The IPv4 address associated with this host.
   string ipv4 = 8;
+  // The state of the machine backing this host.
+  common.State state = 9;
 }
 
 // CreatePhysicalHostRequest is a request to create a new physical host in the database.

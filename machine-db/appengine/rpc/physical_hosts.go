@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 	"go.chromium.org/luci/machine-db/common"
@@ -104,6 +105,18 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 		return internalError(c, errors.Annotate(err, "failed to create physical host").Err())
 	}
 
+	// Physical host state is stored with the backing machine. Update if necessary.
+	if h.State != states.State_STATE_UNSPECIFIED {
+		_, err := tx.ExecContext(c, `
+			UPDATE machines
+			SET state = ?
+			WHERE name = ?
+		`, h.State, h.Machine)
+		if err != nil {
+			return internalError(c, errors.Annotate(err, "failed to update machine").Err())
+		}
+	}
+
 	if err := tx.Commit(); err != nil {
 		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
 	}
@@ -112,8 +125,18 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 
 // listPhysicalHosts returns a slice of physical hosts in the database.
 func listPhysicalHosts(c context.Context, q database.QueryerContext, names []string, vlans []int64) ([]*crimson.PhysicalHost, error) {
-	stmt := squirrel.Select("h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4").
-		From("physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i").
+	stmt := squirrel.Select(
+		"h.name",
+		"v.id",
+		"m.name",
+		"o.name",
+		"p.vm_slots",
+		"p.description",
+		"p.deployment_ticket",
+		"i.ipv4",
+		"m.state",
+	)
+	stmt = stmt.From("physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i").
 		Where("p.hostname_id = h.id").
 		Where("h.vlan_id = v.id").
 		Where("p.machine_id = m.id").
@@ -135,7 +158,17 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, names []str
 	for rows.Next() {
 		h := &crimson.PhysicalHost{}
 		var ipv4 common.IPv4
-		if err = rows.Scan(&h.Name, &h.Vlan, &h.Machine, &h.Os, &h.VmSlots, &h.Description, &h.DeploymentTicket, &ipv4); err != nil {
+		if err = rows.Scan(
+			&h.Name,
+			&h.Vlan,
+			&h.Machine,
+			&h.Os,
+			&h.VmSlots,
+			&h.Description,
+			&h.DeploymentTicket,
+			&ipv4,
+			&h.State,
+		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 		}
 		h.Ipv4 = ipv4.String()
