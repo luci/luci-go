@@ -54,7 +54,7 @@ func (c *AddPhysicalHostCmd) Run(app subcommands.Application, args []string, env
 // addPhysicalHostCmd returns a command to add a physical host.
 func addPhysicalHostCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-host -name <name> -machine <machine> -os <os> -ipv4 <ip address> [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "add-host -name <name> -machine <machine> -os <os> -ipv4 <ip address> [-state <state>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a physical host",
 		LongDesc:  "Adds a physical host to the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -63,6 +63,7 @@ func addPhysicalHostCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
 			cmd.Flags.StringVar(&cmd.host.Ipv4, "ipv4", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
+			cmd.Flags.Var(StateFlag(&cmd.host.State), "state", "The state of this host. Must be the name of a state returned by get-states.")
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
