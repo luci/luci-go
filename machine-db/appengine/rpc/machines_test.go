@@ -20,6 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
@@ -270,6 +272,115 @@ func TestListMachines(t *testing.T) {
 	})
 }
 
+func TestUpdateMachine(t *testing.T) {
+	Convey("updateMachine", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		selectStmt := `
+			^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+			FROM machines m, platforms p, racks r
+			WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
+		`
+		columns := []string{"m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
+		rows := sqlmock.NewRows(columns)
+
+		Convey("update platform", func() {
+			updateStmt := `
+				^UPDATE machines
+				SET platform_id = \(SELECT id FROM platforms WHERE name = \?\)
+				WHERE name = \?$
+			`
+			machine := &crimson.Machine{
+				Name:     "machine",
+				Platform: "platform",
+				Rack:     "rack",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"platform",
+				},
+			}
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			machine, err := updateMachine(c, machine, mask)
+			So(err, ShouldBeNil)
+			So(machine, ShouldResemble, &crimson.Machine{
+				Name:     machine.Name,
+				Platform: machine.Platform,
+				Rack:     machine.Rack,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("update rack", func() {
+			updateStmt := `
+				^UPDATE machines
+				SET rack_id = \(SELECT id FROM racks WHERE name = \?\)
+				WHERE name = \?$
+			`
+			machine := &crimson.Machine{
+				Name:     "machine",
+				Platform: "platform",
+				Rack:     "rack",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"rack",
+				},
+			}
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(machine.Rack, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			machine, err := updateMachine(c, machine, mask)
+			So(err, ShouldBeNil)
+			So(machine, ShouldResemble, &crimson.Machine{
+				Name:     machine.Name,
+				Platform: machine.Platform,
+				Rack:     machine.Rack,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("ok", func() {
+			updateStmt := `
+				^UPDATE machines
+				SET platform_id = \(SELECT id FROM platforms WHERE name = \?\), rack_id = \(SELECT id FROM racks WHERE name = \?\)
+				WHERE name = \?$
+			`
+			machine := &crimson.Machine{
+				Name:     "machine",
+				Platform: "platform",
+				Rack:     "rack",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"platform",
+					"rack",
+				},
+			}
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Rack, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			machine, err := updateMachine(c, machine, mask)
+			So(err, ShouldBeNil)
+			So(machine, ShouldResemble, &crimson.Machine{
+				Name:     machine.Name,
+				Platform: machine.Platform,
+				Rack:     machine.Rack,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+	})
+}
+
 func TestValidateMachineForCreation(t *testing.T) {
 	t.Parallel()
 
@@ -320,6 +431,174 @@ func TestValidateMachineForCreation(t *testing.T) {
 			Platform: "platform",
 			Rack:     "rack",
 			State:    common.State_FREE,
+		})
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestValidateMachineForUpdate(t *testing.T) {
+	t.Parallel()
+
+	Convey("NIC unspecified", t, func() {
+		err := validateNICForUpdate(nil, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "NIC specification is required")
+	})
+
+	Convey("name unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "NIC name is required and must be non-empty")
+	})
+
+	Convey("machine unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"mac_address",
+				"switch",
+				"switchport",
+			},
+		})
+		So(err, ShouldErrLike, "machine is required and must be non-empty")
+	})
+
+	Convey("mask unspecified", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, nil)
+		So(err, ShouldErrLike, "update mask is required")
+	})
+
+	Convey("no paths", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{})
+		So(err, ShouldErrLike, "at least one update mask path is required")
+	})
+
+	Convey("unexpected name", t, func() {
+		err := validateNICForUpdate(&crimson.NIC{
+			Name:       "eth0",
+			Machine:    "machine",
+			MacAddress: "ff:ff:ff:ff:ff:ff",
+			Switch:     "switch",
+			Switchport: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"name",
+			},
+		})
+		So(err, ShouldErrLike, "NIC name cannot be updated")
+	})
+
+	Convey("platform unspecified", t, func() {
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name: "machine",
+			Rack: "rack",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"platform",
+				"rack",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
+			},
+		})
+		So(err, ShouldErrLike, "platform is required and must be non-empty")
+	})
+
+	Convey("rack unspecified", t, func() {
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"platform",
+				"rack",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
+			},
+		})
+		So(err, ShouldErrLike, "rack is required and must be non-empty")
+	})
+
+	Convey("invalid path", t, func() {
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+			Rack:     "rack",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"unknown",
+			},
+		})
+		So(err, ShouldErrLike, "invalid update mask path")
+	})
+
+	Convey("duplicate path", t, func() {
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+			Rack:     "rack",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"platform",
+				"rack",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
+				"deployment_ticket",
+			},
+		})
+		So(err, ShouldErrLike, "duplicate update mask path")
+	})
+
+	Convey("ok", t, func() {
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+			Rack:     "rack",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"platform",
+				"rack",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
+			},
 		})
 		So(err, ShouldBeNil)
 	})
