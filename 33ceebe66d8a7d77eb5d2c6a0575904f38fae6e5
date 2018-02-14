@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f0717462_e6d0ec6d",
+        "filename": "logdog/client/butler/butler_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-14T13:55:10Z",
+      "side": 1,
+      "message": "nit: I\u0027d just make \"closedC\" allowed to be nil, but either way is fine.",
+      "revId": "33ceebe66d8a7d77eb5d2c6a0575904f38fae6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
