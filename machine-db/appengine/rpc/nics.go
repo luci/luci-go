@@ -28,7 +28,6 @@ import (
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -260,21 +259,16 @@ func validateNICForCreation(n *crimson.NIC) error {
 
 // validateNICForUpdate validates a NIC for update.
 func validateNICForUpdate(n *crimson.NIC, mask *field_mask.FieldMask) error {
-	switch {
+	switch err := validateUpdateMask(mask); {
 	case n == nil:
 		return status.Error(codes.InvalidArgument, "NIC specification is required")
 	case n.Name == "":
 		return status.Error(codes.InvalidArgument, "NIC name is required and must be non-empty")
 	case n.Machine == "":
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
-	case mask == nil:
-		return status.Error(codes.InvalidArgument, "update mask is required")
-	case len(mask.Paths) == 0:
-		return status.Error(codes.InvalidArgument, "at least one update mask path is required")
+	case err != nil:
+		return err
 	}
-	// Path names must be unique.
-	// Keep records of ones we've already seen.
-	paths := stringset.New(len(mask.Paths))
 	for _, path := range mask.Paths {
 		switch path {
 		case "name":
@@ -299,9 +293,6 @@ func validateNICForUpdate(n *crimson.NIC, mask *field_mask.FieldMask) error {
 			}
 		default:
 			return status.Errorf(codes.InvalidArgument, "invalid update mask path %q", path)
-		}
-		if !paths.Add(path) {
-			return status.Errorf(codes.InvalidArgument, "duplicate update mask path %q", path)
 		}
 	}
 	return nil

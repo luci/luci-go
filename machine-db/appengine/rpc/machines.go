@@ -20,6 +20,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -59,6 +60,15 @@ func (*Service) ListMachines(c context.Context, req *crimson.ListMachinesRequest
 	return &crimson.ListMachinesResponse{
 		Machines: machines,
 	}, nil
+}
+
+// UpdateMachine handles a request to update an existing machine.
+func (*Service) UpdateMachine(c context.Context, req *crimson.UpdateMachineRequest) (*crimson.Machine, error) {
+	machine, err := updateMachine(c, req.Machine, req.UpdateMask)
+	if err != nil {
+		return nil, err
+	}
+	return machine, nil
 }
 
 // createMachine creates a new machine in the database.
@@ -119,12 +129,8 @@ func deleteMachine(c context.Context, name string) error {
 		return internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "unknown machine %q", name)
-	case rows == 1:
-		return nil
-	default:
-		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
+	return nil
 }
 
 // listMachines returns a slice of machines in the database.
@@ -166,6 +172,79 @@ func listMachines(c context.Context, q database.QueryerContext, req *crimson.Lis
 	return machines, nil
 }
 
+// updateMachine updates an existing machine in the database.
+func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.FieldMask) (_ *crimson.Machine, err error) {
+	if err := validateMachineForUpdate(m, mask); err != nil {
+		return nil, err
+	}
+	stmt := squirrel.Update("machines")
+	for _, path := range mask.Paths {
+		switch path {
+		case "platform":
+			stmt = stmt.Set("platform_id", squirrel.Expr("(SELECT id FROM platforms WHERE name = ?)", m.Platform))
+		case "rack":
+			stmt = stmt.Set("rack_id", squirrel.Expr("(SELECT id FROM racks WHERE name = ?)", m.Rack))
+		case "description":
+			stmt = stmt.Set("description", m.Description)
+		case "asset_tag":
+			stmt = stmt.Set("asset_tag", m.AssetTag)
+		case "service_tag":
+			stmt = stmt.Set("service_tag", m.ServiceTag)
+		case "deployment_ticket":
+			stmt = stmt.Set("deployment_ticket", m.DeploymentTicket)
+		}
+	}
+	stmt = stmt.Where("name = ?", m.Name)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	tx, err := database.Begin(c)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+	}
+	defer func() {
+		if err != nil {
+			if e := tx.Rollback(); e != nil {
+				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
+			}
+		}
+	}()
+	res, err := tx.ExecContext(c, query, args...)
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'platform_id'"):
+			// e.g. "Error 1048: Column 'platform_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown platform %q", m.Platform)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'rack_id'"):
+			// e.g. "Error 1048: Column 'rack_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown rack %q", m.Rack)
+		}
+		return nil, internalError(c, errors.Annotate(err, "failed to update machine").Err())
+	}
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+	case rows == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown machine %q", m.Name)
+	}
+
+	machines, err := listMachines(c, tx, &crimson.ListMachinesRequest{
+		Names: []string{m.Name},
+	})
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated machine").Err())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	}
+	return machines[0], nil
+}
+
 // validateMachineForCreation validates a machine for creation.
 func validateMachineForCreation(m *crimson.Machine) error {
 	switch {
@@ -182,4 +261,45 @@ func validateMachineForCreation(m *crimson.Machine) error {
 	default:
 		return nil
 	}
+}
+
+// validateMachineForUpdate validates a machine for update.
+func validateMachineForUpdate(m *crimson.Machine, mask *field_mask.FieldMask) error {
+	switch err := validateUpdateMask(mask); {
+	case m == nil:
+		return status.Error(codes.InvalidArgument, "machine specification is required")
+	case m.Name == "":
+		return status.Error(codes.InvalidArgument, "machine name is required and must be non-empty")
+	case err != nil:
+		return err
+	}
+	for _, path := range mask.Paths {
+		switch path {
+		case "name":
+			return status.Error(codes.InvalidArgument, "machine name cannot be updated, delete and create a new machine instead")
+		case "platform":
+			if m.Platform == "" {
+				return status.Error(codes.InvalidArgument, "platform is required and must be non-empty")
+			}
+		case "rack":
+			if m.Rack == "" {
+				return status.Error(codes.InvalidArgument, "rack is required and must be non-empty")
+			}
+		case "state":
+			if m.State == common.State_STATE_UNSPECIFIED {
+				return status.Error(codes.InvalidArgument, "state is required")
+			}
+		case "description":
+			// Empty description is allowed, nothing to validate.
+		case "asset_tag":
+			// Empty asset tag is allowed, nothing to validate.
+		case "service_tag":
+			// Empty service tag is allowed, nothing to validate.
+		case "deployment_ticket":
+			// Empty deployment ticket is allowed, nothing to validate.
+		default:
+			return status.Errorf(codes.InvalidArgument, "invalid update mask path %q", path)
+		}
+	}
+	return nil
 }

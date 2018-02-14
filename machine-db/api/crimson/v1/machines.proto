@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package crimson;
 
+import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
 // A machine in the database.
@@ -58,4 +59,12 @@ message ListMachinesResponse {
   // The machines matching this request.
   repeated Machine machines = 1;
   // TODO(smut): Support page tokens.
+}
+
+// A request to update a machine in the database.
+message UpdateMachineRequest {
+  // The machine to update in the database.
+  Machine machine = 1;
+  // The fields to update in the machine.
+  google.protobuf.FieldMask update_mask = 2;
 }

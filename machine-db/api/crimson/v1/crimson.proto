@@ -43,6 +43,8 @@ service Crimson {
   rpc DeleteMachine(DeleteMachineRequest) returns (google.protobuf.Empty);
   // Lists machines in the database.
   rpc ListMachines(ListMachinesRequest) returns (ListMachinesResponse);
+  // Updates a machine in the database.
+  rpc UpdateMachine(UpdateMachineRequest) returns (Machine);
 
   // Creates a new NIC in the database.
   rpc CreateNIC(CreateNICRequest) returns (NIC);
