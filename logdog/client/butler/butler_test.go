@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"sync"
 	"testing"
 	"time"
@@ -427,8 +426,22 @@ func TestButler(t *testing.T) {
 					},
 				}
 
+				closeStreams := make(chan *testStreamData)
+
+				// newTestStream returns a stream that hangs in Read() until
+				// 'closeStreams' is closed. We do this to ensure Bundler doesn't
+				// "drain" and unregister the stream before GetStreamDescs() calls
+				// below have a chance to notice it exists.
+				newTestStream := func() io.ReadCloser {
+					return &testStream{
+						closedC: make(chan struct{}),
+						inC:     closeStreams,
+					}
+				}
+
 				b := mkb(c, conf)
 				defer func() {
+					close(closeStreams)
 					b.Activate()
 					b.Wait()
 				}()
@@ -438,7 +451,7 @@ func TestButler(t *testing.T) {
 						"baz": "override",
 					}
 
-					So(b.AddStream(ioutil.NopCloser(&bytes.Buffer{}), &props), ShouldBeNil)
+					So(b.AddStream(newTestStream(), &props), ShouldBeNil)
 					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
 						"stdout": {
 							Name:        "stdout",
@@ -453,7 +466,7 @@ func TestButler(t *testing.T) {
 				})
 
 				Convey(`Will apply global tags if the stream has none (nil).`, func() {
-					So(b.AddStream(ioutil.NopCloser(&bytes.Buffer{}), &props), ShouldBeNil)
+					So(b.AddStream(newTestStream(), &props), ShouldBeNil)
 					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
 						"stdout": {
 							Name:        "stdout",
