@@ -302,8 +302,8 @@ func TestListNICs(t *testing.T) {
 	})
 }
 
-func TestUpdateNICs(t *testing.T) {
-	Convey("createNIC", t, func() {
+func TestUpdateNIC(t *testing.T) {
+	Convey("updateNIC", t, func() {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
