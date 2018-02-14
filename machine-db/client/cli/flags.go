@@ -16,12 +16,27 @@ package cli
 
 import (
 	"flag"
+	"sort"
 	"strings"
+
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/common/v1"
 )
+
+// getUpdateMask returns a *field_mask.FieldMask containing paths based on which flags have been set.
+func getUpdateMask(set *flag.FlagSet, paths map[string]string) *field_mask.FieldMask {
+	m := &field_mask.FieldMask{}
+	set.Visit(func(f *flag.Flag) {
+		if path, ok := paths[f.Name]; ok {
+			m.Paths = append(m.Paths, path)
+		}
+	})
+	sort.Strings(m.Paths)
+	return m
+}
 
 // stateFlag is a common.State which implements the flag.Value interface.
 type stateFlag common.State

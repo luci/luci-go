@@ -15,13 +15,47 @@
 package cli
 
 import (
+	"flag"
 	"testing"
+
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/machine-db/api/common/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestGetUpdateMask(t *testing.T) {
+	t.Parallel()
+
+	Convey("getUpdateMask", t, func() {
+		var unset, set, ignored, empty stateFlag
+		flagSet := flag.FlagSet{}
+		flagSet.Var(&unset, "unset", "First flag.")
+		flagSet.Var(&set, "set", "Second flag.")
+		flagSet.Var(&ignored, "ignored", "Third flag.")
+		flagSet.Var(&empty, "empty", "Fourth flag.")
+		flagSet.Parse([]string{
+			"-set", "free",
+			"-ignored", "serving",
+			"-empty", "",
+			"-set", "test",
+		})
+
+		mask := getUpdateMask(&flagSet, map[string]string{
+			"unset": "unset",
+			"set":   "set",
+			"empty": "empty",
+		})
+		So(mask, ShouldResemble, &field_mask.FieldMask{
+			Paths: []string{
+				"empty",
+				"set",
+			},
+		})
+	})
+}
 
 func TestStateFlag(t *testing.T) {
 	t.Parallel()

@@ -140,3 +140,50 @@ func getNICsCmd() *subcommands.Command {
 		},
 	}
 }
+
+// UpdateNICCmd is the command to update a network interface.
+type UpdateNICCmd struct {
+	subcommands.CommandRunBase
+	nic crimson.NIC
+}
+
+// Run runs the command to update a network interface.
+func (c *UpdateNICCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	// TODO(smut): Validate required fields client-side.
+	req := &crimson.UpdateNICRequest{
+		Nic: &c.nic,
+		UpdateMask: getUpdateMask(&c.Flags, map[string]string{
+			"mac":    "mac_address",
+			"switch": "switch",
+			"port":   "switchport",
+		}),
+	}
+	client := getClient(ctx)
+	resp, err := client.UpdateNIC(ctx, req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	// TODO(smut): Format this response.
+	fmt.Print(proto.MarshalTextString(resp))
+	return 0
+}
+
+// updateNICCmd returns a command to update a network interface.
+func updateNICCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "update-nic -name <name> -machine <machine> [-mac <mac address>] [-switch <switch>] [-port <switch port>]",
+		ShortDesc: "updates a NIC",
+		LongDesc:  "Updates a network interface in the database.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &UpdateNICCmd{}
+			cmd.Flags.StringVar(&cmd.nic.Name, "name", "", "The name of the NIC. Required and must be the name of a NIC returned by get-nics.")
+			cmd.Flags.StringVar(&cmd.nic.Machine, "machine", "", "The machine this NIC belongs to. Required and must be the name of a machine returned by get-machines.")
+			cmd.Flags.StringVar(&cmd.nic.MacAddress, "mac", "", "The MAC address of this NIC. Must be a valid MAC-48 address.")
+			cmd.Flags.StringVar(&cmd.nic.Switch, "switch", "", "The switch this NIC is connected to. Must be the name of a switch returned by get-switches.")
+			cmd.Flags.Var(flag.Int32(&cmd.nic.Switchport), "port", "The switchport this NIC is connected to.")
+			return cmd
+		},
+	}
+}

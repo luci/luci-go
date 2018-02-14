@@ -68,7 +68,7 @@ func (*Service) UpdateNIC(c context.Context, req *crimson.UpdateNICRequest) (*cr
 	if err != nil {
 		return nil, err
 	}
-	return nic, err
+	return nic, nil
 }
 
 // createNIC creates a new NIC in the database.
@@ -128,12 +128,8 @@ func deleteNIC(c context.Context, name, machine string) error {
 		return internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", name, machine)
-	case rows == 1:
-		return nil
-	default:
-		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
 	}
+	return nil
 }
 
 // listNICs returns a slice of NICs in the database.
@@ -202,29 +198,28 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (_
 	}()
 	res, err := tx.ExecContext(c, query, args...)
 	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'mac_address'"):
+			// e.g. "Error 1062: Duplicate entry '1234567890' for key 'mac_address'".
+			return nil, status.Errorf(codes.AlreadyExists, "duplicate MAC address %q", n.MacAddress)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'switch_id'"):
+			// e.g. "Error 1048: Column 'switch_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown switch %q", n.Switch)
+		}
 		return nil, internalError(c, errors.Annotate(err, "failed to update NIC").Err())
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
 		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
-	case rows == 1:
-		// Ok.
-	default:
-		// Shouldn't happen because name is unique in the database.
-		return nil, internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
+	case rows == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", n.Name, n.Machine)
 	}
 
 	nics, err := listNICs(c, tx, []string{n.Name}, []string{n.Machine})
-	switch {
-	case err != nil:
+	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated NIC").Err())
-	case len(nics) == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", n.Name, n.Machine)
-	case len(nics) == 1:
-		// Ok.
-	default:
-		// Shouldn't happen because name is unique in the database.
-		return nil, internalError(c, errors.Reason("unexpected number of updated NICs %d", len(nics)).Err())
 	}
 
 	if err := tx.Commit(); err != nil {
