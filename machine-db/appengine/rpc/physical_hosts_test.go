@@ -20,6 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
@@ -418,6 +420,171 @@ func TestListPhysicalHosts(t *testing.T) {
 	})
 }
 
+func TestUpdatePhysicalHost(t *testing.T) {
+	Convey("updatePhysicalHost", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		selectStmt := `
+			^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
+			FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
+			WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
+		`
+		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4", "m.state"}
+		rows := sqlmock.NewRows(columns)
+
+		Convey("update machine", func() {
+			updateStmt := `
+				^UPDATE physical_hosts
+				SET machine_id = \(SELECT id FROM machines WHERE name = \?\)
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+			`
+			host := &crimson.PhysicalHost{
+				Name:    "hostname",
+				Vlan:    1,
+				Machine: "machine",
+				Os:      "operating system",
+				VmSlots: 1,
+				Ipv4:    "0.0.0.1",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"machine",
+				},
+			}
+			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket, 1, host.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(host.Machine, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			host, err := updatePhysicalHost(c, host, mask)
+			So(err, ShouldBeNil)
+			So(host, ShouldResemble, &crimson.PhysicalHost{
+				Name:    host.Name,
+				Vlan:    host.Vlan,
+				Machine: host.Machine,
+				Os:      host.Os,
+				VmSlots: host.VmSlots,
+				Ipv4:    host.Ipv4,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("update operating system", func() {
+			updateStmt := `
+				^UPDATE physical_hosts
+				SET os_id = \(SELECT id FROM oses WHERE name = \?\)
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+			`
+			host := &crimson.PhysicalHost{
+				Name:    "hostname",
+				Vlan:    1,
+				Machine: "machine",
+				Os:      "operating system",
+				VmSlots: 1,
+				Ipv4:    "0.0.0.1",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"os",
+				},
+			}
+			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket, 1, host.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(host.Os, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			host, err := updatePhysicalHost(c, host, mask)
+			So(err, ShouldBeNil)
+			So(host, ShouldResemble, &crimson.PhysicalHost{
+				Name:    host.Name,
+				Vlan:    host.Vlan,
+				Machine: host.Machine,
+				Os:      host.Os,
+				VmSlots: host.VmSlots,
+				Ipv4:    host.Ipv4,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("update VM slots", func() {
+			updateStmt := `
+				^UPDATE physical_hosts
+				SET vm_slots = \?
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+			`
+			host := &crimson.PhysicalHost{
+				Name:    "hostname",
+				Vlan:    1,
+				Machine: "machine",
+				Os:      "operating system",
+				VmSlots: 1,
+				Ipv4:    "0.0.0.1",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"vm_slots",
+				},
+			}
+			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket, 1, host.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(host.VmSlots, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			host, err := updatePhysicalHost(c, host, mask)
+			So(err, ShouldBeNil)
+			So(host, ShouldResemble, &crimson.PhysicalHost{
+				Name:    host.Name,
+				Vlan:    host.Vlan,
+				Machine: host.Machine,
+				Os:      host.Os,
+				VmSlots: host.VmSlots,
+				Ipv4:    host.Ipv4,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("ok", func() {
+			updateStmt := `
+				^UPDATE physical_hosts
+				SET machine_id = \(SELECT id FROM machines WHERE name = \?\), os_id = \(SELECT id FROM oses WHERE name = \?\), vm_slots = \?
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+			`
+			host := &crimson.PhysicalHost{
+				Name:    "hostname",
+				Vlan:    1,
+				Machine: "machine",
+				Os:      "operating system",
+				VmSlots: 1,
+				Ipv4:    "0.0.0.1",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"machine",
+					"os",
+					"vm_slots",
+				},
+			}
+			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket, 1, host.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(host.Machine, host.Os, host.VmSlots, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			host, err := updatePhysicalHost(c, host, mask)
+			So(err, ShouldBeNil)
+			So(host, ShouldResemble, &crimson.PhysicalHost{
+				Name:    host.Name,
+				Vlan:    host.Vlan,
+				Machine: host.Machine,
+				Os:      host.Os,
+				VmSlots: host.VmSlots,
+				Ipv4:    host.Ipv4,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+	})
+}
+
 func TestValidatePhysicalHostForCreation(t *testing.T) {
 	t.Parallel()
 
@@ -470,7 +637,7 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 		})
-		So(err, ShouldErrLike, "IPv4 address is required and must be non-empty")
+		So(err, ShouldErrLike, "invalid IPv4 address")
 	})
 
 	Convey("IPv4 address invalid", t, func() {
@@ -500,6 +667,197 @@ func TestValidatePhysicalHostForCreation(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			Ipv4:    "127.0.0.1",
+		})
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestValidatePhysicalHostForUpdate(t *testing.T) {
+	t.Parallel()
+
+	Convey("host unspecified", t, func() {
+		err := validatePhysicalHostForUpdate(nil, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"ipv4",
+				"vm_slots",
+			},
+		})
+		So(err, ShouldErrLike, "physical host specification is required")
+	})
+
+	Convey("hostname unspecified", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"ipv4",
+				"vm_slots",
+			},
+		})
+		So(err, ShouldErrLike, "hostname is required and must be non-empty")
+	})
+
+	Convey("VLAN unspecified", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"ipv4",
+				"vm_slots",
+			},
+		})
+		So(err, ShouldErrLike, "VLAN is required and must be positive")
+	})
+
+	Convey("mask unspecified", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, nil)
+		So(err, ShouldErrLike, "update mask is required")
+	})
+
+	Convey("no paths", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{})
+		So(err, ShouldErrLike, "at least one update mask path is required")
+	})
+
+	Convey("unexpected hostname", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"name",
+			},
+		})
+		So(err, ShouldErrLike, "hostname cannot be updated")
+	})
+
+	Convey("unexpected VLAN", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"vlan",
+			},
+		})
+		So(err, ShouldErrLike, "VLAN cannot be updated")
+	})
+
+	Convey("machine unspecified", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"ipv4",
+				"vm_slots",
+			},
+		})
+		So(err, ShouldErrLike, "machine is required and must be non-empty")
+	})
+
+	Convey("operating system unspecified", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"ipv4",
+				"vm_slots",
+			},
+		})
+		So(err, ShouldErrLike, "operating system is required and must be non-empty")
+	})
+
+	Convey("unsupported path", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"unknown",
+			},
+		})
+		So(err, ShouldErrLike, "unsupported update mask path")
+	})
+
+	Convey("duplicate path", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"ipv4",
+				"vm_slots",
+				"description",
+				"deployment_ticket",
+				"deployment_ticket",
+			},
+		})
+		So(err, ShouldErrLike, "duplicate update mask path")
+	})
+
+	Convey("ok", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"vm_slots",
+				"description",
+				"deployment_ticket",
+			},
 		})
 		So(err, ShouldBeNil)
 	})

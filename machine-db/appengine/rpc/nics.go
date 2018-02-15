@@ -287,7 +287,7 @@ func validateNICForUpdate(n *crimson.NIC, mask *field_mask.FieldMask) error {
 				return status.Error(codes.InvalidArgument, "switchport must be positive")
 			}
 		default:
-			return status.Errorf(codes.InvalidArgument, "invalid update mask path %q", path)
+			return status.Errorf(codes.InvalidArgument, "unsupported update mask path %q", path)
 		}
 	}
 	return nil

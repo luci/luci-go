@@ -119,6 +119,7 @@ func New(params *Parameters) *cli.Application {
 
 			// Physical hosts.
 			addPhysicalHostCmd(),
+			editPhysicalHostCmd(),
 			getPhysicalHostsCmd(),
 			{},
 

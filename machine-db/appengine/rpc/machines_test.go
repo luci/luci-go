@@ -553,7 +553,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 		So(err, ShouldErrLike, "rack is required and must be non-empty")
 	})
 
-	Convey("invalid path", t, func() {
+	Convey("unsupported path", t, func() {
 		err := validateMachineForUpdate(&crimson.Machine{
 			Name:     "machine",
 			Platform: "platform",
@@ -563,7 +563,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"unknown",
 			},
 		})
-		So(err, ShouldErrLike, "invalid update mask path")
+		So(err, ShouldErrLike, "unsupported update mask path")
 	})
 
 	Convey("duplicate path", t, func() {

@@ -279,6 +279,21 @@ func (s *DecoratedCrimson) ListPhysicalHosts(c context.Context, req *ListPhysica
 	return
 }
 
+func (s *DecoratedCrimson) UpdatePhysicalHost(c context.Context, req *UpdatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "UpdatePhysicalHost", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.UpdatePhysicalHost(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "UpdatePhysicalHost", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) CreateVM(c context.Context, req *CreateVMRequest) (rsp *VM, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {

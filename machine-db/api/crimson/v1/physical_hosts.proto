@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package crimson;
 
+import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
 // A physical host in the database.
@@ -31,13 +32,13 @@ message PhysicalHost {
   common.State state = 9;
 }
 
-// CreatePhysicalHostRequest is a request to create a new physical host in the database.
+// A  request to create a new physical host in the database.
 message CreatePhysicalHostRequest {
   // The host to create in the database.
   PhysicalHost host = 1;
 }
 
-// ListPhysicalHostsRequest is a request to list physical hosts in the database.
+// A request to list physical hosts in the database.
 message ListPhysicalHostsRequest {
   // The names of hosts to get.
   repeated string names = 1;
@@ -46,9 +47,17 @@ message ListPhysicalHostsRequest {
   // TODO(smut): Add the rest of the filters.
 }
 
-// ListPhysicalHostsResponse is a response to a request to list physical hosts.
+// A response containing a list of physical hosts in the database.
 message ListPhysicalHostsResponse {
   // The hosts matching this request.
   repeated PhysicalHost hosts = 1;
   // TODO(smut): Support page tokens.
+}
+
+// A request to update a physical host in the database.
+message UpdatePhysicalHostRequest {
+  // The host to update in the database.
+  PhysicalHost host = 1;
+  // The fields to update in the host.
+  google.protobuf.FieldMask update_mask = 2;
 }
