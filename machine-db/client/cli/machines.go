@@ -62,7 +62,7 @@ func addMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.Name, "name", "", "The name of the machine. Required and must be unique within the database.")
 			cmd.Flags.StringVar(&cmd.machine.Platform, "plat", "", "The platform type this machine is. Required and must be the name of a platform returned by get-platforms.")
 			cmd.Flags.StringVar(&cmd.machine.Rack, "rack", "", "The rack this machine belongs to. Required and must be the name of a rack returned by get-racks.")
-			cmd.Flags.Var(StateFlag(&cmd.machine.State), "state", "The state of this machine. Required and must be the name of a state returned by get-states.")
+			cmd.Flags.Var(StateFlag(&cmd.machine.State), "state", "The state of this machine. Required and must be a state returned by get-states.")
 			cmd.Flags.StringVar(&cmd.machine.Description, "desc", "", "A description of this machine.")
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
@@ -102,6 +102,60 @@ func deleteMachineCmd() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &DeleteMachineCmd{}
 			cmd.Flags.StringVar(&cmd.req.Name, "name", "", "The name of the machine to delete.")
+			return cmd
+		},
+	}
+}
+
+// EditMachineCmd is the command to edit a machine.
+type EditMachineCmd struct {
+	subcommands.CommandRunBase
+	machine crimson.Machine
+}
+
+// Run runs the command to edit a machine.
+func (c *EditMachineCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	// TODO(smut): Validate required fields client-side.
+	req := &crimson.UpdateMachineRequest{
+		Machine: &c.machine,
+		UpdateMask: getUpdateMask(&c.Flags, map[string]string{
+			"plat":  "platform",
+			"rack":  "rack",
+			"state": "state",
+			"desc":  "description",
+			"atag":  "asset_tag",
+			"stag":  "service_tag",
+			"tick":  "deployment_ticket",
+		}),
+	}
+	client := getClient(ctx)
+	resp, err := client.UpdateMachine(ctx, req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	// TODO(smut): Format this response.
+	fmt.Print(proto.MarshalTextString(resp))
+	return 0
+}
+
+// editMachineCmd returns a command to edit a machine.
+func editMachineCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "edit-machine -name <name> [-plat <platform>] [-rack <rack>] [-state <state>] [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>]",
+		ShortDesc: "edits a machine",
+		LongDesc:  "Edits a machine in the database.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &EditMachineCmd{}
+			cmd.Flags.StringVar(&cmd.machine.Name, "name", "", "The name of the machine. Required and must be the name of a machine returned by get-machines.")
+			cmd.Flags.StringVar(&cmd.machine.Platform, "plat", "", "The platform type this machine is. Must be the name of a platform returned by get-platforms.")
+			cmd.Flags.StringVar(&cmd.machine.Rack, "rack", "", "The rack this machine belongs to. Must be the name of a rack returned by get-racks.")
+			cmd.Flags.Var(StateFlag(&cmd.machine.State), "state", "The state of this machine. Must be a state returned by get-states.")
+			cmd.Flags.StringVar(&cmd.machine.Description, "desc", "", "A description of this machine.")
+			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
+			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
+			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
 			return cmd
 		},
 	}
