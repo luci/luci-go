@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
@@ -78,6 +79,9 @@ func (op *Operation) ToProto(wrappedID string) *api.UploadOperation {
 //
 // Returns the most recent state of the operation (whether it was mutated just
 // now by the callback or not). 'op' itself is kept intact.
+//
+// Returns only transient errors. All callback errors are tagged as transient
+// as well.
 func (op *Operation) Advance(c context.Context, cb func(context.Context, *Operation) error) (*Operation, error) {
 	fresh := &Operation{ID: op.ID}
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
@@ -91,7 +95,8 @@ func (op *Operation) Advance(c context.Context, cb func(context.Context, *Operat
 		return datastore.Put(c, fresh)
 	}, nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to update the upload operation").Err()
+		return nil, errors.Annotate(err, "failed to update the upload operation").
+			Tag(transient.Tag).Err()
 	}
 	return fresh, nil
 }
