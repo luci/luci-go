@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "096c08bb_5f53d130",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-15T01:44:45Z",
+      "side": 1,
+      "message": "i think these two should be square brackets. FWIU\n\n  crimson update-nic -name A -machine B -port 1\n\nis a valid command",
+      "range": {
+        "startLine": 176,
+        "startChar": 56,
+        "endLine": 176,
+        "endChar": 93
+      },
+      "revId": "db1efd0d319ef53466f6e33dfff63a22cdc8f770",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
