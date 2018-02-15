@@ -298,7 +298,7 @@ func validateMachineForUpdate(m *crimson.Machine, mask *field_mask.FieldMask) er
 		case "deployment_ticket":
 			// Empty deployment ticket is allowed, nothing to validate.
 		default:
-			return status.Errorf(codes.InvalidArgument, "invalid update mask path %q", path)
+			return status.Errorf(codes.InvalidArgument, "unsupported update mask path %q", path)
 		}
 	}
 	return nil

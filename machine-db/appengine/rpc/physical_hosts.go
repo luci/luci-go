@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -53,7 +54,16 @@ func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHo
 	}, nil
 }
 
-// createPhysicalHost creates a new physical host in the database. Returns a gRPC error if unsuccessful.
+// UpdatePhysicalHost handles a request to update an existing physical host.
+func (*Service) UpdatePhysicalHost(c context.Context, req *crimson.UpdatePhysicalHostRequest) (*crimson.PhysicalHost, error) {
+	host, err := updatePhysicalHost(c, req.Host, req.UpdateMask)
+	if err != nil {
+		return nil, err
+	}
+	return host, nil
+}
+
+// createPhysicalHost creates a new physical host in the database.
 func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) {
 	if err := validatePhysicalHostForCreation(h); err != nil {
 		return err
@@ -177,6 +187,78 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, names []str
 	return hosts, nil
 }
 
+// updatePhysicalHost updates an existing physical host in the database.
+func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_mask.FieldMask) (_ *crimson.PhysicalHost, err error) {
+	if err := validatePhysicalHostForUpdate(h, mask); err != nil {
+		return nil, err
+	}
+	stmt := squirrel.Update("physical_hosts")
+	for _, path := range mask.Paths {
+		switch path {
+		case "machine":
+			stmt = stmt.Set("machine_id", squirrel.Expr("(SELECT id FROM machines WHERE name = ?)", h.Machine))
+		case "os":
+			stmt = stmt.Set("os_id", squirrel.Expr("(SELECT id FROM oses WHERE name = ?)", h.Os))
+		case "vm_slots":
+			stmt = stmt.Set("vm_slots", h.VmSlots)
+		case "description":
+			stmt = stmt.Set("description", h.Description)
+		case "deployment_ticket":
+			stmt = stmt.Set("deployment_ticket", h.DeploymentTicket)
+		}
+	}
+	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", h.Name, h.Vlan)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	tx, err := database.Begin(c)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+	}
+	defer func() {
+		if err != nil {
+			if e := tx.Rollback(); e != nil {
+				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
+			}
+		}
+	}()
+	res, err := tx.ExecContext(c, query, args...)
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
+			// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
+			return nil, status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
+			// e.g. "Error 1048: Column 'machine_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
+			// e.g. "Error 1048: Column 'os_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
+		}
+		return nil, internalError(c, errors.Annotate(err, "failed to update physical host").Err())
+	}
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+	case rows == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", h.Name, h.Vlan)
+	}
+
+	hosts, err := listPhysicalHosts(c, tx, []string{h.Name}, []int64{h.Vlan})
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated physical host").Err())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	}
+	return hosts[0], nil
+}
+
 // validatePhysicalHostForCreation validates a physical host for creation.
 func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 	switch {
@@ -190,8 +272,6 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 	case h.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
-	case h.Ipv4 == "":
-		return status.Error(codes.InvalidArgument, "IPv4 address is required and must be non-empty")
 	case h.VmSlots < 0:
 		return status.Error(codes.InvalidArgument, "VM slots must be non-negative")
 	default:
@@ -201,4 +281,46 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		}
 		return nil
 	}
+}
+
+// validatePhysicalHostForUpdate validates a physical host for update.
+func validatePhysicalHostForUpdate(h *crimson.PhysicalHost, mask *field_mask.FieldMask) error {
+	switch err := validateUpdateMask(mask); {
+	case h == nil:
+		return status.Error(codes.InvalidArgument, "physical host specification is required")
+	case h.Name == "":
+		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
+	case h.Vlan < 1:
+		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
+	case err != nil:
+		return err
+	}
+	for _, path := range mask.Paths {
+		// TODO(smut): Allow IPv4 address and state to be updated.
+		switch path {
+		case "name":
+			return status.Error(codes.InvalidArgument, "hostname cannot be updated, delete and create a new physical host instead")
+		case "vlan":
+			return status.Error(codes.InvalidArgument, "VLAN cannot be updated, delete and create a new physical host instead")
+		case "machine":
+			if h.Machine == "" {
+				return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
+			}
+		case "os":
+			if h.Os == "" {
+				return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
+			}
+		case "vm_slots":
+			if h.VmSlots < 0 {
+				return status.Error(codes.InvalidArgument, "VM slots must be non-negative")
+			}
+		case "description":
+			// Empty description is allowed, nothing to validate.
+		case "deployment_ticket":
+			// Empty deployment ticket is allowed, nothing to validate.
+		default:
+			return status.Errorf(codes.InvalidArgument, "unsupported update mask path %q", path)
+		}
+	}
+	return nil
 }

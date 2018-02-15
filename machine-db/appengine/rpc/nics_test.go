@@ -731,7 +731,7 @@ func TestValidateNICForUpdate(t *testing.T) {
 		So(err, ShouldErrLike, "switchport must be positive")
 	})
 
-	Convey("invalid path", t, func() {
+	Convey("unsupported path", t, func() {
 		err := validateNICForUpdate(&crimson.NIC{
 			Name:       "eth0",
 			Machine:    "machine",
@@ -743,7 +743,7 @@ func TestValidateNICForUpdate(t *testing.T) {
 				"unknown",
 			},
 		})
-		So(err, ShouldErrLike, "invalid update mask path")
+		So(err, ShouldErrLike, "unsupported update mask path")
 	})
 
 	Convey("duplicate path", t, func() {
