@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"go.chromium.org/luci/common/logging"
 
@@ -45,6 +46,15 @@ type File interface {
 	//
 	// Only used for Linux\Mac archives. false for symlinks.
 	Executable() bool
+
+	// Writable returns true if the file is user-writable.
+	//
+	// Only used for Linux\Mac archives.
+	Writable() bool
+
+	// ModTime returns modification time of the file. Zero value means no mtime is
+	// recorded.
+	ModTime() time.Time
 
 	// Symlink returns true if the file is a symlink.
 	Symlink() bool
@@ -116,6 +126,8 @@ type fileSystemFile struct {
 	name          string
 	size          uint64
 	executable    bool
+	writable      bool
+	modtime       time.Time
 	symlinkTarget string
 	winAttrs      WinAttrs
 }
@@ -123,6 +135,8 @@ type fileSystemFile struct {
 func (f *fileSystemFile) Name() string       { return f.name }
 func (f *fileSystemFile) Size() uint64       { return f.size }
 func (f *fileSystemFile) Executable() bool   { return f.executable }
+func (f *fileSystemFile) Writable() bool     { return f.writable }
+func (f *fileSystemFile) ModTime() time.Time { return f.modtime }
 func (f *fileSystemFile) Symlink() bool      { return f.symlinkTarget != "" }
 func (f *fileSystemFile) WinAttrs() WinAttrs { return f.winAttrs }
 
@@ -143,6 +157,16 @@ func (f *fileSystemFile) Open() (io.ReadCloser, error) {
 // ScanFilter is predicate used by ScanFileSystem to decide what files to skip.
 type ScanFilter func(abs string) bool
 
+// FileOptions specify which file properties to preserve in the archive.
+type FileOptions struct {
+	// PreserveModTime when true saves the file's modification time.
+	PreserveModTime bool
+	// PreserveWritable when true saves the file's writable bit for either user,
+	// group or world (mask 0222), and converts it to user-only writable bit (mask
+	// 0200).
+	PreserveWritable bool
+}
+
 // ScanFileSystem returns all files in some file system directory in
 // an alphabetical order. It returns only files, skipping directory entries
 // (i.e. empty directories are completely invisible).
@@ -156,7 +180,7 @@ type ScanFilter func(abs string) bool
 // It scans "dir" path, returning File objects that have paths relative to
 // "root". It skips files and directories for which 'exclude(absolute path)'
 // returns true. It also will always skip <root>/<SiteServiceDir>.
-func ScanFileSystem(dir string, root string, exclude ScanFilter) ([]File, error) {
+func ScanFileSystem(dir string, root string, exclude ScanFilter, fileOpts FileOptions) ([]File, error) {
 	root, err := filepath.Abs(filepath.Clean(root))
 	if err != nil {
 		return nil, err
@@ -189,7 +213,7 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter) ([]File, error)
 			return nil
 		}
 		if info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
-			f, err := WrapFile(abs, root, &info)
+			f, err := WrapFile(abs, root, &info, fileOpts)
 			if err != nil {
 				return err
 			}
@@ -209,7 +233,7 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter) ([]File, error)
 // a native absolute path). Returned File object has path relative to 'root'.
 // If fileInfo is given, it will be used to grab file mode and size, otherwise
 // os.Lstat will be used to get it. Recognizes symlinks.
-func WrapFile(abs string, root string, fileInfo *os.FileInfo) (File, error) {
+func WrapFile(abs string, root string, fileInfo *os.FileInfo, fileOpts FileOptions) (File, error) {
 	if !filepath.IsAbs(abs) {
 		return nil, fmt.Errorf("expecting absolute path, got this: %q", abs)
 	}
@@ -237,6 +261,11 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo) (File, error) {
 		return nil, err
 	}
 
+	var modtime time.Time
+	if fileOpts.PreserveModTime {
+		modtime = info.ModTime()
+	}
+	writable := fileOpts.PreserveWritable && (info.Mode().Perm()&0222) != 0
 	// Recognize symlinks as such, convert target to relative path, if needed.
 	if info.Mode()&os.ModeSymlink != 0 {
 		target, err := os.Readlink(abs)
@@ -277,6 +306,8 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo) (File, error) {
 			return &fileSystemFile{
 				absPath:       abs,
 				name:          filepath.ToSlash(rel),
+				writable:      writable,
+				modtime:       modtime,
 				symlinkTarget: filepath.ToSlash(target),
 			}, nil
 		}
@@ -294,6 +325,8 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo) (File, error) {
 			name:       filepath.ToSlash(rel),
 			size:       uint64(info.Size()),
 			executable: (info.Mode().Perm() & 0111) != 0,
+			writable:   writable,
+			modtime:    modtime,
 			winAttrs:   attrs,
 		}, nil
 	}
