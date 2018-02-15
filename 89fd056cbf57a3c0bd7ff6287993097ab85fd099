@@ -22,6 +22,30 @@
       "revId": "89fd056cbf57a3c0bd7ff6287993097ab85fd099",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffa07466_a7a1087e",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-15T00:05:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4167cfe5_a6695ac7",
+      "range": {
+        "startLine": 68,
+        "startChar": 16,
+        "endLine": 68,
+        "endChar": 18
+      },
+      "revId": "89fd056cbf57a3c0bd7ff6287993097ab85fd099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
