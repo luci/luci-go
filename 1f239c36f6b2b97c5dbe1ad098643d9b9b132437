@@ -1,0 +1,280 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd703eeb_8aca3fb7",
+        "filename": "common/logging/gkelogger/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "Really, it\u0027s Google\u0027s \"fluentd\" instance that\u0027s doing the parsing.\n\nMaybe change name to something along the lines of \"cloudFluentdLogger\", or at least mention this in the comment. Stackdriver itself actually doesn\u0027t have anything to do with this parsing.",
+      "range": {
+        "startLine": 16,
+        "startChar": 48,
+        "endLine": 16,
+        "endChar": 65
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01a56d77_23cfa72c",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "nit: Use \"%q\"\nnit: You can use \"b.Bytes()\" here instead of \"b.String()\". \"fmt\" will understand that it\u0027s a string and read the bytes. This avoids a byte-to-string duplication operation.",
+      "range": {
+        "startLine": 36,
+        "startChar": 37,
+        "endLine": 36,
+        "endChar": 41
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe435cbf_19e46fd1",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "nit: \"t.Parallel()\" at the top b/c why not.",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 26
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "651ea286_32a5e1b6",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "nit: any reason not to just say:\nvar buf bytes.Buffer",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 34
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e90bba08_1a2b9198",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "Let\u0027s install it into the Context and use standard logging operations to test the full integration. That or have a separate test that exercises \"Use\".",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 35
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1344e84e_684baed0",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "nit: Not much point to using string interpolation here. Consider just doing \"test log\" or something.",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 36
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6c2d156_f7af4174",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "Consider making this a \"bufio.Writer\" that you flush at the end of each write? It should make construction more efficient, since current construction could call multiple writes to the underlying Writer.",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 6
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2398bad6_148bde08",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "If you\u0027re going to pin line numbers, you should pin revisions too :(\n\nAlternatively just list \"out_google_cloud.rb\" at the struct-level comment.",
+      "range": {
+        "startLine": 50,
+        "startChar": 140,
+        "endLine": 50,
+        "endChar": 144
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e78d07f9_92068491",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "Do these have any utility in the JSON format? Rather than have fluentd process them, we should probably just stuff them into Message like we do in other loggers.",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 73
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16418764_1757228d",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "nit: IMO use *jsonLogger, no reason to pass this by-value.",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 18
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f831203_97e4bcae",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "This is pretty harsh. Maybe just send the text log?",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 86,
+        "endChar": 12
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a2a75d1_bf74c775",
+        "filename": "logdog/server/service/service.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-15T22:51:20Z",
+      "side": 1,
+      "message": "Tee logger?",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 158,
+        "endChar": 0
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
