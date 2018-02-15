@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "05e98afb_aedad290",
+        "filename": "common/logging/gkelogger/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "cloudFluentdLogger would be more precise, but it\u0027s hard to give up a short name like \"gkelogger\".  I think because (presumably) the fluentd plugin was made primarily for GKE, I can justify the name.\n\nI\u0027ve clarified it in the comment though.",
+      "parentUuid": "dd703eeb_8aca3fb7",
+      "range": {
+        "startLine": 16,
+        "startChar": 48,
+        "endLine": 16,
+        "endChar": 65
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01a56d77_23cfa72c",
         "filename": "common/logging/gkelogger/gkelogger_test.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c9ca29b_92192e08",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01a56d77_23cfa72c",
+      "range": {
+        "startLine": 36,
+        "startChar": 37,
+        "endLine": 36,
+        "endChar": 41
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "477c9adf_83370ed3",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe435cbf_19e46fd1",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 26
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "651ea286_32a5e1b6",
         "filename": "common/logging/gkelogger/gkelogger_test.go",
         "patchSetId": 6
@@ -91,6 +163,30 @@
       "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcf9ad48_07454472",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "the package had a New* function, so I\u0027m usually inclined to call it.  Not really sure what the best practice is around it.\n\nEdit: It panicked, so I didn\u0027t do it.",
+      "parentUuid": "651ea286_32a5e1b6",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 34
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "edba32aa_df706be6",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Yeah the next one does.",
+      "parentUuid": "e90bba08_1a2b9198",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 35
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1344e84e_684baed0",
         "filename": "common/logging/gkelogger/gkelogger_test.go",
         "patchSetId": 6
@@ -137,6 +257,30 @@
       "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15c1e3b9_27f3ea66",
+        "filename": "common/logging/gkelogger/gkelogger_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1344e84e_684baed0",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 36
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "afa3bfe0_1cfc62f7",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6c2d156_f7af4174",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 6
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2398bad6_148bde08",
         "filename": "common/logging/gkelogger/logger.go",
         "patchSetId": 6
@@ -183,6 +351,30 @@
       "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ef92a7a_b318df4b",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "It\u0027s pinned to a tag, but yeah I guess that could technically change out from under us.",
+      "parentUuid": "2398bad6_148bde08",
+      "range": {
+        "startLine": 50,
+        "startChar": 140,
+        "endLine": 50,
+        "endChar": 144
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "4c813e3b_fb4363a1",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Actually a lot.  Filtering by structured JSON data has first class support in stackdriver, and it\u0027s the recommended way to do things as per:\nhttps://cloud.google.com/kubernetes-engine/docs/how-to/logging\n\nUsing this, i can filter by message ID explicitly, for instance:\nhttps://pantheon.corp.google.com/logs/viewer?project\u003dluci-logdog-dev\u0026resource\u003dcontainer%2Fcluster_name%2Flogdog-archivist-v2%2Fnamespace_id%2Fdefault\u0026minLogLevel\u003d0\u0026expandAll\u003dfalse\u0026timestamp\u003d2018-02-15T23:20:31.577337340Z\u0026dateRangeStart\u003d2018-02-15T22:20:51.643Z\u0026dateRangeEnd\u003d2018-02-15T23:20:51.643Z\u0026interval\u003dPT1H\u0026advancedFilter\u003dresource.type%3D%22container%22%0Aresource.labels.cluster_name%3D%22logdog-archivist-v2%22%0Aresource.labels.namespace_id%3D%22default%22%0AjsonPayload.fields.messageID%3D%2235635794094946%22",
+      "parentUuid": "e78d07f9_92068491",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 73
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16418764_1757228d",
         "filename": "common/logging/gkelogger/logger.go",
         "patchSetId": 6
@@ -229,6 +445,30 @@
       "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cccf1675_38f8ac19",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16418764_1757228d",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 18
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -255,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "4658b466_7db2ad8b",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f831203_97e4bcae",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 86,
+        "endChar": 12
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a2a75d1_bf74c775",
         "filename": "logdog/server/service/service.go",
         "patchSetId": 6
@@ -275,6 +539,30 @@
       "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0904e2e2_abb3edf1",
+        "filename": "logdog/server/service/service.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-15T23:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a2a75d1_bf74c775",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 158,
+        "endChar": 0
+      },
+      "revId": "1f239c36f6b2b97c5dbe1ad098643d9b9b132437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
