@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "82714e3e_7be17765",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-15T01:27:24Z",
+      "side": 1,
+      "message": "Done. What I meant is \"all errors returned by the callback are converted into transient, even if they are not tagged as such\".",
+      "parentUuid": "500f1dc3_af41a5ba",
+      "range": {
+        "startLine": 376,
+        "startChar": 13,
+        "endLine": 377,
+        "endChar": 13
+      },
+      "revId": "ef593edaa2aef897cb6e44d13ca73cefbc021aed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f47b169f_4a04fb84",
         "filename": "cipd/appengine/impl/cas/cas.go",
         "patchSetId": 8
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "1506a05d_9c31639a",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-15T01:27:24Z",
+      "side": 1,
+      "message": "We can, it\u0027s a matter of configuration. The bucket used for temp file is configured via admin portal page. The code won\u0027t change. \n\nI didn\u0027t bother configuring it because the chance of failure is pretty small. We have only 14 garbage files now in main CIPD bucket (accumulated over several years). And I\u0027ve just deleted them :)",
+      "parentUuid": "f47b169f_4a04fb84",
+      "range": {
+        "startLine": 392,
+        "startChar": 0,
+        "endLine": 401,
+        "endChar": 3
+      },
+      "revId": "ef593edaa2aef897cb6e44d13ca73cefbc021aed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e94c7d56_9fc96d66",
         "filename": "cipd/appengine/impl/cas/upload/operation.go",
         "patchSetId": 8
@@ -68,6 +116,30 @@
       "revId": "ef593edaa2aef897cb6e44d13ca73cefbc021aed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d70a2ed_3e39f40e",
+        "filename": "cipd/appengine/impl/cas/upload/operation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-15T01:27:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e94c7d56_9fc96d66",
+      "range": {
+        "startLine": 83,
+        "startChar": 7,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "ef593edaa2aef897cb6e44d13ca73cefbc021aed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
