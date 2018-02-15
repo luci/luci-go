@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "500f1dc3_af41a5ba",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-15T00:54:31Z",
+      "side": 1,
+      "message": "it took a bit to understand where this is implemented. op.Advance doc says \"All callback errors are treated as transient.\" but in fact ALL errors are treated as transient too, i.e. if it returns an error, it is unconditionally transient. Maybe clarify Advance doc",
+      "range": {
+        "startLine": 376,
+        "startChar": 13,
+        "endLine": 377,
+        "endChar": 13
+      },
+      "revId": "ef593edaa2aef897cb6e44d13ca73cefbc021aed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f47b169f_4a04fb84",
+        "filename": "cipd/appengine/impl/cas/cas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-15T00:54:31Z",
+      "side": 1,
+      "message": "since Publish is copying, why don\u0027t we use a separate bucket for temp files with automatic deletion?\nhttps://cloud.google.com/storage/docs/lifecycle#actions",
+      "range": {
+        "startLine": 392,
+        "startChar": 0,
+        "endLine": 401,
+        "endChar": 3
+      },
+      "revId": "ef593edaa2aef897cb6e44d13ca73cefbc021aed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e94c7d56_9fc96d66",
+        "filename": "cipd/appengine/impl/cas/upload/operation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-15T00:54:31Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 83,
+        "startChar": 7,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "ef593edaa2aef897cb6e44d13ca73cefbc021aed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
