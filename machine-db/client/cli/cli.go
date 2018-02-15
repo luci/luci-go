@@ -112,8 +112,8 @@ func New(params *Parameters) *cli.Application {
 			// Network interfaces.
 			addNICCmd(),
 			deleteNICCmd(),
+			editNICCmd(),
 			getNICsCmd(),
-			updateNICCmd(),
 			{},
 
 			// Physical hosts.
