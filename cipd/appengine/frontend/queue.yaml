@@ -16,3 +16,12 @@ queue:
     task_age_limit: 6h
 
 # [/FROM_PYTHON_CIPD]
+
+
+# Used for cas.tasks.VerifyUpload tasks.
+- name: verify-upload
+  target: backend-go
+  bucket_size: 500
+  rate: 50/s
+  retry_parameters:
+    task_age_limit: 24h
