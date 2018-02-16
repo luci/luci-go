@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "acf678b6_aeb9c6be",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-16T00:50:54Z",
+      "side": 1,
+      "message": "nit: nah, let it panic, it should never be nil. Tests should construct a mutex instead.",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 19
+      },
+      "revId": "02ed6b682c5e27a7a921361b1b97f5b393cec0b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "018fe8be_fd5e3d5b",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-16T00:50:54Z",
+      "side": 1,
+      "message": "strictly speaking we should check errors here, though it\u0027s not clear what to do with them... *shrug* Maybe write to os.Stderr? Not sure...",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 17
+      },
+      "revId": "02ed6b682c5e27a7a921361b1b97f5b393cec0b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
