@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0eadf299_d3296b75",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-16T00:00:28Z",
+      "side": 1,
+      "message": "I think you need to do this wrapping in GetFactory (and use locks) or just don\u0027t use bufio at all.\n\nThe logging factory is called for every logging call, i.e.\n\nlogging.Infof(ctx, \"Hi\") will create new \u0026jsonLogger{...}, call its Infof method, and then forget about it. Buffering is completely useless in this case.\n\nPutting bufio.Writer into config{...} is also tricky though, since config{...} is shared by many goroutines and we don\u0027t want concurrent JSON output to intermix into a mess, so we\u0027ll have to protect all writes with a lock. Might just as well ditch bufio and serialize JSON into temporary buffer, that then gets flushed to output using single Write call.",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
