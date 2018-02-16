@@ -17,7 +17,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -31,6 +30,7 @@ import (
 type GetSwitchesCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListSwitchesRequest
+	headers bool
 }
 
 // Run runs the command to get switches.
@@ -42,8 +42,16 @@ func (c *GetSwitchesCmd) Run(app subcommands.Application, args []string, env sub
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	if len(resp.Switches) > 0 {
+		w := newWriter()
+		defer w.Flush()
+		if c.headers {
+			fmt.Fprintf(w, "Name\tRack\tDatacenter\tDescription\n")
+		}
+		for _, s := range resp.Switches {
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.Name, s.Rack, s.Datacenter, s.Description)
+		}
+	}
 	return 0
 }
 
@@ -58,6 +66,7 @@ func getSwitchesCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a switch to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
 			return cmd
 		},
 	}
