@@ -22,6 +22,30 @@
       "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dac2ea9a_1ab4d4f0",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-16T00:11:41Z",
+      "side": 1,
+      "message": "Also I think locks are required anyway, since Write(...) is not guaranteed to be atomic (so two concurrent writes can lean to gibberish).\n\nSo something like:\n\ntype config struct {\n  l sync.Mutex\n  out io.Writer\n}\n\ntype jsonLogger struct {\n  ctx context.Context\n  cfg *config\n}\n\nfunc (l *jsonLogger) LogCall(...) {\n  blob, err :\u003d json.Marshal(...)\n  ...\n\n  l.cfg.l.Lock()\n  defer l.cfg.l.Unlock()\n  err :\u003d l.cfg.out.Write(blob)\n  ...\n}",
+      "parentUuid": "0eadf299_d3296b75",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
