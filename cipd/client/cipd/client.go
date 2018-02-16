@@ -53,6 +53,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -67,6 +68,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/cipd/version"
 )
 
@@ -855,12 +857,12 @@ var clientFileName = ""
 
 func init() {
 	clientFileName = "cipd"
-	if common.CurrentOS() == "windows" {
+	if platform.CurrentOS() == "windows" {
 		clientFileName = "cipd.exe"
 	}
 
 	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase,
-		common.CurrentOS(), common.CurrentArchitecture())
+		platform.CurrentOS(), platform.CurrentArchitecture())
 }
 
 func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, exePath string) {
@@ -1121,13 +1123,22 @@ func (s sortByTagKey) Len() int      { return len(s) }
 func (s sortByTagKey) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s sortByTagKey) Less(i, j int) bool {
-	k1 := common.GetInstanceTagKey(s[i].Tag)
-	k2 := common.GetInstanceTagKey(s[j].Tag)
+	k1 := instanceTagKey(s[i].Tag)
+	k2 := instanceTagKey(s[j].Tag)
 	if k1 == k2 {
 		// Newest first.
 		return s[j].RegisteredTs.Before(s[i].RegisteredTs)
 	}
 	return k1 < k2
+}
+
+// instanceTagKey returns key portion of the instance tag or empty string.
+func instanceTagKey(t string) string {
+	chunks := strings.SplitN(t, ":", 2)
+	if len(chunks) != 2 {
+		return ""
+	}
+	return chunks[0]
 }
 
 func (client *clientImpl) FetchInstanceTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
@@ -1297,14 +1308,14 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	if err != nil {
 		return
 	}
-	hash, err := common.HashForInstanceID(pin.InstanceID)
+	hash, err := local.HashForInstanceID(pin.InstanceID)
 	if err != nil {
 		return
 	}
 	if err = client.storage.download(ctx, fetchInfo.fetchURL, output, hash); err != nil {
 		return
 	}
-	if common.InstanceIDFromHash(hash) != pin.InstanceID {
+	if local.InstanceIDFromHash(hash) != pin.InstanceID {
 		err = fmt.Errorf("package hash mismatch")
 	}
 	return

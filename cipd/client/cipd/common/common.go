@@ -16,18 +16,13 @@
 package common
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
-	"hash"
 	"path"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
 )
 
 // packageNameRe is a regular expression for a superset of a set of allowed
@@ -169,80 +164,6 @@ func ValidateSubdir(subdir string) error {
 	return nil
 }
 
-// GetInstanceTagKey returns key portion of the instance tag or empty string.
-func GetInstanceTagKey(t string) string {
-	chunks := strings.SplitN(t, ":", 2)
-	if len(chunks) != 2 {
-		return ""
-	}
-	return chunks[0]
-}
-
-// HashForInstanceID constructs correct zero hash.Hash instance that can be
-// used to verify given instance ID.
-//
-// Currently it is always SHA1.
-//
-// TODO(vadimsh): Use this function where sha1.New() is used now.
-func HashForInstanceID(instanceID string) (hash.Hash, error) {
-	if err := ValidateInstanceID(instanceID); err != nil {
-		return nil, err
-	}
-	return sha1.New(), nil
-}
-
-// InstanceIDFromHash returns an instance ID string, given a hash state.
-func InstanceIDFromHash(h hash.Hash) string {
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-// DefaultHash returns a zero hash.Hash instance to use for package verification
-// by default.
-//
-// Currently it is always SHA1.
-//
-// TODO(vadimsh): Use this function where sha1.New() is used now.
-func DefaultHash() hash.Hash {
-	return sha1.New()
-}
-
-var currentArchitecture = ""
-var currentOS = ""
-
-func init() {
-	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
-	currentArchitecture = runtime.GOARCH
-	if currentArchitecture == "arm" {
-		currentArchitecture = "armv6l"
-	}
-
-	currentOS = runtime.GOOS
-	if currentOS == "darwin" {
-		currentOS = "mac"
-	}
-}
-
-// CurrentArchitecture returns the current cipd-style architecture that the
-// current go binary conforms to. Possible values:
-//   - "armv6l" (if GOARCH=arm)
-//   - other GOARCH values
-func CurrentArchitecture() string {
-	return currentArchitecture
-}
-
-// CurrentOS returns the current cipd-style os that the
-// current go binary conforms to. Possible values:
-//   - "mac" (if GOOS=darwin)
-//   - other GOOS values
-func CurrentOS() string {
-	return currentOS
-}
-
-// CurrentPlatform returns the current platform.
-func CurrentPlatform() TemplatePlatform {
-	return TemplatePlatform{currentOS, currentArchitecture}
-}
-
 // PinSlice is a simple list of Pins
 type PinSlice []Pin
 
@@ -323,136 +244,4 @@ func (p PinMapBySubdir) ToSlice() PinSliceBySubdir {
 		ret[subdir] = pkgs.ToSlice()
 	}
 	return ret
-}
-
-// TemplateExpander is a mapping of simple string substitutions which is used to
-// expand cipd package name templates. For example:
-//
-//   ex, err := TemplateExpander{
-//     "platform": "mac-amd64"
-//   }.Expand("foo/${platform}")
-//
-// `ex` would be "foo/mac-amd64".
-//
-// Use DefaultPackageNameExpander() to obtain the default mapping for CIPD
-// applications.
-type TemplateExpander map[string]string
-
-// ErrSkipTemplate may be returned from TemplateExpander.Expand to indicate that
-// a given expansion doesn't apply to the current template parameters. For
-// example, expanding `"foo/${os=linux,mac}"` with a template parameter of "os"
-// == "win", would return ErrSkipTemplate.
-var ErrSkipTemplate = errors.New("package template does not apply to the current system")
-
-var templateParm = regexp.MustCompile(`\${[^}]*}`)
-
-// Expand applies package template expansion rules to the package template,
-//
-// If err == ErrSkipTemplate, that means that this template does not apply to
-// this os/arch combination and should be skipped.
-//
-// The expansion rules are as follows:
-//   - "some text" will pass through unchanged
-//   - "${variable}" will directly substitute the given variable
-//   - "${variable=val1,val2}" will substitute the given variable, if its value
-//     matches one of the values in the list of values. If the current value
-//     does not match, this returns ErrSkipTemplate.
-//
-// Attempting to expand an unknown variable is an error.
-// After expansion, any lingering '$' in the template is an error.
-func (t TemplateExpander) Expand(template string) (pkg string, err error) {
-	return t.expandImpl(template, false)
-}
-
-// Validate returns an error if this template doesn't appear to be valid given
-// the current TemplateExpander parameters.
-//
-// This will catch issues like malformed template parameters and unknown
-// variables, and will replace all ${param=value} items with the first item in
-// the value list, even if the current TemplateExpander value doesn't match.
-//
-// This is mostly used for validating user input when the correct values of
-// TemplateExpander aren't known yet.
-func (t TemplateExpander) Validate(template string) (pkg string, err error) {
-	return t.expandImpl(template, true)
-}
-
-func (t TemplateExpander) expandImpl(template string, alwaysFill bool) (pkg string, err error) {
-	skip := false
-
-	pkg = templateParm.ReplaceAllStringFunc(template, func(parm string) string {
-		// ${...}
-		contents := parm[2 : len(parm)-1]
-
-		varNameValues := strings.SplitN(contents, "=", 2)
-		if len(varNameValues) == 1 {
-			// ${varName}
-			if value, ok := t[varNameValues[0]]; ok {
-				return value
-			}
-
-			err = errors.Reason("unknown variable in ${%s}", contents).Err()
-		}
-
-		// ${varName=value,value}
-		ourValue, ok := t[varNameValues[0]]
-		if !ok {
-			err = errors.Reason("unknown variable %q", parm).Err()
-			return parm
-		}
-
-		for _, val := range strings.Split(varNameValues[1], ",") {
-			if val == ourValue || alwaysFill {
-				return ourValue
-			}
-		}
-		skip = true
-		return parm
-	})
-	if skip {
-		err = ErrSkipTemplate
-	}
-	if err == nil && strings.ContainsRune(pkg, '$') {
-		err = errors.Reason("unable to process some variables in %q", template).Err()
-	}
-	return
-}
-
-// TemplatePlatform contains the parameters for a "${platform}" template.
-//
-// The string value can be obtained by calling String().
-// be parsed using ParseTemplatePlatform.
-type TemplatePlatform struct {
-	OS   string
-	Arch string
-}
-
-// ParseTemplatePlatform parses a TemplatePlatform from its string
-// representation.
-func ParseTemplatePlatform(v string) (TemplatePlatform, error) {
-	parts := strings.Split(v, "-")
-	if len(parts) != 2 {
-		return TemplatePlatform{}, errors.Reason("platform must be <os>-<arch>: %q", v).Err()
-	}
-	return TemplatePlatform{parts[0], parts[1]}, nil
-}
-
-func (tp TemplatePlatform) String() string {
-	return fmt.Sprintf("%s-%s", tp.OS, tp.Arch)
-}
-
-// Expander returns a TemplateExpander populated with tp's fields.
-func (tp TemplatePlatform) Expander() TemplateExpander {
-	return TemplateExpander{
-		"os":       tp.OS,
-		"arch":     tp.Arch,
-		"platform": tp.String(),
-	}
-}
-
-// DefaultTemplateExpander returns the default template expander.
-//
-// This has values populated for ${os}, ${arch} and ${platform}.
-func DefaultTemplateExpander() TemplateExpander {
-	return CurrentPlatform().Expander()
 }
