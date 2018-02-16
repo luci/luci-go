@@ -72,6 +72,57 @@ func addPhysicalHostCmd() *subcommands.Command {
 	}
 }
 
+// EditPhysicalHostCmd is the command to edit a physical host.
+type EditPhysicalHostCmd struct {
+	subcommands.CommandRunBase
+	host crimson.PhysicalHost
+}
+
+// Run runs the command to edit a physical host.
+func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	// TODO(smut): Validate required fields client-side.
+	req := &crimson.UpdatePhysicalHostRequest{
+		Host: &c.host,
+		UpdateMask: getUpdateMask(&c.Flags, map[string]string{
+			"machine": "machine",
+			"os":      "os",
+			"slots":   "vm_slots",
+			"desc":    "description",
+			"tick":    "deployment_ticket",
+		}),
+	}
+	client := getClient(ctx)
+	resp, err := client.UpdatePhysicalHost(ctx, req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	// TODO(smut): Format this response.
+	fmt.Print(proto.MarshalTextString(resp))
+	return 0
+}
+
+// editPhysicalHostCmd returns a command to edit a network interface.
+func editPhysicalHostCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "edit-host -name <name> -vlan <id> [-machine <machine>] [-os <os>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
+		ShortDesc: "edits a physical host",
+		LongDesc:  "Edits a physical host in the database.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &EditPhysicalHostCmd{}
+			cmd.Flags.StringVar(&cmd.host.Name, "name", "", "The name of this host on the network. Required and must be the name of a host returned by get-hosts.")
+			cmd.Flags.Int64Var(&cmd.host.Vlan, "vlan", 0, "The VLAN this host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
+			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Must be the name of a machine returned by get-machines.")
+			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Must be the name of an operating system returned by get-oses.")
+			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
+			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
+			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
+			return cmd
+		},
+	}
+}
+
 // GetPhysicalHostsCmd is the command to get physical hosts.
 type GetPhysicalHostsCmd struct {
 	subcommands.CommandRunBase
