@@ -22,6 +22,30 @@
       "revId": "6becd8066dc3a61f1a03dd01d1f9fd6c9e2ca5e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fad0fc06_c0653d21",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-16T22:11:03Z",
+      "side": 1,
+      "message": "Good point, done.",
+      "parentUuid": "9efb5ede_67186d1d",
+      "range": {
+        "startLine": 154,
+        "startChar": 97,
+        "endLine": 154,
+        "endChar": 107
+      },
+      "revId": "6becd8066dc3a61f1a03dd01d1f9fd6c9e2ca5e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
