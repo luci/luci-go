@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2018 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1145,6 +1145,8 @@ type SwarmingRpcsTaskProperties struct {
 	IoTimeoutSecs int64 `json:"io_timeout_secs,omitempty,string"`
 
 	Outputs []string `json:"outputs,omitempty"`
+
+	RelativeCwd string `json:"relative_cwd,omitempty"`
 
 	SecretBytes string `json:"secret_bytes,omitempty"`
 

@@ -1,603 +1,603 @@
 {
- "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/N69l9lt1N7dZ6sznySPJlGlF4dY\"",
- "discoveryVersion": "v1",
- "id": "config:v1",
- "name": "config",
- "version": "v1",
- "title": "Configuration Service",
- "description": "API to access configurations.",
- "icons": {
-  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
- },
- "protocol": "rest",
- "baseUrl": "https://luci-config.appspot.com/_ah/api/config/v1/",
- "basePath": "/_ah/api/config/v1/",
- "rootUrl": "https://luci-config.appspot.com/_ah/api/",
- "servicePath": "config/v1/",
- "batchPath": "batch",
- "parameters": {
-  "alt": {
-   "type": "string",
-   "description": "Data format for the response.",
-   "default": "json",
-   "enum": [
-    "json"
-   ],
-   "enumDescriptions": [
-    "Responses with Content-Type of application/json"
-   ],
-   "location": "query"
-  },
-  "fields": {
-   "type": "string",
-   "description": "Selector specifying which fields to include in a partial response.",
-   "location": "query"
-  },
-  "key": {
-   "type": "string",
-   "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
-   "location": "query"
-  },
-  "oauth_token": {
-   "type": "string",
-   "description": "OAuth 2.0 token for the current user.",
-   "location": "query"
-  },
-  "prettyPrint": {
-   "type": "boolean",
-   "description": "Returns response with indentations and line breaks.",
-   "default": "true",
-   "location": "query"
-  },
-  "quotaUser": {
-   "type": "string",
-   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
-   "location": "query"
-  },
-  "userIp": {
-   "type": "string",
-   "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
-   "location": "query"
-  }
- },
- "auth": {
-  "oauth2": {
-   "scopes": {
-    "https://www.googleapis.com/auth/userinfo.email": {
-     "description": "View your email address"
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/userinfo.email": {
+          "description": "View your email address"
+        }
+      }
     }
-   }
-  }
- },
- "schemas": {
-  "ComponentsConfigEndpointValidationMessage": {
-   "id": "ComponentsConfigEndpointValidationMessage",
-   "type": "object",
-   "properties": {
-    "severity": {
-     "type": "string",
-     "enum": [
-      "CRITICAL",
-      "DEBUG",
-      "ERROR",
-      "INFO",
-      "WARNING"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      "",
-      "",
-      ""
-     ]
-    },
-    "text": {
-     "type": "string"
-    }
-   }
   },
-  "LuciConfigConfigSet": {
-   "id": "LuciConfigConfigSet",
-   "type": "object",
-   "description": "Describes a config set.",
-   "properties": {
-    "config_set": {
-     "type": "string"
-    },
-    "files": {
-     "type": "array",
-     "description": "Describes a file.",
-     "items": {
-      "$ref": "LuciConfigFile"
-     }
-    },
-    "last_import_attempt": {
-     "$ref": "LuciConfigConfigSetImportAttempt"
-    },
-    "location": {
-     "type": "string"
-    },
-    "revision": {
-     "$ref": "LuciConfigRevision"
-    }
-   }
+  "basePath": "/_ah/api/config/v1/",
+  "baseUrl": "https://luci-config.appspot.com/_ah/api/config/v1/",
+  "batchPath": "batch",
+  "description": "API to access configurations.",
+  "discoveryVersion": "v1",
+  "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/hkdDnNoa8AIjCNvl343vhhbtjdk\"",
+  "icons": {
+    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
   },
-  "LuciConfigConfigSetImportAttempt": {
-   "id": "LuciConfigConfigSetImportAttempt",
-   "type": "object",
-   "properties": {
-    "message": {
-     "type": "string"
+  "id": "config:v1",
+  "kind": "discovery#restDescription",
+  "methods": {
+    "get_config": {
+      "description": "Gets a config file.",
+      "httpMethod": "GET",
+      "id": "config.get_config",
+      "parameterOrder": [
+        "config_set",
+        "path"
+      ],
+      "parameters": {
+        "config_set": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "hash_only": {
+          "location": "query",
+          "type": "boolean"
+        },
+        "path": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "revision": {
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "path": "config_sets/{config_set}/config/{path}",
+      "response": {
+        "$ref": "LuciConfigGetConfigResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "revision": {
-     "$ref": "LuciConfigRevision"
+    "get_config_by_hash": {
+      "description": "Gets a config file by its hash.",
+      "httpMethod": "GET",
+      "id": "config.get_config_by_hash",
+      "parameterOrder": [
+        "content_hash"
+      ],
+      "parameters": {
+        "content_hash": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "config/{content_hash}",
+      "response": {
+        "$ref": "LuciConfigGetConfigByHashResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "success": {
-     "type": "boolean"
+    "get_config_sets": {
+      "description": "Returns config sets.",
+      "httpMethod": "GET",
+      "id": "config.get_config_sets",
+      "parameters": {
+        "config_set": {
+          "location": "query",
+          "type": "string"
+        },
+        "include_files": {
+          "location": "query",
+          "type": "boolean"
+        },
+        "include_last_import_attempt": {
+          "location": "query",
+          "type": "boolean"
+        }
+      },
+      "path": "config-sets",
+      "response": {
+        "$ref": "LuciConfigGetConfigSetsResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "timestamp": {
-     "type": "string",
-     "format": "int64"
+    "get_mapping": {
+      "description": "DEPRECATED. Use get_config_sets.",
+      "httpMethod": "GET",
+      "id": "config.get_mapping",
+      "parameters": {
+        "config_set": {
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "path": "mapping",
+      "response": {
+        "$ref": "LuciConfigGetMappingResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "validation_messages": {
-     "type": "array",
-     "items": {
-      "$ref": "ComponentsConfigEndpointValidationMessage"
-     }
+    "get_project_configs": {
+      "description": "Gets configs in all project config sets.",
+      "httpMethod": "GET",
+      "id": "config.get_project_configs",
+      "parameterOrder": [
+        "path"
+      ],
+      "parameters": {
+        "hashes_only": {
+          "location": "query",
+          "type": "boolean"
+        },
+        "path": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "configs/projects/{path}",
+      "response": {
+        "$ref": "LuciConfigGetConfigMultiResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "get_projects": {
+      "description": "Gets list of registered projects. The project list is stored in services/luci-config:projects.cfg.",
+      "httpMethod": "GET",
+      "id": "config.get_projects",
+      "path": "projects",
+      "response": {
+        "$ref": "LuciConfigGetProjectsResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "get_ref_configs": {
+      "description": "Gets configs in all ref config sets.",
+      "httpMethod": "GET",
+      "id": "config.get_ref_configs",
+      "parameterOrder": [
+        "path"
+      ],
+      "parameters": {
+        "hashes_only": {
+          "location": "query",
+          "type": "boolean"
+        },
+        "path": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "configs/refs/{path}",
+      "response": {
+        "$ref": "LuciConfigGetConfigMultiResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "get_refs": {
+      "description": "Gets list of refs of a project.",
+      "httpMethod": "GET",
+      "id": "config.get_refs",
+      "parameterOrder": [
+        "project_id"
+      ],
+      "parameters": {
+        "project_id": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "projects/{project_id}/refs",
+      "response": {
+        "$ref": "LuciConfigGetRefsResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "reimport": {
+      "description": "Reimports a config set.",
+      "httpMethod": "POST",
+      "id": "config.reimport",
+      "parameterOrder": [
+        "config_set"
+      ],
+      "parameters": {
+        "config_set": {
+          "location": "query",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "reimport",
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "validate_config": {
+      "httpMethod": "POST",
+      "id": "config.validate_config",
+      "path": "validate-config",
+      "request": {
+        "$ref": "LuciConfigValidateConfigRequestMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "LuciConfigValidateConfigResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     }
-   }
   },
-  "LuciConfigFile": {
-   "id": "LuciConfigFile",
-   "type": "object",
-   "description": "Describes a file.",
-   "properties": {
-    "path": {
-     "type": "string"
-    }
-   }
-  },
-  "LuciConfigGetConfigByHashResponseMessage": {
-   "id": "LuciConfigGetConfigByHashResponseMessage",
-   "type": "object",
-   "properties": {
-    "content": {
-     "type": "string",
-     "format": "byte"
-    }
-   }
-  },
-  "LuciConfigGetConfigMultiResponseMessage": {
-   "id": "LuciConfigGetConfigMultiResponseMessage",
-   "type": "object",
-   "properties": {
-    "configs": {
-     "type": "array",
-     "items": {
-      "$ref": "LuciConfigGetConfigMultiResponseMessageConfigEntry"
-     }
-    }
-   }
-  },
-  "LuciConfigGetConfigMultiResponseMessageConfigEntry": {
-   "id": "LuciConfigGetConfigMultiResponseMessageConfigEntry",
-   "type": "object",
-   "properties": {
-    "config_set": {
-     "type": "string"
+  "name": "config",
+  "parameters": {
+    "alt": {
+      "default": "json",
+      "description": "Data format for the response.",
+      "enum": [
+        "json"
+      ],
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json"
+      ],
+      "location": "query",
+      "type": "string"
     },
-    "content": {
-     "type": "string",
-     "format": "byte"
+    "fields": {
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query",
+      "type": "string"
     },
-    "content_hash": {
-     "type": "string"
+    "key": {
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+      "location": "query",
+      "type": "string"
     },
-    "revision": {
-     "type": "string"
+    "oauth_token": {
+      "description": "OAuth 2.0 token for the current user.",
+      "location": "query",
+      "type": "string"
     },
-    "url": {
-     "type": "string"
+    "prettyPrint": {
+      "default": "true",
+      "description": "Returns response with indentations and line breaks.",
+      "location": "query",
+      "type": "boolean"
+    },
+    "quotaUser": {
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+      "location": "query",
+      "type": "string"
+    },
+    "userIp": {
+      "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
+      "location": "query",
+      "type": "string"
     }
-   }
   },
-  "LuciConfigGetConfigResponseMessage": {
-   "id": "LuciConfigGetConfigResponseMessage",
-   "type": "object",
-   "properties": {
-    "content": {
-     "type": "string",
-     "format": "byte"
+  "protocol": "rest",
+  "rootUrl": "https://luci-config.appspot.com/_ah/api/",
+  "schemas": {
+    "ComponentsConfigEndpointValidationMessage": {
+      "id": "ComponentsConfigEndpointValidationMessage",
+      "properties": {
+        "severity": {
+          "enum": [
+            "CRITICAL",
+            "DEBUG",
+            "ERROR",
+            "INFO",
+            "WARNING"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
-    "content_hash": {
-     "type": "string"
+    "LuciConfigConfigSet": {
+      "description": "Describes a config set.",
+      "id": "LuciConfigConfigSet",
+      "properties": {
+        "config_set": {
+          "type": "string"
+        },
+        "files": {
+          "description": "Describes a file.",
+          "items": {
+            "$ref": "LuciConfigFile"
+          },
+          "type": "array"
+        },
+        "last_import_attempt": {
+          "$ref": "LuciConfigConfigSetImportAttempt"
+        },
+        "location": {
+          "type": "string"
+        },
+        "revision": {
+          "$ref": "LuciConfigRevision"
+        }
+      },
+      "type": "object"
     },
-    "revision": {
-     "type": "string"
+    "LuciConfigConfigSetImportAttempt": {
+      "id": "LuciConfigConfigSetImportAttempt",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "revision": {
+          "$ref": "LuciConfigRevision"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "timestamp": {
+          "format": "int64",
+          "type": "string"
+        },
+        "validation_messages": {
+          "items": {
+            "$ref": "ComponentsConfigEndpointValidationMessage"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
     },
-    "url": {
-     "type": "string"
-    }
-   }
-  },
-  "LuciConfigGetConfigSetsResponseMessage": {
-   "id": "LuciConfigGetConfigSetsResponseMessage",
-   "type": "object",
-   "properties": {
-    "config_sets": {
-     "type": "array",
-     "description": "Describes a config set.",
-     "items": {
-      "$ref": "LuciConfigConfigSet"
-     }
-    }
-   }
-  },
-  "LuciConfigGetMappingResponseMessage": {
-   "id": "LuciConfigGetMappingResponseMessage",
-   "type": "object",
-   "properties": {
-    "mappings": {
-     "type": "array",
-     "items": {
-      "$ref": "LuciConfigGetMappingResponseMessageMapping"
-     }
-    }
-   }
-  },
-  "LuciConfigGetMappingResponseMessageMapping": {
-   "id": "LuciConfigGetMappingResponseMessageMapping",
-   "type": "object",
-   "properties": {
-    "config_set": {
-     "type": "string"
+    "LuciConfigFile": {
+      "description": "Describes a file.",
+      "id": "LuciConfigFile",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
-    "location": {
-     "type": "string"
-    }
-   }
-  },
-  "LuciConfigGetProjectsResponseMessage": {
-   "id": "LuciConfigGetProjectsResponseMessage",
-   "type": "object",
-   "properties": {
-    "projects": {
-     "type": "array",
-     "items": {
-      "$ref": "LuciConfigProject"
-     }
-    }
-   }
-  },
-  "LuciConfigGetRefsResponseMessage": {
-   "id": "LuciConfigGetRefsResponseMessage",
-   "type": "object",
-   "properties": {
-    "refs": {
-     "type": "array",
-     "items": {
-      "$ref": "LuciConfigGetRefsResponseMessageRef"
-     }
-    }
-   }
-  },
-  "LuciConfigGetRefsResponseMessageRef": {
-   "id": "LuciConfigGetRefsResponseMessageRef",
-   "type": "object",
-   "properties": {
-    "name": {
-     "type": "string"
-    }
-   }
-  },
-  "LuciConfigProject": {
-   "id": "LuciConfigProject",
-   "type": "object",
-   "properties": {
-    "id": {
-     "type": "string"
+    "LuciConfigGetConfigByHashResponseMessage": {
+      "id": "LuciConfigGetConfigByHashResponseMessage",
+      "properties": {
+        "content": {
+          "format": "byte",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
-    "name": {
-     "type": "string"
+    "LuciConfigGetConfigMultiResponseMessage": {
+      "id": "LuciConfigGetConfigMultiResponseMessage",
+      "properties": {
+        "configs": {
+          "items": {
+            "$ref": "LuciConfigGetConfigMultiResponseMessageConfigEntry"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
     },
-    "repo_type": {
-     "type": "string",
-     "enum": [
-      "GITILES"
-     ],
-     "enumDescriptions": [
-      ""
-     ]
+    "LuciConfigGetConfigMultiResponseMessageConfigEntry": {
+      "id": "LuciConfigGetConfigMultiResponseMessageConfigEntry",
+      "properties": {
+        "config_set": {
+          "type": "string"
+        },
+        "content": {
+          "format": "byte",
+          "type": "string"
+        },
+        "content_hash": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
-    "repo_url": {
-     "type": "string"
+    "LuciConfigGetConfigResponseMessage": {
+      "id": "LuciConfigGetConfigResponseMessage",
+      "properties": {
+        "content": {
+          "format": "byte",
+          "type": "string"
+        },
+        "content_hash": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigGetConfigSetsResponseMessage": {
+      "id": "LuciConfigGetConfigSetsResponseMessage",
+      "properties": {
+        "config_sets": {
+          "description": "Describes a config set.",
+          "items": {
+            "$ref": "LuciConfigConfigSet"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigGetMappingResponseMessage": {
+      "id": "LuciConfigGetMappingResponseMessage",
+      "properties": {
+        "mappings": {
+          "items": {
+            "$ref": "LuciConfigGetMappingResponseMessageMapping"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigGetMappingResponseMessageMapping": {
+      "id": "LuciConfigGetMappingResponseMessageMapping",
+      "properties": {
+        "config_set": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigGetProjectsResponseMessage": {
+      "id": "LuciConfigGetProjectsResponseMessage",
+      "properties": {
+        "projects": {
+          "items": {
+            "$ref": "LuciConfigProject"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigGetRefsResponseMessage": {
+      "id": "LuciConfigGetRefsResponseMessage",
+      "properties": {
+        "refs": {
+          "items": {
+            "$ref": "LuciConfigGetRefsResponseMessageRef"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigGetRefsResponseMessageRef": {
+      "id": "LuciConfigGetRefsResponseMessageRef",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigProject": {
+      "id": "LuciConfigProject",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "repo_type": {
+          "enum": [
+            "GITILES"
+          ],
+          "enumDescriptions": [
+            ""
+          ],
+          "type": "string"
+        },
+        "repo_url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigRevision": {
+      "id": "LuciConfigRevision",
+      "properties": {
+        "committer_email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "format": "int64",
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigValidateConfigRequestMessage": {
+      "id": "LuciConfigValidateConfigRequestMessage",
+      "properties": {
+        "config_set": {
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "LuciConfigValidateConfigRequestMessageFile"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigValidateConfigRequestMessageFile": {
+      "id": "LuciConfigValidateConfigRequestMessageFile",
+      "properties": {
+        "content": {
+          "format": "byte",
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LuciConfigValidateConfigResponseMessage": {
+      "id": "LuciConfigValidateConfigResponseMessage",
+      "properties": {
+        "messages": {
+          "items": {
+            "$ref": "ComponentsConfigEndpointValidationMessage"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
     }
-   }
   },
-  "LuciConfigRevision": {
-   "id": "LuciConfigRevision",
-   "type": "object",
-   "properties": {
-    "committer_email": {
-     "type": "string"
-    },
-    "id": {
-     "type": "string"
-    },
-    "timestamp": {
-     "type": "string",
-     "format": "int64"
-    },
-    "url": {
-     "type": "string"
-    }
-   }
-  },
-  "LuciConfigValidateConfigRequestMessage": {
-   "id": "LuciConfigValidateConfigRequestMessage",
-   "type": "object",
-   "properties": {
-    "config_set": {
-     "type": "string"
-    },
-    "files": {
-     "type": "array",
-     "items": {
-      "$ref": "LuciConfigValidateConfigRequestMessageFile"
-     }
-    }
-   }
-  },
-  "LuciConfigValidateConfigRequestMessageFile": {
-   "id": "LuciConfigValidateConfigRequestMessageFile",
-   "type": "object",
-   "properties": {
-    "content": {
-     "type": "string",
-     "format": "byte"
-    },
-    "path": {
-     "type": "string"
-    }
-   }
-  },
-  "LuciConfigValidateConfigResponseMessage": {
-   "id": "LuciConfigValidateConfigResponseMessage",
-   "type": "object",
-   "properties": {
-    "messages": {
-     "type": "array",
-     "items": {
-      "$ref": "ComponentsConfigEndpointValidationMessage"
-     }
-    }
-   }
-  }
- },
- "methods": {
-  "get_config": {
-   "id": "config.get_config",
-   "path": "config_sets/{config_set}/config/{path}",
-   "httpMethod": "GET",
-   "description": "Gets a config file.",
-   "parameters": {
-    "config_set": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    },
-    "hash_only": {
-     "type": "boolean",
-     "location": "query"
-    },
-    "path": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    },
-    "revision": {
-     "type": "string",
-     "location": "query"
-    }
-   },
-   "parameterOrder": [
-    "config_set",
-    "path"
-   ],
-   "response": {
-    "$ref": "LuciConfigGetConfigResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_config_by_hash": {
-   "id": "config.get_config_by_hash",
-   "path": "config/{content_hash}",
-   "httpMethod": "GET",
-   "description": "Gets a config file by its hash.",
-   "parameters": {
-    "content_hash": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "content_hash"
-   ],
-   "response": {
-    "$ref": "LuciConfigGetConfigByHashResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_config_sets": {
-   "id": "config.get_config_sets",
-   "path": "config-sets",
-   "httpMethod": "GET",
-   "description": "Returns config sets.",
-   "parameters": {
-    "config_set": {
-     "type": "string",
-     "location": "query"
-    },
-    "include_files": {
-     "type": "boolean",
-     "location": "query"
-    },
-    "include_last_import_attempt": {
-     "type": "boolean",
-     "location": "query"
-    }
-   },
-   "response": {
-    "$ref": "LuciConfigGetConfigSetsResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_mapping": {
-   "id": "config.get_mapping",
-   "path": "mapping",
-   "httpMethod": "GET",
-   "description": "DEPRECATED. Use get_config_sets.",
-   "parameters": {
-    "config_set": {
-     "type": "string",
-     "location": "query"
-    }
-   },
-   "response": {
-    "$ref": "LuciConfigGetMappingResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_project_configs": {
-   "id": "config.get_project_configs",
-   "path": "configs/projects/{path}",
-   "httpMethod": "GET",
-   "description": "Gets configs in all project config sets.",
-   "parameters": {
-    "hashes_only": {
-     "type": "boolean",
-     "location": "query"
-    },
-    "path": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "path"
-   ],
-   "response": {
-    "$ref": "LuciConfigGetConfigMultiResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_projects": {
-   "id": "config.get_projects",
-   "path": "projects",
-   "httpMethod": "GET",
-   "description": "Gets list of registered projects. The project list is stored in services/luci-config:projects.cfg.",
-   "response": {
-    "$ref": "LuciConfigGetProjectsResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_ref_configs": {
-   "id": "config.get_ref_configs",
-   "path": "configs/refs/{path}",
-   "httpMethod": "GET",
-   "description": "Gets configs in all ref config sets.",
-   "parameters": {
-    "hashes_only": {
-     "type": "boolean",
-     "location": "query"
-    },
-    "path": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "path"
-   ],
-   "response": {
-    "$ref": "LuciConfigGetConfigMultiResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_refs": {
-   "id": "config.get_refs",
-   "path": "projects/{project_id}/refs",
-   "httpMethod": "GET",
-   "description": "Gets list of refs of a project.",
-   "parameters": {
-    "project_id": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "project_id"
-   ],
-   "response": {
-    "$ref": "LuciConfigGetRefsResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "reimport": {
-   "id": "config.reimport",
-   "path": "reimport",
-   "httpMethod": "POST",
-   "description": "Reimports a config set.",
-   "parameters": {
-    "config_set": {
-     "type": "string",
-     "required": true,
-     "location": "query"
-    }
-   },
-   "parameterOrder": [
-    "config_set"
-   ],
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "validate_config": {
-   "id": "config.validate_config",
-   "path": "validate-config",
-   "httpMethod": "POST",
-   "request": {
-    "$ref": "LuciConfigValidateConfigRequestMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "LuciConfigValidateConfigResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  }
- }
+  "servicePath": "config/v1/",
+  "title": "Configuration Service",
+  "version": "v1"
 }

@@ -1,310 +1,310 @@
 {
- "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/MYeWSQMjtWMUkNO01_D0i1W671o\"",
- "discoveryVersion": "v1",
- "id": "isolateservice:v1",
- "name": "isolateservice",
- "version": "v1",
- "description": "Version 1 of Isolate Service",
- "icons": {
-  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
- },
- "protocol": "rest",
- "baseUrl": "https://isolateserver.appspot.com/_ah/api/isolateservice/v1/",
- "basePath": "/_ah/api/isolateservice/v1/",
- "rootUrl": "https://isolateserver.appspot.com/_ah/api/",
- "servicePath": "isolateservice/v1/",
- "batchPath": "batch",
- "parameters": {
-  "alt": {
-   "type": "string",
-   "description": "Data format for the response.",
-   "default": "json",
-   "enum": [
-    "json"
-   ],
-   "enumDescriptions": [
-    "Responses with Content-Type of application/json"
-   ],
-   "location": "query"
-  },
-  "fields": {
-   "type": "string",
-   "description": "Selector specifying which fields to include in a partial response.",
-   "location": "query"
-  },
-  "key": {
-   "type": "string",
-   "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
-   "location": "query"
-  },
-  "oauth_token": {
-   "type": "string",
-   "description": "OAuth 2.0 token for the current user.",
-   "location": "query"
-  },
-  "prettyPrint": {
-   "type": "boolean",
-   "description": "Returns response with indentations and line breaks.",
-   "default": "true",
-   "location": "query"
-  },
-  "quotaUser": {
-   "type": "string",
-   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
-   "location": "query"
-  },
-  "userIp": {
-   "type": "string",
-   "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
-   "location": "query"
-  }
- },
- "auth": {
-  "oauth2": {
-   "scopes": {
-    "https://www.googleapis.com/auth/userinfo.email": {
-     "description": "View your email address"
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/userinfo.email": {
+          "description": "View your email address"
+        }
+      }
     }
-   }
-  }
- },
- "schemas": {
-  "HandlersEndpointsV1Digest": {
-   "id": "HandlersEndpointsV1Digest",
-   "type": "object",
-   "description": "ProtoRPC message containing digest information.",
-   "properties": {
-    "digest": {
-     "type": "string"
+  },
+  "basePath": "/_ah/api/isolateservice/v1/",
+  "baseUrl": "https://isolateserver.appspot.com/_ah/api/isolateservice/v1/",
+  "batchPath": "batch",
+  "description": "Version 1 of Isolate Service",
+  "discoveryVersion": "v1",
+  "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/MYeWSQMjtWMUkNO01_D0i1W671o\"",
+  "icons": {
+    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+  },
+  "id": "isolateservice:v1",
+  "kind": "discovery#restDescription",
+  "methods": {
+    "finalize_gs_upload": {
+      "description": "Informs client that large entities have been uploaded to GCS.",
+      "httpMethod": "POST",
+      "id": "isolateservice.finalize_gs_upload",
+      "path": "finalize_gs_upload",
+      "request": {
+        "$ref": "HandlersEndpointsV1FinalizeRequest",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "HandlersEndpointsV1PushPing"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "is_isolated": {
-     "type": "boolean"
+    "preupload": {
+      "description": "Checks for entry's existence and generates upload URLs. Arguments: request: the DigestCollection to be posted Returns: the UrlCollection corresponding to the uploaded digests The response list is commensurate to the request's; each UrlMessage has * if an entry is missing: two URLs: the URL to upload a file to and the URL to call when the upload is done (can be null). * if the entry is already present: null URLs (''). UrlCollection([ UrlMessage( upload_url = \"\" finalize_url = \"\" ) UrlMessage( upload_url = '') ... ])",
+      "httpMethod": "POST",
+      "id": "isolateservice.preupload",
+      "path": "preupload",
+      "request": {
+        "$ref": "HandlersEndpointsV1DigestCollection",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "HandlersEndpointsV1UrlCollection"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "size": {
-     "type": "string",
-     "format": "int64"
-    }
-   }
-  },
-  "HandlersEndpointsV1DigestCollection": {
-   "id": "HandlersEndpointsV1DigestCollection",
-   "type": "object",
-   "description": "Endpoints request type analogous to the existing JSON post body.",
-   "properties": {
-    "items": {
-     "type": "array",
-     "description": "ProtoRPC message containing digest information.",
-     "items": {
-      "$ref": "HandlersEndpointsV1Digest"
-     }
+    "retrieve": {
+      "description": "Retrieves content from a storage location.",
+      "httpMethod": "POST",
+      "id": "isolateservice.retrieve",
+      "path": "retrieve",
+      "request": {
+        "$ref": "HandlersEndpointsV1RetrieveRequest",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "HandlersEndpointsV1RetrievedContent"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "namespace": {
-     "$ref": "HandlersEndpointsV1Namespace",
-     "description": "Encapsulates namespace, compression, and hash algorithm."
-    }
-   }
-  },
-  "HandlersEndpointsV1FinalizeRequest": {
-   "id": "HandlersEndpointsV1FinalizeRequest",
-   "type": "object",
-   "description": "Request to validate upload of large Google storage entities.",
-   "properties": {
-    "upload_ticket": {
-     "type": "string"
-    }
-   }
-  },
-  "HandlersEndpointsV1Namespace": {
-   "id": "HandlersEndpointsV1Namespace",
-   "type": "object",
-   "description": "Encapsulates namespace, compression, and hash algorithm.",
-   "properties": {
-    "compression": {
-     "type": "string"
+    "server_details": {
+      "httpMethod": "GET",
+      "id": "isolateservice.server_details",
+      "path": "server_details",
+      "response": {
+        "$ref": "HandlersEndpointsV1ServerDetails"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "digest_hash": {
-     "type": "string"
+    "store_inline": {
+      "description": "Stores relatively small entities in the datastore.",
+      "httpMethod": "POST",
+      "id": "isolateservice.store_inline",
+      "path": "store_inline",
+      "request": {
+        "$ref": "HandlersEndpointsV1StorageRequest",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "HandlersEndpointsV1PushPing"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    }
+  },
+  "name": "isolateservice",
+  "parameters": {
+    "alt": {
+      "default": "json",
+      "description": "Data format for the response.",
+      "enum": [
+        "json"
+      ],
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json"
+      ],
+      "location": "query",
+      "type": "string"
     },
-    "namespace": {
-     "type": "string"
-    }
-   }
-  },
-  "HandlersEndpointsV1PreuploadStatus": {
-   "id": "HandlersEndpointsV1PreuploadStatus",
-   "type": "object",
-   "description": "Endpoints response type for a single URL or pair of URLs.",
-   "properties": {
-    "gs_upload_url": {
-     "type": "string"
+    "fields": {
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query",
+      "type": "string"
     },
-    "index": {
-     "type": "string",
-     "format": "int64"
+    "key": {
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+      "location": "query",
+      "type": "string"
     },
-    "upload_ticket": {
-     "type": "string"
-    }
-   }
-  },
-  "HandlersEndpointsV1PushPing": {
-   "id": "HandlersEndpointsV1PushPing",
-   "type": "object",
-   "description": "Indicates whether data storage executed successfully.",
-   "properties": {
-    "ok": {
-     "type": "boolean"
-    }
-   }
-  },
-  "HandlersEndpointsV1RetrieveRequest": {
-   "id": "HandlersEndpointsV1RetrieveRequest",
-   "type": "object",
-   "description": "Request to retrieve content from memcache, datastore, or GS.",
-   "properties": {
-    "digest": {
-     "type": "string"
+    "oauth_token": {
+      "description": "OAuth 2.0 token for the current user.",
+      "location": "query",
+      "type": "string"
     },
-    "namespace": {
-     "$ref": "HandlersEndpointsV1Namespace",
-     "description": "Encapsulates namespace, compression, and hash algorithm."
+    "prettyPrint": {
+      "default": "true",
+      "description": "Returns response with indentations and line breaks.",
+      "location": "query",
+      "type": "boolean"
     },
-    "offset": {
-     "type": "string",
-     "format": "int64"
-    }
-   }
-  },
-  "HandlersEndpointsV1RetrievedContent": {
-   "id": "HandlersEndpointsV1RetrievedContent",
-   "type": "object",
-   "description": "Content retrieved from DB, or GS URL.",
-   "properties": {
-    "content": {
-     "type": "string",
-     "format": "byte"
+    "quotaUser": {
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+      "location": "query",
+      "type": "string"
     },
-    "url": {
-     "type": "string"
+    "userIp": {
+      "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
+      "location": "query",
+      "type": "string"
     }
-   }
   },
-  "HandlersEndpointsV1ServerDetails": {
-   "id": "HandlersEndpointsV1ServerDetails",
-   "type": "object",
-   "description": "Reports the current API version.",
-   "properties": {
-    "server_version": {
-     "type": "string"
-    }
-   }
-  },
-  "HandlersEndpointsV1StorageRequest": {
-   "id": "HandlersEndpointsV1StorageRequest",
-   "type": "object",
-   "description": "ProtoRPC message representing an entity to be added to the data store.",
-   "properties": {
-    "content": {
-     "type": "string",
-     "format": "byte"
+  "protocol": "rest",
+  "rootUrl": "https://isolateserver.appspot.com/_ah/api/",
+  "schemas": {
+    "HandlersEndpointsV1Digest": {
+      "description": "ProtoRPC message containing digest information.",
+      "id": "HandlersEndpointsV1Digest",
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "is_isolated": {
+          "type": "boolean"
+        },
+        "size": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
-    "upload_ticket": {
-     "type": "string"
+    "HandlersEndpointsV1DigestCollection": {
+      "description": "Endpoints request type analogous to the existing JSON post body.",
+      "id": "HandlersEndpointsV1DigestCollection",
+      "properties": {
+        "items": {
+          "description": "ProtoRPC message containing digest information.",
+          "items": {
+            "$ref": "HandlersEndpointsV1Digest"
+          },
+          "type": "array"
+        },
+        "namespace": {
+          "$ref": "HandlersEndpointsV1Namespace",
+          "description": "Encapsulates namespace, compression, and hash algorithm."
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1FinalizeRequest": {
+      "description": "Request to validate upload of large Google storage entities.",
+      "id": "HandlersEndpointsV1FinalizeRequest",
+      "properties": {
+        "upload_ticket": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1Namespace": {
+      "description": "Encapsulates namespace, compression, and hash algorithm.",
+      "id": "HandlersEndpointsV1Namespace",
+      "properties": {
+        "compression": {
+          "type": "string"
+        },
+        "digest_hash": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1PreuploadStatus": {
+      "description": "Endpoints response type for a single URL or pair of URLs.",
+      "id": "HandlersEndpointsV1PreuploadStatus",
+      "properties": {
+        "gs_upload_url": {
+          "type": "string"
+        },
+        "index": {
+          "format": "int64",
+          "type": "string"
+        },
+        "upload_ticket": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1PushPing": {
+      "description": "Indicates whether data storage executed successfully.",
+      "id": "HandlersEndpointsV1PushPing",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1RetrieveRequest": {
+      "description": "Request to retrieve content from memcache, datastore, or GS.",
+      "id": "HandlersEndpointsV1RetrieveRequest",
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "namespace": {
+          "$ref": "HandlersEndpointsV1Namespace",
+          "description": "Encapsulates namespace, compression, and hash algorithm."
+        },
+        "offset": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1RetrievedContent": {
+      "description": "Content retrieved from DB, or GS URL.",
+      "id": "HandlersEndpointsV1RetrievedContent",
+      "properties": {
+        "content": {
+          "format": "byte",
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1ServerDetails": {
+      "description": "Reports the current API version.",
+      "id": "HandlersEndpointsV1ServerDetails",
+      "properties": {
+        "server_version": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1StorageRequest": {
+      "description": "ProtoRPC message representing an entity to be added to the data store.",
+      "id": "HandlersEndpointsV1StorageRequest",
+      "properties": {
+        "content": {
+          "format": "byte",
+          "type": "string"
+        },
+        "upload_ticket": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HandlersEndpointsV1UrlCollection": {
+      "description": "Endpoints response type analogous to existing JSON response.",
+      "id": "HandlersEndpointsV1UrlCollection",
+      "properties": {
+        "items": {
+          "description": "Endpoints response type for a single URL or pair of URLs.",
+          "items": {
+            "$ref": "HandlersEndpointsV1PreuploadStatus"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
     }
-   }
   },
-  "HandlersEndpointsV1UrlCollection": {
-   "id": "HandlersEndpointsV1UrlCollection",
-   "type": "object",
-   "description": "Endpoints response type analogous to existing JSON response.",
-   "properties": {
-    "items": {
-     "type": "array",
-     "description": "Endpoints response type for a single URL or pair of URLs.",
-     "items": {
-      "$ref": "HandlersEndpointsV1PreuploadStatus"
-     }
-    }
-   }
-  }
- },
- "methods": {
-  "finalize_gs_upload": {
-   "id": "isolateservice.finalize_gs_upload",
-   "path": "finalize_gs_upload",
-   "httpMethod": "POST",
-   "description": "Informs client that large entities have been uploaded to GCS.",
-   "request": {
-    "$ref": "HandlersEndpointsV1FinalizeRequest",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "HandlersEndpointsV1PushPing"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "preupload": {
-   "id": "isolateservice.preupload",
-   "path": "preupload",
-   "httpMethod": "POST",
-   "description": "Checks for entry's existence and generates upload URLs. Arguments: request: the DigestCollection to be posted Returns: the UrlCollection corresponding to the uploaded digests The response list is commensurate to the request's; each UrlMessage has * if an entry is missing: two URLs: the URL to upload a file to and the URL to call when the upload is done (can be null). * if the entry is already present: null URLs (''). UrlCollection([ UrlMessage( upload_url = \"\" finalize_url = \"\" ) UrlMessage( upload_url = '') ... ])",
-   "request": {
-    "$ref": "HandlersEndpointsV1DigestCollection",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "HandlersEndpointsV1UrlCollection"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "retrieve": {
-   "id": "isolateservice.retrieve",
-   "path": "retrieve",
-   "httpMethod": "POST",
-   "description": "Retrieves content from a storage location.",
-   "request": {
-    "$ref": "HandlersEndpointsV1RetrieveRequest",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "HandlersEndpointsV1RetrievedContent"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "server_details": {
-   "id": "isolateservice.server_details",
-   "path": "server_details",
-   "httpMethod": "GET",
-   "response": {
-    "$ref": "HandlersEndpointsV1ServerDetails"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "store_inline": {
-   "id": "isolateservice.store_inline",
-   "path": "store_inline",
-   "httpMethod": "POST",
-   "description": "Stores relatively small entities in the datastore.",
-   "request": {
-    "$ref": "HandlersEndpointsV1StorageRequest",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "HandlersEndpointsV1PushPing"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  }
- }
+  "servicePath": "isolateservice/v1/",
+  "version": "v1"
 }
