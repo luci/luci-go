@@ -38,7 +38,8 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/logging/gkelogger"
+	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/runtime/profiling"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -153,7 +154,8 @@ type Service struct {
 // Run performs service-wide initialization and invokes the specified run
 // function.
 func (s *Service) Run(c context.Context, f func(context.Context) error) {
-	c = gologger.StdConfig.Use(c)
+	// Log to Stdout using JSON log lines.
+	c = teelogger.Use(c, gkelogger.GetFactory(os.Stdout))
 
 	// If a service name isn't specified, default to the base of the current
 	// executable.
