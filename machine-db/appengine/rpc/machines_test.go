@@ -295,6 +295,7 @@ func TestUpdateMachine(t *testing.T) {
 				Name:     "machine",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_SERVING,
 			}
 			mask := &field_mask.FieldMask{
 				Paths: []string{
@@ -312,6 +313,7 @@ func TestUpdateMachine(t *testing.T) {
 				Name:     machine.Name,
 				Platform: machine.Platform,
 				Rack:     machine.Rack,
+				State:    machine.State,
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
@@ -326,6 +328,7 @@ func TestUpdateMachine(t *testing.T) {
 				Name:     "machine",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_SERVING,
 			}
 			mask := &field_mask.FieldMask{
 				Paths: []string{
@@ -343,30 +346,31 @@ func TestUpdateMachine(t *testing.T) {
 				Name:     machine.Name,
 				Platform: machine.Platform,
 				Rack:     machine.Rack,
+				State:    machine.State,
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("ok", func() {
+		Convey("update state", func() {
 			updateStmt := `
 				^UPDATE machines
-				SET platform_id = \(SELECT id FROM platforms WHERE name = \?\), rack_id = \(SELECT id FROM racks WHERE name = \?\)
+				SET state = \?
 				WHERE name = \?$
 			`
 			machine := &crimson.Machine{
 				Name:     "machine",
 				Platform: "platform",
 				Rack:     "rack",
+				State:    common.State_SERVING,
 			}
 			mask := &field_mask.FieldMask{
 				Paths: []string{
-					"platform",
-					"rack",
+					"state",
 				},
 			}
 			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Rack, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(machine.State, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			machine, err := updateMachine(c, machine, mask)
@@ -375,6 +379,42 @@ func TestUpdateMachine(t *testing.T) {
 				Name:     machine.Name,
 				Platform: machine.Platform,
 				Rack:     machine.Rack,
+				State:    machine.State,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("ok", func() {
+			updateStmt := `
+				^UPDATE machines
+				SET platform_id = \(SELECT id FROM platforms WHERE name = \?\), rack_id = \(SELECT id FROM racks WHERE name = \?\), state = \?
+				WHERE name = \?$
+			`
+			machine := &crimson.Machine{
+				Name:     "machine",
+				Platform: "platform",
+				Rack:     "rack",
+				State:    common.State_SERVING,
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"platform",
+					"rack",
+					"state",
+				},
+			}
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Rack, machine.State, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			machine, err := updateMachine(c, machine, mask)
+			So(err, ShouldBeNil)
+			So(machine, ShouldResemble, &crimson.Machine{
+				Name:     machine.Name,
+				Platform: machine.Platform,
+				Rack:     machine.Rack,
+				State:    machine.State,
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
@@ -439,94 +479,84 @@ func TestValidateMachineForCreation(t *testing.T) {
 func TestValidateMachineForUpdate(t *testing.T) {
 	t.Parallel()
 
-	Convey("NIC unspecified", t, func() {
-		err := validateNICForUpdate(nil, &field_mask.FieldMask{
+	Convey("machine unspecified", t, func() {
+		err := validateMachineForUpdate(nil, &field_mask.FieldMask{
 			Paths: []string{
-				"mac_address",
-				"switch",
-				"switchport",
+				"platform",
+				"rack",
+				"state",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
 			},
 		})
-		So(err, ShouldErrLike, "NIC specification is required")
+		So(err, ShouldErrLike, "machine specification is required")
 	})
 
 	Convey("name unspecified", t, func() {
-		err := validateNICForUpdate(&crimson.NIC{
-			Machine:    "machine",
-			MacAddress: "ff:ff:ff:ff:ff:ff",
-			Switch:     "switch",
-			Switchport: 1,
+		err := validateMachineForUpdate(&crimson.Machine{
+			Platform: "platform",
+			Rack:     "rack",
+			State:    common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
-				"mac_address",
-				"switch",
-				"switchport",
+				"platform",
+				"rack",
+				"state",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
 			},
 		})
-		So(err, ShouldErrLike, "NIC name is required and must be non-empty")
-	})
-
-	Convey("machine unspecified", t, func() {
-		err := validateNICForUpdate(&crimson.NIC{
-			Name:       "eth0",
-			MacAddress: "ff:ff:ff:ff:ff:ff",
-			Switch:     "switch",
-			Switchport: 1,
-		}, &field_mask.FieldMask{
-			Paths: []string{
-				"mac_address",
-				"switch",
-				"switchport",
-			},
-		})
-		So(err, ShouldErrLike, "machine is required and must be non-empty")
+		So(err, ShouldErrLike, "machine name is required and must be non-empty")
 	})
 
 	Convey("mask unspecified", t, func() {
-		err := validateNICForUpdate(&crimson.NIC{
-			Name:       "eth0",
-			Machine:    "machine",
-			MacAddress: "ff:ff:ff:ff:ff:ff",
-			Switch:     "switch",
-			Switchport: 1,
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+			Rack:     "rack",
+			State:    common.State_SERVING,
 		}, nil)
 		So(err, ShouldErrLike, "update mask is required")
 	})
 
 	Convey("no paths", t, func() {
-		err := validateNICForUpdate(&crimson.NIC{
-			Name:       "eth0",
-			Machine:    "machine",
-			MacAddress: "ff:ff:ff:ff:ff:ff",
-			Switch:     "switch",
-			Switchport: 1,
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+			Rack:     "rack",
+			State:    common.State_SERVING,
 		}, &field_mask.FieldMask{})
 		So(err, ShouldErrLike, "at least one update mask path is required")
 	})
 
 	Convey("unexpected name", t, func() {
-		err := validateNICForUpdate(&crimson.NIC{
-			Name:       "eth0",
-			Machine:    "machine",
-			MacAddress: "ff:ff:ff:ff:ff:ff",
-			Switch:     "switch",
-			Switchport: 1,
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+			Rack:     "rack",
+			State:    common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"name",
 			},
 		})
-		So(err, ShouldErrLike, "NIC name cannot be updated")
+		So(err, ShouldErrLike, "machine name cannot be updated")
 	})
 
 	Convey("platform unspecified", t, func() {
 		err := validateMachineForUpdate(&crimson.Machine{
-			Name: "machine",
-			Rack: "rack",
+			Name:  "machine",
+			Rack:  "rack",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"platform",
 				"rack",
+				"state",
 				"description",
 				"asset_tag",
 				"service_tag",
@@ -544,6 +574,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 			Paths: []string{
 				"platform",
 				"rack",
+				"state",
 				"description",
 				"asset_tag",
 				"service_tag",
@@ -553,11 +584,31 @@ func TestValidateMachineForUpdate(t *testing.T) {
 		So(err, ShouldErrLike, "rack is required and must be non-empty")
 	})
 
+	Convey("state unspecified", t, func() {
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:     "machine",
+			Platform: "platform",
+			Rack:     "rack",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"platform",
+				"rack",
+				"state",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
+			},
+		})
+		So(err, ShouldErrLike, "state is required")
+	})
+
 	Convey("unsupported path", t, func() {
 		err := validateMachineForUpdate(&crimson.Machine{
 			Name:     "machine",
 			Platform: "platform",
 			Rack:     "rack",
+			State:    common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"unknown",
@@ -571,10 +622,12 @@ func TestValidateMachineForUpdate(t *testing.T) {
 			Name:     "machine",
 			Platform: "platform",
 			Rack:     "rack",
+			State:    common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"platform",
 				"rack",
+				"state",
 				"description",
 				"asset_tag",
 				"service_tag",
@@ -590,10 +643,12 @@ func TestValidateMachineForUpdate(t *testing.T) {
 			Name:     "machine",
 			Platform: "platform",
 			Rack:     "rack",
+			State:    common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"platform",
 				"rack",
+				"state",
 				"description",
 				"asset_tag",
 				"service_tag",
