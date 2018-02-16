@@ -1,251 +1,251 @@
 {
- "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/F3DOCCigvCx-vPYopAdz3sZ1DqY\"",
- "discoveryVersion": "v1",
- "id": "swarmbucket:v1",
- "name": "swarmbucket",
- "version": "v1",
- "title": "Buildbucket-Swarming integration",
- "description": "API specific to swarmbucket.",
- "icons": {
-  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
- },
- "protocol": "rest",
- "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/swarmbucket/v1/",
- "basePath": "/_ah/api/swarmbucket/v1/",
- "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
- "servicePath": "swarmbucket/v1/",
- "batchPath": "batch",
- "parameters": {
-  "alt": {
-   "type": "string",
-   "description": "Data format for the response.",
-   "default": "json",
-   "enum": [
-    "json"
-   ],
-   "enumDescriptions": [
-    "Responses with Content-Type of application/json"
-   ],
-   "location": "query"
-  },
-  "fields": {
-   "type": "string",
-   "description": "Selector specifying which fields to include in a partial response.",
-   "location": "query"
-  },
-  "key": {
-   "type": "string",
-   "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
-   "location": "query"
-  },
-  "oauth_token": {
-   "type": "string",
-   "description": "OAuth 2.0 token for the current user.",
-   "location": "query"
-  },
-  "prettyPrint": {
-   "type": "boolean",
-   "description": "Returns response with indentations and line breaks.",
-   "default": "true",
-   "location": "query"
-  },
-  "quotaUser": {
-   "type": "string",
-   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
-   "location": "query"
-  },
-  "userIp": {
-   "type": "string",
-   "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
-   "location": "query"
-  }
- },
- "auth": {
-  "oauth2": {
-   "scopes": {
-    "https://www.googleapis.com/auth/userinfo.email": {
-     "description": "View your email address"
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/userinfo.email": {
+          "description": "View your email address"
+        }
+      }
     }
-   }
-  }
- },
- "schemas": {
-  "ApiPubSubCallbackMessage": {
-   "id": "ApiPubSubCallbackMessage",
-   "type": "object",
-   "properties": {
-    "auth_token": {
-     "type": "string"
-    },
-    "topic": {
-     "type": "string"
-    },
-    "user_data": {
-     "type": "string"
-    }
-   }
   },
-  "ApiPutRequestMessage": {
-   "id": "ApiPutRequestMessage",
-   "type": "object",
-   "properties": {
-    "bucket": {
-     "type": "string"
+  "basePath": "/_ah/api/swarmbucket/v1/",
+  "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/swarmbucket/v1/",
+  "batchPath": "batch",
+  "description": "API specific to swarmbucket.",
+  "discoveryVersion": "v1",
+  "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/tY_DhNeIFKbUnSPwx5yd3fANyz4\"",
+  "icons": {
+    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+  },
+  "id": "swarmbucket:v1",
+  "kind": "discovery#restDescription",
+  "methods": {
+    "get_builders": {
+      "description": "Returns defined swarmbucket builders. Can be used by code review tool to discover builders.",
+      "httpMethod": "GET",
+      "id": "swarmbucket.get_builders",
+      "path": "builders",
+      "response": {
+        "$ref": "SwarmingSwarmbucketApiGetBuildersResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "canary_preference": {
-     "type": "string",
-     "enum": [
-      "AUTO",
-      "CANARY",
-      "PROD"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ]
+    "get_task_def": {
+      "description": "Returns a swarming task definition for a build request.",
+      "httpMethod": "POST",
+      "id": "swarmbucket.get_task_def",
+      "path": "get_task_def",
+      "request": {
+        "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "client_operation_id": {
-     "type": "string"
-    },
-    "experimental": {
-     "type": "boolean"
-    },
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "parameters_json": {
-     "type": "string"
-    },
-    "pubsub_callback": {
-     "$ref": "ApiPubSubCallbackMessage"
-    },
-    "tags": {
-     "type": "array",
-     "items": {
+    "set_next_build_number": {
+      "description": "Sets the build number that will be used for the next build.",
+      "httpMethod": "POST",
+      "id": "swarmbucket.set_next_build_number",
+      "path": "set_next_build_number",
+      "request": {
+        "$ref": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+        "parameterName": "resource"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    }
+  },
+  "name": "swarmbucket",
+  "parameters": {
+    "alt": {
+      "default": "json",
+      "description": "Data format for the response.",
+      "enum": [
+        "json"
+      ],
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json"
+      ],
+      "location": "query",
       "type": "string"
-     }
-    }
-   }
-  },
-  "SwarmingSwarmbucketApiBucketMessage": {
-   "id": "SwarmingSwarmbucketApiBucketMessage",
-   "type": "object",
-   "properties": {
-    "builders": {
-     "type": "array",
-     "items": {
-      "$ref": "SwarmingSwarmbucketApiBuilderMessage"
-     }
     },
-    "name": {
-     "type": "string"
-    }
-   }
-  },
-  "SwarmingSwarmbucketApiBuilderMessage": {
-   "id": "SwarmingSwarmbucketApiBuilderMessage",
-   "type": "object",
-   "properties": {
-    "category": {
-     "type": "string"
+    "fields": {
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query",
+      "type": "string"
     },
-    "name": {
-     "type": "string"
-    }
-   }
-  },
-  "SwarmingSwarmbucketApiGetBuildersResponseMessage": {
-   "id": "SwarmingSwarmbucketApiGetBuildersResponseMessage",
-   "type": "object",
-   "properties": {
-    "buckets": {
-     "type": "array",
-     "items": {
-      "$ref": "SwarmingSwarmbucketApiBucketMessage"
-     }
-    }
-   }
-  },
-  "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage": {
-   "id": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
-   "type": "object",
-   "properties": {
-    "build_request": {
-     "$ref": "ApiPutRequestMessage"
-    }
-   }
-  },
-  "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage": {
-   "id": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage",
-   "type": "object",
-   "properties": {
-    "task_definition": {
-     "type": "string"
-    }
-   }
-  },
-  "SwarmingSwarmbucketApiSetNextBuildNumberRequest": {
-   "id": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
-   "type": "object",
-   "properties": {
-    "bucket": {
-     "type": "string"
+    "key": {
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+      "location": "query",
+      "type": "string"
     },
-    "builder": {
-     "type": "string"
+    "oauth_token": {
+      "description": "OAuth 2.0 token for the current user.",
+      "location": "query",
+      "type": "string"
     },
-    "next_number": {
-     "type": "string",
-     "format": "int64"
+    "prettyPrint": {
+      "default": "true",
+      "description": "Returns response with indentations and line breaks.",
+      "location": "query",
+      "type": "boolean"
+    },
+    "quotaUser": {
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+      "location": "query",
+      "type": "string"
+    },
+    "userIp": {
+      "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
+      "location": "query",
+      "type": "string"
     }
-   }
-  }
- },
- "methods": {
-  "get_builders": {
-   "id": "swarmbucket.get_builders",
-   "path": "builders",
-   "httpMethod": "GET",
-   "description": "Returns defined swarmbucket builders. Can be used by code review tool to discover builders.",
-   "response": {
-    "$ref": "SwarmingSwarmbucketApiGetBuildersResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
   },
-  "get_task_def": {
-   "id": "swarmbucket.get_task_def",
-   "path": "get_task_def",
-   "httpMethod": "POST",
-   "description": "Returns a swarming task definition for a build request.",
-   "request": {
-    "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
+  "protocol": "rest",
+  "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
+  "schemas": {
+    "ApiPubSubCallbackMessage": {
+      "id": "ApiPubSubCallbackMessage",
+      "properties": {
+        "auth_token": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "user_data": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiPutRequestMessage": {
+      "id": "ApiPutRequestMessage",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "canary_preference": {
+          "enum": [
+            "AUTO",
+            "CANARY",
+            "PROD"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "client_operation_id": {
+          "type": "string"
+        },
+        "experimental": {
+          "type": "boolean"
+        },
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "parameters_json": {
+          "type": "string"
+        },
+        "pubsub_callback": {
+          "$ref": "ApiPubSubCallbackMessage"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingSwarmbucketApiBucketMessage": {
+      "id": "SwarmingSwarmbucketApiBucketMessage",
+      "properties": {
+        "builders": {
+          "items": {
+            "$ref": "SwarmingSwarmbucketApiBuilderMessage"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingSwarmbucketApiBuilderMessage": {
+      "id": "SwarmingSwarmbucketApiBuilderMessage",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingSwarmbucketApiGetBuildersResponseMessage": {
+      "id": "SwarmingSwarmbucketApiGetBuildersResponseMessage",
+      "properties": {
+        "buckets": {
+          "items": {
+            "$ref": "SwarmingSwarmbucketApiBucketMessage"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage": {
+      "id": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
+      "properties": {
+        "build_request": {
+          "$ref": "ApiPutRequestMessage"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage": {
+      "id": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage",
+      "properties": {
+        "task_definition": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingSwarmbucketApiSetNextBuildNumberRequest": {
+      "id": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "builder": {
+          "type": "string"
+        },
+        "next_number": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
   },
-  "set_next_build_number": {
-   "id": "swarmbucket.set_next_build_number",
-   "path": "set_next_build_number",
-   "httpMethod": "POST",
-   "description": "Sets the build number that will be used for the next build.",
-   "request": {
-    "$ref": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
-    "parameterName": "resource"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  }
- }
+  "servicePath": "swarmbucket/v1/",
+  "title": "Buildbucket-Swarming integration",
+  "version": "v1"
 }

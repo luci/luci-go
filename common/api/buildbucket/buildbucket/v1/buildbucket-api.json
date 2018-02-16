@@ -1,1264 +1,1226 @@
 {
- "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/3TGo3HWIm9T8OLWY_DD4AVWv1Os\"",
- "discoveryVersion": "v1",
- "id": "buildbucket:v1",
- "name": "buildbucket",
- "version": "v1",
- "title": "Build Bucket Service",
- "description": "API for scheduling builds.",
- "icons": {
-  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
- },
- "protocol": "rest",
- "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/buildbucket/v1/",
- "basePath": "/_ah/api/buildbucket/v1/",
- "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
- "servicePath": "buildbucket/v1/",
- "batchPath": "batch",
- "parameters": {
-  "alt": {
-   "type": "string",
-   "description": "Data format for the response.",
-   "default": "json",
-   "enum": [
-    "json"
-   ],
-   "enumDescriptions": [
-    "Responses with Content-Type of application/json"
-   ],
-   "location": "query"
-  },
-  "fields": {
-   "type": "string",
-   "description": "Selector specifying which fields to include in a partial response.",
-   "location": "query"
-  },
-  "key": {
-   "type": "string",
-   "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
-   "location": "query"
-  },
-  "oauth_token": {
-   "type": "string",
-   "description": "OAuth 2.0 token for the current user.",
-   "location": "query"
-  },
-  "prettyPrint": {
-   "type": "boolean",
-   "description": "Returns response with indentations and line breaks.",
-   "default": "true",
-   "location": "query"
-  },
-  "quotaUser": {
-   "type": "string",
-   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
-   "location": "query"
-  },
-  "userIp": {
-   "type": "string",
-   "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
-   "location": "query"
-  }
- },
- "auth": {
-  "oauth2": {
-   "scopes": {
-    "https://www.googleapis.com/auth/userinfo.email": {
-     "description": "View your email address"
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/userinfo.email": {
+          "description": "View your email address"
+        }
+      }
     }
-   }
-  }
- },
- "schemas": {
-  "ApiBucketMessage": {
-   "id": "ApiBucketMessage",
-   "type": "object",
-   "properties": {
-    "config_file_content": {
-     "type": "string"
-    },
-    "config_file_rev": {
-     "type": "string"
-    },
-    "config_file_url": {
-     "type": "string"
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    },
-    "name": {
-     "type": "string"
-    },
-    "project_id": {
-     "type": "string"
-    }
-   }
   },
-  "ApiBuildResponseMessage": {
-   "id": "ApiBuildResponseMessage",
-   "type": "object",
-   "properties": {
-    "build": {
-     "$ref": "ApiCommonBuildMessage",
-     "description": "Describes model.Build, see its docstring."
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    }
-   }
+  "basePath": "/_ah/api/buildbucket/v1/",
+  "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/buildbucket/v1/",
+  "batchPath": "batch",
+  "description": "API for scheduling builds.",
+  "discoveryVersion": "v1",
+  "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/B48NtDcwX-L4TGnUwKstUB0cVgs\"",
+  "icons": {
+    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
   },
-  "ApiCancelBatchRequestMessage": {
-   "id": "ApiCancelBatchRequestMessage",
-   "type": "object",
-   "properties": {
-    "build_ids": {
-     "type": "array",
-     "items": {
-      "type": "string",
-      "format": "int64"
-     }
+  "id": "buildbucket:v1",
+  "kind": "discovery#restDescription",
+  "methods": {
+    "backfill_tag_index": {
+      "description": "Backfills TagIndex entites from builds.",
+      "httpMethod": "POST",
+      "id": "buildbucket.backfill_tag_index",
+      "parameterOrder": [
+        "tag",
+        "shards"
+      ],
+      "parameters": {
+        "shards": {
+          "format": "int64",
+          "location": "query",
+          "required": true,
+          "type": "string"
+        },
+        "tag": {
+          "location": "query",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "backfill_tag_index",
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
-    "result_details_json": {
-     "type": "string"
+    "cancel": {
+      "description": "Cancels a build.",
+      "httpMethod": "POST",
+      "id": "buildbucket.cancel",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/cancel",
+      "request": {
+        "$ref": "ApiCancelRequestBodyMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "cancel_batch": {
+      "description": "Cancels builds.",
+      "httpMethod": "POST",
+      "id": "buildbucket.cancel_batch",
+      "path": "builds/cancel",
+      "request": {
+        "$ref": "ApiCancelBatchRequestMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiCancelBatchResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "delete_many_builds": {
+      "description": "Deletes scheduled or started builds in a bucket.",
+      "httpMethod": "POST",
+      "id": "buildbucket.delete_many_builds",
+      "parameterOrder": [
+        "bucket",
+        "status"
+      ],
+      "parameters": {
+        "bucket": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "created_by": {
+          "location": "query",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "COMPLETED",
+            "SCHEDULED",
+            "STARTED"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            ""
+          ],
+          "location": "query",
+          "required": true,
+          "type": "string"
+        },
+        "tag": {
+          "location": "query",
+          "repeated": true,
+          "type": "string"
+        }
+      },
+      "path": "bucket/{bucket}/delete",
+      "response": {
+        "$ref": "ApiDeleteManyBuildsResponse"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "fail": {
+      "description": "Marks a build as failed.",
+      "httpMethod": "POST",
+      "id": "buildbucket.fail",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/fail",
+      "request": {
+        "$ref": "ApiFailRequestBodyMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "get": {
+      "description": "Returns a build by id.",
+      "httpMethod": "GET",
+      "id": "buildbucket.get",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}",
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "get_bucket": {
+      "description": "Returns bucket information.",
+      "httpMethod": "GET",
+      "id": "buildbucket.get_bucket",
+      "parameterOrder": [
+        "bucket"
+      ],
+      "parameters": {
+        "bucket": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "buckets/{bucket}",
+      "response": {
+        "$ref": "ApiBucketMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "heartbeat": {
+      "description": "Updates build lease.",
+      "httpMethod": "POST",
+      "id": "buildbucket.heartbeat",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/heartbeat",
+      "request": {
+        "$ref": "ApiHeartbeatRequestBodyMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "heartbeat_batch": {
+      "description": "Updates multiple build leases.",
+      "httpMethod": "POST",
+      "id": "buildbucket.heartbeat_batch",
+      "path": "heartbeat",
+      "request": {
+        "$ref": "ApiHeartbeatBatchRequestMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiHeartbeatBatchResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "lease": {
+      "description": "Leases a build. Response may contain an error.",
+      "httpMethod": "POST",
+      "id": "buildbucket.lease",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/lease",
+      "request": {
+        "$ref": "ApiLeaseRequestBodyMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "pause": {
+      "description": "Pauses or unpause a bucket.",
+      "httpMethod": "POST",
+      "id": "buildbucket.pause",
+      "parameterOrder": [
+        "bucket",
+        "is_paused"
+      ],
+      "parameters": {
+        "bucket": {
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "is_paused": {
+          "location": "query",
+          "required": true,
+          "type": "boolean"
+        }
+      },
+      "path": "buckets/{bucket}/pause",
+      "response": {
+        "$ref": "ApiPauseResponse"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "peek": {
+      "description": "Returns available builds.",
+      "httpMethod": "GET",
+      "id": "buildbucket.peek",
+      "parameters": {
+        "bucket": {
+          "location": "query",
+          "repeated": true,
+          "type": "string"
+        },
+        "max_builds": {
+          "format": "int32",
+          "location": "query",
+          "type": "integer"
+        },
+        "start_cursor": {
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "path": "peek",
+      "response": {
+        "$ref": "ApiSearchResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "put": {
+      "description": "Creates a new build.",
+      "httpMethod": "PUT",
+      "id": "buildbucket.put",
+      "path": "builds",
+      "request": {
+        "$ref": "ApiPutRequestMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "put_batch": {
+      "description": "Creates builds.",
+      "httpMethod": "PUT",
+      "id": "buildbucket.put_batch",
+      "path": "builds/batch",
+      "request": {
+        "$ref": "ApiPutBatchRequestMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiPutBatchResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "reset": {
+      "description": "Forcibly unleases a build and resets its state to SCHEDULED.",
+      "httpMethod": "POST",
+      "id": "buildbucket.reset",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/reset",
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "retry": {
+      "description": "Retries an existing build.",
+      "httpMethod": "PUT",
+      "id": "buildbucket.retry",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/retry",
+      "request": {
+        "$ref": "ApiRetryRequestMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "search": {
+      "description": "Searches for builds.",
+      "httpMethod": "GET",
+      "id": "buildbucket.search",
+      "parameters": {
+        "bucket": {
+          "location": "query",
+          "repeated": true,
+          "type": "string"
+        },
+        "canary": {
+          "location": "query",
+          "type": "boolean"
+        },
+        "cancelation_reason": {
+          "enum": [
+            "CANCELED_EXPLICITLY",
+            "TIMEOUT"
+          ],
+          "enumDescriptions": [
+            "",
+            ""
+          ],
+          "location": "query",
+          "type": "string"
+        },
+        "created_by": {
+          "location": "query",
+          "type": "string"
+        },
+        "creation_ts_high": {
+          "format": "int64",
+          "location": "query",
+          "type": "string"
+        },
+        "creation_ts_low": {
+          "format": "int64",
+          "location": "query",
+          "type": "string"
+        },
+        "failure_reason": {
+          "enum": [
+            "BUILDBUCKET_FAILURE",
+            "BUILD_FAILURE",
+            "INFRA_FAILURE",
+            "INVALID_BUILD_DEFINITION"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "location": "query",
+          "type": "string"
+        },
+        "include_experimental": {
+          "location": "query",
+          "type": "boolean"
+        },
+        "max_builds": {
+          "format": "int32",
+          "location": "query",
+          "type": "integer"
+        },
+        "result": {
+          "enum": [
+            "CANCELED",
+            "FAILURE",
+            "SUCCESS"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            ""
+          ],
+          "location": "query",
+          "type": "string"
+        },
+        "retry_of": {
+          "format": "int64",
+          "location": "query",
+          "type": "string"
+        },
+        "start_cursor": {
+          "location": "query",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "COMPLETED",
+            "INCOMPLETE",
+            "SCHEDULED",
+            "STARTED"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "location": "query",
+          "type": "string"
+        },
+        "tag": {
+          "location": "query",
+          "repeated": true,
+          "type": "string"
+        }
+      },
+      "path": "search",
+      "response": {
+        "$ref": "ApiSearchResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "start": {
+      "description": "Marks a build as started.",
+      "httpMethod": "POST",
+      "id": "buildbucket.start",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/start",
+      "request": {
+        "$ref": "ApiStartRequestBodyMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    "succeed": {
+      "description": "Marks a build as succeeded.",
+      "httpMethod": "POST",
+      "id": "buildbucket.succeed",
+      "parameterOrder": [
+        "id"
+      ],
+      "parameters": {
+        "id": {
+          "format": "int64",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "path": "builds/{id}/succeed",
+      "request": {
+        "$ref": "ApiSucceedRequestBodyMessage",
+        "parameterName": "resource"
+      },
+      "response": {
+        "$ref": "ApiBuildResponseMessage"
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     }
-   }
   },
-  "ApiCancelBatchResponseMessage": {
-   "id": "ApiCancelBatchResponseMessage",
-   "type": "object",
-   "properties": {
-    "error": {
-     "$ref": "ApiErrorMessage"
-    },
-    "results": {
-     "type": "array",
-     "items": {
-      "$ref": "ApiCancelBatchResponseMessageOneResult"
-     }
-    }
-   }
-  },
-  "ApiCancelBatchResponseMessageOneResult": {
-   "id": "ApiCancelBatchResponseMessageOneResult",
-   "type": "object",
-   "properties": {
-    "build": {
-     "$ref": "ApiCommonBuildMessage",
-     "description": "Describes model.Build, see its docstring."
-    },
-    "build_id": {
-     "type": "string",
-     "format": "int64"
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    }
-   }
-  },
-  "ApiCancelRequestBodyMessage": {
-   "id": "ApiCancelRequestBodyMessage",
-   "type": "object",
-   "properties": {
-    "result_details_json": {
-     "type": "string"
-    }
-   }
-  },
-  "ApiCommonBuildMessage": {
-   "id": "ApiCommonBuildMessage",
-   "type": "object",
-   "description": "Describes model.Build, see its docstring.",
-   "properties": {
-    "bucket": {
-     "type": "string"
-    },
-    "canary": {
-     "type": "boolean"
-    },
-    "canary_preference": {
-     "type": "string",
-     "enum": [
-      "AUTO",
-      "CANARY",
-      "PROD"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ]
-    },
-    "cancelation_reason": {
-     "type": "string",
-     "enum": [
-      "CANCELED_EXPLICITLY",
-      "TIMEOUT"
-     ],
-     "enumDescriptions": [
-      "",
-      ""
-     ]
-    },
-    "completed_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "created_by": {
-     "type": "string"
-    },
-    "created_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "experimental": {
-     "type": "boolean"
-    },
-    "failure_reason": {
-     "type": "string",
-     "enum": [
-      "BUILDBUCKET_FAILURE",
-      "BUILD_FAILURE",
-      "INFRA_FAILURE",
-      "INVALID_BUILD_DEFINITION"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      "",
-      ""
-     ]
-    },
-    "id": {
-     "type": "string",
-     "format": "int64"
-    },
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "lease_key": {
-     "type": "string",
-     "format": "int64"
-    },
-    "parameters_json": {
-     "type": "string"
-    },
-    "project": {
-     "type": "string"
-    },
-    "result": {
-     "type": "string",
-     "enum": [
-      "CANCELED",
-      "FAILURE",
-      "SUCCESS"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ]
-    },
-    "result_details_json": {
-     "type": "string"
-    },
-    "retry_of": {
-     "type": "string",
-     "format": "int64"
-    },
-    "started_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "status": {
-     "type": "string",
-     "enum": [
-      "COMPLETED",
-      "SCHEDULED",
-      "STARTED"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ]
-    },
-    "status_changed_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "tags": {
-     "type": "array",
-     "items": {
+  "name": "buildbucket",
+  "parameters": {
+    "alt": {
+      "default": "json",
+      "description": "Data format for the response.",
+      "enum": [
+        "json"
+      ],
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json"
+      ],
+      "location": "query",
       "type": "string"
-     }
     },
-    "updated_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "url": {
-     "type": "string"
-    },
-    "utcnow_ts": {
-     "type": "string",
-     "format": "int64"
-    }
-   }
-  },
-  "ApiDeleteManyBuildsResponse": {
-   "id": "ApiDeleteManyBuildsResponse",
-   "type": "object",
-   "properties": {
-    "error": {
-     "$ref": "ApiErrorMessage"
-    }
-   }
-  },
-  "ApiErrorMessage": {
-   "id": "ApiErrorMessage",
-   "type": "object",
-   "properties": {
-    "message": {
-     "type": "string"
-    },
-    "reason": {
-     "type": "string",
-     "enum": [
-      "BUILDER_NOT_FOUND",
-      "BUILD_IS_COMPLETED",
-      "BUILD_NOT_FOUND",
-      "CANNOT_LEASE_BUILD",
-      "INVALID_BUILD_STATE",
-      "INVALID_INPUT",
-      "LEASE_EXPIRED"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ""
-     ]
-    }
-   }
-  },
-  "ApiFailRequestBodyMessage": {
-   "id": "ApiFailRequestBodyMessage",
-   "type": "object",
-   "properties": {
-    "failure_reason": {
-     "type": "string",
-     "enum": [
-      "BUILDBUCKET_FAILURE",
-      "BUILD_FAILURE",
-      "INFRA_FAILURE",
-      "INVALID_BUILD_DEFINITION"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      "",
-      ""
-     ]
-    },
-    "lease_key": {
-     "type": "string",
-     "format": "int64"
-    },
-    "new_tags": {
-     "type": "array",
-     "items": {
+    "fields": {
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query",
       "type": "string"
-     }
     },
-    "result_details_json": {
-     "type": "string"
-    },
-    "url": {
-     "type": "string"
-    }
-   }
-  },
-  "ApiHeartbeatBatchRequestMessage": {
-   "id": "ApiHeartbeatBatchRequestMessage",
-   "type": "object",
-   "properties": {
-    "heartbeats": {
-     "type": "array",
-     "items": {
-      "$ref": "ApiHeartbeatBatchRequestMessageOneHeartbeat"
-     }
-    }
-   }
-  },
-  "ApiHeartbeatBatchRequestMessageOneHeartbeat": {
-   "id": "ApiHeartbeatBatchRequestMessageOneHeartbeat",
-   "type": "object",
-   "properties": {
-    "build_id": {
-     "type": "string",
-     "format": "int64"
-    },
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "lease_key": {
-     "type": "string",
-     "format": "int64"
-    }
-   }
-  },
-  "ApiHeartbeatBatchResponseMessage": {
-   "id": "ApiHeartbeatBatchResponseMessage",
-   "type": "object",
-   "properties": {
-    "error": {
-     "$ref": "ApiErrorMessage"
-    },
-    "results": {
-     "type": "array",
-     "items": {
-      "$ref": "ApiHeartbeatBatchResponseMessageOneHeartbeatResult"
-     }
-    }
-   }
-  },
-  "ApiHeartbeatBatchResponseMessageOneHeartbeatResult": {
-   "id": "ApiHeartbeatBatchResponseMessageOneHeartbeatResult",
-   "type": "object",
-   "properties": {
-    "build_id": {
-     "type": "string",
-     "format": "int64"
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    },
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    }
-   }
-  },
-  "ApiHeartbeatRequestBodyMessage": {
-   "id": "ApiHeartbeatRequestBodyMessage",
-   "type": "object",
-   "properties": {
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "lease_key": {
-     "type": "string",
-     "format": "int64"
-    }
-   }
-  },
-  "ApiLeaseRequestBodyMessage": {
-   "id": "ApiLeaseRequestBodyMessage",
-   "type": "object",
-   "properties": {
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    }
-   }
-  },
-  "ApiLongestPendingTimeResponse": {
-   "id": "ApiLongestPendingTimeResponse",
-   "type": "object",
-   "properties": {
-    "error": {
-     "$ref": "ApiErrorMessage"
-    },
-    "longest_pending_time_sec": {
-     "type": "number",
-     "format": "double"
-    }
-   }
-  },
-  "ApiPauseResponse": {
-   "id": "ApiPauseResponse",
-   "type": "object"
-  },
-  "ApiPubSubCallbackMessage": {
-   "id": "ApiPubSubCallbackMessage",
-   "type": "object",
-   "properties": {
-    "auth_token": {
-     "type": "string"
-    },
-    "topic": {
-     "type": "string"
-    },
-    "user_data": {
-     "type": "string"
-    }
-   }
-  },
-  "ApiPutBatchRequestMessage": {
-   "id": "ApiPutBatchRequestMessage",
-   "type": "object",
-   "properties": {
-    "builds": {
-     "type": "array",
-     "items": {
-      "$ref": "ApiPutRequestMessage"
-     }
-    }
-   }
-  },
-  "ApiPutBatchResponseMessage": {
-   "id": "ApiPutBatchResponseMessage",
-   "type": "object",
-   "properties": {
-    "error": {
-     "$ref": "ApiErrorMessage"
-    },
-    "results": {
-     "type": "array",
-     "items": {
-      "$ref": "ApiPutBatchResponseMessageOneResult"
-     }
-    }
-   }
-  },
-  "ApiPutBatchResponseMessageOneResult": {
-   "id": "ApiPutBatchResponseMessageOneResult",
-   "type": "object",
-   "properties": {
-    "build": {
-     "$ref": "ApiCommonBuildMessage",
-     "description": "Describes model.Build, see its docstring."
-    },
-    "client_operation_id": {
-     "type": "string"
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    }
-   }
-  },
-  "ApiPutRequestMessage": {
-   "id": "ApiPutRequestMessage",
-   "type": "object",
-   "properties": {
-    "bucket": {
-     "type": "string"
-    },
-    "canary_preference": {
-     "type": "string",
-     "enum": [
-      "AUTO",
-      "CANARY",
-      "PROD"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ]
-    },
-    "client_operation_id": {
-     "type": "string"
-    },
-    "experimental": {
-     "type": "boolean"
-    },
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "parameters_json": {
-     "type": "string"
-    },
-    "pubsub_callback": {
-     "$ref": "ApiPubSubCallbackMessage"
-    },
-    "tags": {
-     "type": "array",
-     "items": {
+    "key": {
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+      "location": "query",
       "type": "string"
-     }
-    }
-   }
-  },
-  "ApiRetryRequestMessage": {
-   "id": "ApiRetryRequestMessage",
-   "type": "object",
-   "properties": {
-    "client_operation_id": {
-     "type": "string"
     },
-    "lease_expiration_ts": {
-     "type": "string",
-     "format": "int64"
-    },
-    "pubsub_callback": {
-     "$ref": "ApiPubSubCallbackMessage"
-    }
-   }
-  },
-  "ApiSearchResponseMessage": {
-   "id": "ApiSearchResponseMessage",
-   "type": "object",
-   "properties": {
-    "builds": {
-     "type": "array",
-     "description": "Describes model.Build, see its docstring.",
-     "items": {
-      "$ref": "ApiCommonBuildMessage"
-     }
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    },
-    "next_cursor": {
-     "type": "string"
-    }
-   }
-  },
-  "ApiStartRequestBodyMessage": {
-   "id": "ApiStartRequestBodyMessage",
-   "type": "object",
-   "properties": {
-    "canary": {
-     "type": "boolean"
-    },
-    "lease_key": {
-     "type": "string",
-     "format": "int64"
-    },
-    "url": {
-     "type": "string"
-    }
-   }
-  },
-  "ApiSucceedRequestBodyMessage": {
-   "id": "ApiSucceedRequestBodyMessage",
-   "type": "object",
-   "properties": {
-    "lease_key": {
-     "type": "string",
-     "format": "int64"
-    },
-    "new_tags": {
-     "type": "array",
-     "items": {
+    "oauth_token": {
+      "description": "OAuth 2.0 token for the current user.",
+      "location": "query",
       "type": "string"
-     }
     },
-    "result_details_json": {
-     "type": "string"
+    "prettyPrint": {
+      "default": "true",
+      "description": "Returns response with indentations and line breaks.",
+      "location": "query",
+      "type": "boolean"
     },
-    "url": {
-     "type": "string"
+    "quotaUser": {
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+      "location": "query",
+      "type": "string"
+    },
+    "userIp": {
+      "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
+      "location": "query",
+      "type": "string"
     }
-   }
-  }
- },
- "methods": {
-  "backfill_tag_index": {
-   "id": "buildbucket.backfill_tag_index",
-   "path": "backfill_tag_index",
-   "httpMethod": "POST",
-   "description": "Backfills TagIndex entites from builds.",
-   "parameters": {
-    "shards": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "query"
+  },
+  "protocol": "rest",
+  "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
+  "schemas": {
+    "ApiBucketMessage": {
+      "id": "ApiBucketMessage",
+      "properties": {
+        "config_file_content": {
+          "type": "string"
+        },
+        "config_file_rev": {
+          "type": "string"
+        },
+        "config_file_url": {
+          "type": "string"
+        },
+        "error": {
+          "$ref": "ApiErrorMessage"
+        },
+        "name": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
-    "tag": {
-     "type": "string",
-     "required": true,
-     "location": "query"
+    "ApiBuildResponseMessage": {
+      "id": "ApiBuildResponseMessage",
+      "properties": {
+        "build": {
+          "$ref": "ApiCommonBuildMessage",
+          "description": "Describes model.Build, see its docstring."
+        },
+        "error": {
+          "$ref": "ApiErrorMessage"
+        }
+      },
+      "type": "object"
+    },
+    "ApiCancelBatchRequestMessage": {
+      "id": "ApiCancelBatchRequestMessage",
+      "properties": {
+        "build_ids": {
+          "items": {
+            "format": "int64",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "result_details_json": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiCancelBatchResponseMessage": {
+      "id": "ApiCancelBatchResponseMessage",
+      "properties": {
+        "error": {
+          "$ref": "ApiErrorMessage"
+        },
+        "results": {
+          "items": {
+            "$ref": "ApiCancelBatchResponseMessageOneResult"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ApiCancelBatchResponseMessageOneResult": {
+      "id": "ApiCancelBatchResponseMessageOneResult",
+      "properties": {
+        "build": {
+          "$ref": "ApiCommonBuildMessage",
+          "description": "Describes model.Build, see its docstring."
+        },
+        "build_id": {
+          "format": "int64",
+          "type": "string"
+        },
+        "error": {
+          "$ref": "ApiErrorMessage"
+        }
+      },
+      "type": "object"
+    },
+    "ApiCancelRequestBodyMessage": {
+      "id": "ApiCancelRequestBodyMessage",
+      "properties": {
+        "result_details_json": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiCommonBuildMessage": {
+      "description": "Describes model.Build, see its docstring.",
+      "id": "ApiCommonBuildMessage",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "canary": {
+          "type": "boolean"
+        },
+        "canary_preference": {
+          "enum": [
+            "AUTO",
+            "CANARY",
+            "PROD"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "cancelation_reason": {
+          "enum": [
+            "CANCELED_EXPLICITLY",
+            "TIMEOUT"
+          ],
+          "enumDescriptions": [
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "completed_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "created_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "experimental": {
+          "type": "boolean"
+        },
+        "failure_reason": {
+          "enum": [
+            "BUILDBUCKET_FAILURE",
+            "BUILD_FAILURE",
+            "INFRA_FAILURE",
+            "INVALID_BUILD_DEFINITION"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "type": "string"
+        },
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "lease_key": {
+          "format": "int64",
+          "type": "string"
+        },
+        "parameters_json": {
+          "type": "string"
+        },
+        "project": {
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "CANCELED",
+            "FAILURE",
+            "SUCCESS"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "result_details_json": {
+          "type": "string"
+        },
+        "retry_of": {
+          "format": "int64",
+          "type": "string"
+        },
+        "service_account": {
+          "type": "string"
+        },
+        "started_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "COMPLETED",
+            "SCHEDULED",
+            "STARTED"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "status_changed_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "updated_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "utcnow_ts": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiDeleteManyBuildsResponse": {
+      "id": "ApiDeleteManyBuildsResponse",
+      "properties": {
+        "error": {
+          "$ref": "ApiErrorMessage"
+        }
+      },
+      "type": "object"
+    },
+    "ApiErrorMessage": {
+      "id": "ApiErrorMessage",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "BUILDER_NOT_FOUND",
+            "BUILD_IS_COMPLETED",
+            "BUILD_NOT_FOUND",
+            "CANNOT_LEASE_BUILD",
+            "INVALID_BUILD_STATE",
+            "INVALID_INPUT",
+            "LEASE_EXPIRED"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiFailRequestBodyMessage": {
+      "id": "ApiFailRequestBodyMessage",
+      "properties": {
+        "failure_reason": {
+          "enum": [
+            "BUILDBUCKET_FAILURE",
+            "BUILD_FAILURE",
+            "INFRA_FAILURE",
+            "INVALID_BUILD_DEFINITION"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "lease_key": {
+          "format": "int64",
+          "type": "string"
+        },
+        "new_tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "result_details_json": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiHeartbeatBatchRequestMessage": {
+      "id": "ApiHeartbeatBatchRequestMessage",
+      "properties": {
+        "heartbeats": {
+          "items": {
+            "$ref": "ApiHeartbeatBatchRequestMessageOneHeartbeat"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ApiHeartbeatBatchRequestMessageOneHeartbeat": {
+      "id": "ApiHeartbeatBatchRequestMessageOneHeartbeat",
+      "properties": {
+        "build_id": {
+          "format": "int64",
+          "type": "string"
+        },
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "lease_key": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiHeartbeatBatchResponseMessage": {
+      "id": "ApiHeartbeatBatchResponseMessage",
+      "properties": {
+        "error": {
+          "$ref": "ApiErrorMessage"
+        },
+        "results": {
+          "items": {
+            "$ref": "ApiHeartbeatBatchResponseMessageOneHeartbeatResult"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ApiHeartbeatBatchResponseMessageOneHeartbeatResult": {
+      "id": "ApiHeartbeatBatchResponseMessageOneHeartbeatResult",
+      "properties": {
+        "build_id": {
+          "format": "int64",
+          "type": "string"
+        },
+        "error": {
+          "$ref": "ApiErrorMessage"
+        },
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiHeartbeatRequestBodyMessage": {
+      "id": "ApiHeartbeatRequestBodyMessage",
+      "properties": {
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "lease_key": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiLeaseRequestBodyMessage": {
+      "id": "ApiLeaseRequestBodyMessage",
+      "properties": {
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiPauseResponse": {
+      "id": "ApiPauseResponse",
+      "type": "object"
+    },
+    "ApiPubSubCallbackMessage": {
+      "id": "ApiPubSubCallbackMessage",
+      "properties": {
+        "auth_token": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "user_data": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiPutBatchRequestMessage": {
+      "id": "ApiPutBatchRequestMessage",
+      "properties": {
+        "builds": {
+          "items": {
+            "$ref": "ApiPutRequestMessage"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ApiPutBatchResponseMessage": {
+      "id": "ApiPutBatchResponseMessage",
+      "properties": {
+        "error": {
+          "$ref": "ApiErrorMessage"
+        },
+        "results": {
+          "items": {
+            "$ref": "ApiPutBatchResponseMessageOneResult"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ApiPutBatchResponseMessageOneResult": {
+      "id": "ApiPutBatchResponseMessageOneResult",
+      "properties": {
+        "build": {
+          "$ref": "ApiCommonBuildMessage",
+          "description": "Describes model.Build, see its docstring."
+        },
+        "client_operation_id": {
+          "type": "string"
+        },
+        "error": {
+          "$ref": "ApiErrorMessage"
+        }
+      },
+      "type": "object"
+    },
+    "ApiPutRequestMessage": {
+      "id": "ApiPutRequestMessage",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "canary_preference": {
+          "enum": [
+            "AUTO",
+            "CANARY",
+            "PROD"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "client_operation_id": {
+          "type": "string"
+        },
+        "experimental": {
+          "type": "boolean"
+        },
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "parameters_json": {
+          "type": "string"
+        },
+        "pubsub_callback": {
+          "$ref": "ApiPubSubCallbackMessage"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ApiRetryRequestMessage": {
+      "id": "ApiRetryRequestMessage",
+      "properties": {
+        "client_operation_id": {
+          "type": "string"
+        },
+        "lease_expiration_ts": {
+          "format": "int64",
+          "type": "string"
+        },
+        "pubsub_callback": {
+          "$ref": "ApiPubSubCallbackMessage"
+        }
+      },
+      "type": "object"
+    },
+    "ApiSearchResponseMessage": {
+      "id": "ApiSearchResponseMessage",
+      "properties": {
+        "builds": {
+          "description": "Describes model.Build, see its docstring.",
+          "items": {
+            "$ref": "ApiCommonBuildMessage"
+          },
+          "type": "array"
+        },
+        "error": {
+          "$ref": "ApiErrorMessage"
+        },
+        "next_cursor": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiStartRequestBodyMessage": {
+      "id": "ApiStartRequestBodyMessage",
+      "properties": {
+        "canary": {
+          "type": "boolean"
+        },
+        "lease_key": {
+          "format": "int64",
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ApiSucceedRequestBodyMessage": {
+      "id": "ApiSucceedRequestBodyMessage",
+      "properties": {
+        "lease_key": {
+          "format": "int64",
+          "type": "string"
+        },
+        "new_tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "result_details_json": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     }
-   },
-   "parameterOrder": [
-    "tag",
-    "shards"
-   ],
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
   },
-  "cancel": {
-   "id": "buildbucket.cancel",
-   "path": "builds/{id}/cancel",
-   "httpMethod": "POST",
-   "description": "Cancels a build.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "request": {
-    "$ref": "ApiCancelRequestBodyMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "cancel_batch": {
-   "id": "buildbucket.cancel_batch",
-   "path": "builds/cancel",
-   "httpMethod": "POST",
-   "description": "Cancels builds.",
-   "request": {
-    "$ref": "ApiCancelBatchRequestMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiCancelBatchResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "delete_many_builds": {
-   "id": "buildbucket.delete_many_builds",
-   "path": "bucket/{bucket}/delete",
-   "httpMethod": "POST",
-   "description": "Deletes scheduled or started builds in a bucket.",
-   "parameters": {
-    "bucket": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    },
-    "created_by": {
-     "type": "string",
-     "location": "query"
-    },
-    "status": {
-     "type": "string",
-     "required": true,
-     "enum": [
-      "COMPLETED",
-      "SCHEDULED",
-      "STARTED"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ],
-     "location": "query"
-    },
-    "tag": {
-     "type": "string",
-     "repeated": true,
-     "location": "query"
-    }
-   },
-   "parameterOrder": [
-    "bucket",
-    "status"
-   ],
-   "response": {
-    "$ref": "ApiDeleteManyBuildsResponse"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "fail": {
-   "id": "buildbucket.fail",
-   "path": "builds/{id}/fail",
-   "httpMethod": "POST",
-   "description": "Marks a build as failed.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "request": {
-    "$ref": "ApiFailRequestBodyMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get": {
-   "id": "buildbucket.get",
-   "path": "builds/{id}",
-   "httpMethod": "GET",
-   "description": "Returns a build by id.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "get_bucket": {
-   "id": "buildbucket.get_bucket",
-   "path": "buckets/{bucket}",
-   "httpMethod": "GET",
-   "description": "Returns bucket information.",
-   "parameters": {
-    "bucket": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "bucket"
-   ],
-   "response": {
-    "$ref": "ApiBucketMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "heartbeat": {
-   "id": "buildbucket.heartbeat",
-   "path": "builds/{id}/heartbeat",
-   "httpMethod": "POST",
-   "description": "Updates build lease.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "request": {
-    "$ref": "ApiHeartbeatRequestBodyMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "heartbeat_batch": {
-   "id": "buildbucket.heartbeat_batch",
-   "path": "heartbeat",
-   "httpMethod": "POST",
-   "description": "Updates multiple build leases.",
-   "request": {
-    "$ref": "ApiHeartbeatBatchRequestMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiHeartbeatBatchResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "lease": {
-   "id": "buildbucket.lease",
-   "path": "builds/{id}/lease",
-   "httpMethod": "POST",
-   "description": "Leases a build. Response may contain an error.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "request": {
-    "$ref": "ApiLeaseRequestBodyMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "longest_pending_time": {
-   "id": "buildbucket.longest_pending_time",
-   "path": "metrics/longest-pending-time",
-   "httpMethod": "GET",
-   "description": "Returns longest pending time among all SCHEDULED builds of a builder.",
-   "parameters": {
-    "bucket": {
-     "type": "string",
-     "required": true,
-     "location": "query"
-    },
-    "builder": {
-     "type": "string",
-     "required": true,
-     "location": "query"
-    }
-   },
-   "parameterOrder": [
-    "bucket",
-    "builder"
-   ],
-   "response": {
-    "$ref": "ApiLongestPendingTimeResponse"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "pause": {
-   "id": "buildbucket.pause",
-   "path": "buckets/{bucket}/pause",
-   "httpMethod": "POST",
-   "description": "Pauses or unpause a bucket.",
-   "parameters": {
-    "bucket": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    },
-    "is_paused": {
-     "type": "boolean",
-     "required": true,
-     "location": "query"
-    }
-   },
-   "parameterOrder": [
-    "bucket",
-    "is_paused"
-   ],
-   "response": {
-    "$ref": "ApiPauseResponse"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "peek": {
-   "id": "buildbucket.peek",
-   "path": "peek",
-   "httpMethod": "GET",
-   "description": "Returns available builds.",
-   "parameters": {
-    "bucket": {
-     "type": "string",
-     "repeated": true,
-     "location": "query"
-    },
-    "max_builds": {
-     "type": "integer",
-     "format": "int32",
-     "location": "query"
-    },
-    "start_cursor": {
-     "type": "string",
-     "location": "query"
-    }
-   },
-   "response": {
-    "$ref": "ApiSearchResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "put": {
-   "id": "buildbucket.put",
-   "path": "builds",
-   "httpMethod": "PUT",
-   "description": "Creates a new build.",
-   "request": {
-    "$ref": "ApiPutRequestMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "put_batch": {
-   "id": "buildbucket.put_batch",
-   "path": "builds/batch",
-   "httpMethod": "PUT",
-   "description": "Creates builds.",
-   "request": {
-    "$ref": "ApiPutBatchRequestMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiPutBatchResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "reset": {
-   "id": "buildbucket.reset",
-   "path": "builds/{id}/reset",
-   "httpMethod": "POST",
-   "description": "Forcibly unleases a build and resets its state to SCHEDULED.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "retry": {
-   "id": "buildbucket.retry",
-   "path": "builds/{id}/retry",
-   "httpMethod": "PUT",
-   "description": "Retries an existing build.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "request": {
-    "$ref": "ApiRetryRequestMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "search": {
-   "id": "buildbucket.search",
-   "path": "search",
-   "httpMethod": "GET",
-   "description": "Searches for builds.",
-   "parameters": {
-    "bucket": {
-     "type": "string",
-     "repeated": true,
-     "location": "query"
-    },
-    "canary": {
-     "type": "boolean",
-     "location": "query"
-    },
-    "cancelation_reason": {
-     "type": "string",
-     "enum": [
-      "CANCELED_EXPLICITLY",
-      "TIMEOUT"
-     ],
-     "enumDescriptions": [
-      "",
-      ""
-     ],
-     "location": "query"
-    },
-    "created_by": {
-     "type": "string",
-     "location": "query"
-    },
-    "creation_ts_high": {
-     "type": "string",
-     "format": "int64",
-     "location": "query"
-    },
-    "creation_ts_low": {
-     "type": "string",
-     "format": "int64",
-     "location": "query"
-    },
-    "failure_reason": {
-     "type": "string",
-     "enum": [
-      "BUILDBUCKET_FAILURE",
-      "BUILD_FAILURE",
-      "INFRA_FAILURE",
-      "INVALID_BUILD_DEFINITION"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      "",
-      ""
-     ],
-     "location": "query"
-    },
-    "include_experimental": {
-     "type": "boolean",
-     "location": "query"
-    },
-    "max_builds": {
-     "type": "integer",
-     "format": "int32",
-     "location": "query"
-    },
-    "result": {
-     "type": "string",
-     "enum": [
-      "CANCELED",
-      "FAILURE",
-      "SUCCESS"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      ""
-     ],
-     "location": "query"
-    },
-    "retry_of": {
-     "type": "string",
-     "format": "int64",
-     "location": "query"
-    },
-    "start_cursor": {
-     "type": "string",
-     "location": "query"
-    },
-    "status": {
-     "type": "string",
-     "enum": [
-      "COMPLETED",
-      "INCOMPLETE",
-      "SCHEDULED",
-      "STARTED"
-     ],
-     "enumDescriptions": [
-      "",
-      "",
-      "",
-      ""
-     ],
-     "location": "query"
-    },
-    "tag": {
-     "type": "string",
-     "repeated": true,
-     "location": "query"
-    }
-   },
-   "response": {
-    "$ref": "ApiSearchResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "start": {
-   "id": "buildbucket.start",
-   "path": "builds/{id}/start",
-   "httpMethod": "POST",
-   "description": "Marks a build as started.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "request": {
-    "$ref": "ApiStartRequestBodyMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "succeed": {
-   "id": "buildbucket.succeed",
-   "path": "builds/{id}/succeed",
-   "httpMethod": "POST",
-   "description": "Marks a build as succeeded.",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "format": "int64",
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "request": {
-    "$ref": "ApiSucceedRequestBodyMessage",
-    "parameterName": "resource"
-   },
-   "response": {
-    "$ref": "ApiBuildResponseMessage"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  }
- }
+  "servicePath": "buildbucket/v1/",
+  "title": "Build Bucket Service",
+  "version": "v1"
 }
