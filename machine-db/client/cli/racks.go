@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -30,7 +27,8 @@ import (
 // GetRacksCmd is the command to get racks.
 type GetRacksCmd struct {
 	subcommands.CommandRunBase
-	req crimson.ListRacksRequest
+	req     crimson.ListRacksRequest
+	headers bool
 }
 
 // Run runs the command to get racks.
@@ -42,8 +40,16 @@ func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcom
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	if len(resp.Racks) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if c.headers {
+			p.Row("Name", "Datacenter", "Description")
+		}
+		for _, rack := range resp.Racks {
+			p.Row(rack.Name, rack.Datacenter, rack.Description)
+		}
+	}
 	return 0
 }
 
@@ -57,6 +63,7 @@ func getRacksCmd() *subcommands.Command {
 			cmd := &GetRacksCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
 			return cmd
 		},
 	}
