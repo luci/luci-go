@@ -32,15 +32,17 @@ func TestScanFileSystem(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
+		fileOpts := FileOptions{}
+
 		Convey("Scan empty dir works", func() {
-			files, err := ScanFileSystem(tempDir, tempDir, nil)
+			files, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 			So(files, ShouldBeEmpty)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Discovering single file works", func() {
 			writeFile(tempDir, "single_file", "12345", 0666)
-			files, err := ScanFileSystem(tempDir, tempDir, nil)
+			files, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 			So(len(files), ShouldEqual, 1)
 			So(err, ShouldBeNil)
 
@@ -65,7 +67,7 @@ func TestScanFileSystem(t *testing.T) {
 			writeFile(tempDir, "1/a", "", 0666)
 			writeFile(tempDir, "1/b", "", 0666)
 			writeFile(tempDir, "1/2/a", "", 0666)
-			files, err := ScanFileSystem(tempDir, tempDir, nil)
+			files, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			names := make([]string, len(files))
 			for i, f := range files {
@@ -86,7 +88,7 @@ func TestScanFileSystem(t *testing.T) {
 			mkDir(tempDir, "1/2/3")
 			mkDir(tempDir, "1/c")
 			writeFile(tempDir, "1/d/file", "1234", 0666)
-			files, err := ScanFileSystem(tempDir, tempDir, nil)
+			files, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 			So(len(files), ShouldEqual, 1)
 			So(err, ShouldBeNil)
 			So(files[0].Name(), ShouldEqual, "1/d/file")
@@ -98,7 +100,7 @@ func TestScanFileSystem(t *testing.T) {
 			writeFile(tempDir, "1/a", "", 0666)
 			writeFile(tempDir, "1/b", "", 0666)
 			writeFile(tempDir, "1/2/a", "", 0666)
-			files, err := ScanFileSystem(filepath.Join(tempDir, "1"), tempDir, nil)
+			files, err := ScanFileSystem(filepath.Join(tempDir, "1"), tempDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			names := make([]string, len(files))
 			for i, f := range files {
@@ -113,7 +115,7 @@ func TestScanFileSystem(t *testing.T) {
 		})
 
 		Convey("Start path must be under root", func() {
-			_, err := ScanFileSystem(filepath.Dir(tempDir), tempDir, nil)
+			_, err := ScanFileSystem(filepath.Dir(tempDir), tempDir, nil, fileOpts)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -137,7 +139,7 @@ func TestScanFileSystem(t *testing.T) {
 				return false
 			}
 
-			files, err := ScanFileSystem(tempDir, tempDir, excluder)
+			files, err := ScanFileSystem(tempDir, tempDir, excluder, fileOpts)
 			So(err, ShouldBeNil)
 			So(len(files), ShouldEqual, 1)
 			So(files[0].Name(), ShouldEqual, "b")
@@ -157,7 +159,7 @@ func TestScanFileSystem(t *testing.T) {
 			writeSymlink(tempDir, "some_executable", ".cipd/pkgs/0/current/some_executable")
 			writeSymlink(tempDir, "some_file", ".cipd/pkgs/0/current/some_file")
 
-			files, err := ScanFileSystem(tempDir, tempDir, nil)
+			files, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			So(len(files), ShouldEqual, 2)
 
@@ -182,7 +184,7 @@ func TestScanFileSystem(t *testing.T) {
 		if runtime.GOOS != "windows" {
 			Convey("Discovering single executable file works", func() {
 				writeFile(tempDir, "single_file", "12345", 0766)
-				files, err := ScanFileSystem(tempDir, tempDir, nil)
+				files, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 				So(len(files), ShouldEqual, 1)
 				So(err, ShouldBeNil)
 				file := files[0]
@@ -191,7 +193,7 @@ func TestScanFileSystem(t *testing.T) {
 
 			Convey("Relative symlink to outside of package cause error", func() {
 				writeSymlink(tempDir, "a/b1/rel_symlink", filepath.FromSlash("../../.."))
-				_, err := ScanFileSystem(tempDir, tempDir, nil)
+				_, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 				So(err, ShouldNotBeNil)
 			})
 		}
@@ -204,23 +206,25 @@ func TestWrapFile(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
+		fileOpts := FileOptions{}
+
 		Convey("WrapFile simple file works", func() {
 			writeFile(tempDir, "dir/a/b", "12345", 0666)
-			out, err := WrapFile(filepath.Join(tempDir, "dir", "a", "b"), tempDir, nil)
+			out, err := WrapFile(filepath.Join(tempDir, "dir", "a", "b"), tempDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			So(out.Name(), ShouldEqual, "dir/a/b")
 		})
 
 		Convey("WrapFile directory fails", func() {
 			mkDir(tempDir, "dir")
-			_, err := WrapFile(filepath.Join(tempDir, "dir"), tempDir, nil)
+			_, err := WrapFile(filepath.Join(tempDir, "dir"), tempDir, nil, fileOpts)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("WrapFile outside of root fails", func() {
 			mkDir(tempDir, "a")
 			writeFile(tempDir, "b", "body", 0666)
-			_, err := WrapFile(filepath.Join(tempDir, "b"), filepath.Join(tempDir, "a"), nil)
+			_, err := WrapFile(filepath.Join(tempDir, "b"), filepath.Join(tempDir, "a"), nil, fileOpts)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -228,14 +232,14 @@ func TestWrapFile(t *testing.T) {
 			mkDir(tempDir, "a")
 			// "abc" starts with "a", it tricks naive string.HasPrefix subpath check.
 			writeFile(tempDir, "abc", "body", 0666)
-			_, err := WrapFile(filepath.Join(tempDir, "abc"), filepath.Join(tempDir, "a"), nil)
+			_, err := WrapFile(filepath.Join(tempDir, "abc"), filepath.Join(tempDir, "a"), nil, fileOpts)
 			So(err, ShouldNotBeNil)
 		})
 
 		if runtime.GOOS != "windows" {
 			Convey("WrapFile executable file works", func() {
 				writeFile(tempDir, "single_file", "12345", 0766)
-				out, err := WrapFile(filepath.Join(tempDir, "single_file"), tempDir, nil)
+				out, err := WrapFile(filepath.Join(tempDir, "single_file"), tempDir, nil, fileOpts)
 				So(err, ShouldBeNil)
 				So(out.Executable(), ShouldBeTrue)
 			})
@@ -243,7 +247,7 @@ func TestWrapFile(t *testing.T) {
 			Convey("WrapFile rel symlink in root", func() {
 				writeSymlink(tempDir, "a/b/c", filepath.FromSlash("../../d"))
 				mkDir(tempDir, "d")
-				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil)
+				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, fileOpts)
 				So(err, ShouldBeNil)
 				ensureSymlinkTarget(out, "../../d")
 			})
@@ -253,7 +257,7 @@ func TestWrapFile(t *testing.T) {
 				writeSymlink(tempDir, ".cipd/pkgs/0/current", "deadbeef")
 				writeSymlink(tempDir, "some_executable", ".cipd/pkgs/0/current/some_executable")
 
-				out, err := WrapFile(filepath.Join(tempDir, "some_executable"), tempDir, nil)
+				out, err := WrapFile(filepath.Join(tempDir, "some_executable"), tempDir, nil, fileOpts)
 				So(err, ShouldBeNil)
 				if runtime.GOOS != "windows" {
 					So(out.Executable(), ShouldBeTrue)
@@ -264,20 +268,20 @@ func TestWrapFile(t *testing.T) {
 
 			Convey("WrapFile rel symlink outside root", func() {
 				writeSymlink(tempDir, "a/b/c", filepath.FromSlash("../../../d"))
-				_, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil)
+				_, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, fileOpts)
 				So(err, ShouldNotBeNil)
 			})
 
 			Convey("WrapFile abs symlink in root", func() {
 				writeSymlink(tempDir, "a/b/c", filepath.Join(tempDir, "a", "d"))
-				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil)
+				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, fileOpts)
 				So(err, ShouldBeNil)
 				ensureSymlinkTarget(out, "../d")
 			})
 
 			Convey("WrapFile abs symlink outside root", func() {
 				writeSymlink(tempDir, "a/b/c", filepath.Dir(tempDir))
-				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil)
+				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil, fileOpts)
 				So(err, ShouldBeNil)
 				ensureSymlinkTarget(out, filepath.ToSlash(filepath.Dir(tempDir)))
 			})
@@ -328,8 +332,10 @@ func TestFileSystemDestination(t *testing.T) {
 		dest := NewFileSystemDestination(destDir, nil)
 		defer os.RemoveAll(tempDir)
 
+		fileOpts := FileOptions{}
+
 		writeFileToDest := func(name string, executable bool, data string) {
-			writer, err := dest.CreateFile(ctx, name, executable, 0)
+			writer, err := dest.CreateFile(ctx, name, CreateFileOptions{Executable: executable})
 			if writer != nil {
 				defer writer.Close()
 			}
@@ -339,7 +345,7 @@ func TestFileSystemDestination(t *testing.T) {
 		}
 
 		writeAttrFileToDest := func(name string, attr WinAttrs, data string) {
-			writer, err := dest.CreateFile(ctx, name, false, attr)
+			writer, err := dest.CreateFile(ctx, name, CreateFileOptions{WinAttrs: attr})
 			if writer != nil {
 				defer writer.Close()
 			}
@@ -363,7 +369,7 @@ func TestFileSystemDestination(t *testing.T) {
 			So(stat.IsDir(), ShouldBeTrue)
 
 			// And it should be empty.
-			files, err := ScanFileSystem(destDir, destDir, nil)
+			files, err := ScanFileSystem(destDir, destDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			So(len(files), ShouldEqual, 0)
 		})
@@ -385,7 +391,7 @@ func TestFileSystemDestination(t *testing.T) {
 		})
 
 		Convey("CreateFile works only when destination is open", func() {
-			wr, err := dest.CreateFile(ctx, "testing", true, 0)
+			wr, err := dest.CreateFile(ctx, "testing", CreateFileOptions{Executable: true})
 			So(wr, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
@@ -395,12 +401,12 @@ func TestFileSystemDestination(t *testing.T) {
 			defer dest.End(ctx, true)
 
 			// Rel path that is still inside the package is ok.
-			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", false, 0)
+			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", CreateFileOptions{})
 			So(err, ShouldBeNil)
 			wr.Close()
 
 			// Rel path pointing outside is forbidden.
-			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", false, 0)
+			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", CreateFileOptions{})
 			So(err, ShouldNotBeNil)
 		})
 
@@ -432,7 +438,7 @@ func TestFileSystemDestination(t *testing.T) {
 			So(dest.End(ctx, true), ShouldBeNil)
 
 			// Ensure everything is there.
-			files, err := ScanFileSystem(destDir, destDir, nil)
+			files, err := ScanFileSystem(destDir, destDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			names := make([]string, len(files))
 			mapping := make(map[string]File, len(files))
@@ -482,7 +488,7 @@ func TestFileSystemDestination(t *testing.T) {
 			}
 
 			// Ensure no temp files left.
-			allFiles, err := ScanFileSystem(tempDir, tempDir, nil)
+			allFiles, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 			So(len(allFiles), ShouldEqual, len(files))
 		})
 
@@ -503,7 +509,7 @@ func TestFileSystemDestination(t *testing.T) {
 			So(os.IsNotExist(err), ShouldBeTrue)
 
 			// Ensure no temp files left.
-			allFiles, err := ScanFileSystem(tempDir, tempDir, nil)
+			allFiles, err := ScanFileSystem(tempDir, tempDir, nil, fileOpts)
 			So(len(allFiles), ShouldEqual, 0)
 		})
 
@@ -526,7 +532,7 @@ func TestFileSystemDestination(t *testing.T) {
 			So(dest.End(ctx, true), ShouldBeNil)
 
 			// Overwritten.
-			files, err := ScanFileSystem(destDir, destDir, nil)
+			files, err := ScanFileSystem(destDir, destDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			if runtime.GOOS == "windows" {
 				So(len(files), ShouldEqual, 3)
@@ -559,7 +565,7 @@ func TestFileSystemDestination(t *testing.T) {
 			So(dest.End(ctx, false), ShouldBeNil)
 
 			// Kept as is.
-			files, err := ScanFileSystem(destDir, destDir, nil)
+			files, err := ScanFileSystem(destDir, destDir, nil, fileOpts)
 			So(err, ShouldBeNil)
 			So(len(files), ShouldEqual, 1)
 			So(files[0].Name(), ShouldEqual, "data")
@@ -568,7 +574,7 @@ func TestFileSystemDestination(t *testing.T) {
 		Convey("Opening file twice fails", func() {
 			So(dest.Begin(ctx), ShouldBeNil)
 			writeFileToDest("a", false, "a data")
-			w, err := dest.CreateFile(ctx, "a", false, 0)
+			w, err := dest.CreateFile(ctx, "a", CreateFileOptions{})
 			So(w, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 			So(dest.End(ctx, true), ShouldBeNil)
@@ -576,7 +582,7 @@ func TestFileSystemDestination(t *testing.T) {
 
 		Convey("End with opened files fail", func() {
 			So(dest.Begin(ctx), ShouldBeNil)
-			w, err := dest.CreateFile(ctx, "a", false, 0)
+			w, err := dest.CreateFile(ctx, "a", CreateFileOptions{})
 			So(w, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 			So(dest.End(ctx, true), ShouldNotBeNil)

@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -310,6 +311,8 @@ type testDestinationFile struct {
 	bytes.Buffer
 	name          string
 	executable    bool
+	writable      bool
+	modtime       time.Time
 	symlinkTarget string
 	winAttrs      WinAttrs
 }
@@ -321,11 +324,13 @@ func (d *testDestination) Begin(context.Context) error {
 	return nil
 }
 
-func (d *testDestination) CreateFile(ctx context.Context, name string, executable bool, winAttrs WinAttrs) (io.WriteCloser, error) {
+func (d *testDestination) CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error) {
 	f := &testDestinationFile{
 		name:       name,
-		executable: executable,
-		winAttrs:   winAttrs,
+		executable: opts.Executable,
+		writable:   opts.Writable,
+		modtime:    opts.ModTime,
+		winAttrs:   opts.WinAttrs,
 	}
 	d.files = append(d.files, f)
 	return f, nil

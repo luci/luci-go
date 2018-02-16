@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"time"
 )
 
 // NewTestFile returns File implementation (Symlink == false) backed by a fake
@@ -55,6 +56,8 @@ type testFile struct {
 	name          string
 	data          string
 	executable    bool
+	writable      bool
+	modtime       time.Time
 	symlinkTarget string
 
 	winAttrs WinAttrs
@@ -63,6 +66,8 @@ type testFile struct {
 func (f *testFile) Name() string       { return f.name }
 func (f *testFile) Size() uint64       { return uint64(len(f.data)) }
 func (f *testFile) Executable() bool   { return f.executable }
+func (f *testFile) Writable() bool     { return f.writable }
+func (f *testFile) ModTime() time.Time { return f.modtime }
 func (f *testFile) Symlink() bool      { return f.symlinkTarget != "" }
 func (f *testFile) WinAttrs() WinAttrs { return f.winAttrs }
 

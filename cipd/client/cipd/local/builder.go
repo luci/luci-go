@@ -129,8 +129,9 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) er
 			return err
 		}
 
-		// Intentionally do not add timestamp or file mode to make zip archive
-		// deterministic. See also zip.FileInfoHeader() implementation.
+		// Intentionally do not add file mode to make zip archive
+		// deterministic. Timestamps sometimes need to be preserved, but normally
+		// are zero valued. See also zip.FileInfoHeader() implementation.
 		fh := zip.FileHeader{
 			Name:   in.Name(),
 			Method: zip.Deflate,
@@ -143,10 +144,18 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) er
 		if in.Executable() {
 			mode |= 0100
 		}
+		if in.Writable() {
+			mode |= 0200
+		}
 		if in.Symlink() {
 			mode |= os.ModeSymlink
 		}
 		fh.SetMode(mode)
+
+		if !in.ModTime().IsZero() {
+			fh.SetModTime(in.ModTime())
+		}
+
 		fh.ExternalAttrs |= uint32(in.WinAttrs())
 
 		dst, err := writer.CreateHeader(&fh)
@@ -282,6 +291,8 @@ type manifestFile []byte
 func (m *manifestFile) Name() string       { return manifestName }
 func (m *manifestFile) Size() uint64       { return uint64(len(*m)) }
 func (m *manifestFile) Executable() bool   { return false }
+func (m *manifestFile) Writable() bool     { return false }
+func (m *manifestFile) ModTime() time.Time { var t time.Time; return t }
 func (m *manifestFile) Symlink() bool      { return false }
 func (m *manifestFile) WinAttrs() WinAttrs { return 0 }
 
