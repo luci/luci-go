@@ -17,6 +17,7 @@ package cli
 
 import (
 	"os"
+	"text/tabwriter"
 
 	"golang.org/x/net/context"
 
@@ -61,6 +62,11 @@ func createClient(c context.Context, params *Parameters) crimson.CrimsonClient {
 // The client pointer can be embedded in the current context using withClient.
 func getClient(c context.Context) crimson.CrimsonClient {
 	return c.Value(&clientKey).(crimson.CrimsonClient)
+}
+
+// newWriter returns a new tabwriter.Writer which writes to os.Stdout.
+func newWriter() *tabwriter.Writer {
+	return tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
 }
 
 // withClient installs an RPC client pointer into the given context.

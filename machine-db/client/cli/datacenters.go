@@ -15,8 +15,7 @@
 package cli
 
 import (
-	"encoding/csv"
-	"os"
+	"fmt"
 
 	"github.com/maruel/subcommands"
 
@@ -44,14 +43,13 @@ func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env 
 		return 1
 	}
 	if len(resp.Datacenters) > 0 {
-		w := csv.NewWriter(os.Stdout)
-		w.Comma = '\t'
+		w := newWriter()
 		defer w.Flush()
 		if c.headers {
-			w.Write([]string{"Name", "Description"})
+			fmt.Fprintf(w, "Name\tDescription\n")
 		}
 		for _, dc := range resp.Datacenters {
-			w.Write([]string{dc.Name, dc.Description})
+			fmt.Fprintf(w, "%s\t%s\n", dc.Name, dc.Description)
 		}
 	}
 	return 0
