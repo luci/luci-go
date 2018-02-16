@@ -19,8 +19,10 @@ import (
 	"net/url"
 	"strings"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 )
 
 // an itemParser should parse the value from `val`, and update s or
@@ -38,7 +40,7 @@ func subdirParser(s *itemParserState, _ *File, val string) (err error) {
 	// template. When the user uses File.ResolveWith, this will actually use the
 	// user-supplied expander.
 	tempExpanded := ""
-	if tempExpanded, err = common.DefaultTemplateExpander().Validate(val); err == nil {
+	if tempExpanded, err = template.DefaultExpander().Validate(val); err == nil {
 		if err = common.ValidateSubdir(tempExpanded); err == nil {
 			s.curSubdir = val
 		}
@@ -61,10 +63,10 @@ func serviceURLParser(_ *itemParserState, f *File, val string) error {
 
 func verifyParser(_ *itemParserState, f *File, val string) error {
 	fields := strings.Fields(val)
-	plats := make([]common.TemplatePlatform, len(fields))
+	plats := make([]template.Platform, len(fields))
 	for i, field := range fields {
 		var err error
-		if plats[i], err = common.ParseTemplatePlatform(field); err != nil {
+		if plats[i], err = template.ParsePlatform(field); err != nil {
 			return fmt.Errorf("invalid platform entry #%d, should be <os>-<arch>, not %q", i+1, field)
 		}
 	}

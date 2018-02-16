@@ -17,8 +17,10 @@ package ensure
 import (
 	"fmt"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 )
 
 // PackageDef defines a package line parsed out of an ensure file.
@@ -48,9 +50,9 @@ type VersionResolver func(pkg, vers string) (common.Pin, error)
 // Resolve takes a Package definition containing a possibly templated package
 // name, and a possibly unresolved version string and attempts to resolve them
 // into a Pin.
-func (p *PackageDef) Resolve(rslv VersionResolver, expander common.TemplateExpander) (pin common.Pin, err error) {
+func (p *PackageDef) Resolve(rslv VersionResolver, expander template.Expander) (pin common.Pin, err error) {
 	switch pin.PackageName, err = expander.Expand(p.PackageTemplate); err {
-	case common.ErrSkipTemplate:
+	case template.ErrSkipTemplate:
 		return
 	case nil:
 		err = common.ValidatePackageName(pin.PackageName)

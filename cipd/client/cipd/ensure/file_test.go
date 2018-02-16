@@ -18,13 +18,13 @@ import (
 	"bytes"
 	"testing"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func mustMakePlatform(v string) common.TemplatePlatform {
-	plat, err := common.ParseTemplatePlatform(v)
+func mustMakePlatform(v string) template.Platform {
+	plat, err := template.ParsePlatform(v)
 	if err != nil {
 		panic(err)
 	}
@@ -74,7 +74,7 @@ var fileSerializationTests = []struct {
 			"path/to dir/with/spaces": {
 				PackageDef{"different/package", "some_tag:thingy", 0},
 			},
-		}, []common.TemplatePlatform{
+		}, []template.Platform{
 			mustMakePlatform("zoops-ohai"),
 			mustMakePlatform("foos-barch"),
 		}},
