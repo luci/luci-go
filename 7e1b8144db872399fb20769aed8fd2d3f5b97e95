@@ -46,6 +46,30 @@
       "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "845d3454_e60c79c1",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-16T00:46:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dac2ea9a_1ab4d4f0",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
