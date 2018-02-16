@@ -201,6 +201,22 @@ func (a *application) runArchivist(c context.Context) error {
 			}()
 
 			task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
+			c = log.SetFields(c, log.Fields{
+				"consumed":         task.consumed,
+				"subscriptionName": task.subscriptionName,
+				"taskTimestamp":    task.timestamp.Format(time.RFC3339Nano),
+				"archiveTask":      task.at,
+			})
+			if task.msg != nil {
+				// Log all fields except data.
+				c = log.SetFields(c, log.Fields{
+					"message": map[string]interface{}{
+						"id":          task.msg.ID,
+						"attributes":  task.msg.Attributes,
+						"publishTime": task.msg.PublishTime.Format(time.RFC3339Nano),
+					},
+				})
+			}
 			if err != nil {
 				log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
 				deleteTask = true
