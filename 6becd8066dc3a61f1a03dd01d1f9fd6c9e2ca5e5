@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9efb5ede_67186d1d",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-16T05:36:58Z",
+      "side": 1,
+      "message": "it seems you are referring to \"state name\" term defined in the state.go. In code, \"state\" and \"state name\" are two different things, but in CLI only \"state\" term is defined (which is mapped to \"state name\" in code). Maybe we should say just \"Must be a state returned by get-states\"",
+      "range": {
+        "startLine": 154,
+        "startChar": 97,
+        "endLine": 154,
+        "endChar": 107
+      },
+      "revId": "6becd8066dc3a61f1a03dd01d1f9fd6c9e2ca5e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
