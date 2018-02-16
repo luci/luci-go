@@ -192,25 +192,38 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 	if err := validatePhysicalHostForUpdate(h, mask); err != nil {
 		return nil, err
 	}
+	update := false
+	updateState := false
 	stmt := squirrel.Update("physical_hosts")
 	for _, path := range mask.Paths {
 		switch path {
 		case "machine":
 			stmt = stmt.Set("machine_id", squirrel.Expr("(SELECT id FROM machines WHERE name = ?)", h.Machine))
+			update = true
 		case "os":
 			stmt = stmt.Set("os_id", squirrel.Expr("(SELECT id FROM oses WHERE name = ?)", h.Os))
+			update = true
+		case "state":
+			updateState = true
 		case "vm_slots":
 			stmt = stmt.Set("vm_slots", h.VmSlots)
+			update = true
 		case "description":
 			stmt = stmt.Set("description", h.Description)
+			update = true
 		case "deployment_ticket":
 			stmt = stmt.Set("deployment_ticket", h.DeploymentTicket)
+			update = true
 		}
 	}
-	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", h.Name, h.Vlan)
-	query, args, err := stmt.ToSql()
-	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	var query string
+	var args []interface{}
+	if update {
+		stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", h.Name, h.Vlan)
+		query, args, err = stmt.ToSql()
+		if err != nil {
+			return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		}
 	}
 
 	tx, err := database.Begin(c)
@@ -224,25 +237,37 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 			}
 		}
 	}()
-	_, err = tx.ExecContext(c, query, args...)
-	if err != nil {
-		switch e, ok := err.(*mysql.MySQLError); {
-		case !ok:
-			// Type assertion failed.
-		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
-			// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
-			return nil, status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
-		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
-			// e.g. "Error 1048: Column 'machine_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
-		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
-			// e.g. "Error 1048: Column 'os_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
+	if query != "" && len(args) > 0 {
+		_, err = tx.ExecContext(c, query, args...)
+		if err != nil {
+			switch e, ok := err.(*mysql.MySQLError); {
+			case !ok:
+				// Type assertion failed.
+			case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
+				// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
+				return nil, status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
+			case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
+				// e.g. "Error 1048: Column 'machine_id' cannot be null".
+				return nil, status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
+			case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
+				// e.g. "Error 1048: Column 'os_id' cannot be null".
+				return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
+			}
+			return nil, internalError(c, errors.Annotate(err, "failed to update physical host").Err())
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to update physical host").Err())
+		// The number of rows affected cannot distinguish between zero because the physical host didn't exist
+		// and zero because the row already matched, so skip looking at the number of rows affected.
 	}
-	// The number of rows affected cannot distinguish between zero because the host didn't exist
-	// and zero because the row already matched, so skip looking at the number of rows affected.
+	if updateState {
+		_, err = tx.ExecContext(c, `
+			UPDATE machines
+			SET state = ?
+			WHERE id = (SELECT machine_id FROM physical_hosts WHERE hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?))
+		`, h.State, h.Name, h.Vlan)
+		if err != nil {
+			return nil, internalError(c, errors.Annotate(err, "failed to update machine").Err())
+		}
+	}
 
 	hosts, err := listPhysicalHosts(c, tx, []string{h.Name}, []int64{h.Vlan})
 	switch {
@@ -308,6 +333,10 @@ func validatePhysicalHostForUpdate(h *crimson.PhysicalHost, mask *field_mask.Fie
 		case "os":
 			if h.Os == "" {
 				return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
+			}
+		case "state":
+			if h.State == states.State_STATE_UNSPECIFIED {
+				return status.Error(codes.InvalidArgument, "state is required")
 			}
 		case "vm_slots":
 			if h.VmSlots < 0 {

@@ -425,6 +425,11 @@ func TestUpdatePhysicalHost(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
+		updateMachineStmt := `
+			UPDATE machines
+			SET state = \?
+			WHERE id = \(SELECT machine_id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)\)
+		`
 		selectStmt := `
 			^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 			FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
@@ -445,6 +450,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "operating system",
 				VmSlots: 1,
+				State:   common.State_SERVING,
 				Ipv4:    "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
@@ -465,6 +471,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: host.Machine,
 				Os:      host.Os,
 				VmSlots: host.VmSlots,
+				State:   host.State,
 				Ipv4:    host.Ipv4,
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -482,6 +489,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "operating system",
 				VmSlots: 1,
+				State:   common.State_SERVING,
 				Ipv4:    "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
@@ -502,6 +510,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: host.Machine,
 				Os:      host.Os,
 				VmSlots: host.VmSlots,
+				State:   host.State,
 				Ipv4:    host.Ipv4,
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -519,6 +528,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "operating system",
 				VmSlots: 1,
+				State:   common.State_SERVING,
 				Ipv4:    "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
@@ -539,6 +549,41 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: host.Machine,
 				Os:      host.Os,
 				VmSlots: host.VmSlots,
+				State:   host.State,
+				Ipv4:    host.Ipv4,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("update state", func() {
+			host := &crimson.PhysicalHost{
+				Name:    "hostname",
+				Vlan:    1,
+				Machine: "machine",
+				Os:      "operating system",
+				VmSlots: 1,
+				State:   common.State_SERVING,
+				Ipv4:    "0.0.0.1",
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"state",
+				},
+			}
+			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket, 1, host.State)
+			m.ExpectBegin()
+			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			host, err := updatePhysicalHost(c, host, mask)
+			So(err, ShouldBeNil)
+			So(host, ShouldResemble, &crimson.PhysicalHost{
+				Name:    host.Name,
+				Vlan:    host.Vlan,
+				Machine: host.Machine,
+				Os:      host.Os,
+				VmSlots: host.VmSlots,
+				State:   host.State,
 				Ipv4:    host.Ipv4,
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -556,6 +601,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: "machine",
 				Os:      "operating system",
 				VmSlots: 1,
+				State:   common.State_SERVING,
 				Ipv4:    "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
@@ -563,11 +609,13 @@ func TestUpdatePhysicalHost(t *testing.T) {
 					"machine",
 					"os",
 					"vm_slots",
+					"state",
 				},
 			}
 			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket, 1, host.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(host.Machine, host.Os, host.VmSlots, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			host, err := updatePhysicalHost(c, host, mask)
@@ -578,6 +626,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 				Machine: host.Machine,
 				Os:      host.Os,
 				VmSlots: host.VmSlots,
+				State:   host.State,
 				Ipv4:    host.Ipv4,
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -680,8 +729,8 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Paths: []string{
 				"machine",
 				"os",
-				"ipv4",
 				"vm_slots",
+				"state",
 			},
 		})
 		So(err, ShouldErrLike, "physical host specification is required")
@@ -693,12 +742,13 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"machine",
 				"os",
-				"ipv4",
 				"vm_slots",
+				"state",
 			},
 		})
 		So(err, ShouldErrLike, "hostname is required and must be non-empty")
@@ -710,12 +760,13 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"machine",
 				"os",
-				"ipv4",
 				"vm_slots",
+				"state",
 			},
 		})
 		So(err, ShouldErrLike, "VLAN is required and must be positive")
@@ -728,6 +779,7 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, nil)
 		So(err, ShouldErrLike, "update mask is required")
 	})
@@ -739,6 +791,7 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{})
 		So(err, ShouldErrLike, "at least one update mask path is required")
 	})
@@ -750,6 +803,7 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"name",
@@ -765,6 +819,7 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"vlan",
@@ -779,12 +834,13 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Vlan:    1,
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"machine",
 				"os",
-				"ipv4",
 				"vm_slots",
+				"state",
 			},
 		})
 		So(err, ShouldErrLike, "machine is required and must be non-empty")
@@ -796,15 +852,34 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Vlan:    1,
 			Machine: "machine",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"machine",
 				"os",
-				"ipv4",
 				"vm_slots",
+				"state",
 			},
 		})
 		So(err, ShouldErrLike, "operating system is required and must be non-empty")
+	})
+
+	Convey("state unspecified", t, func() {
+		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
+			Name:    "hostname",
+			Vlan:    1,
+			Machine: "machine",
+			Os:      "os",
+			VmSlots: 1,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"machine",
+				"os",
+				"vm_slots",
+				"state",
+			},
+		})
+		So(err, ShouldErrLike, "state is required")
 	})
 
 	Convey("unsupported path", t, func() {
@@ -814,6 +889,7 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"unknown",
@@ -829,12 +905,13 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"machine",
 				"os",
-				"ipv4",
 				"vm_slots",
+				"state",
 				"description",
 				"deployment_ticket",
 				"deployment_ticket",
@@ -850,11 +927,13 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
+			State:   common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"machine",
 				"os",
 				"vm_slots",
+				"state",
 				"description",
 				"deployment_ticket",
 			},

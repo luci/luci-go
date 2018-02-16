@@ -184,6 +184,8 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 			stmt = stmt.Set("platform_id", squirrel.Expr("(SELECT id FROM platforms WHERE name = ?)", m.Platform))
 		case "rack":
 			stmt = stmt.Set("rack_id", squirrel.Expr("(SELECT id FROM racks WHERE name = ?)", m.Rack))
+		case "state":
+			stmt = stmt.Set("state", m.State)
 		case "description":
 			stmt = stmt.Set("description", m.Description)
 		case "asset_tag":
