@@ -22,6 +22,30 @@
       "revId": "063113d2226fa69f012fbdb1e6d300a722c6905c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3d72ce5_d4a483f9",
+        "filename": "machine-db/client/cli/racks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-16T22:52:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f662cabb_aba7bc19",
+      "range": {
+        "startLine": 49,
+        "startChar": 48,
+        "endLine": 49,
+        "endChar": 49
+      },
+      "revId": "063113d2226fa69f012fbdb1e6d300a722c6905c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
