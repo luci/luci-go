@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f662cabb_aba7bc19",
+        "filename": "machine-db/client/cli/racks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-16T06:30:16Z",
+      "side": 1,
+      "message": "\\n. easy mistake to make with this API because we are programming against low-level API which a sequence text values separated by \\n and \\t.\n\nConsider something higher level, e.g.\n\n  type printer struct {\n    *tabwriter.Writer\n  }\n  func newPrinter() *printer\n  func (p *printer) Row(args ...interface{})\n\nand then here\n\n  p :\u003d newPrinter()\n  defer p.Flush()\n  if c.headers {\n    p.Row(\"Name\", \"Datacenter\", \"Description\")\n  }\n  for _, rack :\u003d range resp.Racks {\n    p.Row(rack.Name, rack.Datacenter, rack.Description)\n  }",
+      "range": {
+        "startLine": 49,
+        "startChar": 48,
+        "endLine": 49,
+        "endChar": 49
+      },
+      "revId": "063113d2226fa69f012fbdb1e6d300a722c6905c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
