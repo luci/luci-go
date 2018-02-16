@@ -16,7 +16,6 @@ package common
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -162,17 +161,6 @@ func TestPinToString(t *testing.T) {
 	})
 }
 
-func TestGetInstanceTagKey(t *testing.T) {
-	t.Parallel()
-
-	Convey("GetInstanceTagKey works", t, func() {
-		So(GetInstanceTagKey("a:b"), ShouldEqual, "a")
-		So(GetInstanceTagKey("a:b:c"), ShouldEqual, "a")
-		So(GetInstanceTagKey(":b"), ShouldEqual, "")
-		So(GetInstanceTagKey(""), ShouldEqual, "")
-	})
-}
-
 func TestPinSliceAndMap(t *testing.T) {
 	t.Parallel()
 
@@ -257,83 +245,5 @@ func TestPinSliceAndMap(t *testing.T) {
 			})
 		})
 
-	})
-}
-
-func TestCurrentResolution(t *testing.T) {
-	t.Parallel()
-
-	Convey("Sanity check on arch/os", t, func() {
-		Convey("Has a known os", func() {
-			known := false
-			switch currentOS {
-			case runtime.GOOS, "mac":
-				known = true
-			}
-			So(known, ShouldBeTrue)
-		})
-
-		Convey("Has a known architecture", func() {
-			known := false
-			switch currentArchitecture {
-			case runtime.GOARCH, "armv6l":
-				known = true
-			}
-			So(known, ShouldBeTrue)
-		})
-	})
-}
-
-func TestTemplateExpander(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		template string
-		expected string
-		err      string
-	}{
-		// ok
-		{"", "", ""},
-		{"${os}${os}", "SOME_OSSOME_OS", ""},
-		{"Something", "Something", ""},
-		{"Something/${os}/moo", "Something/SOME_OS/moo", ""},
-		{"Something/${os}-${arch}", "Something/SOME_OS-SOME_ARCH", ""},
-		{"Something/${platform}", "Something/SOME_OS-SOME_ARCH", ""},
-		{"Something/${os=wut,SOME_OS}", "Something/SOME_OS", ""},
-		{"Something/${os=wut,SOME_OS}-${arch}", "Something/SOME_OS-SOME_ARCH", ""},
-
-		// errors
-		{"Something/${var}", "", "unknown variable"},
-		{"Something/${os}-${arch=deez}", "", ErrSkipTemplate.Error()},
-		{"Something/${platform=deez}", "", ErrSkipTemplate.Error()},
-		{"Something/${platform}$", "", "unable to process some variables"},
-		{"Something/${platform${os}}", "", "unknown variable"},
-		{"Something/${platform", "", "unable to process some variables"},
-		{"Something/$platform", "", "unable to process some variables"},
-	}
-
-	expander := TemplateExpander{
-		"os":       "SOME_OS",
-		"arch":     "SOME_ARCH",
-		"platform": "SOME_OS-SOME_ARCH",
-	}
-
-	Convey(`TemplateExpander`, t, func() {
-		for _, tc := range tests {
-			expect := ""
-			if tc.err == "" {
-				expect = fmt.Sprintf("%q", tc.expected)
-			} else {
-				expect = fmt.Sprintf("err(%q)", tc.err)
-			}
-			Convey(fmt.Sprintf(`%q -> %s`, tc.template, expect), func() {
-				val, err := expander.Expand(tc.template)
-				if tc.err != "" {
-					So(err, ShouldErrLike, tc.err)
-				} else {
-					So(val, ShouldEqual, tc.expected)
-				}
-			})
-		}
 	})
 }

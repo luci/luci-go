@@ -48,13 +48,14 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/version"
 )
 
 // TODO(vadimsh): Add some tests.
 
-func expandTemplate(template string) (pkg string, err error) {
-	pkg, err = common.DefaultTemplateExpander().Expand(template)
+func expandTemplate(tmpl string) (pkg string, err error) {
+	pkg, err = template.DefaultExpander().Expand(tmpl)
 	if err != nil {
 		err = commandLineError{err}
 	}

@@ -24,9 +24,11 @@ import (
 	"strings"
 	"unicode"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
+
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 )
 
 // File is an in-process representation of the 'ensure file' format.
@@ -34,7 +36,7 @@ type File struct {
 	ServiceURL string
 
 	PackagesBySubdir map[string]PackageSlice
-	VerifyPlatforms  []common.TemplatePlatform
+	VerifyPlatforms  []template.Platform
 }
 
 // ParseFile parses an ensure file from the given reader. See the package docs
@@ -106,8 +108,8 @@ func ParseFile(r io.Reader) (*File, error) {
 					PackageName: pkg,
 					InstanceID:  vers,
 				}, common.ValidateInstanceVersion(vers)
-			}, common.DefaultTemplateExpander())
-			if err != nil && err != common.ErrSkipTemplate {
+			}, template.DefaultExpander())
+			if err != nil && err != template.ErrSkipTemplate {
 				return nil, err
 			}
 
@@ -150,13 +152,13 @@ func (f *ResolvedFile) Serialize(w io.Writer) (int, error) {
 // using common.DefaultPackageNameExpander(), and also resolves all versions
 // with the provided VersionResolver.
 func (f *File) Resolve(rslv VersionResolver) (*ResolvedFile, error) {
-	return f.ResolveWith(rslv, common.DefaultTemplateExpander())
+	return f.ResolveWith(rslv, template.DefaultExpander())
 }
 
 // ResolveWith takes the current unresolved File and expands all package
 // templates using the provided values of arch and os, and also resolves
 // all versions with the provided VersionResolver.
-func (f *File) ResolveWith(rslv VersionResolver, expander common.TemplateExpander) (*ResolvedFile, error) {
+func (f *File) ResolveWith(rslv VersionResolver, expander template.Expander) (*ResolvedFile, error) {
 	ret := &ResolvedFile{}
 
 	if f.ServiceURL != "" {
@@ -178,7 +180,7 @@ func (f *File) ResolveWith(rslv VersionResolver, expander common.TemplateExpande
 	for subdir, pkgs := range f.PackagesBySubdir {
 		realSubdir, err := expander.Expand(subdir)
 		switch err {
-		case common.ErrSkipTemplate:
+		case template.ErrSkipTemplate:
 			continue
 		case nil:
 		default:
@@ -191,7 +193,7 @@ func (f *File) ResolveWith(rslv VersionResolver, expander common.TemplateExpande
 		}
 		for _, pkg := range pkgs {
 			pin, err := pkg.Resolve(rslv, expander)
-			if err == common.ErrSkipTemplate {
+			if err == template.ErrSkipTemplate {
 				continue
 			}
 			if err != nil {

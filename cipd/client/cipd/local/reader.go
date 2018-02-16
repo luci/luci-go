@@ -359,16 +359,16 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 	case instanceID == "":
 		// Calculate the default hash and use it as instance ID, regardless of
 		// the verification mode.
-		h := common.DefaultHash()
+		h := DefaultHash()
 		dataSize, err = getHashAndSize(inst.data, h)
 		if err != nil {
 			return err
 		}
-		instanceID = common.InstanceIDFromHash(h)
+		instanceID = InstanceIDFromHash(h)
 
 	case v == VerifyHash:
 		var h hash.Hash
-		h, err = common.HashForInstanceID(instanceID)
+		h, err = HashForInstanceID(instanceID)
 		if err != nil {
 			return err
 		}
@@ -376,7 +376,7 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 		if err != nil {
 			return err
 		}
-		if common.InstanceIDFromHash(h) != instanceID {
+		if InstanceIDFromHash(h) != instanceID {
 			return ErrHashMismatch
 		}
 

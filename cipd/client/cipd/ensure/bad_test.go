@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -202,7 +202,7 @@ func TestBadEnsureFiles(t *testing.T) {
 					So(err, ShouldErrLike, tc.err)
 				} else {
 					So(f, ShouldNotBeNil)
-					rf, err := f.ResolveWith(testResolver, common.TemplateExpander{
+					rf, err := f.ResolveWith(testResolver, template.Expander{
 						"os":       "test_os",
 						"arch":     "test_arch",
 						"platform": "test_os-test_arch",

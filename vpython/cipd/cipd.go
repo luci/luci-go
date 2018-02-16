@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
@@ -92,7 +93,7 @@ func (pl *PackageLoader) Resolve(c context.Context, e *vpython.Environment) erro
 //
 // The supplied spec is updated with the resolved packages.
 func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOptions,
-	expander common.TemplateExpander, spec *vpython.Spec) error {
+	expander template.Expander, spec *vpython.Spec) error {
 
 	logging.Debugf(c, "Resolving CIPD packages in root [%s]:", opts.Root)
 	ef, packages := specToEnsureFile(spec)
@@ -288,12 +289,12 @@ func specToEnsureFile(spec *vpython.Spec) (ef *ensure.File, packages []*vpython.
 	return
 }
 
-func (pl *PackageLoader) expanderForTags(c context.Context, tags []*vpython.PEP425Tag) (common.TemplateExpander, error) {
+func (pl *PackageLoader) expanderForTags(c context.Context, tags []*vpython.PEP425Tag) (template.Expander, error) {
 	// Build our aggregate template parameters. We prefer our template parameters
 	// over the local system parameters. This allows us to override CIPD template
 	// parameters elsewhere, and in the production case we will not override
 	// any CIPD template parameters.
-	expander := common.DefaultTemplateExpander()
+	expander := template.DefaultExpander()
 	if pl.Template != nil {
 		loaderTemplate, err := pl.Template(c, tags)
 		if err != nil {

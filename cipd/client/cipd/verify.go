@@ -19,14 +19,15 @@ import (
 	"sort"
 	"sync"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
-	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/promise"
 
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 )
 
 // Verifier uses a Client to verify the validity of packages in parallel.
@@ -137,7 +138,7 @@ func (v *Verifier) ResolvePackage(ctx context.Context, pkg UnresolvedPackage) (c
 //
 // If a package fails to resolve, or if ResolveWith reutrns an error,
 // VerifyEnsureFile will return an error.
-func (v *Verifier) VerifyEnsureFile(ctx context.Context, file *ensure.File, expander common.TemplateExpander) error {
+func (v *Verifier) VerifyEnsureFile(ctx context.Context, file *ensure.File, expander template.Expander) error {
 	v.initialize()
 
 	// Resolve all instances.
