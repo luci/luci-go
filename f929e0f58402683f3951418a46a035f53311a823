@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "77bba1db_f85ab0d8",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-16T06:11:41Z",
+      "side": 1,
+      "message": "your comment about IPv4 and state helped me realize that \"unsupported\" might be a better word",
+      "range": {
+        "startLine": 322,
+        "startChar": 48,
+        "endLine": 322,
+        "endChar": 55
+      },
+      "revId": "f929e0f58402683f3951418a46a035f53311a823",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
