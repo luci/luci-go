@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"encoding/csv"
-	"os"
-
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -44,14 +41,13 @@ func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env 
 		return 1
 	}
 	if len(resp.Datacenters) > 0 {
-		w := csv.NewWriter(os.Stdout)
-		w.Comma = '\t'
+		w := newStdoutWriter()
 		defer w.Flush()
 		if c.headers {
-			w.Write([]string{"Name", "Description"})
+			w.Row("Name", "Description")
 		}
 		for _, dc := range resp.Datacenters {
-			w.Write([]string{dc.Name, dc.Description})
+			w.Row(dc.Name, dc.Description)
 		}
 	}
 	return 0
