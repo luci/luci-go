@@ -196,7 +196,7 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (_
 			}
 		}
 	}()
-	res, err := tx.ExecContext(c, query, args...)
+	_, err = tx.ExecContext(c, query, args...)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -210,16 +210,15 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (_
 		}
 		return nil, internalError(c, errors.Annotate(err, "failed to update NIC").Err())
 	}
-	switch rows, err := res.RowsAffected(); {
-	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
-	case rows == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", n.Name, n.Machine)
-	}
+	// The number of rows affected cannot distinguish between zero because the NIC didn't exist
+	// and zero because the row already matched, so skip looking at the number of rows affected.
 
 	nics, err := listNICs(c, tx, []string{n.Name}, []string{n.Machine})
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated NIC").Err())
+	case len(nics) == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", n.Name, n.Machine)
 	}
 
 	if err := tx.Commit(); err != nil {
