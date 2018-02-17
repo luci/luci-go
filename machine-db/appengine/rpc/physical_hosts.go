@@ -224,7 +224,7 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 			}
 		}
 	}()
-	res, err := tx.ExecContext(c, query, args...)
+	_, err = tx.ExecContext(c, query, args...)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -241,16 +241,15 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 		}
 		return nil, internalError(c, errors.Annotate(err, "failed to update physical host").Err())
 	}
-	switch rows, err := res.RowsAffected(); {
-	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
-	case rows == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", h.Name, h.Vlan)
-	}
+	// The number of rows affected cannot distinguish between zero because the host didn't exist
+	// and zero because the row already matched, so skip looking at the number of rows affected.
 
 	hosts, err := listPhysicalHosts(c, tx, []string{h.Name}, []int64{h.Vlan})
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated physical host").Err())
+	case len(hosts) == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", h.Name, h.Vlan)
 	}
 
 	if err := tx.Commit(); err != nil {
