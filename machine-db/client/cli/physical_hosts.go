@@ -87,6 +87,7 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 		UpdateMask: getUpdateMask(&c.Flags, map[string]string{
 			"machine": "machine",
 			"os":      "os",
+			"state":   "state",
 			"slots":   "vm_slots",
 			"desc":    "description",
 			"tick":    "deployment_ticket",
@@ -103,10 +104,10 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 	return 0
 }
 
-// editPhysicalHostCmd returns a command to edit a network interface.
+// editPhysicalHostCmd returns a command to edit a physical host.
 func editPhysicalHostCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "edit-host -name <name> -vlan <id> [-machine <machine>] [-os <os>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "edit-host -name <name> -vlan <id> [-machine <machine>] [-os <os>] [-state <state>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a physical host",
 		LongDesc:  "Edits a physical host in the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -115,6 +116,7 @@ func editPhysicalHostCmd() *subcommands.Command {
 			cmd.Flags.Int64Var(&cmd.host.Vlan, "vlan", 0, "The VLAN this host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Must be the name of an operating system returned by get-oses.")
+			cmd.Flags.Var(StateFlag(&cmd.host.State), "state", "The state of this host. Must be a state returned by get-states.")
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")

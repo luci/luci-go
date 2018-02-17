@@ -184,6 +184,8 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 			stmt = stmt.Set("platform_id", squirrel.Expr("(SELECT id FROM platforms WHERE name = ?)", m.Platform))
 		case "rack":
 			stmt = stmt.Set("rack_id", squirrel.Expr("(SELECT id FROM racks WHERE name = ?)", m.Rack))
+		case "state":
+			stmt = stmt.Set("state", m.State)
 		case "description":
 			stmt = stmt.Set("description", m.Description)
 		case "asset_tag":
@@ -211,7 +213,7 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 			}
 		}
 	}()
-	res, err := tx.ExecContext(c, query, args...)
+	_, err = tx.ExecContext(c, query, args...)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -225,18 +227,17 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 		}
 		return nil, internalError(c, errors.Annotate(err, "failed to update machine").Err())
 	}
-	switch rows, err := res.RowsAffected(); {
-	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
-	case rows == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown machine %q", m.Name)
-	}
+	// The number of rows affected cannot distinguish between zero because the machine didn't exist
+	// and zero because the row already matched, so skip looking at the number of rows affected.
 
 	machines, err := listMachines(c, tx, &crimson.ListMachinesRequest{
 		Names: []string{m.Name},
 	})
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated machine").Err())
+	case len(machines) == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown machine %q", m.Name)
 	}
 
 	if err := tx.Commit(); err != nil {
