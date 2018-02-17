@@ -117,6 +117,30 @@
       "revId": "02ed6b682c5e27a7a921361b1b97f5b393cec0b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cd683221_e5aca3ba",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-17T02:11:54Z",
+      "side": 1,
+      "message": "Can make it clear though using \"_, _ \u003d l.out.Write\".",
+      "parentUuid": "fefa21ae_8b24cd6e",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 17
+      },
+      "revId": "02ed6b682c5e27a7a921361b1b97f5b393cec0b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -70,6 +70,30 @@
       "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eb2e2465_5d76024a",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-02-17T02:11:54Z",
+      "side": 1,
+      "message": "Yeah \"bufio.NewWriter\" here is no good, but you can put it higher in \"getJsonLoggerFactory\":\n\nfunc (lc *config) getJsonLoggerFactory() func(context.Context) logging.Logger {\n        bufWriter :\u003d bufio.NewWriter(lc.Out)\n\treturn func(c context.Context) logging.Logger {\n\t\treturn \u0026jsonLogger{\n\t\t\tctx: c,\n                        out: bufWriter,\n                }\n        }\n}\n\nActually I don\u0027t see much point for \"config\" either, since it\u0027s only one value.",
+      "parentUuid": "845d3454_e60c79c1",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
