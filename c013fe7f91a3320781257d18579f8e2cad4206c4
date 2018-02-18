@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dde8b56b_98a7f164",
+        "filename": "buildbucket/client/cmd/buildbucket/builders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-18T21:46:33Z",
+      "side": 0,
+      "message": "this was incorrect, and it panics in 1.10 in reflect guts with a message \"trying to write to an un-exported field\" (or something like that) in json.Unmarshal",
+      "range": {
+        "startLine": 169,
+        "startChar": 1,
+        "endLine": 169,
+        "endChar": 10
+      },
+      "revId": "c013fe7f91a3320781257d18579f8e2cad4206c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
