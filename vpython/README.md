@@ -184,17 +184,15 @@ wheel {
 }
 ```
 
-This specification can be supplied in one of three ways:
+This specification can be supplied in one of four ways:
 
 * Explicitly, as a command-line option to `vpython` (`-vpython-spec`).
 * Implicitly, as a file alongside your entry point. For example, if you are
   running `test_runner.py`, `vpython` will look for `test_runner.py.vpython`
   next to it and load the environment from there.
-* Implicitly, inined in your main file. `vpython` will scan the main entry point
-  for sentinel text and, if present, load the specification from that.
-* Implicitly, through the `VPYTHON_VENV_SPEC_PATH` environment variable. This is
-  set by a `vpython` invocation so that chained invocations default to the same
-  environment.
+* Implicitly, inlined in your main file. `vpython` will scan the main entry
+  point for sentinel text and, if present, load the specification from that.
+* Implicitly, through the `VPYTHON_DEFAULT_SPEC` environment variable.
 
 ### Optimization and Caching
 
