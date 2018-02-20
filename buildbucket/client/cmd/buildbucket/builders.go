@@ -166,7 +166,7 @@ type builder struct {
 	ExecutionTimeoutSecs intOrString            `json:"builder_timeout_s"`
 }
 type slavePool struct {
-	slaveData `json:"slave_data"`
+	SlaveData slaveData `json:"slave_data"`
 	// there is also "slaves" property, but we don't need it.
 }
 type slaveData struct {
@@ -242,9 +242,9 @@ func (f *buildersFile) commonDimensions() (map[string]interface{}, error) {
 
 func (s *slavePool) dimensions() (map[string]interface{}, error) {
 	var os string
-	switch s.OS {
+	switch s.SlaveData.OS {
 	case "linux":
-		switch s.OSVersion {
+		switch s.SlaveData.OSVersion {
 		case "":
 			os = "Linux"
 		case "precise":
@@ -254,15 +254,15 @@ func (s *slavePool) dimensions() (map[string]interface{}, error) {
 		}
 
 	case "mac":
-		switch s.OSVersion {
+		switch s.SlaveData.OSVersion {
 		case "":
 			os = "Mac"
 		case "10.9", "10.10", "10.11":
-			os = "Mac-" + s.OSVersion
+			os = "Mac-" + s.SlaveData.OSVersion
 		}
 
 	case "win":
-		switch s.OSVersion {
+		switch s.SlaveData.OSVersion {
 		case "":
 			os = "Windows"
 		case "win7":
@@ -276,11 +276,11 @@ func (s *slavePool) dimensions() (map[string]interface{}, error) {
 		}
 	}
 	if os == "" {
-		return nil, fmt.Errorf("unsupported OS %q version %q", s.OS, s.OSVersion)
+		return nil, fmt.Errorf("unsupported OS %q version %q", s.SlaveData.OS, s.SlaveData.OSVersion)
 	}
 
 	var cpu string
-	switch s.Bitness {
+	switch s.SlaveData.Bitness {
 	case 0:
 		cpu = "x86"
 	case 32:
@@ -288,7 +288,7 @@ func (s *slavePool) dimensions() (map[string]interface{}, error) {
 	case 64:
 		cpu = "x86-64"
 	default:
-		return nil, fmt.Errorf("unsupported bitness: %d", s.Bitness)
+		return nil, fmt.Errorf("unsupported bitness: %d", s.SlaveData.Bitness)
 	}
 
 	return map[string]interface{}{
