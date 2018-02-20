@@ -94,6 +94,30 @@
       "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f031a411_26eb713d",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-20T18:21:44Z",
+      "side": 1,
+      "message": "Yep, basically did that, except without the bufio, because of the blob and lock.",
+      "parentUuid": "eb2e2465_5d76024a",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "7e1b8144db872399fb20769aed8fd2d3f5b97e95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
