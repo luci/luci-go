@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2f3d8f9e_243bf1bf",
+        "filename": "machine-db/client/cli/printer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-20T23:45:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61d8d3f5_951121d3",
+      "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "124a68aa_3c37c700",
         "filename": "machine-db/client/cli/printer.go",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4d84115_97edc062",
+        "filename": "machine-db/client/cli/printer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-20T23:45:35Z",
+      "side": 1,
+      "message": "There are no pipes, the columns are aligned using tabs only. Sample: https://paste.googleplex.com/5474673101897728.",
+      "parentUuid": "124a68aa_3c37c700",
+      "range": {
+        "startLine": 25,
+        "startChar": 26,
+        "endLine": 25,
+        "endChar": 29
+      },
+      "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +127,30 @@
       "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a723a95_089f572a",
+        "filename": "machine-db/client/cli/printer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-20T23:45:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7bd3ab46_3895fda0",
+      "range": {
+        "startLine": 38,
+        "startChar": 7,
+        "endLine": 38,
+        "endChar": 14
+      },
+      "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
