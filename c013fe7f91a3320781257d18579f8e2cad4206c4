@@ -22,6 +22,30 @@
       "revId": "c013fe7f91a3320781257d18579f8e2cad4206c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14970c38_5fe31db4",
+        "filename": "buildbucket/client/cmd/buildbucket/builders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-02-20T19:41:27Z",
+      "side": 0,
+      "message": "I\u0027m actually glad they fixed this; it was very magical/confusing before.",
+      "parentUuid": "dde8b56b_98a7f164",
+      "range": {
+        "startLine": 169,
+        "startChar": 1,
+        "endLine": 169,
+        "endChar": 10
+      },
+      "revId": "c013fe7f91a3320781257d18579f8e2cad4206c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
