@@ -25,7 +25,7 @@ import (
 var (
 	fixSkip        = regexp.MustCompile(`skipped \d+ frames`)
 	fixNum         = regexp.MustCompile(`^#\d+`)
-	fixTestingLine = regexp.MustCompile(`(testing/\w+.go):\d+`)
+	fixTestingLine = regexp.MustCompile(`(testing/\w+.go|\.\/_testmain\.go):\d+`)
 )
 
 func FixForTest(lines []string) []string {
@@ -37,7 +37,7 @@ func FixForTest(lines []string) []string {
 			l = fixSkip.ReplaceAllLiteralString(l, "skipped SOME frames")
 		}
 		l = fixNum.ReplaceAllLiteralString(l, "#?")
-		if strings.HasPrefix(l, "#? testing/") {
+		if strings.HasPrefix(l, "#? testing/") || strings.HasPrefix(l, "#? ./_testmain.go") {
 			l = fixTestingLine.ReplaceAllString(l, "$1:XXX")
 		}
 		lines[i] = l

@@ -120,6 +120,6 @@ func ExampleAnnotate() {
 	// #? testing/example.go:XXX - testing.runExample()
 	// #? testing/example.go:XXX - testing.runExamples()
 	// #? testing/testing.go:XXX - testing.(*M).Run()
-	// ... skipped SOME frames in pkg "_test"...
+	// #? ./_testmain.go:XXX - main.main()
 	// ... skipped SOME frames in pkg "runtime"...
 }

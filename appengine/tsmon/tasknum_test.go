@@ -130,7 +130,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 			Convey(fmt.Sprintf("Count: %d", count), func() {
 				// Request a bunch of task numbers.
 				for i := 0; i < count; i++ {
-					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%s", i))
+					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
 					So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
 				}
 
@@ -140,7 +140,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 				// Yep. Assigned.
 				numbers := map[int]struct{}{}
 				for i := 0; i < count; i++ {
-					num, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%s", i))
+					num, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
 					So(err, ShouldBeNil)
 					numbers[num] = struct{}{}
 				}
@@ -152,7 +152,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 
 				// Yep. Expired.
 				for i := 0; i < count; i++ {
-					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%s", i))
+					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
 					So(err, ShouldEqual, srvtsmon.ErrNoTaskNumber)
 				}
 			})

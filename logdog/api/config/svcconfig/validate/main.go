@@ -62,7 +62,7 @@ func (cmd *validateCommandRun) Run(_ subcommands.Application, args []string, _ s
 
 	d, err := ioutil.ReadFile(args[0])
 	if err != nil {
-		log.Fatalln("Failed to read input file: %v", err)
+		log.Fatalf("Failed to read input file: %v", err)
 	}
 
 	if err := proto.UnmarshalText(string(d), cmd.msg); err != nil {
