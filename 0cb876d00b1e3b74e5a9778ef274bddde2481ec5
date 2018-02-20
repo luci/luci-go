@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61d8d3f5_951121d3",
+        "filename": "machine-db/client/cli/printer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-20T16:00:06Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "124a68aa_3c37c700",
+        "filename": "machine-db/client/cli/printer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-20T16:00:06Z",
+      "side": 1,
+      "message": "pipe\n?",
+      "range": {
+        "startLine": 25,
+        "startChar": 26,
+        "endLine": 25,
+        "endChar": 29
+      },
+      "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0abb38b_463a4441",
+        "filename": "machine-db/client/cli/printer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-20T16:00:06Z",
+      "side": 1,
+      "message": "pipe?",
+      "range": {
+        "startLine": 30,
+        "startChar": 25,
+        "endLine": 30,
+        "endChar": 28
+      },
+      "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bd3ab46_3895fda0",
+        "filename": "machine-db/client/cli/printer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-20T16:00:06Z",
+      "side": 1,
+      "message": "i think you can use fmt.Fprint here and in other places in this func",
+      "range": {
+        "startLine": 38,
+        "startChar": 7,
+        "endLine": 38,
+        "endChar": 14
+      },
+      "revId": "0cb876d00b1e3b74e5a9778ef274bddde2481ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
