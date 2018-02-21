@@ -15,7 +15,6 @@
 package notify
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -23,27 +22,42 @@ import (
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
+	gitpb "go.chromium.org/luci/common/proto/git"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/server/auth"
 )
 
-// gitilesHistory is an implementation of a testutil.HistoryFunc intended to be used
+// HistoryFunc is a function that gets a list of commits from Gitiles for a
+// specific repository, between oldRevision and newRevision.
+type HistoryFunc func(c context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error)
+
+// gitilesHistory is an implementation of a HistoryFunc intended to be used
 // in production (not for testing).
-func gitilesHistory(c context.Context, repoURL, oldRevision, newRevision string) ([]gitiles.Commit, error) {
+func gitilesHistory(c context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
 	c, _ = context.WithTimeout(c, 30*time.Second)
+
 	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-	client := gitiles.Client{Client: &http.Client{Transport: transport}, Auth: true}
-	// With this range, if newCommit.Revision == oldRevision we'll get one commit.
-	treeish := fmt.Sprintf("%s~1..%s", oldRevision, newRevision)
-	commits, err := client.Log(c, repoURL, treeish)
+	client, err := gitiles.NewRESTClient(&http.Client{Transport: transport}, host, true)
 	if err != nil {
+		return nil, errors.Annotate(err, "creating Gitiles client").Err()
+	}
+
+	res, err := client.Log(c, &gitilespb.LogRequest{
+		Project: project,
+		// With this range, if newCommit.Revision == oldRevision,
+		// we'll get one commit.
+		Ancestor: oldRevision + "~1",
+		Treeish:  newRevision,
+	})
+	switch {
+	case err != nil:
 		return nil, errors.Annotate(err, "fetching commit from Gitiles").Err()
-	}
-	// Sanity check.
-	if len(commits) > 0 && commits[0].Commit != newRevision {
+	case len(res.Log) > 0 && res.Log[0].Id != newRevision: // Sanity check.
 		return nil, errors.Reason("gitiles returned inconsistent results").Err()
+	default:
+		return res.Log, nil
 	}
-	return commits, nil
 }
