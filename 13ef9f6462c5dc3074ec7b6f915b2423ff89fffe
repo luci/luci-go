@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba6275a9_fcaedf67",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 563,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T04:43:52Z",
+      "side": 1,
+      "message": "id?",
+      "range": {
+        "startLine": 563,
+        "startChar": 18,
+        "endLine": 563,
+        "endChar": 22
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9498caf_aaa6f0ca",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 569,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T04:43:52Z",
+      "side": 1,
+      "message": "AppID may return a string with \":\" which will change the way pattern is parsed. Please use https://godoc.org/go.chromium.org/luci/common/data/text/pattern#Exact",
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17bc6869_50001d21",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T04:43:52Z",
+      "side": 1,
+      "message": "doesn\u0027t",
+      "range": {
+        "startLine": 574,
+        "startChar": 12,
+        "endLine": 574,
+        "endChar": 30
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2200ebe_4d6846d1",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T04:43:52Z",
+      "side": 1,
+      "message": "comment should start with ValidateFunc",
+      "range": {
+        "startLine": 574,
+        "startChar": 3,
+        "endLine": 574,
+        "endChar": 11
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f59669d_8b68a553",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T04:43:52Z",
+      "side": 1,
+      "message": "nit: maybe remove, there is \"and\" in the same sentence later",
+      "range": {
+        "startLine": 575,
+        "startChar": 3,
+        "endLine": 575,
+        "endChar": 7
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bf866bd_7d66acae",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T04:43:52Z",
+      "side": 1,
+      "message": "should we maybe have just a variable of type valdiation.Validator in package common? then we\u0027d have one exported symbol less and this code would be shorter",
+      "range": {
+        "startLine": 77,
+        "startChar": 52,
+        "endLine": 80,
+        "endChar": 2
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
