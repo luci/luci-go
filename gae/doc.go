@@ -47,60 +47,6 @@
 //   - filter/*    extra filter functionality for the services, agnostic to the
 //                 underlying implementation.
 //
-// TLDR
-//
-// In production, do:
-//
-//   import (
-//     "fmt"
-//     "net/http"
-//
-//     "go.chromium.org/gae/impl/prod"
-//     "go.chromium.org/gae/service/datastore"
-//     "golang.org/x/net/context"
-//   )
-//
-//   func handler(w http.ResponseWriter, r *http.Request) {
-//     c := prod.UseRequest(r)
-//     // add production filters, etc. here
-//     innerHandler(c, w)
-//   }
-//
-//   type CoolStruct struct {
-//     ID `gae:"$id"`
-//
-//     Value string
-//   }
-//
-//   func innerHandler(c context.Context, w http.ResponseWriter) {
-//     obj := &CoolStruct{Value: "hello"}
-//     if err := rds.Put(c, obj); err != nil {
-//       http.Error(w, err.String(), http.StatusInternalServerError)
-//     }
-//     fmt.Fprintf(w, "I wrote: %s", ds.KeyForObj(obj))
-//   }
-//
-// And in your test do:
-//
-//   import (
-//     "testing"
-//     "fmt"
-//     "net/http"
-//
-//     "go.chromium.org/gae/impl/memory"
-//     "go.chromium.org/gae/service/datastore"
-//     "golang.org/x/net/context"
-//   )
-//
-//   func TestHandler(t *testing.T) {
-//     t.Parallel()
-//     c := memory.Use(context.Background())
-//     // use datastore here to monkey with the database, install testing
-//     // filters like featureBreaker to test error conditions in innerHandler,
-//     // etc.
-//     innerHandler(c, ...)
-//   }
-//
 // Service Definitions
 //
 // A service defintion lives under the `service` subfolder, and defines the
@@ -166,30 +112,6 @@
 // These implementations just panic with an appropriate message, depending on
 // which API method was called. They're useful to embed in filter or service
 // implementations as stubs while you're implementing the filter.
-//
-// Usage
-//
-// You will typically access one of the service interfaces in your code like:
-//   // This is the 'production' code
-//   func HTTPHandler(r *http.Request) {
-//     c := prod.Use(appengine.NewContext(r))
-//     CoolFunc(c)
-//   }
-//
-//   // This is the 'testing' code
-//   func TestCoolFunc(t *testing.T) {
-//     c := memory.Use(context.Background())
-//     CoolFunc(c)
-//   }
-//
-//   func CoolFunc(c context.Context, ...) {
-//     SomeOtherFunction(c, ...)
-//
-//     // because you might need to:
-//     ds.RunInTransaction(c, func (c context.Context) error {
-//       SomeOtherFunction(c, ...)  // c contains transactional versions of everything
-//     }, nil)
-//   }
 //
 // Filters
 //

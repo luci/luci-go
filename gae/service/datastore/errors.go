@@ -18,20 +18,23 @@ import (
 	"fmt"
 	"reflect"
 
-	"go.chromium.org/gae"
-
 	"go.chromium.org/luci/common/errors"
 
 	"google.golang.org/appengine/datastore"
 )
+
+type stopErr struct{}
+
+func (stopErr) Error() string { return "stop iteration" }
 
 // These errors are returned by various datastore.Interface methods.
 var (
 	ErrNoSuchEntity          = datastore.ErrNoSuchEntity
 	ErrConcurrentTransaction = datastore.ErrConcurrentTransaction
 
-	// Stop is an alias for "go.chromium.org/gae".Stop
-	Stop = gae.Stop
+	// Stop is understood by various services to stop iterative processes. Examples
+	// include datastore.Interface.Run's callback.
+	Stop = stopErr{}
 )
 
 // MakeErrInvalidKey returns an errors.Annotator instance that wraps an invalid
