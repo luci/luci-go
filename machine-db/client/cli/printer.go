@@ -19,6 +19,8 @@ import (
 	"io"
 	"os"
 	"text/tabwriter"
+
+	"go.chromium.org/luci/machine-db/api/common/v1"
 )
 
 // printer writes rows of tab-separated columns.
@@ -32,7 +34,9 @@ func (p *printer) Row(args ...interface{}) {
 		if i > 0 {
 			fmt.Fprint(p, "\t")
 		}
-		switch arg.(type) {
+		switch a := arg.(type) {
+		case common.State:
+			fmt.Fprint(p, a.Name())
 		default:
 			fmt.Fprint(p, arg)
 		}
@@ -43,7 +47,7 @@ func (p *printer) Row(args ...interface{}) {
 // newPrinter returns a printer.
 func newPrinter(w io.Writer) *printer {
 	return &printer{
-		tabwriter.NewWriter(w, 0, 8, 0, '\t', 0),
+		tabwriter.NewWriter(w, 0, 8, 4, '\t', 0),
 	}
 }
 
