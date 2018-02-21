@@ -24,11 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printDatacenters prints datacenter data to stdout in tab-separated columns.
+func printDatacenters(showHeaders bool, datacenters ...*crimson.Datacenter) {
+	if len(datacenters) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "Description")
+		}
+		for _, dc := range datacenters {
+			p.Row(dc.Name, dc.Description)
+		}
+	}
+}
+
 // GetDatacentersCmd is the command to get datacenters.
 type GetDatacentersCmd struct {
 	subcommands.CommandRunBase
-	req     crimson.ListDatacentersRequest
-	headers bool
+	req crimson.ListDatacentersRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get datacenters.
@@ -40,16 +54,7 @@ func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env 
 		errors.Log(ctx, err)
 		return 1
 	}
-	if len(resp.Datacenters) > 0 {
-		p := newStdoutPrinter()
-		defer p.Flush()
-		if c.headers {
-			p.Row("Name", "Description")
-		}
-		for _, dc := range resp.Datacenters {
-			p.Row(dc.Name, dc.Description)
-		}
-	}
+	printDatacenters(c.f.showHeaders, resp.Datacenters...)
 	return 0
 }
 
@@ -62,7 +67,7 @@ func getDatacentersCmd() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDatacentersCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a datacenter to filter by. Can be specified multiple times.")
-			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

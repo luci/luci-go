@@ -24,11 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printRacks prints rack data to stdout in tab-separated columns.
+func printRacks(showHeaders bool, racks ...*crimson.Rack) {
+	if len(racks) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "Datacenter", "Description", "State")
+		}
+		for _, r := range racks {
+			p.Row(r.Name, r.Datacenter, r.Description, r.State)
+		}
+	}
+}
+
 // GetRacksCmd is the command to get racks.
 type GetRacksCmd struct {
 	subcommands.CommandRunBase
-	req     crimson.ListRacksRequest
-	headers bool
+	req crimson.ListRacksRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get racks.
@@ -40,16 +54,7 @@ func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcom
 		errors.Log(ctx, err)
 		return 1
 	}
-	if len(resp.Racks) > 0 {
-		p := newStdoutPrinter()
-		defer p.Flush()
-		if c.headers {
-			p.Row("Name", "Datacenter", "Description")
-		}
-		for _, rack := range resp.Racks {
-			p.Row(rack.Name, rack.Datacenter, rack.Description)
-		}
-	}
+	printRacks(c.f.showHeaders, resp.Racks...)
 	return 0
 }
 
@@ -63,7 +68,7 @@ func getRacksCmd() *subcommands.Command {
 			cmd := &GetRacksCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
-			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

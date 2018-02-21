@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printIPs prints IP address data to stdout in tab-separated columns.
+func printIPs(showHeaders bool, ips ...*crimson.IP) {
+	if len(ips) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("IPv4", "VLAN", "Hostname")
+		}
+		for _, ip := range ips {
+			p.Row(ip.Ipv4, ip.Vlan, ip.Hostname)
+		}
+	}
+}
+
 // GetIPsCmd is the command to get free IP addresses.
 type GetIPsCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListFreeIPsRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get free IP addresses.
@@ -42,8 +54,7 @@ func (c *GetIPsCmd) Run(app subcommands.Application, args []string, env subcomma
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printIPs(c.f.showHeaders, resp.Ips...)
 	return 0
 }
 
@@ -57,6 +68,7 @@ func getIPsCmd() *subcommands.Command {
 			cmd := &GetIPsCmd{}
 			cmd.Flags.Int64Var(&cmd.req.Vlan, "vlan", 0, "VLAN to get free IP addresses on.")
 			cmd.Flags.Var(flag.Int32(&cmd.req.PageSize), "n", "The number of free IP addresses to get.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

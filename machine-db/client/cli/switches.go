@@ -24,11 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printSwitches prints switch data to stdout in tab-separated columns.
+func printSwitches(showHeaders bool, switches ...*crimson.Switch) {
+	if len(switches) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "Ports", "Rack", "Datacenter", "Description", "State")
+		}
+		for _, s := range switches {
+			p.Row(s.Name, s.Ports, s.Rack, s.Datacenter, s.Description, s.State)
+		}
+	}
+}
+
 // GetSwitchesCmd is the command to get switches.
 type GetSwitchesCmd struct {
 	subcommands.CommandRunBase
-	req     crimson.ListSwitchesRequest
-	headers bool
+	req crimson.ListSwitchesRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get switches.
@@ -40,16 +54,7 @@ func (c *GetSwitchesCmd) Run(app subcommands.Application, args []string, env sub
 		errors.Log(ctx, err)
 		return 1
 	}
-	if len(resp.Switches) > 0 {
-		p := newStdoutPrinter()
-		defer p.Flush()
-		if c.headers {
-			p.Row("Name", "Rack", "Datacenter", "Description")
-		}
-		for _, s := range resp.Switches {
-			p.Row(s.Name, s.Rack, s.Datacenter, s.Description)
-		}
-	}
+	printSwitches(c.f.showHeaders, resp.Switches...)
 	return 0
 }
 
@@ -64,7 +69,7 @@ func getSwitchesCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a switch to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
-			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
