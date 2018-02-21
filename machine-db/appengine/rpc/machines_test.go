@@ -159,14 +159,14 @@ func TestListMachines(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		columns := []string{"m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
+		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-				FROM machines m, platforms p, racks r
-				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r, datacenters d
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
 			`
 			req := &crimson.ListMachinesRequest{
 				Names: []string{"machine"},
@@ -180,9 +180,9 @@ func TestListMachines(t *testing.T) {
 
 		Convey("empty request", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-				FROM machines m, platforms p, racks r
-				WHERE m.platform_id = p.id AND m.rack_id = r.id$
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r, datacenters d
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id$
 			`
 			req := &crimson.ListMachinesRequest{}
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -194,9 +194,9 @@ func TestListMachines(t *testing.T) {
 
 		Convey("empty response", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-				FROM machines m, platforms p, racks r
-				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r, datacenters d
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
 			`
 			req := &crimson.ListMachinesRequest{
 				Names: []string{"machine"},
@@ -210,15 +210,15 @@ func TestListMachines(t *testing.T) {
 
 		Convey("non-empty", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-				FROM machines m, platforms p, racks r
-				WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?,\?\)$
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r, datacenters d
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?,\?\)$
 			`
 			req := &crimson.ListMachinesRequest{
 				Names: []string{"machine 1", "machine 2"},
 			}
-			rows.AddRow(req.Names[0], "platform 1", "rack 1", "description 1", "", "", "", 0)
-			rows.AddRow(req.Names[1], "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
+			rows.AddRow(req.Names[0], "platform 1", "rack 1", "datacenter 1", "description 1", "", "", "", 0)
+			rows.AddRow(req.Names[1], "platform 2", "rack 2", "datacenter 2", "description 2", "", "", "", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Names[1]).WillReturnRows(rows)
 			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
@@ -227,12 +227,14 @@ func TestListMachines(t *testing.T) {
 					Name:        req.Names[0],
 					Platform:    "platform 1",
 					Rack:        "rack 1",
+					Datacenter:  "datacenter 1",
 					Description: "description 1",
 				},
 				{
 					Name:        req.Names[1],
 					Platform:    "platform 2",
 					Rack:        "rack 2",
+					Datacenter:  "datacenter 2",
 					Description: "description 2",
 					State:       common.State_SERVING,
 				},
@@ -242,13 +244,13 @@ func TestListMachines(t *testing.T) {
 
 		Convey("ok", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-				FROM machines m, platforms p, racks r
-				WHERE m.platform_id = p.id AND m.rack_id = r.id$
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				FROM machines m, platforms p, racks r, datacenters d
+				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id$
 			`
 			req := &crimson.ListMachinesRequest{}
-			rows.AddRow("machine 1", "platform 1", "rack 1", "description 1", "", "", "", 0)
-			rows.AddRow("machine 2", "platform 2", "rack 2", "description 2", "", "", "", common.State_SERVING)
+			rows.AddRow("machine 1", "platform 1", "rack 1", "datacenter 1", "description 1", "", "", "", 0)
+			rows.AddRow("machine 2", "platform 2", "rack 2", "datacenter 2", "description 2", "", "", "", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
@@ -257,12 +259,14 @@ func TestListMachines(t *testing.T) {
 					Name:        "machine 1",
 					Platform:    "platform 1",
 					Rack:        "rack 1",
+					Datacenter:  "datacenter 1",
 					Description: "description 1",
 				},
 				{
 					Name:        "machine 2",
 					Platform:    "platform 2",
 					Rack:        "rack 2",
+					Datacenter:  "datacenter 2",
 					Description: "description 2",
 					State:       common.State_SERVING,
 				},
@@ -278,11 +282,11 @@ func TestUpdateMachine(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT m.name, p.name, r.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
-			FROM machines m, platforms p, racks r
-			WHERE m.platform_id = p.id AND m.rack_id = r.id AND m.name IN \(\?\)$
+			^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+			FROM machines m, platforms p, racks r, datacenters d
+			WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
 		`
-		columns := []string{"m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
+		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("update platform", func() {
@@ -302,7 +306,7 @@ func TestUpdateMachine(t *testing.T) {
 					"platform",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -335,7 +339,7 @@ func TestUpdateMachine(t *testing.T) {
 					"rack",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.Rack, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -368,7 +372,7 @@ func TestUpdateMachine(t *testing.T) {
 					"state",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.State, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -403,7 +407,7 @@ func TestUpdateMachine(t *testing.T) {
 					"state",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Rack, machine.State, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -454,6 +458,17 @@ func TestValidateMachineForCreation(t *testing.T) {
 			State:    common.State_FREE,
 		})
 		So(err, ShouldErrLike, "rack is required and must be non-empty")
+	})
+
+	Convey("datacenter specified", t, func() {
+		err := validateMachineForCreation(&crimson.Machine{
+			Name:       "name",
+			Rack:       "rack",
+			Datacenter: "datacenter",
+			Platform:   "platform",
+			State:      common.State_FREE,
+		})
+		So(err, ShouldErrLike, "datacenter must not be specified, use rack instead")
 	})
 
 	Convey("state unspecified", t, func() {
@@ -582,6 +597,27 @@ func TestValidateMachineForUpdate(t *testing.T) {
 			},
 		})
 		So(err, ShouldErrLike, "rack is required and must be non-empty")
+	})
+
+	Convey("datacenter unspecified", t, func() {
+		err := validateMachineForUpdate(&crimson.Machine{
+			Name:       "machine",
+			Rack:       "rack",
+			Datacenter: "datacenter",
+			Platform:   "platform",
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"platform",
+				"rack",
+				"datacenter",
+				"state",
+				"description",
+				"asset_tag",
+				"service_tag",
+				"deployment_ticket",
+			},
+		})
+		So(err, ShouldErrLike, "datacenter cannot be updated, update rack instead")
 	})
 
 	Convey("state unspecified", t, func() {
