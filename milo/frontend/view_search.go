@@ -46,11 +46,11 @@ func searchHandler(c *router.Context) {
 
 	err := parallel.FanOutIn(func(ch chan<- func() error) {
 		ch <- func() (err error) {
-			mBuildbot, err = buildbot.GetAllBuilders(c.Context)
+			mBuildbot, err = buildbot.CIService(c.Context)
 			return err
 		}
 		ch <- func() (err error) {
-			mBuildbucket, err = buildbucket.GetAllBuilders(c.Context)
+			mBuildbucket, err = buildbucket.CIService(c.Context)
 			return err
 		}
 	})
