@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printMachines prints machine data to stdout in tab-separated columns.
+func printMachines(machines []*crimson.Machine, showHeaders bool) {
+	if len(machines) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "Platform", "Rack", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "State")
+		}
+		for _, m := range machines {
+			p.Row(m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
+		}
+	}
+}
+
 // AddMachineCmd is the command to add a machine.
 type AddMachineCmd struct {
 	subcommands.CommandRunBase
 	machine crimson.Machine
+	headers bool
 }
 
 // Run runs the command to add a machine.
@@ -46,8 +58,7 @@ func (c *AddMachineCmd) Run(app subcommands.Application, args []string, env subc
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printMachines([]*crimson.Machine{resp}, c.headers)
 	return 0
 }
 
@@ -67,6 +78,7 @@ func addMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
 			return cmd
 		},
 	}
@@ -83,13 +95,11 @@ func (c *DeleteMachineCmd) Run(app subcommands.Application, args []string, env s
 	ctx := cli.GetContext(app, c, env)
 	// TODO(smut): Validate required fields client-side.
 	client := getClient(ctx)
-	resp, err := client.DeleteMachine(ctx, &c.req)
+	_, err := client.DeleteMachine(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
 	return 0
 }
 
@@ -111,6 +121,7 @@ func deleteMachineCmd() *subcommands.Command {
 type EditMachineCmd struct {
 	subcommands.CommandRunBase
 	machine crimson.Machine
+	headers bool
 }
 
 // Run runs the command to edit a machine.
@@ -135,8 +146,7 @@ func (c *EditMachineCmd) Run(app subcommands.Application, args []string, env sub
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printMachines([]*crimson.Machine{resp}, c.headers)
 	return 0
 }
 
@@ -156,6 +166,7 @@ func editMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
 			return cmd
 		},
 	}
@@ -165,6 +176,7 @@ func editMachineCmd() *subcommands.Command {
 type GetMachinesCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListMachinesRequest
+	headers bool
 }
 
 // Run runs the command to get machines.
@@ -176,8 +188,7 @@ func (c *GetMachinesCmd) Run(app subcommands.Application, args []string, env sub
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printMachines(resp.Machines, c.headers)
 	return 0
 }
 
@@ -194,6 +205,7 @@ func getMachinesCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
+			cmd.Flags.BoolVar(&cmd.headers, "headers", false, "Show column headers.")
 			return cmd
 		},
 	}
