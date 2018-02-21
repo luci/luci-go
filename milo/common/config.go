@@ -26,7 +26,9 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	configInterface "go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -551,4 +553,36 @@ func GetConsolesByBuilderID(c context.Context, builderID string) ([]*Console, er
 	q := datastore.NewQuery("Console").Eq("Builders", builderID)
 	var consoles []*Console
 	return consoles, datastore.GetAll(c, q, &consoles)
+}
+
+// Config Validators go here.
+
+// ConfigPatterns implements validation.Validator.ConfigPatterns, and returns
+// a list of ConfigPatterns that this instance of Milo is responsible for validating.
+// In the Milo case, it is only responsible for validating the config matching the
+// instance's app name in a project config.
+func ConfigPatterns(c context.Context) []*validation.ConfigPattern {
+	cfgName := info.AppID(c) + ".cfg"
+	return []*validation.ConfigPattern{
+		{
+			pattern.MustParse("regex:projects/.*"),
+			pattern.MustParse(cfgName),
+		},
+	}
+}
+
+// Validate returns a function that implements Validation.Validator.Func
+// and takes a potential Milo config at path, validates it,
+// and writes the result into ctx.
+// The validation we do include:
+//
+// * Make sure the config is able to be unmarshalled.
+func ValidateFunc(ctx *validation.Context, configSet, path string, content []byte) {
+	cfgName := info.AppID(ctx.Context) + ".cfg"
+	if strings.HasPrefix(configSet, "projects/") && path == cfgName {
+		proj := config.Project{}
+		if err := proto.Unmarshal(content, &proj); err != nil {
+			ctx.Error(err)
+		}
+	}
 }
