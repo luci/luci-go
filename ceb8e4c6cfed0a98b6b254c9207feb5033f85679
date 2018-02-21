@@ -22,6 +22,30 @@
       "revId": "ceb8e4c6cfed0a98b6b254c9207feb5033f85679",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ed9017a_b7063229",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-21T22:06:39Z",
+      "side": 1,
+      "message": "I have it in this order for switches too. It\u0027s the rack that was chosen for the switch and the machine, at least from the database\u0027s perspective, so I have it first. And then the implied dc is next.\n\nHowever I could be convinced otherwise.",
+      "parentUuid": "14eff499_6ea42455",
+      "range": {
+        "startLine": 33,
+        "startChar": 37,
+        "endLine": 33,
+        "endChar": 51
+      },
+      "revId": "ceb8e4c6cfed0a98b6b254c9207feb5033f85679",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
