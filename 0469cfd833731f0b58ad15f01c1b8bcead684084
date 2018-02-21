@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61f24f9a_7c5eccfb",
+        "filename": "cipd/client/cipd/common/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-21T22:37:51Z",
+      "side": 1,
+      "message": "let\u0027s allow \u0027.\u0027 too, e.g. chromium has refs/tags/66.0.3350.10",
+      "range": {
+        "startLine": 39,
+        "startChar": 41,
+        "endLine": 39,
+        "endChar": 51
+      },
+      "revId": "0469cfd833731f0b58ad15f01c1b8bcead684084",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
