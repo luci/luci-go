@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65815e53_6526e5b9",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T02:00:12Z",
+      "side": 1,
+      "message": "consider\n\n  func printMachines(headers bool, machines ...*crimson.Machine)\n\nthen this would be\n\n  printMachines(c.headers, resp)\n\nbecause Go does not support function overloading, using ... instead of [] is often a good idea\n\nside-effect: order of headers and machines parameters corresponds to the order of output.",
+      "revId": "c33ca1f14af40dd9e8359245fcff8f736db5d112",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "195b0a3c_be264385",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-21T02:00:12Z",
+      "side": 1,
+      "message": "if you plan to add -headers to majority of commands, maybe add HeadersFlag struct, embedded in all commands that need -headers, and move this to HeadersFlag.Register() or smth like that",
+      "revId": "c33ca1f14af40dd9e8359245fcff8f736db5d112",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
