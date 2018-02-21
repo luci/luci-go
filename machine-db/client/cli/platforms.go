@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printPlatforms prints platform data to stdout in tab-separated columns.
+func printPlatforms(showHeaders bool, platforms ...*crimson.Platform) {
+	if len(platforms) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "Description")
+		}
+		for _, plat := range platforms {
+			p.Row(plat.Name, plat.Description)
+		}
+	}
+}
+
 // GetPlatformsCmd is the command to get platforms.
 type GetPlatformsCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListPlatformsRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get platforms.
@@ -42,8 +54,7 @@ func (c *GetPlatformsCmd) Run(app subcommands.Application, args []string, env su
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printPlatforms(c.f.showHeaders, resp.Platforms...)
 	return 0
 }
 
@@ -56,6 +67,7 @@ func getPlatformsCmd() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPlatformsCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a platform to filter by. Can be specified multiple times.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

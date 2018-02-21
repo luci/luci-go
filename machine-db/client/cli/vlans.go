@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printVLANs prints VLAN data to stdout in tab-separated columns.
+func printVLANs(showHeaders bool, vlans ...*crimson.VLAN) {
+	if len(vlans) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("ID", "Alias", "Description", "State")
+		}
+		for _, v := range vlans {
+			p.Row(v.Id, v.Alias, v.Description, v.State)
+		}
+	}
+}
+
 // GetVLANsCmd is the command to get VLANs.
 type GetVLANsCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListVLANsRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get VLANs.
@@ -42,8 +54,7 @@ func (c *GetVLANsCmd) Run(app subcommands.Application, args []string, env subcom
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printVLANs(c.f.showHeaders, resp.Vlans...)
 	return 0
 }
 
@@ -57,6 +68,7 @@ func getVLANsCmd() *subcommands.Command {
 			cmd := &GetVLANsCmd{}
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Ids), "id", "ID of a VLAN to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Aliases), "alias", "Alias of a VLAN to filter by. Can be specified multiple times.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

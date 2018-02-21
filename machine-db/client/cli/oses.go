@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printOSes prints operating system data to stdout in tab-separated columns.
+func printOSes(showHeaders bool, oses ...*crimson.OS) {
+	if len(oses) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "Description")
+		}
+		for _, os := range oses {
+			p.Row(os.Name, os.Description)
+		}
+	}
+}
+
 // GetOSesCmd is the command to get operating systems.
 type GetOSesCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListOSesRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get operating systems.
@@ -42,8 +54,7 @@ func (c *GetOSesCmd) Run(app subcommands.Application, args []string, env subcomm
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printOSes(c.f.showHeaders, resp.Oses...)
 	return 0
 }
 
@@ -56,6 +67,7 @@ func getOSesCmd() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetOSesCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of an operating system to filter by. Can be specified multiple times.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
