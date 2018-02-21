@@ -28,8 +28,7 @@ func main() {
 	mathrand.SeedRandomly()
 	params := &cli.Parameters{
 		AuthOptions: chromeinfra.DefaultAuthOptions(),
-		// TODO(smut): Change to the production server.
-		Host: chromeinfra.MachineDatabaseDevHost,
+		Host:        chromeinfra.MachineDatabaseHost,
 	}
 	os.Exit(cli.Main(params, os.Args[1:]))
 }
