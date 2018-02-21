@@ -26,14 +26,13 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/luci_notify/config"
-	"go.chromium.org/luci/luci_notify/testutil"
 )
 
 var (
@@ -53,9 +52,9 @@ func getBuilderID(b *buildbucket.Build) string {
 	return fmt.Sprintf("buildbucket/%s/%s/%s", b.Project, b.Bucket, b.Builder)
 }
 
-func commitIndex(commits []gitiles.Commit, revision string) int {
+func commitIndex(commits []*gitpb.Commit, revision string) int {
 	for i, commit := range commits {
-		if commit.Commit == revision {
+		if commit.Id == revision {
 			return i
 		}
 	}
@@ -71,7 +70,7 @@ func commitIndex(commits []gitiles.Commit, revision string) int {
 // history is a function that contacts gitiles to obtain the git history for
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
-func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, history testutil.HistoryFunc) error {
+func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, history HistoryFunc) error {
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
 	notifiers, err := config.LookupNotifiers(c, build.Project, builderID)
