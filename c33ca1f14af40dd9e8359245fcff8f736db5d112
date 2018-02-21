@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7f9b1694_54f074ca",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-21T02:38:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65815e53_6526e5b9",
+      "revId": "c33ca1f14af40dd9e8359245fcff8f736db5d112",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "195b0a3c_be264385",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "c33ca1f14af40dd9e8359245fcff8f736db5d112",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b79e2e74_7c102777",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-21T02:38:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "195b0a3c_be264385",
+      "revId": "c33ca1f14af40dd9e8359245fcff8f736db5d112",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
