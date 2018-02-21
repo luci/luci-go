@@ -27,6 +27,9 @@ message Machine {
   string deployment_ticket = 7;
   // The state of this machine.
   common.State state = 8;
+  // The datacenter this machine belongs to.
+  // When creating a machine, omit this field. It will be inferred from the rack.
+  string datacenter = 9;
 }
 
 // A request to create a new machine in the database.
@@ -51,7 +54,8 @@ message ListMachinesRequest {
   repeated string racks = 3;
   // The states to filter returned machines on.
   repeated common.State states = 4;
-  // TODO(smut): Add the rest of the filters.
+  // The datacenters to filter returned machines on.
+  repeated string datacenters = 5;
 }
 
 // A response containing a list of machines in the database.

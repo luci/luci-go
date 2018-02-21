@@ -135,12 +135,23 @@ func deleteMachine(c context.Context, name string) error {
 
 // listMachines returns a slice of machines in the database.
 func listMachines(c context.Context, q database.QueryerContext, req *crimson.ListMachinesRequest) ([]*crimson.Machine, error) {
-	stmt := squirrel.Select("m.name", "p.name", "r.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state").
-		From("machines m, platforms p, racks r").
-		Where("m.platform_id = p.id").Where("m.rack_id = r.id")
+	stmt := squirrel.Select(
+		"m.name",
+		"p.name",
+		"r.name",
+		"d.name",
+		"m.description",
+		"m.asset_tag",
+		"m.service_tag",
+		"m.deployment_ticket",
+		"m.state",
+	)
+	stmt = stmt.From("machines m, platforms p, racks r, datacenters d").
+		Where("m.platform_id = p.id").Where("m.rack_id = r.id").Where("r.datacenter_id = d.id")
 	stmt = selectInString(stmt, "m.name", req.Names)
 	stmt = selectInString(stmt, "p.name", req.Platforms)
 	stmt = selectInString(stmt, "r.name", req.Racks)
+	stmt = selectInString(stmt, "d.name", req.Datacenters)
 	stmt = selectInState(stmt, "m.state", req.States)
 	query, args, err := stmt.ToSql()
 	if err != nil {
@@ -159,6 +170,7 @@ func listMachines(c context.Context, q database.QueryerContext, req *crimson.Lis
 			&m.Name,
 			&m.Platform,
 			&m.Rack,
+			&m.Datacenter,
 			&m.Description,
 			&m.AssetTag,
 			&m.ServiceTag,
@@ -257,6 +269,8 @@ func validateMachineForCreation(m *crimson.Machine) error {
 		return status.Error(codes.InvalidArgument, "platform is required and must be non-empty")
 	case m.Rack == "":
 		return status.Error(codes.InvalidArgument, "rack is required and must be non-empty")
+	case m.Datacenter != "":
+		return status.Error(codes.InvalidArgument, "datacenter must not be specified, use rack instead")
 	case m.State == common.State_STATE_UNSPECIFIED:
 		return status.Error(codes.InvalidArgument, "state is required")
 	default:
@@ -286,6 +300,8 @@ func validateMachineForUpdate(m *crimson.Machine, mask *field_mask.FieldMask) er
 			if m.Rack == "" {
 				return status.Error(codes.InvalidArgument, "rack is required and must be non-empty")
 			}
+		case "datacenter":
+			return status.Error(codes.InvalidArgument, "datacenter cannot be updated, update rack instead")
 		case "state":
 			if m.State == common.State_STATE_UNSPECIFIED {
 				return status.Error(codes.InvalidArgument, "state is required")

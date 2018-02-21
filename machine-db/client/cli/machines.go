@@ -30,10 +30,10 @@ func printMachines(showHeaders bool, machines ...*crimson.Machine) {
 		p := newStdoutPrinter()
 		defer p.Flush()
 		if showHeaders {
-			p.Row("Name", "Platform", "Rack", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "State")
+			p.Row("Name", "Platform", "Rack", "Datacenter", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "State")
 		}
 		for _, m := range machines {
-			p.Row(m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
+			p.Row(m.Name, m.Platform, m.Rack, m.Datacenter, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
 		}
 	}
 }
@@ -196,7 +196,7 @@ func (c *GetMachinesCmd) Run(app subcommands.Application, args []string, env sub
 // getMachinesCmd returns a command to get machines.
 func getMachinesCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-machines [-name <name>]... [-plat <plat>]... [-rack <rack>]... [-state <state>]",
+		UsageLine: "get-machines [-name <name>]... [-plat <plat>]... [-rack <rack>]... [-dc <dc>]... [-state <state>]...",
 		ShortDesc: "retrieves machines",
 		LongDesc:  "Retrieves machines matching the given names, platforms, racks, and states, or all machines if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
@@ -204,8 +204,8 @@ func getMachinesCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a machine to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Platforms), "plat", "Name of a platform to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
-			// TODO(smut): Add the other filters.
 			cmd.f.Register(cmd)
 			return cmd
 		},
