@@ -21,10 +21,22 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/common/v1"
 )
+
+// FormattingFlags contains common flags related to output formatting.
+type FormattingFlags struct {
+	showHeaders bool
+}
+
+// Register registers these formatting flags with the given command.
+func (f *FormattingFlags) Register(c subcommands.CommandRun) {
+	c.GetFlags().BoolVar(&f.showHeaders, "headers", false, "Show column headers.")
+}
 
 // getUpdateMask returns a *field_mask.FieldMask containing paths based on which flags have been set.
 func getUpdateMask(set *flag.FlagSet, paths map[string]string) *field_mask.FieldMask {
