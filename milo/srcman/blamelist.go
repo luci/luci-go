@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync/atomic"
 
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/base128"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
@@ -125,22 +125,22 @@ var whitelistDomains = stringset.NewFromSlice(
 func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool) (ok bool) {
 	logging.Infof(c, "populating git history in ManifestDiff")
 
-	var noauthClient *gitiles.Client
+	var noauthClient *http.Client
 	if t, err := auth.GetRPCTransport(c, auth.NoAuth); err != nil {
 		logging.WithError(err).Errorf(c, "getting NoAuth transport")
 	} else {
-		noauthClient = &gitiles.Client{Client: &http.Client{Transport: t}}
+		noauthClient = &http.Client{Transport: t}
 	}
 
-	var selfClient *gitiles.Client
+	var selfClient *http.Client
 	if t, err := auth.GetRPCTransport(c, auth.AsSelf); err != nil {
 		logging.WithError(err).Errorf(c, "getting AsSelf transport")
 	} else {
-		selfClient = &gitiles.Client{Client: &http.Client{Transport: t}, Auth: true}
+		selfClient = &http.Client{Transport: t}
 	}
 
 	if selfClient == nil && noauthClient == nil {
-		logging.Warningf(c, "could not build any gitiles.Clients, aborting")
+		logging.Warningf(c, "could not build any HTTP clients, aborting")
 		return
 	}
 
@@ -162,48 +162,43 @@ func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool)
 					continue
 				}
 
-				u, err := url.Parse(gitCheckout.RepoUrl)
+				project, host, err := gitiles.ParseRepoURL(gitCheckout.RepoUrl)
 				if err != nil {
-					logging.WithError(err).Warningf(c, "could not parse RepoUrl %q / %q", dirname, gitCheckout.RepoUrl)
+					logging.WithError(err).Warningf(c, "could not parse RepoURL %q for dir %q", gitCheckout.RepoUrl, dirname)
 					continue
 				}
 
-				if !strings.HasSuffix(u.Host, ".googlesource.com") {
-					logging.WithError(err).Warningf(c, "unsupported git host %q / %q", dirname, gitCheckout.RepoUrl)
+				if !strings.HasSuffix(host, ".googlesource.com") {
+					logging.WithError(err).Warningf(c, "unsupported git host %q for dir %q", gitCheckout.RepoUrl, dirname)
 					continue
 				}
 
 				ch <- func() error {
-					client := noauthClient
-					if whitelistDomains.Has(u.Host) && selfClient != nil {
-						client = selfClient
+					httpClient := noauthClient
+					if whitelistDomains.Has(host) && selfClient != nil {
+						httpClient = selfClient
 					}
-
-					opts := []gitiles.LogOption{gitiles.Limit(100)}
-					if withFiles {
-						opts = append(opts, gitiles.WithTreeDiff)
-					}
-
-					treeish := fmt.Sprintf(
-						"%s..%s",
-						diff.Old.Directories[dirname].GitCheckout.Revision,
-						diff.New.Directories[dirname].GitCheckout.Revision,
-					)
-					log, err := client.Log(c, gitCheckout.RepoUrl, treeish, opts...)
+					client, err := gitiles.NewRESTClient(httpClient, host, httpClient == selfClient)
 					if err != nil {
-						logging.WithError(err).Warningf(c, "fetching log - %q", dirname)
+						logging.WithError(err).Warningf(c, "creating gitiles client")
 						atomic.StoreUint32(&hadErrors, 1)
 						return nil
 					}
 
 					// TODO(nodir): use git package to share cache.
-					gitCheckout.History, err = gitiles.LogProto(log)
+					res, err := client.Log(c, &gitilespb.LogRequest{
+						Project:  project,
+						Ancestor: diff.Old.Directories[dirname].GitCheckout.Revision,
+						Treeish:  diff.New.Directories[dirname].GitCheckout.Revision,
+						TreeDiff: withFiles,
+						PageSize: 100,
+					})
 					if err != nil {
-						logging.WithError(err).Warningf(c, "protoizing log - %q", dirname)
+						logging.WithError(err).Warningf(c, "fetching log - %q", dirname)
 						atomic.StoreUint32(&hadErrors, 1)
 						return nil
 					}
-
+					gitCheckout.History = res.Log
 					return nil
 				}
 			}
