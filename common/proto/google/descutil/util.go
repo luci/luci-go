@@ -316,6 +316,8 @@ func At(descProto proto.Message, path []int32) (interface{}, error) {
 // field, e.g. &myFieldDescriptorProto.Name.
 //
 // IndexSourceCodeInfo can be used to retrieve comments.
+//
+// Does not support whole-slice locations.
 func IndexSourceCodeInfo(f *pb.FileDescriptorProto) (map[interface{}]*pb.SourceCodeInfo_Location, error) {
 	if f.SourceCodeInfo == nil {
 		return nil, nil
@@ -323,10 +325,45 @@ func IndexSourceCodeInfo(f *pb.FileDescriptorProto) (map[interface{}]*pb.SourceC
 	ret := make(map[interface{}]*pb.SourceCodeInfo_Location, len(f.SourceCodeInfo.Location))
 	for _, loc := range f.SourceCodeInfo.Location {
 		ptr, err := At(f, loc.Path)
-		if err != nil {
+		switch v := reflect.ValueOf(ptr); {
+		case err != nil:
 			return nil, err
+		case !v.IsValid():
+		case v.Kind() == reflect.Slice:
+			// A slice cannot be used as a map key.
+			// Whole slice declarations are not supported.
+		default:
+			if oldLoc := ret[ptr]; oldLoc != nil {
+				fmt.Printf("key %v. value %v => %v\n", ptr, oldLoc, loc)
+			}
+			ret[ptr] = loc
 		}
-		ret[ptr] = loc
 	}
 	return ret, nil
 }
+
+// // IndexedSourceCodeInfo maps proto descriptors to SourceCodeInfo_Location
+// // pointers.
+// type IndexedSourceCodeInfo struct {
+// 	m map[interface{}]*pb.SourceCodeInfo_Location
+// }
+
+// func (i *IndexedSourceCodeInfo) Set(desc interface{}, loc *SourceCodeInfo_Location) {
+// 	key := desc
+// 	if _, ok := desc.(*proto.Message); !ok {
+// 		panic("desc is not a protobuf message")
+// 	} else if v := reflect.ValueOf(key); v.Kind == reflect.Slice {
+// 		// slices cannot be used a map key.
+// 		// Use their first element instead.
+// 		key = v.Index(0)
+
+// 		// We don't expect key to be slice.
+// 	}
+
+// }
+
+// // Get returns source code info given a descriptor proto pointer
+// // or a slice of descriptor protos.
+// func (i *IndexedSourceCodeInfo) Get(desc interface{}) {
+
+// }
