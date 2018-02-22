@@ -71,13 +71,67 @@ func addVMCmd() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddVMCmd{}
 			cmd.Flags.StringVar(&cmd.vm.Name, "name", "", "The name of this VM on the network. Required and must be unique per VLAN within the database.")
-			cmd.Flags.StringVar(&cmd.vm.Host, "host", "", "The physical host backing this host. Required and must be the name of a physical host returned by get-hosts.")
+			cmd.Flags.StringVar(&cmd.vm.Host, "host", "", "The physical host backing this VM. Required and must be the name of a physical host returned by get-hosts.")
 			cmd.Flags.Int64Var(&cmd.vm.HostVlan, "vlan", 0, "The VLAN the physical host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.Var(StateFlag(&cmd.vm.State), "state", "The state of this VM. Required and must be the name of a state returned by get-states.")
 			cmd.Flags.StringVar(&cmd.vm.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
 			cmd.Flags.StringVar(&cmd.vm.Ipv4, "ipv4", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
 			cmd.Flags.StringVar(&cmd.vm.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.vm.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
+			cmd.f.Register(cmd)
+			return cmd
+		},
+	}
+}
+
+// EditVMCmd is the command to edit a VM.
+type EditVMCmd struct {
+	subcommands.CommandRunBase
+	vm crimson.VM
+	f  FormattingFlags
+}
+
+// Run runs the command to edit a physical host.
+func (c *EditVMCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	// TODO(smut): Validate required fields client-side.
+	req := &crimson.UpdateVMRequest{
+		Vm: &c.vm,
+		UpdateMask: getUpdateMask(&c.Flags, map[string]string{
+			"host":  "host",
+			"hvlan": "host_vlan",
+			"os":    "os",
+			"state": "state",
+			"desc":  "description",
+			"tick":  "deployment_ticket",
+		}),
+	}
+	client := getClient(ctx)
+	resp, err := client.UpdateVM(ctx, req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	printVMs(c.f.showHeaders, resp)
+	return 0
+}
+
+// editVMCmd returns a command to edit a VM.
+func editVMCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "edit-vm -name <name> -vlan <id> [-host <machine> -hvlan <id>] [-os <os>] [-state <state>] [-desc <description>] [-tick <deployment ticket>]",
+		ShortDesc: "edits a VM",
+		LongDesc:  "Edits a VM in the database.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &EditVMCmd{}
+			cmd.Flags.StringVar(&cmd.vm.Name, "name", "", "The name of this VM on the network. Required and must be the name of a VM returned by get-vms.")
+			cmd.Flags.Int64Var(&cmd.vm.Vlan, "vlan", 0, "The VLAN this VM belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
+			cmd.Flags.StringVar(&cmd.vm.Host, "host", "", "The physical host backing this VM. Must be the name of a physical host returned by get-hosts.")
+			cmd.Flags.Int64Var(&cmd.vm.HostVlan, "hvlan", 0, "The VLAN the physical host belongs to. Must be the ID of a VLAN returned by get-vlans.")
+			cmd.Flags.StringVar(&cmd.vm.Os, "os", "", "The operating system this VM is running. Must be the name of an operating system returned by get-oses.")
+			cmd.Flags.Var(StateFlag(&cmd.vm.State), "state", "The state of this VM. Must be a state returned by get-states.")
+			cmd.Flags.StringVar(&cmd.vm.Description, "desc", "", "A description of this VM.")
+			cmd.Flags.StringVar(&cmd.vm.DeploymentTicket, "tick", "", "The deployment ticket associated with this VM.")
 			cmd.f.Register(cmd)
 			return cmd
 		},

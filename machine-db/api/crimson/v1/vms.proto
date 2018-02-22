@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package crimson;
 
+import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
 // A VM in the database.
@@ -53,4 +54,12 @@ message ListVMsResponse {
   // The VMs matching this request.
   repeated VM vms = 1;
   // TODO(smut): Support page tokens.
+}
+
+// A request to update a VM in the database.
+message UpdateVMRequest {
+  // The VM to update in the database.
+  VM vm = 1;
+  // The fields to update in the VM.
+  google.protobuf.FieldMask update_mask = 2;
 }
