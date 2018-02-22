@@ -22,6 +22,30 @@
       "revId": "e534e8def83197a0108c779799113512a9bd96c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "493b65ab_a30d3341",
+        "filename": "machine-db/client/cli/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-22T03:09:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef56533f_1c0a33f9",
+      "range": {
+        "startLine": 33,
+        "startChar": 51,
+        "endLine": 33,
+        "endChar": 67
+      },
+      "revId": "e534e8def83197a0108c779799113512a9bd96c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
