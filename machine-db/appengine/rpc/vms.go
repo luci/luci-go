@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -51,6 +52,15 @@ func (*Service) ListVMs(c context.Context, req *crimson.ListVMsRequest) (*crimso
 	return &crimson.ListVMsResponse{
 		Vms: vms,
 	}, nil
+}
+
+// UpdateVM handles a request to update an existing VM.
+func (*Service) UpdateVM(c context.Context, req *crimson.UpdateVMRequest) (*crimson.VM, error) {
+	vm, err := updateVM(c, req.Vm, req.UpdateMask)
+	if err != nil {
+		return nil, err
+	}
+	return vm, nil
 }
 
 // createVM creates a new VM in the database.
@@ -168,6 +178,81 @@ func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsR
 	return vms, nil
 }
 
+// updateVM updates an existing VM in the database.
+func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (_ *crimson.VM, err error) {
+	if err := validateVMForUpdate(v, mask); err != nil {
+		return nil, err
+	}
+	stmt := squirrel.Update("vms")
+	updatedHost := false
+	for _, path := range mask.Paths {
+		switch path {
+		case "host", "host_vlan":
+			if !updatedHost {
+				stmt = stmt.Set("physical_host_id", squirrel.Expr("(SELECT id FROM physical_hosts WHERE hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?))", v.Host, v.HostVlan))
+			}
+			updatedHost = true
+		case "os":
+			stmt = stmt.Set("os_id", squirrel.Expr("(SELECT id FROM oses WHERE name = ?)", v.Os))
+		case "state":
+			stmt = stmt.Set("state", v.State)
+		case "description":
+			stmt = stmt.Set("description", v.Description)
+		case "deployment_ticket":
+			stmt = stmt.Set("deployment_ticket", v.DeploymentTicket)
+		}
+	}
+	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", v.Name, v.Vlan)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	tx, err := database.Begin(c)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+	}
+	defer func() {
+		if err != nil {
+			if e := tx.Rollback(); e != nil {
+				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
+			}
+		}
+	}()
+	_, err = tx.ExecContext(c, query, args...)
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'physical_host_id'"):
+			// e.g. "Error 1048: Column 'physical_host_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", v.Host, v.HostVlan)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
+			// e.g. "Error 1048: Column 'os_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
+		}
+		return nil, internalError(c, errors.Annotate(err, "failed to update VM").Err())
+	}
+	// The number of rows affected cannot distinguish between zero because the VM didn't exist
+	// and zero because the row already matched, so skip looking at the number of rows affected.
+
+	vms, err := listVMs(c, tx, &crimson.ListVMsRequest{
+		Names: []string{v.Name},
+		Vlans: []int64{v.Vlan},
+	})
+	switch {
+	case err != nil:
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated VM").Err())
+	case len(vms) == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown VM %q for VLAN %d", v.Name, v.Vlan)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	}
+	return vms[0], nil
+}
+
 // validateVMForCreation validates a VM for creation.
 func validateVMForCreation(v *crimson.VM) error {
 	switch {
@@ -194,4 +279,50 @@ func validateVMForCreation(v *crimson.VM) error {
 		}
 		return nil
 	}
+}
+
+// validateVMForUpdate validates a VM for update.
+func validateVMForUpdate(v *crimson.VM, mask *field_mask.FieldMask) error {
+	switch err := validateUpdateMask(mask); {
+	case v == nil:
+		return status.Error(codes.InvalidArgument, "VM specification is required")
+	case v.Name == "":
+		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
+	case v.Vlan < 1:
+		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
+	case err != nil:
+		return err
+	}
+	for _, path := range mask.Paths {
+		// TODO(smut): Allow IPv4 address to be updated.
+		switch path {
+		case "name":
+			return status.Error(codes.InvalidArgument, "hostname cannot be updated, delete and create a new VM instead")
+		case "vlan":
+			return status.Error(codes.InvalidArgument, "VLAN cannot be updated, delete and create a new VM instead")
+		case "host", "host_vlan":
+			// If hostname or host VLAN is specified, require both. Both are required to uniquely identify a host.
+			if v.Host == "" {
+				return status.Error(codes.InvalidArgument, "physical hostname is required and must be non-empty")
+			}
+			if v.HostVlan < 1 {
+				return status.Error(codes.InvalidArgument, "host VLAN is required and must be positive")
+			}
+		case "os":
+			if v.Os == "" {
+				return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
+			}
+		case "state":
+			if v.State == states.State_STATE_UNSPECIFIED {
+				return status.Error(codes.InvalidArgument, "state is required")
+			}
+		case "description":
+			// Empty description is allowed, nothing to validate.
+		case "deployment_ticket":
+			// Empty deployment ticket is allowed, nothing to validate.
+		default:
+			return status.Errorf(codes.InvalidArgument, "unsupported update mask path %q", path)
+		}
+	}
+	return nil
 }
