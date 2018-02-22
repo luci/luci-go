@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "afc296d0_37519544",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-22T03:32:07Z",
+      "side": 1,
+      "message": ", inclusive. \n\nit\u0027s till not clear to me why inclusivity is necessary, but it shouldn\u0027t block this CL.",
+      "range": {
+        "startLine": 31,
+        "startChar": 31,
+        "endLine": 31,
+        "endChar": 60
+      },
+      "revId": "dd6321662b0e385e25c343260467e47f820c9a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5a3c07a_68b766a3",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-22T03:32:07Z",
+      "side": 1,
+      "message": "this is unfortunately less readable than before, :(",
+      "range": {
+        "startLine": 43,
+        "startChar": 80,
+        "endLine": 43,
+        "endChar": 84
+      },
+      "revId": "dd6321662b0e385e25c343260467e47f820c9a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2e59f41_b80b0251",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-22T03:32:07Z",
+      "side": 1,
+      "message": "\u003d\u003d 0 ||\n\nbecause either response is bad.",
+      "range": {
+        "startLine": 58,
+        "startChar": 19,
+        "endLine": 58,
+        "endChar": 25
+      },
+      "revId": "dd6321662b0e385e25c343260467e47f820c9a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
