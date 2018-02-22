@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"unicode"
@@ -22,6 +23,9 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
+	"github.com/sergi/go-diff/diffmatchpatch"
+
+	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
 )
@@ -180,4 +184,57 @@ func (c *schemaConverter) description(file *descriptor.FileDescriptorProto, ptr 
 		}
 	}
 	return description
+}
+
+func printSchema(w *indented.Writer, s bigquery.Schema) {
+	for i, f := range s {
+		if i > 0 {
+			fmt.Fprintf(w, "\n")
+		}
+
+		if f.Description != "" {
+			for _, line := range strings.Split(f.Description, "\n") {
+				fmt.Fprintf(w, "// %s\n", line)
+			}
+		}
+
+		switch {
+		case f.Repeated:
+			fmt.Fprintf(w, "repeated ")
+		case f.Required:
+			fmt.Fprintf(w, "required ")
+		}
+
+		fmt.Fprintf(w, "%s %s", f.Type, f.Name)
+
+		if f.Type == bigquery.RecordFieldType {
+			fmt.Fprintf(w, " {\n")
+			w.Level++
+			printSchema(w, f.Schema)
+			w.Level--
+			fmt.Fprintf(w, "}")
+		}
+
+		fmt.Fprintf(w, "\n")
+	}
+}
+
+func schemaString(s bigquery.Schema, indent int) string {
+	var buf bytes.Buffer
+	printSchema(&indented.Writer{Writer: &buf, Level: indent}, s)
+	return buf.String()
+}
+
+// schemaDiff returns textual colored difference between two schemas.
+// Returns "" if there is no difference.
+func schemaDiff(before, after bigquery.Schema, indent int) string {
+	dmp := diffmatchpatch.New()
+	diff := dmp.DiffMain(
+		schemaString(before, indent),
+		schemaString(after, indent),
+		true)
+	if len(diff) == 1 && diff[0].Type == diffmatchpatch.DiffEqual {
+		return ""
+	}
+	return dmp.DiffPrettyText(diff)
 }

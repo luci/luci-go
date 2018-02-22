@@ -54,36 +54,3 @@ func (ts dryRunTableStore) updateTable(ctx context.Context, datasetID, tableID s
 	printSchema(&indented.Writer{Writer: ts.w}, toUpdate.Schema)
 	return nil
 }
-
-func printSchema(w *indented.Writer, s bigquery.Schema) {
-	for i, f := range s {
-		if i > 0 {
-			fmt.Fprintf(w, "\n")
-		}
-
-		if f.Description != "" {
-			for _, line := range strings.Split(f.Description, "\n") {
-				fmt.Fprintf(w, "// %s\n", line)
-			}
-		}
-
-		switch {
-		case f.Repeated:
-			fmt.Fprintf(w, "repeated ")
-		case f.Required:
-			fmt.Fprintf(w, "required ")
-		}
-
-		fmt.Fprintf(w, "%s %s", f.Type, f.Name)
-
-		if f.Type == bigquery.RecordFieldType {
-			fmt.Fprintf(w, " {\n")
-			w.Level++
-			printSchema(w, f.Schema)
-			w.Level--
-			fmt.Fprintf(w, "}")
-		}
-
-		fmt.Fprintf(w, "\n")
-	}
-}
