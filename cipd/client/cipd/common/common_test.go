@@ -89,6 +89,8 @@ func TestValidatePackageRef(t *testing.T) {
 
 	Convey("ValidatePackageRef works", t, func() {
 		So(ValidatePackageRef("some-ref"), ShouldBeNil)
+		So(ValidatePackageRef("ref/with/slashes.and.dots"), ShouldBeNil)
+
 		So(ValidatePackageRef(""), ShouldNotBeNil)
 		So(ValidatePackageRef("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
 		So(ValidatePackageRef("good:tag"), ShouldNotBeNil)
