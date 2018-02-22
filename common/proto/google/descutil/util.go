@@ -316,6 +316,8 @@ func At(descProto proto.Message, path []int32) (interface{}, error) {
 // field, e.g. &myFieldDescriptorProto.Name.
 //
 // IndexSourceCodeInfo can be used to retrieve comments.
+//
+// Does not support whole-slice locations.
 func IndexSourceCodeInfo(f *pb.FileDescriptorProto) (map[interface{}]*pb.SourceCodeInfo_Location, error) {
 	if f.SourceCodeInfo == nil {
 		return nil, nil
@@ -323,10 +325,16 @@ func IndexSourceCodeInfo(f *pb.FileDescriptorProto) (map[interface{}]*pb.SourceC
 	ret := make(map[interface{}]*pb.SourceCodeInfo_Location, len(f.SourceCodeInfo.Location))
 	for _, loc := range f.SourceCodeInfo.Location {
 		ptr, err := At(f, loc.Path)
-		if err != nil {
+		switch v := reflect.ValueOf(ptr); {
+		case err != nil:
 			return nil, err
+		case !v.IsValid():
+		case v.Kind() == reflect.Slice:
+			// A slice cannot be used as a map key.
+			// Whole slice declarations are not supported.
+		default:
+			ret[ptr] = loc
 		}
-		ret[ptr] = loc
 	}
 	return ret, nil
 }
