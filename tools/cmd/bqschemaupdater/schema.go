@@ -111,10 +111,15 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 			// See also https://docs.google.com/document/d/1PccZ62hmF8QQHHa7GDF9NriCGS5mm-uL_NcXBp2UCDI/edit?ts=5a5390ac#
 			schema.Type = bigquery.StringFieldType
 		default:
-			schema.Type = bigquery.RecordFieldType
-			var err error
-			if schema.Schema, _, err = c.schema(typeName); err != nil {
+			switch s, _, err := c.schema(typeName); {
+			case err != nil:
 				return nil, err
+			case len(s) == 0:
+				// BigQuery does not like empty record fields.
+				return nil, nil
+			default:
+				schema.Type = bigquery.RecordFieldType
+				schema.Schema = s
 			}
 		}
 	default:

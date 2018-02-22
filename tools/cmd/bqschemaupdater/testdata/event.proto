@@ -8,6 +8,7 @@ package testdata;
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 
 message Property {
@@ -36,6 +37,7 @@ message BuildEvent {
     Output output = 5;
     google.protobuf.Timestamp timestamp = 6;
     google.protobuf.Struct struct = 7;
+    google.protobuf.Empty empty = 8; // will be ignored
 }
 
 enum Status {
