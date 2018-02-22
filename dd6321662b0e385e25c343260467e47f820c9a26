@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "feab97a2_64cc99d8",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-22T03:35:16Z",
+      "side": 1,
+      "message": "Micheal, i\u0027m still not sure I get the purpose of this method.\nIs to separate a case of a rebuild on the same revision (retruns 1 commit) \nfrom a build that ran on some really old revision (0 commits)?\nIf so, then why is it important? If not, plz explain.\n\nAlso, I think this should part of the doc.",
+      "parentUuid": "afc296d0_37519544",
+      "range": {
+        "startLine": 31,
+        "startChar": 31,
+        "endLine": 31,
+        "endChar": 60
+      },
+      "revId": "dd6321662b0e385e25c343260467e47f820c9a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5a3c07a_68b766a3",
         "filename": "luci_notify/notify/gitiles.go",
         "patchSetId": 3
