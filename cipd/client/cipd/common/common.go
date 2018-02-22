@@ -36,7 +36,7 @@ var packageNameRe = regexp.MustCompile(`^([a-z0-9_\-\.]+/)*[a-z0-9_\-\.]+$`)
 var instanceTagKeyRe = regexp.MustCompile(`^[a-z0-9_\-]+$`)
 
 // packageRefRe is a regular expression for a ref.
-var packageRefRe = regexp.MustCompile(`^[a-z0-9_\-]{1,100}$`)
+var packageRefRe = regexp.MustCompile(`^[a-z0-9_./\-]{1,256}$`)
 
 // Pin uniquely identifies an instance of some package.
 type Pin struct {
@@ -95,10 +95,7 @@ func ValidatePin(pin Pin) error {
 	if err := ValidatePackageName(pin.PackageName); err != nil {
 		return err
 	}
-	if err := ValidateInstanceID(pin.InstanceID); err != nil {
-		return err
-	}
-	return nil
+	return ValidateInstanceID(pin.InstanceID)
 }
 
 // ValidatePackageRef returns error if a string doesn't look like a valid ref.
