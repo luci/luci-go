@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printNICs prints network interface data to stdout in tab-separated columns.
+func printNICs(showHeaders bool, nics ...*crimson.NIC) {
+	if len(nics) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "Machine", "MAC Address", "Switch", "Port")
+		}
+		for _, n := range nics {
+			p.Row(n.Name, n.Machine, n.MacAddress, n.Switch, n.Switchport)
+		}
+	}
+}
+
 // AddNICCmd is the command to add a network interface.
 type AddNICCmd struct {
 	subcommands.CommandRunBase
 	nic crimson.NIC
+	f   FormattingFlags
 }
 
 // Run runs the command to add a network interface.
@@ -46,8 +58,7 @@ func (c *AddNICCmd) Run(app subcommands.Application, args []string, env subcomma
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printNICs(c.f.showHeaders, resp)
 	return 0
 }
 
@@ -64,6 +75,7 @@ func addNICCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.nic.MacAddress, "mac", "", "The MAC address of this NIC. Required and must be a valid MAC-48 address.")
 			cmd.Flags.StringVar(&cmd.nic.Switch, "switch", "", "The switch this NIC is connected to. Required and must be the name of a switch returned by get-switches.")
 			cmd.Flags.Var(flag.Int32(&cmd.nic.Switchport), "port", "The switchport this NIC is connected to.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -80,13 +92,11 @@ func (c *DeleteNICCmd) Run(app subcommands.Application, args []string, env subco
 	ctx := cli.GetContext(app, c, env)
 	// TODO(smut): Validate required fields client-side.
 	client := getClient(ctx)
-	resp, err := client.DeleteNIC(ctx, &c.req)
+	_, err := client.DeleteNIC(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
 	return 0
 }
 
@@ -109,6 +119,7 @@ func deleteNICCmd() *subcommands.Command {
 type EditNICCmd struct {
 	subcommands.CommandRunBase
 	nic crimson.NIC
+	f   FormattingFlags
 }
 
 // Run runs the command to edit a network interface.
@@ -129,8 +140,7 @@ func (c *EditNICCmd) Run(app subcommands.Application, args []string, env subcomm
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printNICs(c.f.showHeaders, resp)
 	return 0
 }
 
@@ -147,6 +157,7 @@ func editNICCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.nic.MacAddress, "mac", "", "The MAC address of this NIC. Must be a valid MAC-48 address.")
 			cmd.Flags.StringVar(&cmd.nic.Switch, "switch", "", "The switch this NIC is connected to. Must be the name of a switch returned by get-switches.")
 			cmd.Flags.Var(flag.Int32(&cmd.nic.Switchport), "port", "The switchport this NIC is connected to.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -156,6 +167,7 @@ func editNICCmd() *subcommands.Command {
 type GetNICsCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListNICsRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get network interfaces.
@@ -167,8 +179,7 @@ func (c *GetNICsCmd) Run(app subcommands.Application, args []string, env subcomm
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printNICs(c.f.showHeaders, resp.Nics...)
 	return 0
 }
 
@@ -183,6 +194,7 @@ func getNICsCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a NIC to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

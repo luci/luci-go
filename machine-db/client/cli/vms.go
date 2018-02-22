@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printVMs prints VM data to stdout in tab-separated columns.
+func printVMs(showHeaders bool, vms ...*crimson.VM) {
+	if len(vms) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "VLAN", "IP Address", "Host", "Host VLAN", "Operating System", "Description", "Deployment Ticket", "State")
+		}
+		for _, vm := range vms {
+			p.Row(vm.Name, vm.Vlan, vm.Ipv4, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State)
+		}
+	}
+}
+
 // AddVMCmd is the command to add a VM.
 type AddVMCmd struct {
 	subcommands.CommandRunBase
 	vm crimson.VM
+	f  FormattingFlags
 }
 
 // Run runs the command to add a VM.
@@ -46,8 +58,7 @@ func (c *AddVMCmd) Run(app subcommands.Application, args []string, env subcomman
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printVMs(c.f.showHeaders, resp)
 	return 0
 }
 
@@ -67,6 +78,7 @@ func addVMCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.vm.Ipv4, "ipv4", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
 			cmd.Flags.StringVar(&cmd.vm.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.vm.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -76,6 +88,7 @@ func addVMCmd() *subcommands.Command {
 type GetVMsCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListVMsRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get VMs.
@@ -87,8 +100,7 @@ func (c *GetVMsCmd) Run(app subcommands.Application, args []string, env subcomma
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printVMs(c.f.showHeaders, resp.Vms...)
 	return 0
 }
 
@@ -103,6 +115,7 @@ func getVMsCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a VM to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
