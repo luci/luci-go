@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -27,10 +24,25 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
+// printPhysicalHosts prints physical host data to stdout in tab-separated columns.
+func printPhysicalHosts(showHeaders bool, hosts ...*crimson.PhysicalHost) {
+	if len(hosts) > 0 {
+		p := newStdoutPrinter()
+		defer p.Flush()
+		if showHeaders {
+			p.Row("Name", "VLAN", "IP Address", "Machine", "OS", "VM Slots", "Description", "Deployment Ticket", "State")
+		}
+		for _, h := range hosts {
+			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket, h.State)
+		}
+	}
+}
+
 // AddPhysicalHostCmd is the command to add a physical host.
 type AddPhysicalHostCmd struct {
 	subcommands.CommandRunBase
 	host crimson.PhysicalHost
+	f    FormattingFlags
 }
 
 // Run runs the command to add a physical host.
@@ -46,8 +58,7 @@ func (c *AddPhysicalHostCmd) Run(app subcommands.Application, args []string, env
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printPhysicalHosts(c.f.showHeaders, resp)
 	return 0
 }
 
@@ -67,6 +78,7 @@ func addPhysicalHostCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -76,6 +88,7 @@ func addPhysicalHostCmd() *subcommands.Command {
 type EditPhysicalHostCmd struct {
 	subcommands.CommandRunBase
 	host crimson.PhysicalHost
+	f    FormattingFlags
 }
 
 // Run runs the command to edit a physical host.
@@ -99,8 +112,7 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printPhysicalHosts(c.f.showHeaders, resp)
 	return 0
 }
 
@@ -120,6 +132,7 @@ func editPhysicalHostCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -129,6 +142,7 @@ func editPhysicalHostCmd() *subcommands.Command {
 type GetPhysicalHostsCmd struct {
 	subcommands.CommandRunBase
 	req crimson.ListPhysicalHostsRequest
+	f   FormattingFlags
 }
 
 // Run runs the command to get physical hosts.
@@ -140,8 +154,7 @@ func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, en
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
+	printPhysicalHosts(c.f.showHeaders, resp.Hosts...)
 	return 0
 }
 
@@ -156,6 +169,7 @@ func getPhysicalHostsCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a physical host to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
+			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
