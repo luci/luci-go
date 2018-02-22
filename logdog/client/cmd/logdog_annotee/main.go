@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/runtime/profiling"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/annotee/executor"
 	"go.chromium.org/luci/logdog/client/bootstrapResult"
@@ -35,7 +36,6 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

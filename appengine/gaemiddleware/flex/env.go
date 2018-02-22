@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/pprof"

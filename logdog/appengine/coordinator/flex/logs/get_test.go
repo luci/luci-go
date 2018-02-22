@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -33,7 +34,6 @@ import (
 	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"go.chromium.org/gae/filter/featureBreaker"
 

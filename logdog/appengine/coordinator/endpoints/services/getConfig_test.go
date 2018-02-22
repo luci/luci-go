@@ -17,10 +17,10 @@ package services
 import (
 	"testing"
 
+	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
-	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

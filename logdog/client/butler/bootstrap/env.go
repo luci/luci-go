@@ -17,9 +17,9 @@ package bootstrap
 
 import (
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 // Environment is the set of configuration parameters for the bootstrap.

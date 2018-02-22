@@ -44,7 +44,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
 
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/rand/mathrand"

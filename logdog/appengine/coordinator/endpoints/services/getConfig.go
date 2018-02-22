@@ -17,10 +17,10 @@ package services
 import (
 	"github.com/golang/protobuf/ptypes/empty"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 
 	"golang.org/x/net/context"
 )

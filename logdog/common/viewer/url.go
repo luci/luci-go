@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 // GetURL generates a LogDog app viewer URL for the specified streams.

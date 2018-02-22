@@ -23,12 +23,12 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerproto"
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
 	cc "go.chromium.org/luci/logdog/server/collector/coordinator"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
