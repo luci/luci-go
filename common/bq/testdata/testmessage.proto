@@ -15,9 +15,7 @@ message TestMessage {
     NestedTestMessage nested = 3;
     repeated NestedTestMessage repeated_nested = 4;
 
-    // This field will be ignored because it is
-    // google.protobuf.Struct.
-    google.protobuf.Struct will_be_ignored = 5;
+    google.protobuf.Struct struct = 5;
 
     enum FOO {
       X = 0;

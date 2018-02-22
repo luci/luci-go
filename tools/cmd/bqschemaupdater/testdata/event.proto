@@ -35,10 +35,7 @@ message BuildEvent {
     Input input = 4;
     Output output = 5;
     google.protobuf.Timestamp timestamp = 6;
-
-    // This field will be ignored because it is
-    // google.protobuf.Struct.
-    google.protobuf.Struct wil_be_ignored = 7;
+    google.protobuf.Struct struct = 7;
 }
 
 enum Status {
