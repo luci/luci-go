@@ -125,6 +125,7 @@ func New(params *Parameters) *cli.Application {
 
 			// Virtual hosts.
 			addVMCmd(),
+			editVMCmd(),
 			getVMsCmd(),
 			{},
 

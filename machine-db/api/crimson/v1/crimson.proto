@@ -66,6 +66,8 @@ service Crimson {
   rpc CreateVM(CreateVMRequest) returns (VM);
   // Lists VMs in the database.
   rpc ListVMs(ListVMsRequest) returns (ListVMsResponse);
+  // Updates a VM in the database.
+  rpc UpdateVM(UpdateVMRequest) returns (VM);
 
   // Deletes a physical or virtual host from the database.
   rpc DeleteHost(DeleteHostRequest) returns (google.protobuf.Empty);
