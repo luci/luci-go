@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -37,13 +34,11 @@ func (c *DeleteHostCmd) Run(app subcommands.Application, args []string, env subc
 	ctx := cli.GetContext(app, c, env)
 	// TODO(smut): Validate required fields client-side.
 	client := getClient(ctx)
-	resp, err := client.DeleteHost(ctx, &c.req)
+	_, err := client.DeleteHost(ctx, &c.req)
 	if err != nil {
 		errors.Log(ctx, err)
 		return 1
 	}
-	// TODO(smut): Format this response.
-	fmt.Print(proto.MarshalTextString(resp))
 	return 0
 }
 
