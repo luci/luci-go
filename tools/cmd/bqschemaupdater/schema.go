@@ -15,13 +15,18 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
+	"github.com/pmezard/go-difflib/difflib"
+
+	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
 )
@@ -180,4 +185,73 @@ func (c *schemaConverter) description(file *descriptor.FileDescriptorProto, ptr 
 		}
 	}
 	return description
+}
+
+func printSchema(w *indented.Writer, s bigquery.Schema) {
+	// Field order does not matter.
+	// A new field is always added to the end of the field list in a live table.
+	// Sort fields by name to make the result deterministic.
+	// Schema diffing relies on it.
+
+	s = append(bigquery.Schema(nil), s...)
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].Name < s[j].Name
+	})
+
+	for i, f := range s {
+		if i > 0 {
+			fmt.Fprintln(w)
+		}
+
+		if f.Description != "" {
+			for _, line := range strings.Split(f.Description, "\n") {
+				fmt.Fprintln(w, "//", line)
+			}
+		}
+
+		switch {
+		case f.Repeated:
+			fmt.Fprint(w, "repeated ")
+		case f.Required:
+			fmt.Fprint(w, "required ")
+		}
+
+		fmt.Fprint(w, f.Type, f.Name)
+
+		if f.Type == bigquery.RecordFieldType {
+			fmt.Fprintln(w, " {")
+			w.Level++
+			printSchema(w, f.Schema)
+			w.Level--
+			fmt.Fprint(w, "}")
+		}
+
+		fmt.Fprintln(w)
+	}
+}
+
+func schemaString(s bigquery.Schema) string {
+	var buf bytes.Buffer
+	printSchema(&indented.Writer{Writer: &buf}, s)
+	return buf.String()
+}
+
+// schemaDiff returns unified diff of two schemas.
+// Returns "" if there is no difference.
+func schemaDiff(before, after bigquery.Schema) string {
+	ret, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(schemaString(before)),
+		B:        difflib.SplitLines(schemaString(after)),
+		FromFile: "Current",
+		ToFile:   "New",
+		Context:  3,
+		Eol:      "\n",
+	})
+	if err != nil {
+		// GetUnifiedDiffString returns an error only if it fails
+		// to write to a bytes.Buffer, which either cannot happen or we better
+		// panic.
+		panic(err)
+	}
+	return ret
 }
