@@ -232,11 +232,10 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 
 	out := make([]string, 0, len(metas))
 	for _, meta := range metas {
-		projectName, _, _ := meta.ConfigSet.SplitProject()
-		if projectName == "" {
-			logging.Warningf(c, "Unexpected ConfigSet: %s", meta.ConfigSet)
-		} else {
+		if projectName := meta.ConfigSet.Project(); projectName != "" {
 			out = append(out, projectName)
+		} else {
+			logging.Warningf(c, "Unexpected ConfigSet: %s", meta.ConfigSet)
 		}
 	}
 	return out, nil
