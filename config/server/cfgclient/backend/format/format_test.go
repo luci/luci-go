@@ -38,7 +38,7 @@ func (tb *testingBackend) Get(c context.Context, configSet config.Set, path stri
 		return nil, tb.err
 	}
 	if len(tb.items) == 0 {
-		return nil, cfgclient.ErrNoConfig
+		return nil, config.ErrNoConfig
 	}
 	return tb.cloneItems()[0], nil
 }
@@ -114,8 +114,8 @@ func TestFormatBackend(t *testing.T) {
 	Convey(`A testing environment`, t, func() {
 		tb := testingBackend{
 			items: []*backend.Item{
-				{Meta: backend.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
-				{Meta: backend.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
+				{Meta: config.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
+				{Meta: config.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
 			},
 		}
 

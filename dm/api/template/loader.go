@@ -32,7 +32,7 @@ func LoadFile(c context.Context, project, ref string) (file *File, vers string, 
 	cfgSet := config.RefSet(project, ref)
 
 	file = &File{}
-	var meta cfgclient.Meta
+	var meta config.Meta
 	if err = cfgclient.Get(c, cfgclient.AsService, cfgSet, "dm/quest_templates.cfg", textproto.Message(file), &meta); err != nil {
 		return
 	}

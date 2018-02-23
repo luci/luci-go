@@ -46,7 +46,7 @@ const vlanMinCIDRBlockSuffix = 18
 // importVLANs fetches, validates, and applies VLAN configs.
 func importVLANs(c context.Context, configSet config.Set) error {
 	vlan := &configPB.VLANs{}
-	metadata := &cfgclient.Meta{}
+	metadata := &config.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, vlansFilename, textproto.Message(vlan), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", vlansFilename).Err()
 	}

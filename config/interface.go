@@ -24,25 +24,15 @@ import (
 // ErrNoConfig is returned if requested config does not exist.
 var ErrNoConfig = errors.New("no such config")
 
-// Config is a configuration entry in the luci-config service.
-type Config struct {
+// Meta is metadata about a single configuration file.
+type Meta struct {
 	// ConfigSet is the config set name (e.g. "projects/<id>") this config
 	// belongs to.
-	// May be the empty string if this is unknown.
 	ConfigSet Set `json:"configSet,omitempty"`
 
 	// Path is the filename relative to the root of the config set,
-	// without leading slash, e.g. "luci-cron.cfg".
-	// May be the empty string if this is unknown.
-	Path string
-
-	// Error is not nil if there where troubles fetching this config. Used only
-	// by functions that operate with multiple configs at once, such as
-	// GetProjectConfigs and GetRefConfigs.
-	Error error `json:"error,omitempty"`
-
-	// Content is the actual body of the config file.
-	Content string `json:"content,omitempty"`
+	// without leading slash, e.g. "luci-scheduler.cfg".
+	Path string `json:"path,omitempty"`
 
 	// ContentHash can be used to quickly check that content didn't change.
 	ContentHash string `json:"contentHash,omitempty"`
@@ -52,6 +42,19 @@ type Config struct {
 
 	// ViewURL is the URL surfaced for viewing the config.
 	ViewURL string `json:"view_url,omitempty"`
+}
+
+// Config is a configuration file along with its metadata.
+type Config struct {
+	Meta
+
+	// Error is not nil if there where troubles fetching this config. Used only
+	// by functions that operate with multiple configs at once, such as
+	// GetProjectConfigs and GetRefConfigs.
+	Error error `json:"error,omitempty"`
+
+	// Content is the actual body of the config file.
+	Content string `json:"content,omitempty"`
 }
 
 // RepoType is the type of the repo the Project is stored in.
@@ -97,9 +100,9 @@ type Project struct {
 // Transient errors are wrapped in errors.Transient. See common/errors.
 type Interface interface {
 	// GetConfig returns a config at a path in a config set or ErrNoConfig
-	// if missing. If hashOnly is true, returned Config struct has Content set
-	// to "" (and the call is faster).
-	GetConfig(ctx context.Context, configSet Set, path string, hashOnly bool) (*Config, error)
+	// if missing. If metaOnly is true, returned Config struct has only Meta set
+	// (and the call is faster).
+	GetConfig(ctx context.Context, configSet Set, path string, metaOnly bool) (*Config, error)
 
 	// GetConfigByHash returns the contents of a config, as identified by its
 	// content hash, or ErrNoConfig if missing.
@@ -109,18 +112,18 @@ type Interface interface {
 	GetConfigSetLocation(ctx context.Context, configSet Set) (*url.URL, error)
 
 	// GetProjectConfigs returns all the configs at the given path in all
-	// projects that have such config. If hashesOnly is true, returned Config
-	// structs have Content set to "" (and the call is faster).
-	GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]Config, error)
+	// projects that have such config. If metaOnly is true, returned Config
+	// structs have only Meta set (and the call is faster).
+	GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]Config, error)
 
 	// GetProjects returns all the registered projects in the configuration
 	// service.
 	GetProjects(ctx context.Context) ([]Project, error)
 
 	// GetRefConfigs returns the config at the given path in all refs of all
-	// projects that have such config. If hashesOnly is true, returned Config
-	// structs have Content set to "" (and the call is faster).
-	GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]Config, error)
+	// projects that have such config. If metaOnly is true, returned Config
+	// structs have only Meta set (and the call is faster).
+	GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]Config, error)
 
 	// GetRefs returns the list of refs for a project.
 	GetRefs(ctx context.Context, projectID string) ([]string, error)

@@ -21,7 +21,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -41,7 +40,7 @@ type testingBackend struct {
 
 func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	if tb.item == nil {
-		return nil, cfgclient.ErrNoConfig
+		return nil, config.ErrNoConfig
 	}
 	clone := *tb.item
 	return &clone, nil

@@ -88,19 +88,19 @@ func (r *remoteImpl) service(ctx context.Context) (*configApi.Service, error) {
 	return service, nil
 }
 
-func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path string, hashOnly bool) (*config.Config, error) {
+func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path string, metaOnly bool) (*config.Config, error) {
 	srv, err := r.service(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := srv.GetConfig(string(configSet), path).HashOnly(hashOnly).Context(ctx).Do()
+	resp, err := srv.GetConfig(string(configSet), path).HashOnly(metaOnly).Context(ctx).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 
 	var decoded []byte
-	if !hashOnly {
+	if !metaOnly {
 		decoded, err = base64.StdEncoding.DecodeString(resp.Content)
 		if err != nil {
 			return nil, err
@@ -108,12 +108,14 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 	}
 
 	return &config.Config{
-		ConfigSet:   configSet,
-		Path:        path,
-		Content:     string(decoded),
-		ContentHash: resp.ContentHash,
-		Revision:    resp.Revision,
-		ViewURL:     resp.Url,
+		Meta: config.Meta{
+			ConfigSet:   configSet,
+			Path:        path,
+			ContentHash: resp.ContentHash,
+			Revision:    resp.Revision,
+			ViewURL:     resp.Url,
+		},
+		Content: string(decoded),
 	}, nil
 }
 
@@ -207,34 +209,34 @@ func (r *remoteImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 	return projects, err
 }
 
-func (r *remoteImpl) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+func (r *remoteImpl) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	srv, err := r.service(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := srv.GetProjectConfigs(path).HashesOnly(hashesOnly).Context(ctx).Do()
+	resp, err := srv.GetProjectConfigs(path).HashesOnly(metaOnly).Context(ctx).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 
 	c := logging.SetField(ctx, "path", path)
-	return convertMultiWireConfigs(c, path, resp, hashesOnly)
+	return convertMultiWireConfigs(c, path, resp, metaOnly)
 }
 
-func (r *remoteImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+func (r *remoteImpl) GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	srv, err := r.service(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := srv.GetRefConfigs(path).HashesOnly(hashesOnly).Context(ctx).Do()
+	resp, err := srv.GetRefConfigs(path).HashesOnly(metaOnly).Context(ctx).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 
 	c := logging.SetField(ctx, "path", path)
-	return convertMultiWireConfigs(c, path, resp, hashesOnly)
+	return convertMultiWireConfigs(c, path, resp, metaOnly)
 }
 
 func (r *remoteImpl) GetRefs(ctx context.Context, projectID string) ([]string, error) {
@@ -257,13 +259,13 @@ func (r *remoteImpl) GetRefs(ctx context.Context, projectID string) ([]string, e
 
 // convertMultiWireConfigs is a utility to convert what we get over the wire
 // into the structs we use in the config package.
-func convertMultiWireConfigs(ctx context.Context, path string, wireConfigs *configApi.LuciConfigGetConfigMultiResponseMessage, hashesOnly bool) ([]config.Config, error) {
+func convertMultiWireConfigs(ctx context.Context, path string, wireConfigs *configApi.LuciConfigGetConfigMultiResponseMessage, metaOnly bool) ([]config.Config, error) {
 	configs := make([]config.Config, len(wireConfigs.Configs))
 	for i, c := range wireConfigs.Configs {
 		var decoded []byte
 		var err error
 
-		if !hashesOnly {
+		if !metaOnly {
 			decoded, err = base64.StdEncoding.DecodeString(c.Content)
 			if err != nil {
 				lc := logging.SetField(ctx, "configSet", c.ConfigSet)
@@ -272,13 +274,15 @@ func convertMultiWireConfigs(ctx context.Context, path string, wireConfigs *conf
 		}
 
 		configs[i] = config.Config{
-			ConfigSet:   config.Set(c.ConfigSet),
-			Path:        path,
-			Error:       err,
-			Content:     string(decoded),
-			ContentHash: c.ContentHash,
-			Revision:    c.Revision,
-			ViewURL:     c.Url,
+			Meta: config.Meta{
+				ConfigSet:   config.Set(c.ConfigSet),
+				Path:        path,
+				ContentHash: c.ContentHash,
+				Revision:    c.Revision,
+				ViewURL:     c.Url,
+			},
+			Content: string(decoded),
+			Error:   err,
 		}
 	}
 

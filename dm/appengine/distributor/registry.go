@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/dm/api/distributor"
@@ -139,7 +140,7 @@ func loadConfig(c context.Context, cfgName string) (ret *Config, err error) {
 
 	var (
 		distCfg distributor.Config
-		meta    cfgclient.Meta
+		meta    config.Meta
 	)
 	if err = cfgclient.Get(c, cfgclient.AsService, configSet, "distributors.cfg", textproto.Message(&distCfg), &meta); err != nil {
 		return

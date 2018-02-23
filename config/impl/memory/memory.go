@@ -57,13 +57,13 @@ type memoryImpl struct {
 	err  error
 }
 
-func (m *memoryImpl) GetConfig(ctx context.Context, configSet config.Set, path string, hashOnly bool) (*config.Config, error) {
+func (m *memoryImpl) GetConfig(ctx context.Context, configSet config.Set, path string, metaOnly bool) (*config.Config, error) {
 	if err := m.err; err != nil {
 		return nil, err
 	}
 
 	if set, ok := m.sets[configSet]; ok {
-		if cfg := set.configMaybe(configSet, path, hashOnly); cfg != nil {
+		if cfg := set.configMaybe(configSet, path, metaOnly); cfg != nil {
 			return cfg, nil
 		}
 	}
@@ -95,7 +95,7 @@ func (m *memoryImpl) GetConfigSetLocation(ctx context.Context, configSet config.
 	return nil, config.ErrNoConfig
 }
 
-func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	if err := m.err; err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, hashesO
 	}
 	out := []config.Config{}
 	for _, proj := range projects {
-		if cfg, err := m.GetConfig(ctx, config.ProjectSet(proj.ID), path, hashesOnly); err == nil {
+		if cfg, err := m.GetConfig(ctx, config.ProjectSet(proj.ID), path, metaOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}
@@ -137,7 +137,7 @@ func (m *memoryImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 	return out, nil
 }
 
-func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	if err := m.err; err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly 
 
 	out := []config.Config{}
 	for _, configSet := range sets {
-		if cfg, err := m.GetConfig(ctx, configSet, path, hashesOnly); err == nil {
+		if cfg, err := m.GetConfig(ctx, configSet, path, metaOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}
@@ -175,17 +175,19 @@ func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, e
 }
 
 // configMaybe returns config.Config is such config is in the set, else nil.
-func (b Files) configMaybe(configSet config.Set, path string, hashesOnly bool) *config.Config {
+func (b Files) configMaybe(configSet config.Set, path string, metaOnly bool) *config.Config {
 	if body, ok := b[path]; ok {
 		cfg := &config.Config{
-			ConfigSet:   configSet,
-			Path:        path,
-			ContentHash: hash(body),
-			Revision:    b.rev(),
+			Meta: config.Meta{
+				ConfigSet:   configSet,
+				Path:        path,
+				ContentHash: hash(body),
+				Revision:    b.rev(),
+				ViewURL:     fmt.Sprintf("https://example.com/view/here/%s", path),
+			},
 		}
-		if !hashesOnly {
+		if !metaOnly {
 			cfg.Content = body
-			cfg.ViewURL = fmt.Sprintf("https://example.com/view/here/%s", path)
 		}
 		return cfg
 	}

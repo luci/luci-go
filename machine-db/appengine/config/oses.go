@@ -35,7 +35,7 @@ const osesFilename = "oses.cfg"
 // importOSes fetches, validates, and applies operating system configs.
 func importOSes(c context.Context, configSet config.Set) error {
 	os := &configPB.OSes{}
-	metadata := &cfgclient.Meta{}
+	metadata := &config.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, osesFilename, textproto.Message(os), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", osesFilename).Err()
 	}

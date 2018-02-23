@@ -81,12 +81,12 @@ func TestLocalService(t *testing.T) {
 			Base: mbase,
 		}})
 
-		metaFor := func(configSet config.Set, path string) *cfgclient.Meta {
+		metaFor := func(configSet config.Set, path string) *config.Meta {
 			cfg, err := mbase.GetConfig(c, configSet, path, false)
 			if err != nil {
 				panic(err)
 			}
-			return &cfgclient.Meta{
+			return &config.Meta{
 				ConfigSet:   cfg.ConfigSet,
 				Path:        cfg.Path,
 				ContentHash: cfg.ContentHash,
@@ -102,7 +102,7 @@ func TestLocalService(t *testing.T) {
 		Convey(`Can get a single config`, func() {
 			var (
 				val  string
-				meta cfgclient.Meta
+				meta config.Meta
 			)
 
 			Convey(`AsService`, func() {
@@ -125,7 +125,7 @@ func TestLocalService(t *testing.T) {
 				So(val, ShouldEqual, "exclusive")
 
 				So(cfgclient.Get(c, cfgclient.AsUser, "services/baz", "path.cfg", cfgclient.String(&val), nil),
-					ShouldEqual, cfgclient.ErrNoConfig)
+					ShouldEqual, config.ErrNoConfig)
 			})
 
 			Convey(`AsAnonymous`, func() {
@@ -135,21 +135,21 @@ func TestLocalService(t *testing.T) {
 				So(val, ShouldEqual, "foo")
 
 				So(cfgclient.Get(c, cfgclient.AsAnonymous, "projects/exclusive", "path.cfg", cfgclient.String(&val), nil),
-					ShouldEqual, cfgclient.ErrNoConfig)
+					ShouldEqual, config.ErrNoConfig)
 				So(cfgclient.Get(c, cfgclient.AsAnonymous, "services/baz", "path.cfg", cfgclient.String(&val), nil),
-					ShouldEqual, cfgclient.ErrNoConfig)
+					ShouldEqual, config.ErrNoConfig)
 			})
 		})
 
 		Convey(`Can get multiple configs`, func() {
 			var vals []string
-			var meta []*cfgclient.Meta
+			var meta []*config.Meta
 
 			Convey(`AsService`, func() {
 				So(cfgclient.Projects(c, cfgclient.AsService, "path.cfg", cfgclient.StringSlice(&vals), &meta),
 					ShouldBeNil)
 				So(vals, ShouldResemble, []string{"exclusive", "foo", "nouser"})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					metaFor("projects/exclusive", "path.cfg"),
 					metaFor("projects/foo", "path.cfg"),
 					metaFor("projects/nouser", "path.cfg"),
@@ -158,7 +158,7 @@ func TestLocalService(t *testing.T) {
 				So(cfgclient.Refs(c, cfgclient.AsService, "path.cfg", cfgclient.StringSlice(&vals), &meta),
 					ShouldBeNil)
 				So(vals, ShouldResemble, []string{"exclusive master", "nouser master"})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					metaFor("projects/exclusive/refs/heads/master", "path.cfg"),
 					metaFor("projects/nouser/refs/heads/master", "path.cfg"),
 				})
@@ -168,7 +168,7 @@ func TestLocalService(t *testing.T) {
 				So(cfgclient.Projects(c, cfgclient.AsUser, "path.cfg", cfgclient.StringSlice(&vals), &meta),
 					ShouldBeNil)
 				So(vals, ShouldResemble, []string{"exclusive", "foo"})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					metaFor("projects/exclusive", "path.cfg"),
 					metaFor("projects/foo", "path.cfg"),
 				})
@@ -176,7 +176,7 @@ func TestLocalService(t *testing.T) {
 				So(cfgclient.Refs(c, cfgclient.AsUser, "path.cfg", cfgclient.StringSlice(&vals), &meta),
 					ShouldBeNil)
 				So(vals, ShouldResemble, []string{"exclusive master"})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					metaFor("projects/exclusive/refs/heads/master", "path.cfg"),
 				})
 			})
@@ -187,7 +187,7 @@ func TestLocalService(t *testing.T) {
 				So(cfgclient.Projects(c, cfgclient.AsAnonymous, "path.cfg", cfgclient.StringSlice(&vals), &meta),
 					ShouldBeNil)
 				So(vals, ShouldResemble, []string{"foo"})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					metaFor("projects/foo", "path.cfg"),
 				})
 

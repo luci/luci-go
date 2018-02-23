@@ -38,7 +38,7 @@ const switchMaxPorts = 65535
 // importDatacenters fetches, validates, and applies datacenter configs.
 func importDatacenters(c context.Context, configSet config.Set) error {
 	cfg := &configPB.Datacenters{}
-	metadata := &cfgclient.Meta{}
+	metadata := &config.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacentersFilename, textproto.Message(cfg), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", datacentersFilename).Err()
 	}

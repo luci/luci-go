@@ -24,31 +24,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ErrNoConfig is a sentinel error returned by Get when the requested
-// configuration is not found.
-//
-// This is an alias of go.chromium.org/luci/config.ErrNoConfig for backward
-// compatibility.
-var ErrNoConfig = config.ErrNoConfig
-
-// Meta is metadata about a single configuration file.
-//
-// This differs from backend.Meta in that it uses the ConfigSet type for the
-// ConfigSet field.
-type Meta struct {
-	// ConfigSet is the item's config set.
-	ConfigSet config.Set
-	// Path is the item's path within its config set.
-	Path string
-
-	// ContentHash is the content hash.
-	ContentHash string
-	// Revision is the revision string.
-	Revision string
-	// ViewURL is the URL surfaced for viewing the config.
-	ViewURL string
-}
-
 // Authority is the authority on whose behalf a request is operating.
 type Authority backend.Authority
 
@@ -80,7 +55,7 @@ func ServiceURL(c context.Context) url.URL { return backend.Get(c).ServiceURL(c)
 //
 // meta, if not nil, will have the configuration's Meta loaded into it on
 // success.
-func Get(c context.Context, a Authority, cs config.Set, path string, r Resolver, meta *Meta) error {
+func Get(c context.Context, a Authority, cs config.Set, path string, r Resolver, meta *config.Meta) error {
 	be := backend.Get(c)
 
 	params := backend.Params{
@@ -98,7 +73,7 @@ func Get(c context.Context, a Authority, cs config.Set, path string, r Resolver,
 	}
 
 	if meta != nil {
-		*meta = *makeMeta(&item.Meta)
+		*meta = item.Meta
 	}
 	if r == nil {
 		return nil
@@ -125,19 +100,19 @@ func Get(c context.Context, a Authority, cs config.Set, path string, r Resolver,
 // resolved. In this case, any successful resolutions and "meta" will be
 // populated and an errors.MultiError will be returned containing non-nil
 // errors at indices whose configs failed to resolve.
-func Projects(c context.Context, a Authority, path string, r MultiResolver, meta *[]*Meta) error {
+func Projects(c context.Context, a Authority, path string, r MultiResolver, meta *[]*config.Meta) error {
 	return getAll(c, a, backend.GetAllProject, path, r, meta)
 }
 
 // Refs retrieves all named ref configurations.
 //
 // See Projects for individual argument descriptions.
-func Refs(c context.Context, a Authority, path string, r MultiResolver, meta *[]*Meta) error {
+func Refs(c context.Context, a Authority, path string, r MultiResolver, meta *[]*config.Meta) error {
 	return getAll(c, a, backend.GetAllRef, path, r, meta)
 }
 
 func getAll(c context.Context, a Authority, t backend.GetAllTarget, path string, r MultiResolver,
-	meta *[]*Meta) error {
+	meta *[]*config.Meta) error {
 
 	be := backend.Get(c)
 
@@ -160,14 +135,15 @@ func getAll(c context.Context, a Authority, t backend.GetAllTarget, path string,
 	if meta != nil {
 		metaSlice := *meta
 		if metaSlice == nil {
-			metaSlice = make([]*Meta, 0, len(items))
+			metaSlice = make([]*config.Meta, 0, len(items))
 		} else {
 			// Re-use the supplied slice.
 			metaSlice = metaSlice[:0]
 		}
 
 		for _, item := range items {
-			metaSlice = append(metaSlice, makeMeta(&item.Meta))
+			meta := item.Meta
+			metaSlice = append(metaSlice, &meta)
 		}
 
 		*meta = metaSlice
@@ -187,14 +163,4 @@ func getAll(c context.Context, a Authority, t backend.GetAllTarget, path string,
 		}
 	}
 	return lme.Get()
-}
-
-func makeMeta(b *backend.Meta) *Meta {
-	return &Meta{
-		ConfigSet:   config.Set(b.ConfigSet),
-		Path:        b.Path,
-		ContentHash: b.ContentHash,
-		Revision:    b.Revision,
-		ViewURL:     b.ViewURL,
-	}
 }

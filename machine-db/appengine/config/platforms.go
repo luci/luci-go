@@ -35,7 +35,7 @@ const platformsFilename = "platforms.cfg"
 // importPlatforms fetches, validates, and applies platform configs.
 func importPlatforms(c context.Context, configSet config.Set) error {
 	platform := &configPB.Platforms{}
-	metadata := &cfgclient.Meta{}
+	metadata := &config.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, platformsFilename, textproto.Message(platform), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", platformsFilename).Err()
 	}

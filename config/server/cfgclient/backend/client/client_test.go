@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	configApi "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
@@ -143,7 +144,7 @@ func TestRemoteService(t *testing.T) {
 
 			for _, tc := range []struct {
 				name string
-				fn   func(context.Context, cfgclient.Authority, string, cfgclient.MultiResolver, *[]*cfgclient.Meta) error
+				fn   func(context.Context, cfgclient.Authority, string, cfgclient.MultiResolver, *[]*config.Meta) error
 				path string
 			}{
 				{"Project", cfgclient.Projects, "/_ah/api/config/v1/configs/projects/baz"},
@@ -152,11 +153,11 @@ func TestRemoteService(t *testing.T) {
 				Convey(tc.name, func() {
 					var (
 						val  []string
-						meta []*cfgclient.Meta
+						meta []*config.Meta
 					)
 					So(tc.fn(c, cfgclient.AsService, "baz", cfgclient.StringSlice(&val), &meta), ShouldBeNil)
 					So(val, ShouldResemble, []string{"foo", "bar"})
-					So(meta, ShouldResemble, []*cfgclient.Meta{
+					So(meta, ShouldResemble, []*config.Meta{
 						{"projects/foo", "baz", "####", "v1", "config_url"},
 						{"projects/bar", "baz", "####", "v1", "config_url"},
 					})

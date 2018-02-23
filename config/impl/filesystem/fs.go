@@ -302,11 +302,13 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 			ret.contentHashMap[hexHsh] = content
 
 			ret.contentRevPathMap[lk] = &config.Config{
-				ConfigSet:   config.Set(configSet.s()),
-				Path:        cfgPath.s(),
-				Content:     content,
-				ContentHash: hexHsh,
-				ViewURL:     "file://./" + filepath.ToSlash(cfgPath.s()),
+				Meta: config.Meta{
+					ConfigSet:   config.Set(configSet.s()),
+					Path:        cfgPath.s(),
+					ContentHash: hexHsh,
+					ViewURL:     "file://./" + filepath.ToSlash(cfgPath.s()),
+				},
+				Content: content,
 			}
 		}
 
@@ -407,7 +409,7 @@ func (fs *filesystemImpl) slurpScannedConfigs(revision string, scanned *scannedC
 	fs.contentRevisionsScanned.Add(revision)
 }
 
-func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgPath string, hashOnly bool) (*config.Config, error) {
+func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgPath string, metaOnly bool) (*config.Config, error) {
 	configSet := configSet{luciPath(cfgSet)}
 	path := luciPath(cfgPath)
 
@@ -426,7 +428,11 @@ func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgP
 	ret, ok := fs.contentRevPathMap[lk]
 	fs.RUnlock()
 	if ok {
-		return ret, nil
+		c := *ret
+		if metaOnly {
+			c.Content = ""
+		}
+		return &c, nil
 	}
 	return nil, config.ErrNoConfig
 }
@@ -477,7 +483,7 @@ func (fs *filesystemImpl) iterContentRevPath(fn func(lk lookupKey, cfg *config.C
 	return nil
 }
 
-func (fs *filesystemImpl) GetProjectConfigs(ctx context.Context, cfgPath string, hashesOnly bool) ([]config.Config, error) {
+func (fs *filesystemImpl) GetProjectConfigs(ctx context.Context, cfgPath string, metaOnly bool) ([]config.Config, error) {
 	path := luciPath(cfgPath)
 
 	ret := make(configList, 0, 10)
@@ -487,7 +493,7 @@ func (fs *filesystemImpl) GetProjectConfigs(ctx context.Context, cfgPath string,
 		}
 		if lk.configSet.isProject() {
 			c := *cfg
-			if hashesOnly {
+			if metaOnly {
 				c.Content = ""
 			}
 			ret = append(ret, c)
@@ -515,7 +521,7 @@ func (fs *filesystemImpl) GetProjects(ctx context.Context) ([]config.Project, er
 	return ret, nil
 }
 
-func (fs *filesystemImpl) GetRefConfigs(ctx context.Context, cfgPath string, hashesOnly bool) ([]config.Config, error) {
+func (fs *filesystemImpl) GetRefConfigs(ctx context.Context, cfgPath string, metaOnly bool) ([]config.Config, error) {
 	path := luciPath(cfgPath)
 
 	ret := make(configList, 0, 10)
@@ -525,7 +531,7 @@ func (fs *filesystemImpl) GetRefConfigs(ctx context.Context, cfgPath string, has
 		}
 		if lk.configSet.isProjectRef() {
 			c := *cfg
-			if hashesOnly {
+			if metaOnly {
 				c.Content = ""
 			}
 			ret = append(ret, c)

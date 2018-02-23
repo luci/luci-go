@@ -45,7 +45,7 @@ func (tb *testingBackend) Get(c context.Context, configSet config.Set, path stri
 		return nil, tb.err
 	}
 	if len(tb.items) == 0 {
-		return nil, ErrNoConfig
+		return nil, config.ErrNoConfig
 	}
 	return tb.cloneItems()[0], nil
 }
@@ -99,8 +99,8 @@ func TestConfig(t *testing.T) {
 		var err error
 		tb := testingBackend{
 			items: []*backend.Item{
-				{Meta: backend.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
-				{Meta: backend.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
+				{Meta: config.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
+				{Meta: config.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
 			},
 		}
 		transformItems := func(fn func(int, *backend.Item)) {
@@ -133,11 +133,11 @@ func TestConfig(t *testing.T) {
 			Convey(`Multi`, func() {
 				var (
 					val  [][]byte
-					meta []*Meta
+					meta []*config.Meta
 				)
 				So(Projects(c, AsService, "", BytesSlice(&val), &meta), ShouldBeNil)
 				So(val, ShouldResemble, [][]byte{{0}, {1}})
-				So(meta, ShouldResemble, []*Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					{"projects/foo", "path", "####", "v1", "config_url"},
 					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
@@ -158,11 +158,11 @@ func TestConfig(t *testing.T) {
 			Convey(`Multi`, func() {
 				var (
 					val  []string
-					meta []*Meta
+					meta []*config.Meta
 				)
 				So(Projects(c, AsService, "", StringSlice(&val), &meta), ShouldBeNil)
 				So(val, ShouldResemble, []string{"[0]", "[1]"})
-				So(meta, ShouldResemble, []*Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					{"projects/foo", "path", "####", "v1", "config_url"},
 					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
@@ -175,16 +175,16 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey(`Single`, func() {
-				var meta Meta
+				var meta config.Meta
 				So(Get(c, AsService, "", "", nil, &meta), ShouldBeNil)
-				So(meta, ShouldResemble, Meta{"projects/foo", "path", "####", "v1", "config_url"})
+				So(meta, ShouldResemble, config.Meta{"projects/foo", "path", "####", "v1", "config_url"})
 				So(tb.lastParams.Content, ShouldBeFalse)
 			})
 
 			Convey(`Multi`, func() {
-				var meta []*Meta
+				var meta []*config.Meta
 				So(Projects(c, AsService, "", nil, &meta), ShouldBeNil)
-				So(meta, ShouldResemble, []*Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					{"projects/foo", "path", "####", "v1", "config_url"},
 					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
@@ -196,7 +196,7 @@ func TestConfig(t *testing.T) {
 			testErr := errors.New("test error")
 			var (
 				val  []string
-				meta []*Meta
+				meta []*config.Meta
 			)
 			er := errorMultiResolver{
 				out: &val,
@@ -217,7 +217,7 @@ func TestConfig(t *testing.T) {
 			So(val, ShouldResemble, []string{"foo", ""})
 
 			// Meta still works.
-			So(meta, ShouldResemble, []*Meta{
+			So(meta, ShouldResemble, []*config.Meta{
 				{"projects/foo", "path", "####", "v1", "config_url"},
 				{"projects/bar", "path", "####", "v1", "config_url"},
 			})

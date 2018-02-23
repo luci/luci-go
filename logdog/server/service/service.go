@@ -446,7 +446,7 @@ func (s *Service) initConfig(c *context.Context) error {
 	})
 
 	// Load our service configuration.
-	var meta cfgclient.Meta
+	var meta cfglib.Meta
 	cset, path := s.ServiceConfigPath()
 	if err := cfgclient.Get(*c, cfgclient.AsService, cset, path, textproto.Message(&s.serviceConfig), &meta); err != nil {
 		return errors.Annotate(err, "failed to load service config").Err()

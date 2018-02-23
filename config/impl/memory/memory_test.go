@@ -57,23 +57,28 @@ func TestMemoryImpl(t *testing.T) {
 			cfg, err := impl.GetConfig(ctx, "services/abc", "file", false)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, &config.Config{
-				ConfigSet:   "services/abc",
-				Path:        "file",
-				Content:     "body",
-				ContentHash: "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba",
-				Revision:    "a9ae6f9d4d7ee130e6d77b5bf6cc94c681318a47",
-				ViewURL:     "https://example.com/view/here/file",
+				Meta: config.Meta{
+					ConfigSet:   "services/abc",
+					Path:        "file",
+					ContentHash: "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba",
+					Revision:    "a9ae6f9d4d7ee130e6d77b5bf6cc94c681318a47",
+					ViewURL:     "https://example.com/view/here/file",
+				},
+				Content: "body",
 			})
 		})
 
-		Convey("GetConfig hashOnly works", func() {
+		Convey("GetConfig metaOnly works", func() {
 			cfg, err := impl.GetConfig(ctx, "services/abc", "file", true)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, &config.Config{
-				ConfigSet:   "services/abc",
-				Path:        "file",
-				ContentHash: "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba",
-				Revision:    "a9ae6f9d4d7ee130e6d77b5bf6cc94c681318a47",
+				Meta: config.Meta{
+					ConfigSet:   "services/abc",
+					Path:        "file",
+					ContentHash: "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba",
+					Revision:    "a9ae6f9d4d7ee130e6d77b5bf6cc94c681318a47",
+					ViewURL:     "https://example.com/view/here/file",
+				},
 			})
 		})
 
@@ -130,39 +135,49 @@ func TestMemoryImpl(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfgs, ShouldResemble, []config.Config{
 				{
-					ConfigSet:   "projects/proj1",
-					Path:        "file",
-					Content:     "project1 file",
-					ContentHash: "v1:4eb9d5ca35782bed53bbaae001306251b9471ff8",
-					Revision:    "c57ee9f7b1ce4d1f145f76c7a3d908c800a923c8",
-					ViewURL:     "https://example.com/view/here/file",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj1",
+						Path:        "file",
+						ContentHash: "v1:4eb9d5ca35782bed53bbaae001306251b9471ff8",
+						Revision:    "c57ee9f7b1ce4d1f145f76c7a3d908c800a923c8",
+						ViewURL:     "https://example.com/view/here/file",
+					},
+					Content: "project1 file",
 				},
 				{
-					ConfigSet:   "projects/proj2",
-					Path:        "file",
-					Content:     "project2 file",
-					ContentHash: "v1:1d1ac7078c40817f0bb2c41be3c3a6ee47d99b54",
-					Revision:    "bc2557da36bfa9db25ee678e773c2607bcb6068c",
-					ViewURL:     "https://example.com/view/here/file",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj2",
+						Path:        "file",
+						ContentHash: "v1:1d1ac7078c40817f0bb2c41be3c3a6ee47d99b54",
+						Revision:    "bc2557da36bfa9db25ee678e773c2607bcb6068c",
+						ViewURL:     "https://example.com/view/here/file",
+					},
+					Content: "project2 file",
 				},
 			})
 		})
 
-		Convey("GetProjectConfigs hashesOnly works", func() {
+		Convey("GetProjectConfigs metaOnly works", func() {
 			cfgs, err := impl.GetProjectConfigs(ctx, "file", true)
 			So(err, ShouldBeNil)
 			So(cfgs, ShouldResemble, []config.Config{
 				{
-					ConfigSet:   "projects/proj1",
-					Path:        "file",
-					ContentHash: "v1:4eb9d5ca35782bed53bbaae001306251b9471ff8",
-					Revision:    "c57ee9f7b1ce4d1f145f76c7a3d908c800a923c8",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj1",
+						Path:        "file",
+						ContentHash: "v1:4eb9d5ca35782bed53bbaae001306251b9471ff8",
+						Revision:    "c57ee9f7b1ce4d1f145f76c7a3d908c800a923c8",
+						ViewURL:     "https://example.com/view/here/file",
+					},
 				},
 				{
-					ConfigSet:   "projects/proj2",
-					Path:        "file",
-					ContentHash: "v1:1d1ac7078c40817f0bb2c41be3c3a6ee47d99b54",
-					Revision:    "bc2557da36bfa9db25ee678e773c2607bcb6068c",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj2",
+						Path:        "file",
+						ContentHash: "v1:1d1ac7078c40817f0bb2c41be3c3a6ee47d99b54",
+						Revision:    "bc2557da36bfa9db25ee678e773c2607bcb6068c",
+						ViewURL:     "https://example.com/view/here/file",
+					},
 				},
 			})
 		})
@@ -200,53 +215,68 @@ func TestMemoryImpl(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, []config.Config{
 				{
-					ConfigSet:   "projects/proj1/refs/heads/master",
-					Path:        "file",
-					Content:     "project1 master ref",
-					ContentHash: "v1:ef997153c60bd293248d146aa7d8e73080ab4d03",
-					Revision:    "cd5ecf349116150a828f076cc5faeb2cf9d0e8c2",
-					ViewURL:     "https://example.com/view/here/file",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj1/refs/heads/master",
+						Path:        "file",
+						ContentHash: "v1:ef997153c60bd293248d146aa7d8e73080ab4d03",
+						Revision:    "cd5ecf349116150a828f076cc5faeb2cf9d0e8c2",
+						ViewURL:     "https://example.com/view/here/file",
+					},
+					Content: "project1 master ref",
 				},
 				{
-					ConfigSet:   "projects/proj1/refs/heads/other",
-					Path:        "file",
-					Content:     "project1 other ref",
-					ContentHash: "v1:1cfd1169b62b807e8dc10725f171bb0d8246dcd4",
-					Revision:    "22760df658f5124ea212f7dac5ff36d511950582",
-					ViewURL:     "https://example.com/view/here/file",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj1/refs/heads/other",
+						Path:        "file",
+						ContentHash: "v1:1cfd1169b62b807e8dc10725f171bb0d8246dcd4",
+						Revision:    "22760df658f5124ea212f7dac5ff36d511950582",
+						ViewURL:     "https://example.com/view/here/file",
+					},
+					Content: "project1 other ref",
 				},
 				{
-					ConfigSet:   "projects/proj2/refs/heads/master",
-					Path:        "file",
-					Content:     "project2 master ref",
-					ContentHash: "v1:1fdb77cd2ce14bc5cadbb012692a65ef4a0e3a55",
-					Revision:    "841da20f3e01271c6b9f7fec6244d352272f8aee",
-					ViewURL:     "https://example.com/view/here/file",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj2/refs/heads/master",
+						Path:        "file",
+						ContentHash: "v1:1fdb77cd2ce14bc5cadbb012692a65ef4a0e3a55",
+						Revision:    "841da20f3e01271c6b9f7fec6244d352272f8aee",
+						ViewURL:     "https://example.com/view/here/file",
+					},
+					Content: "project2 master ref",
 				},
 			})
 		})
 
-		Convey("GetRefConfigs hashesOnly works", func() {
+		Convey("GetRefConfigs metaOnly works", func() {
 			cfg, err := impl.GetRefConfigs(ctx, "file", true)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, []config.Config{
 				{
-					ConfigSet:   "projects/proj1/refs/heads/master",
-					Path:        "file",
-					ContentHash: "v1:ef997153c60bd293248d146aa7d8e73080ab4d03",
-					Revision:    "cd5ecf349116150a828f076cc5faeb2cf9d0e8c2",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj1/refs/heads/master",
+						Path:        "file",
+						ContentHash: "v1:ef997153c60bd293248d146aa7d8e73080ab4d03",
+						Revision:    "cd5ecf349116150a828f076cc5faeb2cf9d0e8c2",
+						ViewURL:     "https://example.com/view/here/file",
+					},
 				},
 				{
-					ConfigSet:   "projects/proj1/refs/heads/other",
-					Path:        "file",
-					ContentHash: "v1:1cfd1169b62b807e8dc10725f171bb0d8246dcd4",
-					Revision:    "22760df658f5124ea212f7dac5ff36d511950582",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj1/refs/heads/other",
+						Path:        "file",
+						ContentHash: "v1:1cfd1169b62b807e8dc10725f171bb0d8246dcd4",
+						Revision:    "22760df658f5124ea212f7dac5ff36d511950582",
+						ViewURL:     "https://example.com/view/here/file",
+					},
 				},
 				{
-					ConfigSet:   "projects/proj2/refs/heads/master",
-					Path:        "file",
-					ContentHash: "v1:1fdb77cd2ce14bc5cadbb012692a65ef4a0e3a55",
-					Revision:    "841da20f3e01271c6b9f7fec6244d352272f8aee",
+					Meta: config.Meta{
+						ConfigSet:   "projects/proj2/refs/heads/master",
+						Path:        "file",
+						ContentHash: "v1:1fdb77cd2ce14bc5cadbb012692a65ef4a0e3a55",
+						Revision:    "841da20f3e01271c6b9f7fec6244d352272f8aee",
+						ViewURL:     "https://example.com/view/here/file",
+					},
 				},
 			})
 		})

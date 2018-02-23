@@ -46,11 +46,11 @@ func ProjectConfigPath(c context.Context) string {
 //	  previous categories.
 func ProjectConfig(c context.Context, project types.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if project == "" {
-		return nil, cfgclient.ErrNoConfig
+		return nil, config.ErrNoConfig
 	}
 
 	// Get the config from the config service. If the configuration doesn't exist,
-	// this will return cfgclient.ErrNoConfig.
+	// this will return config.ErrNoConfig.
 	configSet, configPath := config.ProjectSet(string(project)), ProjectConfigPath(c)
 
 	var pcfg svcconfig.ProjectConfig
@@ -71,7 +71,7 @@ func ProjectConfig(c context.Context, project types.ProjectName) (*svcconfig.Pro
 func ProjectNames(c context.Context, a cfgclient.Authority) ([]types.ProjectName, error) {
 	configPath := ProjectConfigPath(c)
 
-	var metas []*cfgclient.Meta
+	var metas []*config.Meta
 	if err := cfgclient.Projects(c, a, configPath, nil, &metas); err != nil {
 		log.WithError(err).Errorf(c, "Failed to load project configs.")
 		return nil, err

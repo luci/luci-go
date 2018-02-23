@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
@@ -216,7 +215,7 @@ func (dc *Config) accessConfigSet(c context.Context, a backend.Authority, config
 	case access.ErrNoAccess:
 		// No access.
 		break
-	case cfgclient.ErrNoConfig:
+	case config.ErrNoConfig:
 		log.Fields{
 			"configSet": configSet,
 		}.Debugf(c, "Checking access to project without a config.")

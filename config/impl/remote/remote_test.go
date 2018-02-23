@@ -68,12 +68,14 @@ func TestRemoteCalls(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(*res, ShouldResemble, config.Config{
-				ConfigSet:   "a",
-				Path:        "b",
-				Content:     "hi",
-				ContentHash: "bar",
-				Revision:    "3",
-				ViewURL:     "config_url",
+				Meta: config.Meta{
+					ConfigSet:   "a",
+					Path:        "b",
+					ContentHash: "bar",
+					Revision:    "3",
+					ViewURL:     "config_url",
+				},
+				Content: "hi",
 			})
 		})
 		Convey("GetConfigByHash", func() {
@@ -123,14 +125,16 @@ func TestRemoteCalls(t *testing.T) {
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
-				ConfigSet:   "a",
-				Path:        "b",
-				Content:     "hi",
-				ContentHash: "bar",
-				Revision:    "3",
+				Meta: config.Meta{
+					ConfigSet:   "a",
+					Path:        "b",
+					ContentHash: "bar",
+					Revision:    "3",
+				},
+				Content: "hi",
 			})
 		})
-		Convey("GetProjectConfigs hashesOnly", func() {
+		Convey("GetProjectConfigs metaOnly", func() {
 			server, remoteImpl := testTools(200, map[string]interface{}{
 				"configs": [...]interface{}{map[string]string{
 					"config_set":   "a",
@@ -146,11 +150,12 @@ func TestRemoteCalls(t *testing.T) {
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
-				ConfigSet:   "a",
-				Path:        "b",
-				Content:     "",
-				ContentHash: "bar",
-				Revision:    "3",
+				Meta: config.Meta{
+					ConfigSet:   "a",
+					Path:        "b",
+					ContentHash: "bar",
+					Revision:    "3",
+				},
 			})
 		})
 		Convey("GetProjects", func() {
@@ -200,14 +205,16 @@ func TestRemoteCalls(t *testing.T) {
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
-				ConfigSet:   "a",
-				Path:        "b",
-				Content:     "hi",
-				ContentHash: "bar",
-				Revision:    "3",
+				Meta: config.Meta{
+					ConfigSet:   "a",
+					Path:        "b",
+					ContentHash: "bar",
+					Revision:    "3",
+				},
+				Content: "hi",
 			})
 		})
-		Convey("GetRefConfigs hashesOnly", func() {
+		Convey("GetRefConfigs metaOnly", func() {
 			server, remoteImpl := testTools(200, map[string]interface{}{
 				"configs": [...]interface{}{map[string]string{
 					"config_set":   "a",
@@ -223,10 +230,12 @@ func TestRemoteCalls(t *testing.T) {
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
-				ConfigSet:   "a",
-				Path:        "b",
-				ContentHash: "bar",
-				Revision:    "3",
+				Meta: config.Meta{
+					ConfigSet:   "a",
+					Path:        "b",
+					ContentHash: "bar",
+					Revision:    "3",
+				},
 			})
 		})
 		Convey("GetRefs", func() {

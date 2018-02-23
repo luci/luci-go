@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 )
@@ -48,7 +49,7 @@ func (f *luciConfigFetcher) FetchTextProto(c context.Context, path string, out p
 	c, cancel := context.WithTimeout(c, 40*time.Second) // URL fetch deadline
 	defer cancel()
 
-	var meta cfgclient.Meta
+	var meta config.Meta
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, path, textproto.Message(out), &meta); err != nil {
 		return err
 	}

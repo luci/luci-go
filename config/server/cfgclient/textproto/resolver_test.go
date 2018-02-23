@@ -42,7 +42,7 @@ type testingBackend struct {
 // Get retrieves a single configuration.
 func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	if len(tb.items) == 0 {
-		return nil, cfgclient.ErrNoConfig
+		return nil, config.ErrNoConfig
 	}
 	return tb.cloneItems()[0], nil
 }
@@ -70,9 +70,9 @@ func TestResolver(t *testing.T) {
 		var be backend.B
 		be = &testingBackend{
 			items: []*backend.Item{
-				{Meta: backend.Meta{"projects/foo", "path", "####", "v1", "config_url"},
+				{Meta: config.Meta{"projects/foo", "path", "####", "v1", "config_url"},
 					Content: tpb(&configPB.Project{Id: proto.String("foo")})},
-				{Meta: backend.Meta{"projects/bar", "path", "####", "v1", "config_url"},
+				{Meta: config.Meta{"projects/bar", "path", "####", "v1", "config_url"},
 					Content: tpb(&configPB.Project{Id: proto.String("bar")})},
 			},
 		}
@@ -89,14 +89,14 @@ func TestResolver(t *testing.T) {
 			Convey(`Multi`, func() {
 				var (
 					val  []*configPB.Project
-					meta []*cfgclient.Meta
+					meta []*config.Meta
 				)
 				So(cfgclient.Projects(c, cfgclient.AsService, "", Slice(&val), &meta), ShouldBeNil)
 				So(val, ShouldResemble, []*configPB.Project{
 					{Id: proto.String("foo")},
 					{Id: proto.String("bar")},
 				})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					{"projects/foo", "path", "####", "v1", "config_url"},
 					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
@@ -135,14 +135,14 @@ func TestResolver(t *testing.T) {
 				Convey(`Multi`, func() {
 					var (
 						val  []*configPB.Project
-						meta []*cfgclient.Meta
+						meta []*config.Meta
 					)
 					So(cfgclient.Projects(c, cfgclient.AsService, "", Slice(&val), &meta), ShouldBeNil)
 					So(val, ShouldResemble, []*configPB.Project{
 						{Id: proto.String("foo")},
 						{Id: proto.String("bar")},
 					})
-					So(meta, ShouldResemble, []*cfgclient.Meta{
+					So(meta, ShouldResemble, []*config.Meta{
 						{"projects/foo", "path", "####", "v1", "config_url"},
 						{"projects/bar", "path", "####", "v1", "config_url"},
 					})
