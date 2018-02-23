@@ -88,13 +88,13 @@ func (r *remoteImpl) service(ctx context.Context) (*configApi.Service, error) {
 	return service, nil
 }
 
-func (r *remoteImpl) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
+func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path string, hashOnly bool) (*config.Config, error) {
 	srv, err := r.service(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := srv.GetConfig(configSet, path).HashOnly(hashOnly).Context(ctx).Do()
+	resp, err := srv.GetConfig(string(configSet), path).HashOnly(hashOnly).Context(ctx).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
@@ -136,7 +136,7 @@ func (r *remoteImpl) GetConfigByHash(ctx context.Context, configSet string) (str
 	return string(decoded), nil
 }
 
-func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
+func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
 	if configSet == "" {
 		return nil, fmt.Errorf("configSet must be a non-empty string")
 	}
@@ -146,14 +146,14 @@ func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet string)
 		return nil, err
 	}
 
-	resp, err := srv.GetConfigSets().ConfigSet(configSet).Context(ctx).Do()
+	resp, err := srv.GetConfigSets().ConfigSet(string(configSet)).Context(ctx).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 
 	urlString, has := "", false
 	for _, cset := range resp.ConfigSets {
-		if cset.ConfigSet == configSet {
+		if cset.ConfigSet == string(configSet) {
 			if has {
 				return nil, fmt.Errorf(
 					"duplicate entries %q and %q for location of config set %s",
@@ -272,7 +272,7 @@ func convertMultiWireConfigs(ctx context.Context, path string, wireConfigs *conf
 		}
 
 		configs[i] = config.Config{
-			ConfigSet:   c.ConfigSet,
+			ConfigSet:   config.Set(c.ConfigSet),
 			Path:        path,
 			Error:       err,
 			Content:     string(decoded),

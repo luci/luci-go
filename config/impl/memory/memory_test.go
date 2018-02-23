@@ -28,7 +28,7 @@ import (
 func TestMemoryImpl(t *testing.T) {
 	Convey("with memory implementation", t, func() {
 		ctx := context.Background()
-		impl := New(map[string]ConfigSet{
+		impl := New(map[config.Set]Files{
 			"services/abc": {
 				"file": "body",
 			},

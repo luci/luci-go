@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -50,11 +51,11 @@ func TestPoller(t *testing.T) {
 				},
 			},
 		}
-		cset := memory.ConfigSet{
+		cset := memory.Files{
 			"test-configuration.cfg": proto.MarshalTextString(cfg),
 		}
 
-		mc := memory.New(map[string]memory.ConfigSet{
+		mc := memory.New(map[config.Set]memory.Files{
 			"svcconfig/logdog/test": cset,
 		})
 		c = testconfig.WithCommonClient(c, mc)

@@ -32,8 +32,10 @@ import (
 	"go.chromium.org/luci/config"
 )
 
-// ConfigSet is a mapping from a file path to a config file body.
-type ConfigSet map[string]string
+// Files is all files comprising some config set.
+//
+// Represented as a mapping from a file path to a config file body.
+type Files map[string]string
 
 // SetError artificially pins the error code returned by impl to err. If err is
 // nil, impl will behave normally.
@@ -46,16 +48,16 @@ func SetError(impl config.Interface, err error) {
 
 // New makes an implementation of the config service which takes all configs
 // from provided mapping {config set name -> map of configs}. For unit testing.
-func New(cfg map[string]ConfigSet) config.Interface {
+func New(cfg map[config.Set]Files) config.Interface {
 	return &memoryImpl{sets: cfg}
 }
 
 type memoryImpl struct {
-	sets map[string]ConfigSet
+	sets map[config.Set]Files
 	err  error
 }
 
-func (m *memoryImpl) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
+func (m *memoryImpl) GetConfig(ctx context.Context, configSet config.Set, path string, hashOnly bool) (*config.Config, error) {
 	if err := m.err; err != nil {
 		return nil, err
 	}
@@ -83,12 +85,12 @@ func (m *memoryImpl) GetConfigByHash(ctx context.Context, contentHash string) (s
 	return "", config.ErrNoConfig
 }
 
-func (m *memoryImpl) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
+func (m *memoryImpl) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
 	if err := m.err; err != nil {
 		return nil, err
 	}
 	if _, ok := m.sets[configSet]; ok {
-		return url.Parse("https://example.com/fake-config/" + configSet)
+		return url.Parse("https://example.com/fake-config/" + string(configSet))
 	}
 	return nil, config.ErrNoConfig
 }
@@ -104,7 +106,7 @@ func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, hashesO
 	}
 	out := []config.Config{}
 	for _, proj := range projects {
-		if cfg, err := m.GetConfig(ctx, "projects/"+proj.ID, path, hashesOnly); err == nil {
+		if cfg, err := m.GetConfig(ctx, config.ProjectSet(proj.ID), path, hashesOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}
@@ -118,9 +120,8 @@ func (m *memoryImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 
 	ids := stringset.New(0)
 	for configSet := range m.sets {
-		chunks := strings.Split(configSet, "/")
-		if len(chunks) >= 2 && chunks[0] == "projects" {
-			ids.Add(chunks[1])
+		if projID, _, _ := configSet.SplitProject(); projID != "" {
+			ids.Add(projID)
 		}
 	}
 	sorted := ids.ToSlice()
@@ -143,15 +144,14 @@ func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly 
 
 	var sets []string
 	for configSet := range m.sets {
-		chunks := strings.Split(configSet, "/")
-		if len(chunks) > 3 && chunks[0] == "projects" && chunks[2] == "refs" {
-			sets = append(sets, configSet)
+		if _, _, ref := configSet.SplitProject(); ref != "" {
+			sets = append(sets, string(configSet))
 		}
 	}
 	sort.Strings(sets)
 	out := []config.Config{}
 	for _, configSet := range sets {
-		if cfg, err := m.GetConfig(ctx, configSet, path, hashesOnly); err == nil {
+		if cfg, err := m.GetConfig(ctx, config.Set(configSet), path, hashesOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}
@@ -166,6 +166,7 @@ func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, e
 	prefix := "projects/" + projectID + "/"
 	var out []string
 	for configSet := range m.sets {
+		configSet := string(configSet)
 		if strings.HasPrefix(configSet, prefix) {
 			ref := configSet[len(prefix):]
 			if strings.HasPrefix(ref, "refs/") {
@@ -178,7 +179,7 @@ func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, e
 }
 
 // configMaybe returns config.Config is such config is in the set, else nil.
-func (b ConfigSet) configMaybe(configSet, path string, hashesOnly bool) *config.Config {
+func (b Files) configMaybe(configSet config.Set, path string, hashesOnly bool) *config.Config {
 	if body, ok := b[path]; ok {
 		cfg := &config.Config{
 			ConfigSet:   configSet,
@@ -196,7 +197,7 @@ func (b ConfigSet) configMaybe(configSet, path string, hashesOnly bool) *config.
 }
 
 // rev returns fake revision of given config set.
-func (b ConfigSet) rev() string {
+func (b Files) rev() string {
 	keys := make([]string, 0, len(b))
 	for k := range b {
 		keys = append(keys, k)

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
@@ -235,7 +236,7 @@ name: "opensource"
 access: "group:all"
 `
 
-var aclConfgs = map[string]memcfg.ConfigSet{
+var aclConfgs = map[config.Set]memcfg.Files{
 	"projects/secret": {
 		"project.cfg": secretProjectCfg,
 	},
