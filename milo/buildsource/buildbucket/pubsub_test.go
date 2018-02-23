@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	bucketApi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock/testclock"
-	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"

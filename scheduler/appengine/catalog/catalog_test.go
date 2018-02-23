@@ -24,11 +24,11 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
+	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"

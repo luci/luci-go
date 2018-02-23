@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/data/recordio"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -266,7 +266,7 @@ func (s *Storage) Get(c context.Context, r storage.GetRequest, cb storage.GetCal
 }
 
 // Tail implements storage.Storage.
-func (s *Storage) Tail(c context.Context, project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *Storage) Tail(c context.Context, project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	c = prepareContext(c)
 	c = log.SetFields(c, log.Fields{
 		"project": project,
@@ -372,7 +372,7 @@ func (w *rowWriter) append(d []byte) (appended bool) {
 }
 
 func (w *rowWriter) flush(c context.Context, iface btIface, index types.MessageIndex,
-	project cfgtypes.ProjectName, path types.StreamPath) (int, error) {
+	project config.ProjectName, path types.StreamPath) (int, error) {
 
 	flushCount := w.count
 	if flushCount == 0 {

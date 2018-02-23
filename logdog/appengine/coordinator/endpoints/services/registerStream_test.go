@@ -24,7 +24,7 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -314,7 +314,7 @@ func BenchmarkRegisterStream(b *testing.B) {
 
 	const (
 		prefix  = types.StreamName("testing")
-		project = cfgtypes.ProjectName("proj-foo")
+		project = config.ProjectName("proj-foo")
 	)
 
 	tls := ct.MakeStream(c, project, prefix.Join(types.StreamName(fmt.Sprintf("foo/bar"))))

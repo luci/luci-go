@@ -26,7 +26,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
@@ -50,7 +50,7 @@ const (
 
 // AnnotationStream represents a LogDog annotation protobuf stream.
 type AnnotationStream struct {
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	Path    types.StreamPath
 
 	// Client is the HTTP client to use for LogDog communication.
@@ -196,7 +196,7 @@ func (as *AnnotationStream) toMiloBuild(c context.Context) *ui.MiloBuild {
 type ViewerURLBuilder struct {
 	Host    string
 	Prefix  types.StreamName
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 }
 
 // NewURLBuilder creates a new URLBuilder that can generate links to LogDog
@@ -249,7 +249,7 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 // BuildID implements buildsource.ID.
 type BuildID struct {
 	Host    string
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	Path    types.StreamPath
 }
 
@@ -297,7 +297,7 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 func NewBuildID(host, project, path string) *BuildID {
 	return &BuildID{
 		strings.TrimSpace(host),
-		cfgtypes.ProjectName(project),
+		config.ProjectName(project),
 		types.StreamPath(strings.Trim(path, "/")),
 	}
 }

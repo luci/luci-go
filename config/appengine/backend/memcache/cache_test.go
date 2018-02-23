@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	memconfig "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/errors"
+	memconfig "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"

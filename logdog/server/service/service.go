@@ -33,7 +33,6 @@ import (
 	commonAuth "go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/clock/clockflag"
-	"go.chromium.org/luci/common/config/impl/filesystem"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
@@ -43,7 +42,8 @@ import (
 	"go.chromium.org/luci/common/runtime/profiling"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	cfglib "go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/impl/filesystem"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend/client"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
@@ -474,8 +474,8 @@ func (s *Service) initConfig(c *context.Context) error {
 
 // ServiceConfigPath returns the ConfigSet and path to the current service's
 // configuration.
-func (s *Service) ServiceConfigPath() (cfgtypes.ConfigSet, string) {
-	return cfgtypes.ServiceConfigSet(s.serviceID), svcconfig.ServiceConfigPath
+func (s *Service) ServiceConfigPath() (cfglib.Set, string) {
+	return cfglib.ServiceSet(s.serviceID), svcconfig.ServiceConfigPath
 }
 
 // ServiceConfig returns the configuration data for the current service.
@@ -483,12 +483,12 @@ func (s *Service) ServiceConfig() *svcconfig.Config { return &s.serviceConfig }
 
 // ProjectConfigPath returns the ConfigSet and path to the current service's
 // project configuration for proj.
-func (s *Service) ProjectConfigPath(proj cfgtypes.ProjectName) (cfgtypes.ConfigSet, string) {
-	return cfgtypes.ProjectConfigSet(proj), svcconfig.ProjectConfigPath(s.serviceID)
+func (s *Service) ProjectConfigPath(proj cfglib.ProjectName) (cfglib.Set, string) {
+	return cfglib.ProjectSet(proj), svcconfig.ProjectConfigPath(s.serviceID)
 }
 
 // ProjectConfig returns the current service's project configuration for proj.
-func (s *Service) ProjectConfig(c context.Context, proj cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *Service) ProjectConfig(c context.Context, proj cfglib.ProjectName) (*svcconfig.ProjectConfig, error) {
 	cset, path := s.ProjectConfigPath(proj)
 
 	var pcfg svcconfig.ProjectConfig

@@ -18,7 +18,7 @@ import (
 	"errors"
 	"time"
 
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
@@ -52,7 +52,7 @@ type Config struct {
 // PutRequest describes adding a single storage record to BigTable.
 type PutRequest struct {
 	// Project is the project name of the stream.
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	// Path is the stream path to retrieve.
 	Path types.StreamPath
 	// Index is the entry's stream index.
@@ -66,7 +66,7 @@ type PutRequest struct {
 // GetRequest is a request to retrieve a series of LogEntry records.
 type GetRequest struct {
 	// Project is the project name of the stream.
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	// Path is the stream path to retrieve.
 	Path types.StreamPath
 	// Index is the entry's stream index.
@@ -129,7 +129,7 @@ type Storage interface {
 	// The MessageIndex may be -1 if the message index isn't known. In this case,
 	// the caller will have to unmarshal the log entry data to determine its
 	// index.
-	Tail(context.Context, cfgtypes.ProjectName, types.StreamPath) (*Entry, error)
+	Tail(context.Context, config.ProjectName, types.StreamPath) (*Entry, error)
 
 	// Config installs the supplied configuration parameters into the storage
 	// instance.

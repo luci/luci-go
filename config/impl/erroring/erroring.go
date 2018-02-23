@@ -19,9 +19,9 @@ package erroring
 import (
 	"net/url"
 
-	"go.chromium.org/luci/common/config"
-
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/config"
 )
 
 // New creates a new erroring interface. This interface will always return an

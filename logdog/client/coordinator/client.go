@@ -16,7 +16,7 @@ package coordinator
 
 import (
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/prpc"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/common/types"
@@ -49,7 +49,7 @@ func NewClient(c *prpc.Client) *Client {
 }
 
 // Stream returns a Stream instance for the named stream.
-func (c *Client) Stream(project cfgtypes.ProjectName, path types.StreamPath) *Stream {
+func (c *Client) Stream(project config.ProjectName, path types.StreamPath) *Stream {
 	return &Stream{
 		c:       c,
 		project: project,

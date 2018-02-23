@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	configPB "go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
@@ -45,7 +45,7 @@ import (
 var ErrNoAccess = errors.New("no access")
 
 // Check tests if a given Authority can access the named config set.
-func Check(c context.Context, a backend.Authority, configSet cfgtypes.ConfigSet) error {
+func Check(c context.Context, a backend.Authority, configSet config.Set) error {
 	if a == backend.AsService {
 		return nil
 	}

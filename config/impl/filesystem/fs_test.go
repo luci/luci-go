@@ -25,8 +25,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
 )
 
 func withFolder(files map[string]string, cb func(folder string)) {

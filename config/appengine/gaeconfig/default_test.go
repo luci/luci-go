@@ -22,10 +22,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	commonConfig "go.chromium.org/luci/common/config"
-	memConfig "go.chromium.org/luci/common/config/impl/memory"
 	configPB "go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
+	memConfig "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/client"
@@ -46,7 +45,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func projectConfigWithAccess(name cfgtypes.ProjectName, access ...string) *configPB.ProjectCfg {
+func projectConfigWithAccess(name config.ProjectName, access ...string) *configPB.ProjectCfg {
 	return &configPB.ProjectCfg{
 		Name:   proto.String(string(name)),
 		Access: access,
@@ -325,7 +324,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		}
 
 		// Return project config hashes from backing memory config store.
-		type baseConfigsFn func(context.Context, string, bool) ([]commonConfig.Config, error)
+		type baseConfigsFn func(context.Context, string, bool) ([]config.Config, error)
 		baseContentHashes := func(fn baseConfigsFn, path string) []string {
 			cfgs, err := fn(c, path, true)
 			if err != nil {

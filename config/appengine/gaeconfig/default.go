@@ -23,11 +23,11 @@ import (
 
 	"go.chromium.org/luci/appengine/datastorecache"
 	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/common/config/impl/filesystem"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/appengine/backend/datastore"
 	"go.chromium.org/luci/config/appengine/backend/memcache"
+	"go.chromium.org/luci/config/impl/filesystem"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
 	"go.chromium.org/luci/config/server/cfgclient/backend/client"

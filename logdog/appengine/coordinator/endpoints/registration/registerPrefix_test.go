@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -59,7 +59,7 @@ func TestRegisterPrefix(t *testing.T) {
 
 		svr := New()
 
-		const project = cfgtypes.ProjectName("proj-foo")
+		const project = config.ProjectName("proj-foo")
 		req := logdog.RegisterPrefixRequest{
 			Project:    string(project),
 			Prefix:     "testing/prefix",

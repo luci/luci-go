@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
@@ -40,7 +40,7 @@ type BuildInfoService struct {
 
 var _ milo.BuildInfoServer = (*BuildInfoService)(nil)
 
-func (svc *BuildInfoService) getFromContextURI(c context.Context, id int64, projectHint cfgtypes.ProjectName) (
+func (svc *BuildInfoService) getFromContextURI(c context.Context, id int64, projectHint config.ProjectName) (
 	*milo.BuildInfoResponse, error) {
 	bs, err := buildbucket.GetBuildSummary(c, id)
 	if err != nil {
@@ -88,7 +88,7 @@ func (svc *BuildInfoService) getFromContextURI(c context.Context, id int64, proj
 
 // Get implements milo.BuildInfoServer.
 func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) (*milo.BuildInfoResponse, error) {
-	projectHint := cfgtypes.ProjectName(req.ProjectHint)
+	projectHint := config.ProjectName(req.ProjectHint)
 	if projectHint != "" {
 		if err := projectHint.Validate(); err != nil {
 			return nil, grpcutil.Errf(codes.InvalidArgument, "invalid project hint: %s", err.Error())

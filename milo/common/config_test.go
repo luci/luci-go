@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
 	. "github.com/smartystreets/goconvey/convey"

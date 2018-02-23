@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/appengine/datastorecache"
-	memConfig "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/errors"
 	configPB "go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
+	memConfig "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
@@ -51,12 +51,12 @@ type testCache interface {
 
 	setCacheErr(err error)
 	setProjectDNE(project string)
-	addConfig(configSet cfgtypes.ConfigSet, path, content string) *backend.Item
-	addProjectConfig(name cfgtypes.ProjectName, access string)
-	addConfigSets(path string, configSets ...cfgtypes.ConfigSet) []string
+	addConfig(configSet config.Set, path, content string) *backend.Item
+	addProjectConfig(name config.ProjectName, access string)
+	addConfigSets(path string, configSets ...config.Set) []string
 }
 
-func projectConfigWithAccess(name cfgtypes.ProjectName, access ...string) *configPB.ProjectCfg {
+func projectConfigWithAccess(name config.ProjectName, access ...string) *configPB.ProjectCfg {
 	return &configPB.ProjectCfg{
 		Name:   proto.String(string(name)),
 		Access: access,
@@ -126,12 +126,12 @@ func (fc *fakeCache) setProjectDNE(project string) {
 		Schema:     caching.Schema,
 		ServiceURL: fc.serviceURL,
 		Op:         caching.OpGet,
-		ConfigSet:  string(cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(project))),
+		ConfigSet:  string(config.ProjectSet(config.ProjectName(project))),
 		Path:       cfgclient.ProjectConfigPath,
 	}, nil)
 }
 
-func (fc *fakeCache) addConfigImpl(cs cfgtypes.ConfigSet, path, formatter, formatData, content string) *backend.Item {
+func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, content string) *backend.Item {
 	var (
 		item *backend.Item
 		cv   caching.Value
@@ -165,13 +165,13 @@ func (fc *fakeCache) addConfigImpl(cs cfgtypes.ConfigSet, path, formatter, forma
 	return item
 }
 
-func (fc *fakeCache) addConfig(cs cfgtypes.ConfigSet, path, content string) *backend.Item {
+func (fc *fakeCache) addConfig(cs config.Set, path, content string) *backend.Item {
 	return fc.addConfigImpl(cs, path, "", "", content)
 }
 
 // addProjectConfig caches a "project.cfg" file for the specified project with
 // the specified access string.
-func (fc *fakeCache) addProjectConfig(name cfgtypes.ProjectName, access string) {
+func (fc *fakeCache) addProjectConfig(name config.ProjectName, access string) {
 	// We're loading the resolved version of this cache item.
 	pcfg := projectConfigWithAccess(name, access)
 	pcfgName := proto.MessageName(pcfg)
@@ -182,11 +182,11 @@ func (fc *fakeCache) addProjectConfig(name cfgtypes.ProjectName, access string) 
 		panic(err)
 	}
 
-	fc.addConfigImpl(cfgtypes.ProjectConfigSet(name), cfgclient.ProjectConfigPath,
+	fc.addConfigImpl(config.ProjectSet(name), cfgclient.ProjectConfigPath,
 		textproto.BinaryFormat, pcfgName, formattedData)
 }
 
-func (fc *fakeCache) addConfigSets(path string, configSets ...cfgtypes.ConfigSet) []string {
+func (fc *fakeCache) addConfigSets(path string, configSets ...config.Set) []string {
 	items := make([]*backend.Item, len(configSets))
 	contents := make([]string, len(configSets))
 	for i, cs := range configSets {
@@ -248,7 +248,7 @@ func (fsc *fullStackCache) setProjectDNE(project string) {
 	}
 }
 
-func (fsc *fullStackCache) addConfig(cs cfgtypes.ConfigSet, path, content string) *backend.Item {
+func (fsc *fullStackCache) addConfig(cs config.Set, path, content string) *backend.Item {
 	cset := fsc.data[string(cs)]
 	if cset == nil {
 		cset = memConfig.ConfigSet{}
@@ -272,12 +272,12 @@ func (fsc *fullStackCache) addConfig(cs cfgtypes.ConfigSet, path, content string
 
 // addProjectConfig caches a "project.cfg" file for the specified project with
 // the specified access string.
-func (fsc *fullStackCache) addProjectConfig(name cfgtypes.ProjectName, access string) {
-	fsc.addConfig(cfgtypes.ProjectConfigSet(name), cfgclient.ProjectConfigPath,
+func (fsc *fullStackCache) addProjectConfig(name config.ProjectName, access string) {
+	fsc.addConfig(config.ProjectSet(name), cfgclient.ProjectConfigPath,
 		proto.MarshalTextString(projectConfigWithAccess(name, access)))
 }
 
-func (fsc *fullStackCache) addConfigSets(path string, configSets ...cfgtypes.ConfigSet) []string {
+func (fsc *fullStackCache) addConfigSets(path string, configSets ...config.Set) []string {
 	// Sort the config sets list, then put it back.
 	cstr := make([]string, len(configSets))
 	for i, cs := range configSets {
@@ -285,7 +285,7 @@ func (fsc *fullStackCache) addConfigSets(path string, configSets ...cfgtypes.Con
 	}
 	sort.Strings(cstr)
 	for i, cs := range cstr {
-		configSets[i] = cfgtypes.ConfigSet(cs)
+		configSets[i] = config.Set(cs)
 	}
 
 	items := make([]*backend.Item, len(configSets))

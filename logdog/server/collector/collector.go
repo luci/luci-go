@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	tsmon_types "go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerproto"
 	"go.chromium.org/luci/logdog/common/storage"
@@ -173,7 +173,7 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		b:   pr.Bundle,
 	}
 
-	lw.project = cfgtypes.ProjectName(lw.b.Project)
+	lw.project = config.ProjectName(lw.b.Project)
 	if err := lw.project.Validate(); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -231,7 +231,7 @@ type bundleHandler struct {
 	b *logpb.ButlerLogBundle
 
 	// project is the validated project name.
-	project cfgtypes.ProjectName
+	project config.ProjectName
 }
 
 type bundleEntryHandler struct {

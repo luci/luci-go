@@ -24,7 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
@@ -43,7 +43,7 @@ type rec struct {
 }
 
 type streamKey struct {
-	project cfgtypes.ProjectName
+	project config.ProjectName
 	path    types.StreamPath
 }
 
@@ -168,7 +168,7 @@ func (s *Storage) Get(c context.Context, req storage.GetRequest, cb storage.GetC
 }
 
 // Tail implements storage.Storage.
-func (s *Storage) Tail(c context.Context, project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *Storage) Tail(c context.Context, project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	var r *rec
 
 	// Find the latest log, then return it.
@@ -191,7 +191,7 @@ func (s *Storage) Tail(c context.Context, project cfgtypes.ProjectName, path typ
 }
 
 // Count returns the number of log records for the given stream.
-func (s *Storage) Count(project cfgtypes.ProjectName, path types.StreamPath) (c int) {
+func (s *Storage) Count(project config.ProjectName, path types.StreamPath) (c int) {
 	s.run(func() error {
 		if st := s.getLogStreamLocked(project, path, false); st != nil {
 			c = len(st.logs)
@@ -222,7 +222,7 @@ func (s *Storage) run(f func() error) error {
 	return f()
 }
 
-func (s *Storage) getLogStreamLocked(project cfgtypes.ProjectName, path types.StreamPath, create bool) *logStream {
+func (s *Storage) getLogStreamLocked(project config.ProjectName, path types.StreamPath, create bool) *logStream {
 	key := streamKey{
 		project: project,
 		path:    path,
@@ -246,7 +246,7 @@ func (s *Storage) getLogStreamLocked(project cfgtypes.ProjectName, path types.St
 
 // PutEntries is a convenience method for ingesting logpb.Entry's into this
 // Storage object.
-func (s *Storage) PutEntries(ctx context.Context, project cfgtypes.ProjectName, path types.StreamPath, entries ...*logpb.LogEntry) {
+func (s *Storage) PutEntries(ctx context.Context, project config.ProjectName, path types.StreamPath, entries ...*logpb.LogEntry) {
 	for _, ent := range entries {
 		value, err := proto.Marshal(ent)
 		if err != nil {

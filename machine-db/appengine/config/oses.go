@@ -21,11 +21,11 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 
-	"go.chromium.org/luci/machine-db/api/config/v1"
+	configPB "go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
@@ -33,8 +33,8 @@ import (
 const osesFilename = "oses.cfg"
 
 // importOSes fetches, validates, and applies operating system configs.
-func importOSes(c context.Context, configSet cfgtypes.ConfigSet) error {
-	os := &config.OSes{}
+func importOSes(c context.Context, configSet config.Set) error {
+	os := &configPB.OSes{}
 	metadata := &cfgclient.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, osesFilename, textproto.Message(os), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", osesFilename).Err()
@@ -55,7 +55,7 @@ func importOSes(c context.Context, configSet cfgtypes.ConfigSet) error {
 }
 
 // validateOSes validates oses.cfg.
-func validateOSes(c *validation.Context, cfg *config.OSes) {
+func validateOSes(c *validation.Context, cfg *configPB.OSes) {
 	// Operating system names must be unique.
 	// Keep records of ones we've already seen.
 	names := stringset.New(len(cfg.OperatingSystem))

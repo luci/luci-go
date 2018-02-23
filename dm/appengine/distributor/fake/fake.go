@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	config_mem "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	googlepb "go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/assertions"
+	config_mem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor"

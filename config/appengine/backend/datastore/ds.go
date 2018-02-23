@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
@@ -131,7 +131,7 @@ func (dc *Config) cacheGet(c context.Context, key caching.Key, l caching.Loader)
 	case caching.OpGet:
 		// We can deny access to this operation based solely on the requested
 		// ConfigSet.
-		if err := access.Check(c, origAuthority, cfgtypes.ConfigSet(key.ConfigSet)); err != nil {
+		if err := access.Check(c, origAuthority, config.Set(key.ConfigSet)); err != nil {
 			// Access check failed, simulate ErrNoSuchConfig.
 			//
 			// OpGet: Indicate no content via empty Items.
@@ -209,7 +209,7 @@ func (dc *Config) accessConfigSet(c context.Context, a backend.Authority, config
 
 	// Perform a soft access check.
 	canAccess := false
-	switch err := access.Check(c, a, cfgtypes.ConfigSet(configSet)); err {
+	switch err := access.Check(c, a, config.Set(configSet)); err {
 	case nil:
 		canAccess = true
 

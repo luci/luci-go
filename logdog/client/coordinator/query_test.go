@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/prpctest"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -98,7 +98,7 @@ func TestClientQuery(t *testing.T) {
 		}
 
 		Convey(`When making a query request`, func() {
-			const project = cfgtypes.ProjectName("myproj")
+			const project = config.ProjectName("myproj")
 			const path = "**/+/**"
 			q := QueryOptions{
 				Tags: map[string]string{

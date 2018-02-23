@@ -22,7 +22,7 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"

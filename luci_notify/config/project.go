@@ -15,7 +15,7 @@
 package config
 
 import (
-	configInterface "go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/config"
 )
 
 // Project represents the luci-notify configuration for a single project in the datastore.
@@ -33,7 +33,7 @@ type Project struct {
 }
 
 // NewProject constructs a new Project from a name and a luci-config configuration.
-func NewProject(name string, cfg *configInterface.Config) *Project {
+func NewProject(name string, cfg *config.Config) *Project {
 	return &Project{
 		Name:     name,
 		Revision: cfg.Revision,

@@ -22,11 +22,11 @@ import (
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 
-	"go.chromium.org/luci/machine-db/api/config/v1"
+	configPB "go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
@@ -44,8 +44,8 @@ const vlanMaxCIDRBlocks = 32
 const vlanMinCIDRBlockSuffix = 18
 
 // importVLANs fetches, validates, and applies VLAN configs.
-func importVLANs(c context.Context, configSet cfgtypes.ConfigSet) error {
-	vlan := &config.VLANs{}
+func importVLANs(c context.Context, configSet config.Set) error {
+	vlan := &configPB.VLANs{}
 	metadata := &cfgclient.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, vlansFilename, textproto.Message(vlan), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", vlansFilename).Err()
@@ -69,7 +69,7 @@ func importVLANs(c context.Context, configSet cfgtypes.ConfigSet) error {
 }
 
 // validateVLANs validates vlans.cfg.
-func validateVLANs(c *validation.Context, cfg *config.VLANs) {
+func validateVLANs(c *validation.Context, cfg *configPB.VLANs) {
 	// VLAN IDs must be unique.
 	// Keep records of ones we've already seen.
 	vlans := make(map[int64]struct{}, len(cfg.Vlan))

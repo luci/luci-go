@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/cancelcond"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -38,7 +38,7 @@ type Config struct {
 	Clock clock.Clock
 
 	// Project is the project to use.
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	// Prefix is the common prefix for this set of streams.
 	Prefix types.StreamName
 

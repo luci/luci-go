@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/text/templateproto"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	dm "go.chromium.org/luci/dm/api/service/v1"
@@ -29,7 +29,7 @@ import (
 // LoadFile loads a File by configSet and path.
 func LoadFile(c context.Context, project, ref string) (file *File, vers string, err error) {
 	// If ref is "", this will be a standard project config set.
-	cfgSet := cfgtypes.RefConfigSet(cfgtypes.ProjectName(project), ref)
+	cfgSet := config.RefSet(config.ProjectName(project), ref)
 
 	file = &File{}
 	var meta cfgclient.Meta

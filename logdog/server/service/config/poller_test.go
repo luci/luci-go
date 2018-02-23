@@ -22,7 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 

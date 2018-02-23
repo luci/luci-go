@@ -29,10 +29,10 @@ import (
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
-	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/fakelogs"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"

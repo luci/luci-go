@@ -17,9 +17,8 @@ package cfgclient
 import (
 	"net/url"
 
-	"go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
@@ -38,7 +37,7 @@ var ErrNoConfig = config.ErrNoConfig
 // ConfigSet field.
 type Meta struct {
 	// ConfigSet is the item's config set.
-	ConfigSet cfgtypes.ConfigSet
+	ConfigSet config.Set
 	// Path is the item's path within its config set.
 	Path string
 
@@ -81,7 +80,7 @@ func ServiceURL(c context.Context) url.URL { return backend.Get(c).ServiceURL(c)
 //
 // meta, if not nil, will have the configuration's Meta loaded into it on
 // success.
-func Get(c context.Context, a Authority, cs cfgtypes.ConfigSet, path string, r Resolver, meta *Meta) error {
+func Get(c context.Context, a Authority, cs config.Set, path string, r Resolver, meta *Meta) error {
 	be := backend.Get(c)
 
 	params := backend.Params{
@@ -192,7 +191,7 @@ func getAll(c context.Context, a Authority, t backend.GetAllTarget, path string,
 
 func makeMeta(b *backend.Meta) *Meta {
 	return &Meta{
-		ConfigSet:   cfgtypes.ConfigSet(b.ConfigSet),
+		ConfigSet:   config.Set(b.ConfigSet),
 		Path:        b.Path,
 		ContentHash: b.ContentHash,
 		Revision:    b.Revision,
