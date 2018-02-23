@@ -50,11 +50,15 @@ func Check(c context.Context, a backend.Authority, configSet config.Set) error {
 		return nil
 	}
 
-	_, projectConfigSet, _ := configSet.SplitProject()
-	if projectConfigSet == "" {
+	project := configSet.Project()
+	if project == "" {
 		// Not a project config set, so neither remaining Authority can access.
 		return ErrNoAccess
 	}
+
+	// Root project config set, contains project.cfg file that has project ACL
+	// definitions.
+	projectConfigSet := config.ProjectSet(project)
 
 	// Load the project config. We execute this RPC as the service, not the user,
 	// so while this will recurse (and hopefully take advantage of the cache), it

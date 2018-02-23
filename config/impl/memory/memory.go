@@ -120,7 +120,7 @@ func (m *memoryImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 
 	ids := stringset.New(0)
 	for configSet := range m.sets {
-		if projID, _, _ := configSet.SplitProject(); projID != "" {
+		if projID := configSet.Project(); projID != "" {
 			ids.Add(projID)
 		}
 	}
@@ -142,16 +142,17 @@ func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly 
 		return nil, err
 	}
 
-	var sets []string
+	var sets []config.Set
 	for configSet := range m.sets {
-		if _, _, ref := configSet.SplitProject(); ref != "" {
-			sets = append(sets, string(configSet))
+		if configSet.Ref() != "" {
+			sets = append(sets, configSet)
 		}
 	}
-	sort.Strings(sets)
+	sort.Slice(sets, func(i, j int) bool { return sets[i] < sets[j] })
+
 	out := []config.Config{}
 	for _, configSet := range sets {
-		if cfg, err := m.GetConfig(ctx, config.Set(configSet), path, hashesOnly); err == nil {
+		if cfg, err := m.GetConfig(ctx, configSet, path, hashesOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}
@@ -163,15 +164,10 @@ func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, e
 		return nil, err
 	}
 
-	prefix := "projects/" + projectID + "/"
 	var out []string
 	for configSet := range m.sets {
-		configSet := string(configSet)
-		if strings.HasPrefix(configSet, prefix) {
-			ref := configSet[len(prefix):]
-			if strings.HasPrefix(ref, "refs/") {
-				out = append(out, ref)
-			}
+		if project, ref := configSet.ProjectAndRef(); project == projectID && ref != "" {
+			out = append(out, ref)
 		}
 	}
 	sort.Strings(out)

@@ -57,30 +57,51 @@ func (cs Set) Split() (domain, target, ref string) {
 	}
 }
 
-// SplitProject splits a project-rooted config set (projects/<name>[/...]) into
-// its project name, project config set, and ref components.
+// Service returns a service name for a service-rooted config set or empty
+// string for all other sets.
+func (cs Set) Service() string {
+	domain, target, _ := cs.Split()
+	if domain == "services" {
+		return target
+	}
+	return ""
+}
+
+// Project returns a project name for a project-rooted config set or empty
+// string for all other sets.
+//
+// Use ProjectAndRef if you need to get both the project name and the ref.
+func (cs Set) Project() string {
+	domain, target, _ := cs.Split()
+	if domain == "projects" {
+		return target
+	}
+	return ""
+}
+
+// Ref returns a ref component of a project-rooted config set or empty string
+// for all other sets.
+//
+// Use ProjectAndRef if you need to get both the project name and the ref.
+func (cs Set) Ref() string {
+	domain, _, ref := cs.Split()
+	if domain == "projects" {
+		return ref
+	}
+	return ""
+}
+
+// ProjectAndRef splits a project-rooted config set (projects/<name>[/...]) into
+// its project name and ref components.
 //
 // For example, "projects/foo/bar/baz" is a config set that belongs to project
-// "foo". It will be parsed into:
-//	- project: "foo"
-//	- projectConfigSet: "projects/foo"
-//	- ref: "bar/baz"
+// "foo". It will be parsed into ("foo", "bar/baz").
 //
 // If configSet is not a project config set, empty strings will be returned.
-func (cs Set) SplitProject() (project string, projectConfigSet Set, ref string) {
-	parts := strings.SplitN(string(cs), "/", 3)
-	if len(parts) < 2 || parts[0] != "projects" {
-		// Not a project config set, so neither remaining Authority can access.
+func (cs Set) ProjectAndRef() (project, ref string) {
+	domain, project, ref := cs.Split()
+	if domain == "projects" {
 		return
 	}
-
-	// The project is the first part.
-	project = parts[1]
-
-	// Re-assemble the project part of the config set ("projects/foo").
-	projectConfigSet = cs[:len("projects/")+len(project)]
-	if len(parts) > 2 {
-		ref = parts[2]
-	}
-	return
+	return "", ""
 }
