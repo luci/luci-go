@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3d93b72_6ebf58a4",
+        "filename": "tools/cmd/bqschemaupdater/dry_run_table_store.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-23T18:25:08Z",
+      "side": 1,
+      "message": "Fprint, here and above?",
+      "range": {
+        "startLine": 87,
+        "startChar": 6,
+        "endLine": 87,
+        "endChar": 13
+      },
+      "revId": "60ccdb3e92768f0c243ced6be165e866265157d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
