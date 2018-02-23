@@ -81,6 +81,21 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 	})
 }
 
+func TestCollectParse_BadTolerance(t *testing.T) {
+	Convey(`Make sure that Parse handles a negative tolerance.`, t, func() {
+		c := collectRun{}
+		c.Init(auth.Options{})
+
+		err := c.GetFlags().Parse([]string{
+			"-server", "http://localhost:9050",
+			"-tolerance", "-30m",
+		})
+
+		err = c.Parse(&[]string{"x81n8xn1b684n"})
+		So(err, ShouldErrLike, "negative tolerance")
+	})
+}
+
 func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
 	c, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 	c, _ = clock.WithTimeout(c, 100*time.Second)
@@ -109,14 +124,22 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.err, ShouldErrLike, "404")
 	})
 
-	Convey(`Test timeout exceeded`, t, func() {
+	Convey(`Test timeout and tolerance exceeded`, t, func() {
 		service := &testService{
 			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return nil, &googleapi.Error{Code: 502}
 			},
 		}
-		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
+		result := testCollectPollWithServer(&collectRun{
+			taskOutput: taskOutputNone,
+			tolerance: 100*time.Minute,
+		}, service)
 		So(result.err, ShouldErrLike, "context deadline exceeded")
+		result = testCollectPollWithServer(&collectRun{
+			taskOutput: taskOutputNone,
+			tolerance: 5*time.Second,
+		}, service)
+		So(result.err, ShouldErrLike, "502")
 	})
 
 	Convey(`Test bot finished`, t, func() {
@@ -141,6 +164,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		runner := &collectRun{
 			taskOutput: taskOutputAll,
 			outputDir:  "bah",
+			tolerance: 100*time.Minute,
 		}
 		result := testCollectPollWithServer(runner, service)
 		So(result.err, ShouldBeNil)
@@ -164,7 +188,10 @@ func TestCollectPollForTaskResult(t *testing.T) {
 				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
 			},
 		}
-		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
+		result := testCollectPollWithServer(&collectRun{
+			taskOutput: taskOutputNone,
+			tolerance: 100*time.Minute,
+		}, service)
 		So(i, ShouldEqual, maxTries)
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)
