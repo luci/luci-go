@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/appengine/datastorecache"
 	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/appengine/backend/datastore"
 	"go.chromium.org/luci/config/appengine/backend/memcache"
@@ -34,6 +33,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/erroring"
 	"go.chromium.org/luci/config/server/cfgclient/backend/format"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	serverCaching "go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"

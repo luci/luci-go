@@ -46,10 +46,10 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 

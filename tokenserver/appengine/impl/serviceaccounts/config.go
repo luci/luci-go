@@ -25,10 +25,10 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"

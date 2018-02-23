@@ -27,11 +27,11 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"

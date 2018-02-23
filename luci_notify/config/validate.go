@@ -19,8 +19,8 @@ import (
 	"net/mail"
 	"regexp"
 
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/config/validation"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 )
 

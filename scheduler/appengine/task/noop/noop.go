@@ -26,7 +26,7 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"

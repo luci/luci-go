@@ -20,8 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/luci_notify/testutil"
 

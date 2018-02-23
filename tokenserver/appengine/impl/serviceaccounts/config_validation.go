@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"

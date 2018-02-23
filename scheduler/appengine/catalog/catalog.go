@@ -28,7 +28,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
@@ -38,6 +37,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/messages"
