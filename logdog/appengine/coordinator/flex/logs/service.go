@@ -16,11 +16,11 @@ package logs
 
 import (
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -53,7 +53,7 @@ func newService(svr *server) logdog.LogsServer {
 			if ok {
 				// Enter the requested project namespace. This validates that the
 				// current user has READ access.
-				project := config.ProjectName(pbm.GetMessageProject())
+				project := types.ProjectName(pbm.GetMessageProject())
 				if project == "" {
 					return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
 				}

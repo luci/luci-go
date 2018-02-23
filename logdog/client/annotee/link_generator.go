@@ -15,7 +15,6 @@
 package annotee
 
 import (
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
 )
@@ -31,7 +30,7 @@ type LinkGenerator interface {
 // CoordinatorLinkGenerator is a LinkGenerator implementation
 type CoordinatorLinkGenerator struct {
 	Host    string
-	Project config.ProjectName
+	Project types.ProjectName
 	Prefix  types.StreamName
 }
 

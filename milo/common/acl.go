@@ -47,9 +47,7 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	}
 
 	// Get the project, because that's where the ACLs lie.
-	err := access.Check(
-		c, backend.AsUser,
-		config.ProjectSet(config.ProjectName(project)))
+	err := access.Check(c, backend.AsUser, config.ProjectSet(project))
 	innerError := errors.Unwrap(err)
 
 	switch {

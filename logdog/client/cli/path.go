@@ -15,11 +15,10 @@
 package cli
 
 import (
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-func makeUnifiedPath(project config.ProjectName, path types.StreamPath) string {
+func makeUnifiedPath(project types.ProjectName, path types.StreamPath) string {
 	val := string(project)
 	if path != "" {
 		val += types.StreamNameSepStr + string(path)

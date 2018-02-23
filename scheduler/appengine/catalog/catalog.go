@@ -236,7 +236,7 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 		if projectName == "" {
 			logging.Warningf(c, "Unexpected ConfigSet: %s", meta.ConfigSet)
 		} else {
-			out = append(out, string(projectName))
+			out = append(out, projectName)
 		}
 	}
 	return out, nil
@@ -270,7 +270,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 	}()
 
-	configSet := config.ProjectSet(config.ProjectName(projectID))
+	configSet := config.ProjectSet(projectID)
 	var (
 		cfg  messages.ProjectConfig
 		meta cfgclient.Meta

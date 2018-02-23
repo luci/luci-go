@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -42,7 +41,7 @@ type Coordinator interface {
 // operate and update.
 type LogStreamState struct {
 	// Project is the log stream project.
-	Project config.ProjectName
+	Project types.ProjectName
 	// Path is the log stream path.
 	Path types.StreamPath
 
@@ -68,8 +67,8 @@ type LogStreamState struct {
 // TerminateRequest is a local representation of a Coordinator stream
 // termination request.
 type TerminateRequest struct {
-	Project config.ProjectName // Project name.
-	Path    types.StreamPath   // Stream path. Needed for cache lookup.
+	Project types.ProjectName // Project name.
+	Path    types.StreamPath  // Stream path. Needed for cache lookup.
 
 	// ID is the stream's Coordinator ID, as indicated by the Coordinator.
 	ID string

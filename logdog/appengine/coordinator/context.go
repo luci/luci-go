@@ -20,11 +20,11 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
-	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 
 	"golang.org/x/net/context"
@@ -86,7 +86,7 @@ func GetConfigProvider(c context.Context) ConfigProvider {
 //	  - PermissionDenied if the user does not have the requested access.
 //	- PermissionDenied if the project doesn't exist.
 //	- Internal if an internal error occurred.
-func WithProjectNamespace(c *context.Context, project cfglib.ProjectName, at NamespaceAccessType) error {
+func WithProjectNamespace(c *context.Context, project types.ProjectName, at NamespaceAccessType) error {
 	ctx := *c
 
 	if err := project.Validate(); err != nil {
@@ -199,7 +199,7 @@ func WithProjectNamespace(c *context.Context, project cfglib.ProjectName, at Nam
 // This function is called with the expectation that the Context is in a
 // namespace conforming to ProjectNamespace. If this is not the case, this
 // method will panic.
-func Project(c context.Context) cfglib.ProjectName {
+func Project(c context.Context) types.ProjectName {
 	ns := info.GetNamespace(c)
 	project := ProjectFromNamespace(ns)
 	if project != "" {

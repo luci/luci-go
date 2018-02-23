@@ -22,23 +22,23 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestProjectName(t *testing.T) {
+func TestValidateProjectName(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing valid project names`, t, func() {
-		for _, testCase := range []ProjectName{
+		for _, testCase := range []string{
 			"a",
 			"foo_bar-baz-059",
 		} {
 			Convey(fmt.Sprintf(`Project name %q is valid`, testCase), func() {
-				So(testCase.Validate(), ShouldBeNil)
+				So(ValidateProjectName(testCase), ShouldBeNil)
 			})
 		}
 	})
 
 	Convey(`Testing invalid project names`, t, func() {
 		for _, testCase := range []struct {
-			v          ProjectName
+			v          string
 			errorsLike string
 		}{
 			{"", "cannot have empty name"},
@@ -47,7 +47,7 @@ func TestProjectName(t *testing.T) {
 			{"1eet", "must begin with a letter"},
 		} {
 			Convey(fmt.Sprintf(`Project name %q fails with error %q`, testCase.v, testCase.errorsLike), func() {
-				So(testCase.v.Validate(), ShouldErrLike, testCase.errorsLike)
+				So(ValidateProjectName(testCase.v), ShouldErrLike, testCase.errorsLike)
 			})
 		}
 	})

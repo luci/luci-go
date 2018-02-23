@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -92,7 +91,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		svr := New()
 
 		// di is a datastore bound to the test project namespace.
-		const project = config.ProjectName("proj-foo")
+		const project = types.ProjectName("proj-foo")
 
 		// Generate our test stream.
 		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")

@@ -28,10 +28,10 @@ import (
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/config"
+	montypes "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/archivist"
 	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/service"
@@ -52,7 +52,7 @@ var (
 	// false if it was not.
 	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/archivist/task_processing_time_ms",
 		"The amount of time (in milliseconds) that a single task takes to process.",
-		&types.MetricMetadata{Units: types.Milliseconds},
+		&montypes.MetricMetadata{Units: montypes.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
 )
@@ -249,7 +249,7 @@ func (a *application) runArchivist(c context.Context) error {
 func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.SettingsLoader {
 	serviceID := a.ServiceID()
 
-	return func(c context.Context, proj config.ProjectName) (*archivist.Settings, error) {
+	return func(c context.Context, proj types.ProjectName) (*archivist.Settings, error) {
 		// Fold in our project-specific configuration, if valid.
 		pcfg, err := a.ProjectConfig(c, proj)
 		if err != nil {

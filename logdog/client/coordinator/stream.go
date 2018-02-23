@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
@@ -66,7 +65,7 @@ type StreamState struct {
 // LogStream is returned metadata about a log stream.
 type LogStream struct {
 	// Project is the log stream's project.
-	Project config.ProjectName
+	Project types.ProjectName
 	// Path is the path of the log stream.
 	Path types.StreamPath
 
@@ -79,7 +78,7 @@ type LogStream struct {
 
 func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
 	ls := LogStream{
-		Project: config.ProjectName(proj),
+		Project: types.ProjectName(proj),
 		Path:    path,
 	}
 	if d != nil {
@@ -109,7 +108,7 @@ type Stream struct {
 	c *Client
 
 	// project is this stream's project.
-	project config.ProjectName
+	project types.ProjectName
 	// path is the log stream's prefix.
 	path types.StreamPath
 }

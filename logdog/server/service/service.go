@@ -53,6 +53,7 @@ import (
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/retryServicesClient"
 	"go.chromium.org/luci/logdog/server/service/config"
 	serverAuth "go.chromium.org/luci/server/auth"
@@ -483,12 +484,12 @@ func (s *Service) ServiceConfig() *svcconfig.Config { return &s.serviceConfig }
 
 // ProjectConfigPath returns the ConfigSet and path to the current service's
 // project configuration for proj.
-func (s *Service) ProjectConfigPath(proj cfglib.ProjectName) (cfglib.Set, string) {
-	return cfglib.ProjectSet(proj), svcconfig.ProjectConfigPath(s.serviceID)
+func (s *Service) ProjectConfigPath(proj types.ProjectName) (cfglib.Set, string) {
+	return cfglib.ProjectSet(string(proj)), svcconfig.ProjectConfigPath(s.serviceID)
 }
 
 // ProjectConfig returns the current service's project configuration for proj.
-func (s *Service) ProjectConfig(c context.Context, proj cfglib.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *Service) ProjectConfig(c context.Context, proj types.ProjectName) (*svcconfig.ProjectConfig, error) {
 	cset, path := s.ProjectConfigPath(proj)
 
 	var pcfg svcconfig.ProjectConfig

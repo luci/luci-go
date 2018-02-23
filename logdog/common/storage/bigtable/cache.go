@@ -19,7 +19,6 @@ import (
 	"encoding/binary"
 	"time"
 
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -41,7 +40,7 @@ const lastTailIndexCacheDuration = 1 * time.Hour
 //
 // If there was an error, or if the item was not cached, 0 (first index) will be
 // returned.
-func getLastTailIndex(c context.Context, cache storage.Cache, project config.ProjectName, path types.StreamPath) int64 {
+func getLastTailIndex(c context.Context, cache storage.Cache, project types.ProjectName, path types.StreamPath) int64 {
 	data, ok := cache.Get(c, mkLastTailKey(project, path))
 	if !ok {
 		return 0
@@ -63,14 +62,14 @@ func getLastTailIndex(c context.Context, cache storage.Cache, project config.Pro
 	return v
 }
 
-func putLastTailIndex(c context.Context, cache storage.Cache, project config.ProjectName, path types.StreamPath, v int64) {
+func putLastTailIndex(c context.Context, cache storage.Cache, project types.ProjectName, path types.StreamPath, v int64) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	buf = buf[:binary.PutVarint(buf, v)]
 
 	cache.Put(c, mkLastTailKey(project, path), buf, lastTailIndexCacheDuration)
 }
 
-func mkLastTailKey(project config.ProjectName, path types.StreamPath) storage.CacheKey {
+func mkLastTailKey(project types.ProjectName, path types.StreamPath) storage.CacheKey {
 	return storage.CacheKey{
 		Schema: cacheSchema,
 		Type:   "bt_tail_idx",

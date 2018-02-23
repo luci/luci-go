@@ -31,18 +31,18 @@ import (
 type Set string
 
 // ServiceSet returns the name of a config set for the specified service.
-func ServiceSet(name string) Set { return Set("services/" + name) }
+func ServiceSet(service string) Set { return Set("services/" + service) }
 
 // ProjectSet returns the config set for the specified project.
-func ProjectSet(name ProjectName) Set { return RefSet(name, "") }
+func ProjectSet(project string) Set { return RefSet(project, "") }
 
 // RefSet returns the config set for the specified project and ref. If ref
 // is empty, this will equal the ProjectSet value.
-func RefSet(name ProjectName, ref string) Set {
+func RefSet(project string, ref string) Set {
 	if ref == "" {
-		return Set("projects/" + string(name))
+		return Set("projects/" + project)
 	}
-	return Set(strings.Join([]string{"projects", string(name), ref}, "/"))
+	return Set(strings.Join([]string{"projects", project, ref}, "/"))
 }
 
 // Split splits a Set into its domain, target, and ref components.
@@ -67,7 +67,7 @@ func (cs Set) Split() (domain, target, ref string) {
 //	- ref: "bar/baz"
 //
 // If configSet is not a project config set, empty strings will be returned.
-func (cs Set) SplitProject() (project ProjectName, projectConfigSet Set, ref string) {
+func (cs Set) SplitProject() (project string, projectConfigSet Set, ref string) {
 	parts := strings.SplitN(string(cs), "/", 3)
 	if len(parts) < 2 || parts[0] != "projects" {
 		// Not a project config set, so neither remaining Authority can access.
@@ -75,7 +75,7 @@ func (cs Set) SplitProject() (project ProjectName, projectConfigSet Set, ref str
 	}
 
 	// The project is the first part.
-	project = ProjectName(parts[1])
+	project = parts[1]
 
 	// Re-assemble the project part of the config set ("projects/foo").
 	projectConfigSet = cs[:len("projects/")+len(project)]

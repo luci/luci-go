@@ -19,7 +19,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
@@ -43,7 +42,7 @@ type Bootstrap struct {
 	CoordinatorHost string
 
 	// Project is the Butler instance project name.
-	Project config.ProjectName
+	Project types.ProjectName
 	// Prefix is the Butler instance prefix.
 	Prefix types.StreamName
 
@@ -62,7 +61,7 @@ func getFromEnv(env environ.Env, reg *streamclient.Registry) (*Bootstrap, error)
 	bs := &Bootstrap{
 		CoordinatorHost: env.GetEmpty(EnvCoordinatorHost),
 		Prefix:          types.StreamName(prefix),
-		Project:         config.ProjectName(env.GetEmpty(EnvStreamProject)),
+		Project:         types.ProjectName(env.GetEmpty(EnvStreamProject)),
 	}
 	if err := bs.Prefix.Validate(); err != nil {
 		return nil, fmt.Errorf("bootstrap: failed to validate prefix %q: %s", prefix, err)
