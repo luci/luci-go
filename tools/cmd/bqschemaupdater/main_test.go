@@ -120,6 +120,10 @@ func TestBQSchemaUpdater(t *testing.T) {
 				Name: "timestamp",
 				Type: bigquery.TimestampFieldType,
 			},
+			{
+				Name: "struct",
+				Type: bigquery.StringFieldType,
+			},
 		})
 	})
 }

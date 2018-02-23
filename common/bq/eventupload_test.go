@@ -19,11 +19,14 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
+	"cloud.google.com/go/bigquery"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/struct"
+
 	"go.chromium.org/luci/common/bq/testdata"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -125,10 +128,9 @@ func TestUpload(t *testing.T) {
 
 func TestSave(t *testing.T) {
 	Convey("TestSave", t, func() {
-		ts, err := ptypes.TimestampProto(time.Time{})
-		if err != nil {
-			t.Fatal("could not convert time to timestamp")
-		}
+		recentTime := testclock.TestRecentTimeUTC
+		ts, err := ptypes.TimestampProto(recentTime)
+		So(err, ShouldBeNil)
 
 		r := &Row{
 			Message: &testdata.TestMessage{
@@ -146,21 +148,30 @@ func TestSave(t *testing.T) {
 					testdata.TestMessage_Y,
 					testdata.TestMessage_X,
 				},
+				Struct: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"num": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
+						"str": {Kind: &structpb.Value_StringValue{StringValue: "a"}},
+					},
+				},
 			},
 			InsertID: "testid",
 		}
 		row, id, err := r.Save()
 		So(err, ShouldBeNil)
-		So(row["name"], ShouldEqual, "testname")
-		So(row["foo"], ShouldEqual, "Y")
-
-		So(row["foo_repeated"].([]interface{})[0].(string), ShouldEqual, "Y")
-		So(row["foo_repeated"].([]interface{})[1].(string), ShouldEqual, "X")
-
-		So(row["timestamp"].(time.Time), ShouldResemble, time.Time{})
-		So(row["nested"].(map[string]bigquery.Value)["name"], ShouldEqual, "nestedname")
-		So(row["repeated_nested"].([]interface{})[0].(map[string]bigquery.Value)["name"], ShouldEqual, "repeated_one")
 		So(id, ShouldEqual, "testid")
+		So(row, ShouldResemble, map[string]bigquery.Value{
+			"name":      "testname",
+			"timestamp": recentTime,
+			"nested":    map[string]bigquery.Value{"name": "nestedname"},
+			"repeated_nested": []interface{}{
+				map[string]bigquery.Value{"name": "repeated_one"},
+				map[string]bigquery.Value{"name": "repeated_two"},
+			},
+			"foo":          "Y",
+			"foo_repeated": []interface{}{"Y", "X"},
+			"struct":       `{"num":1,"str":"a"}`,
+		})
 	})
 }
 

@@ -15,6 +15,7 @@
 package bq
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"reflect"
@@ -27,8 +28,10 @@ import (
 	"golang.org/x/net/context"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/struct"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/errors"
@@ -167,12 +170,6 @@ func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
 		for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
 			t = t.Elem()
 		}
-		if t.PkgPath() == "github.com/golang/protobuf/ptypes/struct" {
-			// Ignore protobuf structs, according to
-			// https://godoc.org/go.chromium.org/luci/tools/cmd/bqschemaupdater
-			continue
-		}
-
 		fields = append(fields, fieldInfo{f.Index, p})
 	}
 
@@ -181,7 +178,6 @@ func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
 }
 
 func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, error) {
-	var err error
 	if fi.Enum != "" {
 		stringer, ok := value.(fmt.Stringer)
 		if !ok {
@@ -189,17 +185,24 @@ func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, erro
 		}
 		return stringer.String(), nil
 	} else if tspb, ok := value.(*timestamp.Timestamp); ok {
-		value, err = ptypes.Timestamp(tspb)
+		value, err := ptypes.Timestamp(tspb)
 		if err != nil {
 			return nil, fmt.Errorf("tried to write an invalid timestamp for [%+v] for field %s", tspb, strings.Join(path, "."))
 		}
-	} else if nested, ok := value.(proto.Message); ok {
-		value, err = mapFromMessage(nested, path)
-		if err != nil {
+		return value, nil
+	} else if s, ok := value.(*structpb.Struct); ok {
+		// Structs are persisted as JSONPB strings.
+		// See also https://bit.ly/chromium-bq-struct
+		var buf bytes.Buffer
+		if err := (&jsonpb.Marshaler{}).Marshal(&buf, s); err != nil {
 			return nil, err
 		}
+		return buf.String(), nil
+	} else if nested, ok := value.(proto.Message); ok {
+		return mapFromMessage(nested, path)
+	} else {
+		return value, nil
 	}
-	return value, nil
 }
 
 // NewUploader constructs a new Uploader struct.
