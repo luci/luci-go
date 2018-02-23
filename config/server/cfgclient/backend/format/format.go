@@ -20,6 +20,7 @@ package format
 
 import (
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
@@ -38,7 +39,7 @@ type Backend struct {
 }
 
 // Get implements backend.B.
-func (b *Backend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (b *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	item, err := b.B.Get(c, configSet, path, p)
 	if err != nil {
 		return nil, err

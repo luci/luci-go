@@ -86,7 +86,7 @@ func (s *Settings) Save(withMeta bool) (datastore.PropertyMap, error) {
 // the new config into the datastore.
 func updateSettings(c context.Context) error {
 	// Load the settings from luci-config.
-	cs := string(cfgclient.CurrentServiceConfigSet(c))
+	cs := cfgclient.CurrentServiceConfigSet(c)
 	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
 	cfg, err := lucicfg.GetConfig(c, cs, "settings.cfg", false)
 	if err != nil {

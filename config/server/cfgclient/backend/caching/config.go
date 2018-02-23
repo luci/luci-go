@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 
@@ -67,7 +68,7 @@ type Key struct {
 	FormatData string `json:"fd,omitempty"`
 
 	// ConfigSet is the config set parameter. This is valid for "OpGet".
-	ConfigSet string `json:"cs,omitempty"`
+	ConfigSet config.Set `json:"cs,omitempty"`
 	// Path is the path parameters. This is valid for "OpGet" and "OpGetAll".
 	Path string `json:"p,omitempty"`
 
@@ -82,7 +83,7 @@ func (k *Key) ParamHash() []byte {
 		cstr = "y"
 	}
 	return HashParams(k.Schema, k.ServiceURL, string(k.Authority), string(k.Op), cstr,
-		k.Formatter, k.FormatData, k.ConfigSet, k.Path, string(k.GetAllTarget))
+		k.Formatter, k.FormatData, string(k.ConfigSet), k.Path, string(k.GetAllTarget))
 }
 
 // String prints a text representation of the key. No effort is made to ensure
@@ -126,7 +127,7 @@ type ValueItem struct {
 // MakeValueItem builds a caching ValueItem from a backend.Item.
 func MakeValueItem(it *backend.Item) ValueItem {
 	return ValueItem{
-		ConfigSet:   it.ConfigSet,
+		ConfigSet:   string(it.ConfigSet),
 		Path:        it.Path,
 		ContentHash: it.ContentHash,
 		Revision:    it.Revision,
@@ -141,7 +142,7 @@ func MakeValueItem(it *backend.Item) ValueItem {
 func (vi *ValueItem) ConfigItem() *backend.Item {
 	return &backend.Item{
 		Meta: backend.Meta{
-			ConfigSet:   vi.ConfigSet,
+			ConfigSet:   config.Set(vi.ConfigSet),
 			Path:        vi.Path,
 			ContentHash: vi.ContentHash,
 			Revision:    vi.Revision,
@@ -270,7 +271,7 @@ func (b *Backend) keyServiceURL(c context.Context) string {
 }
 
 // Get implements backend.B.
-func (b *Backend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (b *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	key := Key{
 		Schema:     Schema,
 		ServiceURL: b.keyServiceURL(c),
@@ -376,7 +377,7 @@ func CacheLoad(c context.Context, b backend.B, k Key, v *Value) (rv *Value, err 
 	return
 }
 
-func doGet(c context.Context, b backend.B, configSet, path string, v *Value, p backend.Params) (*Value, error) {
+func doGet(c context.Context, b backend.B, configSet config.Set, path string, v *Value, p backend.Params) (*Value, error) {
 	hadItem := (v != nil && len(v.Items) > 0)
 	if !hadItem {
 		// Initialize empty "v".
@@ -453,7 +454,7 @@ func doGetAll(c context.Context, b backend.B, t backend.GetAllTarget, path strin
 			match := true
 			for i, other := range items {
 				cur := v.Items[i]
-				if cur.ConfigSet == other.ConfigSet && cur.Path == other.Path &&
+				if cur.ConfigSet == string(other.ConfigSet) && cur.Path == other.Path &&
 					cur.ContentHash == other.ContentHash {
 					continue
 				}

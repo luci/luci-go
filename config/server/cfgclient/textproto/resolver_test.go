@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	configPB "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/format"
@@ -39,7 +40,7 @@ type testingBackend struct {
 }
 
 // Get retrieves a single configuration.
-func (tb *testingBackend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	if len(tb.items) == 0 {
 		return nil, cfgclient.ErrNoConfig
 	}

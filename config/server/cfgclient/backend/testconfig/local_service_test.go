@@ -53,7 +53,7 @@ func TestLocalService(t *testing.T) {
 		}
 		c = auth.WithState(c, &fs)
 
-		configs := map[string]memory.ConfigSet{
+		configs := map[config.Set]memory.Files{
 			"projects/foo": {
 				"path.cfg":    "foo",
 				"project.cfg": accessCfg("group:all"),
@@ -81,13 +81,13 @@ func TestLocalService(t *testing.T) {
 			Base: mbase,
 		}})
 
-		metaFor := func(configSet, path string) *cfgclient.Meta {
+		metaFor := func(configSet config.Set, path string) *cfgclient.Meta {
 			cfg, err := mbase.GetConfig(c, configSet, path, false)
 			if err != nil {
 				panic(err)
 			}
 			return &cfgclient.Meta{
-				ConfigSet:   config.Set(cfg.ConfigSet),
+				ConfigSet:   cfg.ConfigSet,
 				Path:        cfg.Path,
 				ContentHash: cfg.ContentHash,
 				Revision:    cfg.Revision,

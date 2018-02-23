@@ -92,7 +92,7 @@ func Get(c context.Context, a Authority, cs config.Set, path string, r Resolver,
 		params.FormatSpec = fr.Format()
 	}
 
-	item, err := be.Get(c, string(cs), path, params)
+	item, err := be.Get(c, cs, path, params)
 	if err != nil {
 		return err
 	}

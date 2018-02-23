@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	configPB "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
@@ -38,7 +39,7 @@ type testingBackend struct {
 	item *backend.Item
 }
 
-func (tb *testingBackend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	if tb.item == nil {
 		return nil, cfgclient.ErrNoConfig
 	}

@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
@@ -43,7 +44,7 @@ func TestConfig(t *testing.T) {
 				So(settings.Buildbot.InternalReader, ShouldEqual, "")
 			})
 			Convey("Read a config", func() {
-				mockedConfigs["services/luci-milo"] = memcfg.ConfigSet{
+				mockedConfigs["services/luci-milo"] = memcfg.Files{
 					"settings.cfg": settingsCfg,
 				}
 				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
@@ -80,7 +81,7 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("Check second update reorders", func() {
-				mockedConfigsUpdate["services/luci-milo"] = memcfg.ConfigSet{
+				mockedConfigsUpdate["services/luci-milo"] = memcfg.Files{
 					"settings.cfg": settingsCfg,
 				}
 				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigsUpdate))
@@ -217,13 +218,13 @@ buildbot: {
 }
 `
 
-var mockedConfigs = map[string]memcfg.ConfigSet{
+var mockedConfigs = map[config.Set]memcfg.Files{
 	"projects/foo": {
 		"luci-milo.cfg": fooCfg,
 	},
 }
 
-var mockedConfigsUpdate = map[string]memcfg.ConfigSet{
+var mockedConfigsUpdate = map[config.Set]memcfg.Files{
 	"projects/foo": {
 		"luci-milo.cfg": fooCfg2,
 	},

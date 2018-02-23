@@ -255,7 +255,7 @@ func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 // and then stores a snapshot of the configuration in datastore.
 func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	// Load the settings from luci-config.
-	cs := string(cfgclient.CurrentServiceConfigSet(c))
+	cs := cfgclient.CurrentServiceConfigSet(c)
 	// Acquire the raw config client.
 	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
 	// Our global config name is called settings.cfg.
@@ -357,7 +357,7 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 				Parent:         parentKey,
 				ID:             pc.Id,
 				Ordinal:        i,
-				ConfigURL:      LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision),
+				ConfigURL:      LuciConfigURL(c, string(cfg.ConfigSet), cfg.Path, cfg.Revision),
 				ConfigRevision: cfg.Revision,
 				Builders:       pc.AllBuilderIDs(),
 				Def:            *pc,
@@ -395,14 +395,15 @@ func UpdateConsoles(c context.Context) error {
 	// Iterate through each project config, extracting the console definition.
 	for _, cfg := range configs {
 		// This looks like "projects/<project name>"
-		splitPath := strings.SplitN(cfg.ConfigSet, "/", 2)
+		cfgSet := string(cfg.ConfigSet)
+		splitPath := strings.SplitN(cfgSet, "/", 2)
 		if len(splitPath) != 2 {
-			return fmt.Errorf("Invalid config set path %s", cfg.ConfigSet)
+			return fmt.Errorf("Invalid config set path %s", cfgSet)
 		}
 		projectName := splitPath[1]
 		knownProjects[projectName] = nil
 		if kp, err := updateProjectConsoles(c, projectName, &cfg); err != nil {
-			err = errors.Annotate(err, "processing project %s", cfg.ConfigSet).Err()
+			err = errors.Annotate(err, "processing project %s", cfgSet).Err()
 			merr = append(merr, err)
 		} else {
 			knownProjects[projectName] = kp

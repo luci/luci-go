@@ -135,9 +135,10 @@ func updateProjects(c context.Context) error {
 	merr := errors.MultiError{}
 	for _, cfg := range configs {
 		// This looks like "projects/<project name>"
-		splitPath := strings.SplitN(cfg.ConfigSet, "/", 2)
+		cfgSet := string(cfg.ConfigSet)
+		splitPath := strings.SplitN(cfgSet, "/", 2)
 		if len(splitPath) != 2 {
-			merr = append(merr, fmt.Errorf("invalid config set %s", cfg.ConfigSet))
+			merr = append(merr, fmt.Errorf("invalid config set %s", cfgSet))
 			continue
 		}
 		projectName := splitPath[1]
@@ -151,14 +152,14 @@ func updateProjects(c context.Context) error {
 			continue
 		}
 		ctx := &validation.Context{Context: c}
-		ctx.SetFile(cfg.ConfigSet)
+		ctx.SetFile(cfgSet)
 		validateProjectConfig(ctx, &project)
 		if err := ctx.Finalize(); err != nil {
 			merr = append(merr, errors.Annotate(err, "validating config").Err())
 			continue
 		}
 		if err := updateProject(c, projectName, &project, &cfg); err != nil {
-			err = errors.Annotate(err, "processing %s", cfg.ConfigSet).Err()
+			err = errors.Annotate(err, "processing %s", cfgSet).Err()
 			merr = append(merr, err)
 		}
 	}

@@ -126,7 +126,7 @@ func (fc *fakeCache) setProjectDNE(project string) {
 		Schema:     caching.Schema,
 		ServiceURL: fc.serviceURL,
 		Op:         caching.OpGet,
-		ConfigSet:  string(config.ProjectSet(project)),
+		ConfigSet:  config.ProjectSet(project),
 		Path:       cfgclient.ProjectConfigPath,
 	}, nil)
 }
@@ -139,7 +139,7 @@ func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, c
 	if content != "" {
 		item = &backend.Item{
 			Meta: backend.Meta{
-				ConfigSet:   string(cs),
+				ConfigSet:   cs,
 				Path:        path,
 				ContentHash: "hash",
 				ViewURL:     "https://x.com/view/here",
@@ -155,7 +155,7 @@ func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, c
 		ServiceURL: fc.serviceURL,
 		Authority:  backend.AsService,
 		Op:         caching.OpGet,
-		ConfigSet:  string(cs),
+		ConfigSet:  cs,
 		Path:       path,
 		Content:    true,
 		Formatter:  formatter,
@@ -193,7 +193,7 @@ func (fc *fakeCache) addConfigSets(path string, configSets ...config.Set) []stri
 		contents[i] = string(cs)
 		items[i] = &backend.Item{
 			Meta: backend.Meta{
-				ConfigSet:   string(cs),
+				ConfigSet:   cs,
 				Path:        path,
 				ContentHash: "hash",
 				ViewURL:     "https://x.com/view/here",
@@ -225,7 +225,7 @@ type fullStackCache struct {
 	cache *datastorecache.Cache
 	err   error
 
-	data    map[string]memConfig.ConfigSet
+	data    map[config.Set]memConfig.Files
 	backend backend.B
 	junkIdx int
 }
@@ -240,19 +240,19 @@ func (fsc *fullStackCache) Get(c context.Context, key []byte) (datastorecache.Va
 func (fsc *fullStackCache) setCacheErr(err error) { fsc.err = err }
 
 func (fsc *fullStackCache) setProjectDNE(project string) {
-	key := "projects/" + project
+	key := config.ProjectSet(project)
 	for k := range fsc.data {
-		if k == key || strings.HasPrefix(k, key+"/") {
+		if k == key || strings.HasPrefix(string(k), string(key)+"/") {
 			delete(fsc.data, k)
 		}
 	}
 }
 
 func (fsc *fullStackCache) addConfig(cs config.Set, path, content string) *backend.Item {
-	cset := fsc.data[string(cs)]
+	cset := fsc.data[cs]
 	if cset == nil {
-		cset = memConfig.ConfigSet{}
-		fsc.data[string(cs)] = cset
+		cset = memConfig.Files{}
+		fsc.data[cs] = cset
 	}
 	if content == "" {
 		delete(cset, path)
@@ -261,7 +261,7 @@ func (fsc *fullStackCache) addConfig(cs config.Set, path, content string) *backe
 	cset[path] = content
 
 	// Pull the config right back out of the base service.
-	item, err := fsc.backend.Get(context.Background(), string(cs), path, backend.Params{
+	item, err := fsc.backend.Get(context.Background(), cs, path, backend.Params{
 		Authority: backend.AsService,
 	})
 	if err != nil {
@@ -545,7 +545,7 @@ func TestDatastoreCacheFullStack(t *testing.T) {
 	Convey(`Testing full-stack datastore cache`, t, func() {
 		c := memory.Use(context.Background())
 
-		data := map[string]memConfig.ConfigSet{}
+		data := map[config.Set]memConfig.Files{}
 
 		var be backend.B
 		be = &client.Backend{

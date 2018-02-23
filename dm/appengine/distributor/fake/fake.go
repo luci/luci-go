@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	googlepb "go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/config"
 	config_mem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	dm "go.chromium.org/luci/dm/api/service/v1"
@@ -67,7 +68,7 @@ func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.C
 	c = ttest.Context()
 	c = testsecrets.Use(c)
 
-	c = testconfig.WithCommonClient(c, config_mem.New(map[string]config_mem.ConfigSet{
+	c = testconfig.WithCommonClient(c, config_mem.New(map[config.Set]config_mem.Files{
 		"services/app": {
 			"acls.cfg": `
 				readers: "reader_group"

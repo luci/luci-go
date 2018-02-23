@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 
 	"go.chromium.org/luci/config/server/cfgclient"
@@ -39,7 +40,7 @@ func TestLRUCache(t *testing.T) {
 		c := context.Background()
 		c, tc := testclock.UseTime(c, testclock.TestTimeLocal)
 
-		mbase := map[string]memory.ConfigSet{
+		mbase := map[config.Set]memory.Files{
 			"projects/foo": {
 				"file": "content",
 			},
@@ -74,7 +75,7 @@ func TestLRUCache(t *testing.T) {
 				ShouldEqual, cfgclient.ErrNoConfig)
 
 			// Re-add, still no config.
-			mbase["projects/foo"] = memory.ConfigSet{
+			mbase["projects/foo"] = memory.Files{
 				"file": "content",
 			}
 			So(cfgclient.Get(c, cfgclient.AsService, "projects/foo", "file", cfgclient.String(&s), nil),

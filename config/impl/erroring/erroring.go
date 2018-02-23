@@ -39,7 +39,7 @@ type erroringInterface struct {
 	err error
 }
 
-func (i erroringInterface) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
+func (i erroringInterface) GetConfig(ctx context.Context, configSet config.Set, path string, hashOnly bool) (*config.Config, error) {
 	return nil, i.err
 }
 
@@ -47,7 +47,7 @@ func (i erroringInterface) GetConfigByHash(ctx context.Context, contentHash stri
 	return "", i.err
 }
 
-func (i erroringInterface) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
+func (i erroringInterface) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
 	return nil, i.err
 }
 

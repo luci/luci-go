@@ -82,7 +82,7 @@ func mkLRUCacheKey(key *Key, id identity.Identity) lruCacheKey {
 		string(id),
 		key.Schema,
 		string(key.Op),
-		key.ConfigSet,
+		string(key.ConfigSet),
 		key.Path,
 		string(key.GetAllTarget),
 	}, ":"))

@@ -14,10 +14,14 @@
 
 package backend
 
+import (
+	"go.chromium.org/luci/config"
+)
+
 // Meta is backend metadata about a single configuration file.
 type Meta struct {
 	// ConfigSet is the item's config set.
-	ConfigSet string
+	ConfigSet config.Set
 	// Path is the item's path within its config set.
 	Path string
 

@@ -68,7 +68,7 @@ type testingBackend struct {
 	err error
 }
 
-func (b *testingBackend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (b *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	if p.Content {
 		b.getContentCalls++
 	} else {
@@ -112,7 +112,7 @@ func TestConfig(t *testing.T) {
 		}
 		flushCache()
 
-		mbase := map[string]memory.ConfigSet{
+		mbase := map[config.Set]memory.Files{
 			"services/foo": {
 				"file": "body",
 			},
@@ -143,13 +143,13 @@ func TestConfig(t *testing.T) {
 		tb := testingBackend{B: be}
 		be = &tb
 
-		metaFor := func(configSet, path string) *cfgclient.Meta {
+		metaFor := func(configSet config.Set, path string) *cfgclient.Meta {
 			cfg, err := mconfig.GetConfig(c, configSet, path, false)
 			if err != nil {
 				panic(err)
 			}
 			return &cfgclient.Meta{
-				ConfigSet:   config.Set(cfg.ConfigSet),
+				ConfigSet:   cfg.ConfigSet,
 				Path:        cfg.Path,
 				ContentHash: cfg.ContentHash,
 				Revision:    cfg.Revision,
@@ -195,7 +195,7 @@ func TestConfig(t *testing.T) {
 		advance := func() {
 			mbase["services/foo"]["file"] = "body2"
 			mbase["services/foo"]["late"] = "late config"
-			mbase["projects/showsup"] = memory.ConfigSet{
+			mbase["projects/showsup"] = memory.Files{
 				"file": "shows up",
 			}
 			delete(mbase, "projects/goesaway")

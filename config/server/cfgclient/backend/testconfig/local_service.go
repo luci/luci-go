@@ -80,8 +80,8 @@ type boundLocalInterface struct {
 	a   backend.Authority
 }
 
-func (bli *boundLocalInterface) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
-	if err := access.Check(bli, bli.a, config.Set(configSet)); err != nil {
+func (bli *boundLocalInterface) GetConfig(ctx context.Context, configSet config.Set, path string, hashOnly bool) (*config.Config, error) {
+	if err := access.Check(bli, bli.a, configSet); err != nil {
 		return nil, config.ErrNoConfig
 	}
 	return bli.Interface.GetConfig(ctx, configSet, path, hashOnly)
@@ -103,8 +103,8 @@ func (bli *boundLocalInterface) GetRefConfigs(ctx context.Context, path string, 
 	return bli.pruneConfigList(cfgs), nil
 }
 
-func (bli *boundLocalInterface) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
-	if err := access.Check(ctx, bli.a, config.Set(configSet)); err != nil {
+func (bli *boundLocalInterface) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
+	if err := access.Check(ctx, bli.a, configSet); err != nil {
 		return nil, cfgclient.ErrNoConfig
 	}
 	return bli.Interface.GetConfigSetLocation(ctx, configSet)

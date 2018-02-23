@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/common"
@@ -81,7 +82,7 @@ buildbucket: {
 }
 `
 
-var bktConfigFull = map[string]memcfg.ConfigSet{
+var bktConfigFull = map[config.Set]memcfg.Files{
 	"services/luci-milo-dev": {
 		"settings.cfg": bktConfig,
 	},

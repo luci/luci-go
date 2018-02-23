@@ -42,6 +42,7 @@ func (l luciPath) s() string {
 	return string(l)
 }
 
+// TODO(vadimsh): Consolidate this with config.Set.
 type configSet struct{ luciPath }
 
 func newConfigSet(toks ...string) configSet {
