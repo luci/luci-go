@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/sync/promise"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
@@ -133,7 +133,7 @@ func (c *cache) TerminateStream(ctx context.Context, r *TerminateRequest) error 
 
 // cacheEntryKey is the LRU key for a cacheEntry.
 type cacheEntryKey struct {
-	project cfgtypes.ProjectName
+	project config.ProjectName
 	path    types.StreamPath
 }
 

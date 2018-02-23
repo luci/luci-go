@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 
 	"golang.org/x/net/context"
@@ -30,7 +30,7 @@ import (
 // the OnChange function will be called and the polling will stop.
 type ChangePoller struct {
 	// ConfigSet is the slice of config paths to watch.
-	ConfigSet cfgtypes.ConfigSet
+	ConfigSet config.Set
 	// Path is the path of the config to watch.
 	Path string
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgtypes
+package config
 
 import (
 	"testing"
@@ -24,21 +24,21 @@ func TestConfigSet(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing config set utility methods`, t, func() {
-		So(ServiceConfigSet("my-service"), ShouldEqual, "services/my-service")
-		So(ProjectConfigSet("my-project"), ShouldEqual, "projects/my-project")
-		So(RefConfigSet("my-project", "refs/heads/master"), ShouldEqual, "projects/my-project/refs/heads/master")
+		So(ServiceSet("my-service"), ShouldEqual, "services/my-service")
+		So(ProjectSet("my-project"), ShouldEqual, "projects/my-project")
+		So(RefSet("my-project", "refs/heads/master"), ShouldEqual, "projects/my-project/refs/heads/master")
 
-		project, configSet, tail := ConfigSet("projects/foo").SplitProject()
+		project, configSet, tail := Set("projects/foo").SplitProject()
 		So(project, ShouldEqual, "foo")
 		So(configSet, ShouldEqual, "projects/foo")
 		So(tail, ShouldEqual, "")
 
-		project, configSet, tail = ConfigSet("projects/foo/refs/heads/master").SplitProject()
+		project, configSet, tail = Set("projects/foo/refs/heads/master").SplitProject()
 		So(project, ShouldEqual, "foo")
 		So(configSet, ShouldEqual, "projects/foo")
 		So(tail, ShouldEqual, "refs/heads/master")
 
-		project, configSet, tail = ConfigSet("not/a/project/config/set").SplitProject()
+		project, configSet, tail = Set("not/a/project/config/set").SplitProject()
 		So(project, ShouldEqual, "")
 		So(configSet, ShouldEqual, "")
 		So(tail, ShouldEqual, "")

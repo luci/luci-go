@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/config/impl/memory"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/client"
@@ -149,7 +149,7 @@ func TestConfig(t *testing.T) {
 				panic(err)
 			}
 			return &cfgclient.Meta{
-				ConfigSet:   cfgtypes.ConfigSet(cfg.ConfigSet),
+				ConfigSet:   config.Set(cfg.ConfigSet),
 				Path:        cfg.Path,
 				ContentHash: cfg.ContentHash,
 				Revision:    cfg.Revision,

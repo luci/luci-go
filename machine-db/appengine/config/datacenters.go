@@ -21,11 +21,11 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 
-	"go.chromium.org/luci/machine-db/api/config/v1"
+	configPB "go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
@@ -36,8 +36,8 @@ const datacentersFilename = "datacenters.cfg"
 const switchMaxPorts = 65535
 
 // importDatacenters fetches, validates, and applies datacenter configs.
-func importDatacenters(c context.Context, configSet cfgtypes.ConfigSet) error {
-	cfg := &config.Datacenters{}
+func importDatacenters(c context.Context, configSet config.Set) error {
+	cfg := &configPB.Datacenters{}
 	metadata := &cfgclient.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacentersFilename, textproto.Message(cfg), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", datacentersFilename).Err()
@@ -52,11 +52,11 @@ func importDatacenters(c context.Context, configSet cfgtypes.ConfigSet) error {
 	}
 
 	// cfgs will be a map of datacenter config filename to Datacenter.
-	cfgs := make(map[string]*config.Datacenter, len(cfg.Datacenter))
+	cfgs := make(map[string]*configPB.Datacenter, len(cfg.Datacenter))
 	// datacenters will be a slice of Datacenters.
-	datacenters := make([]*config.Datacenter, 0, len(cfg.Datacenter))
+	datacenters := make([]*configPB.Datacenter, 0, len(cfg.Datacenter))
 	for _, datacenterFile := range cfg.Datacenter {
-		datacenter := &config.Datacenter{}
+		datacenter := &configPB.Datacenter{}
 		if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacenterFile, textproto.Message(datacenter), nil); err != nil {
 			return errors.Annotate(err, "failed to load datacenter config %q", datacenterFile).Err()
 		}
@@ -86,7 +86,7 @@ func importDatacenters(c context.Context, configSet cfgtypes.ConfigSet) error {
 }
 
 // validateDatacentersCfg validates datacenters.cfg.
-func validateDatacentersCfg(c *validation.Context, cfg *config.Datacenters) {
+func validateDatacentersCfg(c *validation.Context, cfg *configPB.Datacenters) {
 	// Datacenter filenames must be unique.
 	// Keep records of which ones we've already seen.
 	files := stringset.New(len(cfg.Datacenter))
@@ -101,7 +101,7 @@ func validateDatacentersCfg(c *validation.Context, cfg *config.Datacenters) {
 }
 
 // validateDatacenters validates the individual datacenter.cfg files referenced in datacenters.cfg.
-func validateDatacenters(c *validation.Context, datacenters map[string]*config.Datacenter) {
+func validateDatacenters(c *validation.Context, datacenters map[string]*configPB.Datacenter) {
 	// Datacenter, rack, and switch names must be unique.
 	// Keep records of ones we've already seen.
 	names := stringset.New(len(datacenters))

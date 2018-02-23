@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/runtime/profiling"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/annotee/executor"
 	"go.chromium.org/luci/logdog/client/bootstrapResult"
@@ -73,7 +73,7 @@ type application struct {
 	printSummary       bool
 	testingDir         string
 	annotationInterval clockflag.Duration
-	project            cfgtypes.ProjectName
+	project            config.ProjectName
 	nameBase           streamproto.StreamNameFlag
 	prefix             streamproto.StreamNameFlag
 	logdogHost         string

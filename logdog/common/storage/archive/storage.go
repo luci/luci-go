@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
@@ -232,7 +232,7 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 	}
 }
 
-func (s *storageImpl) Tail(c context.Context, project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *storageImpl) Tail(c context.Context, project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	idx, err := s.getIndex(c)
 	if err != nil {
 		return nil, err

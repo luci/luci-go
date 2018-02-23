@@ -21,11 +21,11 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 
-	"go.chromium.org/luci/machine-db/api/config/v1"
+	configPB "go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/model"
 )
 
@@ -33,8 +33,8 @@ import (
 const platformsFilename = "platforms.cfg"
 
 // importPlatforms fetches, validates, and applies platform configs.
-func importPlatforms(c context.Context, configSet cfgtypes.ConfigSet) error {
-	platform := &config.Platforms{}
+func importPlatforms(c context.Context, configSet config.Set) error {
+	platform := &configPB.Platforms{}
 	metadata := &cfgclient.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, platformsFilename, textproto.Message(platform), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", platformsFilename).Err()
@@ -55,7 +55,7 @@ func importPlatforms(c context.Context, configSet cfgtypes.ConfigSet) error {
 }
 
 // validatePlatforms validates platforms.cfg.
-func validatePlatforms(c *validation.Context, cfg *config.Platforms) {
+func validatePlatforms(c *validation.Context, cfg *configPB.Platforms) {
 	// Platform names must be unique.
 	// Keep records of ones we've already seen.
 	names := stringset.New(len(cfg.Platform))

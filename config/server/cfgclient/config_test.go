@@ -19,8 +19,8 @@ import (
 	"net/url"
 	"testing"
 
-	"go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"

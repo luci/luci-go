@@ -24,9 +24,9 @@ import (
 	"google.golang.org/api/googleapi"
 
 	configApi "go.chromium.org/luci/common/api/luci_config/config/v1"
-	"go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config"
 )
 
 // ClientFactory returns HTTP client to use (given a context).

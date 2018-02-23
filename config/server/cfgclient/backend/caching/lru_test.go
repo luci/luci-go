@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/config/impl/memory"
 
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
