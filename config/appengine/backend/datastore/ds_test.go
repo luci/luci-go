@@ -51,7 +51,7 @@ type testCache interface {
 
 	setCacheErr(err error)
 	setProjectDNE(project string)
-	addConfig(configSet config.Set, path, content string) *backend.Item
+	addConfig(configSet config.Set, path, content string) *config.Config
 	addProjectConfig(project string, access string)
 	addConfigSets(path string, configSets ...config.Set) []string
 }
@@ -131,13 +131,13 @@ func (fc *fakeCache) setProjectDNE(project string) {
 	}, nil)
 }
 
-func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, content string) *backend.Item {
+func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, content string) *config.Config {
 	var (
-		item *backend.Item
+		item *config.Config
 		cv   caching.Value
 	)
 	if content != "" {
-		item = &backend.Item{
+		item = &config.Config{
 			Meta: config.Meta{
 				ConfigSet:   cs,
 				Path:        path,
@@ -145,7 +145,7 @@ func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, c
 				ViewURL:     "https://x.com/view/here",
 			},
 			Content:    content,
-			FormatSpec: backend.FormatSpec{formatter, formatData},
+			FormatSpec: config.FormatSpec{formatter, formatData},
 		}
 		cv.LoadItems(item)
 	}
@@ -165,7 +165,7 @@ func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, c
 	return item
 }
 
-func (fc *fakeCache) addConfig(cs config.Set, path, content string) *backend.Item {
+func (fc *fakeCache) addConfig(cs config.Set, path, content string) *config.Config {
 	return fc.addConfigImpl(cs, path, "", "", content)
 }
 
@@ -187,11 +187,11 @@ func (fc *fakeCache) addProjectConfig(project, access string) {
 }
 
 func (fc *fakeCache) addConfigSets(path string, configSets ...config.Set) []string {
-	items := make([]*backend.Item, len(configSets))
+	items := make([]*config.Config, len(configSets))
 	contents := make([]string, len(configSets))
 	for i, cs := range configSets {
 		contents[i] = string(cs)
-		items[i] = &backend.Item{
+		items[i] = &config.Config{
 			Meta: config.Meta{
 				ConfigSet:   cs,
 				Path:        path,
@@ -248,7 +248,7 @@ func (fsc *fullStackCache) setProjectDNE(project string) {
 	}
 }
 
-func (fsc *fullStackCache) addConfig(cs config.Set, path, content string) *backend.Item {
+func (fsc *fullStackCache) addConfig(cs config.Set, path, content string) *config.Config {
 	cset := fsc.data[cs]
 	if cset == nil {
 		cset = memConfig.Files{}
@@ -288,7 +288,7 @@ func (fsc *fullStackCache) addConfigSets(path string, configSets ...config.Set) 
 		configSets[i] = config.Set(cs)
 	}
 
-	items := make([]*backend.Item, len(configSets))
+	items := make([]*config.Config, len(configSets))
 	for i, cs := range configSets {
 		items[i] = fsc.addConfig(cs, path, string(cs))
 	}

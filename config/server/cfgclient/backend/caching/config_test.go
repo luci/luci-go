@@ -68,7 +68,7 @@ type testingBackend struct {
 	err error
 }
 
-func (b *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (b *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	if p.Content {
 		b.getContentCalls++
 	} else {
@@ -81,7 +81,7 @@ func (b *testingBackend) Get(c context.Context, configSet config.Set, path strin
 	return b.B.Get(c, configSet, path, p)
 }
 
-func (b *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) ([]*backend.Item, error) {
+func (b *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) ([]*config.Config, error) {
 	if p.Content {
 		b.getContentCalls++
 	} else {

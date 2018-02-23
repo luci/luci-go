@@ -51,7 +51,7 @@ var _ backend.B = (*Backend)(nil)
 func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.GetServiceURL() }
 
 // Get implements backend.B.
-func (be *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (be *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	svc := be.GetConfigInterface(c, p.Authority)
 
 	cfg, err := svc.GetConfig(c, configSet, path, !p.Content)
@@ -64,7 +64,7 @@ func (be *Backend) Get(c context.Context, configSet config.Set, path string, p b
 
 // GetAll implements backend.B.
 func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
-	[]*backend.Item, error) {
+	[]*config.Config, error) {
 
 	svc := be.GetConfigInterface(c, p.Authority)
 
@@ -83,7 +83,7 @@ func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string
 		return nil, translateConfigErr(err)
 	}
 
-	items := make([]*backend.Item, len(cfgs))
+	items := make([]*config.Config, len(cfgs))
 	for i := range cfgs {
 		items[i] = makeItem(&cfgs[i])
 	}
@@ -172,8 +172,8 @@ func translateConfigErr(err error) error {
 	}
 }
 
-func makeItem(cfg *config.Config) *backend.Item {
-	return &backend.Item{
+func makeItem(cfg *config.Config) *config.Config {
+	return &config.Config{
 		Meta: config.Meta{
 			ConfigSet:   cfg.ConfigSet,
 			Path:        cfg.Path,

@@ -36,8 +36,8 @@ import (
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/errors"
 	luciProto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/format"
 
 	"github.com/golang/protobuf/proto"
@@ -129,7 +129,7 @@ func (r *resolver) loadMulti(v reflect.Value) bool {
 }
 
 // Resolve implements cfgclient.MultiResolver.
-func (r *resolver) Resolve(it *backend.Item) error {
+func (r *resolver) Resolve(it *config.Config) error {
 	return r.resolveItem(r.single, it.Content, it.FormatSpec.Formatter)
 }
 
@@ -140,7 +140,7 @@ func (r *resolver) PrepareMulti(size int) {
 }
 
 // ResolveItemAt implements cfgclient.MultiResolver.
-func (r *resolver) ResolveItemAt(i int, it *backend.Item) error {
+func (r *resolver) ResolveItemAt(i int, it *config.Config) error {
 	msgV := archetypeInstance(r.singleType)
 	if err := r.resolveItem(msgV.Interface().(proto.Message), it.Content, it.FormatSpec.Formatter); err != nil {
 		return err
@@ -169,8 +169,8 @@ func (r *resolver) resolveItem(out proto.Message, content string, format string)
 	}
 }
 
-func (r *resolver) Format() backend.FormatSpec {
-	return backend.FormatSpec{BinaryFormat, r.messageName}
+func (r *resolver) Format() config.FormatSpec {
+	return config.FormatSpec{BinaryFormat, r.messageName}
 }
 
 // Formatter is a cfgclient.Formatter implementation bound to a specific

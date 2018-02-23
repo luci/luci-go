@@ -95,13 +95,13 @@ func (k *Key) Params() backend.Params {
 	return backend.Params{
 		Content:    k.Content,
 		Authority:  k.Authority,
-		FormatSpec: backend.FormatSpec{k.Formatter, k.FormatData},
+		FormatSpec: config.FormatSpec{k.Formatter, k.FormatData},
 	}
 }
 
-// ValueItem is a cache-optimized backend.Item projection.
+// ValueItem is a cache-optimized config.Config projection.
 //
-// This will mostly be the same as a backend.Item, with the exception of
+// This will mostly be the same as a config.Config, with the exception of
 // Content, which will hold the formatted value if it has been formatted.
 //
 // See Formatter in
@@ -123,8 +123,8 @@ type ValueItem struct {
 	FormatData []byte `json:"fd,omitempty"`
 }
 
-// MakeValueItem builds a caching ValueItem from a backend.Item.
-func MakeValueItem(it *backend.Item) ValueItem {
+// MakeValueItem builds a caching ValueItem from a config.Config.
+func MakeValueItem(it *config.Config) ValueItem {
 	return ValueItem{
 		ConfigSet:   string(it.ConfigSet),
 		Path:        it.Path,
@@ -137,9 +137,9 @@ func MakeValueItem(it *backend.Item) ValueItem {
 	}
 }
 
-// ConfigItem returns the backend.Item equivalent of vi.
-func (vi *ValueItem) ConfigItem() *backend.Item {
-	return &backend.Item{
+// ConfigItem returns the config.Config equivalent of vi.
+func (vi *ValueItem) ConfigItem() *config.Config {
+	return &config.Config{
 		Meta: config.Meta{
 			ConfigSet:   config.Set(vi.ConfigSet),
 			Path:        vi.Path,
@@ -148,7 +148,7 @@ func (vi *ValueItem) ConfigItem() *backend.Item {
 			ViewURL:     vi.ViewURL,
 		},
 		Content:    string(vi.Content),
-		FormatSpec: backend.FormatSpec{vi.Formatter, string(vi.FormatData)},
+		FormatSpec: config.FormatSpec{vi.Formatter, string(vi.FormatData)},
 	}
 }
 
@@ -167,9 +167,9 @@ type Value struct {
 	Items []ValueItem `json:"i,omitempty"`
 }
 
-// LoadItems loads a set of backend.Item into v's Items field. If items is nil,
+// LoadItems loads a set of config.Config into v's Items field. If items is nil,
 // v.Items will be nil.
-func (v *Value) LoadItems(items ...*backend.Item) {
+func (v *Value) LoadItems(items ...*config.Config) {
 	if len(items) == 0 {
 		v.Items = nil
 		return
@@ -181,22 +181,22 @@ func (v *Value) LoadItems(items ...*backend.Item) {
 	}
 }
 
-// SingleItem returns the first backend.Item in v's Items slice. If the Items
+// SingleItem returns the first config.Config in v's Items slice. If the Items
 // slice is empty, SingleItem will return nil.
-func (v *Value) SingleItem() *backend.Item {
+func (v *Value) SingleItem() *config.Config {
 	if len(v.Items) == 0 {
 		return nil
 	}
 	return v.Items[0].ConfigItem()
 }
 
-// ConfigItems returns the backend.Item projection of v's Items slice.
-func (v *Value) ConfigItems() []*backend.Item {
+// ConfigItems returns the config.Config projection of v's Items slice.
+func (v *Value) ConfigItems() []*config.Config {
 	if len(v.Items) == 0 {
 		return nil
 	}
 
-	res := make([]*backend.Item, len(v.Items))
+	res := make([]*config.Config, len(v.Items))
 	for i := range v.Items {
 		res[i] = v.Items[i].ConfigItem()
 	}
@@ -270,7 +270,7 @@ func (b *Backend) keyServiceURL(c context.Context) string {
 }
 
 // Get implements backend.B.
-func (b *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (b *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	key := Key{
 		Schema:     Schema,
 		ServiceURL: b.keyServiceURL(c),
@@ -312,7 +312,7 @@ func (b *Backend) Get(c context.Context, configSet config.Set, path string, p ba
 }
 
 // GetAll implements config.Backend.
-func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) ([]*backend.Item, error) {
+func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) ([]*config.Config, error) {
 	key := Key{
 		Schema:       Schema,
 		ServiceURL:   b.keyServiceURL(c),

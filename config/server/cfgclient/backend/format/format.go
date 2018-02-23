@@ -39,7 +39,7 @@ type Backend struct {
 }
 
 // Get implements backend.B.
-func (b *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (b *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	item, err := b.B.Get(c, configSet, path, p)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (b *Backend) Get(c context.Context, configSet config.Set, path string, p ba
 
 // GetAll implements backend.B.
 func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
-	[]*backend.Item, error) {
+	[]*config.Config, error) {
 
 	items, err := b.B.GetAll(c, t, path, p)
 	if err != nil {
@@ -90,7 +90,7 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 	return items, nil
 }
 
-func (b *Backend) formatItem(it *backend.Item, formatter Formatter, fs backend.FormatSpec) error {
+func (b *Backend) formatItem(it *config.Config, formatter Formatter, fs config.FormatSpec) error {
 	if !it.FormatSpec.Unformatted() {
 		// Item is already formatted.
 		return nil
