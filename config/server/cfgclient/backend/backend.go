@@ -68,7 +68,7 @@ type B interface {
 	ServiceURL(context.Context) url.URL
 
 	// Get retrieves a single configuration.
-	Get(c context.Context, configSet, path string, p Params) (*Item, error)
+	Get(c context.Context, configSet config.Set, path string, p Params) (*Item, error)
 
 	// GetAll retrieves all configurations of a given type.
 	GetAll(c context.Context, t GetAllTarget, path string, p Params) ([]*Item, error)

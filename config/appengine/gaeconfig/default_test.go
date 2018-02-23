@@ -78,7 +78,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		authState.IdentityGroups = []string{"all", "users"}
 
 		// Use a memory-backed Config service instance.
-		baseMap := map[string]memConfig.ConfigSet{
+		baseMap := map[config.Set]memConfig.Files{
 			"projects/open": map[string]string{
 				"project.cfg": proto.MarshalTextString(projectConfigWithAccess("foo", "group:all")),
 				"test.cfg":    "Test Config Content",
@@ -258,7 +258,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				return
 			}
 
-			baseContentHash := func(configSet, config string) string {
+			baseContentHash := func(configSet config.Set, config string) string {
 				cfg, err := base.GetConfig(c, configSet, config, true)
 				if err != nil {
 					panic(err)

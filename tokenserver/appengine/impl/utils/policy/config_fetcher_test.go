@@ -76,7 +76,7 @@ func TestConfigFetcher(t *testing.T) {
 }
 
 func prepareServiceConfig(c context.Context, configs map[string]string) context.Context {
-	return testconfig.WithCommonClient(c, memory.New(map[string]memory.ConfigSet{
-		"services/" + info.AppID(c): configs,
+	return testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
+		config.Set("services/" + info.AppID(c)): configs,
 	}))
 }
