@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4b820c68_d8d86f97",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-23T18:33:18Z",
+      "side": 1,
+      "message": "It wasn\u0027t. I\u0027ve fixed it.",
+      "parentUuid": "bc2aba49_4ce1fa9c",
+      "range": {
+        "startLine": 195,
+        "startChar": 14,
+        "endLine": 195,
+        "endChar": 111
+      },
+      "revId": "fb1e65b802e2ef3d91c10ad89ed8546dcb7e8ca9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c3ed5a0b_4baade0e",
         "filename": "common/bq/eventupload_test.go",
         "patchSetId": 3
