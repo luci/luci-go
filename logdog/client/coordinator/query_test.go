@@ -22,10 +22,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 

@@ -33,10 +33,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 func init() {

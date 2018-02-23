@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 

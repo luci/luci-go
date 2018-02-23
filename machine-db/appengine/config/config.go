@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/server/router"
 )
 

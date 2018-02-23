@@ -21,10 +21,10 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	ds "go.chromium.org/gae/service/datastore"
 

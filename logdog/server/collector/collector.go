@@ -26,12 +26,12 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	tsmon_types "go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerproto"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/collector/coordinator"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

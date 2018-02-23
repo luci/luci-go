@@ -27,10 +27,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	accessProto "go.chromium.org/luci/common/proto/access"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
-	"go.chromium.org/luci/luci_config/server/cfgclient"
-	"go.chromium.org/luci/luci_config/server/cfgclient/access"
-	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/server/cfgclient/access"
+	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
 )
 

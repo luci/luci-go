@@ -16,11 +16,11 @@ package logs
 
 import (
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

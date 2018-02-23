@@ -18,9 +18,9 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )

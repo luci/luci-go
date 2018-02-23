@@ -16,10 +16,10 @@ package coordinator
 
 import (
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/grpc/prpc"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 var (

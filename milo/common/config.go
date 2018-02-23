@@ -30,8 +30,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/luci_config/server/cfgclient"
-	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"

@@ -38,12 +38,12 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/runtime/profiling"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	grpcLogging "go.chromium.org/luci/grpc/logging"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )

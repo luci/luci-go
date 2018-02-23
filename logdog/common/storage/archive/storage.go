@@ -35,10 +35,10 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	cloudStorage "cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"

@@ -35,9 +35,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
-	"go.chromium.org/luci/luci_config/server/cfgclient"
-	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/server/cfgclient/textproto"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/messages"

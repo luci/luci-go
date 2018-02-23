@@ -17,9 +17,9 @@ package config
 import (
 	"time"
 
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
-	"go.chromium.org/luci/luci_config/server/cfgclient"
-	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/server/caching"
 
 	"github.com/golang/protobuf/proto"

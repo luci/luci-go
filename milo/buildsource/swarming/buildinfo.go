@@ -18,9 +18,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 

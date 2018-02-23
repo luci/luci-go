@@ -20,10 +20,10 @@ import (
 	"go.chromium.org/luci/appengine/datastorecache"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/mutexpool"
-	"go.chromium.org/luci/luci_config/appengine/backend/datastore"
-	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
-	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
-	"go.chromium.org/luci/luci_config/server/cfgclient/backend/caching"
+	"go.chromium.org/luci/config/appengine/backend/datastore"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
 
 	"golang.org/x/net/context"
 )
