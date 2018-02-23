@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a5dcee5a_f449dbe4",
+        "filename": "config/server/cfgclient/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-23T23:34:12Z",
+      "side": 0,
+      "message": "this was weird...",
+      "range": {
+        "startLine": 192,
+        "startChar": 0,
+        "endLine": 192,
+        "endChar": 38
+      },
+      "revId": "b9c727724a42db5f6c5c0c5302feb57b1a696b87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
