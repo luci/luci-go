@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc2aba49_4ce1fa9c",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-23T18:20:52Z",
+      "side": 1,
+      "message": "Is this doc shared externally?",
+      "range": {
+        "startLine": 195,
+        "startChar": 14,
+        "endLine": 195,
+        "endChar": 111
+      },
+      "revId": "fb1e65b802e2ef3d91c10ad89ed8546dcb7e8ca9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3ed5a0b_4baade0e",
+        "filename": "common/bq/eventupload_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-23T18:20:52Z",
+      "side": 1,
+      "message": "This is nicer, thank you.",
+      "range": {
+        "startLine": 131,
+        "startChar": 2,
+        "endLine": 134,
+        "endChar": 0
+      },
+      "revId": "fb1e65b802e2ef3d91c10ad89ed8546dcb7e8ca9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9d4866a_5017483f",
+        "filename": "common/bq/eventupload_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-02-23T18:20:52Z",
+      "side": 1,
+      "message": "Also nicer!",
+      "range": {
+        "startLine": 163,
+        "startChar": 10,
+        "endLine": 163,
+        "endChar": 24
+      },
+      "revId": "fb1e65b802e2ef3d91c10ad89ed8546dcb7e8ca9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
