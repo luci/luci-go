@@ -243,16 +243,32 @@ func TestListVMs(t *testing.T) {
 		columns := []string{"hv.name", "hv.vlan_id", "hp.name", "hp.vlan_id", "o.name", "vm.description", "vm.deployment_ticket", "i.ipv4", "v.state"}
 		rows := sqlmock.NewRows(columns)
 
+		Convey("invalid IPv4 address", func() {
+			req := &crimson.ListVMsRequest{
+				Names: []string{"vm"},
+				Vlans: []int64{0},
+				Ipv4S: []string{"0.0.0.1", "0.0.0.2/20"},
+			}
+			vms, err := listVMs(c, db, req)
+			So(err, ShouldErrLike, "invalid IPv4 address")
+			So(vms, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
 		Convey("query failed", func() {
 			selectStmt := `
 				^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
 				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
-				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\) AND hv.vlan_id IN \(\?\)$
+				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id
+					AND hv.name IN \(\?\) AND hv.vlan_id IN \(\?\) AND i.ipv4 IN \(\?,\?\)$
 			`
-			names := []string{"vm"}
-			vlans := []int64{0}
-			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnError(fmt.Errorf("error"))
-			vms, err := listVMs(c, db, names, vlans)
+			req := &crimson.ListVMsRequest{
+				Names: []string{"vm"},
+				Vlans: []int64{0},
+				Ipv4S: []string{"0.0.0.1", "0.0.0.2"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0], 1, 2).WillReturnError(fmt.Errorf("error"))
+			vms, err := listVMs(c, db, req)
 			So(err, ShouldErrLike, "failed to fetch VMs")
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -264,10 +280,11 @@ func TestListVMs(t *testing.T) {
 				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
 				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.vlan_id IN \(\?\)$
 			`
-			names := []string{}
-			vlans := []int64{0}
-			m.ExpectQuery(selectStmt).WithArgs(vlans[0]).WillReturnRows(rows)
-			vms, err := listVMs(c, db, names, vlans)
+			req := &crimson.ListVMsRequest{
+				Vlans: []int64{0},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Vlans[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, req)
 			So(err, ShouldBeNil)
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -279,10 +296,11 @@ func TestListVMs(t *testing.T) {
 				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
 				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\)$
 			`
-			names := []string{"vm"}
-			vlans := []int64{}
-			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnRows(rows)
-			vms, err := listVMs(c, db, names, vlans)
+			req := &crimson.ListVMsRequest{
+				Names: []string{"vm"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, req)
 			So(err, ShouldBeNil)
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -294,10 +312,12 @@ func TestListVMs(t *testing.T) {
 				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
 				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\) AND hv.vlan_id IN \(\?\)$
 			`
-			names := []string{"vm"}
-			vlans := []int64{0}
-			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnRows(rows)
-			vms, err := listVMs(c, db, names, vlans)
+			req := &crimson.ListVMsRequest{
+				Names: []string{"vm"},
+				Vlans: []int64{0},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, req)
 			So(err, ShouldBeNil)
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -309,25 +329,27 @@ func TestListVMs(t *testing.T) {
 				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
 				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?,\?\) AND hv.vlan_id IN \(\?\)$
 			`
-			names := []string{"vm 1", "vm 2"}
-			vlans := []int64{0}
-			rows.AddRow(names[0], vlans[0], "host 1", 10, "os 1", "", "", 1, 0)
-			rows.AddRow(names[1], vlans[0], "host 2", 20, "os 2", "", "", 2, common.State_SERVING)
-			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1], vlans[0]).WillReturnRows(rows)
-			vms, err := listVMs(c, db, names, vlans)
+			req := &crimson.ListVMsRequest{
+				Names: []string{"vm 1", "vm 2"},
+				Vlans: []int64{0},
+			}
+			rows.AddRow(req.Names[0], req.Vlans[0], "host 1", 10, "os 1", "", "", 1, 0)
+			rows.AddRow(req.Names[1], req.Vlans[0], "host 2", 20, "os 2", "", "", 2, common.State_SERVING)
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Names[1], req.Vlans[0]).WillReturnRows(rows)
+			vms, err := listVMs(c, db, req)
 			So(err, ShouldBeNil)
 			So(vms, ShouldResemble, []*crimson.VM{
 				{
-					Name:     names[0],
-					Vlan:     vlans[0],
+					Name:     req.Names[0],
+					Vlan:     req.Vlans[0],
 					Host:     "host 1",
 					HostVlan: 10,
 					Os:       "os 1",
 					Ipv4:     "0.0.0.1",
 				},
 				{
-					Name:     names[1],
-					Vlan:     vlans[0],
+					Name:     req.Names[1],
+					Vlan:     req.Vlans[0],
 					Host:     "host 2",
 					HostVlan: 20,
 					Os:       "os 2",
@@ -344,12 +366,11 @@ func TestListVMs(t *testing.T) {
 				FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
 				WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id$
 			`
-			names := []string{}
-			vlans := []int64{}
+			req := &crimson.ListVMsRequest{}
 			rows.AddRow("vm 1", 1, "host 1", 10, "os 1", "", "", 1, 0)
 			rows.AddRow("vm 2", 2, "host 2", 20, "os 2", "", "", 2, common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			vms, err := listVMs(c, db, names, vlans)
+			vms, err := listVMs(c, db, req)
 			So(err, ShouldBeNil)
 			So(vms, ShouldResemble, []*crimson.VM{
 				{

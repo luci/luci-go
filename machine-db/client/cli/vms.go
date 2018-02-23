@@ -65,7 +65,7 @@ func (c *AddVMCmd) Run(app subcommands.Application, args []string, env subcomman
 // addVMCmd returns a command to add a VM.
 func addVMCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-vm -name <name> -host <name> -vlan <id> -os <os> -state <state> [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "add-vm -name <name> -host <name> -vlan <id> -os <os> -ipv4 <ip address> -state <state> [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a VM",
 		LongDesc:  "Adds a VM to the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -107,13 +107,14 @@ func (c *GetVMsCmd) Run(app subcommands.Application, args []string, env subcomma
 // getVMsCmd returns a command to get VMs.
 func getVMsCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-vms [-name <name>]... [-vlan <id>]...",
+		UsageLine: "get-vms [-name <name>]... [-vlan <id>]... [-ipv4 <ip address>]...",
 		ShortDesc: "retrieves VMs",
 		LongDesc:  "Retrieves VMs matching the given names and VLANs, or all VMs if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVMsCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a VM to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Ipv4S), "ipv4", "IPv4 address to filter by. Can be specified multiple times.")
 			// TODO(smut): Add the other filters.
 			cmd.f.Register(cmd)
 			return cmd

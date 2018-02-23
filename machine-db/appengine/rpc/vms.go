@@ -44,7 +44,7 @@ func (*Service) CreateVM(c context.Context, req *crimson.CreateVMRequest) (*crim
 
 // ListVMs handles a request to list VMs.
 func (*Service) ListVMs(c context.Context, req *crimson.ListVMsRequest) (*crimson.ListVMsResponse, error) {
-	vms, err := listVMs(c, database.Get(c), req.Names, req.Vlans)
+	vms, err := listVMs(c, database.Get(c), req)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -109,7 +109,12 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 }
 
 // listVMs returns a slice of VMs in the database.
-func listVMs(c context.Context, q database.QueryerContext, names []string, vlans []int64) ([]*crimson.VM, error) {
+func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsRequest) ([]*crimson.VM, error) {
+	ipv4s, err := parseIPv4s(req.Ipv4S)
+	if err != nil {
+		return nil, err
+	}
+
 	stmt := squirrel.Select(
 		"hv.name",
 		"hv.vlan_id",
@@ -127,8 +132,9 @@ func listVMs(c context.Context, q database.QueryerContext, names []string, vlans
 		Where("p.hostname_id = hp.id").
 		Where("v.os_id = o.id").
 		Where("i.hostname_id = hv.id")
-	stmt = selectInString(stmt, "hv.name", names)
-	stmt = selectInInt64(stmt, "hv.vlan_id", vlans)
+	stmt = selectInString(stmt, "hv.name", req.Names)
+	stmt = selectInInt64(stmt, "hv.vlan_id", req.Vlans)
+	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())

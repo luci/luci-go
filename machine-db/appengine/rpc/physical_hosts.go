@@ -45,7 +45,7 @@ func (*Service) CreatePhysicalHost(c context.Context, req *crimson.CreatePhysica
 
 // ListPhysicalHosts handles a request to list physical hosts.
 func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHostsRequest) (*crimson.ListPhysicalHostsResponse, error) {
-	hosts, err := listPhysicalHosts(c, database.Get(c), req.Names, req.Vlans)
+	hosts, err := listPhysicalHosts(c, database.Get(c), req)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -134,7 +134,12 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 }
 
 // listPhysicalHosts returns a slice of physical hosts in the database.
-func listPhysicalHosts(c context.Context, q database.QueryerContext, names []string, vlans []int64) ([]*crimson.PhysicalHost, error) {
+func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimson.ListPhysicalHostsRequest) ([]*crimson.PhysicalHost, error) {
+	ipv4s, err := parseIPv4s(req.Ipv4S)
+	if err != nil {
+		return nil, err
+	}
+
 	stmt := squirrel.Select(
 		"h.name",
 		"v.id",
@@ -152,8 +157,9 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, names []str
 		Where("p.machine_id = m.id").
 		Where("p.os_id = o.id").
 		Where("i.hostname_id = h.id")
-	stmt = selectInString(stmt, "h.name", names)
-	stmt = selectInInt64(stmt, "v.id", vlans)
+	stmt = selectInString(stmt, "h.name", req.Names)
+	stmt = selectInInt64(stmt, "v.id", req.Vlans)
+	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
@@ -269,7 +275,10 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 		}
 	}
 
-	hosts, err := listPhysicalHosts(c, tx, []string{h.Name}, []int64{h.Vlan})
+	hosts, err := listPhysicalHosts(c, tx, &crimson.ListPhysicalHostsRequest{
+		Names: []string{h.Name},
+		Vlans: []int64{h.Vlan},
+	})
 	switch {
 	case err != nil:
 		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated physical host").Err())
