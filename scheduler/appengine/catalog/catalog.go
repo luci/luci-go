@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 
@@ -270,7 +270,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 	}()
 
-	configSet := cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(projectID))
+	configSet := config.ProjectSet(config.ProjectName(projectID))
 	var (
 		cfg  messages.ProjectConfig
 		meta cfgclient.Meta

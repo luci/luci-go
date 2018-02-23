@@ -21,9 +21,9 @@ import (
 	"net/url"
 	"sync"
 
-	"go.chromium.org/luci/common/config"
-	"go.chromium.org/luci/common/config/impl/remote"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/impl/remote"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"

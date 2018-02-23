@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
@@ -249,7 +249,7 @@ func TestHandleArchive(t *testing.T) {
 				}
 
 				err = st.Put(c, storage.PutRequest{
-					Project: cfgtypes.ProjectName(p),
+					Project: config.ProjectName(p),
 					Path:    desc.Path(),
 					Index:   types.MessageIndex(v),
 					Values:  [][]byte{d},
@@ -322,7 +322,7 @@ func TestHandleArchive(t *testing.T) {
 
 		ar := Archivist{
 			Service: &sc,
-			SettingsLoader: func(c context.Context, proj cfgtypes.ProjectName) (*Settings, error) {
+			SettingsLoader: func(c context.Context, proj config.ProjectName) (*Settings, error) {
 				// Extra slashes to test concatenation,.
 				st := stBase
 				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", proj))

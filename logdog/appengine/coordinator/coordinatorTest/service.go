@@ -15,7 +15,7 @@
 package coordinatorTest
 
 import (
-	"go.chromium.org/luci/config/common/cfgtypes"
+	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
@@ -62,7 +62,7 @@ func (s *Services) Config(c context.Context) (*config.Config, error) {
 }
 
 // ProjectConfig implements coordinator.Services.
-func (s *Services) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *Services) ProjectConfig(c context.Context, project cfglib.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if s.PC != nil {
 		return s.PC()
 	}

@@ -21,8 +21,8 @@ package erroring
 import (
 	"net/url"
 
-	"go.chromium.org/luci/common/config"
-	"go.chromium.org/luci/common/config/impl/erroring"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/impl/erroring"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"

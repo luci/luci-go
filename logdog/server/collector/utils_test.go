@@ -26,7 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerproto"
 	"go.chromium.org/luci/logdog/common/storage"
@@ -305,7 +305,7 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 
 	// Load all entries for this stream.
 	req := storage.GetRequest{
-		Project: cfgtypes.ProjectName(project),
+		Project: config.ProjectName(project),
 		Path:    types.StreamPath(name),
 	}
 

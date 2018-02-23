@@ -17,7 +17,7 @@ package services
 import (
 	"github.com/golang/protobuf/proto"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -56,7 +56,7 @@ func New() logdog.ServicesServer {
 // message type.
 func maybeEnterProjectNamespace(c context.Context, req proto.Message) (context.Context, error) {
 	if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
-		project := cfgtypes.ProjectName(pbm.GetMessageProject())
+		project := config.ProjectName(pbm.GetMessageProject())
 		log.Fields{
 			"project": project,
 		}.Debugf(c, "Request is entering project namespace.")

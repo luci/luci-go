@@ -16,7 +16,7 @@ package cfgclient
 
 import (
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 
 	"golang.org/x/net/context"
 )
@@ -30,6 +30,6 @@ func CurrentServiceName(c context.Context) string { return info.TrimmedAppID(c) 
 
 // CurrentServiceConfigSet returns the config set for the current AppEngine
 // service, based on its current service name.
-func CurrentServiceConfigSet(c context.Context) cfgtypes.ConfigSet {
-	return cfgtypes.ServiceConfigSet(CurrentServiceName(c))
+func CurrentServiceConfigSet(c context.Context) config.Set {
+	return config.ServiceSet(CurrentServiceName(c))
 }

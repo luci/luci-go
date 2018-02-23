@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
@@ -68,7 +68,7 @@ type application struct {
 	// empty. Subcommands that support "unified" project-in-path paths should use
 	// splitPath to get the project form the path. Those that don't should assert
 	// that this is non-empty.
-	project   cfgtypes.ProjectName
+	project   config.ProjectName
 	authFlags authcli.Flags
 	insecure  bool
 	timeout   clockflag.Duration
@@ -97,14 +97,14 @@ func (a *application) addToFlagSet(ctx context.Context, fs *flag.FlagSet) {
 // If a project is supplied via command-line, the path is returned directly
 // along with the project. If no project is supplied, the first slash-delimited
 // component of "p" is used as the project name.
-func (a *application) splitPath(p string) (cfgtypes.ProjectName, string, bool, error) {
+func (a *application) splitPath(p string) (config.ProjectName, string, bool, error) {
 	if a.project != "" {
 		return a.project, p, false, nil
 	}
 
 	parts := strings.SplitN(p, types.StreamNameSepStr, 2)
 
-	project := cfgtypes.ProjectName(parts[0])
+	project := config.ProjectName(parts[0])
 	if err := project.Validate(); err != nil {
 		return "", "", false, fmt.Errorf("invalid project name %q: %v", project, err)
 	}

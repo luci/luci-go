@@ -82,7 +82,7 @@ type Project struct {
 	RepoURL *url.URL
 }
 
-// Interface represents luci-config service API.
+// Interface represents low-level luci-config service API.
 //
 // All methods accept context.Context they use for deadlines and for passing to
 // callbacks (if the implementation uses any). Contexts here don't necessary

@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
@@ -136,7 +136,7 @@ type QueryCallback func(r *LogStream) bool
 //     first value is "foo" and whose name is "baz".
 //   - foo/bar will return all streams whose name is "foo/bar".
 //   - */* will return all streams with two-component names.
-func (c *Client) Query(ctx context.Context, project cfgtypes.ProjectName, path string, o QueryOptions, cb QueryCallback) error {
+func (c *Client) Query(ctx context.Context, project config.ProjectName, path string, o QueryOptions, cb QueryCallback) error {
 	req := logdog.QueryRequest{
 		Project:     string(project),
 		Path:        path,

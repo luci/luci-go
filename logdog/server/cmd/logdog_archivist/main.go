@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/archivist"
@@ -249,7 +249,7 @@ func (a *application) runArchivist(c context.Context) error {
 func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.SettingsLoader {
 	serviceID := a.ServiceID()
 
-	return func(c context.Context, proj cfgtypes.ProjectName) (*archivist.Settings, error) {
+	return func(c context.Context, proj config.ProjectName) (*archivist.Settings, error) {
 		// Fold in our project-specific configuration, if valid.
 		pcfg, err := a.ProjectConfig(c, proj)
 		if err != nil {

@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2018 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,40 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgtypes
+package config
 
 import (
 	"strings"
 )
 
-// ConfigSet is a configuration service Config Set string.
+// Set is a name of a configuration set: a bunch of config files versioned and
+// stored as a single unit in a same repository.
 //
-// A config set consists of a domain and a series of path components:
+// A config set name consists of a domain and a series of path components:
 // domain/target/refs...
 //
 //	- Service config sets are config sets in the "services" domain, with the
 //	  service name as the target.
 //	- Project config sets are config sets in the "projects" domain. The target
 //	  is the project name.
-type ConfigSet string
+type Set string
 
-// ServiceConfigSet returns the name of a config set for the specified service.
-func ServiceConfigSet(name string) ConfigSet { return ConfigSet("services/" + name) }
+// ServiceSet returns the name of a config set for the specified service.
+func ServiceSet(name string) Set { return Set("services/" + name) }
 
-// ProjectConfigSet returns the config set for the specified project.
-func ProjectConfigSet(name ProjectName) ConfigSet { return RefConfigSet(name, "") }
+// ProjectSet returns the config set for the specified project.
+func ProjectSet(name ProjectName) Set { return RefSet(name, "") }
 
-// RefConfigSet returns the config set for the specified project and ref. If ref
-// is empty, this will equal the ProjectConfigSet value.
-func RefConfigSet(name ProjectName, ref string) ConfigSet {
+// RefSet returns the config set for the specified project and ref. If ref
+// is empty, this will equal the ProjectSet value.
+func RefSet(name ProjectName, ref string) Set {
 	if ref == "" {
-		return ConfigSet("projects/" + string(name))
+		return Set("projects/" + string(name))
 	}
-	return ConfigSet(strings.Join([]string{"projects", string(name), ref}, "/"))
+	return Set(strings.Join([]string{"projects", string(name), ref}, "/"))
 }
 
-// Split splits a ConfigSet into its domain, target, and ref components.
-func (cs ConfigSet) Split() (domain, target, ref string) {
+// Split splits a Set into its domain, target, and ref components.
+func (cs Set) Split() (domain, target, ref string) {
 	switch p := strings.SplitN(string(cs), "/", 3); len(p) {
 	case 1:
 		return p[0], "", ""
@@ -66,7 +67,7 @@ func (cs ConfigSet) Split() (domain, target, ref string) {
 //	- ref: "bar/baz"
 //
 // If configSet is not a project config set, empty strings will be returned.
-func (cs ConfigSet) SplitProject() (project ProjectName, projectConfigSet ConfigSet, ref string) {
+func (cs Set) SplitProject() (project ProjectName, projectConfigSet Set, ref string) {
 	parts := strings.SplitN(string(cs), "/", 3)
 	if len(parts) < 2 || parts[0] != "projects" {
 		// Not a project config set, so neither remaining Authority can access.

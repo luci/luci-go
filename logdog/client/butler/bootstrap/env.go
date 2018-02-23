@@ -17,7 +17,7 @@ package bootstrap
 
 import (
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -30,7 +30,7 @@ type Environment struct {
 
 	// Project is the project name. If not empty, this will be exported to
 	// subprocesses.
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	// Prefix is the prefix name. If not empty, this will be exported to
 	// subprocesses.
 	Prefix types.StreamName

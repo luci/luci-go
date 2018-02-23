@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -41,7 +41,7 @@ type Config struct {
 	// ConfigServiceURL is the config service's URL.
 	ConfigServiceURL url.URL `json:"-"`
 	// ConfigSet is the name of the service config set that is being used.
-	ConfigSet cfgtypes.ConfigSet `json:"-"`
+	ConfigSet config.Set `json:"-"`
 	// ServiceConfigPath is the path within ConfigSet of the service
 	// configuration.
 	ServiceConfigPath string `json:"-"`
@@ -49,7 +49,7 @@ type Config struct {
 
 // ServiceConfigPath returns the config set and path for this application's
 // service configuration.
-func ServiceConfigPath(c context.Context) (cfgtypes.ConfigSet, string) {
+func ServiceConfigPath(c context.Context) (config.Set, string) {
 	return cfgclient.CurrentServiceConfigSet(c), svcconfig.ServiceConfigPath
 }
 

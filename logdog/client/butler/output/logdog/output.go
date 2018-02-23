@@ -28,7 +28,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
@@ -61,7 +61,7 @@ type Config struct {
 	Host string
 
 	// Project is the project that this stream belongs to.
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	// Prefix is the stream prefix to register.
 	Prefix types.StreamName
 	// PrefixExpiration is the prefix expiration to use when registering.

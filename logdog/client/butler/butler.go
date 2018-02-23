@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
@@ -67,7 +67,7 @@ type Config struct {
 	OutputWorkers int
 
 	// Project is the project that the log stream will be bound to.
-	Project cfgtypes.ProjectName
+	Project config.ProjectName
 	// Prefix is the log stream common prefix value.
 	Prefix types.StreamName
 

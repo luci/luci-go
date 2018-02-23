@@ -17,8 +17,7 @@ package testconfig
 import (
 	"net/url"
 
-	ccfg "go.chromium.org/luci/common/config"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
@@ -29,7 +28,7 @@ import (
 
 // WithCommonClient installs a backend.B into the supplied Context that
 // loads its configuration from base.
-func WithCommonClient(c context.Context, base ccfg.Interface) context.Context {
+func WithCommonClient(c context.Context, base config.Interface) context.Context {
 	return backend.WithBackend(c, &client.Backend{
 		Provider: &Provider{
 			Base: base,
@@ -46,7 +45,7 @@ func WithCommonClient(c context.Context, base ccfg.Interface) context.Context {
 // Provider performs access checks locally using access.CheckAccess.
 type Provider struct {
 	// Base is the base interface.
-	Base ccfg.Interface
+	Base config.Interface
 }
 
 var _ client.Provider = (*Provider)(nil)
@@ -60,7 +59,7 @@ func (p *Provider) GetServiceURL() url.URL {
 }
 
 // GetConfigClient implements ClientProvider.
-func (p *Provider) GetConfigClient(c context.Context, a backend.Authority) ccfg.Interface {
+func (p *Provider) GetConfigClient(c context.Context, a backend.Authority) config.Interface {
 	return &boundLocalInterface{
 		Context:   c,
 		Interface: p.Base,
@@ -69,26 +68,26 @@ func (p *Provider) GetConfigClient(c context.Context, a backend.Authority) ccfg.
 	}
 }
 
-// boundLocalInterface is a ccfg.Interface implementation that adds ACL
+// boundLocalInterface is a config.Interface implementation that adds ACL
 // pruning to the results based on the bound authority.
 type boundLocalInterface struct {
 	context.Context
 
 	// Interface is the config interface implementation.
-	ccfg.Interface
+	config.Interface
 
 	lsp *Provider
 	a   backend.Authority
 }
 
-func (bli *boundLocalInterface) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*ccfg.Config, error) {
-	if err := access.Check(bli, bli.a, cfgtypes.ConfigSet(configSet)); err != nil {
-		return nil, ccfg.ErrNoConfig
+func (bli *boundLocalInterface) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
+	if err := access.Check(bli, bli.a, config.Set(configSet)); err != nil {
+		return nil, config.ErrNoConfig
 	}
 	return bli.Interface.GetConfig(ctx, configSet, path, hashOnly)
 }
 
-func (bli *boundLocalInterface) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]ccfg.Config, error) {
+func (bli *boundLocalInterface) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
 	cfgs, err := bli.Interface.GetProjectConfigs(ctx, path, hashesOnly)
 	if err != nil {
 		return nil, err
@@ -96,7 +95,7 @@ func (bli *boundLocalInterface) GetProjectConfigs(ctx context.Context, path stri
 	return bli.pruneConfigList(cfgs), nil
 }
 
-func (bli *boundLocalInterface) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]ccfg.Config, error) {
+func (bli *boundLocalInterface) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
 	cfgs, err := bli.Interface.GetRefConfigs(ctx, path, hashesOnly)
 	if err != nil {
 		return nil, err
@@ -105,16 +104,16 @@ func (bli *boundLocalInterface) GetRefConfigs(ctx context.Context, path string, 
 }
 
 func (bli *boundLocalInterface) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
-	if err := access.Check(ctx, bli.a, cfgtypes.ConfigSet(configSet)); err != nil {
+	if err := access.Check(ctx, bli.a, config.Set(configSet)); err != nil {
 		return nil, cfgclient.ErrNoConfig
 	}
 	return bli.Interface.GetConfigSetLocation(ctx, configSet)
 }
 
-func (bli *boundLocalInterface) pruneConfigList(cl []ccfg.Config) []ccfg.Config {
+func (bli *boundLocalInterface) pruneConfigList(cl []config.Config) []config.Config {
 	ptr := 0
 	for i := range cl {
-		if err := access.Check(bli, bli.a, cfgtypes.ConfigSet(cl[i].ConfigSet)); err == nil {
+		if err := access.Check(bli, bli.a, config.Set(cl[i].ConfigSet)); err == nil {
 			cl[ptr] = cl[i]
 			ptr++
 		}

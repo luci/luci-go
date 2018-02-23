@@ -17,6 +17,7 @@ package logs
 import (
 	"time"
 
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -198,7 +198,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	return nil
 }
 
-func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project cfgtypes.ProjectName,
+func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project config.ProjectName,
 	path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
 
 	log.Fields{
@@ -283,7 +283,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningSt
 	}
 }
 
-func getTail(c context.Context, st coordinator.SigningStorage, project cfgtypes.ProjectName, path types.StreamPath) (
+func getTail(c context.Context, st coordinator.SigningStorage, project config.ProjectName, path types.StreamPath) (
 	[]*logpb.LogEntry, error) {
 
 	log.Fields{

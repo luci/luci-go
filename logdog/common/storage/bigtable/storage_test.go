@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/recordio"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
@@ -49,7 +49,7 @@ func TestStorage(t *testing.T) {
 		s := NewMemoryInstance(&cache)
 		defer s.Close()
 
-		project := cfgtypes.ProjectName("test-project")
+		project := config.ProjectName("test-project")
 		get := func(path string, index int, limit int, keysOnly bool) ([]string, error) {
 			req := storage.GetRequest{
 				Project:  project,

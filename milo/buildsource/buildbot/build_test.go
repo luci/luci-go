@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
-	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
