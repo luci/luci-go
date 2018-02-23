@@ -45,6 +45,54 @@
       "revId": "b2e08713054a1d312a8393b25bd8f6dbb291488b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77fa39c0_775934af",
+        "filename": "config/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-23T02:40:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8aa686b_17f98340",
+      "range": {
+        "startLine": 15,
+        "startChar": 23,
+        "endLine": 15,
+        "endChar": 30
+      },
+      "revId": "b2e08713054a1d312a8393b25bd8f6dbb291488b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c0cc689c_abb52cb8",
+        "filename": "config/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-23T02:40:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9d2e8be_b469549d",
+      "range": {
+        "startLine": 15,
+        "startChar": 57,
+        "endLine": 15,
+        "endChar": 64
+      },
+      "revId": "b2e08713054a1d312a8393b25bd8f6dbb291488b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
