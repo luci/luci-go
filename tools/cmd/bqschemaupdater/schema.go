@@ -107,20 +107,9 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 		case "google.protobuf.Timestamp":
 			schema.Type = bigquery.TimestampFieldType
 		case "google.protobuf.Struct":
-			// Schemaless data, such as protobuf Structs, should not be used in
-			// BigQuery tables.
-			// Instead, users that need that data should maintain their own
-			// structured BQ tables, possibly duplicating some data.
-			//
-			// For example, instead of putting arbitrary build properties in
-			// completed_builds event table, a user that needs test results
-			// surfaced in the output properties, should instead maintain their
-			// own BQ test results table, possibly duplicating some data from
-			// completed_builds table (e.g. build id, builder).
-			//
-			// This consensus was reached at
-			// https://docs.google.com/document/d/1PccZ62hmF8QQHHa7GDF9NriCGS5mm-uL_NcXBp2UCDI/edit?ts=5a5390ac#
-			return nil, nil
+			// google.protobuf.Struct is persisted as JSONPB string.
+			// See also https://bit.ly/chromium-bq-struct
+			schema.Type = bigquery.StringFieldType
 		default:
 			schema.Type = bigquery.RecordFieldType
 			var err error
