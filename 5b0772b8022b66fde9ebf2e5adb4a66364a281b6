@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1b3e04fa_16c3bafd",
+        "filename": "machine-db/client/cli/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-23T22:20:08Z",
+      "side": 1,
+      "message": "OS at least, and if they want it then state, machine, rack, DC.",
+      "parentUuid": "b8ae3571_4d119330",
+      "range": {
+        "startLine": 172,
+        "startChar": 26,
+        "endLine": 172,
+        "endChar": 31
+      },
+      "revId": "5b0772b8022b66fde9ebf2e5adb4a66364a281b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f849ff36_f4380406",
         "filename": "machine-db/client/cli/vms.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "5b0772b8022b66fde9ebf2e5adb4a66364a281b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "725e223f_65c4548c",
+        "filename": "machine-db/client/cli/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-23T22:20:08Z",
+      "side": 1,
+      "message": "OS was already requested, possibly also state, and host.",
+      "parentUuid": "f849ff36_f4380406",
+      "range": {
+        "startLine": 118,
+        "startChar": 26,
+        "endLine": 118,
+        "endChar": 31
+      },
+      "revId": "5b0772b8022b66fde9ebf2e5adb4a66364a281b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
