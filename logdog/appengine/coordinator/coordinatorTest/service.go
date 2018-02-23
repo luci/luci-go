@@ -15,12 +15,12 @@
 package coordinatorTest
 
 import (
-	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
 )
@@ -62,7 +62,7 @@ func (s *Services) Config(c context.Context) (*config.Config, error) {
 }
 
 // ProjectConfig implements coordinator.Services.
-func (s *Services) ProjectConfig(c context.Context, project cfglib.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *Services) ProjectConfig(c context.Context, project types.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if s.PC != nil {
 		return s.PC()
 	}

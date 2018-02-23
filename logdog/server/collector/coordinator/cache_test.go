@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
@@ -332,7 +331,7 @@ func TestStreamStateCache(t *testing.T) {
 			})
 
 			Convey(`Different projects with the same stream name will not conflict.`, func() {
-				var projects = []config.ProjectName{"", "foo", "bar"}
+				var projects = []types.ProjectName{"", "foo", "bar"}
 
 				for i, p := range projects {
 					st.Project = p

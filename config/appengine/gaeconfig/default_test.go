@@ -45,9 +45,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func projectConfigWithAccess(name config.ProjectName, access ...string) *configPB.ProjectCfg {
+func projectConfigWithAccess(project string, access ...string) *configPB.ProjectCfg {
 	return &configPB.ProjectCfg{
-		Name:   proto.String(string(name)),
+		Name:   proto.String(project),
 		Access: access,
 	}
 }

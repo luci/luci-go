@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
@@ -40,7 +39,7 @@ func TestSecret() types.PrefixSecret {
 // TestStream returns a testing stream.
 type TestStream struct {
 	// Project is the project name for this stream.
-	Project config.ProjectName
+	Project types.ProjectName
 	// Path is the path of this stream.
 	Path types.StreamPath
 
@@ -56,7 +55,7 @@ type TestStream struct {
 }
 
 // MakeStream builds a new TestStream with the supplied parameters.
-func MakeStream(c context.Context, project config.ProjectName, path types.StreamPath) *TestStream {
+func MakeStream(c context.Context, project types.ProjectName, path types.StreamPath) *TestStream {
 	prefix, name := path.Split()
 
 	now := clock.Now(c).UTC()

@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -66,7 +65,7 @@ func TestBigTable(t *testing.T) {
 		st := Storage{}
 		defer st.Close()
 
-		project := config.ProjectName("test-project")
+		project := types.ProjectName("test-project")
 		path := types.StreamPath("testing/+/foo/bar")
 
 		Convey(`Can Put() log stream records {0..5, 7, 8, 10}.`, func() {

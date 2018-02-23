@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/runtime/profiling"
-	"go.chromium.org/luci/config"
 	grpcLogging "go.chromium.org/luci/grpc/logging"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/output"
@@ -69,7 +68,7 @@ type application struct {
 	cli.Application
 	context.Context
 
-	project             config.ProjectName
+	project             types.ProjectName
 	prefix              types.StreamName
 	coordinatorHost     string
 	outputWorkers       int

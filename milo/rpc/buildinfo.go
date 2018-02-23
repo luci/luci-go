@@ -40,7 +40,7 @@ type BuildInfoService struct {
 
 var _ milo.BuildInfoServer = (*BuildInfoService)(nil)
 
-func (svc *BuildInfoService) getFromContextURI(c context.Context, id int64, projectHint config.ProjectName) (
+func (svc *BuildInfoService) getFromContextURI(c context.Context, id int64, projectHint string) (
 	*milo.BuildInfoResponse, error) {
 	bs, err := buildbucket.GetBuildSummary(c, id)
 	if err != nil {
@@ -88,9 +88,9 @@ func (svc *BuildInfoService) getFromContextURI(c context.Context, id int64, proj
 
 // Get implements milo.BuildInfoServer.
 func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) (*milo.BuildInfoResponse, error) {
-	projectHint := config.ProjectName(req.ProjectHint)
+	projectHint := req.ProjectHint
 	if projectHint != "" {
-		if err := projectHint.Validate(); err != nil {
+		if err := config.ValidateProjectName(projectHint); err != nil {
 			return nil, grpcutil.Errf(codes.InvalidArgument, "invalid project hint: %s", err.Error())
 		}
 	}

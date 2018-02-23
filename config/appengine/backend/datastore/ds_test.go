@@ -52,13 +52,13 @@ type testCache interface {
 	setCacheErr(err error)
 	setProjectDNE(project string)
 	addConfig(configSet config.Set, path, content string) *backend.Item
-	addProjectConfig(name config.ProjectName, access string)
+	addProjectConfig(project string, access string)
 	addConfigSets(path string, configSets ...config.Set) []string
 }
 
-func projectConfigWithAccess(name config.ProjectName, access ...string) *configPB.ProjectCfg {
+func projectConfigWithAccess(project string, access ...string) *configPB.ProjectCfg {
 	return &configPB.ProjectCfg{
-		Name:   proto.String(string(name)),
+		Name:   proto.String(project),
 		Access: access,
 	}
 }
@@ -126,7 +126,7 @@ func (fc *fakeCache) setProjectDNE(project string) {
 		Schema:     caching.Schema,
 		ServiceURL: fc.serviceURL,
 		Op:         caching.OpGet,
-		ConfigSet:  string(config.ProjectSet(config.ProjectName(project))),
+		ConfigSet:  string(config.ProjectSet(project)),
 		Path:       cfgclient.ProjectConfigPath,
 	}, nil)
 }
@@ -171,9 +171,9 @@ func (fc *fakeCache) addConfig(cs config.Set, path, content string) *backend.Ite
 
 // addProjectConfig caches a "project.cfg" file for the specified project with
 // the specified access string.
-func (fc *fakeCache) addProjectConfig(name config.ProjectName, access string) {
+func (fc *fakeCache) addProjectConfig(project, access string) {
 	// We're loading the resolved version of this cache item.
-	pcfg := projectConfigWithAccess(name, access)
+	pcfg := projectConfigWithAccess(project, access)
 	pcfgName := proto.MessageName(pcfg)
 
 	f := textproto.Formatter{}
@@ -182,7 +182,7 @@ func (fc *fakeCache) addProjectConfig(name config.ProjectName, access string) {
 		panic(err)
 	}
 
-	fc.addConfigImpl(config.ProjectSet(name), cfgclient.ProjectConfigPath,
+	fc.addConfigImpl(config.ProjectSet(project), cfgclient.ProjectConfigPath,
 		textproto.BinaryFormat, pcfgName, formattedData)
 }
 
@@ -272,9 +272,9 @@ func (fsc *fullStackCache) addConfig(cs config.Set, path, content string) *backe
 
 // addProjectConfig caches a "project.cfg" file for the specified project with
 // the specified access string.
-func (fsc *fullStackCache) addProjectConfig(name config.ProjectName, access string) {
-	fsc.addConfig(config.ProjectSet(name), cfgclient.ProjectConfigPath,
-		proto.MarshalTextString(projectConfigWithAccess(name, access)))
+func (fsc *fullStackCache) addProjectConfig(project, access string) {
+	fsc.addConfig(config.ProjectSet(project), cfgclient.ProjectConfigPath,
+		proto.MarshalTextString(projectConfigWithAccess(project, access)))
 }
 
 func (fsc *fullStackCache) addConfigSets(path string, configSets ...config.Set) []string {

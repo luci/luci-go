@@ -24,7 +24,6 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -76,7 +75,7 @@ func TestQuery(t *testing.T) {
 		var svrBase server
 		svr := newService(&svrBase)
 
-		const project = config.ProjectName("proj-foo")
+		const project = types.ProjectName("proj-foo")
 
 		// Stock query request, will be modified by each test.
 		req := logdog.QueryRequest{
