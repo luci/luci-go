@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"

@@ -27,8 +27,8 @@ import (
 // ErrNoConfig is a sentinel error returned by Get when the requested
 // configuration is not found.
 //
-// This is an alias of go.chromium.org/luci/common/config.ErrNoConfig for
-// backward compatibility.
+// This is an alias of go.chromium.org/luci/config.ErrNoConfig for backward
+// compatibility.
 var ErrNoConfig = config.ErrNoConfig
 
 // Meta is metadata about a single configuration file.

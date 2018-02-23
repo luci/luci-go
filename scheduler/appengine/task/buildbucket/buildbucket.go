@@ -32,10 +32,10 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config/validation"
 
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"

@@ -31,8 +31,8 @@ import (
 
 	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
