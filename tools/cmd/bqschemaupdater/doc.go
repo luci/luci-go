@@ -14,6 +14,8 @@
 //     and valid values are appended to the BigQuery field description
 //   - if a field is google.protobuf.Timestamp, the BigQuery type is TIMESTAMP
 //   - if a field is google.protobuf.Struct, is is persisted as a JSONPB string.
+//   - if a field is of message type without subfields of supported types,
+//     it is ignored.
 //   - if a field is of message type, the BigQuery type is RECORD
 //     with schema corresponding to the proto field type. Recursively.
 package main
