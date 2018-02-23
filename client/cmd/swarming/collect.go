@@ -134,6 +134,7 @@ type collectRun struct {
 	commonFlags
 
 	timeout         time.Duration
+	tolerance       time.Duration
 	taskSummaryJSON string
 	taskOutput      taskOutputOption
 	outputDir       string
@@ -145,6 +146,7 @@ func (c *collectRun) Init(defaultAuthOpts auth.Options) {
 	c.commonFlags.Init(defaultAuthOpts)
 
 	c.Flags.DurationVar(&c.timeout, "timeout", 0, "Timeout to wait for result. Set to 0 for no timeout.")
+	c.Flags.DurationVar(&c.tolerance, "tolerance", 10*time.Minute, "Amount of time to try before failing in the event of consecutive transient failures from swarming server.")
 	c.Flags.StringVar(&c.taskSummaryJSON, "task-summary-json", "", "Dump a summary of task results to a file as json.")
 	c.Flags.BoolVar(&c.perf, "perf", false, "Includes performance statistics.")
 	c.Flags.Var(&c.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
@@ -161,6 +163,11 @@ func (c *collectRun) Parse(args *[]string) error {
 	// Validate timeout duration.
 	if c.timeout < 0 {
 		return fmt.Errorf("negative timeout is not allowed")
+	}
+
+	// Validate tolerance duration.
+	if c.tolerance < 0 {
+		return fmt.Errorf("negative tolerance is not allowed")
 	}
 
 	// Validate arguments.
@@ -246,12 +253,15 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service swarmingService, results chan<- taskResult) {
 	var result taskResult
 	startedTime := clock.Now(ctx)
+	toleranceStart := startedTime
 	for {
 		result = c.fetchTaskResults(ctx, taskID, service)
+		currentTime := clock.Now(ctx)
 		if result.err != nil {
 			if gapiErr, ok := result.err.(*googleapi.Error); ok {
-				// Error code of < 500 is a fatal error.
-				if gapiErr.Code < 500 {
+				// If we encounter an error code of < 500 (fatal error) or if
+				// we exceed the given tolerance, then exit.
+				if gapiErr.Code < 500 || currentTime.Sub(toleranceStart) > c.tolerance {
 					results <- result
 					return
 				}
@@ -267,9 +277,9 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 				results <- result
 				return
 			}
+			// Since we got a real result back, reset our tolerance.
+			toleranceStart = currentTime
 		}
-
-		currentTime := clock.Now(ctx)
 
 		// Start with a 1 second delay and for each 30 seconds of waiting
 		// add another second until hitting a 15 second ceiling.
