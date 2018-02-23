@@ -46,6 +46,30 @@
       "revId": "17658ae439b3f4de525437e38eb5c211272b8f5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5cf484a1_3c7ed8eb",
+        "filename": "common/proto/google/descutil/util_test.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-23T19:52:42Z",
+      "side": 1,
+      "message": "ah, i get it now. lgtm.",
+      "parentUuid": "0d904048_6217df38",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 1
+      },
+      "revId": "17658ae439b3f4de525437e38eb5c211272b8f5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
