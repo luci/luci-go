@@ -244,9 +244,10 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 }
 
 func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service swarmingService, results chan<- taskResult) {
+	var result taskResult
 	startedTime := clock.Now(ctx)
 	for {
-		result := c.fetchTaskResults(ctx, taskID, service)
+		result = c.fetchTaskResults(ctx, taskID, service)
 		if result.err != nil {
 			if gapiErr, ok := result.err.(*googleapi.Error); ok {
 				// Error code of < 500 is a fatal error.
@@ -283,9 +284,11 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 		if timerResult.Err != nil {
 			err := timerResult.Err
 			if result.err != nil {
-				err = fmt.Errorf("%v: %v", timerResult.Err, result.err)
+				result.err = fmt.Errorf("%v: %v", timerResult.Err, result.err)
+			} else {
+				result.err = err
 			}
-			results <- taskResult{taskID: taskID, err: err}
+			results <- result
 			return
 		}
 	}
@@ -295,16 +298,18 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 	jsonResults := map[string]interface{}{}
 	for _, result := range results {
+		jsonResult := map[string]interface{}{}
 		if result.err != nil {
-			jsonResults[result.taskID] = map[string]interface{}{"error": result.err.Error()}
-		} else {
-			jsonResult := map[string]interface{}{"results": *result.result}
+			jsonResult["error"] = result.err.Error()
+		}
+		if result.result != nil {
+			jsonResult["results"] = *result.result
 			if c.taskOutput.includesJSON() {
 				jsonResult["output"] = result.output
 			}
 			jsonResult["outputs"] = result.outputs
-			jsonResults[result.taskID] = jsonResult
 		}
+		jsonResults[result.taskID] = jsonResult
 	}
 	return json.MarshalIndent(jsonResults, "", "  ")
 }
