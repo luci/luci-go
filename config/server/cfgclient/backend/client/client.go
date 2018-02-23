@@ -52,7 +52,7 @@ var _ backend.B = (*Backend)(nil)
 func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.GetServiceURL() }
 
 // Get implements backend.B.
-func (be *Backend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (be *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	svc := be.GetConfigInterface(c, p.Authority)
 
 	cfg, err := svc.GetConfig(c, configSet, path, !p.Content)

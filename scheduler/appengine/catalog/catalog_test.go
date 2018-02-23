@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
@@ -561,7 +562,7 @@ trigger {
 }
 `
 
-var mockedConfigs = map[string]memcfg.ConfigSet{
+var mockedConfigs = map[config.Set]memcfg.Files{
 	"projects/project1": {
 		"scheduler.cfg": project1Cfg,
 	},

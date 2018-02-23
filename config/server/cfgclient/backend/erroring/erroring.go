@@ -48,7 +48,7 @@ func (e erroringImpl) ServiceURL(context.Context) url.URL {
 	}
 }
 
-func (e erroringImpl) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (e erroringImpl) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	return nil, e.err
 }
 

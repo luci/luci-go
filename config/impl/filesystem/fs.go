@@ -302,7 +302,8 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 			ret.contentHashMap[hexHsh] = content
 
 			ret.contentRevPathMap[lk] = &config.Config{
-				ConfigSet: configSet.s(), Path: cfgPath.s(),
+				ConfigSet:   config.Set(configSet.s()),
+				Path:        cfgPath.s(),
 				Content:     content,
 				ContentHash: hexHsh,
 				ViewURL:     "file://./" + filepath.ToSlash(cfgPath.s()),
@@ -406,7 +407,7 @@ func (fs *filesystemImpl) slurpScannedConfigs(revision string, scanned *scannedC
 	fs.contentRevisionsScanned.Add(revision)
 }
 
-func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet, cfgPath string, hashOnly bool) (*config.Config, error) {
+func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgPath string, hashOnly bool) (*config.Config, error) {
 	configSet := configSet{luciPath(cfgSet)}
 	path := luciPath(cfgPath)
 
@@ -444,7 +445,7 @@ func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash strin
 	return "", config.ErrNoConfig
 }
 
-func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet string) (*url.URL, error) {
+func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet config.Set) (*url.URL, error) {
 	configSet := configSet{luciPath(cfgSet)}
 
 	if err := configSet.validate(); err != nil {

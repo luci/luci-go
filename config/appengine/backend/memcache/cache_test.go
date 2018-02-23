@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
 	memconfig "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
@@ -57,7 +58,7 @@ func TestMemcache(t *testing.T) {
 			return st
 		}
 
-		configDB := map[string]memconfig.ConfigSet{
+		configDB := map[config.Set]memconfig.Files{
 			"projects/foo": {
 				"test.cfg": "foo",
 			},
