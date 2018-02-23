@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
@@ -36,14 +36,14 @@ import (
 
 type testConfigProvider struct {
 	configErr error
-	configs   map[cfgtypes.ProjectName]*svcconfig.ProjectConfig
+	configs   map[cfglib.ProjectName]*svcconfig.ProjectConfig
 }
 
 func (s *testConfigProvider) Config(c context.Context) (*config.Config, error) {
 	panic("not implemented")
 }
 
-func (s *testConfigProvider) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *testConfigProvider) ProjectConfig(c context.Context, project cfglib.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if err := s.configErr; err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func TestWithProjectNamespace(t *testing.T) {
 
 		// Fake service with fake project configs.
 		cp := testConfigProvider{
-			configs: map[cfgtypes.ProjectName]*svcconfig.ProjectConfig{
+			configs: map[cfglib.ProjectName]*svcconfig.ProjectConfig{
 				"all-access": {
 					ReaderAuthGroups: []string{"all"},
 					WriterAuthGroups: []string{"all"},
@@ -173,7 +173,7 @@ func TestWithProjectNamespace(t *testing.T) {
 				Convey(`When config service returns an unexpected error`, func() {
 					cp.configErr = errors.New("misc")
 
-					for _, proj := range []cfgtypes.ProjectName{"all-access", "exclusive-access", "does-not-exist"} {
+					for _, proj := range []cfglib.ProjectName{"all-access", "exclusive-access", "does-not-exist"} {
 						Convey(fmt.Sprintf(`Will fail to access %q with Internal.`, proj), func() {
 							So(WithProjectNamespace(&c, "all-access", tc.access), ShouldBeRPCInternal)
 						})

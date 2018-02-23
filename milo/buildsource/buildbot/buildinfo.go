@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/milo/api/buildbot"
@@ -44,7 +44,7 @@ import (
 //	3) Fetches the LogDog annotation stream and resolves it into a Step.
 //	4) Merges some operational BuildBot build information into the Step.
 func GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_BuildBot,
-	projectHint cfgtypes.ProjectName) (*milo.BuildInfoResponse, error) {
+	projectHint config.ProjectName) (*milo.BuildInfoResponse, error) {
 
 	logging.Infof(c, "Loading build info for master %q, builder %q, build #%d",
 		req.MasterName, req.BuilderName, req.BuildNumber)

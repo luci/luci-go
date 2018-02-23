@@ -17,9 +17,9 @@ package backend
 import (
 	"net/url"
 
-	"go.chromium.org/luci/common/config"
-
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/config"
 )
 
 // FormatSpec is a specification for formatted data.

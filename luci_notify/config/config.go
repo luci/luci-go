@@ -26,11 +26,11 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-	configInterface "go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/server/router"

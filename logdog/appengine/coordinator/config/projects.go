@@ -18,7 +18,7 @@ import (
 	"sort"
 
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -43,14 +43,14 @@ func ProjectConfigPath(c context.Context) string {
 //	  be loaded.
 //	- Some other error if an error occurred that does not fit one of the
 //	  previous categories.
-func ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
+func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if project == "" {
 		return nil, cfgclient.ErrNoConfig
 	}
 
 	// Get the config from the config service. If the configuration doesn't exist,
 	// this will return cfgclient.ErrNoConfig.
-	configSet, configPath := cfgtypes.ProjectConfigSet(project), ProjectConfigPath(c)
+	configSet, configPath := config.ProjectSet(project), ProjectConfigPath(c)
 
 	var pcfg svcconfig.ProjectConfig
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, configPath, textproto.Message(&pcfg), nil); err != nil {
@@ -67,7 +67,7 @@ func ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.
 
 // ProjectNames returns a sorted list of the names of all of the projects
 // that the supplied authority can view.
-func ProjectNames(c context.Context, a cfgclient.Authority) ([]cfgtypes.ProjectName, error) {
+func ProjectNames(c context.Context, a cfgclient.Authority) ([]config.ProjectName, error) {
 	configPath := ProjectConfigPath(c)
 
 	var metas []*cfgclient.Meta
@@ -77,7 +77,7 @@ func ProjectNames(c context.Context, a cfgclient.Authority) ([]cfgtypes.ProjectN
 	}
 
 	// Iterate through our Metas and extract the project names.
-	projects := make([]cfgtypes.ProjectName, 0, len(metas))
+	projects := make([]config.ProjectName, 0, len(metas))
 	for _, meta := range metas {
 		projectName, _, _ := meta.ConfigSet.SplitProject()
 		if projectName != "" {
@@ -92,7 +92,7 @@ func ProjectNames(c context.Context, a cfgclient.Authority) ([]cfgtypes.ProjectN
 // LogDog project configurations.
 //
 // The list will be alphabetically sorted.
-func ActiveProjects(c context.Context) ([]cfgtypes.ProjectName, error) {
+func ActiveProjects(c context.Context) ([]config.ProjectName, error) {
 	return ProjectNames(c, cfgclient.AsService)
 }
 
@@ -100,11 +100,11 @@ func ActiveProjects(c context.Context) ([]cfgtypes.ProjectName, error) {
 // LogDog project configurations that the current user can see.
 //
 // The list will be alphabetically sorted.
-func ActiveUserProjects(c context.Context) ([]cfgtypes.ProjectName, error) {
+func ActiveUserProjects(c context.Context) ([]config.ProjectName, error) {
 	return ProjectNames(c, cfgclient.AsUser)
 }
 
-type projectNameSlice []cfgtypes.ProjectName
+type projectNameSlice []config.ProjectName
 
 func (s projectNameSlice) Len() int           { return len(s) }
 func (s projectNameSlice) Less(i, j int) bool { return s[i] < s[j] }

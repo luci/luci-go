@@ -18,7 +18,7 @@ import (
 	"io"
 
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
@@ -31,10 +31,10 @@ import (
 type storageSource struct {
 	context.Context
 
-	st            storage.Storage      // the storage instance to read from
-	project       cfgtypes.ProjectName // the path of the log stream
-	path          types.StreamPath     // the path of the log stream
-	terminalIndex types.MessageIndex   // if >= 0, discard logs beyond this
+	st            storage.Storage    // the storage instance to read from
+	project       config.ProjectName // the path of the log stream
+	path          types.StreamPath   // the path of the log stream
+	terminalIndex types.MessageIndex // if >= 0, discard logs beyond this
 
 	buf           []*logpb.LogEntry
 	lastIndex     types.MessageIndex

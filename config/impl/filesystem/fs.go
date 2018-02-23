@@ -77,9 +77,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/config"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
 )
 
 // ProjectConfiguration is the struct that will be used to read the

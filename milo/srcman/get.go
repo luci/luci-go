@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/common/fetcher"
 	logdog_types "go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
@@ -134,7 +134,7 @@ func logdogGet(ctx context.Context, u *url.URL) ([]byte, error) {
 	if len(parts) != 3 || parts[0] != "" {
 		return nil, errors.Reason("malformed logdog URL: %q", u).Err()
 	}
-	project := cfgtypes.ProjectName(parts[1])
+	project := config.ProjectName(parts[1])
 	streamPath := logdog_types.StreamPath(parts[2])
 
 	if err := project.Validate(); err != nil {

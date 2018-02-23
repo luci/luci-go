@@ -17,7 +17,7 @@ package config
 import (
 	"time"
 
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/server/caching"
@@ -30,7 +30,7 @@ import (
 var messageCache = caching.RegisterLRUCache(4096)
 
 type messageCacheKey struct {
-	cset cfgtypes.ConfigSet
+	cset config.Set
 	path string
 }
 
@@ -46,7 +46,7 @@ type MessageCache struct {
 //
 // If the message is not currently in the process cache, it will be fetched from
 // the config service and cached prior to being returned.
-func (mc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path string, msg proto.Message) (
+func (mc *MessageCache) Get(c context.Context, cset config.Set, path string, msg proto.Message) (
 	proto.Message, error) {
 
 	// If no Lifetime is configured, bypass the cache layer.
@@ -78,7 +78,7 @@ func (mc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path str
 // GetUncached returns an unmarshalled configuration service text protobuf
 // message. This bypasses the cache, and, on success, does not cache the
 // resulting value.
-func (mc *MessageCache) GetUncached(c context.Context, cset cfgtypes.ConfigSet, path string,
+func (mc *MessageCache) GetUncached(c context.Context, cset config.Set, path string,
 	msg proto.Message) error {
 
 	return cfgclient.Get(c, cfgclient.AsService, cset, path, textproto.Message(msg), nil)

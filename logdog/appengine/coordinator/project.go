@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 
 	"golang.org/x/net/context"
@@ -32,7 +32,7 @@ const (
 
 // ProjectNamespace returns the AppEngine namespace for a given luci-config
 // project name.
-func ProjectNamespace(project cfgtypes.ProjectName) string {
+func ProjectNamespace(project config.ProjectName) string {
 	return projectNamespacePrefix + string(project)
 }
 
@@ -41,11 +41,11 @@ func ProjectNamespace(project cfgtypes.ProjectName) string {
 //
 // If the namespace does not have a project namespace prefix, this function
 // will return an empty string.
-func ProjectFromNamespace(ns string) cfgtypes.ProjectName {
+func ProjectFromNamespace(ns string) config.ProjectName {
 	if !strings.HasPrefix(ns, projectNamespacePrefix) {
 		return ""
 	}
-	return cfgtypes.ProjectName(ns[len(projectNamespacePrefix):])
+	return config.ProjectName(ns[len(projectNamespacePrefix):])
 }
 
 // CurrentProject returns the current project based on the currently-loaded
@@ -53,7 +53,7 @@ func ProjectFromNamespace(ns string) cfgtypes.ProjectName {
 //
 // If there is no current namespace, or if the current namespace is not a valid
 // project namespace, an empty string will be returned.
-func CurrentProject(c context.Context) cfgtypes.ProjectName {
+func CurrentProject(c context.Context) config.ProjectName {
 	if ns := info.GetNamespace(c); ns != "" {
 		return ProjectFromNamespace(ns)
 	}

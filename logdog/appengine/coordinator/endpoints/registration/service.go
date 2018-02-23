@@ -17,7 +17,7 @@ package registration
 import (
 	"github.com/golang/protobuf/proto"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -43,7 +43,7 @@ func New() logdog.RegistrationServer {
 			if ok {
 				// Enter the requested project namespace. This validates that the
 				// current user has READ access.
-				project := cfgtypes.ProjectName(pbm.GetMessageProject())
+				project := config.ProjectName(pbm.GetMessageProject())
 				if project == "" {
 					return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
 				}

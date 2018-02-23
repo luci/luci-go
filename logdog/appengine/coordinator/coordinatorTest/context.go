@@ -24,20 +24,20 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	coordcfg "go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage/archive"
@@ -121,14 +121,14 @@ func (e *Environment) LeaveAllGroups() {
 // ClearCoordinatorConfig removes the Coordinator configuration entry,
 // simulating a missing config.
 func (e *Environment) ClearCoordinatorConfig(c context.Context) {
-	configSet, _ := config.ServiceConfigPath(c)
+	configSet, _ := coordcfg.ServiceConfigPath(c)
 	delete(e.Config, string(configSet))
 }
 
 // ModServiceConfig loads the current service configuration, invokes the
 // callback with its contents, and writes the result back to config.
 func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Config)) {
-	configSet, configPath := config.ServiceConfigPath(c)
+	configSet, configPath := coordcfg.ServiceConfigPath(c)
 
 	var cfg svcconfig.Config
 	e.modTextProtobuf(c, configSet, configPath, &cfg, func() {
@@ -138,8 +138,8 @@ func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Con
 
 // ModProjectConfig loads the current configuration for the named project,
 // invokes the callback with its contents, and writes the result back to config.
-func (e *Environment) ModProjectConfig(c context.Context, proj cfgtypes.ProjectName, fn func(*svcconfig.ProjectConfig)) {
-	configSet, configPath := cfgtypes.ProjectConfigSet(proj), config.ProjectConfigPath(c)
+func (e *Environment) ModProjectConfig(c context.Context, proj config.ProjectName, fn func(*svcconfig.ProjectConfig)) {
+	configSet, configPath := config.ProjectSet(proj), coordcfg.ProjectConfigPath(c)
 
 	var pcfg svcconfig.ProjectConfig
 	e.modTextProtobuf(c, configSet, configPath, &pcfg, func() {
@@ -150,7 +150,7 @@ func (e *Environment) ModProjectConfig(c context.Context, proj cfgtypes.ProjectN
 // IterateTumbleAll iterates all Tumble instances across all namespaces.
 func (e *Environment) IterateTumbleAll(c context.Context) { e.Tumble.IterateAll(c) }
 
-func (e *Environment) modTextProtobuf(c context.Context, configSet cfgtypes.ConfigSet, path string,
+func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, path string,
 	msg proto.Message, fn func()) {
 
 	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, path, textproto.Message(msg), nil); err {
@@ -164,7 +164,7 @@ func (e *Environment) modTextProtobuf(c context.Context, configSet cfgtypes.Conf
 	e.addConfigEntry(configSet, path, proto.MarshalTextString(msg))
 }
 
-func (e *Environment) addConfigEntry(configSet cfgtypes.ConfigSet, path, content string) {
+func (e *Environment) addConfigEntry(configSet config.Set, path, content string) {
 	cset := e.Config[string(configSet)]
 	if cset == nil {
 		cset = make(map[string]string)
@@ -222,7 +222,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// luci-config: Projects.
 	projectName := info.AppID(c)
-	addProjectConfig := func(proj cfgtypes.ProjectName, access ...string) {
+	addProjectConfig := func(proj config.ProjectName, access ...string) {
 		projectAccesses := make([]string, len(access))
 
 		// Build our service config. Also builds "projectAccesses".
@@ -246,7 +246,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		})
 
 		var pcfg configPB.ProjectCfg
-		e.modTextProtobuf(c, cfgtypes.ProjectConfigSet(proj), cfgclient.ProjectConfigPath, &pcfg, func() {
+		e.modTextProtobuf(c, config.ProjectSet(proj), cfgclient.ProjectConfigPath, &pcfg, func() {
 			pcfg = configPB.ProjectCfg{
 				Name:   proto.String(string(proj)),
 				Access: projectAccesses,
@@ -260,7 +260,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	// Add a project without a LogDog project config.
 	e.addConfigEntry("projects/proj-unconfigured", "not-logdog.cfg", "junk")
 
-	configSet, configPath := cfgtypes.ProjectConfigSet("proj-malformed"), config.ProjectConfigPath(c)
+	configSet, configPath := config.ProjectSet("proj-malformed"), coordcfg.ProjectConfigPath(c)
 	e.addConfigEntry(configSet, configPath, "!!! not a text protobuf !!!")
 
 	// luci-config: Coordinator Defaults
@@ -334,7 +334,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 // WithProjectNamespace runs f in proj's namespace, bypassing authentication
 // checks.
-func WithProjectNamespace(c context.Context, proj cfgtypes.ProjectName, f func(context.Context)) {
+func WithProjectNamespace(c context.Context, proj config.ProjectName, f func(context.Context)) {
 	if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessAllTesting); err != nil {
 		panic(err)
 	}
