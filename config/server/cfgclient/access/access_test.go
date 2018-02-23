@@ -35,10 +35,10 @@ import (
 type testingBackend struct {
 	backend.B
 
-	item *backend.Item
+	item *config.Config
 }
 
-func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	if tb.item == nil {
 		return nil, config.ErrNoConfig
 	}
@@ -72,7 +72,7 @@ func TestCheckAccess(t *testing.T) {
 				tb.item = nil
 				return
 			}
-			tb.item = &backend.Item{
+			tb.item = &config.Config{
 				Content: tpb(&configPB.ProjectCfg{Access: access}),
 			}
 		}

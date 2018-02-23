@@ -44,9 +44,29 @@ type Meta struct {
 	ViewURL string `json:"view_url,omitempty"`
 }
 
+// FormatSpec is a specification for formatted data.
+type FormatSpec struct {
+	// Formatter is the name of the formatter that produces the content data.
+	//
+	// An empty string means the original config service format.
+	Formatter string
+
+	// Data is additional format data describing the type. It may be empty.
+	Data string
+}
+
+// Unformatted returns true if fs does not specify a format.
+func (fs *FormatSpec) Unformatted() bool { return fs.Formatter == "" }
+
 // Config is a configuration file along with its metadata.
 type Config struct {
 	Meta
+
+	// FormatSpec, if non-empty, qualifies the format of the Content.
+	//
+	// It is set only if config was obtained through cfgclient guts that does
+	// reformatting (e.g. formats text protos into binary protos).
+	FormatSpec FormatSpec `json:"formatSpec,omitempty"`
 
 	// Error is not nil if there where troubles fetching this config. Used only
 	// by functions that operate with multiple configs at once, such as

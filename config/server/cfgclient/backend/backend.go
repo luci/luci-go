@@ -22,33 +22,6 @@ import (
 	"go.chromium.org/luci/config"
 )
 
-// FormatSpec is a specification for formatted data.
-type FormatSpec struct {
-	// Formatter is the supported destination Resolver format for this item.
-	// Backends (notably the format.Backend) may project the Item into this
-	// format.
-	//
-	// An empty string means the original config service format.
-	Formatter string
-
-	// Data is additional format data describing the type. It may be empty.
-	Data string
-}
-
-// Unformatted retrns true if fs does not specify a format.
-func (fs *FormatSpec) Unformatted() bool { return fs.Formatter == "" }
-
-// Item is a single config item. It is used to pass configuration data
-// between Backend instances.
-type Item struct {
-	config.Meta
-
-	Content string
-
-	// FormatSpec, if non-empty, qualifies the format of the Content.
-	FormatSpec FormatSpec
-}
-
 // Params are parameters supplied to Backend methods. They are generated
 // by the main interface user-facing methods (config.go)
 type Params struct {
@@ -59,7 +32,7 @@ type Params struct {
 	Content bool
 
 	// FormatSpec, if non-empty, qualifies the format of the Content.
-	FormatSpec FormatSpec
+	FormatSpec config.FormatSpec
 }
 
 // B is a configuration backend interface.
@@ -68,10 +41,10 @@ type B interface {
 	ServiceURL(context.Context) url.URL
 
 	// Get retrieves a single configuration.
-	Get(c context.Context, configSet config.Set, path string, p Params) (*Item, error)
+	Get(c context.Context, configSet config.Set, path string, p Params) (*config.Config, error)
 
 	// GetAll retrieves all configurations of a given type.
-	GetAll(c context.Context, t GetAllTarget, path string, p Params) ([]*Item, error)
+	GetAll(c context.Context, t GetAllTarget, path string, p Params) ([]*config.Config, error)
 
 	// GetConfigInterface returns the raw configuration interface of the backend.
 	GetConfigInterface(c context.Context, a Authority) config.Interface

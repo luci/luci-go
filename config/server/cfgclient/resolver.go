@@ -16,13 +16,13 @@ package cfgclient
 
 import (
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/server/cfgclient/backend"
+	"go.chromium.org/luci/config"
 )
 
 // Resolver resolves configuration data into a native type.
 type Resolver interface {
 	// Resolve resolves a single Item.
-	Resolve(it *backend.Item) error
+	Resolve(it *config.Config) error
 }
 
 // MultiResolver resolves a slice of Item.
@@ -43,7 +43,7 @@ type MultiResolver interface {
 	// ResolveItemAt resolves an individual item at the specified index.
 	// PrepareMulti with a size greater than i must be called prior to using
 	// ResolveItemAt.
-	ResolveItemAt(i int, it *backend.Item) error
+	ResolveItemAt(i int, it *config.Config) error
 }
 
 // FormattingResolver is a Resolver that changes the format of its contents.
@@ -55,10 +55,10 @@ type FormattingResolver interface {
 	//
 	// An empty format represents no Formatter, meaning that this Resolver only
 	// supports the raw config service result.
-	Format() backend.FormatSpec
+	Format() config.FormatSpec
 }
 
-func assertEmptyFormat(it *backend.Item) error {
+func assertEmptyFormat(it *config.Config) error {
 	if !it.FormatSpec.Unformatted() {
 		return errors.Reason("unknown format: %q", it.FormatSpec.Formatter).Err()
 	}
@@ -76,7 +76,7 @@ type byteSliceResolver struct {
 	out *[]byte
 }
 
-func (r byteSliceResolver) Resolve(it *backend.Item) error {
+func (r byteSliceResolver) Resolve(it *config.Config) error {
 	if err := assertEmptyFormat(it); err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (r multiByteSliceResolver) PrepareMulti(size int) {
 	}
 }
 
-func (r multiByteSliceResolver) ResolveItemAt(i int, it *backend.Item) error {
+func (r multiByteSliceResolver) ResolveItemAt(i int, it *config.Config) error {
 	if err := assertEmptyFormat(it); err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ type stringResolver struct {
 	out *string
 }
 
-func (r stringResolver) Resolve(it *backend.Item) error {
+func (r stringResolver) Resolve(it *config.Config) error {
 	if err := assertEmptyFormat(it); err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (r multiStringResolver) PrepareMulti(size int) {
 	}
 }
 
-func (r multiStringResolver) ResolveItemAt(i int, it *backend.Item) error {
+func (r multiStringResolver) ResolveItemAt(i int, it *config.Config) error {
 	if err := assertEmptyFormat(it); err != nil {
 		return err
 	}

@@ -36,11 +36,11 @@ func tpb(msg proto.Message) string { return proto.MarshalTextString(msg) }
 type testingBackend struct {
 	backend.B
 
-	items []*backend.Item
+	items []*config.Config
 }
 
 // Get retrieves a single configuration.
-func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	if len(tb.items) == 0 {
 		return nil, config.ErrNoConfig
 	}
@@ -49,13 +49,13 @@ func (tb *testingBackend) Get(c context.Context, configSet config.Set, path stri
 
 // GetAll retrieves all configurations of a given type.
 func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
-	[]*backend.Item, error) {
+	[]*config.Config, error) {
 
 	return tb.cloneItems(), nil
 }
 
-func (tb *testingBackend) cloneItems() []*backend.Item {
-	clones := make([]*backend.Item, len(tb.items))
+func (tb *testingBackend) cloneItems() []*config.Config {
+	clones := make([]*config.Config, len(tb.items))
 	for i, it := range tb.items {
 		clone := *it
 		clones[i] = &clone
@@ -69,7 +69,7 @@ func TestResolver(t *testing.T) {
 
 		var be backend.B
 		be = &testingBackend{
-			items: []*backend.Item{
+			items: []*config.Config{
 				{Meta: config.Meta{"projects/foo", "path", "####", "v1", "config_url"},
 					Content: tpb(&configPB.Project{Id: proto.String("foo")})},
 				{Meta: config.Meta{"projects/bar", "path", "####", "v1", "config_url"},

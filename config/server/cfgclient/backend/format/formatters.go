@@ -33,7 +33,7 @@ var registry struct {
 // The Formatter is supplied with the content to format along with the
 // formatter-specific metadata, fd.
 //
-// Formatter operates on a backend.Item's Content via the "format" Backend.
+// Formatter operates on a config.Config's Content via the "format" Backend.
 type Formatter interface {
 	FormatItem(c, fd string) (string, error)
 }
