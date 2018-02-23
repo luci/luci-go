@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/gae/filter/count"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/config/validation"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
