@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8ae3571_4d119330",
+        "filename": "machine-db/client/cli/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-23T08:47:17Z",
+      "side": 1,
+      "message": "which?",
+      "range": {
+        "startLine": 172,
+        "startChar": 26,
+        "endLine": 172,
+        "endChar": 31
+      },
+      "revId": "5b0772b8022b66fde9ebf2e5adb4a66364a281b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f849ff36_f4380406",
+        "filename": "machine-db/client/cli/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-23T08:47:17Z",
+      "side": 1,
+      "message": "which?",
+      "range": {
+        "startLine": 118,
+        "startChar": 26,
+        "endLine": 118,
+        "endChar": 31
+      },
+      "revId": "5b0772b8022b66fde9ebf2e5adb4a66364a281b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
