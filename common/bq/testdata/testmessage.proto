@@ -8,7 +8,6 @@ package testdata;
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
 
 message TestMessage {
     string name = 1;
@@ -27,8 +26,6 @@ message TestMessage {
     FOO foo = 6;
 
     repeated FOO foo_repeated = 7;
-
-    google.protobuf.Empty empty = 8;
 }
 
 message NestedTestMessage {
