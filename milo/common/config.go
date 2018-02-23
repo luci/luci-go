@@ -394,16 +394,13 @@ func UpdateConsoles(c context.Context) error {
 	knownProjects := map[string]stringset.Set{}
 	// Iterate through each project config, extracting the console definition.
 	for _, cfg := range configs {
-		// This looks like "projects/<project name>"
-		cfgSet := string(cfg.ConfigSet)
-		splitPath := strings.SplitN(cfgSet, "/", 2)
-		if len(splitPath) != 2 {
-			return fmt.Errorf("Invalid config set path %s", cfgSet)
+		projectName := cfg.ConfigSet.Project()
+		if projectName == "" {
+			return fmt.Errorf("Invalid config set path %s", cfg.ConfigSet)
 		}
-		projectName := splitPath[1]
 		knownProjects[projectName] = nil
 		if kp, err := updateProjectConsoles(c, projectName, &cfg); err != nil {
-			err = errors.Annotate(err, "processing project %s", cfgSet).Err()
+			err = errors.Annotate(err, "processing project %s", projectName).Err()
 			merr = append(merr, err)
 		} else {
 			knownProjects[projectName] = kp

@@ -80,8 +80,7 @@ func ProjectNames(c context.Context, a cfgclient.Authority) ([]types.ProjectName
 	// Iterate through our Metas and extract the project names.
 	projects := make([]types.ProjectName, 0, len(metas))
 	for _, meta := range metas {
-		projectName, _, _ := meta.ConfigSet.SplitProject()
-		if projectName != "" {
+		if projectName := meta.ConfigSet.Project(); projectName != "" {
 			projects = append(projects, types.ProjectName(projectName))
 		}
 	}
