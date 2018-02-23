@@ -20,11 +20,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/config/validation"
+
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/config/validation"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

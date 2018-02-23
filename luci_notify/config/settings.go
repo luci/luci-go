@@ -22,11 +22,11 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/config/validation"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/validation"
 
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 )

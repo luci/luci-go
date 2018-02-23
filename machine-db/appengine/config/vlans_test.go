@@ -19,7 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 
