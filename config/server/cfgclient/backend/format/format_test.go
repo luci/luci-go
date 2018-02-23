@@ -30,10 +30,10 @@ import (
 type testingBackend struct {
 	backend.B
 	err   error
-	items []*backend.Item
+	items []*config.Config
 }
 
-func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	if err := tb.err; err != nil {
 		return nil, tb.err
 	}
@@ -44,7 +44,7 @@ func (tb *testingBackend) Get(c context.Context, configSet config.Set, path stri
 }
 
 func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
-	[]*backend.Item, error) {
+	[]*config.Config, error) {
 
 	if err := tb.err; err != nil {
 		return nil, tb.err
@@ -52,8 +52,8 @@ func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path
 	return tb.cloneItems(), nil
 }
 
-func (tb *testingBackend) cloneItems() []*backend.Item {
-	clones := make([]*backend.Item, len(tb.items))
+func (tb *testingBackend) cloneItems() []*config.Config {
+	clones := make([]*config.Config, len(tb.items))
 	for i, it := range tb.items {
 		clone := *it
 		clones[i] = &clone
@@ -66,19 +66,19 @@ func (tb *testingBackend) cloneItems() []*backend.Item {
 type retainingBackend struct {
 	backend.B
 
-	lastItems []*backend.Item
+	lastItems []*config.Config
 	lastErr   error
 }
 
-func (b *retainingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
-	var item *backend.Item
+func (b *retainingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
+	var item *config.Config
 	item, b.lastErr = b.B.Get(c, configSet, path, p)
-	b.lastItems = []*backend.Item{item}
+	b.lastItems = []*config.Config{item}
 	return item, b.lastErr
 }
 
 func (b *retainingBackend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
-	[]*backend.Item, error) {
+	[]*config.Config, error) {
 
 	b.lastItems, b.lastErr = b.B.GetAll(c, t, path, p)
 	return b.lastItems, b.lastErr
@@ -92,11 +92,11 @@ func (cf customFormatter) FormatItem(c string, fd string) (string, error) {
 
 type retainingResolver struct {
 	format string
-	item   *backend.Item
+	item   *config.Config
 }
 
-func (rr *retainingResolver) Format() backend.FormatSpec { return backend.FormatSpec{rr.format, ""} }
-func (rr *retainingResolver) Resolve(it *backend.Item) error {
+func (rr *retainingResolver) Format() config.FormatSpec { return config.FormatSpec{rr.format, ""} }
+func (rr *retainingResolver) Resolve(it *config.Config) error {
 	rr.item = it
 	return nil
 }
@@ -113,7 +113,7 @@ func (pf panicFormatter) FormatItem(string, string) (string, error) { panic("pan
 func TestFormatBackend(t *testing.T) {
 	Convey(`A testing environment`, t, func() {
 		tb := testingBackend{
-			items: []*backend.Item{
+			items: []*config.Config{
 				{Meta: config.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
 				{Meta: config.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
 			},

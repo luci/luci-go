@@ -32,14 +32,14 @@ import (
 type testingBackend struct {
 	serviceURL *url.URL
 	err        error
-	items      []*backend.Item
+	items      []*config.Config
 	url        url.URL
 	lastParams backend.Params
 }
 
 func (tb *testingBackend) ServiceURL(context.Context) url.URL { return *tb.serviceURL }
 
-func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
 	tb.lastParams = p
 	if err := tb.err; err != nil {
 		return nil, tb.err
@@ -51,7 +51,7 @@ func (tb *testingBackend) Get(c context.Context, configSet config.Set, path stri
 }
 
 func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
-	[]*backend.Item, error) {
+	[]*config.Config, error) {
 
 	tb.lastParams = p
 	if err := tb.err; err != nil {
@@ -64,8 +64,8 @@ func (tb *testingBackend) GetConfigInterface(c context.Context, a backend.Author
 	panic("not supported")
 }
 
-func (tb *testingBackend) cloneItems() []*backend.Item {
-	clones := make([]*backend.Item, len(tb.items))
+func (tb *testingBackend) cloneItems() []*config.Config {
+	clones := make([]*config.Config, len(tb.items))
 	for i, it := range tb.items {
 		clone := *it
 		clones[i] = &clone
@@ -82,7 +82,7 @@ func (er *errorMultiResolver) PrepareMulti(size int) {
 	*er.out = make([]string, size)
 }
 
-func (er *errorMultiResolver) ResolveItemAt(i int, it *backend.Item) error {
+func (er *errorMultiResolver) ResolveItemAt(i int, it *config.Config) error {
 	if err := er.getErr(i); err != nil {
 		return err
 	}
@@ -98,12 +98,12 @@ func TestConfig(t *testing.T) {
 
 		var err error
 		tb := testingBackend{
-			items: []*backend.Item{
+			items: []*config.Config{
 				{Meta: config.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
 				{Meta: config.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
 			},
 		}
-		transformItems := func(fn func(int, *backend.Item)) {
+		transformItems := func(fn func(int, *config.Config)) {
 			for i, itm := range tb.items {
 				fn(i, itm)
 			}
@@ -120,7 +120,7 @@ func TestConfig(t *testing.T) {
 
 		// Caching / type test cases.
 		Convey(`Test byte resolver`, func() {
-			transformItems(func(i int, ci *backend.Item) {
+			transformItems(func(i int, ci *config.Config) {
 				ci.Content = string([]byte{byte(i)})
 			})
 
@@ -145,7 +145,7 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey(`Test string resolver`, func() {
-			transformItems(func(i int, ci *backend.Item) {
+			transformItems(func(i int, ci *config.Config) {
 				ci.Content = fmt.Sprintf("[%d]", i)
 			})
 
@@ -170,7 +170,7 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey(`Test nil resolver`, func() {
-			transformItems(func(i int, ci *backend.Item) {
+			transformItems(func(i int, ci *config.Config) {
 				ci.Content = fmt.Sprintf("[%d]", i)
 			})
 
