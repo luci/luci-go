@@ -8,6 +8,7 @@ package testdata;
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 message TestMessage {
     string name = 1;
@@ -15,9 +16,7 @@ message TestMessage {
     NestedTestMessage nested = 3;
     repeated NestedTestMessage repeated_nested = 4;
 
-    // This field will be ignored because it is
-    // google.protobuf.Struct.
-    google.protobuf.Struct will_be_ignored = 5;
+    google.protobuf.Struct struct = 5;
 
     enum FOO {
       X = 0;
@@ -28,6 +27,8 @@ message TestMessage {
     FOO foo = 6;
 
     repeated FOO foo_repeated = 7;
+
+    google.protobuf.Empty empty = 8;
 }
 
 message NestedTestMessage {

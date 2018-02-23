@@ -8,6 +8,7 @@ package testdata;
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 
 message Property {
@@ -23,6 +24,11 @@ message Output {
     repeated Property properties = 4;
 }
 
+// This entire message will be ignored.
+message EmptyContainer {
+    google.protobuf.Empty empty = 1;
+}
+
 // Build events.
 //
 // Line after blank line.
@@ -35,10 +41,9 @@ message BuildEvent {
     Input input = 4;
     Output output = 5;
     google.protobuf.Timestamp timestamp = 6;
-
-    // This field will be ignored because it is
-    // google.protobuf.Struct.
-    google.protobuf.Struct wil_be_ignored = 7;
+    google.protobuf.Struct struct = 7;
+    google.protobuf.Empty empty = 8; // will be ignored
+    EmptyContainer empty_container = 9; // will be ignored
 }
 
 enum Status {

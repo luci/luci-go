@@ -15,13 +15,18 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
+	"github.com/pmezard/go-difflib/difflib"
+
+	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
 )
@@ -107,25 +112,19 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 		case "google.protobuf.Timestamp":
 			schema.Type = bigquery.TimestampFieldType
 		case "google.protobuf.Struct":
-			// Schemaless data, such as protobuf Structs, should not be used in
-			// BigQuery tables.
-			// Instead, users that need that data should maintain their own
-			// structured BQ tables, possibly duplicating some data.
-			//
-			// For example, instead of putting arbitrary build properties in
-			// completed_builds event table, a user that needs test results
-			// surfaced in the output properties, should instead maintain their
-			// own BQ test results table, possibly duplicating some data from
-			// completed_builds table (e.g. build id, builder).
-			//
-			// This consensus was reached at
-			// https://docs.google.com/document/d/1PccZ62hmF8QQHHa7GDF9NriCGS5mm-uL_NcXBp2UCDI/edit?ts=5a5390ac#
-			return nil, nil
+			// google.protobuf.Struct is persisted as JSONPB string.
+			// See also https://docs.google.com/document/d/1PccZ62hmF8QQHHa7GDF9NriCGS5mm-uL_NcXBp2UCDI/edit?ts=5a5390ac#
+			schema.Type = bigquery.StringFieldType
 		default:
-			schema.Type = bigquery.RecordFieldType
-			var err error
-			if schema.Schema, _, err = c.schema(typeName); err != nil {
+			switch s, _, err := c.schema(typeName); {
+			case err != nil:
 				return nil, err
+			case len(s) == 0:
+				// BigQuery does not like empty record fields.
+				return nil, nil
+			default:
+				schema.Type = bigquery.RecordFieldType
+				schema.Schema = s
 			}
 		}
 	default:
@@ -186,4 +185,73 @@ func (c *schemaConverter) description(file *descriptor.FileDescriptorProto, ptr 
 		}
 	}
 	return description
+}
+
+func printSchema(w *indented.Writer, s bigquery.Schema) {
+	// Field order does not matter.
+	// A new field is always added to the end of the field list in a live table.
+	// Sort fields by name to make the result deterministic.
+	// Schema diffing relies on it.
+
+	s = append(bigquery.Schema(nil), s...)
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].Name < s[j].Name
+	})
+
+	for i, f := range s {
+		if i > 0 {
+			fmt.Fprintln(w)
+		}
+
+		if f.Description != "" {
+			for _, line := range strings.Split(f.Description, "\n") {
+				fmt.Fprintln(w, "//", line)
+			}
+		}
+
+		switch {
+		case f.Repeated:
+			fmt.Fprint(w, "repeated ")
+		case f.Required:
+			fmt.Fprint(w, "required ")
+		}
+
+		fmt.Fprint(w, f.Type, f.Name)
+
+		if f.Type == bigquery.RecordFieldType {
+			fmt.Fprintln(w, " {")
+			w.Level++
+			printSchema(w, f.Schema)
+			w.Level--
+			fmt.Fprint(w, "}")
+		}
+
+		fmt.Fprintln(w)
+	}
+}
+
+func schemaString(s bigquery.Schema) string {
+	var buf bytes.Buffer
+	printSchema(&indented.Writer{Writer: &buf}, s)
+	return buf.String()
+}
+
+// schemaDiff returns unified diff of two schemas.
+// Returns "" if there is no difference.
+func schemaDiff(before, after bigquery.Schema) string {
+	ret, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(schemaString(before)),
+		B:        difflib.SplitLines(schemaString(after)),
+		FromFile: "Current",
+		ToFile:   "New",
+		Context:  3,
+		Eol:      "\n",
+	})
+	if err != nil {
+		// GetUnifiedDiffString returns an error only if it fails
+		// to write to a bytes.Buffer, which either cannot happen or we better
+		// panic.
+		panic(err)
+	}
+	return ret
 }
