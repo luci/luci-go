@@ -328,9 +328,13 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 	service := &swarmingServiceImpl{client, s}
 
 	// Prepare context.
-	// TODO(mknyszek): Use cancel func to implement graceful exit on SIGINT.
-	ctx, cancel := clock.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
+	ctx := context.Background()
+	if c.timeout > 0 {
+		// TODO(mknyszek): Use cancel func to implement graceful exit on SIGINT.
+		var cancel func()
+		ctx, cancel = clock.WithTimeout(ctx, c.timeout)
+		defer cancel()
+	}
 
 	// Aggregate results by polling and fetching across multiple goroutines.
 	results := make([]taskResult, len(taskIDs))
