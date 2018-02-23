@@ -123,14 +123,11 @@ type flags struct {
 	tableDef
 	protoDir    string
 	messageName string
-	dryRun      bool
 	importPaths stringlistflag.Flag
 }
 
 func parseFlags() (*flags, error) {
 	var f flags
-	flag.BoolVar(&f.dryRun, "dry-run", false, "Only performs non-mutating operations; logs what would happen otherwise")
-
 	table := flag.String("table", "", `Table name with format "<project id>.<dataset id>.<table id>"`)
 	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table")
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned")
@@ -202,10 +199,6 @@ func run(ctx context.Context) error {
 		return errors.Annotate(err, "could not create BigQuery client").Err()
 	}
 	var ts tableStore = bqTableStore{c}
-	if flags.dryRun {
-		ts = dryRunTableStore{ts: ts, w: os.Stdout}
-	}
-
 	return updateFromTableDef(ctx, ts, td)
 }
 
