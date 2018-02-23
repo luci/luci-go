@@ -39,7 +39,7 @@ type testingBackend struct {
 
 func (tb *testingBackend) ServiceURL(context.Context) url.URL { return *tb.serviceURL }
 
-func (tb *testingBackend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	tb.lastParams = p
 	if err := tb.err; err != nil {
 		return nil, tb.err

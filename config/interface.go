@@ -29,7 +29,7 @@ type Config struct {
 	// ConfigSet is the config set name (e.g. "projects/<id>") this config
 	// belongs to.
 	// May be the empty string if this is unknown.
-	ConfigSet string `json:"configSet,omitempty"`
+	ConfigSet Set `json:"configSet,omitempty"`
 
 	// Path is the filename relative to the root of the config set,
 	// without leading slash, e.g. "luci-cron.cfg".
@@ -99,14 +99,14 @@ type Interface interface {
 	// GetConfig returns a config at a path in a config set or ErrNoConfig
 	// if missing. If hashOnly is true, returned Config struct has Content set
 	// to "" (and the call is faster).
-	GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*Config, error)
+	GetConfig(ctx context.Context, configSet Set, path string, hashOnly bool) (*Config, error)
 
 	// GetConfigByHash returns the contents of a config, as identified by its
 	// content hash, or ErrNoConfig if missing.
 	GetConfigByHash(ctx context.Context, contentHash string) (string, error)
 
 	// GetConfigSetLocation returns the URL location of a config set.
-	GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error)
+	GetConfigSetLocation(ctx context.Context, configSet Set) (*url.URL, error)
 
 	// GetProjectConfigs returns all the configs at the given path in all
 	// projects that have such config. If hashesOnly is true, returned Config

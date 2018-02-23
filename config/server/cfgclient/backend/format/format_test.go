@@ -17,6 +17,7 @@ package format
 import (
 	"testing"
 
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 
@@ -32,7 +33,7 @@ type testingBackend struct {
 	items []*backend.Item
 }
 
-func (tb *testingBackend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (tb *testingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	if err := tb.err; err != nil {
 		return nil, tb.err
 	}
@@ -69,7 +70,7 @@ type retainingBackend struct {
 	lastErr   error
 }
 
-func (b *retainingBackend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+func (b *retainingBackend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*backend.Item, error) {
 	var item *backend.Item
 	item, b.lastErr = b.B.Get(c, configSet, path, p)
 	b.lastItems = []*backend.Item{item}

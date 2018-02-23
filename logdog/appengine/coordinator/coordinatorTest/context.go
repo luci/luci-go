@@ -80,7 +80,7 @@ type Environment struct {
 	AuthState authtest.FakeState
 
 	// Config is the luci-config configuration map that is installed.
-	Config map[string]memory.ConfigSet
+	Config map[config.Set]memory.Files
 
 	// Services is the set of installed Coordinator services.
 	Services Services
@@ -123,7 +123,7 @@ func (e *Environment) LeaveAllGroups() {
 // simulating a missing config.
 func (e *Environment) ClearCoordinatorConfig(c context.Context) {
 	configSet, _ := coordcfg.ServiceConfigPath(c)
-	delete(e.Config, string(configSet))
+	delete(e.Config, configSet)
 }
 
 // ModServiceConfig loads the current service configuration, invokes the
@@ -166,10 +166,10 @@ func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, p
 }
 
 func (e *Environment) addConfigEntry(configSet config.Set, path, content string) {
-	cset := e.Config[string(configSet)]
+	cset := e.Config[configSet]
 	if cset == nil {
-		cset = make(map[string]string)
-		e.Config[string(configSet)] = cset
+		cset = make(memory.Files)
+		e.Config[configSet] = cset
 	}
 	cset[path] = content
 }
@@ -183,7 +183,7 @@ func (e *Environment) addConfigEntry(configSet config.Set, path, content string)
 // indexing functionality.
 func Install(useRealIndex bool) (context.Context, *Environment) {
 	e := Environment{
-		Config:   make(map[string]memory.ConfigSet),
+		Config:   make(map[config.Set]memory.Files),
 		GSClient: GSClient{},
 		StorageCache: StorageCache{
 			Base: &flex.StorageCache{},
