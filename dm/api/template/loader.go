@@ -29,7 +29,7 @@ import (
 // LoadFile loads a File by configSet and path.
 func LoadFile(c context.Context, project, ref string) (file *File, vers string, err error) {
 	// If ref is "", this will be a standard project config set.
-	cfgSet := config.RefSet(config.ProjectName(project), ref)
+	cfgSet := config.RefSet(project, ref)
 
 	file = &File{}
 	var meta cfgclient.Meta

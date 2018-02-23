@@ -17,9 +17,9 @@ package coordinator
 import (
 	"sync"
 
-	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
 )
@@ -46,7 +46,7 @@ type ConfigProvider interface {
 	// request.
 	//
 	// Returns the same error codes as config.ProjectConfig.
-	ProjectConfig(context.Context, cfglib.ProjectName) (*svcconfig.ProjectConfig, error)
+	ProjectConfig(context.Context, types.ProjectName) (*svcconfig.ProjectConfig, error)
 }
 
 // LUCIConfigProvider is a ConfigProvider implementation that loads its
@@ -56,7 +56,7 @@ type LUCIConfigProvider struct {
 
 	// gcfg is the cached global configuration.
 	gcfg           *config.Config
-	projectConfigs map[cfglib.ProjectName]*cachedProjectConfig
+	projectConfigs map[types.ProjectName]*cachedProjectConfig
 }
 
 // Config implements ConfigProvider.
@@ -82,7 +82,7 @@ func (s *LUCIConfigProvider) Config(c context.Context) (*config.Config, error) {
 type cachedProjectConfig struct {
 	sync.Once
 
-	project cfglib.ProjectName
+	project types.ProjectName
 	pcfg    *svcconfig.ProjectConfig
 	err     error
 }
@@ -99,12 +99,12 @@ func (cp *cachedProjectConfig) resolve(c context.Context) (*svcconfig.ProjectCon
 	return cp.pcfg, cp.err
 }
 
-func (s *LUCIConfigProvider) getOrCreateCachedProjectConfig(project cfglib.ProjectName) *cachedProjectConfig {
+func (s *LUCIConfigProvider) getOrCreateCachedProjectConfig(project types.ProjectName) *cachedProjectConfig {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	if s.projectConfigs == nil {
-		s.projectConfigs = make(map[cfglib.ProjectName]*cachedProjectConfig)
+		s.projectConfigs = make(map[types.ProjectName]*cachedProjectConfig)
 	}
 	cp := s.projectConfigs[project]
 	if cp == nil {
@@ -117,6 +117,6 @@ func (s *LUCIConfigProvider) getOrCreateCachedProjectConfig(project cfglib.Proje
 }
 
 // ProjectConfig implements ConfigProvider.
-func (s *LUCIConfigProvider) ProjectConfig(c context.Context, project cfglib.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *LUCIConfigProvider) ProjectConfig(c context.Context, project types.ProjectName) (*svcconfig.ProjectConfig, error) {
 	return s.getOrCreateCachedProjectConfig(project).resolve(c)
 }

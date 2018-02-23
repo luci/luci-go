@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -138,8 +139,8 @@ func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Con
 
 // ModProjectConfig loads the current configuration for the named project,
 // invokes the callback with its contents, and writes the result back to config.
-func (e *Environment) ModProjectConfig(c context.Context, proj config.ProjectName, fn func(*svcconfig.ProjectConfig)) {
-	configSet, configPath := config.ProjectSet(proj), coordcfg.ProjectConfigPath(c)
+func (e *Environment) ModProjectConfig(c context.Context, proj types.ProjectName, fn func(*svcconfig.ProjectConfig)) {
+	configSet, configPath := config.ProjectSet(string(proj)), coordcfg.ProjectConfigPath(c)
 
 	var pcfg svcconfig.ProjectConfig
 	e.modTextProtobuf(c, configSet, configPath, &pcfg, func() {
@@ -222,7 +223,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// luci-config: Projects.
 	projectName := info.AppID(c)
-	addProjectConfig := func(proj config.ProjectName, access ...string) {
+	addProjectConfig := func(proj types.ProjectName, access ...string) {
 		projectAccesses := make([]string, len(access))
 
 		// Build our service config. Also builds "projectAccesses".
@@ -246,7 +247,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		})
 
 		var pcfg configPB.ProjectCfg
-		e.modTextProtobuf(c, config.ProjectSet(proj), cfgclient.ProjectConfigPath, &pcfg, func() {
+		e.modTextProtobuf(c, config.ProjectSet(string(proj)), cfgclient.ProjectConfigPath, &pcfg, func() {
 			pcfg = configPB.ProjectCfg{
 				Name:   proto.String(string(proj)),
 				Access: projectAccesses,
@@ -334,7 +335,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 // WithProjectNamespace runs f in proj's namespace, bypassing authentication
 // checks.
-func WithProjectNamespace(c context.Context, proj config.ProjectName, f func(context.Context)) {
+func WithProjectNamespace(c context.Context, proj types.ProjectName, f func(context.Context)) {
 	if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessAllTesting); err != nil {
 		panic(err)
 	}

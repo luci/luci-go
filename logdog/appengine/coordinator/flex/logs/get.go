@@ -17,7 +17,6 @@ package logs
 import (
 	"time"
 
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -198,7 +197,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	return nil
 }
 
-func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project config.ProjectName,
+func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project types.ProjectName,
 	path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
 
 	log.Fields{
@@ -283,7 +282,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningSt
 	}
 }
 
-func getTail(c context.Context, st coordinator.SigningStorage, project config.ProjectName, path types.StreamPath) (
+func getTail(c context.Context, st coordinator.SigningStorage, project types.ProjectName, path types.StreamPath) (
 	[]*logpb.LogEntry, error) {
 
 	log.Fields{

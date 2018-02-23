@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config"
 )
 
 const logDogURLScheme = "logdog"
@@ -31,7 +30,7 @@ type StreamAddr struct {
 	Host string `json:"host,omitempty"`
 
 	// Project is the LUCI project name that this log belongs to.
-	Project config.ProjectName `json:"project,omitempty"`
+	Project ProjectName `json:"project,omitempty"`
 
 	// Path is the LogDog stream path.
 	Path StreamPath `json:"path,omitempty"`
@@ -104,7 +103,7 @@ func ParseURL(v string) (*StreamAddr, error) {
 		return nil, errors.Reason("URL path does not include both project and path components: %s", u.Path).Err()
 	}
 
-	addr.Project, addr.Path = config.ProjectName(parts[1]), StreamPath(parts[2])
+	addr.Project, addr.Path = ProjectName(parts[1]), StreamPath(parts[2])
 	if err := addr.Project.Validate(); err != nil {
 		return nil, errors.Annotate(err, "invalid project name: %q", addr.Project).Err()
 	}
