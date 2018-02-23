@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8be093c8_4b1cab26",
+        "filename": "common/proto/google/descutil/util_test.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-23T19:35:13Z",
+      "side": 1,
+      "message": "(likely, i\u0027m lacking context) - why is this necessary?",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 1
+      },
+      "revId": "17658ae439b3f4de525437e38eb5c211272b8f5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
