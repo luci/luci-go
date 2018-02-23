@@ -39,6 +39,13 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
+var (
+	canceledByUser = errors.BoolTag{
+		Key: errors.NewTagKey("operation canceled by user"),
+	}
+	errCanceledByUser = errors.Reason("operation canceled by user").Tag(canceledByUser).Err()
+)
+
 type tableDef struct {
 	ProjectID              string
 	DataSetID              string
@@ -51,8 +58,17 @@ type tableDef struct {
 }
 
 func updateFromTableDef(ctx context.Context, ts tableStore, td tableDef) error {
-	switch _, err := ts.getTableMetadata(ctx, td.DataSetID, td.TableID); {
-	case isNotFound(err):
+	tableID := fmt.Sprintf("%s.%s.%s", td.ProjectID, td.DataSetID, td.TableID)
+	md, err := ts.getTableMetadata(ctx, td.DataSetID, td.TableID)
+	switch {
+	case isNotFound(err): // new table
+		fmt.Printf("Table %q does not exist.\n", tableID)
+		fmt.Println("It will be created with the following schema:")
+		fmt.Println(schemaString(td.Schema, 1))
+		if !confirm("Continue") {
+			return errCanceledByUser
+		}
+
 		md := &bigquery.TableMetadata{
 			Name:        td.FriendlyName,
 			Description: td.Description,
@@ -67,16 +83,37 @@ func updateFromTableDef(ctx context.Context, ts tableStore, td tableDef) error {
 		if err != nil {
 			return err
 		}
-		log.Println("Created a new table... please update the documentation in https://chromium.googlesource.com/infra/infra/+/master/doc/bigquery_tables.md or the internal equivalent.")
+		fmt.Println("Table is created.")
+		fmt.Println("Please update the documentation in https://chromium.googlesource.com/infra/infra/+/master/doc/bigquery_tables.md or the internal equivalent.")
 		return nil
 	case err != nil:
 		return err
+
+	default: // existing table
+		fmt.Printf("Updating table %q\n", tableID)
+		if diff := schemaDiff(md.Schema, td.Schema); diff != "" {
+			fmt.Println("The following changes to the schema will be made.")
+			fmt.Println(strings.Repeat("=", 80))
+			fmt.Println(diff)
+			fmt.Println(strings.Repeat("=", 80))
+			if !confirm("Continue") {
+				return errCanceledByUser
+			}
+		} else {
+			fmt.Println("No changes to schema detected.")
+		}
+
+		update := bigquery.TableMetadataToUpdate{
+			Name:        td.FriendlyName,
+			Description: td.Description,
+			Schema:      td.Schema,
+		}
+		if err := ts.updateTable(ctx, td.DataSetID, td.TableID, update); err != nil {
+			return err
+		}
+		fmt.Println("Finished updating the table.")
+		return nil
 	}
-	return ts.updateTable(ctx, td.DataSetID, td.TableID, bigquery.TableMetadataToUpdate{
-		Name:        td.FriendlyName,
-		Description: td.Description,
-		Schema:      td.Schema,
-	})
 }
 
 type flags struct {
@@ -166,16 +203,14 @@ func run(ctx context.Context) error {
 		ts = dryRunTableStore{ts: ts, w: os.Stdout}
 	}
 
-	log.Printf("Updating table `%s.%s.%s`...", td.ProjectID, td.DataSetID, td.TableID)
-	if err = updateFromTableDef(ctx, ts, td); err != nil {
-		return errors.Annotate(err, "failed to update table").Err()
-	}
-	log.Println("Finished updating table.")
-	return nil
+	return updateFromTableDef(ctx, ts, td)
 }
 
 func main() {
-	if err := run(context.Background()); err != nil {
+	switch err := run(context.Background()); {
+	case canceledByUser.In(err):
+		os.Exit(1)
+	case err != nil:
 		log.Fatal(err)
 	}
 }
@@ -297,4 +332,13 @@ func goPaths() []string {
 		return nil
 	}
 	return strings.Split(gopath, string(filepath.ListSeparator))
+}
+
+// confirm asks a user confirmation for an action, with No as default.
+// Only "y" or "Y" response is treated as yes.
+func confirm(action string) (response bool) {
+	fmt.Printf("%s? [y/N] ", action)
+	var res string
+	fmt.Scanln(&res)
+	return res == "y" || res == "Y"
 }
