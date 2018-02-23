@@ -19,10 +19,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 // ErrNotBootstrapped is returned by Get when the current process is not

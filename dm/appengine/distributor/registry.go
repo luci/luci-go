@@ -21,10 +21,10 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/dm/api/distributor"
 	"go.chromium.org/luci/dm/api/service/v1"
-	"go.chromium.org/luci/luci_config/server/cfgclient"
-	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/proto"

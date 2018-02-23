@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/server/cfgclient/backend"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/server/router"
 )

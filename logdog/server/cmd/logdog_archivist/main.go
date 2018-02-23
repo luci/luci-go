@@ -29,12 +29,12 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/config/common/cfgtypes"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/archivist"
 	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/service"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"

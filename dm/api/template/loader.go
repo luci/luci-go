@@ -20,10 +20,10 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/text/templateproto"
+	"go.chromium.org/luci/config/common/cfgtypes"
+	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	dm "go.chromium.org/luci/dm/api/service/v1"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
-	"go.chromium.org/luci/luci_config/server/cfgclient"
-	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 )
 
 // LoadFile loads a File by configSet and path.
