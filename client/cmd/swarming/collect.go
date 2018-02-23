@@ -26,13 +26,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	googleapi "google.golang.org/api/googleapi"
-
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 type taskOutputOption int64
@@ -209,30 +210,43 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, service swarmingService) taskResult {
-	// Fetch the result details.
-	result, err := service.GetTaskResult(ctx, taskID, c.perf)
+	var result *swarming.SwarmingRpcsTaskResult
+	var output string
+	var outputs []string
+	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		var err error
+
+		// Fetch the result details.
+		result, err = service.GetTaskResult(ctx, taskID, c.perf)
+		if err != nil {
+			return tagTransientGoogleAPIError(err)
+		}
+
+		// TODO(mknyszek): Fetch output and outputs in parallel.
+
+		// If we got the result details, try to fetch stdout if the
+		// user asked for it.
+		if c.taskOutput != taskOutputNone {
+			taskOutput, err := service.GetTaskOutput(ctx, taskID)
+			if err != nil {
+				return tagTransientGoogleAPIError(err)
+			}
+			output = taskOutput.Output
+		}
+
+		// Download the result isolated if available and if we have a place to put it.
+		if c.outputDir != "" && result.OutputsRef != nil {
+			outputs, err = service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef)
+			if err != nil {
+				return tagTransientGoogleAPIError(err)
+			}
+		}
+		return nil
+	}, func(err error, d time.Duration) {
+		logging.WithError(err).Warningf(ctx, "Transient error while making request, retrying in %s...", d)
+	})
 	if err != nil {
 		return taskResult{taskID: taskID, err: err}
-	}
-
-	// If we got the result details, try to fetch stdout if the
-	// user asked for it.
-	var output string
-	if c.taskOutput != taskOutputNone {
-		taskOutput, err := service.GetTaskOutput(ctx, taskID)
-		if err != nil {
-			return taskResult{taskID: taskID, err: err}
-		}
-		output = taskOutput.Output
-	}
-
-	// Download the result isolated if available and if we have a place to put it.
-	var outputs []string
-	if c.outputDir != "" && result.OutputsRef != nil {
-		outputs, err = service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef)
-		if err != nil {
-			return taskResult{taskID: taskID, err: err}
-		}
 	}
 
 	return taskResult{
@@ -249,13 +263,10 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 	for {
 		result = c.fetchTaskResults(ctx, taskID, service)
 		if result.err != nil {
-			if gapiErr, ok := result.err.(*googleapi.Error); ok {
-				// Error code of < 500 is a fatal error.
-				if gapiErr.Code < 500 {
-					results <- result
-					return
-				}
-			}
+			// If we recieved an error from fetchTaskResults, it either hit a fatal
+			// failure, or it hit too many transient failures.
+			results <- result
+			return
 		} else {
 			// Only stop if the swarming bot is "dead" (i.e. not running).
 			state, err := parseTaskState(result.result.State)

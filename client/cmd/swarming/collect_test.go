@@ -116,7 +116,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			},
 		}
 		result := testCollectPollWithServer(&collectRun{taskOutput: taskOutputNone}, service)
-		So(result.err, ShouldErrLike, "context deadline exceeded")
+		So(result.err, ShouldErrLike, "502")
 	})
 
 	Convey(`Test bot finished`, t, func() {
@@ -159,7 +159,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				if i < maxTries {
 					i += 1
-					return nil, &googleapi.Error{Code: http.StatusInternalServerError}
+					return nil, &googleapi.Error{Code: http.StatusBadGateway}
 				}
 				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
 			},

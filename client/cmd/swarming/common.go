@@ -24,6 +24,8 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"google.golang.org/api/googleapi"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/downloader"
@@ -33,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 var swarmingAPISuffix = "/api/swarming/v1/"
@@ -148,6 +151,13 @@ func (c *commonFlags) createAuthClient() (*http.Client, error) {
 	// for IP whitelisted bots: they have NO credentials to send.
 	ctx := gologger.StdConfig.Use(context.Background())
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
+}
+
+func tagTransientGoogleAPIError(err error) error {
+	if gerr, _ := err.(*googleapi.Error); gerr != nil && gerr.Code >= 500 {
+		return transient.Tag.Apply(err)
+	}
+	return err
 }
 
 func printError(a subcommands.Application, err error) {
