@@ -17,9 +17,13 @@ package main
 import (
 	"fmt"
 	"io"
+	"strings"
+
+	"golang.org/x/net/context"
 
 	"cloud.google.com/go/bigquery"
-	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/data/text/indented"
 )
 
 type dryRunTableStore struct {
@@ -47,20 +51,39 @@ func (ts dryRunTableStore) updateTable(ctx context.Context, datasetID, tableID s
 	fmt.Fprintf(ts.w, "Would run updateTable with datasetID %v, tableID %v...\n", datasetID, tableID)
 	fmt.Fprintf(ts.w, "...using TableMetadataToUpdate{Name: %v, Description: %v}\n", toUpdate.Name, toUpdate.Description)
 	fmt.Fprintln(ts.w, "...and schema:")
-	printSchema(ts.w, toUpdate.Schema, "\t")
+	printSchema(&indented.Writer{Writer: ts.w}, toUpdate.Schema)
 	return nil
 }
 
-func printSchema(w io.Writer, s bigquery.Schema, prefix string) {
-	for _, f := range s {
-		fmt.Fprintf(w, "%sName: %v\n", prefix, f.Name)
-		fmt.Fprintf(w, "%sDescription: %v\n", prefix, f.Description)
-		fmt.Fprintf(w, "%sRepeated: %v\n", prefix, f.Repeated)
-		fmt.Fprintf(w, "%sRequired: %v\n", prefix, f.Required)
-		fmt.Fprintf(w, "%sType: %v\n", prefix, f.Type)
-		if f.Type == bigquery.RecordFieldType {
-			printSchema(w, f.Schema, prefix+"\t")
+func printSchema(w *indented.Writer, s bigquery.Schema) {
+	for i, f := range s {
+		if i > 0 {
+			fmt.Fprintln(w)
 		}
-		fmt.Fprint(w, "\n")
+
+		if f.Description != "" {
+			for _, line := range strings.Split(f.Description, "\n") {
+				fmt.Fprintln(w, "//", line)
+			}
+		}
+
+		switch {
+		case f.Repeated:
+			fmt.Fprint(w, "repeated ")
+		case f.Required:
+			fmt.Fprint(w, "required ")
+		}
+
+		fmt.Fprint(w, f.Type, f.Name)
+
+		if f.Type == bigquery.RecordFieldType {
+			fmt.Fprintln(w, " {")
+			w.Level++
+			printSchema(w, f.Schema)
+			w.Level--
+			fmt.Fprint(w, "}")
+		}
+
+		fmt.Fprintln(w)
 	}
 }
