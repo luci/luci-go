@@ -72,14 +72,14 @@ func TestLRUCache(t *testing.T) {
 			tc.Add(time.Hour)
 
 			So(cfgclient.Get(c, cfgclient.AsService, "projects/foo", "file", cfgclient.String(&s), nil),
-				ShouldEqual, cfgclient.ErrNoConfig)
+				ShouldEqual, config.ErrNoConfig)
 
 			// Re-add, still no config.
 			mbase["projects/foo"] = memory.Files{
 				"file": "content",
 			}
 			So(cfgclient.Get(c, cfgclient.AsService, "projects/foo", "file", cfgclient.String(&s), nil),
-				ShouldEqual, cfgclient.ErrNoConfig)
+				ShouldEqual, config.ErrNoConfig)
 
 			// "No config" expires, config is back.
 			tc.Add(time.Hour)

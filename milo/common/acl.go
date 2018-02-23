@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	accessProto "go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
@@ -55,7 +54,7 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 		return true, nil
 	case err == access.ErrNoAccess:
 		return false, nil
-	case innerError == cfgclient.ErrNoConfig:
+	case innerError == config.ErrNoConfig:
 		return false, CodeNotFound.Tag().Apply(err)
 	default:
 		return false, err

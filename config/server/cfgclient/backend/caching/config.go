@@ -21,7 +21,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
@@ -141,7 +140,7 @@ func MakeValueItem(it *backend.Item) ValueItem {
 // ConfigItem returns the backend.Item equivalent of vi.
 func (vi *ValueItem) ConfigItem() *backend.Item {
 	return &backend.Item{
-		Meta: backend.Meta{
+		Meta: config.Meta{
 			ConfigSet:   config.Set(vi.ConfigSet),
 			Path:        vi.Path,
 			ContentHash: vi.ContentHash,
@@ -307,7 +306,7 @@ func (b *Backend) Get(c context.Context, configSet config.Set, path string, p ba
 	it := value.SingleItem()
 	if it == nil {
 		// Sentinel for no config.
-		return nil, cfgclient.ErrNoConfig
+		return nil, config.ErrNoConfig
 	}
 	return it, nil
 }
@@ -408,7 +407,7 @@ func doGet(c context.Context, b backend.B, configSet config.Set, path string, v 
 			// showed that the current content has a different hash.
 			break
 
-		case cfgclient.ErrNoConfig:
+		case config.ErrNoConfig:
 			v.LoadItems()
 			return v, nil
 
@@ -423,7 +422,7 @@ func doGet(c context.Context, b backend.B, configSet config.Set, path string, v 
 		v.LoadItems(item)
 		return v, nil
 
-	case cfgclient.ErrNoConfig:
+	case config.ErrNoConfig:
 		// Empty "config missing" item.
 		v.LoadItems()
 		return v, nil

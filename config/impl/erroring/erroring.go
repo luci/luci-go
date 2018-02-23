@@ -39,7 +39,7 @@ type erroringInterface struct {
 	err error
 }
 
-func (i erroringInterface) GetConfig(ctx context.Context, configSet config.Set, path string, hashOnly bool) (*config.Config, error) {
+func (i erroringInterface) GetConfig(ctx context.Context, configSet config.Set, path string, metaOnly bool) (*config.Config, error) {
 	return nil, i.err
 }
 
@@ -51,7 +51,7 @@ func (i erroringInterface) GetConfigSetLocation(ctx context.Context, configSet c
 	return nil, i.err
 }
 
-func (i erroringInterface) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+func (i erroringInterface) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	return nil, i.err
 }
 
@@ -59,7 +59,7 @@ func (i erroringInterface) GetProjects(ctx context.Context) ([]config.Project, e
 	return nil, i.err
 }
 
-func (i erroringInterface) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+func (i erroringInterface) GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	return nil, i.err
 }
 

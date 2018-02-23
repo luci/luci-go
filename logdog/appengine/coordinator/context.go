@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/server/cfgclient"
+	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
@@ -116,7 +116,7 @@ func WithProjectNamespace(c *context.Context, project types.ProjectName, at Name
 			// Successfully loaded project config.
 			return pcfg, nil
 
-		case cfgclient.ErrNoConfig, config.ErrInvalidConfig:
+		case cfglib.ErrNoConfig, config.ErrInvalidConfig:
 			// If the configuration request was valid, but no configuration could be
 			// loaded, treat this as the user not having READ access to the project.
 			// Otherwise, the user could use this error response to confirm a

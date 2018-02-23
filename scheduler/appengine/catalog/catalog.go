@@ -225,7 +225,7 @@ func (cat *catalog) UnmarshalTask(c context.Context, task []byte) (proto.Message
 func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 	// Enumerate all projects that have <config>.cfg. Do not fetch actual configs
 	// yet.
-	var metas []*cfgclient.Meta
+	var metas []*config.Meta
 	if err := cfgclient.Projects(c, cfgclient.AsService, cat.configFile(c), nil, &metas); err != nil {
 		return nil, err
 	}
@@ -272,12 +272,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	configSet := config.ProjectSet(projectID)
 	var (
 		cfg  messages.ProjectConfig
-		meta cfgclient.Meta
+		meta config.Meta
 	)
 	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, cat.configFile(c), textproto.Message(&cfg), &meta); err {
 	case nil:
 		break
-	case cfgclient.ErrNoConfig:
+	case config.ErrNoConfig:
 		// Project is not using scheduler, so monitoring-wise pretend the project
 		// doesn't exist.
 		projectHasConfig = false

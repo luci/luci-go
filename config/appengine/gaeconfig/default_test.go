@@ -53,7 +53,7 @@ func projectConfigWithAccess(project string, access ...string) *configPB.Project
 }
 
 // stripMeta strips cache-specific identifying information from a set of Metas.
-func stripMeta(metas []*cfgclient.Meta) []*cfgclient.Meta {
+func stripMeta(metas []*config.Meta) []*config.Meta {
 	for _, meta := range metas {
 		meta.ContentHash = ""
 		meta.Revision = ""
@@ -147,7 +147,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		// layers into "c".
 		installConfig := func(c context.Context) context.Context { return useImpl(c, be) }
 
-		loadProjectConfigs := func(c context.Context, a cfgclient.Authority) (projs []string, meta []*cfgclient.Meta, err error) {
+		loadProjectConfigs := func(c context.Context, a cfgclient.Authority) (projs []string, meta []*config.Meta, err error) {
 			err = cfgclient.Projects(c, a, "project.cfg", cfgclient.StringSlice(&projs), &meta)
 			return
 		}
@@ -215,7 +215,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 
 			_, metas, err := loadProjectConfigs(c, cfgclient.AsUser)
 			So(err, ShouldBeNil)
-			So(stripMeta(metas), ShouldResemble, []*cfgclient.Meta{
+			So(stripMeta(metas), ShouldResemble, []*config.Meta{
 				{ConfigSet: "projects/open", Path: "project.cfg"},
 			})
 
@@ -226,7 +226,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			c = installConfig(c)
 			_, metas, err = loadProjectConfigs(c, cfgclient.AsUser)
 			So(err, ShouldBeNil)
-			So(stripMeta(metas), ShouldResemble, []*cfgclient.Meta{
+			So(stripMeta(metas), ShouldResemble, []*config.Meta{
 				{ConfigSet: "projects/open", Path: "project.cfg"},
 			})
 
@@ -244,7 +244,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			c = installConfig(c)
 			_, metas, err = loadProjectConfigs(c, cfgclient.AsUser)
 			So(err, ShouldBeNil)
-			So(stripMeta(metas), ShouldResemble, []*cfgclient.Meta{
+			So(stripMeta(metas), ShouldResemble, []*config.Meta{
 				{ConfigSet: "projects/foo", Path: "project.cfg"},
 				{ConfigSet: "projects/open", Path: "project.cfg"},
 			})
@@ -253,7 +253,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		Convey(`GetConfig iterative updates`, func() {
 			c = installConfig(c)
 
-			get := func(c context.Context) (v string, meta cfgclient.Meta, err error) {
+			get := func(c context.Context) (v string, meta config.Meta, err error) {
 				err = cfgclient.Get(c, cfgclient.AsService, "projects/open", "test.cfg", cfgclient.String(&v), &meta)
 				return
 			}
@@ -300,16 +300,16 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				So(runCron(), ShouldEqual, http.StatusOK)
 
 				_, _, err = get(c)
-				So(err, ShouldEqual, cfgclient.ErrNoConfig)
+				So(err, ShouldEqual, config.ErrNoConfig)
 			})
 		})
 
 		// Load project config, return a slice of hashes.
-		type getAllFn func(context.Context, cfgclient.Authority, string, cfgclient.MultiResolver, *[]*cfgclient.Meta) error
+		type getAllFn func(context.Context, cfgclient.Authority, string, cfgclient.MultiResolver, *[]*config.Meta) error
 		getHashes := func(c context.Context, gaFn getAllFn, path string) ([]string, error) {
 			var (
 				content []string
-				metas   []*cfgclient.Meta
+				metas   []*config.Meta
 			)
 			err := gaFn(c, cfgclient.AsService, path, cfgclient.StringSlice(&content), &metas)
 			if err != nil {

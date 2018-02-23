@@ -143,12 +143,12 @@ func TestConfig(t *testing.T) {
 		tb := testingBackend{B: be}
 		be = &tb
 
-		metaFor := func(configSet config.Set, path string) *cfgclient.Meta {
+		metaFor := func(configSet config.Set, path string) *config.Meta {
 			cfg, err := mconfig.GetConfig(c, configSet, path, false)
 			if err != nil {
 				panic(err)
 			}
-			return &cfgclient.Meta{
+			return &config.Meta{
 				ConfigSet:   cfg.ConfigSet,
 				Path:        cfg.Path,
 				ContentHash: cfg.ContentHash,
@@ -246,19 +246,19 @@ func TestConfig(t *testing.T) {
 			Convey(`Get w/ missing entry caches the miss.`, func() {
 				// Get missing entry.
 				var s string
-				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, cfgclient.ErrNoConfig)
+				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, config.ErrNoConfig)
 				So(tb.getNoContentCalls, ShouldEqual, 0)
 				So(tb.getContentCalls, ShouldEqual, 1)
 
 				// Entry is still gone (cached).
-				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, cfgclient.ErrNoConfig)
+				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, config.ErrNoConfig)
 				So(tb.getNoContentCalls, ShouldEqual, 0) // (Unchanged)
 				So(tb.getContentCalls, ShouldEqual, 1)   // (Unchanged)
 
 				// Entry comes into existence, but still cached as gone.
 				advance()
 
-				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, cfgclient.ErrNoConfig)
+				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, config.ErrNoConfig)
 				So(tb.getNoContentCalls, ShouldEqual, 0) // (Unchanged)
 				So(tb.getContentCalls, ShouldEqual, 1)   // (Unchanged)
 
@@ -273,7 +273,7 @@ func TestConfig(t *testing.T) {
 				expired = true
 				delete(mbase["services/foo"], "late")
 
-				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, cfgclient.ErrNoConfig)
+				So(cfgclient.Get(c, cfgclient.AsService, "services/foo", "late", cfgclient.String(&s), nil), ShouldEqual, config.ErrNoConfig)
 				So(tb.getNoContentCalls, ShouldEqual, 1)
 				So(tb.getContentCalls, ShouldEqual, 2) // (Unchanged)
 			})
@@ -281,14 +281,14 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetAll`, func() {
 			Convey(`Successfully loads, caches, refreshes projects.`, func() {
-				origMetas := []*cfgclient.Meta{
+				origMetas := []*config.Meta{
 					metaFor("projects/goesaway", "file"),
 					metaFor("projects/proj1", "file"),
 				}
 
 				// Load all successfully.
 				var s []string
-				var meta []*cfgclient.Meta
+				var meta []*config.Meta
 				So(cfgclient.Projects(c, cfgclient.AsService, "file", cfgclient.StringSlice(&s), &meta), ShouldBeNil)
 				So(s, ShouldResemble, []string{"goesaway file", "project1 file"})
 				So(meta, ShouldResemble, origMetas)
@@ -319,7 +319,7 @@ func TestConfig(t *testing.T) {
 
 				So(cfgclient.Projects(c, cfgclient.AsService, "file", cfgclient.StringSlice(&s), &meta), ShouldBeNil)
 				So(s, ShouldResemble, []string{"project1 file", "shows up"})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					metaFor("projects/proj1", "file"),
 					metaFor("projects/showsup", "file"),
 				})
@@ -333,7 +333,7 @@ func TestConfig(t *testing.T) {
 
 				So(cfgclient.Projects(c, cfgclient.AsService, "file", cfgclient.StringSlice(&s), &meta), ShouldBeNil)
 				So(s, ShouldResemble, []string{"project1 file"})
-				So(meta, ShouldResemble, []*cfgclient.Meta{
+				So(meta, ShouldResemble, []*config.Meta{
 					metaFor("projects/proj1", "file"),
 				})
 				So(tb.getNoContentCalls, ShouldEqual, 3)
@@ -341,14 +341,14 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey(`Works with refs too.`, func() {
-				origMetas := []*cfgclient.Meta{
+				origMetas := []*config.Meta{
 					metaFor("projects/goesaway/refs/heads/master", "file"),
 					metaFor("projects/goesaway/refs/heads/other", "file"),
 				}
 
 				// Load all successfully.
 				var s []string
-				var meta []*cfgclient.Meta
+				var meta []*config.Meta
 
 				So(cfgclient.Refs(c, cfgclient.AsService, "file", cfgclient.StringSlice(&s), &meta), ShouldBeNil)
 				So(s, ShouldResemble, []string{"goesaway master ref", "goesaway other ref"})

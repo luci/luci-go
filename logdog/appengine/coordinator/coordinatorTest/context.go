@@ -155,7 +155,7 @@ func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, p
 	msg proto.Message, fn func()) {
 
 	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, path, textproto.Message(msg), nil); err {
-	case nil, cfgclient.ErrNoConfig:
+	case nil, config.ErrNoConfig:
 		break
 	default:
 		panic(err)

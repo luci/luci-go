@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/remote"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
 
@@ -167,7 +166,7 @@ func (p *RemoteProvider) GetConfigClient(c context.Context, a backend.Authority)
 func translateConfigErr(err error) error {
 	switch err {
 	case config.ErrNoConfig:
-		return cfgclient.ErrNoConfig
+		return config.ErrNoConfig
 	default:
 		return err
 	}
@@ -175,7 +174,7 @@ func translateConfigErr(err error) error {
 
 func makeItem(cfg *config.Config) *backend.Item {
 	return &backend.Item{
-		Meta: backend.Meta{
+		Meta: config.Meta{
 			ConfigSet:   cfg.ConfigSet,
 			Path:        cfg.Path,
 			ContentHash: cfg.ContentHash,

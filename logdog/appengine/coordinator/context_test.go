@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/config/server/cfgclient"
+	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/common/types"
@@ -51,7 +51,7 @@ func (s *testConfigProvider) ProjectConfig(c context.Context, project types.Proj
 	cfg, ok := s.configs[project]
 	switch {
 	case !ok:
-		return nil, cfgclient.ErrNoConfig
+		return nil, cfglib.ErrNoConfig
 
 	case cfg == nil:
 		return nil, config.ErrInvalidConfig

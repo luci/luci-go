@@ -138,7 +138,7 @@ func (fc *fakeCache) addConfigImpl(cs config.Set, path, formatter, formatData, c
 	)
 	if content != "" {
 		item = &backend.Item{
-			Meta: backend.Meta{
+			Meta: config.Meta{
 				ConfigSet:   cs,
 				Path:        path,
 				ContentHash: "hash",
@@ -192,7 +192,7 @@ func (fc *fakeCache) addConfigSets(path string, configSets ...config.Set) []stri
 	for i, cs := range configSets {
 		contents[i] = string(cs)
 		items[i] = &backend.Item{
-			Meta: backend.Meta{
+			Meta: config.Meta{
 				ConfigSet:   cs,
 				Path:        path,
 				ContentHash: "hash",
@@ -296,7 +296,7 @@ func (fsc *fullStackCache) addConfigSets(path string, configSets ...config.Set) 
 }
 
 // stripMeta strips cache-specific identifying information from a set of Metas.
-func stripMeta(metas []*cfgclient.Meta) []*cfgclient.Meta {
+func stripMeta(metas []*config.Meta) []*config.Meta {
 	for _, meta := range metas {
 		meta.ContentHash = ""
 		meta.Revision = ""
@@ -328,7 +328,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 			cache.addConfig("projects/test", "foo", "")
 
 			So(cfgclient.Get(c, cfgclient.AsService, "projects/test", "foo", cfgclient.String(&v), nil),
-				ShouldEqual, cfgclient.ErrNoConfig)
+				ShouldEqual, config.ErrNoConfig)
 		})
 
 		Convey(`Config is present`, func() {
@@ -342,7 +342,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 			Convey(`As user, when not a project group member, fails with ErrNoConfig`, func() {
 				So(cfgclient.Get(c, cfgclient.AsUser, "projects/test", "foo", cfgclient.String(&v), nil),
-					ShouldEqual, cfgclient.ErrNoConfig)
+					ShouldEqual, config.ErrNoConfig)
 			})
 
 			Convey(`As user, when a project group member, succeeds.`, func() {
@@ -353,14 +353,14 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 			Convey(`As anonymous, fails with ErrNoConfig`, func() {
 				So(cfgclient.Get(c, cfgclient.AsAnonymous, "projects/test", "foo", cfgclient.String(&v), nil),
-					ShouldEqual, cfgclient.ErrNoConfig)
+					ShouldEqual, config.ErrNoConfig)
 			})
 		})
 	})
 
 	Convey(`Test Projects`, func() {
 		var v []string
-		var meta []*cfgclient.Meta
+		var meta []*config.Meta
 
 		Convey(`When cache returns an error`, func() {
 			cache.setCacheErr(testErr)
@@ -382,7 +382,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 			Convey(`As service, retrieves all configs.`, func() {
 				So(cfgclient.Projects(c, cfgclient.AsService, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 				So(v, ShouldResemble, allConfigs)
-				So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{
+				So(stripMeta(meta), ShouldResemble, []*config.Meta{
 					{ConfigSet: "projects/bar", Path: "test.cfg"},
 					{ConfigSet: "projects/baz", Path: "test.cfg"},
 					{ConfigSet: "projects/foo", Path: "test.cfg"},
@@ -395,7 +395,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 					So(cfgclient.Projects(c, cfgclient.AsUser, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 					So(v, ShouldResemble, []string(nil))
-					So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{})
+					So(stripMeta(meta), ShouldResemble, []*config.Meta{})
 				})
 
 				Convey(`Member of "foo", gets only "foo".`, func() {
@@ -403,7 +403,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 					So(cfgclient.Projects(c, cfgclient.AsUser, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 					So(v, ShouldResemble, allConfigs[2:3])
-					So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{
+					So(stripMeta(meta), ShouldResemble, []*config.Meta{
 						{ConfigSet: "projects/foo", Path: "test.cfg"},
 					})
 				})
@@ -415,7 +415,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 					So(cfgclient.Projects(c, cfgclient.AsUser, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 					So(v, ShouldResemble, allConfigs)
-					So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{
+					So(stripMeta(meta), ShouldResemble, []*config.Meta{
 						{ConfigSet: "projects/bar", Path: "test.cfg"},
 						{ConfigSet: "projects/baz", Path: "test.cfg"},
 						{ConfigSet: "projects/foo", Path: "test.cfg"},
@@ -427,7 +427,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 	Convey(`Test Refs`, func() {
 		var v []string
-		var meta []*cfgclient.Meta
+		var meta []*config.Meta
 
 		Convey(`When cache returns an error`, func() {
 			cache.setCacheErr(testErr)
@@ -450,7 +450,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 			Convey(`As service, retrieves all configs.`, func() {
 				So(cfgclient.Refs(c, cfgclient.AsService, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 				So(v, ShouldResemble, allConfigs)
-				So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{
+				So(stripMeta(meta), ShouldResemble, []*config.Meta{
 					{ConfigSet: "projects/bar/refs/branches/mybranch", Path: "test.cfg"},
 					{ConfigSet: "projects/bar/refs/heads/master", Path: "test.cfg"},
 					{ConfigSet: "projects/foo/refs/branches/mybranch", Path: "test.cfg"},
@@ -464,7 +464,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 					So(cfgclient.Refs(c, cfgclient.AsUser, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 					So(v, ShouldResemble, []string(nil))
-					So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{})
+					So(stripMeta(meta), ShouldResemble, []*config.Meta{})
 				})
 
 				Convey(`Member of "foo", gets only "foo".`, func() {
@@ -472,7 +472,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 					So(cfgclient.Refs(c, cfgclient.AsUser, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 					So(v, ShouldResemble, allConfigs[2:4])
-					So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{
+					So(stripMeta(meta), ShouldResemble, []*config.Meta{
 						{ConfigSet: "projects/foo/refs/branches/mybranch", Path: "test.cfg"},
 						{ConfigSet: "projects/foo/refs/heads/master", Path: "test.cfg"},
 					})
@@ -484,7 +484,7 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 
 					So(cfgclient.Refs(c, cfgclient.AsUser, "test.cfg", cfgclient.StringSlice(&v), &meta), ShouldBeNil)
 					So(v, ShouldResemble, allConfigs)
-					So(stripMeta(meta), ShouldResemble, []*cfgclient.Meta{
+					So(stripMeta(meta), ShouldResemble, []*config.Meta{
 						{ConfigSet: "projects/bar/refs/branches/mybranch", Path: "test.cfg"},
 						{ConfigSet: "projects/bar/refs/heads/master", Path: "test.cfg"},
 						{ConfigSet: "projects/foo/refs/branches/mybranch", Path: "test.cfg"},

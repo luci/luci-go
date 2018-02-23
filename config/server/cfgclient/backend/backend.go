@@ -41,7 +41,7 @@ func (fs *FormatSpec) Unformatted() bool { return fs.Formatter == "" }
 // Item is a single config item. It is used to pass configuration data
 // between Backend instances.
 type Item struct {
-	Meta
+	config.Meta
 
 	Content string
 

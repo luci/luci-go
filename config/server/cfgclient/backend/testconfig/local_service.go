@@ -18,7 +18,6 @@ import (
 	"net/url"
 
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/client"
@@ -105,7 +104,7 @@ func (bli *boundLocalInterface) GetRefConfigs(ctx context.Context, path string, 
 
 func (bli *boundLocalInterface) GetConfigSetLocation(ctx context.Context, configSet config.Set) (*url.URL, error) {
 	if err := access.Check(ctx, bli.a, configSet); err != nil {
-		return nil, cfgclient.ErrNoConfig
+		return nil, config.ErrNoConfig
 	}
 	return bli.Interface.GetConfigSetLocation(ctx, configSet)
 }
