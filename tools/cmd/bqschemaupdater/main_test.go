@@ -54,7 +54,7 @@ func TestBQSchemaUpdater(t *testing.T) {
 				TableID:   tableID,
 				Schema:    tc,
 			}
-			err := updateFromTableDef(ctx, ts, td)
+			err := updateFromTableDef(ctx, true, ts, td)
 			So(err, ShouldBeNil)
 			got, err := ts.getTableMetadata(ctx, datasetID, tableID)
 			So(err, ShouldBeNil)

@@ -17,7 +17,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"golang.org/x/net/context"
 
@@ -53,37 +52,4 @@ func (ts dryRunTableStore) updateTable(ctx context.Context, datasetID, tableID s
 	fmt.Fprintln(ts.w, "...and schema:")
 	printSchema(&indented.Writer{Writer: ts.w}, toUpdate.Schema)
 	return nil
-}
-
-func printSchema(w *indented.Writer, s bigquery.Schema) {
-	for i, f := range s {
-		if i > 0 {
-			fmt.Fprintln(w)
-		}
-
-		if f.Description != "" {
-			for _, line := range strings.Split(f.Description, "\n") {
-				fmt.Fprintln(w, "//", line)
-			}
-		}
-
-		switch {
-		case f.Repeated:
-			fmt.Fprint(w, "repeated ")
-		case f.Required:
-			fmt.Fprint(w, "required ")
-		}
-
-		fmt.Fprint(w, f.Type, f.Name)
-
-		if f.Type == bigquery.RecordFieldType {
-			fmt.Fprintln(w, " {")
-			w.Level++
-			printSchema(w, f.Schema)
-			w.Level--
-			fmt.Fprint(w, "}")
-		}
-
-		fmt.Fprintln(w)
-	}
 }

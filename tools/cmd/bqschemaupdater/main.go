@@ -39,6 +39,13 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
+var (
+	canceledByUser = errors.BoolTag{
+		Key: errors.NewTagKey("operation canceled by user"),
+	}
+	errCanceledByUser = errors.Reason("operation canceled by user").Tag(canceledByUser).Err()
+)
+
 type tableDef struct {
 	ProjectID              string
 	DataSetID              string
@@ -50,9 +57,27 @@ type tableDef struct {
 	Schema                 bigquery.Schema
 }
 
-func updateFromTableDef(ctx context.Context, ts tableStore, td tableDef) error {
-	switch _, err := ts.getTableMetadata(ctx, td.DataSetID, td.TableID); {
-	case isNotFound(err):
+func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td tableDef) error {
+	tableID := fmt.Sprintf("%s.%s.%s", td.ProjectID, td.DataSetID, td.TableID)
+	shouldContinue := func() bool {
+		if force {
+			return true
+		}
+		return confirm("Continue")
+	}
+
+	md, err := ts.getTableMetadata(ctx, td.DataSetID, td.TableID)
+	switch {
+	case isNotFound(err): // new table
+		fmt.Printf("Table %q does not exist.\n", tableID)
+		fmt.Println("It will be created with the following schema:")
+		fmt.Println(strings.Repeat("=", 80))
+		fmt.Println(schemaString(td.Schema))
+		fmt.Println(strings.Repeat("=", 80))
+		if !shouldContinue() {
+			return errCanceledByUser
+		}
+
 		md := &bigquery.TableMetadata{
 			Name:        td.FriendlyName,
 			Description: td.Description,
@@ -67,16 +92,38 @@ func updateFromTableDef(ctx context.Context, ts tableStore, td tableDef) error {
 		if err != nil {
 			return err
 		}
-		log.Println("Created a new table... please update the documentation in https://chromium.googlesource.com/infra/infra/+/master/doc/bigquery_tables.md or the internal equivalent.")
+		fmt.Println("Table is created.")
+		fmt.Println("Please update the documentation in https://chromium.googlesource.com/infra/infra/+/master/doc/bigquery_tables.md or the internal equivalent.")
 		return nil
+
 	case err != nil:
 		return err
+
+	default: // existing table
+		fmt.Printf("Updating table %q\n", tableID)
+		if diff := schemaDiff(md.Schema, td.Schema); diff == "" {
+			fmt.Println("No changes to schema detected.")
+		} else {
+			fmt.Println("The following changes to the schema will be made:")
+			fmt.Println(strings.Repeat("=", 80))
+			fmt.Println(diff)
+			fmt.Println(strings.Repeat("=", 80))
+			if !shouldContinue() {
+				return errCanceledByUser
+			}
+		}
+
+		update := bigquery.TableMetadataToUpdate{
+			Name:        td.FriendlyName,
+			Description: td.Description,
+			Schema:      td.Schema,
+		}
+		if err := ts.updateTable(ctx, td.DataSetID, td.TableID, update); err != nil {
+			return err
+		}
+		fmt.Println("Finished updating the table.")
+		return nil
 	}
-	return ts.updateTable(ctx, td.DataSetID, td.TableID, bigquery.TableMetadataToUpdate{
-		Name:        td.FriendlyName,
-		Description: td.Description,
-		Schema:      td.Schema,
-	})
 }
 
 type flags struct {
@@ -84,6 +131,7 @@ type flags struct {
 	protoDir    string
 	messageName string
 	dryRun      bool
+	force       bool
 	importPaths stringlistflag.Flag
 }
 
@@ -92,12 +140,13 @@ func parseFlags() (*flags, error) {
 	flag.BoolVar(&f.dryRun, "dry-run", false, "Only performs non-mutating operations; logs what would happen otherwise")
 
 	table := flag.String("table", "", `Table name with format "<project id>.<dataset id>.<table id>"`)
-	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table")
-	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned")
+	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table.")
+	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned.")
 	flag.DurationVar(&f.PartitioningExpiration, "partition-expiration", 0, "Expiration for partitions. 0 for no expiration.")
-	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message")
+	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message.")
+	flag.BoolVar(&f.force, "force", false, "proceed without a user confirmation.")
 	// -I matches protoc's flag and its error message suggesting to pass -I.
-	flag.Var(&f.importPaths, "I", "path to directory with the imported .proto file; can be specified multiple times")
+	flag.Var(&f.importPaths, "I", "path to directory with the imported .proto file; can be specified multiple times.")
 
 	flag.StringVar(&f.messageName,
 		"message",
@@ -166,16 +215,14 @@ func run(ctx context.Context) error {
 		ts = dryRunTableStore{ts: ts, w: os.Stdout}
 	}
 
-	log.Printf("Updating table `%s.%s.%s`...", td.ProjectID, td.DataSetID, td.TableID)
-	if err = updateFromTableDef(ctx, ts, td); err != nil {
-		return errors.Annotate(err, "failed to update table").Err()
-	}
-	log.Println("Finished updating table.")
-	return nil
+	return updateFromTableDef(ctx, flags.force, ts, td)
 }
 
 func main() {
-	if err := run(context.Background()); err != nil {
+	switch err := run(context.Background()); {
+	case canceledByUser.In(err):
+		os.Exit(1)
+	case err != nil:
 		log.Fatal(err)
 	}
 }
@@ -297,4 +344,13 @@ func goPaths() []string {
 		return nil
 	}
 	return strings.Split(gopath, string(filepath.ListSeparator))
+}
+
+// confirm asks for a user confirmation for an action, with No as default.
+// Only "y" or "Y" responses is treated as yes.
+func confirm(action string) (response bool) {
+	fmt.Printf("%s? [y/N] ", action)
+	var res string
+	fmt.Scanln(&res)
+	return res == "y" || res == "Y"
 }
