@@ -111,10 +111,15 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 			// See also https://bit.ly/chromium-bq-struct
 			schema.Type = bigquery.StringFieldType
 		default:
-			schema.Type = bigquery.RecordFieldType
-			var err error
-			if schema.Schema, _, err = c.schema(typeName); err != nil {
+			switch s, _, err := c.schema(typeName); {
+			case err != nil:
 				return nil, err
+			case len(s) == 0:
+				// BigQuery does not like empty record fields.
+				return nil, nil
+			default:
+				schema.Type = bigquery.RecordFieldType
+				schema.Schema = s
 			}
 		}
 	default:
