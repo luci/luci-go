@@ -15,13 +15,18 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
+	"github.com/pmezard/go-difflib/difflib"
+
+	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
 )
@@ -180,4 +185,68 @@ func (c *schemaConverter) description(file *descriptor.FileDescriptorProto, ptr 
 		}
 	}
 	return description
+}
+
+func printSchema(w *indented.Writer, s bigquery.Schema) {
+	// Order does not matter.
+	// A new field is always added to the end of the field list in a live table.
+	// Sort fields by name to make the order deterministic.
+	s = append(bigquery.Schema(nil), s...)
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].Name < s[j].Name
+	})
+
+	for i, f := range s {
+		if i > 0 {
+			fmt.Fprintf(w, "\n")
+		}
+
+		if f.Description != "" {
+			for _, line := range strings.Split(f.Description, "\n") {
+				fmt.Fprintf(w, "// %s\n", line)
+			}
+		}
+
+		switch {
+		case f.Repeated:
+			fmt.Fprintf(w, "repeated ")
+		case f.Required:
+			fmt.Fprintf(w, "required ")
+		}
+
+		fmt.Fprintf(w, "%s %s", f.Type, f.Name)
+
+		if f.Type == bigquery.RecordFieldType {
+			fmt.Fprintf(w, " {\n")
+			w.Level++
+			printSchema(w, f.Schema)
+			w.Level--
+			fmt.Fprintf(w, "}")
+		}
+
+		fmt.Fprintf(w, "\n")
+	}
+}
+
+func schemaString(s bigquery.Schema, indent int) string {
+	var buf bytes.Buffer
+	printSchema(&indented.Writer{Writer: &buf, Level: indent}, s)
+	return buf.String()
+}
+
+// schemaDiff returns textual colored difference between two schemas.
+// Returns "" if there is no difference.
+func schemaDiff(before, after bigquery.Schema) string {
+	s, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(schemaString(before, 0)),
+		B:        difflib.SplitLines(schemaString(after, 0)),
+		FromFile: "Current",
+		ToFile:   "New",
+		Context:  3,
+		Eol:      "\n",
+	})
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
