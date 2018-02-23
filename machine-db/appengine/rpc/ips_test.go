@@ -79,3 +79,31 @@ func TestListFreeIPs(t *testing.T) {
 		})
 	})
 }
+
+func TestParseIPv4s(t *testing.T) {
+	t.Parallel()
+
+	Convey("IPv6", t, func() {
+		ipv4s, err := parseIPv4s([]string{"2001:db8:a0b:12f0::1"})
+		So(err, ShouldErrLike, "invalid IPv4 address")
+		So(ipv4s, ShouldBeNil)
+	})
+
+	Convey("min", t, func() {
+		ipv4s, err := parseIPv4s([]string{"0.0.0.0"})
+		So(err, ShouldBeNil)
+		So(ipv4s, ShouldResemble, []int64{0})
+	})
+
+	Convey("max", t, func() {
+		ipv4s, err := parseIPv4s([]string{"255.255.255.255"})
+		So(err, ShouldBeNil)
+		So(ipv4s, ShouldResemble, []int64{int64(4294967295)})
+	})
+
+	Convey("ok", t, func() {
+		ipv4s, err := parseIPv4s([]string{"0.0.0.1", "0.0.0.2", "127.0.0.1"})
+		So(err, ShouldBeNil)
+		So(ipv4s, ShouldResemble, []int64{1, 2, 2130706433})
+	})
+}

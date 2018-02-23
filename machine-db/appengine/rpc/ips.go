@@ -76,3 +76,16 @@ func listFreeIPs(c context.Context, vlan int64, limit int32) ([]*crimson.IP, err
 	}
 	return ips, nil
 }
+
+// parseIPv4s returns a slice of int64 IP addresses.
+func parseIPv4s(ips []string) ([]int64, error) {
+	ipv4s := make([]int64, len(ips))
+	for i, ip := range ips {
+		ipv4, err := common.ParseIPv4(ip)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", ip)
+		}
+		ipv4s[i] = int64(ipv4)
+	}
+	return ipv4s, nil
+}

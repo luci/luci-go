@@ -288,16 +288,31 @@ func TestListPhysicalHosts(t *testing.T) {
 		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
+		Convey("invalid IPv4 address", func() {
+			req := &crimson.ListPhysicalHostsRequest{
+				Names: []string{"host"},
+				Vlans: []int64{0},
+				Ipv4S: []string{"0.0.0.1", "0.0.0.2/20"},
+			}
+			hosts, err := listPhysicalHosts(c, db, req)
+			So(err, ShouldErrLike, "invalid IPv4 address")
+			So(hosts, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
 		Convey("query failed", func() {
 			selectStmt := `
 				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
+				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id
+					AND h.name IN \(\?\) AND v.id IN \(\?\) AND i.ipv4 IN \(\?,\?\)$
 			`
-			names := []string{"host"}
-			vlans := []int64{0}
-			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnError(fmt.Errorf("error"))
-			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			req := &crimson.ListPhysicalHostsRequest{
+				Names: []string{"host"},
+				Vlans: []int64{0},
+				Ipv4S: []string{"0.0.0.1", "0.0.0.2"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0], 1, 2).WillReturnError(fmt.Errorf("error"))
+			hosts, err := listPhysicalHosts(c, db, req)
 			So(err, ShouldErrLike, "failed to fetch physical hosts")
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -309,10 +324,11 @@ func TestListPhysicalHosts(t *testing.T) {
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND v.id IN \(\?\)$
 			`
-			names := []string{}
-			vlans := []int64{0}
-			m.ExpectQuery(selectStmt).WithArgs(vlans[0]).WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			req := &crimson.ListPhysicalHostsRequest{
+				Vlans: []int64{0},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Vlans[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -324,10 +340,11 @@ func TestListPhysicalHosts(t *testing.T) {
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\)$
 			`
-			names := []string{"host"}
-			vlans := []int64{}
-			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			req := &crimson.ListPhysicalHostsRequest{
+				Names: []string{"host"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -339,10 +356,12 @@ func TestListPhysicalHosts(t *testing.T) {
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
 			`
-			names := []string{"host"}
-			vlans := []int64{0}
-			m.ExpectQuery(selectStmt).WithArgs(names[0], vlans[0]).WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			req := &crimson.ListPhysicalHostsRequest{
+				Names: []string{"host"},
+				Vlans: []int64{0},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -354,25 +373,27 @@ func TestListPhysicalHosts(t *testing.T) {
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?,\?\) AND v.id IN \(\?\)$
 			`
-			names := []string{"host 1", "host 2"}
-			vlans := []int64{0}
-			rows.AddRow(names[0], vlans[0], "machine 1", "os 1", 1, "", "", 1, 0)
-			rows.AddRow(names[1], vlans[0], "machine 2", "os 2", 2, "", "", 2, common.State_SERVING)
-			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1], vlans[0]).WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			req := &crimson.ListPhysicalHostsRequest{
+				Names: []string{"host 1", "host 2"},
+				Vlans: []int64{0},
+			}
+			rows.AddRow(req.Names[0], req.Vlans[0], "machine 1", "os 1", 1, "", "", 1, 0)
+			rows.AddRow(req.Names[1], req.Vlans[0], "machine 2", "os 2", 2, "", "", 2, common.State_SERVING)
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Names[1], req.Vlans[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
 				{
-					Name:    names[0],
-					Vlan:    vlans[0],
+					Name:    req.Names[0],
+					Vlan:    req.Vlans[0],
 					Machine: "machine 1",
 					Os:      "os 1",
 					VmSlots: 1,
 					Ipv4:    "0.0.0.1",
 				},
 				{
-					Name:    names[1],
-					Vlan:    vlans[0],
+					Name:    req.Names[1],
+					Vlan:    req.Vlans[0],
 					Machine: "machine 2",
 					Os:      "os 2",
 					VmSlots: 2,
@@ -389,12 +410,11 @@ func TestListPhysicalHosts(t *testing.T) {
 				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
 				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id$
 			`
-			names := []string{}
-			vlans := []int64{}
+			req := &crimson.ListPhysicalHostsRequest{}
 			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "", 1, 0)
 			rows.AddRow("host 2", 2, "machine 2", "os 2", 2, "", "", 2, common.State_SERVING)
 			m.ExpectQuery(selectStmt).WithArgs().WillReturnRows(rows)
-			hosts, err := listPhysicalHosts(c, db, names, vlans)
+			hosts, err := listPhysicalHosts(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
 				{
