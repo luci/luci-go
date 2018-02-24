@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"golang.org/x/net/context"
 
 	"cloud.google.com/go/bigquery"
@@ -154,6 +156,9 @@ func TestSave(t *testing.T) {
 						"str": {Kind: &structpb.Value_StringValue{StringValue: "a"}},
 					},
 				},
+
+				Empty:   &empty.Empty{},
+				Empties: []*empty.Empty{{}, {}},
 			},
 			InsertID: "testid",
 		}
