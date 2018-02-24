@@ -53,6 +53,8 @@ type fieldInfo struct {
 var bqFields = map[reflect.Type][]fieldInfo{}
 var bqFieldsLock = sync.RWMutex{}
 
+var protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
+
 const insertLimit = 10000
 const batchDefault = 500
 
@@ -120,41 +122,41 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 
 	var row map[string]bigquery.Value // keep it nil unless there are values
 	for _, fi := range infos {
-		var (
-			value interface{}
-			err   error
-		)
+		var bqValue interface{}
 		path[len(path)-1] = fi.Name
 		if fi.Repeated {
 			f := s.FieldByIndex(fi.structIndex)
 			// init value only if there are elements
-			if n := f.Len(); n > 0 {
-				elems := make([]interface{}, n)
-				vPath := append(path, "")
-				for i := 0; i < len(elems); i++ {
-					vPath[len(vPath)-1] = strconv.Itoa(i)
-					elems[i], err = getValue(f.Index(i).Interface(), vPath, fi)
-					if err != nil {
-						return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
-					}
+			n := f.Len()
+			if n == 0 {
+				// omit a repeated field with no elements.
+				continue
+			}
+			elems := make([]interface{}, n)
+			vPath := append(path, "")
+			for i := 0; i < len(elems); i++ {
+				vPath[len(vPath)-1] = strconv.Itoa(i)
+				elems[i], err = getValue(f.Index(i).Interface(), vPath, fi)
+				if err != nil {
+					return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
 				}
-				value = elems
 			}
+			bqValue = elems
 		} else {
-			value, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path, fi)
-			if err != nil {
+			bqValue, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path, fi)
+			switch {
+			case err != nil:
 				return nil, errors.Annotate(err, "%s", fi.OrigName).Err()
+			case bqValue == nil:
+				// Omit NULL values.
+				continue
 			}
-		}
-		if value == nil {
-			// omit nils.
-			continue
 		}
 
 		if row == nil {
 			row = map[string]bigquery.Value{}
 		}
-		row[fi.OrigName] = bigquery.Value(value)
+		row[fi.OrigName] = bigquery.Value(bqValue)
 	}
 	return row, nil
 }
@@ -169,7 +171,10 @@ func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
 
 	bqFieldsLock.Lock()
 	defer bqFieldsLock.Unlock()
+	return getFieldInfosLocked(t)
+}
 
+func getFieldInfosLocked(t reflect.Type) ([]fieldInfo, error) {
 	if f := bqFields[t]; f != nil {
 		return f, nil
 	}
@@ -185,9 +190,24 @@ func getFieldInfos(t reflect.Type) ([]fieldInfo, error) {
 			return nil, fmt.Errorf("OrigName of field %q.%q is empty", t, p.Name)
 		}
 
-		t := f.Type
-		for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
-			t = t.Elem()
+		ft := f.Type
+		if ft.Kind() == reflect.Slice {
+			ft = ft.Elem()
+		}
+		if ft.Implements(protoMessageType) && ft.Kind() == reflect.Ptr {
+			if st := ft.Elem(); st.Kind() == reflect.Struct {
+				// Note: this will crash with a stack overflow if the protobuf
+				// message is recursive, but bqschemaupdater should catch that
+				// earlier.
+				subfields, err := getFieldInfosLocked(st)
+				if err != nil {
+					return nil, err
+				}
+				if len(subfields) == 0 {
+					// Skip RECORD fields with no sub-fields.
+					continue
+				}
+			}
 		}
 		fields = append(fields, fieldInfo{f.Index, p})
 	}
