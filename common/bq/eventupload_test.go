@@ -23,6 +23,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/struct"
 
 	"go.chromium.org/luci/common/bq/testdata"
@@ -154,6 +155,9 @@ func TestSave(t *testing.T) {
 						"str": {Kind: &structpb.Value_StringValue{StringValue: "a"}},
 					},
 				},
+
+				Empty:   &empty.Empty{},
+				Empties: []*empty.Empty{{}, {}},
 			},
 			InsertID: "testid",
 		}
