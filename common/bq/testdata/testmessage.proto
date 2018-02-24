@@ -29,6 +29,7 @@ message TestMessage {
     repeated FOO foo_repeated = 7;
 
     google.protobuf.Empty empty = 8;
+    repeated google.protobuf.Empty empties = 9;
 }
 
 message NestedTestMessage {
