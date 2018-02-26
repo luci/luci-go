@@ -18,6 +18,7 @@ import (
 	"errors"
 	"io"
 
+	storage "cloud.google.com/go/storage"
 	"go.chromium.org/luci/common/gcloud/gs"
 )
 
@@ -33,6 +34,9 @@ func (c GSClient) Put(path gs.Path, d []byte) {
 func (c GSClient) Get(path gs.Path) []byte {
 	return c[path]
 }
+
+// Attrs implements gs.Client.
+func (c GSClient) Attrs(path gs.Path) (*storage.ObjectAttrs, error) { return nil, nil }
 
 // Close implements gs.Client.
 func (c GSClient) Close() error { return nil }
