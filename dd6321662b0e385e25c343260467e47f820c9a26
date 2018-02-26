@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "594d627c_b7241d22",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-26T21:01:26Z",
+      "side": 1,
+      "message": "ahhhhh, yes, my bad! then what you said earlier is correct, it separates those cases. the way it\u0027s written now you want there to be 1 commit on the same revision, and I agree that should be documented.\n\nIt\u0027s important because we want to easily distinguish the case where we get a build for the same commit that might be newer regardless via build time (which we want to notify on) vs. getting a build for an old commit (because of some pub/sub out-of-order nonsense) that we don\u0027t care about anymore and don\u0027t want to notify on. See line 131 in pubsub.go. This is how luci-notify uses gitiles to check ordering, though alternatively we could just handle the \"equal\" case separately, which would avoid an RPC call... also that might be an easy path to supporting builds without revision information.",
+      "parentUuid": "36b6f21b_f0e0aab6",
+      "range": {
+        "startLine": 31,
+        "startChar": 31,
+        "endLine": 31,
+        "endChar": 60
+      },
+      "revId": "dd6321662b0e385e25c343260467e47f820c9a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5a3c07a_68b766a3",
         "filename": "luci_notify/notify/gitiles.go",
         "patchSetId": 3
