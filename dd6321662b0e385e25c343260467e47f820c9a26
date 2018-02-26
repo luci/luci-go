@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "36b6f21b_f0e0aab6",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-26T20:41:27Z",
+      "side": 1,
+      "message": "Michael, I wasn\u0027t clear. I get the mocking bit, but what I\u0027m wondering about is purpose of adding \"~1\".\nIf it\u0027s necessary (is my guess above correct?), then it should be documented.\nElse, removed.",
+      "parentUuid": "8739e51b_412aa86b",
+      "range": {
+        "startLine": 31,
+        "startChar": 31,
+        "endLine": 31,
+        "endChar": 60
+      },
+      "revId": "dd6321662b0e385e25c343260467e47f820c9a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5a3c07a_68b766a3",
         "filename": "luci_notify/notify/gitiles.go",
         "patchSetId": 3
