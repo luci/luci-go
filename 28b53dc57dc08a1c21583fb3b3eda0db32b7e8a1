@@ -22,6 +22,30 @@
       "revId": "28b53dc57dc08a1c21583fb3b3eda0db32b7e8a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41b6b1dc_73764d90",
+        "filename": "config/impl/remote/remote.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-26T18:10:41Z",
+      "side": 1,
+      "message": "Maybe... API wrapper is using \u0027string\u0027 through: https://github.com/luci/luci-go/blob/master/common/api/luci_config/config/v1/config-gen.go#L219\n\nRegardless, it is a big change for another CL.",
+      "parentUuid": "8b36a46c_a27d96be",
+      "range": {
+        "startLine": 118,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 9
+      },
+      "revId": "28b53dc57dc08a1c21583fb3b3eda0db32b7e8a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
