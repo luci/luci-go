@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8739e51b_412aa86b",
+        "filename": "luci_notify/notify/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-26T20:36:38Z",
+      "side": 1,
+      "message": "It exists so we can inject a dummy history function for testing. The alternative was adding the gitiles client into the context, but I think at the time it was deemed too much boilerplate for just one call to Log. With this type alias it was only a few lines changed.",
+      "parentUuid": "feab97a2_64cc99d8",
+      "range": {
+        "startLine": 31,
+        "startChar": 31,
+        "endLine": 31,
+        "endChar": 60
+      },
+      "revId": "dd6321662b0e385e25c343260467e47f820c9a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5a3c07a_68b766a3",
         "filename": "luci_notify/notify/gitiles.go",
         "patchSetId": 3
