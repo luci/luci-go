@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b36a46c_a27d96be",
+        "filename": "config/impl/remote/remote.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-26T13:55:36Z",
+      "side": 1,
+      "message": "FWIW I think Content should be []byte",
+      "range": {
+        "startLine": 118,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 9
+      },
+      "revId": "28b53dc57dc08a1c21583fb3b3eda0db32b7e8a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
