@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3954c68_f5a4293b",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-02-26T14:51:41Z",
+      "side": 1,
+      "message": "I feel it\u0027s the wrong abstraction level. This should be done much deeper, close to the http client.\n\nThere\u0027s already two retry mechanisms in the source tree, these should be leveraged.",
+      "revId": "bdc4029d5be5badf9f08500db438fcc9200ed5ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
