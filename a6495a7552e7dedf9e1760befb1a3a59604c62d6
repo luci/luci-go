@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "18045d41_ac8d0244",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-26T23:41:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aab78bd7_d87e420a",
+      "range": {
+        "startLine": 290,
+        "startChar": 0,
+        "endLine": 305,
+        "endChar": 4
+      },
+      "revId": "a6495a7552e7dedf9e1760befb1a3a59604c62d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7aa347ec_d11de1b2",
         "filename": "machine-db/appengine/rpc/vms.go",
         "patchSetId": 1
@@ -56,6 +80,24 @@
       "revId": "a6495a7552e7dedf9e1760befb1a3a59604c62d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3efbc1a3_b66443c4",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-26T23:41:49Z",
+      "side": 1,
+      "message": "Will add this validation elsewhere.",
+      "parentUuid": "7aa347ec_d11de1b2",
+      "revId": "a6495a7552e7dedf9e1760befb1a3a59604c62d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
