@@ -79,6 +79,30 @@
       "revId": "a6495a7552e7dedf9e1760befb1a3a59604c62d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03e87423_4fe9a6ee",
+        "filename": "machine-db/client/cli/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-02-26T23:35:21Z",
+      "side": 1,
+      "message": "In practice hostnames are globally unique because the hostname convention users use (sort of) encodes VLAN information.\n\nI was considering making VLAN optional unless it\u0027s necessary to disambiguate (i.e. if \u003e 1 host matches, don\u0027t modify them all, err instead).",
+      "parentUuid": "34c03bf5_2e706611",
+      "range": {
+        "startLine": 128,
+        "startChar": 37,
+        "endLine": 128,
+        "endChar": 41
+      },
+      "revId": "a6495a7552e7dedf9e1760befb1a3a59604c62d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
