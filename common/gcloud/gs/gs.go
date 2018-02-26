@@ -48,6 +48,9 @@ var (
 type Client interface {
 	io.Closer
 
+	// Attrs retrieves Object attributes for a given path.
+	Attrs(p Path) (*gs.ObjectAttrs, error)
+
 	// NewReader instantiates a new Reader instance for the named bucket/path.
 	//
 	// The supplied offset must be >= 0, or else this function will panic.
@@ -117,6 +120,14 @@ func (c *prodClient) NewWriter(p Path) (Writer, error) {
 		bucket:  bucket,
 		relpath: filename,
 	}, nil
+}
+
+func (c *prodClient) Attrs(p Path) (*gs.ObjectAttrs, error) {
+	obj, err := c.handleForPath(p)
+	if err != nil {
+		return nil, err
+	}
+	return obj.Attrs(c)
 }
 
 func (c *prodClient) NewReader(p Path, offset, length int64) (io.ReadCloser, error) {
