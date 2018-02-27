@@ -186,36 +186,44 @@ func TestRowsFromSrc(t *testing.T) {
 		desc    string
 		src     interface{}
 		wantLen int
+		wantErr bool
 	}{
 		{
 			desc:    "accepts pointers to structs which implement proto.Message",
 			src:     &testdata.TestMessage{},
 			wantLen: 1,
+			wantErr: false,
 		},
-		// TODO: when proto transition is complete, change to does not accept
 		{
-			desc:    "accepts structs",
-			src:     testdata.TestMessage{},
-			wantLen: 1,
+			desc:    "does not accept structs",
+			src:     fakeEvent{},
+			wantLen: 0,
+			wantErr: true,
 		},
-		// TODO: when proto transition is complete, change to does not accept
 		{
-			desc:    "accepts pointers to structs which do not implement proto.Message",
+			desc:    "does not accept pointers to structs which do not implement proto.Message",
 			src:     &fakeEvent{},
-			wantLen: 1,
+			wantLen: 0,
+			wantErr: true,
 		},
 		{
 			desc:    "accepts slices of structs which implement proto.Message",
 			src:     []*testdata.TestMessage{{}, {}},
 			wantLen: 2,
+			wantErr: false,
 		},
 	}
 
 	Convey("test rowsFromSrc()", t, func() {
 		for _, tc := range tcs {
 			Convey(tc.desc, func() {
-				r, _ := rowsFromSrc(tc.src)
+				r, err := rowsFromSrc(tc.src)
 				So(r, ShouldHaveLength, tc.wantLen)
+				if tc.wantErr {
+					So(err, ShouldNotBeNil)
+				} else {
+					So(err, ShouldBeNil)
+				}
 			})
 		}
 	})
@@ -264,13 +272,12 @@ func TestBatch(t *testing.T) {
 
 	Convey("Test batch", t, func() {
 		rowLimit := 2
-		// TODO: when proto transition is complete, use *Rows, not ValueSavers
-		rows := make([]bigquery.ValueSaver, 3)
+		rows := make([]*Row, 3)
 		for i := 0; i < 3; i++ {
 			rows[i] = &Row{}
 		}
 
-		want := [][]bigquery.ValueSaver{
+		want := [][]*Row{
 			{
 				&Row{},
 				&Row{},
