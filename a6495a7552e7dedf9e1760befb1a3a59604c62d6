@@ -163,6 +163,30 @@
       "revId": "a6495a7552e7dedf9e1760befb1a3a59604c62d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23a6c047_a3f3f5fe",
+        "filename": "machine-db/client/cli/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-27T00:09:04Z",
+      "side": 1,
+      "message": "what was the conclusion of the consideration?",
+      "parentUuid": "03e87423_4fe9a6ee",
+      "range": {
+        "startLine": 128,
+        "startChar": 37,
+        "endLine": 128,
+        "endChar": 41
+      },
+      "revId": "a6495a7552e7dedf9e1760befb1a3a59604c62d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
