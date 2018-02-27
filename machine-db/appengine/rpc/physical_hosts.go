@@ -159,7 +159,10 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 		Where("i.hostname_id = h.id")
 	stmt = selectInString(stmt, "h.name", req.Names)
 	stmt = selectInInt64(stmt, "v.id", req.Vlans)
+	stmt = selectInString(stmt, "m.name", req.Machines)
+	stmt = selectInString(stmt, "o.name", req.Oses)
 	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
+	stmt = selectInState(stmt, "m.state", req.States)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())

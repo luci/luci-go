@@ -46,7 +46,12 @@ message ListPhysicalHostsRequest {
   repeated int64 vlans = 2;
   // The IPv4 addresses to filter returned hosts on.
   repeated string ipv4s = 3;
-  // TODO(smut): Add the rest of the filters.
+  // The machines to filter retrieved hosts on.
+  repeated string machines = 4;
+  // The operating systems to filter retrieved hosts on.
+  repeated string oses = 5;
+  // The states to filter retrieved hosts on.
+  repeated common.State states = 6;
 }
 
 // A response containing a list of physical hosts in the database.
