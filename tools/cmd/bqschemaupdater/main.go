@@ -54,6 +54,7 @@ type tableDef struct {
 	Description            string
 	PartitioningDisabled   bool
 	PartitioningExpiration time.Duration
+	PartitioningField      string
 	Schema                 bigquery.Schema
 }
 
@@ -86,6 +87,7 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 		if !td.PartitioningDisabled {
 			md.TimePartitioning = &bigquery.TimePartitioning{
 				Expiration: td.PartitioningExpiration,
+				Field:      td.PartitioningField,
 			}
 		}
 		err := ts.createTable(ctx, td.DataSetID, td.TableID, md)
@@ -138,6 +140,7 @@ func parseFlags() (*flags, error) {
 	var f flags
 	table := flag.String("table", "", `Table name with format "<project id>.<dataset id>.<table id>"`)
 	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table.")
+	flag.StringVar(&f.PartitioningField, "partitioning-field", "", "Name of a timestamp field to use for table partitioning (beta).")
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned.")
 	flag.DurationVar(&f.PartitioningExpiration, "partition-expiration", 0, "Expiration for partitions. 0 for no expiration.")
 	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message.")
@@ -159,6 +162,8 @@ func parseFlags() (*flags, error) {
 		return nil, fmt.Errorf("-table is required")
 	case f.messageName == "":
 		return nil, fmt.Errorf("-message is required (the name must contain the proto package name)")
+	case f.PartitioningField != "" && f.PartitioningDisabled:
+		return nil, fmt.Errorf("partitioning field cannot be non-empty with disabled partitioning")
 	}
 	if parts := strings.Split(*table, "."); len(parts) == 3 {
 		f.ProjectID = parts[0]
