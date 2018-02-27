@@ -82,17 +82,17 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 		logging.Infof(c, "No configuration was found for this builder, ignoring...")
 		return nil
 	}
-
 	gCommit := getCommitBuildSet(build.BuildSets)
-	if gCommit == nil {
-		logging.Infof(c, "No revision information found for this build, ignoring...")
-		return nil
-	}
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builder := &Builder{ID: builderID}
 	switch err := datastore.Get(c, builder); {
-	case err == datastore.ErrNoSuchEntity:
+	case err == datastore.ErrNoSuchEntity || builder.StatusRevision == "" || gCommit == nil:
+		// If we don't have revision information, use the empty string explicitly.
+		revision := ""
+		if gCommit != nil {
+			revision = gCommit.Revision
+		}
 		// If the Builder isn't found, start a transaction and try to store
 		// the builder for the first time.
 		keepGoing := false
@@ -105,15 +105,28 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 					return err
 				}
 				// Initialize the Builder in the datastore.
-				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build)); err != nil {
+				return datastore.Put(c, NewBuilder(builderID, revision, build))
+			case err == nil && (builder.StatusRevision == "" || gCommit == nil):
+				// Since we don't have revision information for at least one of the builders, check
+				// ordering using build time first.
+				if builder.StatusBuildTime.After(build.CreationTime) {
+					logging.Debugf(c, "Found build with an old time.")
+					return nil
+				}
+				// If we have no previous revision information, and the build is in order with
+				// respect to build creation time, let's notify, update the datastore, and end here.
+				if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
 					return err
 				}
-				return nil
+				// Update the builder in the datastore. This will "upgrade" a builder to having
+				// revision information if it was found, or it will "downgrade" a builder to
+				// having no revision information.
+				return datastore.Put(c, NewBuilder(builderID, revision, build))
 			case err != nil:
 				return err
 			}
-			// If we actually managed to get a Builder, we should continue with the
-			// full code path.
+			// If we actually managed to get a Builder, and we have revision information for
+			// it, we should continue with the full code path.
 			keepGoing = true
 			return nil
 		}, nil)
@@ -123,6 +136,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 	case err != nil:
 		return err
 	}
+	// gCommit at this point is guaranteed to be non-nil.
 
 	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
 	commits, err := history(c, gCommit.RepoURL(), builder.StatusRevision, gCommit.Revision)

@@ -100,7 +100,7 @@ func TestHandleBuild(t *testing.T) {
 			So(builder.StatusRevision, ShouldResemble, revision)
 			So(builder.Status, ShouldEqual, build.Status)
 		}
-
+		
 		grepLog := func(substring string) {
 			buf := new(bytes.Buffer)
 			_, err := memlogger.Dump(c, buf)
@@ -114,15 +114,49 @@ func TestHandleBuild(t *testing.T) {
 			grepLog("configuration")
 		})
 
-		Convey(`no revision`, func() {
+		Convey(`init builder no revision`, func() {
 			build := testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)
-			testSuccess(build)
-			grepLog("revision")
+			testSuccess(build, "test-example-success@google.com")
+			verifyBuilder(build, "")
 		})
 
 		Convey(`init builder`, func() {
 			build := pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, oldTime, rev1)
 			testSuccess(build, "test-example-failure@google.com")
+			verifyBuilder(build, rev1)
+		})
+
+		Convey(`downgrade to no revision`, func() {
+			build := pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, oldTime, rev1)
+			testSuccess(build, "test-example-failure@google.com")
+			verifyBuilder(build, rev1)
+
+			build = testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)
+			build.CreationTime = newTime
+			testSuccess(build, "test-example-change@google.com", "test-example-success@google.com")
+			verifyBuilder(build, "")
+		})
+
+		Convey(`upgrade to revision`, func() {
+			build := testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)
+			build.CreationTime = oldTime
+			testSuccess(build, "test-example-success@google.com")
+			verifyBuilder(build, "")
+
+			build = pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, newTime, rev1)
+			testSuccess(build, "test-example-change@google.com", "test-example-failure@google.com")
+			verifyBuilder(build, rev1)
+		})
+
+		Convey(`downgrade to no revision out-of-order`, func() {
+			build := pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, newTime, rev1)
+			testSuccess(build, "test-example-failure@google.com")
+			verifyBuilder(build, rev1)
+
+			build2 := testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)
+			build2.CreationTime = oldTime
+			testSuccess(build2)
+			grepLog("old time")
 			verifyBuilder(build, rev1)
 		})
 
