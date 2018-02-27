@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "60c1da58_8b3b8fd0",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 563,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-27T23:23:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba6275a9_fcaedf67",
+      "range": {
+        "startLine": 563,
+        "startChar": 18,
+        "endLine": 563,
+        "endChar": 22
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9498caf_aaa6f0ca",
         "filename": "milo/common/config.go",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a1f3e3d_a13608b3",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 569,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-27T23:23:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9498caf_aaa6f0ca",
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,54 @@
     },
     {
       "key": {
+        "uuid": "1e7bf18c_d89eed8d",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-27T23:23:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2200ebe_4d6846d1",
+      "range": {
+        "startLine": 574,
+        "startChar": 3,
+        "endLine": 574,
+        "endChar": 11
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ee4cf682_a54ce141",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 574,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-27T23:23:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17bc6869_50001d21",
+      "range": {
+        "startLine": 574,
+        "startChar": 12,
+        "endLine": 574,
+        "endChar": 30
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f59669d_8b68a553",
         "filename": "milo/common/config.go",
         "patchSetId": 4
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "c31082ea_403e2909",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-27T23:23:45Z",
+      "side": 1,
+      "message": "Rewrote",
+      "parentUuid": "6f59669d_8b68a553",
+      "range": {
+        "startLine": 575,
+        "startChar": 3,
+        "endLine": 575,
+        "endChar": 7
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2bf866bd_7d66acae",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 4
@@ -131,6 +245,30 @@
       "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b6ecf4e_16d34d80",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-27T23:23:45Z",
+      "side": 1,
+      "message": "I\u0027d agree and think that would make much more sense.  Thats a refactor that would make sense in a different CL though.",
+      "parentUuid": "2bf866bd_7d66acae",
+      "range": {
+        "startLine": 77,
+        "startChar": 52,
+        "endLine": 80,
+        "endChar": 2
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
