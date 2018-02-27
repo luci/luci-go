@@ -191,8 +191,8 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 
 		Convey("DeployInstance new non-empty package instance", func() {
 			inst := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a", false),
-				NewTestFile("some/executable", "data b", true),
+				NewTestFile("some/file/path", "data a", TestFileOpts{}),
+				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 				NewTestSymlink("some/symlink", "executable"),
 			}, InstallModeSymlink)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
@@ -256,8 +256,8 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 
 		Convey("Redeploy same package instance", func() {
 			inst := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a", false),
-				NewTestFile("some/executable", "data b", true),
+				NewTestFile("some/file/path", "data a", TestFileOpts{}),
+				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 				NewTestSymlink("some/symlink", "executable"),
 			}, InstallModeSymlink)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
@@ -310,12 +310,12 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 
 		Convey("DeployInstance package update", func() {
 			oldPkg := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a old", false),
-				NewTestFile("some/executable", "data b old", true),
-				NewTestFile("some/to-be-empty-dir/file", "data", false),
-				NewTestFile("old only", "data c old", true),
-				NewTestFile("mode change 1", "data d", true),
-				NewTestFile("mode change 2", "data e", false),
+				NewTestFile("some/file/path", "data a old", TestFileOpts{}),
+				NewTestFile("some/executable", "data b old", TestFileOpts{Executable: true}),
+				NewTestFile("some/to-be-empty-dir/file", "data", TestFileOpts{}),
+				NewTestFile("old only", "data c old", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 1", "data d", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 2", "data e", TestFileOpts{}),
 				NewTestSymlink("symlink unchanged", "target"),
 				NewTestSymlink("symlink changed", "old target"),
 				NewTestSymlink("symlink removed", "target"),
@@ -323,10 +323,10 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 			oldPkg.instanceID = "0000000000000000000000000000000000000000"
 
 			newPkg := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a new", false),
-				NewTestFile("some/executable", "data b new", true),
-				NewTestFile("mode change 1", "data d", false),
-				NewTestFile("mode change 2", "data d", true),
+				NewTestFile("some/file/path", "data a new", TestFileOpts{}),
+				NewTestFile("some/executable", "data b new", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 1", "data d", TestFileOpts{}),
+				NewTestFile("mode change 2", "data d", TestFileOpts{Executable: true}),
 				NewTestSymlink("symlink unchanged", "target"),
 				NewTestSymlink("symlink changed", "new target"),
 			}, InstallModeSymlink)
@@ -400,17 +400,17 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 
 		Convey("DeployInstance two different packages", func() {
 			pkg1 := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a old", false),
-				NewTestFile("some/executable", "data b old", true),
-				NewTestFile("pkg1 file", "data c", false),
+				NewTestFile("some/file/path", "data a old", TestFileOpts{}),
+				NewTestFile("some/executable", "data b old", TestFileOpts{Executable: true}),
+				NewTestFile("pkg1 file", "data c", TestFileOpts{}),
 			}, InstallModeSymlink)
 			pkg1.instanceID = "0000000000000000000000000000000000000000"
 
 			// Nesting in package names is allowed.
 			pkg2 := makeTestInstance("test/package/another", []File{
-				NewTestFile("some/file/path", "data a new", false),
-				NewTestFile("some/executable", "data b new", true),
-				NewTestFile("pkg2 file", "data d", false),
+				NewTestFile("some/file/path", "data a new", TestFileOpts{}),
+				NewTestFile("some/executable", "data b new", TestFileOpts{Executable: true}),
+				NewTestFile("pkg2 file", "data d", TestFileOpts{}),
 			}, InstallModeSymlink)
 			pkg2.instanceID = "1111111111111111111111111111111111111111"
 
@@ -533,8 +533,8 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 
 		Convey("DeployInstance new non-empty package instance", func() {
 			inst := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a", false),
-				NewTestFile("some/executable", "data b", true),
+				NewTestFile("some/file/path", "data a", TestFileOpts{}),
+				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 				NewTestSymlink("some/symlink", "executable"),
 			}, InstallModeCopy)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
@@ -572,8 +572,8 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 
 		Convey("Redeploy same package instance", func() {
 			inst := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a", false),
-				NewTestFile("some/executable", "data b", true),
+				NewTestFile("some/file/path", "data a", TestFileOpts{}),
+				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 				NewTestSymlink("some/symlink", "executable"),
 			}, InstallModeCopy)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
@@ -617,12 +617,12 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 
 		Convey("DeployInstance package update", func() {
 			oldPkg := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a old", false),
-				NewTestFile("some/executable", "data b old", true),
-				NewTestFile("some/to-be-empty-dir/file", "data", false),
-				NewTestFile("old only", "data c old", true),
-				NewTestFile("mode change 1", "data d", true),
-				NewTestFile("mode change 2", "data e", false),
+				NewTestFile("some/file/path", "data a old", TestFileOpts{}),
+				NewTestFile("some/executable", "data b old", TestFileOpts{Executable: true}),
+				NewTestFile("some/to-be-empty-dir/file", "data", TestFileOpts{}),
+				NewTestFile("old only", "data c old", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 1", "data d", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 2", "data e", TestFileOpts{}),
 				NewTestSymlink("symlink unchanged", "target"),
 				NewTestSymlink("symlink changed", "old target"),
 				NewTestSymlink("symlink removed", "target"),
@@ -630,10 +630,10 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 			oldPkg.instanceID = "0000000000000000000000000000000000000000"
 
 			newPkg := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a new", false),
-				NewTestFile("some/executable", "data b new", true),
-				NewTestFile("mode change 1", "data d", false),
-				NewTestFile("mode change 2", "data d", true),
+				NewTestFile("some/file/path", "data a new", TestFileOpts{}),
+				NewTestFile("some/executable", "data b new", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 1", "data d", TestFileOpts{}),
+				NewTestFile("mode change 2", "data d", TestFileOpts{Executable: true}),
 				NewTestSymlink("symlink unchanged", "target"),
 				NewTestSymlink("symlink changed", "new target"),
 			}, InstallModeCopy)
@@ -689,17 +689,17 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 
 		Convey("DeployInstance two different packages", func() {
 			pkg1 := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a old", false),
-				NewTestFile("some/executable", "data b old", true),
-				NewTestFile("pkg1 file", "data c", false),
+				NewTestFile("some/file/path", "data a old", TestFileOpts{}),
+				NewTestFile("some/executable", "data b old", TestFileOpts{Executable: true}),
+				NewTestFile("pkg1 file", "data c", TestFileOpts{}),
 			}, InstallModeCopy)
 			pkg1.instanceID = "0000000000000000000000000000000000000000"
 
 			// Nesting in package names is allowed.
 			pkg2 := makeTestInstance("test/package/another", []File{
-				NewTestFile("some/file/path", "data a new", false),
-				NewTestFile("some/executable", "data b new", true),
-				NewTestFile("pkg2 file", "data d", false),
+				NewTestFile("some/file/path", "data a new", TestFileOpts{}),
+				NewTestFile("some/executable", "data b new", TestFileOpts{Executable: true}),
+				NewTestFile("pkg2 file", "data d", TestFileOpts{}),
 			}, InstallModeCopy)
 			pkg2.instanceID = "1111111111111111111111111111111111111111"
 
@@ -805,8 +805,8 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 
 		Convey("DeployInstance new non-empty package instance", func() {
 			inst := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a", false),
-				NewTestFile("some/executable", "data b", true),
+				NewTestFile("some/file/path", "data a", TestFileOpts{}),
+				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 			}, InstallModeCopy)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
@@ -846,8 +846,8 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 
 		Convey("Redeploy same package instance", func() {
 			inst := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a", false),
-				NewTestFile("some/executable", "data b", true),
+				NewTestFile("some/file/path", "data a", TestFileOpts{}),
+				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 			}, InstallModeCopy)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
@@ -893,20 +893,20 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 
 		Convey("DeployInstance package update", func() {
 			oldPkg := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a old", false),
-				NewTestFile("some/executable", "data b old", true),
-				NewTestFile("some/to-be-empty-dir/file", "data", false),
-				NewTestFile("old only", "data c old", true),
-				NewTestFile("mode change 1", "data d", true),
-				NewTestFile("mode change 2", "data e", false),
+				NewTestFile("some/file/path", "data a old", TestFileOpts{}),
+				NewTestFile("some/executable", "data b old", TestFileOpts{Executable: true}),
+				NewTestFile("some/to-be-empty-dir/file", "data", TestFileOpts{}),
+				NewTestFile("old only", "data c old", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 1", "data d", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 2", "data e", TestFileOpts{}),
 			}, InstallModeCopy)
 			oldPkg.instanceID = "0000000000000000000000000000000000000000"
 
 			newPkg := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a new", false),
-				NewTestFile("some/executable", "data b new", true),
-				NewTestFile("mode change 1", "data d", false),
-				NewTestFile("mode change 2", "data d", true),
+				NewTestFile("some/file/path", "data a new", TestFileOpts{}),
+				NewTestFile("some/executable", "data b new", TestFileOpts{Executable: true}),
+				NewTestFile("mode change 1", "data d", TestFileOpts{}),
+				NewTestFile("mode change 2", "data d", TestFileOpts{Executable: true}),
 			}, InstallModeCopy)
 			newPkg.instanceID = "1111111111111111111111111111111111111111"
 
@@ -960,17 +960,17 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 
 		Convey("DeployInstance two different packages", func() {
 			pkg1 := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path", "data a old", false),
-				NewTestFile("some/executable", "data b old", true),
-				NewTestFile("pkg1 file", "data c", false),
+				NewTestFile("some/file/path", "data a old", TestFileOpts{}),
+				NewTestFile("some/executable", "data b old", TestFileOpts{Executable: true}),
+				NewTestFile("pkg1 file", "data c", TestFileOpts{}),
 			}, InstallModeCopy)
 			pkg1.instanceID = "0000000000000000000000000000000000000000"
 
 			// Nesting in package names is allowed.
 			pkg2 := makeTestInstance("test/package/another", []File{
-				NewTestFile("some/file/path", "data a new", false),
-				NewTestFile("some/executable", "data b new", true),
-				NewTestFile("pkg2 file", "data d", false),
+				NewTestFile("some/file/path", "data a new", TestFileOpts{}),
+				NewTestFile("some/executable", "data b new", TestFileOpts{Executable: true}),
+				NewTestFile("pkg2 file", "data d", TestFileOpts{}),
 			}, InstallModeCopy)
 			pkg2.instanceID = "1111111111111111111111111111111111111111"
 
@@ -1048,8 +1048,8 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 		tempDir := mkTempDir()
 
 		files := []File{
-			NewTestFile("some/file/path", "data a", false),
-			NewTestFile("some/executable", "data b", true),
+			NewTestFile("some/file/path", "data a", TestFileOpts{}),
+			NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 			NewTestSymlink("some/symlink", "executable"),
 		}
 
@@ -1262,17 +1262,17 @@ func TestRemoveDeployedPosix(t *testing.T) {
 
 			// Deploy some instance (to keep it).
 			inst := makeTestInstance("test/package/123", []File{
-				NewTestFile("some/file/path1", "data a", false),
-				NewTestFile("some/executable1", "data b", true),
+				NewTestFile("some/file/path1", "data a", TestFileOpts{}),
+				NewTestFile("some/executable1", "data b", TestFileOpts{Executable: true}),
 			}, InstallModeCopy)
 			_, err := d.DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 
 			// Deploy another instance (to remove it).
 			inst2 := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path2", "data a", false),
-				NewTestFile("some/to-be-empty-dir/file", "data", false),
-				NewTestFile("some/executable2", "data b", true),
+				NewTestFile("some/file/path2", "data a", TestFileOpts{}),
+				NewTestFile("some/to-be-empty-dir/file", "data", TestFileOpts{}),
+				NewTestFile("some/executable2", "data b", TestFileOpts{Executable: true}),
 				NewTestSymlink("some/symlink", "executable"),
 			}, InstallModeCopy)
 			_, err = d.DeployInstance(ctx, "", inst2)
@@ -1343,17 +1343,17 @@ func TestRemoveDeployedWindows(t *testing.T) {
 
 			// Deploy some instance (to keep it).
 			inst := makeTestInstance("test/package/123", []File{
-				NewTestFile("some/file/path1", "data a", false),
-				NewTestFile("some/executable1", "data b", true),
+				NewTestFile("some/file/path1", "data a", TestFileOpts{}),
+				NewTestFile("some/executable1", "data b", TestFileOpts{Executable: true}),
 			}, InstallModeCopy)
 			_, err := d.DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 
 			// Deploy another instance (to remove it).
 			inst2 := makeTestInstance("test/package", []File{
-				NewTestFile("some/file/path2", "data a", false),
-				NewTestFile("some/executable2", "data b", true),
-				NewTestFile("some/to-be-empty-dir/file", "data", false),
+				NewTestFile("some/file/path2", "data a", TestFileOpts{}),
+				NewTestFile("some/executable2", "data b", TestFileOpts{Executable: true}),
+				NewTestFile("some/to-be-empty-dir/file", "data", TestFileOpts{}),
 			}, InstallModeCopy)
 			_, err = d.DeployInstance(ctx, "", inst2)
 			So(err, ShouldBeNil)
@@ -1555,7 +1555,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 			return NewTestFile(
 				fmt.Sprintf(".cipd/pkgs/%s/description.json", pkgFolder),
 				fmt.Sprintf(`{"subdir": %q, "package_name": %q}`, subdir, packageName),
-				false,
+				TestFileOpts{},
 			)
 		}
 		resolve := func() (numSet, map[Description]string) {
@@ -1600,7 +1600,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 
 		Convey("bogus file", func() {
 			writeFiles(
-				NewTestFile(".cipd/pkgs/wat", "hello", false),
+				NewTestFile(".cipd/pkgs/wat", "hello", TestFileOpts{}),
 			)
 			nums, all := resolve()
 			So(nums, ShouldResemble, numSet(nil))
@@ -1610,7 +1610,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 
 		Convey("bad description.json", func() {
 			writeFiles(
-				NewTestFile(".cipd/pkgs/0/description.json", "hello", false),
+				NewTestFile(".cipd/pkgs/0/description.json", "hello", TestFileOpts{}),
 			)
 			nums, all := resolve()
 			So(nums, ShouldResemble, numSet(nil))
@@ -1620,7 +1620,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 
 		Convey("package with no manifest", func() {
 			writeFiles(
-				NewTestFile(".cipd/pkgs/0/deadbeef/something", "hello", false),
+				NewTestFile(".cipd/pkgs/0/deadbeef/something", "hello", TestFileOpts{}),
 				NewTestSymlink(".cipd/pkgs/0/_current", "deadbeef"),
 			)
 			nums, all := resolve()
@@ -1632,12 +1632,12 @@ func TestResolveValidPackageDirs(t *testing.T) {
 		Convey("package with manifest", func() {
 			curLink := NewTestSymlink(".cipd/pkgs/oldskool/_current", "0123456789abcdef00000123456789abcdef0000")
 			if runtime.GOOS == "windows" {
-				curLink = NewTestFile(".cipd/pkgs/oldskool/_current.txt", "0123456789abcdef00000123456789abcdef0000", false)
+				curLink = NewTestFile(".cipd/pkgs/oldskool/_current.txt", "0123456789abcdef00000123456789abcdef0000", TestFileOpts{})
 			}
 			writeFiles(
-				NewTestFile(".cipd/pkgs/oldskool/0123456789abcdef00000123456789abcdef0000/something", "hello", false),
+				NewTestFile(".cipd/pkgs/oldskool/0123456789abcdef00000123456789abcdef0000/something", "hello", TestFileOpts{}),
 				NewTestFile(".cipd/pkgs/oldskool/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
-					`{"format_version": "1", "package_name": "cool/cats"}`, false),
+					`{"format_version": "1", "package_name": "cool/cats"}`, TestFileOpts{}),
 				curLink,
 			)
 			nums, all := resolve()
@@ -1753,7 +1753,7 @@ func makeTestInstance(name string, files []File, installMode InstallMode) *testP
 	if err != nil {
 		panic("Failed to write a manifest")
 	}
-	files = append(files, NewTestFile(manifestName, string(out.Bytes()), false))
+	files = append(files, NewTestFile(manifestName, string(out.Bytes()), TestFileOpts{}))
 	return &testPackageInstance{
 		packageName: name,
 		instanceID:  "0123456789abcdef00000123456789abcdef0000",

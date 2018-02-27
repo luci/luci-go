@@ -43,11 +43,12 @@ const (
 	// compare it to the given instanceID.
 	VerifyHash VerificationMode = 0
 
-	// SkipVerification instructs OpenPackage to skip the hash verification and
-	// trust that the given instanceID matches the package.
+	// SkipHashVerification instructs OpenPackage to skip the hash verification
+	// and trust that the given instanceID matches the package.
 	SkipHashVerification VerificationMode = 1
 )
 
+// ErrHashMismatch is an error when package hash doesn't match.
 var ErrHashMismatch = errors.New("package hash mismatch")
 
 // PackageInstance represents a binary CIPD package file (with manifest inside).
@@ -180,7 +181,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 			}
 			manifest.Files = append(manifest.Files, fi)
 		}
-		out, err := dest.CreateFile(ctx, f.Name(), false, 0)
+		out, err := dest.CreateFile(ctx, f.Name(), CreateFileOptions{})
 		if err != nil {
 			return err
 		}
@@ -203,7 +204,12 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 
 	extractRegularFile := func(f File) (err error) {
 		defer progress.advance(f)
-		out, err := dest.CreateFile(ctx, f.Name(), f.Executable(), f.WinAttrs())
+		out, err := dest.CreateFile(ctx, f.Name(), CreateFileOptions{
+			Executable: f.Executable(),
+			Writable:   f.Writable(),
+			ModTime:    f.ModTime(),
+			WinAttrs:   f.WinAttrs(),
+		})
 		if err != nil {
 			return err
 		}
@@ -511,6 +517,8 @@ type blobFile struct {
 func (b *blobFile) Name() string                   { return b.name }
 func (b *blobFile) Size() uint64                   { return uint64(len(b.blob)) }
 func (b *blobFile) Executable() bool               { return false }
+func (b *blobFile) Writable() bool                 { return false }
+func (b *blobFile) ModTime() time.Time             { var t time.Time; return t }
 func (b *blobFile) Symlink() bool                  { return false }
 func (b *blobFile) SymlinkTarget() (string, error) { return "", nil }
 func (b *blobFile) WinAttrs() WinAttrs             { return 0 }
@@ -552,6 +560,18 @@ func (f *fileInZip) Executable() bool {
 		return false
 	}
 	return (f.z.Mode() & 0100) != 0
+}
+
+func (f *fileInZip) Writable() bool {
+	return (f.z.Mode() & 0400) != 0
+}
+
+func (f *fileInZip) ModTime() time.Time {
+	var t time.Time
+	if f.z.ModifiedTime != 0 {
+		t = f.z.ModTime()
+	}
+	return t
 }
 
 func (f *fileInZip) Size() uint64 {
