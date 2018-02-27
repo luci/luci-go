@@ -244,9 +244,8 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	})
 }
 
-// GetAllBuilders returns a resp.Module object containing all known masters
-// and builders.
-func GetAllBuilders(c context.Context) (*ui.CIService, error) {
+// CIService returns a *ui.CIService containing all known masters and builders.
+func CIService(c context.Context) (*ui.CIService, error) {
 	result := &ui.CIService{Name: "Buildbot"}
 	masters, err := buildstore.AllMasters(c, true)
 	if err != nil {

@@ -41,29 +41,27 @@ var openSearchXML = `<?xml version="1.0" encoding="UTF-8"?>
 </OpenSearchDescription>`
 
 func searchHandler(c *router.Context) {
-	s := ui.Search{}
-	var mBuildbot, mBuildbucket *ui.CIService
-
+	var buildbotService, buildbucketService *ui.CIService
 	err := parallel.FanOutIn(func(ch chan<- func() error) {
 		ch <- func() (err error) {
-			mBuildbot, err = buildbot.GetAllBuilders(c.Context)
-			return err
+			buildbotService, err = buildbot.CIService(c.Context)
+			return
 		}
 		ch <- func() (err error) {
-			mBuildbucket, err = buildbucket.GetAllBuilders(c.Context)
-			return err
+			buildbucketService, err = buildbucket.CIService(c.Context)
+			return
 		}
 	})
 
-	s.CIServices = append(s.CIServices, *mBuildbucket)
-	s.CIServices = append(s.CIServices, *mBuildbot)
 	errMsg := ""
 	if err != nil {
 		errMsg = err.Error()
 	}
 	templates.MustRender(c.Context, c.Writer, "pages/search.html", templates.Args{
-		"search": s,
-		"error":  errMsg,
+		"search": &ui.Search{
+			CIServices: []ui.CIService{*buildbucketService, *buildbotService},
+		},
+		"error": errMsg,
 	})
 }
 

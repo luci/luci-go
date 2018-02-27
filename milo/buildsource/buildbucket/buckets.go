@@ -15,33 +15,81 @@
 package buildbucket
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
+
+	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
-func GetAllBuilders(c context.Context) (*ui.CIService, error) {
-	settings := common.GetSettings(c)
-	bucketSettings := settings.Buildbucket
-	if bucketSettings == nil {
-		return nil, errors.New("buildbucket settings missing in config")
+// GetBuilders returns all Swarmbucket builders, cached for current identity.
+func GetBuilders(c context.Context) (*swarmbucket.SwarmingSwarmbucketApiGetBuildersResponseMessage, error) {
+	host := common.GetSettings(c).GetBuildbucket().GetHost()
+	if host == "" {
+		return nil, errors.New("buildbucket host is missing in config")
 	}
-	result := &ui.CIService{
-		Name: "LUCI",
-		Host: ui.NewLink(bucketSettings.Name, "https://"+bucketSettings.Host,
-			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
+	return getBuilders(c, host)
+}
+
+func getBuilders(c context.Context, host string) (*swarmbucket.SwarmingSwarmbucketApiGetBuildersResponseMessage, error) {
+	mc := memcache.NewItem(c, fmt.Sprintf("swarmbucket-builders-%q-%q", host, auth.CurrentIdentity(c)))
+	switch err := memcache.Get(c, mc); {
+	case err == memcache.ErrCacheMiss:
+	case err != nil:
+		logging.WithError(err).Warningf(c, "memcache.get failed while loading swarmbucket builders")
+	default:
+		var res swarmbucket.SwarmingSwarmbucketApiGetBuildersResponseMessage
+		if err := json.Unmarshal(mc.Value(), &res); err != nil {
+			logging.WithError(err).Warningf(c, "corrupted swarmbucket builders cache")
+		} else {
+			return &res, nil
+		}
 	}
-	client, err := newSwarmbucketClient(c, bucketSettings.Host)
+
+	client, err := newSwarmbucketClient(c, host)
 	if err != nil {
 		return nil, err
 	}
 	// TODO(hinoka): Retries for transient errors
-	r, err := client.GetBuilders().Do()
+	res, err := client.GetBuilders().Do()
+	if err != nil {
+		return nil, err
+	}
+
+	if data, err := json.Marshal(res); err == nil {
+		mc.SetValue(data).SetExpiration(10 * time.Minute)
+		if err := memcache.Set(c, mc); err != nil {
+			logging.WithError(err).Warningf(c, "failed to cache swarmbucket builders")
+		}
+	}
+
+	return res, nil
+}
+
+// CIService returns a *ui.CIService containing all known buckets and builders.
+func CIService(c context.Context) (*ui.CIService, error) {
+	bucketSettings := common.GetSettings(c).GetBuildbucket()
+	host := bucketSettings.GetHost()
+	if host == "" {
+		return nil, errors.New("buildbucket host is missing in config")
+	}
+	result := &ui.CIService{
+		Name: "LUCI",
+		Host: ui.NewLink(bucketSettings.Name, "https://"+host,
+			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
+	}
+
+	r, err := getBuilders(c, host)
 	if err != nil {
 		return nil, err
 	}

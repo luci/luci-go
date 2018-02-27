@@ -44,7 +44,7 @@ func TestMaster(t *testing.T) {
 		}, true, nil), ShouldBeNil)
 
 		Convey(`GetAllBuilders()`, func() {
-			cs, err := GetAllBuilders(c)
+			cs, err := CIService(c)
 			So(err, ShouldBeNil)
 			So(len(cs.BuilderGroups), ShouldEqual, 1)
 		})
