@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "425d0ef9_340a8dd7",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-27T00:34:44Z",
+      "side": 1,
+      "message": "I assume: if err \u003d memcache.Set()...",
+      "revId": "37ed022664a14f137f1c2572f4462eb09e0d4234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
