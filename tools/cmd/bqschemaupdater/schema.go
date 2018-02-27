@@ -216,7 +216,7 @@ func printSchema(w *indented.Writer, s bigquery.Schema) {
 			fmt.Fprint(w, "required ")
 		}
 
-		fmt.Fprint(w, f.Type, f.Name)
+		fmt.Fprintf(w, "%s %s", f.Type, f.Name)
 
 		if f.Type == bigquery.RecordFieldType {
 			fmt.Fprintln(w, " {")
