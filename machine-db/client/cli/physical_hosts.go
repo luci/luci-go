@@ -161,15 +161,17 @@ func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, en
 // getPhysicalHostsCmd returns a command to get physical hosts.
 func getPhysicalHostsCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-ipv4 <ip address>]...",
+		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-os <os>]... [-ipv4 <ip address>]... [-state <state>]...",
 		ShortDesc: "retrieves physical hosts",
 		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPhysicalHostsCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a physical host to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Oses), "os", "Name of an operating system to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Ipv4S), "ipv4", "IPv4 address to filter by. Can be specified multiple times.")
-			// TODO(smut): Add the other filters.
+			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
 			cmd.f.Register(cmd)
 			return cmd
 		},
