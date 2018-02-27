@@ -16,6 +16,24 @@
       "revId": "bdc4029d5be5badf9f08500db438fcc9200ed5ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4346121_6b83cec9",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-27T02:10:37Z",
+      "side": 1,
+      "message": "Done, and actually, the problem I really want to solve is just being able to collect indefinitely with some tolerance for transient errors. Wrapping the execution of fetchTaskResults in a retry.Retry() block solves that.",
+      "parentUuid": "d3954c68_f5a4293b",
+      "revId": "bdc4029d5be5badf9f08500db438fcc9200ed5ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
