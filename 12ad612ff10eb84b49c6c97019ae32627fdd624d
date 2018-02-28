@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "99da0bf7_c7400a18",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 572,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-28T23:04:16Z",
+      "side": 1,
+      "message": "validation",
+      "range": {
+        "startLine": 572,
+        "startChar": 27,
+        "endLine": 572,
+        "endChar": 37
+      },
+      "revId": "12ad612ff10eb84b49c6c97019ae32627fdd624d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

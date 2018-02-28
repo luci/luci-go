@@ -269,6 +269,30 @@
       "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33df3aea_682a9383",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-02-28T23:04:16Z",
+      "side": 1,
+      "message": "it is a refactor of the code that is being in this CL. Why would the refactor be in a different CL?",
+      "parentUuid": "9b6ecf4e_16d34d80",
+      "range": {
+        "startLine": 77,
+        "startChar": 52,
+        "endLine": 80,
+        "endChar": 2
+      },
+      "revId": "13ef9f6462c5dc3074ec7b6f915b2423ff89fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
