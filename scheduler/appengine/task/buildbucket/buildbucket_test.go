@@ -300,7 +300,7 @@ func TestTriggeredFlow(t *testing.T) {
 		So(ctl.Log, ShouldContain, "ignoring gitiles trigger 1")
 		// TODO(tandrii): refactor test and code s.t. we can test properties that were set.
 		So(ctl.Log[3], ShouldContainSubstring,
-			`\"properties\":{\"branch\":\"refs/heads/master\",\"revision\":\"deadbeef\"}}`)
+			`\"properties\":{\"branch\":\"refs/heads/master\",\"repository\":\"r.googlesource.com/repo\",\"revision\":\"deadbeef\"}}`)
 		So(ctl.Log[3], ShouldContainSubstring, "buildset:commit/gitiles/r.googlesource.com/repo/+/deadbeef")
 		So(ctl.Log[3], ShouldContainSubstring, "gitiles_ref:refs/heads/master")
 	})
