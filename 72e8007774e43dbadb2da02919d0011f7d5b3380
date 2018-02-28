@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4c2d498_63904373",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-28T01:50:27Z",
+      "side": 1,
+      "message": "this is the wrong place, this is fallback that I forgot to remove... It\u0027s not in use anymore. \n\nThe real place is https://github.com/luci/luci-go/blob/master/scheduler/appengine/engine/request.go#L149",
+      "range": {
+        "startLine": 187,
+        "startChar": 3,
+        "endLine": 187,
+        "endChar": 62
+      },
+      "revId": "72e8007774e43dbadb2da02919d0011f7d5b3380",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
