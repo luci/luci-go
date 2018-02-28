@@ -27,6 +27,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -375,18 +376,14 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 		}
 	}
 	if issue != -1 && patchset != -1 {
+		var cl buildbucket.BuildSet = nil
 		switch {
 		case rietveld != "":
-			rietveld = strings.TrimRight(rietveld, "/")
-			ss.Changelist = ui.NewLink(
-				fmt.Sprintf("Rietveld CL %d", issue),
-				fmt.Sprintf("%s/%d", rietveld, issue), "")
+			cl = &buildbucket.RietveldChange{strings.TrimRight(rietveld, "/"), issue, int(patchset)}
 		case gerrit != "":
-			gerrit = strings.TrimRight(gerrit, "/")
-			ss.Changelist = ui.NewLink(
-				fmt.Sprintf("Gerrit CL %d (ps#%d)", issue, patchset),
-				fmt.Sprintf("%s/c/%d/%d", gerrit, issue, patchset), "")
+			cl = &buildbucket.GerritChange{strings.TrimRight(gerrit, "/"), issue, int(patchset)}
 		}
+		ss.Changelist = ui.NewPatchLink(cl)
 	}
 
 	if gotRevision != "" {
