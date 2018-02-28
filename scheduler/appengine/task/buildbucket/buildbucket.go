@@ -184,6 +184,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		if t := maybeGetTrigger(c, ctl); t != nil {
 			props.Fields["revision"] = strProtoValue(t.revision)
 			props.Fields["branch"] = strProtoValue(t.ref)
+			props.Fields["repository"] = strProtoValue(t.repo.String())
 			tags = append(tags, "buildset:"+t.buildset(), "gitiles_ref:"+t.ref)
 		}
 	}
