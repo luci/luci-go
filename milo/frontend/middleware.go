@@ -15,9 +15,11 @@
 package frontend
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -44,19 +46,20 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
-	"faviconMIMEType": faviconMIMEType,
-	"formatTime":      formatTime,
-	"humanDuration":   humanDuration,
-	"localTime":       localTime,
-	"obfuscateEmail":  obfuscateEmail,
-	"pagedURL":        pagedURL,
-	"parseRFC3339":    parseRFC3339,
-	"percent":         percent,
-	"shortenEmail":    shortenEmail,
-	"shortHash":       shortHash,
-	"startswith":      strings.HasPrefix,
-	"sub":             sub,
-	"toLower":         strings.ToLower,
+	"faviconMIMEType":  faviconMIMEType,
+	"formatCommitDesc": formatCommitDesc,
+	"formatTime":       formatTime,
+	"humanDuration":    humanDuration,
+	"localTime":        localTime,
+	"obfuscateEmail":   obfuscateEmail,
+	"pagedURL":         pagedURL,
+	"parseRFC3339":     parseRFC3339,
+	"percent":          percent,
+	"shortHash":        shortHash,
+	"shortenEmail":     shortenEmail,
+	"startswith":       strings.HasPrefix,
+	"sub":              sub,
+	"toLower":          strings.ToLower,
 }
 
 // localTime returns a <span> element with t in human format
@@ -71,6 +74,53 @@ func localTime(ifZero string, t time.Time) template.HTML {
 		`<span class="local-time" data-timestamp="%d">%s</span>`,
 		milliseconds,
 		t.Format(time.RFC850)))
+}
+
+var rURL = regexp.MustCompile(`https://.*`)
+var rBUG = regexp.MustCompile(`(?i:bugs?)[:=] *(.*,? ?)*`)
+var rBugNum = regexp.MustCompile(`((\S*:)?#?|b/)\d+`)
+var tURL = template.Must(template.New("tBUG").Parse("<a href=\"{{.URL}}\">{{.Label}}</a>"))
+
+type link struct {
+	URL   string
+	Label string
+}
+
+// formatCommitDesc takes a commit message and adds embellishings such as:
+// * Linkify URLs
+// * Linkify bug numbers using https://crbug.com/
+// * Linkify b/ bug links
+func formatCommitDesc(desc string) template.HTML {
+	// Since we take in a string and return a trusted raw HTML string, escape
+	// everything first.
+	desc = template.HTMLEscapeString(desc)
+	result := rURL.ReplaceAllStringFunc(desc, func(s string) string {
+		buf := bytes.Buffer{}
+		if err := tURL.Execute(&buf, link{s, s}); err != nil {
+			return s
+		}
+		return buf.String()
+	})
+	result = rBUG.ReplaceAllStringFunc(result, func(s string) string {
+		return rBugNum.ReplaceAllStringFunc(s, func(s1 string) string {
+			buf := bytes.Buffer{}
+			l := link{Label: s1}
+			if strings.HasPrefix(s1, "b/") {
+				l.URL = "http://" + s1
+			} else {
+				// We don't need the #
+				s1 = strings.Replace(s1, "#", "", 1)
+				// project:123 should rewrite into crbug.com/project/123
+				s1 = strings.Replace(s1, ":", "/", 1)
+				l.URL = "https://crbug.com/" + s1
+			}
+			if err := tURL.Execute(&buf, l); err != nil {
+				return s
+			}
+			return buf.String()
+		})
+	})
+	return template.HTML(result)
 }
 
 // humanDuration translates d into a human readable string of x units y units,
