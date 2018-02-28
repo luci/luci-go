@@ -159,8 +159,9 @@ func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
 	}
 
 	r.Properties = structFromMap(map[string]string{
-		"revision": t.Revision,
-		"branch":   t.Ref,
+		"revision":   t.Revision,
+		"branch":     t.Ref,
+		"repository": t.Repo,
 	})
 	r.Tags = []string{
 		"buildset:" + commit.String(),
