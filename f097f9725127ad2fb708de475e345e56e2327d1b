@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8a16d0e3_ae2a4d31",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-02-28T21:49:31Z",
+      "side": 1,
+      "message": "I don\u0027t feel great about it either, but today the alternative would be to manually go into luci-notify\u0027s datastore and delete the entry so it could get \"upgraded\" or \"downgraded\". Alternatively we make it a part of the config, like some sort of field next to each builder indicating how ordering is determined (which generally should just be \"what\u0027s the best method we have available to us\" which today is revision history). It seems wrong though to duplicate that information both in luci-notify and luci-scheduler, though.\n\nI\u0027m certainly open to suggestions here. I did it this way because I basically didn\u0027t have any other ideas. :) I\u0027ll keep thinking though.",
+      "parentUuid": "5eea8f8d_3bc131da",
+      "revId": "f097f9725127ad2fb708de475e345e56e2327d1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bce089a3_fe9ff24f",
         "filename": "luci_notify/notify/pubsub_test.go",
         "patchSetId": 2
