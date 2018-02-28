@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ec22a3d_9d049dc7",
+        "filename": "milo/frontend/expectations/buildbot.build-Debug_page-_win_chromium_rel_ng_246309.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-02-28T20:32:25Z",
+      "side": 1,
+      "message": "Something weird happened here.",
+      "range": {
+        "startLine": 81,
+        "startChar": 60,
+        "endLine": 81,
+        "endChar": 68
+      },
+      "revId": "076c87b4f164d421270f32c7f24168281e5706b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
