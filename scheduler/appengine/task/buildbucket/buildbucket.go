@@ -175,19 +175,6 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		props.Fields[k] = v
 	}
 
-	// TODO(vadimsh): Remove this fallback once all servers are updated to supply
-	// req.Properties for gitiles triggers. Invocation triggered by old server
-	// code supply list of triggers, but no Properties or Tags. So build them
-	// right here. This is needed only to support in-flight invocations started
-	// when the server is being updated.
-	if req.Properties == nil {
-		if t := maybeGetTrigger(c, ctl); t != nil {
-			props.Fields["revision"] = strProtoValue(t.revision)
-			props.Fields["branch"] = strProtoValue(t.ref)
-			tags = append(tags, "buildset:"+t.buildset(), "gitiles_ref:"+t.ref)
-		}
-	}
-
 	// Prepare JSON blob for Buildbucket. encoding/json and jsonpb doesn't
 	// interoperate with each other, so stick with jsonpb for this.
 	paramsJSON, err := (&jsonpb.Marshaler{}).MarshalToString(&structpb.Struct{
