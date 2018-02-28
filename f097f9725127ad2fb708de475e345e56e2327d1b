@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5eea8f8d_3bc131da",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-28T05:35:34Z",
+      "side": 1,
+      "message": "so, for some kind of cron-like like job, this is indeed nice to have.\nHowever, I\u0027m not convinced automatic upgrade/downgrade is a good thing: either builder always has revisions or always has no revisions. What am I missing?",
+      "revId": "f097f9725127ad2fb708de475e345e56e2327d1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bce089a3_fe9ff24f",
+        "filename": "luci_notify/notify/pubsub_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-02-28T05:35:34Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 103,
+        "startChar": 0,
+        "endLine": 103,
+        "endChar": 2
+      },
+      "revId": "f097f9725127ad2fb708de475e345e56e2327d1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
