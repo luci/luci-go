@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
@@ -43,6 +44,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/rpc"
 )
 
@@ -69,6 +71,9 @@ func Run(templatePath string) {
 
 	// Admin and cron endpoints.
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
+
+	// Initialize config validation endpoints.
+	gaeconfig.InstallValidationHandlers(r, frontendMW, &common.Validator)
 
 	// Cron endpoints
 	r.GET("/internal/cron/fix-datastore", cronMW, cronFixDatastore)
