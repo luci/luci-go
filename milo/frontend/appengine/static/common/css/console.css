@@ -53,6 +53,8 @@
 .tree-status {
   margin-bottom: 6px;
   padding: 0.5em;
+  overflow: hidden;
+  word-break: break-word;
   font-weight: normal;
   font-size: 16px;
   font-family: Verdana, Cursor;
