@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2880bb29_26ee9ecb",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-28T02:59:29Z",
+      "side": 1,
+      "message": "add a TODO to \"do it in parallel\"",
+      "range": {
+        "startLine": 227,
+        "startChar": 2,
+        "endLine": 241,
+        "endChar": 3
+      },
+      "revId": "8d5caf6d3a203186110cb8ca7647a89767f8b903",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aee673b9_fc851c82",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-28T02:59:29Z",
+      "side": 1,
+      "message": "please log the error too",
+      "range": {
+        "startLine": 244,
+        "startChar": 25,
+        "endLine": 244,
+        "endChar": 80
+      },
+      "revId": "8d5caf6d3a203186110cb8ca7647a89767f8b903",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50f98182_8b9a0e4a",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-28T02:59:29Z",
+      "side": 1,
+      "message": "nit: this alias is unneccessary",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 11
+      },
+      "revId": "8d5caf6d3a203186110cb8ca7647a89767f8b903",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd53e769_6f589c3b",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-02-28T02:59:29Z",
+      "side": 1,
+      "message": "nit:\n\nif gerr, _ :\u003d err.(*googleapi.Error); gerr !\u003d nil \u0026\u0026 gerr.Code \u003e\u003d 500 {\n  return transient.Tag.Apply(err)\n}\nreturn err",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 167,
+        "endChar": 32
+      },
+      "revId": "8d5caf6d3a203186110cb8ca7647a89767f8b903",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
