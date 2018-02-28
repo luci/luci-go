@@ -26,12 +26,14 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
@@ -549,4 +551,37 @@ func GetConsolesByBuilderID(c context.Context, builderID string) ([]*Console, er
 	q := datastore.NewQuery("Console").Eq("Builders", builderID)
 	var consoles []*Console
 	return consoles, datastore.GetAll(c, q, &consoles)
+}
+
+// Config Validators go here.
+
+var Validator = validation.Validator{configPatterns, validateFunc}
+
+// configPatterns implements validation.Validator.ConfigPatterns, and returns
+// a list of ConfigPatterns that this instance of Milo is responsible for validating.
+// In the Milo case, it is only responsible for validating the config matching the
+// instance's appID in a project config.
+func configPatterns(c context.Context) []*validation.ConfigPattern {
+	cfgName := info.AppID(c) + ".cfg"
+	return []*validation.ConfigPattern{
+		{
+			pattern.MustParse("regex:projects/.*"),
+			pattern.Exact(cfgName),
+		},
+	}
+}
+
+// validateFunc implements validation.Validator.Func by taking a
+// potential Milo config at path, validating it, and writing the result into ctx.
+// The validation we do include:
+//
+// * Make sure the config is able to be unmarshalled.
+func validateFunc(ctx *validation.Context, configSet, path string, content []byte) {
+	cfgName := info.AppID(ctx.Context) + ".cfg"
+	if strings.HasPrefix(configSet, "projects/") && path == cfgName {
+		proj := config.Project{}
+		if err := proto.UnmarshalText(string(content), &proj); err != nil {
+			ctx.Error(err)
+		}
+	}
 }

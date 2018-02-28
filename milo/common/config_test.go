@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/config/validation"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -34,6 +35,24 @@ func TestConfig(t *testing.T) {
 	Convey("Test Environment", t, func() {
 		c := gaetesting.TestingContextWithAppID("dev~luci-milo")
 		datastore.GetTestable(c).Consistent(true)
+
+		Convey("Validation tests", func() {
+			ctx := &validation.Context{
+				Context: c,
+			}
+			configSet := "projects/foobar"
+			path := "luci-milo.cfg"
+			Convey("Load a bad config", func() {
+				content := []byte(badCfg)
+				validateFunc(ctx, configSet, path, content)
+				So(ctx.Finalize().Error(), ShouldResemble, "in <unspecified file>: line 4: unknown field name \"\" in config.Header")
+			})
+			Convey("Load a good config", func() {
+				content := []byte(fooCfg)
+				validateFunc(ctx, configSet, path, content)
+				So(ctx.Finalize(), ShouldBeNil)
+			})
+		})
 
 		Convey("Tests about global configs", func() {
 			Convey("Read a config before anything is set", func() {
@@ -167,6 +186,12 @@ consoles: {
 	}
 	header_id: "main_header"
 }
+`
+
+var badCfg = `
+headers: {
+	id: "main_header",
+	tree_status_host: "blarg.example.com"
 `
 
 var fooCfg2 = `
