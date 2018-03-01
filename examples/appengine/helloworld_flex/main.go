@@ -19,10 +19,12 @@ import (
 
 	"golang.org/x/net/context"
 
+	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/flex"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -35,7 +37,12 @@ func main() {
 	// Prepare the router.
 	r := router.NewWithRootContext(c)
 	flex.ReadOnlyFlex.InstallHandlers(r)
-	r.GET("/", flex.ReadOnlyFlex.Base(), indexPage)
+	middleware := flex.ReadOnlyFlex.Base()
+
+	portal.InstallHandlers(r, middleware, &gaeauth.UsersAPIAuthMethod{})
+	gaeauth.InstallHandlers(r, middleware)
+
+	r.GET("/", middleware, indexPage)
 
 	// Start serving.
 	logging.Infof(c, "Listening on %s...", flex.ListeningAddr)
