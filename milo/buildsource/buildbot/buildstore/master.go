@@ -15,7 +15,9 @@
 package buildstore
 
 import (
+	"encoding/json"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -27,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 )
@@ -36,6 +39,51 @@ type Master struct {
 	buildbot.Master
 	Internal bool
 	Modified time.Time
+}
+
+type builderProp struct {
+	Mastername string `json:"mastername"`
+}
+
+// getLUCIBuilders returns all LUCI builders from a given master from Swarmbucket.
+// LUCI builders do not have their own concept of "master".  Instead, this is
+// inferred from the "mastername" property in the property JSON.
+//
+// TODO(hinoka): If this is slow, cache the result.  If not, remove this TODO.
+func getLUCIBuilders(c context.Context, master string) ([]string, error) {
+	lock := &sync.Mutex{}
+	result := []string{}
+	buildersResponse, err := buildbucket.GetBuilders(c)
+	if err != nil {
+		return nil, err
+	}
+	t := clock.Now(c)
+	defer logging.Debugf(c, "getLUCIBuilders took %d ns", clock.Now(c).Sub(t).Nanoseconds())
+
+	return result, parallel.FanOutIn(func(ch chan<- func() error) {
+		for _, bucket := range buildersResponse.Buckets {
+			for _, builder := range bucket.Builders {
+				builder := builder
+				bucket := bucket
+				if builder.PropertiesJson == "" {
+					continue
+				}
+				ch <- func() error {
+					prop := builderProp{}
+					if err := json.Unmarshal([]byte(builder.PropertiesJson), &prop); err != nil {
+						logging.WithError(err).Errorf(c, "processing %s/%s", bucket.Name, builder.Name)
+						return nil
+					}
+					if prop.Mastername == master {
+						lock.Lock()
+						defer lock.Unlock()
+						result = append(result, builder.Name)
+					}
+					return nil
+				}
+			}
+		}
+	})
 }
 
 // GetMaster fetches a master.
@@ -73,6 +121,17 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 			b.Slaves = nil
 			b.PendingBuildStates = nil
 		}
+		// Add in pure-luci builders, if not found in buildbot.
+		builders, err := getLUCIBuilders(c, name)
+		if err != nil {
+			return nil, err
+		}
+		for _, builder := range builders {
+			if _, ok := m.Builders[builder]; !ok {
+				m.Builders[builder] = &buildbot.Builder{Buildername: builder}
+			}
+		}
+
 	} else {
 		var refreshBuilds []*buildEntity
 		for _, slave := range m.Slaves {
