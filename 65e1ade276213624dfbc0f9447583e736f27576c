@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0779dfc9_4bd35712",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-01T23:19:54Z",
+      "side": 1,
+      "message": "if !showNoHeaders {\n\nAnd elsewhere. It\u0027s possible that running \"gofmt -w -s .\" inside machine-db/client/cli will fix this for you in every file, not sure.",
+      "revId": "65e1ade276213624dfbc0f9447583e736f27576c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a342db5_c2498375",
+        "filename": "machine-db/client/cli/flags.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-01T23:19:54Z",
+      "side": 1,
+      "message": "Maybe just noHeaders. headers by itself is unclear hence showHeaders, but noHeaders by itself without \"show\" seems clear enough.",
+      "revId": "65e1ade276213624dfbc0f9447583e736f27576c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
