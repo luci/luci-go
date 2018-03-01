@@ -1354,8 +1354,6 @@ type SwarmingRpcsTaskResult struct {
 
 	PerformanceStats *SwarmingRpcsPerformanceStats `json:"performance_stats,omitempty"`
 
-	PropertiesHash string `json:"properties_hash,omitempty"`
-
 	RunId string `json:"run_id,omitempty"`
 
 	ServerVersions []string `json:"server_versions,omitempty"`

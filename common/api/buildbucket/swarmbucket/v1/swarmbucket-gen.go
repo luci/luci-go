@@ -191,6 +191,8 @@ type SwarmingSwarmbucketApiBuilderMessage struct {
 
 	Name string `json:"name,omitempty"`
 
+	PropertiesJson string `json:"properties_json,omitempty"`
+
 	// ForceSendFields is a list of field names (e.g. "Category") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
