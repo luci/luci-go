@@ -8,6 +8,7 @@ package crimson;
 
 import "google/protobuf/empty.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto";
@@ -54,6 +55,11 @@ service Crimson {
   rpc ListNICs(ListNICsRequest) returns (ListNICsResponse);
   // Updates a NIC in the database.
   rpc UpdateNIC(UpdateNICRequest) returns (NIC);
+
+  // Creates a new DRAC in the database.
+  rpc CreateDRAC(CreateDRACRequest) returns (DRAC);
+  // Lists DRACs in the database.
+  rpc ListDRACs(ListDRACsRequest) returns (ListDRACsResponse);
 
   // Creates a new physical host in the database.
   rpc CreatePhysicalHost(CreatePhysicalHostRequest) returns (PhysicalHost);
