@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d777f381_f828a19c",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-01T19:31:17Z",
+      "side": 1,
+      "message": "for i, m :\u003d range messages {",
+      "revId": "8242f65494f4b70e44c9b2dc8c5128d78a497e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52c63de3_13d372cd",
+        "filename": "common/bq/eventupload_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-01T19:31:17Z",
+      "side": 1,
+      "message": "could be shorter:\n\n\t\twant :\u003d [][]*Row{\n\t\t\t{{}, {}},\n\t\t\t{{}},\n\t\t}",
+      "revId": "8242f65494f4b70e44c9b2dc8c5128d78a497e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
