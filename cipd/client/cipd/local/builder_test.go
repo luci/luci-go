@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -64,11 +65,16 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Building package with a bunch of files at different deflate levels", t, func() {
+		// Must not be exactly midnight. For some reason, any "YYYY MM DD 00:00:00"
+		// gets mapped to zero value.
+		testMTime := time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)
 		makeOpts := func(out io.Writer, level int) BuildInstanceOptions {
 			return BuildInstanceOptions{
 				Input: []File{
-					NewTestFile("testing/qwerty", "12345", false),
-					NewTestFile("abc", "duh", true),
+					NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
+					NewTestFile("abc", "duh", TestFileOpts{Executable: true}),
+					NewTestFile("writable", "write me", TestFileOpts{Writable: true}),
+					NewTestFile("timestamped", "I'm old", TestFileOpts{ModTime: testMTime}),
 					NewWinTestFile("sneaky_file", "ninja", WinAttrHidden),
 					NewWinTestFile("special_file", "special", WinAttrSystem),
 					NewTestSymlink("rel_symlink", "abc"),
@@ -101,6 +107,19 @@ func TestBuildInstance(t *testing.T) {
 				size: 3,
 				mode: 0700,
 				body: []byte("duh"),
+			},
+			{
+				name: "writable",
+				size: 8,
+				mode: 0600,
+				body: []byte("write me"),
+			},
+			{
+				name:    "timestamped",
+				size:    7,
+				mode:    0600,
+				body:    []byte("I'm old"),
+				modTime: testMTime,
 			},
 			{
 				name:     "sneaky_file",
@@ -145,11 +164,115 @@ func TestBuildInstance(t *testing.T) {
 		}
 	})
 
+	Convey("Building package with a bunch of files preserving mtime and u+w", t, func() {
+		// Must not be exactly midnight. For some reason, any "YYYY MM DD 00:00:00"
+		// gets mapped to zero value.
+		testMTime := time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)
+		makeOpts := func(out io.Writer, level int) BuildInstanceOptions {
+			return BuildInstanceOptions{
+				FileOptions: FileOptions{
+					PreserveModTime:  true,
+					PreserveWritable: true,
+				},
+				Input: []File{
+					NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
+					NewTestFile("abc", "duh", TestFileOpts{Executable: true}),
+					NewTestFile("writable", "write me", TestFileOpts{Writable: true}),
+					NewTestFile("timestamped", "I'm old", TestFileOpts{ModTime: time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)}),
+					NewWinTestFile("sneaky_file", "ninja", WinAttrHidden),
+					NewWinTestFile("special_file", "special", WinAttrSystem),
+					NewTestSymlink("rel_symlink", "abc"),
+					NewTestSymlink("abs_symlink", "/abc/def"),
+				},
+				Output:           out,
+				PackageName:      "testing",
+				VersionFile:      "version.json",
+				InstallMode:      "copy",
+				CompressionLevel: level,
+			}
+		}
+
+		goodManifest := `{
+  "format_version": "1",
+  "package_name": "testing",
+  "version_file": "version.json",
+  "install_mode": "copy"
+}`
+
+		goodFiles := []zippedFile{
+			{
+				name: "testing/qwerty",
+				size: 5,
+				mode: 0400,
+				body: []byte("12345"),
+			},
+			{
+				name: "abc",
+				size: 3,
+				mode: 0500,
+				body: []byte("duh"),
+			},
+			{
+				name: "writable",
+				size: 8,
+				mode: 0600,
+				body: []byte("write me"),
+			},
+			{
+				name:    "timestamped",
+				size:    7,
+				mode:    0400,
+				body:    []byte("I'm old"),
+				modTime: testMTime,
+			},
+			{
+				name:     "sneaky_file",
+				size:     5,
+				mode:     0400,
+				body:     []byte("ninja"),
+				winAttrs: WinAttrHidden,
+			},
+			{
+				name:     "special_file",
+				size:     7,
+				mode:     0400,
+				body:     []byte("special"),
+				winAttrs: WinAttrSystem,
+			},
+			{
+				name: "rel_symlink",
+				size: 3,
+				mode: 0400 | os.ModeSymlink,
+				body: []byte("abc"),
+			},
+			{
+				name: "abs_symlink",
+				size: 8,
+				mode: 0400 | os.ModeSymlink,
+				body: []byte("/abc/def"),
+			},
+			{
+				// See structs.go, manifestName.
+				name: ".cipdpkg/manifest.json",
+				size: uint64(len(goodManifest)),
+				mode: 0400,
+				body: []byte(goodManifest),
+			},
+		}
+
+		for lvl := 0; lvl <= 9; lvl++ {
+			out := bytes.Buffer{}
+			err := BuildInstance(ctx, makeOpts(&out, lvl))
+			So(err, ShouldBeNil)
+			So(readZip(out.Bytes()), ShouldResemble, goodFiles)
+		}
+	})
+
 	Convey("Duplicate files fail", t, func() {
 		err := BuildInstance(ctx, BuildInstanceOptions{
 			Input: []File{
-				NewTestFile("a", "12345", false),
-				NewTestFile("a", "12345", false),
+				NewTestFile("a", "12345", TestFileOpts{}),
+				NewTestFile("a", "12345", TestFileOpts{}),
 			},
 			Output:      &bytes.Buffer{},
 			PackageName: "testing",
@@ -160,7 +283,7 @@ func TestBuildInstance(t *testing.T) {
 	Convey("Writing to service dir fails", t, func() {
 		err := BuildInstance(ctx, BuildInstanceOptions{
 			Input: []File{
-				NewTestFile(".cipdpkg/stuff", "12345", false),
+				NewTestFile(".cipdpkg/stuff", "12345", TestFileOpts{}),
 			},
 			Output:      &bytes.Buffer{},
 			PackageName: "testing",
@@ -201,6 +324,7 @@ type zippedFile struct {
 	name     string
 	size     uint64
 	mode     os.FileMode
+	modTime  time.Time
 	body     []byte
 	winAttrs WinAttrs
 }
@@ -221,10 +345,15 @@ func readZip(data []byte) []zippedFile {
 		if err != nil {
 			panic("Failed to read zipped file")
 		}
+		var mtime time.Time
+		if zf.ModifiedTime != 0 {
+			mtime = zf.ModTime()
+		}
 		files[i] = zippedFile{
 			name:     zf.Name,
 			size:     zf.FileHeader.UncompressedSize64,
 			mode:     zf.Mode(),
+			modTime:  mtime,
 			body:     body,
 			winAttrs: WinAttrs(zf.ExternalAttrs) & WinAttrsAll,
 		}
