@@ -25,11 +25,11 @@ import (
 )
 
 // printPhysicalHosts prints physical host data to stdout in tab-separated columns.
-func printPhysicalHosts(showHeaders bool, hosts ...*crimson.PhysicalHost) {
+func printPhysicalHosts(showNoHeaders bool, hosts ...*crimson.PhysicalHost) {
 	if len(hosts) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if showNoHeaders == false {
 			p.Row("Name", "VLAN", "IP Address", "Machine", "OS", "VM Slots", "Description", "Deployment Ticket", "State")
 		}
 		for _, h := range hosts {
@@ -58,7 +58,7 @@ func (c *AddPhysicalHostCmd) Run(app subcommands.Application, args []string, env
 		errors.Log(ctx, err)
 		return 1
 	}
-	printPhysicalHosts(c.f.showHeaders, resp)
+	printPhysicalHosts(c.f.showNoHeaders, resp)
 	return 0
 }
 
@@ -112,7 +112,7 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 		errors.Log(ctx, err)
 		return 1
 	}
-	printPhysicalHosts(c.f.showHeaders, resp)
+	printPhysicalHosts(c.f.showNoHeaders, resp)
 	return 0
 }
 
@@ -154,7 +154,7 @@ func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, en
 		errors.Log(ctx, err)
 		return 1
 	}
-	printPhysicalHosts(c.f.showHeaders, resp.Hosts...)
+	printPhysicalHosts(c.f.showNoHeaders, resp.Hosts...)
 	return 0
 }
 
