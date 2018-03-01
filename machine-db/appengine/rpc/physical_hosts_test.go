@@ -65,11 +65,11 @@ func TestCreatePhysicalHost(t *testing.T) {
 			WHERE name = \?
 		`
 		selectStmt := `
-			^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-			FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-			WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND i.ipv4 IN \(\?\)$
+			^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+			FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+			WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\) AND i.ipv4 IN \(\?\)$
 		`
-		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4", "m.state"}
+		columns := []string{"n.name", "n.vlan_id", "m.name", "o.name", "h.vm_slots", "h.description", "h.deployment_ticket", "i.ipv4", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("invalid IPv4", func() {
@@ -338,7 +338,7 @@ func TestListPhysicalHosts(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4", "m.state"}
+		columns := []string{"n.name", "n.vlan_id", "m.name", "o.name", "h.vm_slots", "h.description", "h.deployment_ticket", "i.ipv4", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("invalid IPv4 address", func() {
@@ -352,12 +352,13 @@ func TestListPhysicalHosts(t *testing.T) {
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
+
 		Convey("query failed", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id
-					AND h.name IN \(\?\) AND v.id IN \(\?\) AND i.ipv4 IN \(\?,\?\)$
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id
+					AND n.name IN \(\?\) AND n.vlan_id IN \(\?\) AND i.ipv4 IN \(\?,\?\)$
 			`
 			req := &crimson.ListPhysicalHostsRequest{
 				Names: []string{"host"},
@@ -373,9 +374,9 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("no names", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND v.id IN \(\?\)$
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.vlan_id IN \(\?\)$
 			`
 			req := &crimson.ListPhysicalHostsRequest{
 				Vlans: []int64{0},
@@ -389,9 +390,9 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("no vlans", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\)$
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\)$
 			`
 			req := &crimson.ListPhysicalHostsRequest{
 				Names: []string{"host"},
@@ -403,11 +404,63 @@ func TestListPhysicalHosts(t *testing.T) {
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
+		Convey("datacenters", func() {
+			selectStmt := `
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				JOIN racks r ON m.rack_id = r.id
+				JOIN datacenters d ON r.datacenter_id = d.id
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND d.name IN \(\?,\?\)$
+			`
+			req := &crimson.ListPhysicalHostsRequest{
+				Datacenters: []string{"datacenter 1", "datacenter 2"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Datacenters[0], req.Datacenters[1]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, req)
+			So(err, ShouldBeNil)
+			So(hosts, ShouldBeNil)
+		})
+
+		Convey("racks", func() {
+			selectStmt := `
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				JOIN racks r ON m.rack_id = r.id
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND r.name IN \(\?,\?\)$
+			`
+			req := &crimson.ListPhysicalHostsRequest{
+				Racks: []string{"rack 1", "rack 2"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Racks[0], req.Racks[1]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, req)
+			So(err, ShouldBeNil)
+			So(hosts, ShouldBeNil)
+		})
+
+		Convey("datacenters and racks", func() {
+			selectStmt := `
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				JOIN racks r ON m.rack_id = r.id
+				JOIN datacenters d ON r.datacenter_id = d.id
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id
+					AND d.name IN \(\?\) AND r.name IN \(\?\)$
+			`
+			req := &crimson.ListPhysicalHostsRequest{
+				Datacenters: []string{"datacenter"},
+				Racks:       []string{"rack"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Datacenters[0], req.Racks[0]).WillReturnRows(rows)
+			hosts, err := listPhysicalHosts(c, db, req)
+			So(err, ShouldBeNil)
+			So(hosts, ShouldBeNil)
+		})
+
 		Convey("empty", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\) AND n.vlan_id IN \(\?\)$
 			`
 			req := &crimson.ListPhysicalHostsRequest{
 				Names: []string{"host"},
@@ -422,9 +475,9 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("non-empty", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?,\?\) AND v.id IN \(\?\)$
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?,\?\) AND n.vlan_id IN \(\?\)$
 			`
 			req := &crimson.ListPhysicalHostsRequest{
 				Names: []string{"host 1", "host 2"},
@@ -459,9 +512,9 @@ func TestListPhysicalHosts(t *testing.T) {
 
 		Convey("ok", func() {
 			selectStmt := `
-				^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-				FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-				WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id$
+				^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+				FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+				WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id$
 			`
 			req := &crimson.ListPhysicalHostsRequest{}
 			rows.AddRow("host 1", 1, "machine 1", "os 1", 1, "", "", 1, 0)
@@ -504,11 +557,11 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			WHERE id = \(SELECT machine_id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)\)
 		`
 		selectStmt := `
-			^SELECT h.name, v.id, m.name, o.name, p.vm_slots, p.description, p.deployment_ticket, i.ipv4, m.state
-			FROM physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i
-			WHERE p.hostname_id = h.id AND h.vlan_id = v.id AND p.machine_id = m.id AND p.os_id = o.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND v.id IN \(\?\)$
+			^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
+			FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
+			WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\) AND n.vlan_id IN \(\?\)$
 		`
-		columns := []string{"h.name", "v.id", "m.name", "o.name", "p.vm_slots", "p.description", "p.deployment_ticket", "i.ipv4", "m.state"}
+		columns := []string{"n.name", "n.vlan_id", "m.name", "o.name", "h.vm_slots", "h.description", "h.deployment_ticket", "i.ipv4", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("update machine", func() {

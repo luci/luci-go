@@ -32,7 +32,7 @@ message PhysicalHost {
   common.State state = 9;
 }
 
-// A  request to create a new physical host in the database.
+// A request to create a new physical host in the database.
 message CreatePhysicalHostRequest {
   // The host to create in the database.
   PhysicalHost host = 1;
@@ -52,6 +52,12 @@ message ListPhysicalHostsRequest {
   repeated string oses = 5;
   // The states to filter retrieved hosts on.
   repeated common.State states = 6;
+  // The platforms to filter returned hosts on.
+  repeated string platforms = 7;
+  // The racks to filter returned hosts on.
+  repeated string racks = 8;
+  // The datacenters to filter returned hosts on.
+  repeated string datacenters = 9;
 }
 
 // A response containing a list of physical hosts in the database.
