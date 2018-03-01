@@ -1,0 +1,45 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+// A DRAC in the database.
+message DRAC {
+  // The name of this DRAC on the network. With VLAN, uniquely identifies this DRAC.
+  string name = 1;
+  // The machine this DRAC belongs to. Uniquely identifies this DRAC.
+  string machine = 2;
+  // The IPv4 address associated with this DRAC.
+  string ipv4 = 3;
+  // The VLAN this DRAC belongs to.
+  // When creating a DRAC, omit this field. It will be inferred from the IPv4 address.
+  int64 vlan = 4;
+}
+
+// A request to create a new DRAC in the database.
+message CreateDRACRequest {
+  // The DRAC to create in the database.
+  DRAC drac = 1;
+}
+
+// A request to list DRACs in the database.
+message ListDRACsRequest {
+  // The names of DRACs to get.
+  repeated string names = 1;
+  // The machines to filter retrieved DRACs on.
+  repeated string machines = 2;
+  // The IPv4 addresses to filter returned DRACs on.
+  repeated string ipv4s = 3;
+  // The VLANs to filter returned DRACs on.
+  repeated int64 vlans = 4;
+}
+
+// A response containing a list of DRACs in the database.
+message ListDRACsResponse {
+  // The DRACs matching this request.
+  repeated DRAC dracs = 1;
+  // TODO(smut): Support page tokens.
+}
