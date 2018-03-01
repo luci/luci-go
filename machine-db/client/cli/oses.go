@@ -25,11 +25,11 @@ import (
 )
 
 // printOSes prints operating system data to stdout in tab-separated columns.
-func printOSes(showHeaders bool, oses ...*crimson.OS) {
+func printOSes(noHeaders bool, oses ...*crimson.OS) {
 	if len(oses) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("Name", "Description")
 		}
 		for _, os := range oses {
@@ -54,7 +54,7 @@ func (c *GetOSesCmd) Run(app subcommands.Application, args []string, env subcomm
 		errors.Log(ctx, err)
 		return 1
 	}
-	printOSes(c.f.showHeaders, resp.Oses...)
+	printOSes(c.f.noHeaders, resp.Oses...)
 	return 0
 }
 

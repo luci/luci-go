@@ -25,11 +25,11 @@ import (
 )
 
 // printDatacenters prints datacenter data to stdout in tab-separated columns.
-func printDatacenters(showHeaders bool, datacenters ...*crimson.Datacenter) {
+func printDatacenters(noHeaders bool, datacenters ...*crimson.Datacenter) {
 	if len(datacenters) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("Name", "Description")
 		}
 		for _, dc := range datacenters {
@@ -54,7 +54,7 @@ func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env 
 		errors.Log(ctx, err)
 		return 1
 	}
-	printDatacenters(c.f.showHeaders, resp.Datacenters...)
+	printDatacenters(c.f.noHeaders, resp.Datacenters...)
 	return 0
 }
 

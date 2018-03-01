@@ -25,11 +25,11 @@ import (
 )
 
 // printIPs prints IP address data to stdout in tab-separated columns.
-func printIPs(showHeaders bool, ips ...*crimson.IP) {
+func printIPs(noHeaders bool, ips ...*crimson.IP) {
 	if len(ips) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("IPv4", "VLAN", "Hostname")
 		}
 		for _, ip := range ips {
@@ -54,7 +54,7 @@ func (c *GetIPsCmd) Run(app subcommands.Application, args []string, env subcomma
 		errors.Log(ctx, err)
 		return 1
 	}
-	printIPs(c.f.showHeaders, resp.Ips...)
+	printIPs(c.f.noHeaders, resp.Ips...)
 	return 0
 }
 

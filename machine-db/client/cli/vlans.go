@@ -25,11 +25,11 @@ import (
 )
 
 // printVLANs prints VLAN data to stdout in tab-separated columns.
-func printVLANs(showHeaders bool, vlans ...*crimson.VLAN) {
+func printVLANs(noHeaders bool, vlans ...*crimson.VLAN) {
 	if len(vlans) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("ID", "Alias", "Description", "State")
 		}
 		for _, v := range vlans {
@@ -54,7 +54,7 @@ func (c *GetVLANsCmd) Run(app subcommands.Application, args []string, env subcom
 		errors.Log(ctx, err)
 		return 1
 	}
-	printVLANs(c.f.showHeaders, resp.Vlans...)
+	printVLANs(c.f.noHeaders, resp.Vlans...)
 	return 0
 }
 
