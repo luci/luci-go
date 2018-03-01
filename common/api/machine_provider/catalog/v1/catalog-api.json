@@ -13,7 +13,7 @@
   "batchPath": "batch",
   "description": "Implements cloud endpoints for the Machine Provider Catalog.",
   "discoveryVersion": "v1",
-  "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/iCLdUueAdH-dwKXi0uyRnx6Mn-s\"",
+  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/iCLdUueAdH-dwKXi0uyRnx6Mn-s\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"

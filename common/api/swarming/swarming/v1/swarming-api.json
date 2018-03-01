@@ -13,7 +13,7 @@
   "batchPath": "batch",
   "description": "API to interact with the Swarming service. Permits to create, view and cancel tasks, query tasks and bots",
   "discoveryVersion": "v1",
-  "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/3-FeVJ2_2S2AhTBKoexN0DrupKY\"",
+  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/MwS04UO44e3Wn9zgAOfxkgQH070\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
@@ -1656,9 +1656,6 @@
         },
         "performance_stats": {
           "$ref": "SwarmingRpcsPerformanceStats"
-        },
-        "properties_hash": {
-          "type": "string"
         },
         "run_id": {
           "type": "string"
