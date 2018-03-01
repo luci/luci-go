@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74a8ec57_a690f0e0",
+        "filename": "milo/buildsource/swarming/expectations/build-expired.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-01T01:12:33Z",
+      "side": 1,
+      "message": "I\u0027ll add in pending time in a separate CL.",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 36
+      },
+      "revId": "1bd30c1ea19b8505880c1b0890a169120fe97c4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
