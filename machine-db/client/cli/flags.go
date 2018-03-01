@@ -30,12 +30,12 @@ import (
 
 // FormattingFlags contains common flags related to output formatting.
 type FormattingFlags struct {
-	showHeaders bool
+	noHeaders bool
 }
 
 // Register registers these formatting flags with the given command.
 func (f *FormattingFlags) Register(c subcommands.CommandRun) {
-	c.GetFlags().BoolVar(&f.showHeaders, "headers", false, "Show column headers.")
+	c.GetFlags().BoolVar(&f.noHeaders, "noheaders", false, "Do not show headers.")
 }
 
 // getUpdateMask returns a *field_mask.FieldMask containing paths based on which flags have been set.

@@ -25,11 +25,11 @@ import (
 )
 
 // printDRACs prints DRAC data to stdout in tab-separated columns.
-func printDRACs(showHeaders bool, dracs ...*crimson.DRAC) {
+func printDRACs(noHeaders bool, dracs ...*crimson.DRAC) {
 	if len(dracs) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("Name", "Machine", "IP Address", "VLAN")
 		}
 		for _, d := range dracs {
@@ -58,7 +58,7 @@ func (c *AddDRACCmd) Run(app subcommands.Application, args []string, env subcomm
 		errors.Log(ctx, err)
 		return 1
 	}
-	printDRACs(c.f.showHeaders, resp)
+	printDRACs(c.f.noHeaders, resp)
 	return 0
 }
 
@@ -95,7 +95,7 @@ func (c *GetDRACsCmd) Run(app subcommands.Application, args []string, env subcom
 		errors.Log(ctx, err)
 		return 1
 	}
-	printDRACs(c.f.showHeaders, resp.Dracs...)
+	printDRACs(c.f.noHeaders, resp.Dracs...)
 	return 0
 }
 

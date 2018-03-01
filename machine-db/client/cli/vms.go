@@ -25,11 +25,11 @@ import (
 )
 
 // printVMs prints VM data to stdout in tab-separated columns.
-func printVMs(showHeaders bool, vms ...*crimson.VM) {
+func printVMs(noHeaders bool, vms ...*crimson.VM) {
 	if len(vms) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("Name", "VLAN", "IP Address", "Host", "Host VLAN", "Operating System", "Description", "Deployment Ticket", "State")
 		}
 		for _, vm := range vms {
@@ -58,7 +58,7 @@ func (c *AddVMCmd) Run(app subcommands.Application, args []string, env subcomman
 		errors.Log(ctx, err)
 		return 1
 	}
-	printVMs(c.f.showHeaders, resp)
+	printVMs(c.f.noHeaders, resp)
 	return 0
 }
 
@@ -112,7 +112,7 @@ func (c *EditVMCmd) Run(app subcommands.Application, args []string, env subcomma
 		errors.Log(ctx, err)
 		return 1
 	}
-	printVMs(c.f.showHeaders, resp)
+	printVMs(c.f.noHeaders, resp)
 	return 0
 }
 
@@ -154,7 +154,7 @@ func (c *GetVMsCmd) Run(app subcommands.Application, args []string, env subcomma
 		errors.Log(ctx, err)
 		return 1
 	}
-	printVMs(c.f.showHeaders, resp.Vms...)
+	printVMs(c.f.noHeaders, resp.Vms...)
 	return 0
 }
 

@@ -25,11 +25,11 @@ import (
 )
 
 // printMachines prints machine data to stdout in tab-separated columns.
-func printMachines(showHeaders bool, machines ...*crimson.Machine) {
+func printMachines(noHeaders bool, machines ...*crimson.Machine) {
 	if len(machines) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("Name", "Platform", "Rack", "Datacenter", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "State")
 		}
 		for _, m := range machines {
@@ -58,7 +58,7 @@ func (c *AddMachineCmd) Run(app subcommands.Application, args []string, env subc
 		errors.Log(ctx, err)
 		return 1
 	}
-	printMachines(c.f.showHeaders, resp)
+	printMachines(c.f.noHeaders, resp)
 	return 0
 }
 
@@ -147,7 +147,7 @@ func (c *EditMachineCmd) Run(app subcommands.Application, args []string, env sub
 		errors.Log(ctx, err)
 		return 1
 	}
-	printMachines(c.f.showHeaders, resp)
+	printMachines(c.f.noHeaders, resp)
 	return 0
 }
 
@@ -189,7 +189,7 @@ func (c *GetMachinesCmd) Run(app subcommands.Application, args []string, env sub
 		errors.Log(ctx, err)
 		return 1
 	}
-	printMachines(c.f.showHeaders, resp.Machines...)
+	printMachines(c.f.noHeaders, resp.Machines...)
 	return 0
 }
 

@@ -25,11 +25,11 @@ import (
 )
 
 // printSwitches prints switch data to stdout in tab-separated columns.
-func printSwitches(showHeaders bool, switches ...*crimson.Switch) {
+func printSwitches(noHeaders bool, switches ...*crimson.Switch) {
 	if len(switches) > 0 {
 		p := newStdoutPrinter()
 		defer p.Flush()
-		if showHeaders {
+		if !noHeaders {
 			p.Row("Name", "Ports", "Rack", "Datacenter", "Description", "State")
 		}
 		for _, s := range switches {
@@ -54,7 +54,7 @@ func (c *GetSwitchesCmd) Run(app subcommands.Application, args []string, env sub
 		errors.Log(ctx, err)
 		return 1
 	}
-	printSwitches(c.f.showHeaders, resp.Switches...)
+	printSwitches(c.f.noHeaders, resp.Switches...)
 	return 0
 }
 
