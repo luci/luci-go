@@ -365,10 +365,17 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 		}
 		step.Started = google.NewTimestamp(ts)
 	}
-	if sr.CompletedTs != "" {
+	switch {
+	case sr.CompletedTs != "":
 		ts, err := time.Parse(SwarmingTimeLayout, sr.CompletedTs)
 		if err != nil {
 			return fmt.Errorf("invalid task CompletedTs: %s", err)
+		}
+		step.Ended = google.NewTimestamp(ts)
+	case sr.AbandonedTs != "":
+		ts, err := time.Parse(SwarmingTimeLayout, sr.AbandonedTs)
+		if err != nil {
+			return fmt.Errorf("invalid task AbandonedTs: %s", err)
 		}
 		step.Ended = google.NewTimestamp(ts)
 	}
