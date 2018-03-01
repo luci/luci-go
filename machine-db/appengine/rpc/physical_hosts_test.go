@@ -132,22 +132,6 @@ func TestCreatePhysicalHost(t *testing.T) {
 			So(createPhysicalHost(c, host), ShouldErrLike, "Internal server error")
 		})
 
-		Convey("duplicate machine", func() {
-			host := &crimson.PhysicalHost{
-				Name:    "host",
-				Machine: "machine",
-				Os:      "os",
-				Ipv4:    "127.0.0.1",
-				State:   common.State_SERVING,
-			}
-			m.ExpectBegin()
-			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'machine_id'"})
-			m.ExpectRollback()
-			So(createPhysicalHost(c, host), ShouldErrLike, "duplicate physical host for machine")
-		})
-
 		Convey("invalid machine", func() {
 			host := &crimson.PhysicalHost{
 				Name:    "host",

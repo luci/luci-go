@@ -86,7 +86,6 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 		return err
 	}
 
-	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
 	_, err = tx.ExecContext(c, `
 		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket)
 		VALUES (
@@ -102,9 +101,6 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
 			// Type assertion failed.
-		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
-			// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
-			return status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)

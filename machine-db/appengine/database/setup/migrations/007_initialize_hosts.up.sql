@@ -41,6 +41,5 @@ CREATE TABLE IF NOT EXISTS physical_hosts (
 	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE CASCADE,
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
 	FOREIGN KEY (os_id) REFERENCES oses (id) ON DELETE RESTRICT,
-	UNIQUE (hostname_id),
-	UNIQUE (machine_id)
+	UNIQUE (hostname_id)
 );
