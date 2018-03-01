@@ -151,28 +151,39 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	}
 
 	stmt := squirrel.Select(
-		"h.name",
-		"v.id",
+		"n.name",
+		"n.vlan_id",
 		"m.name",
 		"o.name",
-		"p.vm_slots",
-		"p.description",
-		"p.deployment_ticket",
+		"h.vm_slots",
+		"h.description",
+		"h.deployment_ticket",
 		"i.ipv4",
 		"m.state",
 	)
-	stmt = stmt.From("physical_hosts p, hostnames h, vlans v, machines m, oses o, ips i").
-		Where("p.hostname_id = h.id").
-		Where("h.vlan_id = v.id").
-		Where("p.machine_id = m.id").
-		Where("p.os_id = o.id").
-		Where("i.hostname_id = h.id")
-	stmt = selectInString(stmt, "h.name", req.Names)
-	stmt = selectInInt64(stmt, "v.id", req.Vlans)
+	stmt = stmt.From("(physical_hosts h, hostnames n, machines m, oses o, ips i)")
+	if len(req.Datacenters) > 0 {
+		stmt = stmt.Join("racks r ON m.rack_id = r.id")
+		stmt = stmt.Join("datacenters d ON r.datacenter_id = d.id")
+	} else if len(req.Racks) > 0 {
+		stmt = stmt.Join("racks r ON m.rack_id = r.id")
+	}
+	if len(req.Platforms) > 0 {
+		stmt = stmt.Join("platforms p ON m.platform_id = p.id")
+	}
+	stmt = stmt.Where("h.hostname_id = n.id").
+		Where("h.machine_id = m.id").
+		Where("h.os_id = o.id").
+		Where("i.hostname_id = n.id")
+	stmt = selectInString(stmt, "n.name", req.Names)
+	stmt = selectInInt64(stmt, "n.vlan_id", req.Vlans)
 	stmt = selectInString(stmt, "m.name", req.Machines)
 	stmt = selectInString(stmt, "o.name", req.Oses)
 	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
 	stmt = selectInState(stmt, "m.state", req.States)
+	stmt = selectInString(stmt, "d.name", req.Datacenters)
+	stmt = selectInString(stmt, "r.name", req.Racks)
+	stmt = selectInString(stmt, "p.name", req.Platforms)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
