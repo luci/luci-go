@@ -1,0 +1,257 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65f051d7_f4baa1b8",
+        "filename": "cipd/client/cipd/local/builder.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "eh, this looks messy... Also, after I thought over my previous advice of not caring about +w bit for old package, I now believe we should not change them. Let\u0027s handle this as a change in the format of the CIPD file. Current version v1 is \"+w bit in zip files is totally ignored regardless of what it is set to\". New version v1.1 will be \"+w bit in zip files is always respected\" (and we will set it to either +0200 or not when building the package). \n\nSo:\n1. Bump manifest version to \"1.1\": https://github.com/luci/luci-go/blob/master/cipd/client/cipd/local/json_descs.go#L37\n2. Do here\n\n  mode :\u003d os.FileMode(0400)\n  if in.Writable() {\n    mode |\u003d 0200\n  }\n\n3. In packageInstance.open read the version from the manifest, and forcefully remove 0222 if it is \u003d\u003d \"1\": https://github.com/luci/luci-go/blob/master/cipd/client/cipd/local/reader.go#L427\n\nWdyt?",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 3
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dd34039_64011875",
+        "filename": "cipd/client/cipd/local/builder.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "nit: return time.Time{}",
+      "range": {
+        "startLine": 303,
+        "startChar": 45,
+        "endLine": 303,
+        "endChar": 70
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8efb3b21_90bc79a4",
+        "filename": "cipd/client/cipd/local/files.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "nit: ScanOptions to make it more different from somewhat similar CreateFileOptions",
+      "range": {
+        "startLine": 173,
+        "startChar": 5,
+        "endLine": 173,
+        "endChar": 16
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9757945_a1086fc1",
+        "filename": "cipd/client/cipd/local/files.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "I think these needs to be recalculated, since \u0027info\u0027 may change on line 313 (it is a rare edge case).\n\nI propose to add two helper function:\n\ngetWritable(info, fileOpts)\ngetModtime(info, fileOpts)\n\nAnd then just call them whenever fileSystemFile{...} fields are populated.",
+      "range": {
+        "startLine": 340,
+        "startChar": 3,
+        "endLine": 341,
+        "endChar": 23
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d077c43_6cff60e8",
+        "filename": "cipd/client/cipd/local/files.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 489,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "are you sure Windows ignores +w? It has a concept of read only files. (It does not have a notion of +x file, thus it ignores +x bit).",
+      "range": {
+        "startLine": 487,
+        "startChar": 2,
+        "endLine": 489,
+        "endChar": 3
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7ab1ef3_66d4e579",
+        "filename": "cipd/client/cipd/local/files.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 490,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "I think it can safely be 0222, umask will trim it appropriately. E.g. the default umask on my laptop is u\u003drwx,g\u003drx,o\u003drx, so it will trim 0222 to 0200.",
+      "range": {
+        "startLine": 490,
+        "startChar": 10,
+        "endLine": 490,
+        "endChar": 14
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e737f9ac_8ddfbae5",
+        "filename": "cipd/client/cipd/local/files.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 524,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "nit: do it before d.lock.Lock()",
+      "range": {
+        "startLine": 520,
+        "startChar": 3,
+        "endLine": 524,
+        "endChar": 4
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51834e9a_362ef276",
+        "filename": "cipd/client/cipd/local/pkgdef.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "PreserveModTime",
+      "range": {
+        "startLine": 47,
+        "startChar": 4,
+        "endLine": 47,
+        "endChar": 22
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a03299d6_33327aca",
+        "filename": "cipd/client/cipd/local/pkgdef.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "... when extracting the package.",
+      "range": {
+        "startLine": 47,
+        "startChar": 63,
+        "endLine": 47,
+        "endChar": 73
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8db67b38_69a71e78",
+        "filename": "cipd/client/cipd/local/reader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 521,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "nit: return time.Time{}",
+      "range": {
+        "startLine": 521,
+        "startChar": 53,
+        "endLine": 521,
+        "endChar": 78
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13c4d349_78944bfa",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 1890,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-01T21:09:40Z",
+      "side": 1,
+      "message": "nit: move this to L461 and L502, since prepareInput is supposed to return almost complete BuildInstanceOptions (everything except Output, per its doc).",
+      "range": {
+        "startLine": 1889,
+        "startChar": 0,
+        "endLine": 1890,
+        "endChar": 56
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
