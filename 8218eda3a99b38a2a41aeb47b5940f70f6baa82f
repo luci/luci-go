@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a7779dc_65252caf",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-01T01:01:24Z",
+      "side": 1,
+      "message": "To update an existing database:\n\nALTER TABLE `physical_hosts` DROP FOREIGN KEY `physical_hosts_ibfk_2`;\nALTER TABLE `physical_hosts` DROP INDEX `machine_id`;\nALTER TABLE physical_hosts ADD CONSTRAINT FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT;\n\nTo change an index from unique to non-unique you need to delete and recreate it. To delete this particular index, you need to delete the fk constraint that uses it. Recreating the fk constraint also recreates the necessary index (this time as non-unique). It\u0027s not easy to add a migration for this because we don\u0027t name our fk constraints. Someone doing the migration needs to verify that `physical_hosts_ibfk_2` is in fact the right fk constraint to drop. Easier to just alter it here so new dbs are set up correctly, and manually modify existing dbs (fortunately I own all live instances of this db).",
+      "revId": "8218eda3a99b38a2a41aeb47b5940f70f6baa82f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
