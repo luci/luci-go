@@ -25,7 +25,7 @@ type IP struct {
 func (m *IP) Reset()                    { *m = IP{} }
 func (m *IP) String() string            { return proto.CompactTextString(m) }
 func (*IP) ProtoMessage()               {}
-func (*IP) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*IP) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
 func (m *IP) GetIpv4() string {
 	if m != nil {
@@ -59,7 +59,7 @@ type ListFreeIPsRequest struct {
 func (m *ListFreeIPsRequest) Reset()                    { *m = ListFreeIPsRequest{} }
 func (m *ListFreeIPsRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListFreeIPsRequest) ProtoMessage()               {}
-func (*ListFreeIPsRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*ListFreeIPsRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
 
 func (m *ListFreeIPsRequest) GetVlan() int64 {
 	if m != nil {
@@ -84,7 +84,7 @@ type ListIPsResponse struct {
 func (m *ListIPsResponse) Reset()                    { *m = ListIPsResponse{} }
 func (m *ListIPsResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListIPsResponse) ProtoMessage()               {}
-func (*ListIPsResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (*ListIPsResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
 
 func (m *ListIPsResponse) GetIps() []*IP {
 	if m != nil {
@@ -100,10 +100,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto", fileDescriptor4)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor4 = []byte{
 	// 226 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0x4b, 0x6a, 0xc3, 0x30,
 	0x10, 0x40, 0x51, 0xdc, 0x4f, 0xa2, 0x2c, 0x0a, 0x5a, 0x99, 0x96, 0x82, 0xf1, 0xca, 0x9b, 0x4a,

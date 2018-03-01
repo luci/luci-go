@@ -117,6 +117,11 @@ func New(params *Parameters) *cli.Application {
 			getNICsCmd(),
 			{},
 
+			// DRACs.
+			addDRACCmd(),
+			getDRACsCmd(),
+			{},
+
 			// Physical hosts.
 			addPhysicalHostCmd(),
 			editPhysicalHostCmd(),
@@ -129,7 +134,7 @@ func New(params *Parameters) *cli.Application {
 			getVMsCmd(),
 			{},
 
-			// Physical and virtual hosts.
+			// Hostnames.
 			deleteHostCmd(),
 			{},
 

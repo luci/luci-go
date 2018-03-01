@@ -249,6 +249,36 @@ func (s *DecoratedCrimson) UpdateNIC(c context.Context, req *UpdateNICRequest) (
 	return
 }
 
+func (s *DecoratedCrimson) CreateDRAC(c context.Context, req *CreateDRACRequest) (rsp *DRAC, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "CreateDRAC", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.CreateDRAC(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "CreateDRAC", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedCrimson) ListDRACs(c context.Context, req *ListDRACsRequest) (rsp *ListDRACsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ListDRACs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ListDRACs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ListDRACs", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) CreatePhysicalHost(c context.Context, req *CreatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {

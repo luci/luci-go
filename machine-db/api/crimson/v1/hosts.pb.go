@@ -23,7 +23,7 @@ type DeleteHostRequest struct {
 func (m *DeleteHostRequest) Reset()                    { *m = DeleteHostRequest{} }
 func (m *DeleteHostRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeleteHostRequest) ProtoMessage()               {}
-func (*DeleteHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*DeleteHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 func (m *DeleteHostRequest) GetName() string {
 	if m != nil {
@@ -44,10 +44,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto", fileDescriptor3)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor3 = []byte{
 	// 144 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x2c, 0xcc, 0xb1, 0x0e, 0xc2, 0x20,
 	0x10, 0x80, 0xe1, 0x54, 0x8d, 0x46, 0x36, 0x99, 0x3a, 0x36, 0x4e, 0x5d, 0xe4, 0x62, 0xdc, 0x74,
