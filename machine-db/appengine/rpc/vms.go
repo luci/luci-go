@@ -37,10 +37,11 @@ import (
 
 // CreateVM handles a request to create a new VM.
 func (*Service) CreateVM(c context.Context, req *crimson.CreateVMRequest) (*crimson.VM, error) {
-	if err := createVM(c, req.Vm); err != nil {
+	vm, err := createVM(c, req.Vm)
+	if err != nil {
 		return nil, err
 	}
-	return req.Vm, nil
+	return vm, nil
 }
 
 // ListVMs handles a request to list VMs.
@@ -64,14 +65,14 @@ func (*Service) UpdateVM(c context.Context, req *crimson.UpdateVMRequest) (*crim
 }
 
 // createVM creates a new VM in the database.
-func createVM(c context.Context, v *crimson.VM) (err error) {
+func createVM(c context.Context, v *crimson.VM) (_ *crimson.VM, err error) {
 	if err := validateVMForCreation(v); err != nil {
-		return err
+		return nil, err
 	}
 	ip, _ := common.ParseIPv4(v.Ipv4)
 	tx, err := database.Begin(c)
 	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
 	defer func() {
 		if err != nil {
@@ -83,7 +84,7 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 
 	hostnameId, err := assignHostnameAndIP(c, tx, v.Name, ip)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// vms.hostname_id, vms.physical_host_id, and vms.os_id are NOT NULL as above.
@@ -104,18 +105,27 @@ func createVM(c context.Context, v *crimson.VM) (err error) {
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'physical_host_id'"):
 			// e.g. "Error 1048: Column 'physical_host_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", v.Host, v.HostVlan)
+			return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", v.Host, v.HostVlan)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
+			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
 		}
-		return internalError(c, errors.Annotate(err, "failed to create VM").Err())
+		return nil, internalError(c, errors.Annotate(err, "failed to create VM").Err())
+	}
+
+	vms, err := listVMs(c, tx, &crimson.ListVMsRequest{
+		// VMs are typically identified by hostname and VLAN, but VLAN is inferred from IP address during creation.
+		Names: []string{v.Name},
+		Ipv4S: []string{v.Ipv4},
+	})
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch created VM").Err())
 	}
 
 	if err := tx.Commit(); err != nil {
-		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
 	}
-	return nil
+	return vms[0], nil
 }
 
 // listVMs returns a slice of VMs in the database.
