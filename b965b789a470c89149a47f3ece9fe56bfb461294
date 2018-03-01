@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c324c1ed_2fae1d62",
+        "filename": "common/proto/milo/annotations.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-01T22:30:45Z",
+      "side": 1,
+      "message": "Please document exactly what sort of data this should contain, what it will be used for, and what the implications are.",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 147,
+        "endChar": 67
+      },
+      "revId": "b965b789a470c89149a47f3ece9fe56bfb461294",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
