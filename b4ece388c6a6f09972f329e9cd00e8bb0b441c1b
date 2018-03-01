@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84dbf5d5_4ef99fc1",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-01T06:50:34Z",
+      "side": 1,
+      "message": "this does not match the spec in https://bugs.chromium.org/p/chromium/issues/detail?id\u003d816652\n1) spec says parameter, not property\n2) the value is a list of JSON objects, not comma separated emails in a single string",
+      "range": {
+        "startLine": 49,
+        "startChar": 25,
+        "endLine": 49,
+        "endChar": 80
+      },
+      "revId": "b4ece388c6a6f09972f329e9cd00e8bb0b441c1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "763af110_65ef7835",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-01T06:50:34Z",
+      "side": 1,
+      "message": "i am not sure want this customizability. Why not support only the one name specified in the bug? That is \"email_notify\". Otherwise we may have different build schedulers use different, inconsistent names.",
+      "range": {
+        "startLine": 52,
+        "startChar": 4,
+        "endLine": 52,
+        "endChar": 35
+      },
+      "revId": "b4ece388c6a6f09972f329e9cd00e8bb0b441c1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
