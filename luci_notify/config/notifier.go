@@ -42,18 +42,28 @@ type NotificationConfig struct {
 
 	// EmailRecipients is a list of email recipients to notify.
 	EmailRecipients []string `json:"email_recipients"`
+
+	// BuildbucketProperties is a list of buildbucket properties to resolve into
+	// email addresees.
+	BuildbucketProperties []string `json:"property_properties"`
 }
 
 func newNotificationConfig(cfg *notifyConfig.Notification) NotificationConfig {
 	var recipients []string
+	var properties []string
 	if cfg.Email != nil {
 		recipients = cfg.Email.Recipients
 	}
+	if cfg.Property != nil {
+		properties = cfg.Property.Properties
+	}
+
 	return NotificationConfig{
-		OnSuccess:       cfg.OnSuccess,
-		OnFailure:       cfg.OnFailure,
-		OnChange:        cfg.OnChange,
-		EmailRecipients: recipients,
+		OnSuccess:             cfg.OnSuccess,
+		OnFailure:             cfg.OnFailure,
+		OnChange:              cfg.OnChange,
+		EmailRecipients:       recipients,
+		BuildbucketProperties: properties,
 	}
 }
 

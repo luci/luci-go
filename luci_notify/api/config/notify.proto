@@ -45,6 +45,13 @@ message Notification {
     repeated string recipients = 1;
   }
 
+  // Property is a message representing a set of buildbucket properties whose
+  // values (if present) are used as a comma separated list of email recipients.
+  message Property {
+    // Properties is a list of buildbucket properties to check.
+    repeated string properties = 1;
+  }
+
   // OnSuccess specifies a trigger to notify recipients on each build success.
   //
   // Optional.
@@ -65,6 +72,12 @@ message Notification {
   //
   // Optional.
   Email email = 4;
+
+  // Property is the set of buildbucket properties to resolve into email
+  // addresses to notify.
+  //
+  // Optional.
+  Property property = 5;
 }
 
 // Builder references a buildbucket builder in the current project.
