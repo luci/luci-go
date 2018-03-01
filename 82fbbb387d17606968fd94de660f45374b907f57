@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5b9e0961_df67a99e",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-03-01T18:32:17Z",
+      "side": 1,
+      "message": "Forgot about that, thanks!",
+      "parentUuid": "4d02b6e8_43f268a1",
+      "range": {
+        "startLine": 301,
+        "startChar": 3,
+        "endLine": 303,
+        "endChar": 26
+      },
+      "revId": "82fbbb387d17606968fd94de660f45374b907f57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5032675_aa57564e",
         "filename": "common/bq/eventupload.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "82fbbb387d17606968fd94de660f45374b907f57",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67fac953_a1b67886",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-03-01T18:32:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5032675_aa57564e",
+      "revId": "82fbbb387d17606968fd94de660f45374b907f57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
