@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "bdedbd56_48d62e91",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-01T06:17:05Z",
+      "side": 1,
+      "message": "I see, yes this is not a trivial problem. I lean towards accepting your current proposal because I have no better one.\nBut, can you ask whoever was reviewer of your app proposal? I am likely too far away from your app to have meaningful suggestions anyway.\n\nFTR, luci team didn\u0027t shy away from duplicating config stuff (e.g. buildername) in a bunch of configs, though not because we like it, but because we think it\u0027s less bad than what we have today in buildbot world.",
+      "parentUuid": "8a16d0e3_ae2a4d31",
+      "revId": "f097f9725127ad2fb708de475e345e56e2327d1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bce089a3_fe9ff24f",
         "filename": "luci_notify/notify/pubsub_test.go",
         "patchSetId": 2
