@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3d78daba_4c88107f",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-01T23:40:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0779dfc9_4bd35712",
+      "revId": "65e1ade276213624dfbc0f9447583e736f27576c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a342db5_c2498375",
         "filename": "machine-db/client/cli/flags.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "65e1ade276213624dfbc0f9447583e736f27576c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2a4a1c5_20a84afb",
+        "filename": "machine-db/client/cli/flags.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-01T23:40:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a342db5_c2498375",
+      "revId": "65e1ade276213624dfbc0f9447583e736f27576c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
