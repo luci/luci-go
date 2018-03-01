@@ -37,10 +37,11 @@ import (
 
 // CreatePhysicalHost handles a request to create a new physical host.
 func (*Service) CreatePhysicalHost(c context.Context, req *crimson.CreatePhysicalHostRequest) (*crimson.PhysicalHost, error) {
-	if err := createPhysicalHost(c, req.Host); err != nil {
+	host, err := createPhysicalHost(c, req.Host)
+	if err != nil {
 		return nil, err
 	}
-	return req.Host, nil
+	return host, nil
 }
 
 // ListPhysicalHosts handles a request to list physical hosts.
@@ -64,14 +65,14 @@ func (*Service) UpdatePhysicalHost(c context.Context, req *crimson.UpdatePhysica
 }
 
 // createPhysicalHost creates a new physical host in the database.
-func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) {
+func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (_ *crimson.PhysicalHost, err error) {
 	if err := validatePhysicalHostForCreation(h); err != nil {
-		return err
+		return nil, err
 	}
 	ip, _ := common.ParseIPv4(h.Ipv4)
 	tx, err := database.Begin(c)
 	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
 	defer func() {
 		if err != nil {
@@ -83,7 +84,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 
 	hostnameId, err := assignHostnameAndIP(c, tx, h.Name, ip)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
@@ -104,15 +105,15 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
-			return status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
+			return nil, status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
+			return nil, status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
+			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
 		}
-		return internalError(c, errors.Annotate(err, "failed to create physical host").Err())
+		return nil, internalError(c, errors.Annotate(err, "failed to create physical host").Err())
 	}
 
 	// Physical host state is stored with the backing machine. Update if necessary.
@@ -123,14 +124,23 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (err error) 
 			WHERE name = ?
 		`, h.State, h.Machine)
 		if err != nil {
-			return internalError(c, errors.Annotate(err, "failed to update machine").Err())
+			return nil, internalError(c, errors.Annotate(err, "failed to update machine").Err())
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
-		return internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	hosts, err := listPhysicalHosts(c, tx, &crimson.ListPhysicalHostsRequest{
+		// Physical hosts are typically identified by hostname and VLAN, but VLAN is inferred from IP address during creation.
+		Names: []string{h.Name},
+		Ipv4S: []string{h.Ipv4},
+	})
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch created physical host").Err())
 	}
-	return nil
+
+	if err := tx.Commit(); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	}
+	return hosts[0], nil
 }
 
 // listPhysicalHosts returns a slice of physical hosts in the database.
