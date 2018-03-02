@@ -22,6 +22,30 @@
       "revId": "47256502f8dd81af4420eb3bc913c4dc69e57ff3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "242ecdce_07bf10ef",
+        "filename": "common/proto/milo/annotations.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1167649
+      },
+      "writtenOn": "2018-03-02T20:35:43Z",
+      "side": 1,
+      "message": "I think this makes sense. That way recipe engine is just passing along data, and kitchen can decide what to do re: monitoring.\n\nOn the recipe engine side, we\u0027ll require step_class to be set if monitor \u003d true.",
+      "parentUuid": "6c0c5d84_525d7c7d",
+      "range": {
+        "startLine": 155,
+        "startChar": 9,
+        "endLine": 155,
+        "endChar": 22
+      },
+      "revId": "47256502f8dd81af4420eb3bc913c4dc69e57ff3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
