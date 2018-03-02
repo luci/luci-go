@@ -298,10 +298,8 @@ func (u *Uploader) updateUploads(ctx context.Context, count int64, status string
 	}
 }
 
-// Put uploads one or more rows to the BigQuery service. src is expected to
-// be a struct (or a pointer to a struct) matching the schema in Uploader, or a
-// slice containing such values. Put takes care of adding InsertIDs, used by
-// BigQuery to deduplicate rows.
+// Put uploads one or more rows to the BigQuery service. Put takes care of
+// adding InsertIDs, used by BigQuery to deduplicate rows.
 //
 // If any rows do now match one of the expected types, Put will not attempt to
 // upload any rows and returns an InvalidTypeError.
@@ -315,19 +313,22 @@ func (u *Uploader) updateUploads(ctx context.Context, count int64, status string
 //
 // See bigquery documentation and source code for detailed information on how
 // struct values are mapped to rows.
-func (u *Uploader) Put(ctx context.Context, src interface{}) error {
+func (u *Uploader) Put(ctx context.Context, messages ...proto.Message) error {
 	if _, ok := ctx.Deadline(); !ok {
 		var c context.CancelFunc
 		ctx, c = context.WithTimeout(ctx, time.Minute)
 		defer c()
 	}
-	rows, err := rowsFromSrc(src)
-	if err != nil {
-		return err
+	rows := make([]*Row, len(messages))
+	for i, m := range messages {
+		rows[i] = &Row{
+			Message:  m,
+			InsertID: ID.Generate(),
+		}
 	}
 	for _, rowSet := range batch(rows, u.batchSize()) {
 		var failed int
-		err = u.Uploader.Put(ctx, rowSet)
+		err := u.Uploader.Put(ctx, rowSet)
 		if err != nil {
 			logging.WithError(err).Errorf(ctx, "eventupload: Uploader.Put failed")
 			if merr, ok := err.(bigquery.PutMultiError); ok {
@@ -348,10 +349,9 @@ func (u *Uploader) Put(ctx context.Context, src interface{}) error {
 	return nil
 }
 
-// TODO: when proto transition is complete, deal in *Rows, not bigquery.ValueSaver
-func batch(rows []bigquery.ValueSaver, batchSize int) [][]bigquery.ValueSaver {
+func batch(rows []*Row, batchSize int) [][]*Row {
 	rowSetsLen := int(math.Ceil(float64(len(rows) / batchSize)))
-	rowSets := make([][]bigquery.ValueSaver, 0, rowSetsLen)
+	rowSets := make([][]*Row, 0, rowSetsLen)
 	for len(rows) > 0 {
 		batch := rows
 		if len(batch) > batchSize {
@@ -361,76 +361,6 @@ func batch(rows []bigquery.ValueSaver, batchSize int) [][]bigquery.ValueSaver {
 		rows = rows[len(batch):]
 	}
 	return rowSets
-}
-
-// rowsFromSrc accepts pointers to structs which implement proto.Message,
-// and slices of this type. It does all necessary conversion and validation to
-// return a slice of Row pointers. Row implements bigquery.ValueSaver and can be
-// used with bigquery.Uploader.Put().
-//
-// rowsFromSrc also handles the following: structs which do not implement
-// proto.Message, pointers to such structs, and slices of such values. This is
-// to maintain backwards compatability during the proto transition.
-// TODO: when proto transition is complete, deal in *Rows and proto.Messages.
-func rowsFromSrc(src interface{}) ([]bigquery.ValueSaver, error) {
-	// TODO: when proto transition is complete, remove
-	validateSingleValue := func(v reflect.Value) error {
-		switch v.Kind() {
-		case reflect.Struct:
-			return nil
-		case reflect.Ptr:
-			ptrK := v.Elem().Kind()
-			if ptrK == reflect.Struct {
-				return nil
-			}
-			return errors.Reason("pointer types must point to structs, not %s", ptrK).Err()
-		default:
-			return errors.Reason("struct or pointer-to-struct expected, got %v", v.Kind()).Err()
-		}
-	}
-
-	vsFromVal := func(v reflect.Value) (bigquery.ValueSaver, error) {
-		if m, ok := v.Interface().(proto.Message); ok {
-			return &Row{
-				Message:  m,
-				InsertID: ID.Generate(),
-			}, nil
-		}
-		// TODO: when proto transition is complete, remove
-		err := validateSingleValue(v)
-		if err != nil {
-			return nil, err
-		}
-		s, err := bigquery.InferSchema(v)
-		if err != nil {
-			return nil, errors.Annotate(err, "could not infer schema for (%T)", v).Err()
-		}
-		return &bigquery.StructSaver{
-			Schema:   s,
-			InsertID: ID.Generate(),
-			Struct:   v,
-		}, nil
-	}
-
-	var vs []bigquery.ValueSaver
-	srcV := reflect.ValueOf(src)
-	if srcV.Kind() == reflect.Slice {
-		vs = make([]bigquery.ValueSaver, srcV.Len())
-		for i := 0; i < len(vs); i++ {
-			v, err := vsFromVal(srcV.Index(i))
-			if err != nil {
-				return nil, err
-			}
-			vs[i] = v
-		}
-	} else {
-		v, err := vsFromVal(srcV)
-		if err != nil {
-			return nil, err
-		}
-		vs = []bigquery.ValueSaver{v}
-	}
-	return vs, nil
 }
 
 // BatchUploader contains the necessary data for asynchronously sending batches

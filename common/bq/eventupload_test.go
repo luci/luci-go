@@ -179,48 +179,6 @@ func TestSave(t *testing.T) {
 	})
 }
 
-func TestRowsFromSrc(t *testing.T) {
-	t.Parallel()
-
-	tcs := []struct {
-		desc    string
-		src     interface{}
-		wantLen int
-	}{
-		{
-			desc:    "accepts pointers to structs which implement proto.Message",
-			src:     &testdata.TestMessage{},
-			wantLen: 1,
-		},
-		// TODO: when proto transition is complete, change to does not accept
-		{
-			desc:    "accepts structs",
-			src:     testdata.TestMessage{},
-			wantLen: 1,
-		},
-		// TODO: when proto transition is complete, change to does not accept
-		{
-			desc:    "accepts pointers to structs which do not implement proto.Message",
-			src:     &fakeEvent{},
-			wantLen: 1,
-		},
-		{
-			desc:    "accepts slices of structs which implement proto.Message",
-			src:     []*testdata.TestMessage{{}, {}},
-			wantLen: 2,
-		},
-	}
-
-	Convey("test rowsFromSrc()", t, func() {
-		for _, tc := range tcs {
-			Convey(tc.desc, func() {
-				r, _ := rowsFromSrc(tc.src)
-				So(r, ShouldHaveLength, tc.wantLen)
-			})
-		}
-	})
-}
-
 func TestStage(t *testing.T) {
 	t.Parallel()
 
@@ -264,20 +222,14 @@ func TestBatch(t *testing.T) {
 
 	Convey("Test batch", t, func() {
 		rowLimit := 2
-		// TODO: when proto transition is complete, use *Rows, not ValueSavers
-		rows := make([]bigquery.ValueSaver, 3)
+		rows := make([]*Row, 3)
 		for i := 0; i < 3; i++ {
 			rows[i] = &Row{}
 		}
 
-		want := [][]bigquery.ValueSaver{
-			{
-				&Row{},
-				&Row{},
-			},
-			{
-				&Row{},
-			},
+		want := [][]*Row{
+			{{}, {}},
+			{{}},
 		}
 		rowSets := batch(rows, rowLimit)
 		So(rowSets, ShouldResemble, want)
