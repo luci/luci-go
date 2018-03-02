@@ -70,6 +70,30 @@
       "revId": "7962936f7aa4d99d17895fce7f7277c3fc1bfccc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0869d558_7b088f93",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-02T20:21:46Z",
+      "side": 1,
+      "message": "oops, that was debug stuff. Sorry.",
+      "parentUuid": "026199b8_f476b504",
+      "range": {
+        "startLine": 318,
+        "startChar": 42,
+        "endLine": 318,
+        "endChar": 48
+      },
+      "revId": "7962936f7aa4d99d17895fce7f7277c3fc1bfccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
