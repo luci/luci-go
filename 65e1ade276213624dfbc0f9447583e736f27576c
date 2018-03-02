@@ -69,6 +69,29 @@
       "revId": "65e1ade276213624dfbc0f9447583e736f27576c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "06d45b90_f6eed823",
+        "filename": "machine-db/client/cli/flags.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-02T05:49:48Z",
+      "side": 1,
+      "message": "i think changing this to true is what this CL should have been\n\nshowNoHeaders is negative. Negatives are generally slightly harder to reason about, e.g. !showNoHeaders",
+      "range": {
+        "startLine": 38,
+        "startChar": 53,
+        "endLine": 38,
+        "endChar": 58
+      },
+      "revId": "65e1ade276213624dfbc0f9447583e736f27576c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
