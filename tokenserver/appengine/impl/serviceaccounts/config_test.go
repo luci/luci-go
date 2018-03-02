@@ -20,6 +20,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -76,7 +78,7 @@ func TestRules(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
-		rule, err := cfg.Rule(ctx, "abc@robots.com")
+		rule, err := cfg.Rule(ctx, "abc@robots.com", "user:proxy@example.com")
 		So(err, ShouldBeNil)
 		So(rule, ShouldNotBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 1")
@@ -115,39 +117,46 @@ func TestRules(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
-		rule, err := cfg.Rule(ctx, "abc@robots.com")
+		rule, err := cfg.Rule(ctx, "abc@robots.com", "user:proxy@example.com")
 		So(err, ShouldBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 1")
 
-		rule, err = cfg.Rule(ctx, "def@robots.com")
+		rule, err = cfg.Rule(ctx, "def@robots.com", "user:proxy@example.com")
 		So(err, ShouldBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 1")
 
-		rule, err = cfg.Rule(ctx, "xyz@robots.com")
+		rule, err = cfg.Rule(ctx, "xyz@robots.com", "user:proxy@example.com")
 		So(err, ShouldBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 2")
 
-		rule, err = cfg.Rule(ctx, "via-group1@robots.com")
+		rule, err = cfg.Rule(ctx, "via-group1@robots.com", "user:proxy@example.com")
 		So(err, ShouldBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 1")
 
-		rule, err = cfg.Rule(ctx, "via-group2@robots.com")
+		rule, err = cfg.Rule(ctx, "via-group2@robots.com", "user:proxy@example.com")
 		So(err, ShouldBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 2")
 
-		rule, err = cfg.Rule(ctx, "via-both@robots.com")
-		So(err, ShouldErrLike, `matches multiple rules: "rule 1", "rule 2"`)
+		// Note: "rule 2" is not visible to proxy@example.com.
+		rule, err = cfg.Rule(ctx, "via-both@robots.com", "user:proxy@example.com")
+		So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+		So(err, ShouldErrLike, `matches 2 rules in the config rev fake-revision: "rule 1" and 1 more`)
 
-		rule, err = cfg.Rule(ctx, "via-group1-and-rule1@robots.com")
+		// Note: no rules are visible to the proxy at all.
+		rule, err = cfg.Rule(ctx, "via-both@robots.com", "user:unknown@example.com")
+		So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+		So(err, ShouldErrLike, `unknown service account`)
+
+		rule, err = cfg.Rule(ctx, "via-group1-and-rule1@robots.com", "user:proxy@example.com")
 		So(err, ShouldBeNil)
 		So(rule.Rule.Name, ShouldEqual, "rule 1")
 
-		rule, err = cfg.Rule(ctx, "via-group1-and-rule2@robots.com")
-		So(err, ShouldErrLike, `matches multiple rules: "rule 1", "rule 2"`)
+		rule, err = cfg.Rule(ctx, "via-group1-and-rule2@robots.com", "user:proxy@example.com")
+		So(err, ShouldErrLike, `matches 2 rules in the config rev fake-revision: "rule 1" and 1 more`)
 
-		rule, err = cfg.Rule(ctx, "unknown@robots.com")
-		So(err, ShouldBeNil)
-		So(rule, ShouldBeNil)
+		rule, err = cfg.Rule(ctx, "unknown@robots.com", "user:proxy@example.com")
+		So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+		So(err, ShouldErrLike, `unknown service account`)
 	})
 
 	Convey("Check works", t, func() {

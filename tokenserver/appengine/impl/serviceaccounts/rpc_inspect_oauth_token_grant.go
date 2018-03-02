@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -71,17 +70,14 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 
 		// Always return the rule that matches the service account, even if the
 		// token itself is not allowed by it (we check it separately below).
-		rule, err := rules.Rule(c, resp.TokenBody.ServiceAccount)
+		rule, err := rules.Rule(c, resp.TokenBody.ServiceAccount, "")
 		switch {
-		case err != nil:
-			// Note: InspectOAuthTokenGrant is admin API. It is fine to return the
-			// detailed error response.
-			return nil, status.Errorf(
-				codes.Internal, "failed to query rules for account %q using config rev %s - %s",
-				resp.TokenBody.ServiceAccount, rules.ConfigRevision(), err)
-		case rule == nil:
-			addInvalidityReason("the service account is not specified in the rules (rev %s)", rules.ConfigRevision())
+		case status.Code(err) == codes.PermissionDenied:
+			s, _ := status.FromError(err)
+			addInvalidityReason("%s", s.Message())
 			return resp, nil
+		case err != nil: // usually codes.Internal
+			return nil, err
 		default:
 			resp.MatchingRule = rule.Rule
 		}
@@ -95,9 +91,7 @@ func (r *InspectOAuthTokenGrantRPC) InspectOAuthTokenGrant(c context.Context, re
 		switch _, err = rules.Check(c, q); {
 		case err == nil:
 			resp.AllowedByRules = true
-
-		// TODO(nodir, vadimsh): use status.FromError
-		case grpc.Code(err) == codes.Internal:
+		case status.Code(err) == codes.Internal:
 			return nil, err // a transient error when checking rules
 		default: // fatal gRPC error => the rules forbid the token
 			addInvalidityReason("not allowed by the rules (rev %s)", rules.ConfigRevision())

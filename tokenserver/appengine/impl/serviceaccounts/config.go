@@ -52,6 +52,16 @@ const (
 	maxAllowedMaxGrantValidityDuration = 7 * 24 * 3600
 )
 
+var (
+	// errGenericDenied is returned to unrecognized callers to indicate they don't
+	// have access.
+	errGenericDenied = status.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+
+	// errGenericInternal is returned on internal errors if we still don't know
+	// whether the caller is trusted to see more details or not.
+	errGenericInternal = status.Errorf(codes.Internal, "internal error when querying rules, see logs")
+)
+
 // Rules is queryable representation of service_accounts.cfg rules.
 type Rules struct {
 	revision      string           // config revision this policy is imported from
@@ -71,6 +81,7 @@ type Rule struct {
 	EndUsers       *identityset.Set          // parsed 'end_user'
 	Proxies        *identityset.Set          // parsed 'proxy'
 	TrustedProxies *identityset.Set          // parsed 'trusted_proxy'
+	AllProxies     *identityset.Set          // union of 'proxy' and 'trusted_proxy'
 }
 
 // RulesQuery describes circumstances of using some service account.
@@ -206,14 +217,13 @@ func (r *Rules) ConfigRevision() string {
 	return r.revision
 }
 
-// Rule returns a rule governing the access to the given service account.
+// MatchingRules returns all rules (zero or more, sorted by name) that
+// apply to the given service account.
 //
-// On success returns the corresponding rule or nil if the given accounts is not
-// in the config. Returns an error if the check failed, in particular if the
-// account is mentioned in more than one rule.
+// Returns an error if the group membership check fails.
 //
 // Relatively heavy operation, try to reuse the result.
-func (r *Rules) Rule(c context.Context, serviceAccount string) (*Rule, error) {
+func (r *Rules) MatchingRules(c context.Context, serviceAccount string) ([]*Rule, error) {
 	// TODO(vadimsh): This will not scale when the number of rules becomes large.
 	// At some point we'll have to give up the perfect consistency and start
 	// caching the results.
@@ -241,24 +251,82 @@ func (r *Rules) Rule(c context.Context, serviceAccount string) (*Rule, error) {
 		matchingRules[rule] = struct{}{}
 	}
 
-	// There should be at most one hit.
-	switch len(matchingRules) {
-	case 0:
-		return nil, nil
-	case 1:
-		for rule := range matchingRules {
-			return rule, nil
-		}
-		panic("impossible")
-	default:
-		names := make([]string, 0, len(matchingRules))
-		for r := range matchingRules {
-			names = append(names, fmt.Sprintf("%q", r.Rule.Name))
-		}
-		sort.Strings(names)
-		return nil, errors.Reason(
-			"account %s matches multiple rules: %s", serviceAccount, strings.Join(names, ", ")).Err()
+	// Convert to an array and sort for deterministic error messages.
+	out := make([]*Rule, 0, len(matchingRules))
+	for rule := range matchingRules {
+		out = append(out, rule)
 	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Rule.Name < out[j].Rule.Name })
+	return out, nil
+}
+
+// Rule returns a rule matching the service account or a grpc error.
+//
+// It uses the given 'proxy' exclusively to decide whether it is okay to put
+// detailed error message in the response. Unknown proxies get only vague
+// generic reply. It does NOT check whether proxy is allowed to use the rule,
+// this should be done by the caller.
+//
+// If 'proxy' is an empty string, the error message contains all possible
+// details (this is used only from admin RPCs).
+//
+// Always logs detailed errors.
+func (r *Rules) Rule(c context.Context, serviceAccount string, proxy identity.Identity) (*Rule, error) {
+	rules, err := r.MatchingRules(c, serviceAccount)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to query rules for account %q using config rev %s", serviceAccount, r.revision)
+		return nil, errGenericInternal
+	}
+
+	switch len(rules) {
+	case 0:
+		logging.Errorf(c, "No rule for service account %q in the config rev %s", serviceAccount, r.revision)
+		if proxy == "" {
+			return nil, status.Errorf(codes.PermissionDenied, "the service account is not specified in the rules (rev %s)", r.revision)
+		}
+		return nil, errGenericDenied
+	case 1:
+		logging.Infof(c, "Found the matching rule %q in the config rev %s", rules[0].Rule.Name, r.revision)
+		return rules[0], nil
+	}
+
+	// Here we have two or more rules matching the account. This is forbidden.
+	// Construct an error message that contains only rule names visible to the
+	// caller ('proxy'), if any. Log all rules to the server log.
+	allRules := make([]string, 0, len(rules))
+	visibleRules := make([]string, 0, len(rules))
+	for _, rule := range rules {
+		visible := proxy == ""
+		if !visible {
+			var err error
+			if visible, err = rule.AllProxies.IsMember(c, proxy); err != nil {
+				logging.WithError(err).Errorf(c, "Failed to check membership of proxy %q in rule %q", proxy, rule.Rule.Name)
+				return nil, errGenericInternal
+			}
+		}
+		name := fmt.Sprintf("%q", rule.Rule.Name)
+		allRules = append(allRules, name)
+		if visible {
+			visibleRules = append(visibleRules, name)
+		}
+	}
+
+	// Always log all details to the server log.
+	logging.Errorf(c, "Service account %q matches %d rules in the config rev %s: %s",
+		serviceAccount, len(rules), r.revision, strings.Join(allRules, ", "))
+
+	// Totally unknown proxies see no details.
+	if len(visibleRules) == 0 {
+		return nil, errGenericDenied
+	}
+
+	// Show names of visible rules in the error message.
+	msg := fmt.Sprintf("service account %q matches %d rules in the config rev %s: %s",
+		serviceAccount, len(rules), r.revision, strings.Join(visibleRules, ", "))
+	if len(visibleRules) != len(rules) {
+		msg += fmt.Sprintf(" and %d more", len(rules)-len(visibleRules))
+	}
+	return nil, status.Errorf(codes.PermissionDenied, msg)
 }
 
 // Check checks that rules allow the requested usage.
@@ -267,25 +335,23 @@ func (r *Rules) Rule(c context.Context, serviceAccount string) (*Rule, error) {
 // The returned rule can be consulted further to check additional restrictions,
 // such as allowed OAuth scopes or validity duration.
 //
-// It is supposed to be called as part of some RPC handler. It logs errors
-// internally, so no need to log them outside.
+// Note that ambiguities in rules are forbidden: an account must match at most
+// one rule. If it matches multiple rules, PermissionDenied error will be
+// returned, indicating the account is misconfigured and must not be used until
+// the ambiguity is fixed.
+//
+// Supposed to be called as part of some RPC handler. It logs errors internally,
+// so no need to log them outside.
 func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 	rule := query.Rule
-
 	if rule == nil {
-		// Grab the rule for this account. Don't leak information about presence or
-		// absence of the account to the caller, they may not be authorized to see
-		// the account at all.
-		var err error
-		switch rule, err = r.Rule(c, query.ServiceAccount); {
-		case err != nil:
-			logging.WithError(err).Errorf(c, "Failed to query rules for account %q using config rev %s", query.ServiceAccount, r.revision)
-			return nil, status.Errorf(codes.Internal, "internal error when querying rules, see logs")
-		case rule == nil:
-			logging.Errorf(c, "No rule for service account %q in the config rev %s", query.ServiceAccount, r.revision)
-			return nil, status.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+		if query.Proxy == "" {
+			panic("query.Proxy must be already populated here")
 		}
-		logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Rule.Name, r.revision)
+		var err error
+		if rule, err = r.Rule(c, query.ServiceAccount, query.Proxy); err != nil {
+			return nil, err
+		}
 	}
 
 	// Trusted proxies are allowed to skip the end user check. We trust them to do
@@ -307,11 +373,11 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 		// it's a total stranger and keep error messages not very detailed, to avoid
 		// leaking internal configuration.
 		logging.Errorf(c, "Caller %q is not authorized to use account %q", query.Proxy, query.ServiceAccount)
-		return nil, status.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+		return nil, errGenericDenied
 	}
 
-	// Here the proxy is in 'Proxies' list, but in 'TrustedProxies' list. Check
-	// that the end user is authorized by the rule.
+	// Here the proxy is in 'Proxies' list, but not in 'TrustedProxies' list.
+	// Check that the end user is authorized by the rule.
 	switch known, err := rule.EndUsers.IsMember(c, query.EndUser); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to check membership of end user %q", query.EndUser)
@@ -370,6 +436,7 @@ func makeRule(c context.Context, ruleProto *admin.ServiceAccountRule, defaults *
 		EndUsers:       endUsers,
 		Proxies:        proxies,
 		TrustedProxies: trustedProxies,
+		AllProxies:     identityset.Union(proxies, trustedProxies),
 	}, nil
 }
 
