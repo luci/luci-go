@@ -43,9 +43,9 @@
     "Revision": null,
     "Description": "",
     "Changelist": {
-      "Label": "Gerrit CL",
+      "Label": "Gerrit CL 513444 (ps#32)",
       "URL": "https://chromium-review.googlesource.com/c/513444/32",
-      "AriaLabel": "gerrit changelist number 513444"
+      "AriaLabel": "gerrit changelist number 513444 patchset 32"
     },
     "CommitURL": "",
     "File": null,

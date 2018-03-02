@@ -20,11 +20,13 @@ package ui
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"regexp"
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -304,6 +306,26 @@ type Link struct {
 // NewLink does just about what you'd expect.
 func NewLink(label, url, ariaLabel string) *Link {
 	return &Link{Link: model.Link{Label: label, URL: url}, AriaLabel: ariaLabel}
+}
+
+// NewPatchLink is the right way (TM) to generate links to Rietveld/Gerrit CLs.
+//
+// Returns nil if provided buildset is not Rietveld or Gerrit CL.
+func NewPatchLink(cl buildbucket.BuildSet) *Link {
+	switch v := cl.(type) {
+	case *buildbucket.GerritChange:
+		return NewLink(
+			fmt.Sprintf("Gerrit CL %d (ps#%d)", v.Change, v.PatchSet),
+			v.URL(),
+			fmt.Sprintf("gerrit changelist number %d patchset %d", v.Change, v.PatchSet))
+	case *buildbucket.RietveldChange:
+		return NewLink(
+			fmt.Sprintf("Rietveld CL %d (ps#%d)", v.Issue, v.PatchSet),
+			v.URL(),
+			fmt.Sprintf("rietveld changelist number %d patchset %d", v.Issue, v.PatchSet))
+	default:
+		return nil
+	}
 }
 
 /// HTML methods.

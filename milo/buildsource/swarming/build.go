@@ -24,6 +24,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/buildbucket"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -378,28 +379,18 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 
 func addBuildsetInfo(build *ui.MiloBuild, tags map[string]string) {
 	buildset := tags["buildset"]
-	if !strings.HasPrefix(buildset, "patch/") {
-		// Buildset isn't a patch, ignore.
+	cl := buildbucket.ParseBuildSet(buildset)
+	if cl == nil {
 		return
 	}
-
-	patchset := strings.TrimLeft(buildset, "patch/")
-	// TODO(hinoka): Also support Rietveld patches.
-	if strings.HasPrefix(patchset, "gerrit/") {
-		gerritPatchset := strings.TrimLeft(patchset, "gerrit/")
-		parts := strings.Split(gerritPatchset, "/")
-		if len(parts) != 3 {
-			// Not a well-formed gerrit patchset.
-			return
-		}
-		if build.Trigger == nil {
-			build.Trigger = &ui.Trigger{}
-		}
-		build.Trigger.Changelist = ui.NewLink(
-			"Gerrit CL", fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]),
-			fmt.Sprintf("gerrit changelist number %s", parts[1]))
-
+	link := ui.NewPatchLink(cl)
+	if link == nil {
+		return
 	}
+	if build.Trigger == nil {
+		build.Trigger = &ui.Trigger{}
+	}
+	build.Trigger.Changelist = link
 }
 
 func addRecipeLink(build *ui.MiloBuild, tags map[string]string) {

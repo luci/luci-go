@@ -19,14 +19,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -327,8 +328,8 @@ func blame(b *buildbot.Build) (result []*ui.Commit) {
 // including the properties.
 func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 	ss := &ui.Trigger{}
-	rietveld := ""
-	gerrit := ""
+	var rietveld url.URL
+	var gerrit url.URL
 	gotRevision := ""
 	repository := ""
 	issue := int64(-1)
@@ -358,16 +359,25 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 				logging.Warningf(c, "Field %s is not a string: %#v", prop.Name, prop.Value)
 			}
 		}
+		setIfURL := func(dst *url.URL) {
+			if v, ok := prop.Value.(string); ok {
+				if u, err := url.Parse(v); err == nil {
+					*dst = *u
+					return
+				}
+			}
+			logging.Warningf(c, "Field %s is not a string URL: %#v", prop.Name, prop.Value)
+		}
 
 		switch prop.Name {
 		case "rietveld":
-			setIfStr(&rietveld)
+			setIfURL(&rietveld)
 		case "issue", "patch_issue":
 			setIfIntOrStr(&issue)
 		case "got_revision":
 			setIfStr(&gotRevision)
 		case "patch_gerrit_url":
-			setIfStr(&gerrit)
+			setIfURL(&gerrit)
 		case "patch_set", "patchset":
 			setIfIntOrStr(&patchset)
 		case "repository":
@@ -375,18 +385,14 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 		}
 	}
 	if issue != -1 && patchset != -1 {
+		var cl buildbucket.BuildSet = nil
 		switch {
-		case rietveld != "":
-			rietveld = strings.TrimRight(rietveld, "/")
-			ss.Changelist = ui.NewLink(
-				fmt.Sprintf("Rietveld CL %d", issue),
-				fmt.Sprintf("%s/%d", rietveld, issue), "")
-		case gerrit != "":
-			gerrit = strings.TrimRight(gerrit, "/")
-			ss.Changelist = ui.NewLink(
-				fmt.Sprintf("Gerrit CL %d (ps#%d)", issue, patchset),
-				fmt.Sprintf("%s/c/%d/%d", gerrit, issue, patchset), "")
+		case rietveld.Host != "":
+			cl = &buildbucket.RietveldChange{rietveld.Host, issue, int(patchset)}
+		case gerrit.Host != "":
+			cl = &buildbucket.GerritChange{gerrit.Host, issue, int(patchset)}
 		}
+		ss.Changelist = ui.NewPatchLink(cl)
 	}
 
 	if gotRevision != "" {
