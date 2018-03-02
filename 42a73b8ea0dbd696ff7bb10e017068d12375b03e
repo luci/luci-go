@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66db8f43_25ffeefa",
+        "filename": "machine-db/api/crimson/v1/physical_hosts.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-02T01:05:40Z",
+      "side": 1,
+      "message": "I\u0027m not sure it\u0027s necessary to include these in the response, so I only added them as filters for now.",
+      "revId": "42a73b8ea0dbd696ff7bb10e017068d12375b03e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78b1296c_7a433aae",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-02T01:05:40Z",
+      "side": 1,
+      "message": "Because these three are not actually in the response, we don\u0027t need to look at these tables unless requested.",
+      "revId": "42a73b8ea0dbd696ff7bb10e017068d12375b03e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
