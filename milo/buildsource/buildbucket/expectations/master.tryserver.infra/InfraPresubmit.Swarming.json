@@ -37,9 +37,9 @@
           "Revision": null,
           "Description": "",
           "Changelist": {
-            "Label": "Gerrit CL 1 (ps#2)",
+            "Label": "Gerrit CL chromium-review.googlesource.com 1 (ps#2)",
             "URL": "https://chromium-review.googlesource.com/c/1/2",
-            "AriaLabel": "gerrit changelist 1 (ps#2)"
+            "AriaLabel": "gerrit changelist number 1 patchset 2"
           },
           "CommitURL": "",
           "File": null
@@ -87,9 +87,9 @@
           "Revision": null,
           "Description": "",
           "Changelist": {
-            "Label": "Gerrit CL 2 (ps#2)",
+            "Label": "Gerrit CL chromium-review.googlesource.com 2 (ps#2)",
             "URL": "https://chromium-review.googlesource.com/c/2/2",
-            "AriaLabel": "gerrit changelist 2 (ps#2)"
+            "AriaLabel": "gerrit changelist number 2 patchset 2"
           },
           "CommitURL": "",
           "File": null
