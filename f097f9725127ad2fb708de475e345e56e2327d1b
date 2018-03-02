@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "c1a5593a_c3fb0f9c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-03-02T23:52:45Z",
+      "side": 1,
+      "message": "nodir@ was the primary reviewer for luci-notify so in that sense I think he\u0027d have the most context.",
+      "parentUuid": "bdedbd56_48d62e91",
+      "revId": "f097f9725127ad2fb708de475e345e56e2327d1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bce089a3_fe9ff24f",
         "filename": "luci_notify/notify/pubsub_test.go",
         "patchSetId": 2
