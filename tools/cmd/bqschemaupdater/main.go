@@ -142,7 +142,7 @@ func parseFlags() (*flags, error) {
 	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table.")
 	flag.StringVar(&f.PartitioningField, "partitioning-field", "", "Name of a timestamp field to use for table partitioning (beta).")
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned.")
-	flag.DurationVar(&f.PartitioningExpiration, "partition-expiration", 0, "Expiration for partitions. 0 for no expiration.")
+	flag.DurationVar(&f.PartitioningExpiration, "partitioning-expiration", 0, "Expiration for partitions. 0 for no expiration.")
 	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message.")
 	flag.BoolVar(&f.force, "force", false, "proceed without a user confirmation.")
 	// -I matches protoc's flag and its error message suggesting to pass -I.
