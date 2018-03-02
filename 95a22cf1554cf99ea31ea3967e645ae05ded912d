@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4753a3e_179b6706",
+        "filename": "common/proto/milo/annotations.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-02T20:37:44Z",
+      "side": 1,
+      "message": "I would note that this is required if monitor\u003dtrue",
+      "range": {
+        "startLine": 155,
+        "startChar": 5,
+        "endLine": 156,
+        "endChar": 78
+      },
+      "revId": "95a22cf1554cf99ea31ea3967e645ae05ded912d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
