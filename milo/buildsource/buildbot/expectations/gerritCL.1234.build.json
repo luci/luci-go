@@ -38,7 +38,8 @@
     "Description": "",
     "Changelist": {
       "Label": "Gerrit CL 12345 (ps#7)",
-      "URL": "https://example.com/c/12345/7"
+      "URL": "https://example.com/c/12345/7",
+      "AriaLabel": "gerrit changelist number 12345 patchset 7"
     },
     "CommitURL": "",
     "File": null,
