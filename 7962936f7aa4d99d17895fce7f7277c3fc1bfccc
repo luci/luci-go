@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6433f3c_1d240404",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-02T20:12:59Z",
+      "side": 1,
+      "message": "nit: is not a string URL",
+      "range": {
+        "startLine": 369,
+        "startChar": 42,
+        "endLine": 369,
+        "endChar": 48
+      },
+      "revId": "7962936f7aa4d99d17895fce7f7277c3fc1bfccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "026199b8_f476b504",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-02T20:12:59Z",
+      "side": 1,
+      "message": "Is the hostname necessary? IMO it makes the line a bit too long and busy.\n\nIf you think it\u0027s necessary, i\u0027d prefer dropping rietveld/gerrit and:\n\ncodereview.org CL 123 (ps#1)\nexample.googlesource.com CL 123 (ps#1)",
+      "range": {
+        "startLine": 318,
+        "startChar": 42,
+        "endLine": 318,
+        "endChar": 48
+      },
+      "revId": "7962936f7aa4d99d17895fce7f7277c3fc1bfccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
