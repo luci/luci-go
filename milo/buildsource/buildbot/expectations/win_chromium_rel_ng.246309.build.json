@@ -5,7 +5,10 @@
       "URL": ".",
       "AriaLabel": "Parent builder win_chromium_rel_ng"
     },
-    "Label": "#246309",
+    "Label": {
+      "Label": "#246309",
+      "URL": ""
+    },
     "Status": "Failure",
     "Bot": {
       "Label": "vm774-m4",
@@ -17,9 +20,16 @@
       "URL": "https://build.chromium.org/p//builders/win_chromium_rel_ng/builds/246309",
       "AriaLabel": "Build number 246309 on master  builder win_chromium_rel_ng"
     },
-    "Started": "2016-06-27T23:30:30.080228Z",
-    "Finished": "2016-06-27T23:50:06.476459Z",
-    "Duration": 1176396231000,
+    "PendingTime": {
+      "Started": "0001-01-01T00:00:00Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0
+    },
+    "ExecutionTime": {
+      "Started": "2016-06-27T23:30:30.080228Z",
+      "Finished": "2016-06-27T23:50:06.476459Z",
+      "Duration": 1176396231000
+    },
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
@@ -51,7 +61,10 @@
   },
   "Components": [
     {
-      "Label": "steps",
+      "Label": {
+        "Label": "steps",
+        "URL": ""
+      },
       "Status": "Failure",
       "MainLink": [
         {
@@ -69,9 +82,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:30:30.081103Z",
-      "Finished": "2016-06-27T23:50:06.47502Z",
-      "Duration": 1176393917000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:30:30.081103Z",
+        "Finished": "2016-06-27T23:50:06.47502Z",
+        "Duration": 1176393917000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 2,
@@ -80,7 +100,10 @@
       ]
     },
     {
-      "Label": "update_scripts",
+      "Label": {
+        "Label": "update_scripts",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -105,9 +128,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:30:35.095941Z",
-      "Finished": "2016-06-27T23:30:46.68954Z",
-      "Duration": 11593599000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:30:35.095941Z",
+        "Finished": "2016-06-27T23:30:46.68954Z",
+        "Duration": 11593599000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -116,7 +146,10 @@
       ]
     },
     {
-      "Label": "setup_properties",
+      "Label": {
+        "Label": "setup_properties",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -125,9 +158,16 @@
           "AriaLabel": "log standard i/o for step setup_properties"
         }
       ],
-      "Started": "2016-06-27T23:30:46.691456Z",
-      "Finished": "2016-06-27T23:30:52.447081Z",
-      "Duration": 5755625000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:30:46.691456Z",
+        "Finished": "2016-06-27T23:30:52.447081Z",
+        "Duration": 5755625000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -136,7 +176,10 @@
       ]
     },
     {
-      "Label": "setup_build",
+      "Label": {
+        "Label": "setup_build",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -154,9 +197,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:31:03.472231Z",
-      "Finished": "2016-06-27T23:31:03.473319Z",
-      "Duration": 1088000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:31:03.472231Z",
+        "Finished": "2016-06-27T23:31:03.473319Z",
+        "Duration": 1088000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -165,7 +215,10 @@
       ]
     },
     {
-      "Label": "taskkill",
+      "Label": {
+        "Label": "taskkill",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -174,9 +227,16 @@
           "AriaLabel": "log standard i/o for step taskkill"
         }
       ],
-      "Started": "2016-06-27T23:31:03.47385Z",
-      "Finished": "2016-06-27T23:31:08.512183Z",
-      "Duration": 5038333000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:31:03.47385Z",
+        "Finished": "2016-06-27T23:31:08.512183Z",
+        "Duration": 5038333000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -185,7 +245,10 @@
       ]
     },
     {
-      "Label": "bot_update",
+      "Label": {
+        "Label": "bot_update",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -203,9 +266,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:31:08.514825Z",
-      "Finished": "2016-06-27T23:33:25.91621Z",
-      "Duration": 137401385000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:31:08.514825Z",
+        "Finished": "2016-06-27T23:33:25.91621Z",
+        "Duration": 137401385000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -214,7 +284,10 @@
       ]
     },
     {
-      "Label": "ensure_goma",
+      "Label": {
+        "Label": "ensure_goma",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -223,9 +296,16 @@
           "AriaLabel": "log standard i/o for step ensure_goma"
         }
       ],
-      "Started": "2016-06-27T23:33:26.039239Z",
-      "Finished": "2016-06-27T23:33:26.0398Z",
-      "Duration": 561000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:26.039239Z",
+        "Finished": "2016-06-27T23:33:26.0398Z",
+        "Duration": 561000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -234,7 +314,10 @@
       ]
     },
     {
-      "Label": "ensure_goma.install cipd",
+      "Label": {
+        "Label": "ensure_goma.install cipd",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -252,9 +335,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:25.917629Z",
-      "Finished": "2016-06-27T23:33:25.922282Z",
-      "Duration": 4653000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:25.917629Z",
+        "Finished": "2016-06-27T23:33:25.922282Z",
+        "Duration": 4653000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -263,7 +353,10 @@
       ]
     },
     {
-      "Label": "ensure_goma.ensure_installed",
+      "Label": {
+        "Label": "ensure_goma.ensure_installed",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -281,9 +374,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:26.034848Z",
-      "Finished": "2016-06-27T23:33:26.036922Z",
-      "Duration": 2074000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:26.034848Z",
+        "Finished": "2016-06-27T23:33:26.036922Z",
+        "Duration": 2074000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -292,7 +392,10 @@
       ]
     },
     {
-      "Label": "swarming.py --version",
+      "Label": {
+        "Label": "swarming.py --version",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -301,9 +404,16 @@
           "AriaLabel": "log standard i/o for step swarming.py --version"
         }
       ],
-      "Started": "2016-06-27T23:33:26.04041Z",
-      "Finished": "2016-06-27T23:33:31.579829Z",
-      "Duration": 5539419000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:26.04041Z",
+        "Finished": "2016-06-27T23:33:31.579829Z",
+        "Duration": 5539419000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -312,7 +422,10 @@
       ]
     },
     {
-      "Label": "gclient runhooks (with patch)",
+      "Label": {
+        "Label": "gclient runhooks (with patch)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -321,9 +434,16 @@
           "AriaLabel": "log standard i/o for step gclient runhooks (with patch)"
         }
       ],
-      "Started": "2016-06-27T23:33:31.580763Z",
-      "Finished": "2016-06-27T23:33:41.259195Z",
-      "Duration": 9678432000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:31.580763Z",
+        "Finished": "2016-06-27T23:33:41.259195Z",
+        "Duration": 9678432000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -332,7 +452,10 @@
       ]
     },
     {
-      "Label": "get compile targets for scripts",
+      "Label": {
+        "Label": "get compile targets for scripts",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -350,9 +473,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:41.260574Z",
-      "Finished": "2016-06-27T23:33:41.271375Z",
-      "Duration": 10801000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:41.260574Z",
+        "Finished": "2016-06-27T23:33:41.271375Z",
+        "Duration": 10801000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -361,7 +491,10 @@
       ]
     },
     {
-      "Label": "read test spec (chromium.gpu.json)",
+      "Label": {
+        "Label": "read test spec (chromium.gpu.json)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -379,9 +512,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:41.272736Z",
-      "Finished": "2016-06-27T23:33:42.054254Z",
-      "Duration": 781518000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:41.272736Z",
+        "Finished": "2016-06-27T23:33:42.054254Z",
+        "Duration": 781518000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -390,7 +530,10 @@
       ]
     },
     {
-      "Label": "read test spec (chromium.win.json)",
+      "Label": {
+        "Label": "read test spec (chromium.win.json)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -408,9 +551,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:42.055721Z",
-      "Finished": "2016-06-27T23:33:47.072043Z",
-      "Duration": 5016322000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:42.055721Z",
+        "Finished": "2016-06-27T23:33:47.072043Z",
+        "Duration": 5016322000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -419,7 +569,10 @@
       ]
     },
     {
-      "Label": "ensure git tooling on windows",
+      "Label": {
+        "Label": "ensure git tooling on windows",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -428,9 +581,16 @@
           "AriaLabel": "log standard i/o for step ensure git tooling on windows"
         }
       ],
-      "Started": "2016-06-27T23:33:47.073535Z",
-      "Finished": "2016-06-27T23:33:47.098064Z",
-      "Duration": 24529000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:47.073535Z",
+        "Finished": "2016-06-27T23:33:47.098064Z",
+        "Duration": 24529000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -439,7 +599,10 @@
       ]
     },
     {
-      "Label": "git diff to analyze patch",
+      "Label": {
+        "Label": "git diff to analyze patch",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -457,9 +620,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:47.098714Z",
-      "Finished": "2016-06-27T23:33:47.100143Z",
-      "Duration": 1429000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:47.098714Z",
+        "Finished": "2016-06-27T23:33:47.100143Z",
+        "Duration": 1429000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -468,7 +638,10 @@
       ]
     },
     {
-      "Label": "read filter exclusion spec",
+      "Label": {
+        "Label": "read filter exclusion spec",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -486,9 +659,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:47.100785Z",
-      "Finished": "2016-06-27T23:33:47.105909Z",
-      "Duration": 5124000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:47.100785Z",
+        "Finished": "2016-06-27T23:33:47.105909Z",
+        "Duration": 5124000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -497,7 +677,10 @@
       ]
     },
     {
-      "Label": "analyze",
+      "Label": {
+        "Label": "analyze",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -522,9 +705,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:47.106699Z",
-      "Finished": "2016-06-27T23:34:11.730666Z",
-      "Duration": 24623967000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:33:47.106699Z",
+        "Finished": "2016-06-27T23:34:11.730666Z",
+        "Duration": 24623967000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -533,7 +723,10 @@
       ]
     },
     {
-      "Label": "cleanup_temp",
+      "Label": {
+        "Label": "cleanup_temp",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -542,9 +735,16 @@
           "AriaLabel": "log standard i/o for step cleanup_temp"
         }
       ],
-      "Started": "2016-06-27T23:34:11.73199Z",
-      "Finished": "2016-06-27T23:34:11.738818Z",
-      "Duration": 6828000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:34:11.73199Z",
+        "Finished": "2016-06-27T23:34:11.738818Z",
+        "Duration": 6828000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -553,7 +753,10 @@
       ]
     },
     {
-      "Label": "clean isolated files",
+      "Label": {
+        "Label": "clean isolated files",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -562,9 +765,16 @@
           "AriaLabel": "log standard i/o for step clean isolated files"
         }
       ],
-      "Started": "2016-06-27T23:34:11.739719Z",
-      "Finished": "2016-06-27T23:34:11.742014Z",
-      "Duration": 2295000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:34:11.739719Z",
+        "Finished": "2016-06-27T23:34:11.742014Z",
+        "Duration": 2295000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -573,7 +783,10 @@
       ]
     },
     {
-      "Label": "generate_build_files (with patch)",
+      "Label": {
+        "Label": "generate_build_files (with patch)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -591,9 +804,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:34:11.742561Z",
-      "Finished": "2016-06-27T23:34:17.82433Z",
-      "Duration": 6081769000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:34:11.742561Z",
+        "Finished": "2016-06-27T23:34:17.82433Z",
+        "Duration": 6081769000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -602,7 +822,10 @@
       ]
     },
     {
-      "Label": "compile (with patch)",
+      "Label": {
+        "Label": "compile (with patch)",
+        "URL": ""
+      },
       "Status": "Failure",
       "MainLink": [
         {
@@ -620,9 +843,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:34:17.825578Z",
-      "Finished": "2016-06-27T23:36:30.258344Z",
-      "Duration": 132432766000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:34:17.825578Z",
+        "Finished": "2016-06-27T23:36:30.258344Z",
+        "Duration": 132432766000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 2,
@@ -631,7 +861,10 @@
       ]
     },
     {
-      "Label": "taskkill (2)",
+      "Label": {
+        "Label": "taskkill (2)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -640,9 +873,16 @@
           "AriaLabel": "log standard i/o for step taskkill (2)"
         }
       ],
-      "Started": "2016-06-27T23:36:30.259513Z",
-      "Finished": "2016-06-27T23:36:35.313368Z",
-      "Duration": 5053855000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:36:30.259513Z",
+        "Finished": "2016-06-27T23:36:35.313368Z",
+        "Duration": 5053855000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -651,7 +891,10 @@
       ]
     },
     {
-      "Label": "bot_update (without patch)",
+      "Label": {
+        "Label": "bot_update (without patch)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -669,9 +912,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:36:35.315657Z",
-      "Finished": "2016-06-27T23:37:40.311573Z",
-      "Duration": 64995916000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:36:35.315657Z",
+        "Finished": "2016-06-27T23:37:40.311573Z",
+        "Duration": 64995916000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -680,7 +930,10 @@
       ]
     },
     {
-      "Label": "gclient runhooks (without patch)",
+      "Label": {
+        "Label": "gclient runhooks (without patch)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -689,9 +942,16 @@
           "AriaLabel": "log standard i/o for step gclient runhooks (without patch)"
         }
       ],
-      "Started": "2016-06-27T23:37:40.31495Z",
-      "Finished": "2016-06-27T23:37:51.910569Z",
-      "Duration": 11595619000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:37:40.31495Z",
+        "Finished": "2016-06-27T23:37:51.910569Z",
+        "Duration": 11595619000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -700,7 +960,10 @@
       ]
     },
     {
-      "Label": "generate_build_files (without patch)",
+      "Label": {
+        "Label": "generate_build_files (without patch)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -718,9 +981,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:37:51.912842Z",
-      "Finished": "2016-06-27T23:38:00.260382Z",
-      "Duration": 8347540000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:37:51.912842Z",
+        "Finished": "2016-06-27T23:38:00.260382Z",
+        "Duration": 8347540000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -729,7 +999,10 @@
       ]
     },
     {
-      "Label": "compile (without patch)",
+      "Label": {
+        "Label": "compile (without patch)",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -747,9 +1020,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:38:00.263897Z",
-      "Finished": "2016-06-27T23:50:06.384504Z",
-      "Duration": 726120607000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:38:00.263897Z",
+        "Finished": "2016-06-27T23:50:06.384504Z",
+        "Duration": 726120607000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -758,7 +1038,10 @@
       ]
     },
     {
-      "Label": "mark: before_tests",
+      "Label": {
+        "Label": "mark: before_tests",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -767,9 +1050,16 @@
           "AriaLabel": "log standard i/o for step mark: before_tests"
         }
       ],
-      "Started": "2016-06-27T23:50:06.385913Z",
-      "Finished": "2016-06-27T23:50:06.387008Z",
-      "Duration": 1095000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:50:06.385913Z",
+        "Finished": "2016-06-27T23:50:06.387008Z",
+        "Duration": 1095000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -778,7 +1068,10 @@
       ]
     },
     {
-      "Label": "Failure reason",
+      "Label": {
+        "Label": "Failure reason",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -796,9 +1089,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:50:06.387504Z",
-      "Finished": "2016-06-27T23:50:06.388198Z",
-      "Duration": 694000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:50:06.387504Z",
+        "Finished": "2016-06-27T23:50:06.388198Z",
+        "Duration": 694000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,

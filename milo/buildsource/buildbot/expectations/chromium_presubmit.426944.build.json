@@ -5,7 +5,10 @@
       "URL": ".",
       "AriaLabel": "Parent builder chromium_presubmit"
     },
-    "Label": "#426944",
+    "Label": {
+      "Label": "#426944",
+      "URL": ""
+    },
     "Status": "Success",
     "Banner": {
       "OS": [
@@ -28,9 +31,16 @@
       "URL": "https://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944",
       "AriaLabel": "Build number 426944 on master tryserver.chromium.linux builder chromium_presubmit"
     },
-    "Started": "2017-05-03T23:34:23.961041Z",
-    "Finished": "2017-05-03T23:37:53.351052Z",
-    "Duration": 209390011000,
+    "PendingTime": {
+      "Started": "0001-01-01T00:00:00Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0
+    },
+    "ExecutionTime": {
+      "Started": "2017-05-03T23:34:23.961041Z",
+      "Finished": "2017-05-03T23:37:53.351052Z",
+      "Duration": 209390011000
+    },
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
@@ -62,7 +72,10 @@
   },
   "Components": [
     {
-      "Label": "steps",
+      "Label": {
+        "Label": "steps",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -99,9 +112,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:34:23.974519Z",
-      "Finished": "2017-05-03T23:37:53.342126Z",
-      "Duration": 209367607000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:34:23.974519Z",
+        "Finished": "2017-05-03T23:37:53.342126Z",
+        "Duration": 209367607000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -110,7 +130,10 @@
       ]
     },
     {
-      "Label": "update_scripts",
+      "Label": {
+        "Label": "update_scripts",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -128,9 +151,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:34:29.106231Z",
-      "Finished": "2017-05-03T23:34:42.609716Z",
-      "Duration": 13503485000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:34:29.106231Z",
+        "Finished": "2017-05-03T23:34:42.609716Z",
+        "Duration": 13503485000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -139,7 +169,10 @@
       ]
     },
     {
-      "Label": "setup_properties",
+      "Label": {
+        "Label": "setup_properties",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -148,9 +181,16 @@
           "AriaLabel": "log standard i/o for step setup_properties"
         }
       ],
-      "Started": "2017-05-03T23:34:42.62644Z",
-      "Finished": "2017-05-03T23:34:42.630036Z",
-      "Duration": 3596000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:34:42.62644Z",
+        "Finished": "2017-05-03T23:34:42.630036Z",
+        "Duration": 3596000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -159,7 +199,10 @@
       ]
     },
     {
-      "Label": "LogDog Bootstrap",
+      "Label": {
+        "Label": "LogDog Bootstrap",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -168,9 +211,16 @@
           "AriaLabel": "log standard i/o for step LogDog Bootstrap"
         }
       ],
-      "Started": "2017-05-03T23:34:50.166759Z",
-      "Finished": "2017-05-03T23:34:50.16884Z",
-      "Duration": 2081000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:34:50.166759Z",
+        "Finished": "2017-05-03T23:34:50.16884Z",
+        "Duration": 2081000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -179,7 +229,10 @@
       ]
     },
     {
-      "Label": "setup_build",
+      "Label": {
+        "Label": "setup_build",
+        "URL": ""
+      },
       "Status": "Success",
       "SubLink": [
         [
@@ -197,9 +250,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:35:00.064764Z",
-      "Finished": "2017-05-03T23:35:00.070291Z",
-      "Duration": 5527000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:35:00.064764Z",
+        "Finished": "2017-05-03T23:35:00.070291Z",
+        "Duration": 5527000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -208,7 +268,10 @@
       ]
     },
     {
-      "Label": "bot_update",
+      "Label": {
+        "Label": "bot_update",
+        "URL": ""
+      },
       "Status": "Success",
       "SubLink": [
         [
@@ -226,9 +289,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:35:00.071573Z",
-      "Finished": "2017-05-03T23:37:39.927864Z",
-      "Duration": 159856291000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:35:00.071573Z",
+        "Finished": "2017-05-03T23:37:39.927864Z",
+        "Duration": 159856291000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -237,7 +307,10 @@
       ]
     },
     {
-      "Label": "commit-git-patch",
+      "Label": {
+        "Label": "commit-git-patch",
+        "URL": ""
+      },
       "Status": "Success",
       "SubLink": [
         [
@@ -248,9 +321,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:39.929381Z",
-      "Finished": "2017-05-03T23:37:39.933238Z",
-      "Duration": 3857000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:37:39.929381Z",
+        "Finished": "2017-05-03T23:37:39.933238Z",
+        "Duration": 3857000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -259,7 +339,10 @@
       ]
     },
     {
-      "Label": "gclient runhooks",
+      "Label": {
+        "Label": "gclient runhooks",
+        "URL": ""
+      },
       "Status": "Success",
       "SubLink": [
         [
@@ -270,9 +353,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:39.934405Z",
-      "Finished": "2017-05-03T23:37:52.025927Z",
-      "Duration": 12091522000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:37:39.934405Z",
+        "Finished": "2017-05-03T23:37:52.025927Z",
+        "Duration": 12091522000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -281,7 +371,10 @@
       ]
     },
     {
-      "Label": "presubmit",
+      "Label": {
+        "Label": "presubmit",
+        "URL": ""
+      },
       "Status": "Success",
       "SubLink": [
         [
@@ -292,9 +385,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:52.026443Z",
-      "Finished": "2017-05-03T23:37:52.027892Z",
-      "Duration": 1449000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:37:52.026443Z",
+        "Finished": "2017-05-03T23:37:52.027892Z",
+        "Duration": 1449000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -303,7 +403,10 @@
       ]
     },
     {
-      "Label": "recipe result",
+      "Label": {
+        "Label": "recipe result",
+        "URL": ""
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -321,9 +424,16 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:52.028334Z",
-      "Finished": "2017-05-03T23:37:52.030069Z",
-      "Duration": 1735000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2017-05-03T23:37:52.028334Z",
+        "Finished": "2017-05-03T23:37:52.030069Z",
+        "Duration": 1735000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
