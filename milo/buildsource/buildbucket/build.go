@@ -182,7 +182,7 @@ func getUIBuild(c context.Context, build *model.BuildSummary, sID *swarming.Buil
 			return nil, err
 		}
 		if buildName := build.GetBuildName(); buildName != "" {
-			ret.Summary.Label = buildName
+			ret.Summary.Label = ui.NewLink(buildName, "", "")
 		}
 	}
 
