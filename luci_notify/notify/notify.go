@@ -107,7 +107,7 @@ func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucket
 // isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
 func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.Build) bool {
 	// TODO(mknyszek): Do a real ACL check here.
-	if strings.HasSuffix(recipient, "@google.com") {
+	if strings.HasSuffix(recipient, "@google.com") || strings.HasSuffix(recipient, "@chromium.org") {
 		return true
 	}
 	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", build.ID)
