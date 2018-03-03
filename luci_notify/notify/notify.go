@@ -37,11 +37,16 @@ import (
 )
 
 var emailTemplate = template.Must(template.New("email").Parse(`
-luci-notify has detected a new {{ .Build.Status }} on builder "{{ .Build.Builder }}".
+luci-notify detected a status change for builder "{{ .Build.Builder }}"
+at {{ .Build.StatusChangeTime }}.
 
 <table>
   <tr>
-    <td>Previous result:</td>
+    <td>New status:</td>
+    <td><b>{{ .Build.Status }}</b></td>
+  </tr>
+  <tr>
+    <td>Previous status:</td>
     <td>{{ .OldStatus }}</td>
   </tr>
   <tr>
@@ -74,8 +79,7 @@ func createEmailTask(c context.Context, recipients []string, oldStatus buildbuck
 	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
 		return nil, errors.Annotate(err, "constructing email body").Err()
 	}
-	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
-		build.Status,
+	subject := fmt.Sprintf(`[Build Status] Builder %s on %s`,
 		build.Builder,
 		build.Bucket)
 
