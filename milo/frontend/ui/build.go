@@ -19,12 +19,14 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"html/template"
 	"regexp"
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -54,6 +56,24 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
+}
+
+// BuildSummary returns the BuildSummary representation of the MiloBuild.  This
+// is the subset of fields that is interesting to the builder view.
+func (b *MiloBuild) BuildSummary() *BuildSummary {
+	result := &BuildSummary{
+		Link:          b.Summary.Label,
+		Status:        b.Summary.Status,
+		PendingTime:   b.Summary.PendingTime,
+		ExecutionTime: b.Summary.ExecutionTime,
+		Text:          b.Summary.Text,
+		Blame:         b.Blame,
+		Build:         b,
+	}
+	if b.Trigger != nil {
+		result.Revision = &b.Trigger.Commit
+	}
+	return result
 }
 
 // Trigger is the combination of pointing to a single commit, with information
@@ -188,6 +208,33 @@ const (
 	Interesting
 )
 
+// Interval is a time interval which has a start, an end and a duration.
+type Interval struct {
+	// Started denotes the start time of this interval.
+	Started time.Time
+	// Finished denotest the end time of this interval.
+	Finished time.Time
+	// Duration is the length of the interval.
+	Duration time.Duration
+}
+
+// NewInterval returns a new interval struct.  If end time is empty (eg. Not completed)
+// set end time to empty but set duration to the difference between start and now.
+func NewInterval(c context.Context, start, end time.Time) Interval {
+	i := Interval{Started: start, Finished: end}
+	if end.IsZero() {
+		i.Duration = clock.Now(c).Sub(i.Started)
+	} else {
+		i.Duration = i.Finished.Sub(i.Started)
+	}
+	return i
+}
+
+// IsZero returns true if this is an empty interval.
+func (i Interval) IsZero() bool {
+	return i.Started.IsZero()
+}
+
 // BuildComponent represents a single Step, subsetup, attempt, or recipe.
 type BuildComponent struct {
 	// The parent of this component.  For buildbot and swarmbucket builds, this
@@ -195,7 +242,7 @@ type BuildComponent struct {
 	ParentLabel *Link `json:",omitempty"`
 
 	// The main label for the component.
-	Label string
+	Label *Link
 
 	// Status of the build.
 	Status model.Status
@@ -224,15 +271,11 @@ type BuildComponent struct {
 	// Designates the progress of the current component. Set null for no progress.
 	Progress *BuildProgress `json:",omitempty"`
 
-	// When did this step start.
-	Started time.Time
+	// Pending is time interval that this build was pending.
+	PendingTime Interval
 
-	// When did this step finish.
-	Finished time.Time
-
-	// The time it took for this step to finish. If unfinished, this is the
-	// current elapsed duration.
-	Duration time.Duration
+	// Execution is time interval that this build was executing.
+	ExecutionTime Interval
 
 	// The type of component.  This manifests itself as a little label on the
 	// top left corner of the component.
@@ -304,6 +347,11 @@ type Link struct {
 // NewLink does just about what you'd expect.
 func NewLink(label, url, ariaLabel string) *Link {
 	return &Link{Link: model.Link{Label: label, URL: url}, AriaLabel: ariaLabel}
+}
+
+// NewEmptyLink creates a Link struct acting as a pure text label.
+func NewEmptyLink(label string) *Link {
+	return &Link{Link: model.Link{Label: label}}
 }
 
 /// HTML methods.

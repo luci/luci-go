@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -63,33 +62,29 @@ func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
 	return msgs, nil
 }
 
-// toMiloBuild converts a buildbucket build to a milo build.
-// In case of an error, returns a build with a description of the error
-// and logs the error.
-func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.BuildSummary, error) {
-	var b buildbucket.Build
-	if err := b.ParseMessage(msg); err != nil {
-		return nil, err
-	}
-
+// extractRevision extracts the author email from a build message.
+// TODO(hinoka, nodir): Delete after buildbucket v2.
+func extractEmail(msg *bbapi.ApiCommonBuildMessage) (string, error) {
 	var params struct {
 		Changes []struct {
 			Author struct{ Email string }
 		}
-		Properties struct {
-			Revision string `json:"revision"`
-		}
 	}
 	if msg.ParametersJson != "" {
 		if err := json.NewDecoder(strings.NewReader(msg.ParametersJson)).Decode(&params); err != nil {
-			return nil, errors.Annotate(err, "failed to parse parameters_json of build %d", b.ID).Err()
+			return "", errors.Annotate(err, "failed to parse parameters_json").Err()
 		}
 	}
+	if len(params.Changes) == 1 {
+		return params.Changes[0].Author.Email, nil
+	}
+	return "", nil
+}
 
+// extractInfo extracts the resulting info text from a build message.
+// TODO(hinoka, nodir): Delete after buildbucket v2.
+func extractInfo(msg *bbapi.ApiCommonBuildMessage) (string, error) {
 	var resultDetails struct {
-		Properties struct {
-			GotRevision string `json:"got_revision"`
-		}
 		// TODO(nodir,iannucci): define a proto for build UI data
 		UI struct {
 			Info string
@@ -97,45 +92,61 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.Build
 	}
 	if msg.ResultDetailsJson != "" {
 		if err := json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails); err != nil {
-			return nil, errors.Annotate(err, "failed to parse result_details_json of build %d", b.ID).Err()
+			return "", errors.Annotate(err, "failed to parse result_details_json").Err()
 		}
+	}
+	return resultDetails.UI.Info, nil
+}
+
+// toMiloBuild converts a buildbucket build to a milo build.
+// In case of an error, returns a build with a description of the error
+// and logs the error.
+func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
+	// Parse the build message into a buildbucket.Build struct, filling in the
+	// input and output properties that we expect to receive.
+	var b buildbucket.Build
+	var props struct {
+		Revision string `json:"revision"`
+	}
+	var resultDetails struct {
+		GotRevision string `json:"got_revision"`
+	}
+	b.Input.Properties = &props
+	b.Output.Properties = &resultDetails
+	if err := b.ParseMessage(msg); err != nil {
+		return nil, err
+	}
+	// TODO(hinoka,nodir): Replace the following lines after buildbucket v2.
+	info, err := extractInfo(msg)
+	if err != nil {
+		return nil, err
+	}
+	email, err := extractEmail(msg)
+	if err != nil {
+		return nil, err
 	}
 
-	duration := func(start, end time.Time) time.Duration {
-		if start.IsZero() {
-			return 0
-		}
-		if end.IsZero() {
-			end = clock.Now(c)
-		}
-		if end.Before(start) {
-			return 0
-		}
-		return end.Sub(start)
+	result := &ui.MiloBuild{
+		Summary: ui.BuildComponent{
+			PendingTime:   ui.NewInterval(c, b.CreationTime, b.StartTime),
+			ExecutionTime: ui.NewInterval(c, b.StartTime, b.CompletionTime),
+			Status:        parseStatus(b.Status),
+		},
+		Trigger: &ui.Trigger{},
+	}
+	// Add in revision information, if available.
+	if resultDetails.GotRevision != "" {
+		result.Trigger.Commit.Revision = ui.NewLink(resultDetails.GotRevision, "", "")
+	}
+	if props.Revision != "" {
+		result.Trigger.Commit.RequestRevision = ui.NewLink(props.Revision, "", "")
 	}
 
-	result := &ui.BuildSummary{
-		Revision: resultDetails.Properties.GotRevision,
-		Status:   parseStatus(b.Status),
-		PendingTime: ui.Interval{
-			Started:  b.CreationTime,
-			Finished: b.StartTime,
-			Duration: duration(b.CreationTime, b.StartTime),
-		},
-		ExecutionTime: ui.Interval{
-			Started:  b.StartTime,
-			Finished: b.CompletionTime,
-			Duration: duration(b.StartTime, b.CompletionTime),
-		},
-	}
-	if result.Revision == "" {
-		result.Revision = params.Properties.Revision
-	}
 	if b.Experimental {
-		result.Text = []string{"Experimental"}
+		result.Summary.Text = []string{"Experimental"}
 	}
-	if resultDetails.UI.Info != "" {
-		result.Text = append(result.Text, strings.Split(resultDetails.UI.Info, "\n")...)
+	if info != "" {
+		result.Summary.Text = append(result.Summary.Text, strings.Split(info, "\n")...)
 	}
 
 	for _, bs := range b.BuildSets {
@@ -149,24 +160,22 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.Build
 		result.Blame = []*ui.Commit{{
 			Changelist: ui.NewLink(fmt.Sprintf("Gerrit CL %d (ps#%d)", cl.Change, cl.PatchSet), cl.URL(),
 				fmt.Sprintf("gerrit changelist %d (ps#%d)", cl.Change, cl.PatchSet)),
-			RequestRevision: ui.NewLink(params.Properties.Revision, "", fmt.Sprintf("request revision %s", params.Properties.Revision)),
+			RequestRevision: ui.NewLink(props.Revision, "", fmt.Sprintf("request revision %s", props.Revision)),
 		}}
 
-		if len(params.Changes) == 1 {
-			result.Blame[0].AuthorEmail = params.Changes[0].Author.Email
-		}
+		result.Blame[0].AuthorEmail = email
 		break
 	}
 
 	if b.Number != nil {
 		numStr := strconv.Itoa(*b.Number)
-		result.Link = ui.NewLink(
+		result.Summary.Label = ui.NewLink(
 			numStr,
 			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
 			fmt.Sprintf("build #%s", numStr))
 	} else {
 		idStr := strconv.FormatInt(b.ID, 10)
-		result.Link = ui.NewLink(
+		result.Summary.Label = ui.NewLink(
 			idStr,
 			fmt.Sprintf("/p/%s/builds/b%s", b.Project, idStr),
 			fmt.Sprintf("build #%s", idStr))
@@ -195,16 +204,16 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 		if err != nil {
 			return err
 		}
-		switch mb.Status {
+		switch mb.Summary.Status {
 		case model.NotRun:
-			target.PendingBuilds = append(target.PendingBuilds, mb)
+			target.PendingBuilds = append(target.PendingBuilds, mb.BuildSummary())
 
 		case model.Running:
-			target.CurrentBuilds = append(target.CurrentBuilds, mb)
+			target.CurrentBuilds = append(target.CurrentBuilds, mb.BuildSummary())
 
 		case model.Success, model.Failure, model.InfraFailure, model.Warning:
 			if len(target.FinishedBuilds) < maxCompletedBuilds {
-				target.FinishedBuilds = append(target.FinishedBuilds, mb)
+				target.FinishedBuilds = append(target.FinishedBuilds, mb.BuildSummary())
 			}
 
 		default:
@@ -251,10 +260,11 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 			return err
 		}
 		for _, m := range msgs {
-			b, err := toMiloBuild(c, m)
+			mb, err := toMiloBuild(c, m)
 			if err != nil {
 				return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
 			}
+			b := mb.BuildSummary()
 			switch b.Status {
 			case model.NotRun:
 				result.PendingBuilds = append(result.PendingBuilds, b)

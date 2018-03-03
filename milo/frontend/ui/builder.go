@@ -17,17 +17,8 @@
 package ui
 
 import (
-	"time"
-
 	"go.chromium.org/luci/milo/common/model"
 )
-
-// Interval is a time interval which has a start, an end and a duration.
-type Interval struct {
-	Started  time.Time     // when did this interval start
-	Finished time.Time     // when did this interval finish
-	Duration time.Duration // length of the interval; may be non-zero if Finished is zero
-}
 
 // BuildSummary is a summary of a build, with just enough information for display
 // on a builders page, with an optional field to return the whole build
@@ -46,8 +37,7 @@ type BuildSummary struct {
 	ExecutionTime Interval
 
 	// Revision is the main revision of the build.
-	// TODO(hinoka): Maybe use a commit object instead?
-	Revision string
+	Revision *Commit
 
 	// Arbitrary text to display below links.  One line per entry,
 	// newlines are stripped.
@@ -56,10 +46,7 @@ type BuildSummary struct {
 	// Blame is for tracking whose change the build belongs to, if any.
 	Blame []*Commit
 
-	// Build is a reference to the full underlying MiloBuild, if it's available.
-	// The only reason this would be calculated is if populating the BuildSummary
-	// requires fetching the entire build anyways.  This is assumed to not
-	// be available.
+	// Build is a reference to the full underlying MiloBuild, if available.
 	Build *MiloBuild
 }
 
