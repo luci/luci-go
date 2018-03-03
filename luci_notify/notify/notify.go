@@ -64,6 +64,39 @@ luci-notify has detected a new {{ .Build.Status }} on builder "{{ .Build.Builder
 
 <a href="{{ .Build.URL }}">Full details are available here.</a>`))
 
+// Extract the email addresses (if any) specified by the build input.
+func extractEmailNotifyProperty(build *buildbucket.Build) []string {
+	// Are input properties in an unexpected format?
+	propMap, ok := build.Input.Properties.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	// Do we not have "email_notify"?
+	propList, ok := propMap["email_notify"]
+	if !ok {
+		return nil
+	}
+
+	// Is "email_notify" in an unexpected format?
+	emailList, ok := propList.([]interface{})
+	if !ok {
+		// TODO(dgarrett): Error out? Log warning?
+		return nil
+	}
+
+	result := []string{}
+	for _, eg := range emailList {
+		if e, ok := eg.(string); ok {
+			result = append(result, e)
+		} else {
+			// TODO(dgarrett): Error out? Log warning?
+		}
+	}
+
+	return result
+}
+
 // createEmailTask constructs an EmailTask to be dispatched onto the task queue.
 func createEmailTask(c context.Context, recipients []string, oldStatus buildbucket.Status, build *buildbucket.Build) (*tq.Task, error) {
 	templateContext := map[string]interface{}{
@@ -114,19 +147,33 @@ func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.
 // notifications if necessary.
 func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucket.Status, build *buildbucket.Build) error {
 	recipientSet := stringset.New(0)
+
+	// Notify based on configured notifiers.
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
 			if !shouldNotify(&nc, oldStatus, build.Status) {
 				continue
 			}
 			for _, r := range nc.EmailRecipients {
-				if isRecipientAllowed(c, r, build) {
-					recipientSet.Add(r)
-				}
+				recipientSet.Add(r)
 			}
 		}
-
 	}
+
+	// Notify based on build request properties.
+	propertyEmails := extractEmailNotifyProperty(build)
+	if len(propertyEmails) > 0 {
+		for _, r := range propertyEmails {
+			recipientSet.Add(r)
+		}
+	}
+
+	for _, r := range recipientSet.ToSlice() {
+		if !isRecipientAllowed(c, r, build) {
+			recipientSet.Del(r)
+		}
+	}
+
 	if recipientSet.Len() == 0 {
 		logging.Infof(c, "Nobody to notify...")
 		return nil

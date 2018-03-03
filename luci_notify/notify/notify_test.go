@@ -47,8 +47,18 @@ func extractNotifiers(c context.Context, projectID string, cfg *notifyConfig.Pro
 	return notifiers
 }
 
-func notifyDummyBuild(status buildbucket.Status) *buildbucket.Build {
-	return testutil.TestBuild("test", "hello", "test-builder", status)
+func notifyDummyBuild(status buildbucket.Status, notifyEmails ...string) *buildbucket.Build {
+	result := testutil.TestBuild("test", "hello", "test-builder", status)
+
+	if len(notifyEmails) > 0 {
+		var emailGeneric []interface{}
+		for _, e := range notifyEmails {
+			emailGeneric = append(emailGeneric, e)
+		}
+		result.Input.Properties = map[string]interface{}{"email_notify": emailGeneric}
+	}
+
+	return result
 }
 
 func verifyStringSliceResembles(actual, expect []string) {
@@ -98,6 +108,37 @@ func verifyTasksAndMessages(c context.Context, taskqueue tqtesting.Testable, ema
 	mail.GetTestable(c).Reset()
 }
 
+func TestExtractEmailNotifyProperty(t *testing.T) {
+	// Validation helper function.
+	verify := func(properties interface{}, emailExpect ...string) {
+		build := notifyDummyBuild(buildbucket.StatusSuccess)
+		build.Input.Properties = properties
+		result := extractEmailNotifyProperty(build)
+		So(len(result), ShouldEqual, len(emailExpect))
+		if len(emailExpect) > 0 {
+			So(result, ShouldResemble, emailExpect)
+		}
+	}
+
+	Convey(`Test extractEmailNotifyProperty`, t, func() {
+		verify(nil)
+		verify("bogus")
+		verify(map[string]interface{}{})
+		verify(map[string]interface{}{"unrelated": "value"})
+		verify(map[string]interface{}{"email_notify": "bogus"})
+		verify(map[string]interface{}{"email_notify": []interface{}{}})
+		verify(map[string]interface{}{"email_notify": []interface{}{123}})
+		verify(map[string]interface{}{"email_notify": []interface{}{"foo"}},
+			"foo")
+		verify(map[string]interface{}{"email_notify": []interface{}{"foo", "bar"}},
+			"foo",
+			"bar")
+		verify(map[string]interface{}{"email_notify": []interface{}{"foo", 123, "bar"}},
+			"foo",
+			"bar")
+	})
+}
+
 func TestNotify(t *testing.T) {
 	t.Parallel()
 
@@ -115,7 +156,9 @@ func TestNotify(t *testing.T) {
 
 		// Re-usable builds and builders for running Notify.
 		goodBuild := notifyDummyBuild(buildbucket.StatusSuccess)
+		goodEmailBuild := notifyDummyBuild(buildbucket.StatusSuccess, "property@google.com", "bogus@gmail.com")
 		badBuild := notifyDummyBuild(buildbucket.StatusFailure)
+		badEmailBuild := notifyDummyBuild(buildbucket.StatusFailure, "property@google.com", "bogus@gmail.com")
 		goodBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
 			Status:          buildbucket.StatusSuccess,
@@ -142,6 +185,8 @@ func TestNotify(t *testing.T) {
 			test(noNotifiers, goodBuild, badBuilder)
 			test(noNotifiers, badBuild, goodBuilder)
 			test(noNotifiers, badBuild, badBuilder)
+			test(noNotifiers, goodEmailBuild, goodBuilder, "property@google.com")
+			test(noNotifiers, badEmailBuild, goodBuilder, "property@google.com")
 		})
 
 		Convey(`on success`, func() {
@@ -151,6 +196,13 @@ func TestNotify(t *testing.T) {
 				goodBuilder,
 				"test-example-success@google.com",
 			)
+			test(
+				notifiers,
+				goodEmailBuild,
+				goodBuilder,
+				"test-example-success@google.com",
+				"property@google.com",
+			)
 		})
 
 		Convey(`on failure`, func() {
@@ -159,6 +211,13 @@ func TestNotify(t *testing.T) {
 				badBuild,
 				badBuilder,
 				"test-example-failure@google.com",
+			)
+			test(
+				notifiers,
+				badEmailBuild,
+				badBuilder,
+				"test-example-failure@google.com",
+				"property@google.com",
 			)
 		})
 
@@ -170,6 +229,14 @@ func TestNotify(t *testing.T) {
 				"test-example-failure@google.com",
 				"test-example-change@google.com",
 			)
+			test(
+				notifiers,
+				badEmailBuild,
+				goodBuilder,
+				"test-example-failure@google.com",
+				"test-example-change@google.com",
+				"property@google.com",
+			)
 		})
 
 		Convey(`on change to success`, func() {
@@ -179,6 +246,14 @@ func TestNotify(t *testing.T) {
 				badBuilder,
 				"test-example-success@google.com",
 				"test-example-change@google.com",
+			)
+			test(
+				notifiers,
+				goodEmailBuild,
+				badBuilder,
+				"test-example-success@google.com",
+				"test-example-change@google.com",
+				"property@google.com",
 			)
 		})
 	})
