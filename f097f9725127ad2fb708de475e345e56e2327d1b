@@ -73,6 +73,47 @@
     },
     {
       "key": {
+        "uuid": "09b7979a_87f820d2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T17:07:02Z",
+      "side": 1,
+      "message": "i think automatic downgrading/upgrading is ok in lieu of better, and yet simple, approach",
+      "parentUuid": "bdedbd56_48d62e91",
+      "revId": "f097f9725127ad2fb708de475e345e56e2327d1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "be7ca26c_1bacbacf",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T17:07:02Z",
+      "side": 1,
+      "message": "this function is \u003e100 LOC because of the commit-order-logic. This CL complicates the function further to support \"no commit\" case. I think it would be simpler to put an `if gCommit \u003d\u003d nil` statement after L85 and fork the logic below for two cases:\n1. we don\u0027t have a commit and logic is pretty straightforward\n2. we have a commit, and life is harder",
+      "range": {
+        "startLine": 90,
+        "startChar": 74,
+        "endLine": 90,
+        "endChar": 88
+      },
+      "revId": "f097f9725127ad2fb708de475e345e56e2327d1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bce089a3_fe9ff24f",
         "filename": "luci_notify/notify/pubsub_test.go",
         "patchSetId": 2
