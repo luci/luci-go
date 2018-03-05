@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55407530_101f8b4a",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T16:00:17Z",
+      "side": 1,
+      "message": "inline type please\n\nvar prop struct {\n   ....",
+      "revId": "e69a50702d2d6b0a097a213ea2cfe402d26e706c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba8faaac_fed505d1",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T16:00:17Z",
+      "side": 1,
+      "message": "nit: s/from/for/ ?\nthere are two froms in this sentence",
+      "range": {
+        "startLine": 47,
+        "startChar": 45,
+        "endLine": 47,
+        "endChar": 49
+      },
+      "revId": "e69a50702d2d6b0a097a213ea2cfe402d26e706c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bc8cb37_3dada785",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T16:00:17Z",
+      "side": 1,
+      "message": "nit: This variable is not used in case of L54\nplease move closer to usage. before next loop.\n\n[]string{} allocates memory for a slice of capacity zero, which means it will be ultimately discarded and the allocation was for nothing.\n\n  var result []string\n\ndoes not do the allocation",
+      "revId": "e69a50702d2d6b0a097a213ea2cfe402d26e706c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
