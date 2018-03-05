@@ -22,6 +22,30 @@
       "revId": "713a4dad7be45140602ee524306482091eb9f919",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4f1905a_26eb2c33",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1177675
+      },
+      "writtenOn": "2018-03-05T18:46:21Z",
+      "side": 1,
+      "message": "Could remove it, but I figured people may find it useful to have a fixed subject line component to write filters against.",
+      "parentUuid": "59e8d585_a3b86c99",
+      "range": {
+        "startLine": 82,
+        "startChar": 25,
+        "endLine": 82,
+        "endChar": 39
+      },
+      "revId": "713a4dad7be45140602ee524306482091eb9f919",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
