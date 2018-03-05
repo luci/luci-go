@@ -35,6 +35,10 @@ import (
 
 // This file implements conversion of buildbucket builds to buildbot builds.
 
+// ErrNoBuildNumber is an error tag indicating that a build does not have
+// a build number.
+var ErrNoBuildNumber = errors.BoolTag{Key: errors.NewTagKey("no buildnumber")}
+
 // buildFromBuildbucket converts a buildbucket build to a buildbot build.
 // If details is false, steps, text and properties are not guaranteed to be
 // loaded.
@@ -44,7 +48,7 @@ import (
 func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build, fetchAnnotations bool) (*buildbot.Build, error) {
 	num, err := buildNumber(b)
 	if err != nil {
-		return nil, errors.Annotate(err, "parsing buildnumber").Err()
+		return nil, err
 	}
 
 	res := &buildbot.Build{
@@ -144,7 +148,7 @@ func buildbucketClient(c context.Context) (*bbapi.Service, error) {
 func buildNumber(b *buildbucket.Build) (int, error) {
 	address := b.Tags.Get("build_address")
 	if address == "" {
-		return 0, errors.Reason("no build_address in build %d", b.ID).Err()
+		return 0, errors.Reason("no build_address in build %d", b.ID).Tag(ErrNoBuildNumber).Err()
 	}
 
 	// address format is "<bucket>/<builder>/<buildnumber>"
