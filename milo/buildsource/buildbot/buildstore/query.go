@@ -214,7 +214,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 
 	logging.Infof(c, "buildbucket search took %s", clock.Since(c, start))
 
-	builds := make([]*buildbot.Build, len(msgs))
+	buildsTemp := make([]*buildbot.Build, len(msgs))
 	start = clock.Now(c)
 	err = parallel.WorkPool(10, func(work chan<- func() error) {
 		for i, msg := range msgs {
@@ -227,10 +227,13 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 				}
 				// may load annotations from logdog, that's why parallelized.
 				b, err := buildFromBuildbucket(c, q.Master, &buildbucketBuild, !q.NoAnnotationFetch)
-				if err != nil {
+				switch {
+				case ErrNoBuildNumber.In(err):
+					return nil
+				case err != nil:
 					return err
 				}
-				builds[i] = b
+				buildsTemp[i] = b
 				return nil
 			}
 		}
@@ -239,6 +242,14 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 		return nil, err
 	}
 	logging.Infof(c, "conversion from buildbucket builds took %s", clock.Since(c, start))
+
+	// Remove nil builds. I.E. The ones without build numbers.
+	builds := make([]*buildbot.Build, 0, len(buildsTemp))
+	for _, b := range buildsTemp {
+		if b != nil {
+			builds = append(builds, b)
+		}
+	}
 
 	if !q.NoChangeFetch && len(builds) > 0 {
 		start = clock.Now(c)
