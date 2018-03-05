@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74a0504d_d5118c09",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T23:29:05Z",
+      "side": 1,
+      "message": "why are we doing this in a loop?",
+      "range": {
+        "startLine": 299,
+        "startChar": 0,
+        "endLine": 306,
+        "endChar": 3
+      },
+      "revId": "47cda16a8b29f8154d9053a636b7222136164ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64d805eb_f43f3b2e",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T23:29:05Z",
+      "side": 1,
+      "message": "i think this is where we should compute visible",
+      "revId": "47cda16a8b29f8154d9053a636b7222136164ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
