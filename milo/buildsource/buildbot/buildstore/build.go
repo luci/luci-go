@@ -132,7 +132,12 @@ func getEmulatedBuild(c context.Context, master, builder string, number int, fet
 	}
 
 	buildbotBuild, err := buildFromBuildbucket(c, master, buildbucketBuild, fetchAnnotations)
-	if err != nil {
+	switch {
+	case ErrNoBuildNumber.In(err):
+		// This is an old buildbucket build without a build number.  Just drop it.
+		// All emulated builds should have a build number.
+		return nil, nil
+	case err != nil:
 		return nil, err
 	}
 
