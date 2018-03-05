@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "62c1325d_088fbda7",
+        "filename": "milo/buildsource/buildbot/buildstore/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-05T23:56:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f51b02e_26d28de2",
+      "revId": "0732f75a724b8607e9f387af528d6e4e6ebf3531",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "422d595f_63e113af",
         "filename": "milo/buildsource/buildbot/buildstore/buildbucket.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "0732f75a724b8607e9f387af528d6e4e6ebf3531",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ff5c743_22192e9c",
+        "filename": "milo/buildsource/buildbot/buildstore/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-05T23:56:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "422d595f_63e113af",
+      "range": {
+        "startLine": 48,
+        "startChar": 14,
+        "endLine": 48,
+        "endChar": 36
+      },
+      "revId": "0732f75a724b8607e9f387af528d6e4e6ebf3531",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
