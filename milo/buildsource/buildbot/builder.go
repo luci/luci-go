@@ -78,24 +78,20 @@ func mergeText(text []string) []string {
 	return result
 }
 
-func getBuildSummary(b *buildbot.Build, linkParams url.Values) *ui.BuildSummary {
-	linkURL := fmt.Sprintf("%d", b.Number)
+// getBuildSummary takes a buildbot build a returns the ui.BuildSummary rendering
+// of the build.  It is similar to renderBuild, but does not process steps or
+// properties.
+func getBuildSummary(c context.Context, b *buildbot.Build, linkParams url.Values) *ui.BuildSummary {
+	mb := &ui.MiloBuild{
+		Trigger: sourcestamp(c, b),
+		Summary: summary(c, b),
+		Blame:   blame(b),
+	}
+	bs := mb.BuildSummary()
 	if len(linkParams) > 0 {
-		linkURL += "?" + linkParams.Encode()
+		bs.Link.URL += "?" + linkParams.Encode()
 	}
-	return &ui.BuildSummary{
-		Link: ui.NewLink(fmt.Sprintf("#%d", b.Number), linkURL,
-			fmt.Sprintf("build number %d on builder %s", b.Number, b.Buildername)),
-		Status: b.Status(),
-		ExecutionTime: ui.Interval{
-			Started:  b.Times.Start.Time,
-			Finished: b.Times.Finish.Time,
-			Duration: b.Times.Duration(),
-		},
-		Text:     mergeText(b.Text),
-		Blame:    blame(b),
-		Revision: b.Sourcestamp.Revision,
-	}
+	return bs
 }
 
 func summarizeSlavePool(
@@ -223,7 +219,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.PrevCursor = res.PrevCursor
 			result.FinishedBuilds = make([]*ui.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
-				result.FinishedBuilds[i] = getBuildSummary(b, linkParams)
+				result.FinishedBuilds[i] = getBuildSummary(c, b, linkParams)
 			}
 			return err
 		}
@@ -237,7 +233,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.CurrentBuilds = make([]*ui.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
 				// currentBuilds is presented in reversed order, so flip it
-				result.CurrentBuilds[len(res.Builds)-i-1] = getBuildSummary(b, linkParams)
+				result.CurrentBuilds[len(res.Builds)-i-1] = getBuildSummary(c, b, linkParams)
 			}
 			return err
 		}
