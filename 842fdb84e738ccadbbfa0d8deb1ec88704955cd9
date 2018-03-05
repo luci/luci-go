@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a7796cd_975dc832",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T16:36:25Z",
+      "side": 1,
+      "message": "allmost all of this code is essentially parsing of the email_notify structure. Normally json package does this by parsing json to a struct. https://godoc.org/go.chromium.org/luci/buildbucket#Properties\nexplains how such parsing should be done with buildbucket\u0027s Build type.\n\nI\u0027ve uploaded https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/949062\nto explain the idea. If you do that, then you don\u0027t really this func.\n\nGo tip: note that \n\nstruct Build {\n  *buildbucket.Build\n  ...\n}\n\nmeans that build.Build.Foo is available as build.Foo.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 0
+      },
+      "revId": "842fdb84e738ccadbbfa0d8deb1ec88704955cd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "183e1dea_066073a8",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-05T16:36:25Z",
+      "side": 1,
+      "message": "it is safe to loop over nil or [], so this if statement is unnecessary",
+      "range": {
+        "startLine": 165,
+        "startChar": 1,
+        "endLine": 165,
+        "endChar": 29
+      },
+      "revId": "842fdb84e738ccadbbfa0d8deb1ec88704955cd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
