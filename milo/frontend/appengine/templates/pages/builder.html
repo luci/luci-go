@@ -144,7 +144,12 @@
         <tr>
           <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
           <td>{{ .ExecutionTime.Duration | humanDuration }}</td>
-          <td class="revision">{{ .Revision }}</td>
+          <td class="revision">
+            {{ with .Revision }}
+              {{ if .Revision }}{{ .Revision.HTML }}
+              {{ else }}{{ .RequestRevision.HTML }}{{ end }}
+            {{ end }}
+          </td>
           {{ if eq .Status.String "Success" }}
             <td class="status-Success">Success</td>
           {{ else if eq .Status.String "Failure" }}

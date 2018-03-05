@@ -424,7 +424,7 @@ func addProjectInfo(build *ui.MiloBuild, tags map[string]string) {
 }
 
 func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *ui.MiloBuild) error {
-	build.Summary.Label = sr.TaskId
+	build.Summary.Label = ui.NewLink(sr.TaskId, "", "")
 	build.Summary.Type = ui.Recipe
 	build.Summary.Source = ui.NewLink(
 		"Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String(),
@@ -480,22 +480,19 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 // stream doesn't exist and the swarming job is complete.  It modifies the build
 // to add information that would've otherwise been in the annotation stream.
 func failedToStart(c context.Context, build *ui.MiloBuild, res *swarming.SwarmingRpcsTaskResult, host string) error {
-	var err error
 	build.Summary.Status = model.InfraFailure
-	build.Summary.Started, err = time.Parse(SwarmingTimeLayout, res.StartedTs)
+	started, err := time.Parse(SwarmingTimeLayout, res.StartedTs)
 	if err != nil {
 		return err
 	}
-	build.Summary.Finished, err = time.Parse(SwarmingTimeLayout, res.CompletedTs)
+	ended, err := time.Parse(SwarmingTimeLayout, res.CompletedTs)
 	if err != nil {
 		return err
 	}
-	build.Summary.Duration = build.Summary.Finished.Sub(build.Summary.Started)
+	build.Summary.ExecutionTime = ui.NewInterval(c, started, ended)
 	infoComp := infoComponent(model.InfraFailure,
 		"LogDog stream not found", "Job likely failed to start.")
-	infoComp.Started = build.Summary.Started
-	infoComp.Finished = build.Summary.Finished
-	infoComp.Duration = build.Summary.Duration
+	infoComp.ExecutionTime = build.Summary.ExecutionTime
 	infoComp.Verbosity = ui.Interesting
 	build.Components = append(build.Components, infoComp)
 	return addTaskToBuild(c, host, res, build)
@@ -662,7 +659,7 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 func infoComponent(st model.Status, label, text string) *ui.BuildComponent {
 	return &ui.BuildComponent{
 		Type:   ui.Summary,
-		Label:  label,
+		Label:  ui.NewLink(label, "", ""),
 		Text:   []string{text},
 		Status: st,
 	}
