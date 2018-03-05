@@ -34,6 +34,7 @@ import (
 )
 
 // This file implements conversion of buildbucket builds to buildbot builds.
+var ErrNoBuildNumber = errors.BoolTag{Key: errors.NewTagKey("no buildnumber")}
 
 // buildFromBuildbucket converts a buildbucket build to a buildbot build.
 // If details is false, steps, text and properties are not guaranteed to be
@@ -44,7 +45,7 @@ import (
 func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build, fetchAnnotations bool) (*buildbot.Build, error) {
 	num, err := buildNumber(b)
 	if err != nil {
-		return nil, errors.Annotate(err, "parsing buildnumber").Err()
+		return nil, ErrNoBuildNumber.Apply(err)
 	}
 
 	res := &buildbot.Build{
