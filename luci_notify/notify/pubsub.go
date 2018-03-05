@@ -206,8 +206,19 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 	h.WriteHeader(http.StatusOK)
 }
 
+// Build is buildbucket.Build plus luci-notify-specific metadata extracted
+// from properties.
+type Build struct {
+	*buildbucket.Build
+	InputProperties struct {
+		EmailNotify []struct {
+			Email string `json:"email"`
+		} `json:"email_notify"`
+	}
+}
+
 // extractBuild constructs a Build from the PubSub HTTP request.
-func extractBuild(c context.Context, r *http.Request) (*buildbucket.Build, error) {
+func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	// sent by pubsub.
 	// This struct is just convenient for unwrapping the json message
 	var msg struct {
@@ -225,7 +236,8 @@ func extractBuild(c context.Context, r *http.Request) (*buildbucket.Build, error
 	if err := json.Unmarshal(msg.Message.Data, &message); err != nil {
 		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
-	var build buildbucket.Build
+	var build Build
+	build.Input.Properties = &build.InputProperties
 	if err := build.ParseMessage(&message.Build); err != nil {
 		return nil, errors.Annotate(err, "could not decode buildbucket build").Err()
 	}
