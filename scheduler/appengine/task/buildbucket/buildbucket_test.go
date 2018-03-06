@@ -297,12 +297,6 @@ func TestTriggeredFlow(t *testing.T) {
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),
 			ViewURL:  "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10",
 		})
-		So(ctl.Log, ShouldContain, "ignoring gitiles trigger 1")
-		// TODO(tandrii): refactor test and code s.t. we can test properties that were set.
-		So(ctl.Log[3], ShouldContainSubstring,
-			`\"properties\":{\"branch\":\"refs/heads/master\",\"revision\":\"deadbeef\"}}`)
-		So(ctl.Log[3], ShouldContainSubstring, "buildset:commit/gitiles/r.googlesource.com/repo/+/deadbeef")
-		So(ctl.Log[3], ShouldContainSubstring, "gitiles_ref:refs/heads/master")
 	})
 }
 

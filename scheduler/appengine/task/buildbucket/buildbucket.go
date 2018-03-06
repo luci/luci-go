@@ -29,15 +29,11 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 
-	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils"
@@ -173,19 +169,6 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	}
 	for k, v := range req.Properties.GetFields() {
 		props.Fields[k] = v
-	}
-
-	// TODO(vadimsh): Remove this fallback once all servers are updated to supply
-	// req.Properties for gitiles triggers. Invocation triggered by old server
-	// code supply list of triggers, but no Properties or Tags. So build them
-	// right here. This is needed only to support in-flight invocations started
-	// when the server is being updated.
-	if req.Properties == nil {
-		if t := maybeGetTrigger(c, ctl); t != nil {
-			props.Fields["revision"] = strProtoValue(t.revision)
-			props.Fields["branch"] = strProtoValue(t.ref)
-			tags = append(tags, "buildset:"+t.buildset(), "gitiles_ref:"+t.ref)
-		}
 	}
 
 	// Prepare JSON blob for Buildbucket. encoding/json and jsonpb doesn't
@@ -435,56 +418,4 @@ func strProtoValue(s string) *structpb.Value {
 			StringValue: s,
 		},
 	}
-}
-
-// TODO(vadimsh): Remove this code once the fallback in LaunchTask is removed.
-// This code now lives in engine/request.go.
-
-func maybeGetTrigger(c context.Context, ctl task.Controller) *normalizedTrigger {
-	var prevTriggerID string
-	var latest *normalizedTrigger
-	for _, t := range ctl.Request().IncomingTriggers {
-		g := t.GetGitiles()
-		if g == nil {
-			ctl.DebugLog("ignoring non-gitiles trigger %s", t.Id)
-			continue
-		}
-		n, err := normalizeGitilesTrigger(g)
-		if err != nil {
-			logging.Errorf(c, "failed to normalize GitilesTrigger id='%s': %s", t.Id, err)
-			ctl.DebugLog("failed to normalize GitilesTrigger id='%s': %s", t.Id, err)
-			continue
-		}
-		// Latest trigger wins until engine v2 is available, because v1 requires
-		// coalescing all pending triggers into just 1 invocation.
-		if latest != nil {
-			ctl.DebugLog("ignoring gitiles trigger %s", prevTriggerID)
-		}
-		latest = n
-		prevTriggerID = t.Id
-	}
-	return latest
-}
-
-type normalizedTrigger struct {
-	repo     *url.URL
-	ref      string
-	revision string
-}
-
-func (n *normalizedTrigger) buildset() string {
-	c := buildbucket.GitilesCommit{
-		Host:     n.repo.Host,
-		Project:  strings.TrimPrefix(n.repo.Path, "/"),
-		Revision: n.revision,
-	}
-	return c.String()
-}
-
-func normalizeGitilesTrigger(in *api.GitilesTrigger) (*normalizedTrigger, error) {
-	u, err := gitiles.NormalizeRepoURL(in.Repo, false)
-	if err != nil {
-		return nil, err
-	}
-	return &normalizedTrigger{repo: u, ref: in.Ref, revision: in.Revision}, nil
 }
