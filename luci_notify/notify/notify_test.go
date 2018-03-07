@@ -47,8 +47,15 @@ func extractNotifiers(c context.Context, projectID string, cfg *notifyConfig.Pro
 	return notifiers
 }
 
-func notifyDummyBuild(status buildbucket.Status) *buildbucket.Build {
-	return testutil.TestBuild("test", "hello", "test-builder", status)
+func notifyDummyBuild(status buildbucket.Status, notifyEmails ...string) *Build {
+	var build Build
+	build.Build = testutil.TestBuild("test", "hello", "test-builder", status)
+
+	for _, e := range notifyEmails {
+		build.InputProperties.EmailNotify = append(build.InputProperties.EmailNotify, EmailNotifyValue{e})
+	}
+
+	return &build
 }
 
 func verifyStringSliceResembles(actual, expect []string) {
@@ -115,7 +122,9 @@ func TestNotify(t *testing.T) {
 
 		// Re-usable builds and builders for running Notify.
 		goodBuild := notifyDummyBuild(buildbucket.StatusSuccess)
+		goodEmailBuild := notifyDummyBuild(buildbucket.StatusSuccess, "property@google.com", "bogus@gmail.com")
 		badBuild := notifyDummyBuild(buildbucket.StatusFailure)
+		badEmailBuild := notifyDummyBuild(buildbucket.StatusFailure, "property@google.com", "bogus@gmail.com")
 		goodBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
 			Status:          buildbucket.StatusSuccess,
@@ -127,7 +136,7 @@ func TestNotify(t *testing.T) {
 
 		dispatcher, taskqueue := createMockTaskQueue(c)
 
-		test := func(notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder, emailExpect ...string) {
+		test := func(notifiers []*config.Notifier, build *Build, builder *Builder, emailExpect ...string) {
 			// Test Notify.
 			err := Notify(c, dispatcher, notifiers, builder.Status, build)
 			So(err, ShouldBeNil)
@@ -142,6 +151,8 @@ func TestNotify(t *testing.T) {
 			test(noNotifiers, goodBuild, badBuilder)
 			test(noNotifiers, badBuild, goodBuilder)
 			test(noNotifiers, badBuild, badBuilder)
+			test(noNotifiers, goodEmailBuild, goodBuilder, "property@google.com")
+			test(noNotifiers, badEmailBuild, goodBuilder, "property@google.com")
 		})
 
 		Convey(`on success`, func() {
@@ -151,6 +162,13 @@ func TestNotify(t *testing.T) {
 				goodBuilder,
 				"test-example-success@google.com",
 			)
+			test(
+				notifiers,
+				goodEmailBuild,
+				goodBuilder,
+				"test-example-success@google.com",
+				"property@google.com",
+			)
 		})
 
 		Convey(`on failure`, func() {
@@ -159,6 +177,13 @@ func TestNotify(t *testing.T) {
 				badBuild,
 				badBuilder,
 				"test-example-failure@google.com",
+			)
+			test(
+				notifiers,
+				badEmailBuild,
+				badBuilder,
+				"test-example-failure@google.com",
+				"property@google.com",
 			)
 		})
 
@@ -170,6 +195,14 @@ func TestNotify(t *testing.T) {
 				"test-example-failure@google.com",
 				"test-example-change@google.com",
 			)
+			test(
+				notifiers,
+				badEmailBuild,
+				goodBuilder,
+				"test-example-failure@google.com",
+				"test-example-change@google.com",
+				"property@google.com",
+			)
 		})
 
 		Convey(`on change to success`, func() {
@@ -179,6 +212,14 @@ func TestNotify(t *testing.T) {
 				badBuilder,
 				"test-example-success@google.com",
 				"test-example-change@google.com",
+			)
+			test(
+				notifiers,
+				goodEmailBuild,
+				badBuilder,
+				"test-example-success@google.com",
+				"test-example-change@google.com",
+				"property@google.com",
 			)
 		})
 	})
