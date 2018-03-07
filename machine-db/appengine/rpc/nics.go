@@ -53,7 +53,7 @@ func (*Service) DeleteNIC(c context.Context, req *crimson.DeleteNICRequest) (*em
 
 // ListNICs handles a request to list network interfaces.
 func (*Service) ListNICs(c context.Context, req *crimson.ListNICsRequest) (*crimson.ListNICsResponse, error) {
-	nics, err := listNICs(c, database.Get(c), req.Names, req.Machines)
+	nics, err := listNICs(c, database.Get(c), req)
 	if err != nil {
 		return nil, internalError(c, err)
 	}
@@ -133,12 +133,19 @@ func deleteNIC(c context.Context, name, machine string) error {
 }
 
 // listNICs returns a slice of NICs in the database.
-func listNICs(c context.Context, q database.QueryerContext, names, machines []string) ([]*crimson.NIC, error) {
+func listNICs(c context.Context, q database.QueryerContext, req *crimson.ListNICsRequest) ([]*crimson.NIC, error) {
+	mac48s, err := parseMAC48s(req.MacAddresses)
+	if err != nil {
+		return nil, err
+	}
+
 	stmt := squirrel.Select("n.name", "m.name", "n.mac_address", "s.name", "n.switchport").
 		From("nics n, machines m, switches s").
 		Where("n.machine_id = m.id").Where("n.switch_id = s.id")
-	stmt = selectInString(stmt, "n.name", names)
-	stmt = selectInString(stmt, "m.name", machines)
+	stmt = selectInString(stmt, "n.name", req.Names)
+	stmt = selectInString(stmt, "m.name", req.Machines)
+	stmt = selectInUint64(stmt, "n.mac_address", mac48s)
+	stmt = selectInString(stmt, "s.name", req.Switches)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
@@ -160,6 +167,19 @@ func listNICs(c context.Context, q database.QueryerContext, names, machines []st
 		nics = append(nics, n)
 	}
 	return nics, nil
+}
+
+// parseMAC48s returns a slice of uint64 MAC addresses.
+func parseMAC48s(macs []string) ([]uint64, error) {
+	mac48s := make([]uint64, len(macs))
+	for i, mac := range macs {
+		mac48, err := common.ParseMAC48(mac)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid MAC-48 address %q", mac)
+		}
+		mac48s[i] = uint64(mac48)
+	}
+	return mac48s, nil
 }
 
 // updateNIC updates an existing NIC in the database.
@@ -213,7 +233,10 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (_
 	// The number of rows affected cannot distinguish between zero because the NIC didn't exist
 	// and zero because the row already matched, so skip looking at the number of rows affected.
 
-	nics, err := listNICs(c, tx, []string{n.Name}, []string{n.Machine})
+	nics, err := listNICs(c, tx, &crimson.ListNICsRequest{
+		Names:    []string{n.Name},
+		Machines: []string{n.Machine},
+	})
 	switch {
 	case err != nil:
 		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated NIC").Err())
