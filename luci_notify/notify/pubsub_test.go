@@ -45,15 +45,21 @@ var (
 	}
 )
 
-func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime time.Time, revision string) *buildbucket.Build {
-	build := testutil.TestBuild("test", "hello", builder, status)
+func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime time.Time, revision string, notifyEmails ...string) *Build {
+	var build Build
+	build.Build = testutil.TestBuild("test", "hello", builder, status)
 	build.BuildSets = []buildbucket.BuildSet{buildbucket.BuildSet(&buildbucket.GitilesCommit{
 		Host:     "test.googlesource.com",
 		Project:  "test",
 		Revision: revision,
 	})}
 	build.CreationTime = creationTime
-	return build
+
+	for _, e := range notifyEmails {
+		build.InputProperties.EmailNotify = append(build.InputProperties.EmailNotify, EmailNotifyValue{e})
+	}
+
+	return &build
 }
 
 func TestHandleBuild(t *testing.T) {
@@ -83,7 +89,7 @@ func TestHandleBuild(t *testing.T) {
 
 		dispatcher, taskqueue := createMockTaskQueue(c)
 
-		testSuccess := func(build *buildbucket.Build, emailExpect ...string) {
+		testSuccess := func(build *Build, emailExpect ...string) {
 			// Test handleBuild.
 			err := handleBuild(c, dispatcher, build, history)
 			So(err, ShouldBeNil)
@@ -92,7 +98,7 @@ func TestHandleBuild(t *testing.T) {
 			verifyTasksAndMessages(c, taskqueue, emailExpect)
 		}
 
-		verifyBuilder := func(build *buildbucket.Build, revision string) {
+		verifyBuilder := func(build *Build, revision string) {
 			datastore.GetTestable(c).CatchupIndexes()
 			id := getBuilderID(build)
 			builder := Builder{ID: id}
@@ -111,11 +117,16 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`no config`, func() {
 			build := pubsubDummyBuild("not-a-builder", buildbucket.StatusFailure, oldTime, rev1)
 			testSuccess(build)
-			grepLog("configuration")
+			grepLog("Nobody to notify")
+		})
+
+		Convey(`no config w/property`, func() {
+			build := pubsubDummyBuild("not-a-builder", buildbucket.StatusFailure, oldTime, rev1, "property@google.com")
+			testSuccess(build, "property@google.com")
 		})
 
 		Convey(`no revision`, func() {
-			build := testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)
+			build := &Build{Build: testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)}
 			testSuccess(build)
 			grepLog("revision")
 		})
@@ -123,6 +134,12 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`init builder`, func() {
 			build := pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, oldTime, rev1)
 			testSuccess(build, "test-example-failure@google.com")
+			verifyBuilder(build, rev1)
+		})
+
+		Convey(`init builder w/property`, func() {
+			build := pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, oldTime, rev1, "property@google.com")
+			testSuccess(build, "test-example-failure@google.com", "property@google.com")
 			verifyBuilder(build, rev1)
 		})
 
@@ -143,6 +160,16 @@ func TestHandleBuild(t *testing.T) {
 
 			newBuild := pubsubDummyBuild("test-builder-3", buildbucket.StatusFailure, newTime, rev2)
 			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com")
+			verifyBuilder(newBuild, rev2)
+		})
+
+		Convey(`revision update w/property`, func() {
+			build := pubsubDummyBuild("test-builder-3", buildbucket.StatusSuccess, oldTime, rev1, "property@google.com")
+			testSuccess(build, "test-example-success@google.com", "property@google.com")
+			verifyBuilder(build, rev1)
+
+			newBuild := pubsubDummyBuild("test-builder-3", buildbucket.StatusFailure, newTime, rev2, "property@google.com")
+			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com", "property@google.com")
 			verifyBuilder(newBuild, rev2)
 		})
 

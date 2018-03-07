@@ -49,7 +49,7 @@ func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
 	return nil
 }
 
-func getBuilderID(b *buildbucket.Build) string {
+func getBuilderID(b *Build) string {
 	return fmt.Sprintf("buildbucket/%s/%s/%s", b.Project, b.Bucket, b.Builder)
 }
 
@@ -71,7 +71,7 @@ func commitIndex(commits []gitiles.Commit, revision string) int {
 // history is a function that contacts gitiles to obtain the git history for
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
-func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, history testutil.HistoryFunc) error {
+func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history testutil.HistoryFunc) error {
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
 	notifiers, err := config.LookupNotifiers(c, build.Project, builderID)
@@ -79,8 +79,10 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 		return errors.Annotate(err, "looking up notifiers").Err()
 	}
 	if len(notifiers) == 0 {
-		logging.Infof(c, "No configuration was found for this builder, ignoring...")
-		return nil
+		// No configurations were found, but we might need to generate notifications
+		// based on properties. Don't fall through to avoid storing build status for
+		// builds without configurations.
+		return Notify(c, d, notifiers, StatusUnknown, build)
 	}
 
 	gCommit := getCommitBuildSet(build.BuildSets)
@@ -105,7 +107,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 					return err
 				}
 				// Initialize the Builder in the datastore.
-				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build)); err != nil {
+				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build.Build)); err != nil {
 					return err
 				}
 				return nil
@@ -175,7 +177,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, 
 		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
 			return err
 		}
-		return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build))
+		return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build.Build))
 	}, nil)
 }
 
@@ -206,8 +208,21 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 	h.WriteHeader(http.StatusOK)
 }
 
+// EmailNotifyValue contains a single email address from properties_json.
+type EmailNotifyValue struct {
+	Email string `json:"email"`
+}
+
+// Build is buildbucket.Build along with the parsed 'email_notify' values.
+type Build struct {
+	*buildbucket.Build
+	InputProperties struct {
+		EmailNotify []EmailNotifyValue
+	} `json:"email_notify"`
+}
+
 // extractBuild constructs a Build from the PubSub HTTP request.
-func extractBuild(c context.Context, r *http.Request) (*buildbucket.Build, error) {
+func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	// sent by pubsub.
 	// This struct is just convenient for unwrapping the json message
 	var msg struct {
@@ -225,7 +240,8 @@ func extractBuild(c context.Context, r *http.Request) (*buildbucket.Build, error
 	if err := json.Unmarshal(msg.Message.Data, &message); err != nil {
 		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
-	var build buildbucket.Build
+	var build Build
+	build.Input.Properties = &build.InputProperties
 	if err := build.ParseMessage(&message.Build); err != nil {
 		return nil, errors.Annotate(err, "could not decode buildbucket build").Err()
 	}

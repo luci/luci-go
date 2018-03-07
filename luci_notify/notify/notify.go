@@ -70,7 +70,7 @@ at {{ .Build.StatusChangeTime }}.
 <a href="{{ .Build.URL }}">Full details are available here.</a>`))
 
 // createEmailTask constructs an EmailTask to be dispatched onto the task queue.
-func createEmailTask(c context.Context, recipients []string, oldStatus buildbucket.Status, build *buildbucket.Build) (*tq.Task, error) {
+func createEmailTask(c context.Context, recipients []string, oldStatus buildbucket.Status, build *Build) (*tq.Task, error) {
 	templateContext := map[string]interface{}{
 		"OldStatus": oldStatus.String(),
 		"Build":     build,
@@ -105,7 +105,7 @@ func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucket
 }
 
 // isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
-func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.Build) bool {
+func isRecipientAllowed(c context.Context, recipient string, build *Build) bool {
 	// TODO(mknyszek): Do a real ACL check here.
 	if strings.HasSuffix(recipient, "@google.com") || strings.HasSuffix(recipient, "@chromium.org") {
 		return true
@@ -114,23 +114,34 @@ func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.
 	return false
 }
 
-// Notify consolidates and filters recipients from a list of Notifiers and dispatches
-// notifications if necessary.
-func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucket.Status, build *buildbucket.Build) error {
+// Notify discovers, consolidates and filters recipients from notifiers, and
+// 'email_notify' properties, then dispatches notifications if necessary.
+func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucket.Status, build *Build) error {
 	recipientSet := stringset.New(0)
+
+	// Notify based on configured notifiers.
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
 			if !shouldNotify(&nc, oldStatus, build.Status) {
 				continue
 			}
 			for _, r := range nc.EmailRecipients {
-				if isRecipientAllowed(c, r, build) {
-					recipientSet.Add(r)
-				}
+				recipientSet.Add(r)
 			}
 		}
-
 	}
+
+	// Notify based on build request properties.
+	for _, r := range build.InputProperties.EmailNotify {
+		recipientSet.Add(r.Email)
+	}
+
+	for _, r := range recipientSet.ToSlice() {
+		if !isRecipientAllowed(c, r, build) {
+			recipientSet.Del(r)
+		}
+	}
+
 	if recipientSet.Len() == 0 {
 		logging.Infof(c, "Nobody to notify...")
 		return nil
