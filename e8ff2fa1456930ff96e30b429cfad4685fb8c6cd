@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e71e61f_a31c7c51",
+        "filename": "machine-db/appengine/rpc/queries.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-07T20:48:53Z",
+      "side": 1,
+      "message": "this line is identical to 3 others. maybe extract\n\n  func selectIn(b squirrel.SelectBuilder, expr string, values ...interface{}) squirrel.SelectBuilder\n\nthen you can as well make parseMac48s to return []interface{} and then you don\u0027t need selectInUint64",
+      "revId": "e8ff2fa1456930ff96e30b429cfad4685fb8c6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
