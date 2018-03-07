@@ -55,7 +55,7 @@ func (*Service) DeleteNIC(c context.Context, req *crimson.DeleteNICRequest) (*em
 func (*Service) ListNICs(c context.Context, req *crimson.ListNICsRequest) (*crimson.ListNICsResponse, error) {
 	nics, err := listNICs(c, database.Get(c), req)
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListNICsResponse{
 		Nics: nics,
@@ -153,7 +153,7 @@ func listNICs(c context.Context, q database.QueryerContext, req *crimson.ListNIC
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch NICs").Err()
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch NICs").Err())
 	}
 	defer rows.Close()
 	var nics []*crimson.NIC
@@ -161,7 +161,7 @@ func listNICs(c context.Context, q database.QueryerContext, req *crimson.ListNIC
 		n := &crimson.NIC{}
 		var mac48 common.MAC48
 		if err = rows.Scan(&n.Name, &n.Machine, &mac48, &n.Switch, &n.Switchport); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch NIC").Err()
+			return nil, internalError(c, errors.Annotate(err, "failed to fetch NIC").Err())
 		}
 		n.MacAddress = mac48.String()
 		nics = append(nics, n)

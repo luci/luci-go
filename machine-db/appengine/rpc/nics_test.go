@@ -200,7 +200,7 @@ func TestListNICs(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Machines[0]).WillReturnError(fmt.Errorf("error"))
 			nics, err := listNICs(c, db, req)
-			So(err, ShouldErrLike, "failed to fetch NICs")
+			So(err, ShouldErrLike, "Internal server error")
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

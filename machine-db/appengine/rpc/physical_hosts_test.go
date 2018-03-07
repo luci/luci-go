@@ -367,7 +367,7 @@ func TestListPhysicalHosts(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0], 1, 2).WillReturnError(fmt.Errorf("error"))
 			hosts, err := listPhysicalHosts(c, db, req)
-			So(err, ShouldErrLike, "failed to fetch physical hosts")
+			So(err, ShouldErrLike, "Internal server error")
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
