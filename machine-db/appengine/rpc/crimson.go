@@ -15,6 +15,8 @@
 package rpc
 
 import (
+	"strings"
+
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
@@ -30,7 +32,11 @@ import (
 
 // authPrelude ensures the user is authorized to use the Crimson API.
 func authPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	switch authorized, err := isAuthorized(c); {
+	groups := []string{"machine-db-administrators"}
+	if strings.HasPrefix(methodName, "List") {
+		groups = append(groups, "machine-db-readers")
+	}
+	switch authorized, err := isIn(c, groups); {
 	case err != nil:
 		return c, internalError(c, err)
 	case !authorized:
@@ -45,10 +51,9 @@ func internalError(c context.Context, err error) error {
 	return status.Errorf(codes.Internal, "Internal server error")
 }
 
-// isAuthorized returns whether the current user is authorized to use the Crimson API.
-func isAuthorized(c context.Context) (bool, error) {
-	// TODO(smut): Create other groups for this.
-	is, err := auth.IsMember(c, "machine-db-administrators")
+// isIn returns whether the current user is in any of the given groups.
+func isIn(c context.Context, groups []string) (bool, error) {
+	is, err := auth.IsMember(c, groups...)
 	if err != nil {
 		return false, errors.Annotate(err, "failed to check group membership").Err()
 	}
