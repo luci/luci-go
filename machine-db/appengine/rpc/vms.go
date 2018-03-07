@@ -48,7 +48,7 @@ func (*Service) CreateVM(c context.Context, req *crimson.CreateVMRequest) (*crim
 func (*Service) ListVMs(c context.Context, req *crimson.ListVMsRequest) (*crimson.ListVMsResponse, error) {
 	vms, err := listVMs(c, database.Get(c), req)
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListVMsResponse{
 		Vms: vms,
@@ -156,7 +156,7 @@ func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsR
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch VMs").Err()
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch VMs").Err())
 	}
 	defer rows.Close()
 	var vms []*crimson.VM
@@ -174,7 +174,7 @@ func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsR
 			&ipv4,
 			&v.State,
 		); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch VM").Err()
+			return nil, internalError(c, errors.Annotate(err, "failed to fetch VM").Err())
 		}
 		v.Ipv4 = ipv4.String()
 		vms = append(vms, v)

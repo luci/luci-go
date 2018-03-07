@@ -312,7 +312,7 @@ func TestListVMs(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0], 1, 2).WillReturnError(fmt.Errorf("error"))
 			vms, err := listVMs(c, db, req)
-			So(err, ShouldErrLike, "failed to fetch VMs")
+			So(err, ShouldErrLike, "Internal server error")
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

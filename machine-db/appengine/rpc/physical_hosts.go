@@ -48,7 +48,7 @@ func (*Service) CreatePhysicalHost(c context.Context, req *crimson.CreatePhysica
 func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHostsRequest) (*crimson.ListPhysicalHostsResponse, error) {
 	hosts, err := listPhysicalHosts(c, database.Get(c), req)
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListPhysicalHostsResponse{
 		Hosts: hosts,
@@ -185,7 +185,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch physical hosts").Err()
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch physical hosts").Err())
 	}
 	defer rows.Close()
 	var hosts []*crimson.PhysicalHost
@@ -203,7 +203,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 			&ipv4,
 			&h.State,
 		); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
+			return nil, internalError(c, errors.Annotate(err, "failed to fetch physical host").Err())
 		}
 		h.Ipv4 = ipv4.String()
 		hosts = append(hosts, h)
