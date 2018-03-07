@@ -176,16 +176,30 @@ func TestListNICs(t *testing.T) {
 		columns := []string{"n.name", "m.name", "n.mac_address", "s.name", "s.switchport"}
 		rows := sqlmock.NewRows(columns)
 
+		Convey("invalid MAC-48 address", func() {
+			req := &crimson.ListNICsRequest{
+				Names:        []string{"eth0"},
+				Machines:     []string{"machine"},
+				MacAddresses: []string{"01:02:03:04:05:06", "01:02:03:04:05:06:07:08"},
+			}
+			nics, err := listNICs(c, db, req)
+			So(err, ShouldErrLike, "invalid MAC-48 address")
+			So(nics, ShouldBeEmpty)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
 		Convey("query failed", func() {
 			selectStmt := `
 				^SELECT n.name, m.name, n.mac_address, s.name, n.switchport
 				FROM nics n, machines m, switches s
 				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?\) AND m.name IN \(\?\)$
 			`
-			names := []string{"eth0"}
-			machines := []string{"machine"}
-			m.ExpectQuery(selectStmt).WithArgs(names[0], machines[0]).WillReturnError(fmt.Errorf("error"))
-			nics, err := listNICs(c, db, names, machines)
+			req := &crimson.ListNICsRequest{
+				Names:    []string{"eth0"},
+				Machines: []string{"machine"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Machines[0]).WillReturnError(fmt.Errorf("error"))
+			nics, err := listNICs(c, db, req)
 			So(err, ShouldErrLike, "failed to fetch NICs")
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -197,10 +211,11 @@ func TestListNICs(t *testing.T) {
 				FROM nics n, machines m, switches s
 				WHERE n.machine_id = m.id AND n.switch_id = s.id AND m.name IN \(\?\)$
 			`
-			names := []string{}
-			machines := []string{"machine"}
-			m.ExpectQuery(selectStmt).WithArgs(machines[0]).WillReturnRows(rows)
-			nics, err := listNICs(c, db, names, machines)
+			req := &crimson.ListNICsRequest{
+				Machines: []string{"machine"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Machines[0]).WillReturnRows(rows)
+			nics, err := listNICs(c, db, req)
 			So(err, ShouldBeNil)
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -212,10 +227,11 @@ func TestListNICs(t *testing.T) {
 				FROM nics n, machines m, switches s
 				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?\)$
 			`
-			names := []string{"eth0"}
-			machines := []string{}
-			m.ExpectQuery(selectStmt).WithArgs(names[0]).WillReturnRows(rows)
-			nics, err := listNICs(c, db, names, machines)
+			req := &crimson.ListNICsRequest{
+				Names: []string{"eth0"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0]).WillReturnRows(rows)
+			nics, err := listNICs(c, db, req)
 			So(err, ShouldBeNil)
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -227,10 +243,12 @@ func TestListNICs(t *testing.T) {
 				FROM nics n, machines m, switches s
 				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?\) AND m.name IN \(\?\)$
 			`
-			names := []string{"eth0"}
-			machines := []string{"machine"}
-			m.ExpectQuery(selectStmt).WithArgs(names[0], machines[0]).WillReturnRows(rows)
-			nics, err := listNICs(c, db, names, machines)
+			req := &crimson.ListNICsRequest{
+				Names:    []string{"eth0"},
+				Machines: []string{"machine"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Machines[0]).WillReturnRows(rows)
+			nics, err := listNICs(c, db, req)
 			So(err, ShouldBeNil)
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -242,24 +260,26 @@ func TestListNICs(t *testing.T) {
 				FROM nics n, machines m, switches s
 				WHERE n.machine_id = m.id AND n.switch_id = s.id AND n.name IN \(\?,\?\) AND m.name IN \(\?\)$
 			`
-			names := []string{"eth0", "eth1"}
-			machines := []string{"machine"}
-			rows.AddRow(names[0], machines[0], 1, "switch", 1)
-			rows.AddRow(names[1], machines[0], common.MaxMAC48, "switch", 2)
-			m.ExpectQuery(selectStmt).WithArgs(names[0], names[1], machines[0]).WillReturnRows(rows)
-			nics, err := listNICs(c, db, names, machines)
+			req := &crimson.ListNICsRequest{
+				Names:    []string{"eth0", "eth1"},
+				Machines: []string{"machine"},
+			}
+			rows.AddRow(req.Names[0], req.Machines[0], 1, "switch", 1)
+			rows.AddRow(req.Names[1], req.Machines[0], common.MaxMAC48, "switch", 2)
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Names[1], req.Machines[0]).WillReturnRows(rows)
+			nics, err := listNICs(c, db, req)
 			So(err, ShouldBeNil)
 			So(nics, ShouldResemble, []*crimson.NIC{
 				{
-					Name:       names[0],
-					Machine:    machines[0],
+					Name:       req.Names[0],
+					Machine:    req.Machines[0],
 					MacAddress: "00:00:00:00:00:01",
 					Switch:     "switch",
 					Switchport: 1,
 				},
 				{
-					Name:       names[1],
-					Machine:    machines[0],
+					Name:       req.Names[1],
+					Machine:    req.Machines[0],
 					MacAddress: "ff:ff:ff:ff:ff:ff",
 					Switch:     "switch",
 					Switchport: 2,
@@ -274,12 +294,11 @@ func TestListNICs(t *testing.T) {
 				FROM nics n, machines m, switches s
 				WHERE n.machine_id = m.id AND n.switch_id = s.id$
 			`
-			names := []string{}
-			machines := []string{}
+			req := &crimson.ListNICsRequest{}
 			rows.AddRow("eth0", "machine", 0, "switch", 0)
 			rows.AddRow("eth1", "machine", 1, "switch", 1)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			nics, err := listNICs(c, db, names, machines)
+			nics, err := listNICs(c, db, req)
 			So(err, ShouldBeNil)
 			So(nics, ShouldResemble, []*crimson.NIC{
 				{

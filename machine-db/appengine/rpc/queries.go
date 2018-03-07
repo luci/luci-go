@@ -58,3 +58,16 @@ func selectInString(b squirrel.SelectBuilder, expr string, values []string) squi
 	}
 	return b.Where(expr+" IN ("+squirrel.Placeholders(len(args))+")", args...)
 }
+
+// selectInUint64 returns the given SELECT modified with a WHERE IN clause.
+// expr is the left-hand side of the IN operator, values is the right-hand side. No-op if values is empty.
+func selectInUint64(b squirrel.SelectBuilder, expr string, values []uint64) squirrel.SelectBuilder {
+	if len(values) == 0 {
+		return b
+	}
+	args := make([]interface{}, len(values))
+	for i, val := range values {
+		args[i] = val
+	}
+	return b.Where(expr+" IN ("+squirrel.Placeholders(len(args))+")", args...)
+}

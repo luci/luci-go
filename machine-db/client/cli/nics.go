@@ -193,7 +193,8 @@ func getNICsCmd() *subcommands.Command {
 			cmd := &GetNICsCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a NIC to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
-			// TODO(smut): Add the other filters.
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.MacAddresses), "mac", "MAC address to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Switches), "switch", "Name of a switch to filter by. Can be specified multiple times.")
 			cmd.f.Register(cmd)
 			return cmd
 		},

@@ -42,7 +42,10 @@ message ListNICsRequest {
   repeated string names = 1;
   // The machines to filter retrieved NICs on.
   repeated string machines = 2;
-  // TODO(smut): Add the rest of the filters.
+  // The MAC addresses to filter retrieved NICs on.
+  repeated string mac_addresses = 3;
+  // The switches to filter retrieved NICs on.
+  repeated string switches = 4;
 }
 
 // A response containing a list of NICs in the database.
