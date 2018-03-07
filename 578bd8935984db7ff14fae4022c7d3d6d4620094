@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "770aac44_bb6473c6",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-07T02:07:18Z",
+      "side": 1,
+      "message": "at this point, I don\u0027t see the value in isIn. Can\u0027t we use auth.IsMember?",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 0
+      },
+      "revId": "578bd8935984db7ff14fae4022c7d3d6d4620094",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
