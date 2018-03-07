@@ -16,6 +16,24 @@
       "revId": "e8ff2fa1456930ff96e30b429cfad4685fb8c6cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fea4b2d7_21126411",
+        "filename": "machine-db/appengine/rpc/queries.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-07T22:24:19Z",
+      "side": 1,
+      "message": "Will investigate in a follow up, because there\u0027s also parseIPv4s to change in a file that isn\u0027t currently in this CL.",
+      "parentUuid": "1e71e61f_a31c7c51",
+      "revId": "e8ff2fa1456930ff96e30b429cfad4685fb8c6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
