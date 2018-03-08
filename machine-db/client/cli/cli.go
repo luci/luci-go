@@ -108,6 +108,7 @@ func New(params *Parameters) *cli.Application {
 			deleteMachineCmd(),
 			editMachineCmd(),
 			getMachinesCmd(),
+			renameMachineCmd(),
 			{},
 
 			// Network interfaces.

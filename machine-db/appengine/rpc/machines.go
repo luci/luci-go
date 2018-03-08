@@ -62,6 +62,11 @@ func (*Service) ListMachines(c context.Context, req *crimson.ListMachinesRequest
 	}, nil
 }
 
+// RenameMachine handles a request to rename an existing machine.
+func (*Service) RenameMachine(c context.Context, req *crimson.RenameMachineRequest) (*crimson.Machine, error) {
+	return renameMachine(c, req.Name, req.NewName)
+}
+
 // UpdateMachine handles a request to update an existing machine.
 func (*Service) UpdateMachine(c context.Context, req *crimson.UpdateMachineRequest) (*crimson.Machine, error) {
 	machine, err := updateMachine(c, req.Machine, req.UpdateMask)
@@ -182,6 +187,58 @@ func listMachines(c context.Context, q database.QueryerContext, req *crimson.Lis
 		machines = append(machines, m)
 	}
 	return machines, nil
+}
+
+// renameMachine renames an existing machine in the database.
+func renameMachine(c context.Context, name, newName string) (*crimson.Machine, error) {
+	switch {
+	case name == "":
+		return nil, status.Error(codes.InvalidArgument, "machine name is required and must be non-empty")
+	case newName == "":
+		return nil, status.Error(codes.InvalidArgument, "new name is required and must be non-empty")
+	case name == newName:
+		return nil, status.Error(codes.InvalidArgument, "new name must be different")
+	}
+
+	tx, err := database.Begin(c)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+	}
+	defer tx.MaybeRollback(c)
+
+	res, err := tx.ExecContext(c, `
+		UPDATE machines
+		SET name = ?
+		WHERE name = ?
+	`, newName, name)
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_DUP_ENTRY:
+			// e.g. "Error 1062: Duplicate entry 'machine-name' for key 'name'".
+			return nil, status.Errorf(codes.AlreadyExists, "duplicate machine %q", newName)
+		}
+		return nil, internalError(c, errors.Annotate(err, "failed to rename machine").Err())
+	}
+	switch rows, err := res.RowsAffected(); {
+	case err != nil:
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+	case rows == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown machine %q", name)
+	}
+
+	machines, err := listMachines(c, tx, &crimson.ListMachinesRequest{
+		Names: []string{newName},
+	})
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch renamed machine").Err())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	}
+	return machines[0], nil
 }
 
 // updateMachine updates an existing machine in the database.
