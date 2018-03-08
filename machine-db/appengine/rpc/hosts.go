@@ -15,7 +15,6 @@
 package rpc
 
 import (
-	"database/sql"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -80,10 +79,10 @@ func deleteHost(c context.Context, name string, vlan int64) error {
 
 // assignHostnameAndIP assigns the given hostname and IP address using the given transaction.
 // The caller must commit or roll back the transaction appropriately.
-func assignHostnameAndIP(c context.Context, tx *sql.Tx, hostname string, ipv4 common.IPv4) (int64, error) {
+func assignHostnameAndIP(c context.Context, q database.ExecerContext, hostname string, ipv4 common.IPv4) (int64, error) {
 	// By setting hostnames.vlan_id as both FOREIGN KEY and NOT NULL when setting up the database,
 	// we can avoid checking if the given VLAN is valid. MySQL will ensure the given VLAN exists.
-	res, err := tx.ExecContext(c, `
+	res, err := q.ExecContext(c, `
 		INSERT INTO hostnames (name, vlan_id)
 		VALUES (?, (SELECT vlan_id FROM ips WHERE ipv4 = ? AND hostname_id IS NULL))
 	`, hostname, ipv4)
@@ -105,7 +104,7 @@ func assignHostnameAndIP(c context.Context, tx *sql.Tx, hostname string, ipv4 co
 		return 0, internalError(c, errors.Annotate(err, "failed to fetch hostname").Err())
 	}
 
-	res, err = tx.ExecContext(c, `
+	res, err = q.ExecContext(c, `
 		UPDATE ips
 		SET hostname_id = ?
 		WHERE ipv4 = ?

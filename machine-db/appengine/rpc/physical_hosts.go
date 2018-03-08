@@ -65,7 +65,7 @@ func (*Service) UpdatePhysicalHost(c context.Context, req *crimson.UpdatePhysica
 }
 
 // createPhysicalHost creates a new physical host in the database.
-func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (_ *crimson.PhysicalHost, err error) {
+func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.PhysicalHost, error) {
 	if err := validatePhysicalHostForCreation(h); err != nil {
 		return nil, err
 	}
@@ -74,13 +74,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (_ *crimson.
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
-	defer func() {
-		if err != nil {
-			if e := tx.Rollback(); e != nil {
-				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
-			}
-		}
-	}()
+	defer tx.MaybeRollback(c)
 
 	hostnameId, err := assignHostnameAndIP(c, tx, h.Name, ip)
 	if err != nil {
@@ -218,7 +212,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 }
 
 // updatePhysicalHost updates an existing physical host in the database.
-func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_mask.FieldMask) (_ *crimson.PhysicalHost, err error) {
+func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_mask.FieldMask) (*crimson.PhysicalHost, error) {
 	if err := validatePhysicalHostForUpdate(h, mask); err != nil {
 		return nil, err
 	}
@@ -248,6 +242,7 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 	}
 	var query string
 	var args []interface{}
+	var err error
 	if update {
 		stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", h.Name, h.Vlan)
 		query, args, err = stmt.ToSql()
@@ -260,13 +255,8 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
-	defer func() {
-		if err != nil {
-			if e := tx.Rollback(); e != nil {
-				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
-			}
-		}
-	}()
+	defer tx.MaybeRollback(c)
+
 	if query != "" && len(args) > 0 {
 		_, err = tx.ExecContext(c, query, args...)
 		if err != nil {

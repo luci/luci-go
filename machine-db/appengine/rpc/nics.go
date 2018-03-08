@@ -183,7 +183,7 @@ func parseMAC48s(macs []string) ([]uint64, error) {
 }
 
 // updateNIC updates an existing NIC in the database.
-func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (_ *crimson.NIC, err error) {
+func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (*crimson.NIC, error) {
 	if err := validateNICForUpdate(n, mask); err != nil {
 		return nil, err
 	}
@@ -209,13 +209,8 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (_
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
-	defer func() {
-		if err != nil {
-			if e := tx.Rollback(); e != nil {
-				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
-			}
-		}
-	}()
+	defer tx.MaybeRollback(c)
+
 	_, err = tx.ExecContext(c, query, args...)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
