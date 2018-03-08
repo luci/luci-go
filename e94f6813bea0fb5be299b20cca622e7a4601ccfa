@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "422abde2_ff39e872",
+        "filename": "common/bq/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2018-03-08T01:04:19Z",
+      "side": 1,
+      "message": "User would do this.",
+      "range": {
+        "startLine": 43,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 3
+      },
+      "revId": "e94f6813bea0fb5be299b20cca622e7a4601ccfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28dea132_f02f4e4d",
+        "filename": "common/bq/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2018-03-08T01:04:19Z",
+      "side": 1,
+      "message": "User would do this.",
+      "range": {
+        "startLine": 66,
+        "startChar": 6,
+        "endLine": 70,
+        "endChar": 3
+      },
+      "revId": "e94f6813bea0fb5be299b20cca622e7a4601ccfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a3586cf_6c2c9683",
+        "filename": "common/bq/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2018-03-08T01:04:19Z",
+      "side": 1,
+      "message": "User would do this (roughly)",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 3
+      },
+      "revId": "e94f6813bea0fb5be299b20cca622e7a4601ccfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
