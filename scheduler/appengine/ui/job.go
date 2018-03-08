@@ -148,7 +148,8 @@ func runJobAction(ctx *router.Context) {
 		http.Error(w, "Forbidden", 403)
 		return
 	case err != nil:
-		panic(err)
+		genericReply(err)
+		return
 	}
 
 	// Wait for the corresponding invocation to appear. Give up if task queue or
