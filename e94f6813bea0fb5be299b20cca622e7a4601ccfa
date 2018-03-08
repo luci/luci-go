@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "7ead3b66_f9b6023c",
+        "filename": "common/bq/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-08T22:37:53Z",
+      "side": 1,
+      "message": "common packages cannot import appengine or server",
+      "revId": "e94f6813bea0fb5be299b20cca622e7a4601ccfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "422abde2_ff39e872",
         "filename": "common/bq/query.go",
         "patchSetId": 1
