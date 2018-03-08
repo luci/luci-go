@@ -54,7 +54,7 @@ func (*Service) ListDRACs(c context.Context, req *crimson.ListDRACsRequest) (*cr
 }
 
 // createDRAC creates a new DRAC in the database.
-func createDRAC(c context.Context, d *crimson.DRAC) (_ *crimson.DRAC, err error) {
+func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	if err := validateDRACForCreation(d); err != nil {
 		return nil, err
 	}
@@ -63,13 +63,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (_ *crimson.DRAC, err error)
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
-	defer func() {
-		if err != nil {
-			if e := tx.Rollback(); e != nil {
-				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
-			}
-		}
-	}()
+	defer tx.MaybeRollback(c)
 
 	hostnameId, err := assignHostnameAndIP(c, tx, d.Name, ip)
 	if err != nil {
