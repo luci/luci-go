@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c746a4ff_553a14ea",
+        "filename": "machine-db/appengine/database/tx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-08T22:35:46Z",
+      "side": 1,
+      "message": "swap order",
+      "range": {
+        "startLine": 20,
+        "startChar": 8,
+        "endLine": 22,
+        "endChar": 8
+      },
+      "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cc1b5d1_931d55ae",
+        "filename": "machine-db/appengine/database/tx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-08T22:35:46Z",
+      "side": 1,
+      "message": "please document that it requires (*RollbackTx).Commit() to be called and NOT (*sql.Tx).Commit\n\nalso please mention that it logs errors",
+      "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b3dffe3_5185559f",
+        "filename": "machine-db/appengine/rpc/hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-08T22:35:46Z",
+      "side": 1,
+      "message": "nit: why q? i read q as query. i think tx is better: it tells the client that it should be a transaction (otherwise our writes below are not transactional)",
+      "range": {
+        "startLine": 82,
+        "startChar": 44,
+        "endLine": 82,
+        "endChar": 45
+      },
+      "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
