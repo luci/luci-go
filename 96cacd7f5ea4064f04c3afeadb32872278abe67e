@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "85fa3a75_bd9572f8",
+        "filename": "machine-db/appengine/database/tx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-08T22:51:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c746a4ff_553a14ea",
+      "range": {
+        "startLine": 20,
+        "startChar": 8,
+        "endLine": 22,
+        "endChar": 8
+      },
+      "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3cc1b5d1_931d55ae",
         "filename": "machine-db/appengine/database/tx.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ce4867e_ecbc8d33",
+        "filename": "machine-db/appengine/database/tx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-08T22:51:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3cc1b5d1_931d55ae",
+      "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69c4ef92_0fd58a8d",
+        "filename": "machine-db/appengine/rpc/hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-08T22:51:51Z",
+      "side": 1,
+      "message": "q is the name of database.QueryerContext args wherever those exist, I first changed it to q before I realized this function calls ExecContext and not QueryContext. Changed to tx.",
+      "parentUuid": "7b3dffe3_5185559f",
+      "range": {
+        "startLine": 82,
+        "startChar": 44,
+        "endLine": 82,
+        "endChar": 45
+      },
+      "revId": "96cacd7f5ea4064f04c3afeadb32872278abe67e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
