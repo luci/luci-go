@@ -185,7 +185,7 @@ func listMachines(c context.Context, q database.QueryerContext, req *crimson.Lis
 }
 
 // updateMachine updates an existing machine in the database.
-func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.FieldMask) (_ *crimson.Machine, err error) {
+func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.FieldMask) (*crimson.Machine, error) {
 	if err := validateMachineForUpdate(m, mask); err != nil {
 		return nil, err
 	}
@@ -218,13 +218,8 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
-	defer func() {
-		if err != nil {
-			if e := tx.Rollback(); e != nil {
-				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
-			}
-		}
-	}()
+	defer tx.MaybeRollback(c)
+
 	_, err = tx.ExecContext(c, query, args...)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
