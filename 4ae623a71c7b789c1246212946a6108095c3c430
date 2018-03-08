@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2a1ca5d_f5e8da9e",
+        "filename": "milo/buildsource/buildbot/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-08T21:49:32Z",
+      "side": 1,
+      "message": "Do we still need this?  I think it\u0027s for setting emulation mode, but afaict it\u0027s always on.",
+      "revId": "4ae623a71c7b789c1246212946a6108095c3c430",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

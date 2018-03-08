@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6476acb_fc93a512",
+        "filename": "milo/buildsource/swarming/expectations/build-canceled.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-08T21:49:32Z",
+      "side": 1,
+      "message": "FWIW i think it\u0027d make sense if this linked to the stdout.  But it doesn\u0027t have to be in in this CL.",
+      "revId": "a731ba406e83ada19619febf353695e92de19616",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

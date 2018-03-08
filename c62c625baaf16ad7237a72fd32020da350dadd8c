@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ccde1c79_e4d0525c",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-08T21:49:32Z",
+      "side": 1,
+      "message": "GotRevision is prioritized, then RequestRevision if GotRevision isn\u0027t available.",
+      "revId": "c62c625baaf16ad7237a72fd32020da350dadd8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
