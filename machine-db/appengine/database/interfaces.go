@@ -19,6 +19,12 @@ import (
 	"database/sql"
 )
 
+// ExecerContext defines an interface which supports ExecContext calls.
+// Implemented by sql.Conn, sql.DB, sql.Stmt, sql.Tx.
+type ExecerContext interface {
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}
+
 // QueryerContext defines an interface which supports QueryContext calls.
 // Implemented by sql.Conn, sql.DB, sql.Stmt, sql.Tx.
 type QueryerContext interface {

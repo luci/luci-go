@@ -65,7 +65,7 @@ func (*Service) UpdateVM(c context.Context, req *crimson.UpdateVMRequest) (*crim
 }
 
 // createVM creates a new VM in the database.
-func createVM(c context.Context, v *crimson.VM) (_ *crimson.VM, err error) {
+func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 	if err := validateVMForCreation(v); err != nil {
 		return nil, err
 	}
@@ -74,13 +74,7 @@ func createVM(c context.Context, v *crimson.VM) (_ *crimson.VM, err error) {
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
-	defer func() {
-		if err != nil {
-			if e := tx.Rollback(); e != nil {
-				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
-			}
-		}
-	}()
+	defer tx.MaybeRollback(c)
 
 	hostnameId, err := assignHostnameAndIP(c, tx, v.Name, ip)
 	if err != nil {
@@ -189,7 +183,7 @@ func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsR
 }
 
 // updateVM updates an existing VM in the database.
-func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (_ *crimson.VM, err error) {
+func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (*crimson.VM, error) {
 	if err := validateVMForUpdate(v, mask); err != nil {
 		return nil, err
 	}
@@ -222,13 +216,8 @@ func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (_ *
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
 	}
-	defer func() {
-		if err != nil {
-			if e := tx.Rollback(); e != nil {
-				errors.Log(c, errors.Annotate(e, "failed to roll back transaction").Err())
-			}
-		}
-	}()
+	defer tx.MaybeRollback(c)
+
 	_, err = tx.ExecContext(c, query, args...)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
