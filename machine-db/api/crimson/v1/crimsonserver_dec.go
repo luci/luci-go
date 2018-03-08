@@ -174,6 +174,21 @@ func (s *DecoratedCrimson) ListMachines(c context.Context, req *ListMachinesRequ
 	return
 }
 
+func (s *DecoratedCrimson) RenameMachine(c context.Context, req *RenameMachineRequest) (rsp *Machine, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "RenameMachine", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.RenameMachine(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "RenameMachine", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) UpdateMachine(c context.Context, req *UpdateMachineRequest) (rsp *Machine, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {

@@ -65,6 +65,14 @@ message ListMachinesResponse {
   // TODO(smut): Support page tokens.
 }
 
+// A request to rename a machine in the database.
+message RenameMachineRequest {
+  // The name of the machine to rename.
+  string name = 1;
+  // The new name to give this machine.
+  string new_name = 2;
+}
+
 // A request to update a machine in the database.
 message UpdateMachineRequest {
   // The machine to update in the database.
