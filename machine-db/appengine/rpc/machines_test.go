@@ -276,6 +276,95 @@ func TestListMachines(t *testing.T) {
 	})
 }
 
+func TestRenameMachine(t *testing.T) {
+	Convey("renameMachine", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		selectStmt := `
+			^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+			FROM machines m, platforms p, racks r, datacenters d
+			WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
+		`
+		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
+		rows := sqlmock.NewRows(columns)
+
+		Convey("name unspecified", func() {
+			machine, err := renameMachine(c, "", "new machine")
+			So(err, ShouldErrLike, "machine name is required and must be non-empty")
+			So(machine, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("new name unspecified", func() {
+			machine, err := renameMachine(c, "old machine", "")
+			So(err, ShouldErrLike, "new name is required and must be non-empty")
+			So(machine, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("names equal", func() {
+			machine, err := renameMachine(c, "machine", "machine")
+			So(err, ShouldErrLike, "new name must be different")
+			So(machine, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("invalid machine", func() {
+			updateStmt := `
+				^UPDATE machines
+				SET name = \?
+				WHERE name = \?$
+			`
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs("new machine", "old machine").WillReturnResult(sqlmock.NewResult(1, 0))
+			m.ExpectRollback()
+			machine, err := renameMachine(c, "old machine", "new machine")
+			So(err, ShouldErrLike, "unknown machine")
+			So(machine, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("duplicate machine", func() {
+			updateStmt := `
+				^UPDATE machines
+				SET name = \?
+				WHERE name = \?$
+			`
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs("new machine", "old machine").WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
+			m.ExpectRollback()
+			machine, err := renameMachine(c, "old machine", "new machine")
+			So(err, ShouldErrLike, "duplicate machine")
+			So(machine, ShouldBeNil)
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("ok", func() {
+			updateStmt := `
+				^UPDATE machines
+				SET name = \?
+				WHERE name = \?$
+			`
+			rows.AddRow("new machine", "platform", "rack", "datacenter", "", "", "", "", common.State_SERVING)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs("new machine", "old machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			machine, err := renameMachine(c, "old machine", "new machine")
+			So(err, ShouldBeNil)
+			So(machine, ShouldResemble, &crimson.Machine{
+				Name:       "new machine",
+				Platform:   "platform",
+				Rack:       "rack",
+				Datacenter: "datacenter",
+				State:      common.State_SERVING,
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+	})
+}
+
 func TestUpdateMachine(t *testing.T) {
 	Convey("updateMachine", t, func() {
 		db, m, _ := sqlmock.New()

@@ -211,3 +211,40 @@ func getMachinesCmd() *subcommands.Command {
 		},
 	}
 }
+
+// RenameMachineCmd is the command to rename a machine.
+type RenameMachineCmd struct {
+	subcommands.CommandRunBase
+	req crimson.RenameMachineRequest
+	f   FormattingFlags
+}
+
+// Run runs the command to rename a machine.
+func (c *RenameMachineCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	// TODO(smut): Validate required fields client-side.
+	client := getClient(ctx)
+	resp, err := client.RenameMachine(ctx, &c.req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	printMachines(c.f.tsv, resp)
+	return 0
+}
+
+// renameMachineCmd returns a command to rename a machine.
+func renameMachineCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "name-machine -old <name> -new <name>",
+		ShortDesc: "renames a machine",
+		LongDesc:  "Renames a machine in the database.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &RenameMachineCmd{}
+			cmd.Flags.StringVar(&cmd.req.Name, "old", "", "The name of the machine. Required and must be the name of a machine returned by get-machines.")
+			cmd.Flags.StringVar(&cmd.req.NewName, "new", "", "The new name of the machine. Required and must be unique within the database.")
+			cmd.f.Register(cmd)
+			return cmd
+		},
+	}
+}

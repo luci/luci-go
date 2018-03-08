@@ -44,6 +44,8 @@ service Crimson {
   rpc DeleteMachine(DeleteMachineRequest) returns (google.protobuf.Empty);
   // Lists machines in the database.
   rpc ListMachines(ListMachinesRequest) returns (ListMachinesResponse);
+  // Renames a machine in the database.
+  rpc RenameMachine(RenameMachineRequest) returns (Machine);
   // Updates a machine in the database.
   rpc UpdateMachine(UpdateMachineRequest) returns (Machine);
 
