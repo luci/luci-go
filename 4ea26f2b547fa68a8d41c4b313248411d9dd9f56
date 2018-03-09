@@ -128,6 +128,30 @@
       "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "934536b5_1d52140a",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T23:42:07Z",
+      "side": 1,
+      "message": "ok, i don\u0027t mind name-X",
+      "parentUuid": "1ff60bf1_e07d861f",
+      "range": {
+        "startLine": 239,
+        "startChar": 14,
+        "endLine": 239,
+        "endChar": 18
+      },
+      "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
