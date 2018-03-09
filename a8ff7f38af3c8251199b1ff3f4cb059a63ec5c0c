@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c17c9b03_016a1af0",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T21:03:18Z",
+      "side": 1,
+      "message": "this will include previous result\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/11/947711/2/luci_notify/notify/notify.go#43\nwhich does not make sense for a tryjob. Ideally we do not include previous result.\n\nI think the simplest and not too ugly fix would be to omit \"Previous result\" tr in the email body by wrapping that tr with {{ if ne .OldStatus -1}}{end}}",
+      "revId": "a8ff7f38af3c8251199b1ff3f4cb059a63ec5c0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
