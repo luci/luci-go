@@ -416,7 +416,7 @@ type ServiceAccountRule struct {
 	// produced by MintOAuthTokenViaGrant can always live up to 1h regardless of
 	// validity duration of the grant.
 	//
-	// Default is taken from ServiceAccountRuleDefaults or 24 hours if not
+	// Default is taken from ServiceAccountRuleDefaults or 48 hours if not
 	// specified there.
 	MaxGrantValidityDuration int64 `protobuf:"varint,7,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
 }
@@ -500,7 +500,7 @@ type ServiceAccountRuleDefaults struct {
 	// Default value for corresponding ServiceAccountRule field, if not specified
 	// there.
 	//
-	// Default is 24 hours.
+	// Default is 48 hours.
 	MaxGrantValidityDuration int64 `protobuf:"varint,2,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
 }
 

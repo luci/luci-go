@@ -268,7 +268,7 @@ message ServiceAccountRule {
   // produced by MintOAuthTokenViaGrant can always live up to 1h regardless of
   // validity duration of the grant.
   //
-  // Default is taken from ServiceAccountRuleDefaults or 24 hours if not
+  // Default is taken from ServiceAccountRuleDefaults or 48 hours if not
   // specified there.
   int64 max_grant_validity_duration = 7;
 }
@@ -286,6 +286,6 @@ message ServiceAccountRuleDefaults {
   // Default value for corresponding ServiceAccountRule field, if not specified
   // there.
   //
-  // Default is 24 hours.
+  // Default is 48 hours.
   int64 max_grant_validity_duration = 2;
 }
