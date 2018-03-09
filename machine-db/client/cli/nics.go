@@ -25,11 +25,11 @@ import (
 )
 
 // printNICs prints network interface data to stdout in tab-separated columns.
-func printNICs(noHeaders bool, nics ...*crimson.NIC) {
+func printNICs(tsv bool, nics ...*crimson.NIC) {
 	if len(nics) > 0 {
-		p := newStdoutPrinter()
+		p := newStdoutPrinter(tsv)
 		defer p.Flush()
-		if !noHeaders {
+		if !tsv {
 			p.Row("Name", "Machine", "MAC Address", "Switch", "Port")
 		}
 		for _, n := range nics {
@@ -58,7 +58,7 @@ func (c *AddNICCmd) Run(app subcommands.Application, args []string, env subcomma
 		errors.Log(ctx, err)
 		return 1
 	}
-	printNICs(c.f.noHeaders, resp)
+	printNICs(c.f.tsv, resp)
 	return 0
 }
 
@@ -140,7 +140,7 @@ func (c *EditNICCmd) Run(app subcommands.Application, args []string, env subcomm
 		errors.Log(ctx, err)
 		return 1
 	}
-	printNICs(c.f.noHeaders, resp)
+	printNICs(c.f.tsv, resp)
 	return 0
 }
 
@@ -179,7 +179,7 @@ func (c *GetNICsCmd) Run(app subcommands.Application, args []string, env subcomm
 		errors.Log(ctx, err)
 		return 1
 	}
-	printNICs(c.f.noHeaders, resp.Nics...)
+	printNICs(c.f.tsv, resp.Nics...)
 	return 0
 }
 

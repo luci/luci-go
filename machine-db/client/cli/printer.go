@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
@@ -23,13 +24,21 @@ import (
 	"go.chromium.org/luci/machine-db/api/common/v1"
 )
 
-// printer writes rows of tab-separated columns.
-type printer struct {
+// tablePrinter defines an interface for printing tabular data.
+type tablePrinter interface {
+	Row(args ...interface{})
+	Flush() error
+}
+
+// humanReadable writes rows of space-separated columns.
+// To ensure proper alignment of columns Flush should be called once after the last Row.
+type humanReadable struct {
 	*tabwriter.Writer
 }
 
-// Row prints one row of tab-separated columns.
-func (p *printer) Row(args ...interface{}) {
+// Row prints one row of space-separated columns.
+// Aligns mixed-length columns regardless of how many spaces it takes.
+func (p *humanReadable) Row(args ...interface{}) {
 	for i, arg := range args {
 		if i > 0 {
 			fmt.Fprint(p, "\t")
@@ -44,14 +53,49 @@ func (p *printer) Row(args ...interface{}) {
 	fmt.Fprint(p, "\n")
 }
 
-// newPrinter returns a printer.
-func newPrinter(w io.Writer) *printer {
-	return &printer{
-		tabwriter.NewWriter(w, 0, 8, 4, '\t', 0),
+// newHumanReadable returns a humanReadable tablePrinter.
+func newHumanReadable(w io.Writer) *humanReadable {
+	return &humanReadable{
+		tabwriter.NewWriter(w, 0, 1, 4, ' ', 0),
 	}
 }
 
-// newStdoutPrinter returns a printer which writes to os.Stdout.
-func newStdoutPrinter() *printer {
-	return newPrinter(os.Stdout)
+// machineReadable writes rows of tab-separated columns.
+type machineReadable struct {
+	*csv.Writer
+}
+
+// Flushes the underlying buffer.
+func (p *machineReadable) Flush() error {
+	p.Writer.Flush()
+	return p.Error()
+}
+
+// Row prints one row of tab-separated columns.
+// Does not attempt to align mixed-length columns.
+func (p *machineReadable) Row(args ...interface{}) {
+	row := make([]string, len(args))
+	for i, arg := range args {
+		switch a := arg.(type) {
+		case common.State:
+			row[i] = a.Name()
+		default:
+			row[i] = fmt.Sprint(arg)
+		}
+	}
+	p.Write(row)
+}
+
+func newMachineReadable(w io.Writer) *machineReadable {
+	m := &machineReadable{csv.NewWriter(w)}
+	m.Comma = '\t'
+	return m
+}
+
+// newStdoutPrinter returns a tablePrinter which writes to os.Stdout.
+func newStdoutPrinter(forMachines bool) tablePrinter {
+	if forMachines {
+		return newMachineReadable(os.Stdout)
+	}
+	return newHumanReadable(os.Stdout)
 }

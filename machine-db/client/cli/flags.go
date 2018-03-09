@@ -30,12 +30,12 @@ import (
 
 // FormattingFlags contains common flags related to output formatting.
 type FormattingFlags struct {
-	noHeaders bool
+	tsv bool
 }
 
 // Register registers these formatting flags with the given command.
 func (f *FormattingFlags) Register(c subcommands.CommandRun) {
-	c.GetFlags().BoolVar(&f.noHeaders, "noheaders", false, "Do not show headers.")
+	c.GetFlags().BoolVar(&f.tsv, "tsv", false, "Whether to emit data in tsv instead of human-readable format.")
 }
 
 // getUpdateMask returns a *field_mask.FieldMask containing paths based on which flags have been set.
