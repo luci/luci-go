@@ -16,6 +16,24 @@
       "revId": "a8ff7f38af3c8251199b1ff3f4cb059a63ec5c0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d43de28_74b267f4",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-09T21:17:30Z",
+      "side": 1,
+      "message": "Agreed that we probably want a different format for tryjob emails. I\u0027d thought about that, but wanted to have a different CL. This one already does enough.\n\nIgnoring a previous status of StatusUnknown does seem like a reasonable start.",
+      "parentUuid": "c17c9b03_016a1af0",
+      "revId": "a8ff7f38af3c8251199b1ff3f4cb059a63ec5c0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
