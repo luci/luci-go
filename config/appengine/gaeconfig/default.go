@@ -17,13 +17,10 @@ package gaeconfig
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"go.chromium.org/luci/appengine/datastorecache"
-	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/appengine/backend/datastore"
 	"go.chromium.org/luci/config/appengine/backend/memcache"
 	"go.chromium.org/luci/config/impl/filesystem"
@@ -33,8 +30,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/erroring"
 	"go.chromium.org/luci/config/server/cfgclient/backend/format"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
-	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/server/auth"
 	serverCaching "go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
@@ -117,54 +112,6 @@ func installCacheCronHandlerImpl(r *router.Router, base router.MiddlewareChain, 
 	datastore.Cache.InstallCronRoute("/admin/config/cache/manager", r, base)
 }
 
-// InstallValidationHandlers installs handlers for config validation.
-//
-// It ensures that caller is either the config service itself or a member of a
-// trusted group, both of which are configurable in the appengine app settings.
-// It requires that the hostname, the email of config service and the name of
-// the trusted group have been defined in the appengine app settings page before
-// the installed endpoints are called.
-func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, validator *validation.Validator) {
-	a := auth.Authenticator{
-		Methods: []auth.Method{
-			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-		},
-	}
-	base = base.Extend(a.GetMiddleware(), func(c *router.Context, next router.Handler) {
-		cc, w := c.Context, c.Writer
-		switch s := mustFetchCachedSettings(cc); {
-		case s.ConfigServiceHost == "":
-			errStatus(cc, w, http.StatusInternalServerError, "ConfigServiceHost has not been defined in settings")
-		case s.ConfigServiceEmail == "":
-			errStatus(cc, w, http.StatusInternalServerError, "ConfigServiceEmail has not been defined in settings")
-		case s.AdministratorsGroup == "":
-			errStatus(cc, w, http.StatusInternalServerError, "AdministratorsGroup has not been defined in settings")
-		default:
-			if auth.CurrentIdentity(cc).Email() == s.ConfigServiceEmail {
-				next(c)
-				return
-			}
-			switch isAdmin, err := auth.IsMember(cc, s.AdministratorsGroup); {
-			case err != nil:
-				errStatus(cc, w, http.StatusInternalServerError, "Unable to authenticate")
-			case !isAdmin:
-				errStatus(cc, w, http.StatusForbidden, "Insufficient authority for validation")
-			default:
-				next(c)
-			}
-		}
-	})
-	validation.InstallHandlers(r, base, validator)
-}
-
-func errStatus(c context.Context, w http.ResponseWriter, status int, msg string) {
-	if status >= http.StatusInternalServerError {
-		logging.Errorf(c, msg)
-	}
-	w.WriteHeader(status)
-	w.Write([]byte(msg))
-}
-
 // Use installs the default luci-config client.
 //
 // The client is configured to use luci-config URL specified in the settings,
@@ -213,9 +160,6 @@ func useImpl(c context.Context, be backend.B) context.Context {
 //
 // UseFlex has the same effect as Use, except that the backing cache is
 // a process-local cache instead of the AppEngine memcache service.
-//
-// UseFlex may optionally supply an LRUcache to use for process-wide
-// configuration caching. If nil, no process-wide caching will be performed.
 func UseFlex(c context.Context) context.Context {
 	// TODO: Install a path to load configurations from datastore cache. ATM,
 	// it can't be done because using datastore cache requires the ability to
