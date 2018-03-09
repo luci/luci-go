@@ -45,7 +45,7 @@ const serviceAccountsCfg = "service_accounts.cfg"
 const (
 	// defaultMaxGrantValidityDuration is value for max_grant_validity_duration if
 	// it isn't specified in the config.
-	defaultMaxGrantValidityDuration = 24 * 3600
+	defaultMaxGrantValidityDuration = 48 * 3600
 
 	// maxAllowedMaxGrantValidityDuration is maximal allowed value for
 	// max_grant_validity_duration in service_accounts.cfg.
