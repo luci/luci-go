@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "90c8b224_890bec04",
+        "filename": "config/validation/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T02:07:40Z",
+      "side": 1,
+      "message": "nit: imo this variable does not deserve to exist. Could you move meta var up and append directly to meta.Validation.Patterns?",
+      "range": {
+        "startLine": 156,
+        "startChar": 5,
+        "endLine": 156,
+        "endChar": 13
+      },
+      "revId": "f6d7562383e9cc046adb885e696936ef02b7a5a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
