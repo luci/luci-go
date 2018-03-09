@@ -93,6 +93,69 @@
       "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "469199ca_b0766b1c",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-09T19:32:09Z",
+      "side": 1,
+      "message": "do we really have to support patterns other than $app_id?",
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b094c41a_380316ea",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-09T19:32:09Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 204,
+        "startChar": 53,
+        "endLine": 204,
+        "endChar": 54
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f304832c_0dfaf274",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-09T19:32:09Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 208,
+        "startChar": 53,
+        "endLine": 208,
+        "endChar": 54
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
