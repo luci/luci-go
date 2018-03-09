@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "44b67d51_22442e57",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-09T22:39:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c5bfb9e_3ac0a4ba",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 20
+      },
+      "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1547817c_d053dc0f",
         "filename": "machine-db/appengine/rpc/machines.go",
         "patchSetId": 1
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "e6f5be13_da7d5812",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-09T22:39:16Z",
+      "side": 1,
+      "message": "Done, good catch",
+      "parentUuid": "1547817c_d053dc0f",
+      "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "32635b44_86669a2c",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -53,6 +95,30 @@
       "writtenOn": "2018-03-09T22:27:59Z",
       "side": 1,
       "message": "why not rename? the description is rename",
+      "range": {
+        "startLine": 239,
+        "startChar": 14,
+        "endLine": 239,
+        "endChar": 18
+      },
+      "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ff60bf1_e07d861f",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-09T22:39:16Z",
+      "side": 1,
+      "message": "All the others are 3-4 chars (add, get, list, del) and I couldn\u0027t decide between ren-* and name-*. From my interactions with users, I know they prefer shorter names (e.g. they like that add-m is automatically resolved to add-machine). What do you think?",
+      "parentUuid": "32635b44_86669a2c",
       "range": {
         "startLine": 239,
         "startChar": 14,
