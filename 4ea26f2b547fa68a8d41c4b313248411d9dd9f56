@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c5bfb9e_3ac0a4ba",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T22:27:59Z",
+      "side": 1,
+      "message": "just return renameMachine(...)",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 20
+      },
+      "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1547817c_d053dc0f",
+        "filename": "machine-db/appengine/rpc/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T22:27:59Z",
+      "side": 1,
+      "message": "it would be zero if name is same. Let\u0027s ensure that newName!\u003dname",
+      "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32635b44_86669a2c",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T22:27:59Z",
+      "side": 1,
+      "message": "why not rename? the description is rename",
+      "range": {
+        "startLine": 239,
+        "startChar": 14,
+        "endLine": 239,
+        "endChar": 18
+      },
+      "revId": "4ea26f2b547fa68a8d41c4b313248411d9dd9f56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
