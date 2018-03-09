@@ -113,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "d56291c2_f4c4b6b1",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-09T19:47:02Z",
+      "side": 1,
+      "message": "No, but hardcoding only $app_id seemed arbitrary.",
+      "parentUuid": "469199ca_b0766b1c",
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b094c41a_380316ea",
         "filename": "config/validation/rules.go",
         "patchSetId": 1
