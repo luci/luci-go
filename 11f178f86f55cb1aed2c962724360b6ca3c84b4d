@@ -1,0 +1,412 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba8caf2a_84824c04",
+        "filename": "milo/buildsource/buildbot/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "we no longer return a build summary",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ccaef10_7da25f39",
+        "filename": "milo/buildsource/buildbot/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "why not remove this function and add includeSteps and includeProperties boolean parameters to renderBuild?",
+      "range": {
+        "startLine": 82,
+        "startChar": 17,
+        "endLine": 83,
+        "endChar": 14
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d16a9ce_5da82b80",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "why not NewEmptyLink?",
+      "range": {
+        "startLine": 185,
+        "startChar": 26,
+        "endLine": 185,
+        "endChar": 33
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ca7ddfa_b13f1eec",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "extractEmail",
+      "range": {
+        "startLine": 65,
+        "startChar": 3,
+        "endLine": 65,
+        "endChar": 18
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1215decf_57de0535",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "CL author\n\nbuilds do not have authors",
+      "range": {
+        "startLine": 65,
+        "startChar": 32,
+        "endLine": 65,
+        "endChar": 38
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41eb6e91_5e3851b0",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "NewEmptyLink here and below?",
+      "range": {
+        "startLine": 139,
+        "startChar": 38,
+        "endLine": 139,
+        "endChar": 45
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e82583df_7d907513",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "let\u0027s use https://godoc.org/github.com/golang/protobuf/ptypes#Timestamp",
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d58092ea_4f4317fd",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "NewEmptyLink?",
+      "range": {
+        "startLine": 436,
+        "startChar": 26,
+        "endLine": 436,
+        "endChar": 33
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e742ea4e_df610d1e",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 672,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "NewEmptyLink?",
+      "range": {
+        "startLine": 672,
+        "startChar": 13,
+        "endLine": 672,
+        "endChar": 20
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "220c21a1_82229a08",
+        "filename": "milo/buildsource/swarming/expectations/build-pending.json",
+        "patchSetId": 8
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "let\u0027s change the test so that it is more realistic",
+      "range": {
+        "startLine": 23,
+        "startChar": 17,
+        "endLine": 23,
+        "endChar": 35
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb112a2e_246ef338",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "this piece is identical to the one above. let\u0027s dedup. please define a {{ template }}\nor add a TODO to do so",
+      "range": {
+        "startLine": 186,
+        "startChar": 14,
+        "endLine": 193,
+        "endChar": 24
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38a2c97a_3a7cc4df",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "the fact that we have a full MiloBuild here and make a temp struct only to type shorter field names is a smell to me:\n- we do not really have encapsulation since we have the full milo build: one can still NOT write .BuildSummary. If CurrentBuilds was []*buildSummary, it would make more sense, but I understand that CurrentBuilds is public and buildSummary is not \n- i think it indicates a problem with MiloBuild itself. Imagine ui.MiloBuild is simpler, e.g. it has ExecutionTime, rather than Summary that has execution time. Would you still have buildSummary?",
+      "range": {
+        "startLine": 83,
+        "startChar": 15,
+        "endLine": 83,
+        "endChar": 27
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c873c2c_da9f027c",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "let\u0027s use net/context like other files",
+      "range": {
+        "startLine": 22,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 9
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c80198a_e4c08444",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "if this function is specific to builder view, why is it in build.go?",
+      "range": {
+        "startLine": 64,
+        "startChar": 53,
+        "endLine": 64,
+        "endChar": 67
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8af30d7d_69ea1c48",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "a public function should not return a private type.",
+      "range": {
+        "startLine": 65,
+        "startChar": 20,
+        "endLine": 65,
+        "endChar": 32
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2043eea3_c1f1a996",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "what if start is zero too?\n\nnit: line above we use variable, but here we use field. Let\u0027s be consistent",
+      "range": {
+        "startLine": 246,
+        "startChar": 32,
+        "endLine": 246,
+        "endChar": 41
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54e71f89_a65b5c67",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "how \"empty interval\" is defined? \"An interval is empty if it does not have a start\" is not intuitive to me.\nI am not sure I see value in this func. It is used only in templates to decide whether to render N/A or a duration. We could move the condition into the template func. Then we don\u0027t need this.",
+      "range": {
+        "startLine": 253,
+        "startChar": 34,
+        "endLine": 253,
+        "endChar": 51
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74f16f7a_838bc532",
+        "filename": "milo/frontend/ui/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-09T03:05:22Z",
+      "side": 1,
+      "message": "builder",
+      "range": {
+        "startLine": 24,
+        "startChar": 8,
+        "endLine": 24,
+        "endChar": 16
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
