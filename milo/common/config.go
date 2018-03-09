@@ -561,14 +561,14 @@ var Validator = validation.Validator{configPatterns, validateFunc}
 // a list of ConfigPatterns that this instance of Milo is responsible for validating.
 // In the Milo case, it is only responsible for validating the config matching the
 // instance's appID in a project config.
-func configPatterns(c context.Context) []*validation.ConfigPattern {
+func configPatterns(c context.Context) ([]*validation.ConfigPattern, error) {
 	cfgName := info.AppID(c) + ".cfg"
 	return []*validation.ConfigPattern{
 		{
 			pattern.MustParse("regex:projects/.*"),
 			pattern.Exact(cfgName),
 		},
-	}
+	}, nil
 }
 
 // validateFunc implements validation.Validator.Func by taking a
@@ -576,7 +576,7 @@ func configPatterns(c context.Context) []*validation.ConfigPattern {
 // The validation we do include:
 //
 // * Make sure the config is able to be unmarshalled.
-func validateFunc(ctx *validation.Context, configSet, path string, content []byte) {
+func validateFunc(ctx *validation.Context, configSet, path string, content []byte) error {
 	cfgName := info.AppID(ctx.Context) + ".cfg"
 	if strings.HasPrefix(configSet, "projects/") && path == cfgName {
 		proj := config.Project{}
@@ -584,4 +584,5 @@ func validateFunc(ctx *validation.Context, configSet, path string, content []byt
 			ctx.Error(err)
 		}
 	}
+	return nil
 }

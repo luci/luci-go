@@ -46,17 +46,28 @@ type ConfigPattern struct {
 	Path      pattern.Pattern
 }
 
+// Func performs the actual config validation and stores the associated results
+// in the validation.Context.
+//
+// Returns an error if the validation process itself fails due to causes
+// unrelated to the data being validated. This will result in HTTP Internal
+// Server Error reply, instructing the config service to retry.
+type Func func(ctx *Context, configSet, path string, content []byte) error
+
 // Validator defines the components needed to install handlers to
 // implement config validation protocol.
 type Validator struct {
 	// GetConfigPatterns takes in context.Context and returns the list of
 	// ConfigPatterns that the implementing service is responsible
 	// for validating.
-	ConfigPatterns func(c context.Context) []*ConfigPattern
+	//
+	// Returns an error if it can't assemble this list. This will result in
+	// HTTP Internal Server Error reply, instructing the config service to retry.
+	ConfigPatterns func(c context.Context) ([]*ConfigPattern, error)
 
 	// Func performs the actual config validation and stores the
 	// associated results in the validation.Context.
-	Func func(ctx *Context, configSet, path string, content []byte)
+	Func Func
 }
 
 // InstallHandlers installs the metadata and validation handlers as defined by
@@ -100,9 +111,15 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 		badRequestStatus(c, w, "Must specify the path of the file to validate", nil)
 		return
 	}
+
 	vc := &Context{Context: c}
 	vc.SetFile(reqBody.GetPath())
-	validator.Func(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
+	err := validator.Func(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
+	if err != nil {
+		internalErrStatus(c, w, "Validation: transient failure", err)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	var msgList []*config.ValidationResponseMessage_Message
 	if len(vc.errors) == 0 {
@@ -114,7 +131,8 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 			err := error.Error()
 			msgList = append(msgList, &config.ValidationResponseMessage_Message{
 				Severity: config.ValidationResponseMessage_ERROR.Enum(),
-				Text:     &err})
+				Text:     &err,
+			})
 			errorBuffer.WriteString("\n  " + err)
 		}
 		logging.Warningf(c, "Validation errors%s", errorBuffer.String())
@@ -128,19 +146,28 @@ func (validator *Validator) validationRequestHandler(ctx *router.Context) {
 // responds with the necessary metadata defined by the given Validator.
 func (validator *Validator) metadataRequestHandler(ctx *router.Context) {
 	c, w := ctx.Context, ctx.Writer
-	var patterns []*config.ConfigPattern
-	for _, p := range validator.ConfigPatterns(c) {
-		patterns = append(patterns,
-			&config.ConfigPattern{
-				ConfigSet: proto.String(p.ConfigSet.String()),
-				Path:      proto.String(p.Path.String())})
+
+	patterns, err := validator.ConfigPatterns(c)
+	if err != nil {
+		internalErrStatus(c, w, "Metadata: failed to collect the list of validation patterns", err)
+		return
 	}
+
 	meta := config.ServiceDynamicMetadata{
 		Version: proto.String(metaDataFormatVersion),
 		Validation: &config.Validator{
-			Url:      proto.String(fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath)),
-			Patterns: patterns}}
-	if err := json.NewEncoder(w).Encode(meta); err != nil {
+			Url: proto.String(fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath)),
+		},
+	}
+	for _, p := range patterns {
+		meta.Validation.Patterns = append(meta.Validation.Patterns, &config.ConfigPattern{
+			ConfigSet: proto.String(p.ConfigSet.String()),
+			Path:      proto.String(p.Path.String()),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(&meta); err != nil {
 		internalErrStatus(c, w, "Metadata: failed to JSON encode output", err)
 	}
 }
