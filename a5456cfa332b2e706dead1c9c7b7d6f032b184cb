@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f40c3058_e34146ee",
+        "filename": "config/appengine/gaeconfig/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-09T19:21:23Z",
+      "side": 1,
+      "message": "how about making cfgclient.Get() accepting ${appid} as a placeholder? Then one can use exactly the same var.\nalso, can \"services/${appid}\" and \"${appid}.cfg\" be constants in rules package? Seems like these two would be sufficient for most packages.",
+      "parentUuid": "32786bce_636f695a",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 57
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a4912908_d2c0c84a",
         "filename": "config/appengine/gaeconfig/validation.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-03-09T03:38:42Z",
       "side": 1,
       "message": "I\u0027m considering making this mandatory and migrating all current users of InstallValidationHandlers to use validation.Rules instead.\n\nThis would allow to move InstallValidationHandlers into standard.InstallHandlers called by all GAE apps (thus making config validation available by default in all luci-go apps).\n\nRules are great because they are composable.",
+      "range": {
+        "startLine": 43,
+        "startChar": 3,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92b68d0f_14eb96f9",
+        "filename": "config/appengine/gaeconfig/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-09T19:21:23Z",
+      "side": 1,
+      "message": "sgtm but i have low confidence; nodir?",
+      "parentUuid": "a4912908_d2c0c84a",
       "range": {
         "startLine": 43,
         "startChar": 3,
