@@ -331,7 +331,8 @@ func TestValidateConfig(t *testing.T) {
 func TestConfigPatterns(t *testing.T) {
 	Convey("Match typical project configSet", t, func() {
 		catalog := New("luci-scheduler.cfg")
-		patterns := catalog.ConfigPatterns(testContext())
+		patterns, err := catalog.ConfigPatterns(testContext())
+		So(err, ShouldBeNil)
 		So(len(patterns), ShouldEqual, 1)
 		So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
 	})
