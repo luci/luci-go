@@ -25,11 +25,11 @@ import (
 )
 
 // printRacks prints rack data to stdout in tab-separated columns.
-func printRacks(noHeaders bool, racks ...*crimson.Rack) {
+func printRacks(tsv bool, racks ...*crimson.Rack) {
 	if len(racks) > 0 {
-		p := newStdoutPrinter()
+		p := newStdoutPrinter(tsv)
 		defer p.Flush()
-		if !noHeaders {
+		if !tsv {
 			p.Row("Name", "Datacenter", "Description", "State")
 		}
 		for _, r := range racks {
@@ -54,7 +54,7 @@ func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcom
 		errors.Log(ctx, err)
 		return 1
 	}
-	printRacks(c.f.noHeaders, resp.Racks...)
+	printRacks(c.f.tsv, resp.Racks...)
 	return 0
 }
 

@@ -25,11 +25,11 @@ import (
 )
 
 // printPlatforms prints platform data to stdout in tab-separated columns.
-func printPlatforms(noHeaders bool, platforms ...*crimson.Platform) {
+func printPlatforms(tsv bool, platforms ...*crimson.Platform) {
 	if len(platforms) > 0 {
-		p := newStdoutPrinter()
+		p := newStdoutPrinter(tsv)
 		defer p.Flush()
-		if !noHeaders {
+		if !tsv {
 			p.Row("Name", "Description")
 		}
 		for _, plat := range platforms {
@@ -54,7 +54,7 @@ func (c *GetPlatformsCmd) Run(app subcommands.Application, args []string, env su
 		errors.Log(ctx, err)
 		return 1
 	}
-	printPlatforms(c.f.noHeaders, resp.Platforms...)
+	printPlatforms(c.f.tsv, resp.Platforms...)
 	return 0
 }
 
