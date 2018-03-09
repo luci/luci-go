@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3b7f6f8f_c9941cc0",
+        "filename": "cipd/client/cipd/local/builder.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1116444
+      },
+      "writtenOn": "2018-03-09T01:23:25Z",
+      "side": 1,
+      "message": "+1, I like the idea of \"formally\" changing the format version. Will work on it in the next patch.\n\nI imagine there might an edge case when someone builds a package the second time with the new version, and since the hash is now different, it\u0027ll get uploaded with exactly the same tags, potentially failing to resolve later. But hopefully it\u0027s rare enough that we may not care (most of our packages are auto-built on commit, so git_revision will be different).",
+      "parentUuid": "65f051d7_f4baa1b8",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 3
+      },
+      "revId": "4252d5937f6525e518958c9387fbab289d3e548a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1dd34039_64011875",
         "filename": "cipd/client/cipd/local/builder.go",
         "patchSetId": 9
