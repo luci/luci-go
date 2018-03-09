@@ -116,7 +116,7 @@ type Catalog interface {
 	// This is part of the components needed to install validation endpoints
 	// on the service. When a config validation request is received by the
 	// service from luci-config, this is called to perform the validation.
-	ValidateConfig(ctx *validation.Context, configSet, path string, content []byte)
+	ValidateConfig(ctx *validation.Context, configSet, path string, content []byte) error
 
 	// ConfigPatterns returns the patterns of configSets and paths that the
 	// service is responsible for validating.
@@ -124,7 +124,7 @@ type Catalog interface {
 	// This is part of the components needed to install validation endpoints
 	// on the service. When request for metadata is received by the service
 	// from luci-config, this is called to return the patterns.
-	ConfigPatterns(c context.Context) []*validation.ConfigPattern
+	ConfigPatterns(c context.Context) ([]*validation.ConfigPattern, error)
 }
 
 // JobFlavor describes a category of jobs.
@@ -401,20 +401,21 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	return out, nil
 }
 
-func (cat *catalog) ConfigPatterns(c context.Context) []*validation.ConfigPattern {
+func (cat *catalog) ConfigPatterns(c context.Context) ([]*validation.ConfigPattern, error) {
 	return []*validation.ConfigPattern{
 		{
 			// Pattern automatically adds ^ and $ to regex strings.
 			pattern.MustParse("regex:projects/.*"),
 			pattern.MustParse(cat.configFile(c)),
 		},
-	}
+	}, nil
 }
 
-func (cat *catalog) ValidateConfig(ctx *validation.Context, configSet, path string, content []byte) {
+func (cat *catalog) ValidateConfig(ctx *validation.Context, configSet, path string, content []byte) error {
 	if strings.HasPrefix(configSet, "projects/") && path == cat.configFile(ctx.Context) {
 		cat.validateProjectConfig(ctx, content)
 	}
+	return nil
 }
 
 // validateProjectConfig validates the content of a project config file.
