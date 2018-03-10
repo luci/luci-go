@@ -80,11 +80,13 @@
     <h2>Current Builds ({{len .Builder.CurrentBuilds}}):</h2>
     <ul>
     {{ range .Builder.CurrentBuilds }}
-      <li>{{ .Link.HTML }}
-        {{ with .Blame }}{{ template "blamelist" }}{{ end }}
-        [Running for: {{ .ExecutionTime.Duration | humanDuration }}]
-        {{ range .Text }} {{ . }}{{ end }}
-      </li>
+      {{ with .BuildSummary }}
+        <li>{{ .Link.HTML }}
+          {{ with .Blame }}{{ template "blamelist" }}{{ end }}
+          [Running for: {{ .ExecutionTime.Duration | humanDuration }}]
+          {{ range .Text }} {{ . }}{{ end }}
+        </li>
+      {{ end }}
     {{ end }}
     </ul>
   {{ else }}
@@ -100,10 +102,12 @@
 			{{ end -}}{{- len .Builder.PendingBuilds -}}):</h2>
     <ul>
     {{- range .Builder.PendingBuilds -}}
-      <li>
-        <small>({{- .PendingTime.Started | localTime "" }}, waiting {{ .PendingTime.Duration | humanDuration -}})</small>
-        {{- with .Blame }}{{- template "blamelist" -}}{{- end -}}
-      </li>
+      {{- with .BuildSummary -}}
+        <li>
+          <small>({{- .PendingTime.Started | localTime "" }}, waiting {{ .PendingTime.Duration | humanDuration -}})</small>
+          {{- with .Blame }}{{- template "blamelist" -}}{{- end -}}
+        </li>
+      {{- end -}}
     {{- end -}}
     </ul>
   {{ else }}
@@ -141,49 +145,53 @@
       </tr>
 
       {{ range .Builder.FinishedBuilds }}
-        <tr>
-          <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
-          <td>{{ .ExecutionTime.Duration | humanDuration }}</td>
-          <td class="revision">{{ .Revision }}</td>
-          {{ if eq .Status.String "Success" }}
-            <td class="status-Success">Success</td>
-          {{ else if eq .Status.String "Failure" }}
-            <td class="status-Failure">Failed</td>
-          {{ else if eq .Status.String "InfraFailure" }}
-            <td class="status-Exception">Infra Failure</td>
-          {{ else if eq .Status.String "Exception" }}
-            <td class="status-Exception">Exception</td>
-          {{ else }}
-            <td> {{ .Status.String }} </td>
-          {{ end }}
-          <td>{{ .Link.HTML }}</td>
-          {{ if $hasBlamelist }}
-            <td class="left">
-              {{ $nb := len .Blame }}
-              {{ if lt $nb 4 }}
-                {{ range $i, $c := .Blame }}
-                  {{ if gt $i 0 }},{{ end }}
-                  {{ if .Changelist }}
-                    {{ .Changelist.HTML }}
-                    {{ if .AuthorEmail }}
-                      by {{ .AuthorEmail }}
+        {{ with .BuildSummary }}
+          <tr>
+            <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
+            <td>{{ .ExecutionTime.Duration | humanDuration }}</td>
+            <td class="revision">
+              {{ .Revision.RevisionHTML }}
+            </td>
+            {{ if eq .Status.String "Success" }}
+              <td class="status-Success">Success</td>
+            {{ else if eq .Status.String "Failure" }}
+              <td class="status-Failure">Failed</td>
+            {{ else if eq .Status.String "InfraFailure" }}
+              <td class="status-Exception">Infra Failure</td>
+            {{ else if eq .Status.String "Exception" }}
+              <td class="status-Exception">Exception</td>
+            {{ else }}
+              <td> {{ .Status.String }} </td>
+            {{ end }}
+            <td>{{ .Link.HTML }}</td>
+            {{ if $hasBlamelist }}
+              <td class="left">
+                {{ $nb := len .Blame }}
+                {{ if lt $nb 4 }}
+                  {{ range $i, $c := .Blame }}
+                    {{ if gt $i 0 }},{{ end }}
+                    {{ if .Changelist }}
+                      {{ .Changelist.HTML }}
+                      {{ if .AuthorEmail }}
+                        by {{ .AuthorEmail }}
+                      {{ end }}
+                    {{ else }}
+                      (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
                     {{ end }}
-                  {{ else }}
-                    (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
                   {{ end }}
+                {{ else }}
+                  ({{ $nb }} changes)
                 {{ end }}
-              {{ else }}
-                ({{ $nb }} changes)
+              </td>
+            {{ end }}
+            <td class="left">
+              {{ range $i, $value := .Text }}
+                {{ if gt $i 0 }}<br>{{ end }}
+                {{ . }}
               {{ end }}
             </td>
-          {{ end }}
-          <td class="left">
-            {{ range $i, $value := .Text }}
-              {{ if gt $i 0 }}<br>{{ end }}
-              {{ . }}
-            {{ end }}
-          </td>
-        </tr>
+          </tr>
+        {{ end }}
       {{ end }}
     </table>
   {{ else }}
