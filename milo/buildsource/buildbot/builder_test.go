@@ -81,8 +81,8 @@ func TestBuilder(t *testing.T) {
 				So(len(response.FinishedBuilds), ShouldEqual, 2)
 				So(response.NextCursor, ShouldEqual, "-9") // numbers < 9
 				So(response.PrevCursor, ShouldEqual, "")   // no prev cursor for a non-cursor query
-				So(response.FinishedBuilds[0].Link.Label, ShouldEqual, "#10")
-				So(response.FinishedBuilds[0].Text, ShouldResemble, []string{"failed stuff"})
+				So(response.FinishedBuilds[0].BuildSummary().Link.Label, ShouldEqual, "#10")
+				So(response.FinishedBuilds[0].BuildSummary().Text, ShouldResemble, []string{"failed stuff"})
 
 				Convey(`Fetch another 2`, func() {
 					response2, err := GetBuilder(c, "fake", "fake", 2, response.NextCursor)
