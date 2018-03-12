@@ -168,6 +168,10 @@ func buildbotBuildTestData() []common.TestBundle {
 // buildbotBuilderTestData returns sample test data for builder pages.
 func buildbotBuilderTestData() []common.TestBundle {
 	l := ui.NewLink("Some current build", "https://some.url/path", "")
+	sum := &ui.BuildSummary{
+		Link:     l,
+		Revision: &ui.Commit{Revision: ui.NewEmptyLink("deadbeef")},
+	}
 	return []common.TestBundle{
 		{
 			Description: "Basic Test no builds",
@@ -190,15 +194,9 @@ func buildbotBuilderTestData() []common.TestBundle {
 						Idle:         5,
 						Busy:         8,
 					},
-					CurrentBuilds: []*ui.BuildSummary{
-						{Link: l, Revision: "deadbeef"},
-					},
-					PendingBuilds: []*ui.BuildSummary{
-						{Link: l, Revision: "deadbeef"},
-					},
-					FinishedBuilds: []*ui.BuildSummary{
-						{Link: l, Revision: "deadbeef"},
-					},
+					CurrentBuilds:  []*ui.BuildSummary{sum},
+					PendingBuilds:  []*ui.BuildSummary{sum},
+					FinishedBuilds: []*ui.BuildSummary{sum},
 				},
 			},
 		},
