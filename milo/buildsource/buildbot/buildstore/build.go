@@ -42,6 +42,12 @@ var TooBigTag = errors.BoolTag{
 	Key: errors.NewTagKey("entity was not saved because it was too large to store"),
 }
 
+// ImportRejectedTag is tagged to an error when an entity cannot be mutated
+// anymore.
+var ImportRejectedTag = errors.BoolTag{
+	Key: errors.NewTagKey("import rejected"),
+}
+
 // maxDataSize is maximum number of bytes for "data" field in build or master
 // entities.
 // Datastore has a max size of 1MB. If the blob is over 9.5MB, it probably
@@ -166,10 +172,6 @@ func getDatastoreBuild(c context.Context, master, builder string, number int) (*
 
 	return (*buildbot.Build)(entity), err
 }
-
-// ErrImportRejected is returned when an entity cannot be mutated
-// anymore.
-var ErrImportRejected = errors.New("import rejected")
 
 var errMissingProperties = errors.New("missing required properties")
 
@@ -336,7 +338,7 @@ func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) 
 			replaced = true
 
 			if bs.Version < existingBS.Version {
-				return ErrImportRejected
+				return errors.Reason("Imported version older than existing (%d < %d)", bs.Version, existingBS.Version).Tag(ImportRejectedTag).Err()
 			} else if bs.Version == existingBS.Version {
 				return nil // idempotency
 			}
