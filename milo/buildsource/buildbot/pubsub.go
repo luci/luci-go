@@ -162,7 +162,7 @@ func saveMaster(c context.Context, master *buildbot.Master, internal bool) int {
 			// FIXME: there should have been a metric and alert.
 			return 0
 		}
-		if err == buildstore.ErrImportRejected {
+		if buildstore.ImportRejectedTag.In(err) {
 			// Permanent failure, don't retry.
 			return 0
 		}
@@ -266,7 +266,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		build.OSFamily, build.OSVersion = getOSInfo(c, build, &cachedMaster)
 		replaced, err := buildstore.SaveBuild(c, build)
 		switch {
-		case err == buildstore.ErrImportRejected:
+		case buildstore.ImportRejectedTag.In(err):
 			// Most probably, build has already completed.
 			buildCounter.Add(
 				c, 1, false, build.Master, build.Buildername, build.Finished, "Rejected")
