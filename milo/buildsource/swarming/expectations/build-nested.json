@@ -1,6 +1,9 @@
 {
   "Summary": {
-    "Label": "2d8d62f6be545b10",
+    "Label": {
+      "Label": "2d8d62f6be545b10",
+      "URL": ""
+    },
     "Status": "Running",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
@@ -14,9 +17,16 @@
         "AriaLabel": "step link for Task 2d8d62f6be545b10"
       }
     ],
-    "Started": "2016-03-14T10:00:01.85071Z",
-    "Finished": "0001-01-01T00:00:00Z",
-    "Duration": 3598149290000,
+    "PendingTime": {
+      "Started": "0001-01-01T00:00:00Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0
+    },
+    "ExecutionTime": {
+      "Started": "2016-03-14T10:00:01.85071Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 7198149290000
+    },
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Verbosity": 1,
@@ -29,7 +39,11 @@
   "Trigger": null,
   "Components": [
     {
-      "Label": "recipe bootstrap",
+      "Label": {
+        "Label": "recipe bootstrap",
+        "URL": "",
+        "AriaLabel": "recipe bootstrap"
+      },
       "Status": "Running",
       "MainLink": [
         {
@@ -38,16 +52,27 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-11-14T22:36:06Z",
-      "Finished": "0001-01-01T00:00:00Z",
-      "Duration": 0,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:06Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": -21206166000000000
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": null
     },
     {
-      "Label": "setup_build",
+      "Label": {
+        "Label": "setup_build",
+        "URL": "",
+        "AriaLabel": "setup_build"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -65,9 +90,16 @@
           }
         ]
       ],
-      "Started": "2016-11-14T22:36:12.970000128Z",
-      "Finished": "2016-11-14T22:36:13.02Z",
-      "Duration": 49999872,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:12.970000128Z",
+        "Finished": "2016-11-14T22:36:13.02Z",
+        "Duration": 49999872
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 1,
@@ -76,7 +108,11 @@
       ]
     },
     {
-      "Label": "install cipd",
+      "Label": {
+        "Label": "install cipd",
+        "URL": "",
+        "AriaLabel": "install cipd"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -94,9 +130,16 @@
           }
         ]
       ],
-      "Started": "2016-11-14T22:36:13.02Z",
-      "Finished": "2016-11-14T22:36:13.450000128Z",
-      "Duration": 430000128,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:13.02Z",
+        "Finished": "2016-11-14T22:36:13.450000128Z",
+        "Duration": 430000128
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -105,7 +148,11 @@
       ]
     },
     {
-      "Label": "ensure_installed",
+      "Label": {
+        "Label": "ensure_installed",
+        "URL": "",
+        "AriaLabel": "ensure_installed"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -123,16 +170,27 @@
           }
         ]
       ],
-      "Started": "2016-11-14T22:36:13.450000128Z",
-      "Finished": "2016-11-14T22:36:13.68Z",
-      "Duration": 229999872,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:13.450000128Z",
+        "Finished": "2016-11-14T22:36:13.68Z",
+        "Duration": 229999872
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": null
     },
     {
-      "Label": "jiri init",
+      "Label": {
+        "Label": "jiri init",
+        "URL": "",
+        "AriaLabel": "jiri init"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -141,16 +199,27 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-11-14T22:36:13.68Z",
-      "Finished": "2016-11-14T22:36:14.06Z",
-      "Duration": 380000000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:13.68Z",
+        "Finished": "2016-11-14T22:36:14.06Z",
+        "Duration": 380000000
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": null
     },
     {
-      "Label": "jiri project clean",
+      "Label": {
+        "Label": "jiri project clean",
+        "URL": "",
+        "AriaLabel": "jiri project clean"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -159,16 +228,27 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-11-14T22:36:14.06Z",
-      "Finished": "2016-11-14T22:36:14.089999872Z",
-      "Duration": 29999872,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:14.06Z",
+        "Finished": "2016-11-14T22:36:14.089999872Z",
+        "Duration": 29999872
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": null
     },
     {
-      "Label": "jiri import",
+      "Label": {
+        "Label": "jiri import",
+        "URL": "",
+        "AriaLabel": "jiri import"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -177,16 +257,27 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-11-14T22:36:14.089999872Z",
-      "Finished": "2016-11-14T22:36:14.089999872Z",
-      "Duration": 0,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:14.089999872Z",
+        "Finished": "2016-11-14T22:36:14.089999872Z",
+        "Duration": 0
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": null
     },
     {
-      "Label": "jiri update",
+      "Label": {
+        "Label": "jiri update",
+        "URL": "",
+        "AriaLabel": "jiri update"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -195,27 +286,49 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-11-14T22:36:14.089999872Z",
-      "Finished": "2016-11-14T22:37:14.029999872Z",
-      "Duration": 59940000000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:36:14.089999872Z",
+        "Finished": "2016-11-14T22:37:14.029999872Z",
+        "Duration": 59940000000
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": null
     },
     {
-      "Label": "build",
+      "Label": {
+        "Label": "build",
+        "URL": "",
+        "AriaLabel": "build"
+      },
       "Status": "Failure",
-      "Started": "2016-11-14T22:37:58.5Z",
-      "Finished": "2016-11-14T22:37:58.5Z",
-      "Duration": 0,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:37:58.5Z",
+        "Finished": "2016-11-14T22:37:58.5Z",
+        "Duration": 0
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 2,
       "Text": null
     },
     {
-      "Label": "build.cleanup",
+      "Label": {
+        "Label": "build.cleanup",
+        "URL": "",
+        "AriaLabel": "build.cleanup"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -224,16 +337,27 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-11-14T22:37:14.78Z",
-      "Finished": "2016-11-14T22:37:16.329999872Z",
-      "Duration": 1549999872,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:37:14.78Z",
+        "Finished": "2016-11-14T22:37:16.329999872Z",
+        "Duration": 1549999872
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": null
     },
     {
-      "Label": "build.build",
+      "Label": {
+        "Label": "build.build",
+        "URL": "",
+        "AriaLabel": "build.build"
+      },
       "Status": "Failure",
       "MainLink": [
         {
@@ -242,9 +366,16 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-11-14T22:37:16.329999872Z",
-      "Finished": "2016-11-14T22:37:58.5Z",
-      "Duration": 42170000128,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:37:16.329999872Z",
+        "Finished": "2016-11-14T22:37:58.5Z",
+        "Duration": 42170000128
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 2,
