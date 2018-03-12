@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ab102a88_fe463e95",
+        "filename": "milo/buildsource/buildbot/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ba8caf2a_84824c04",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ccaef10_7da25f39",
         "filename": "milo/buildsource/buildbot/builder.go",
         "patchSetId": 8
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "74dc62ce_a8f64e0b",
+        "filename": "milo/buildsource/buildbot/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Good idea, done.",
+      "parentUuid": "4ccaef10_7da25f39",
+      "range": {
+        "startLine": 82,
+        "startChar": 17,
+        "endLine": 83,
+        "endChar": 14
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d16a9ce_5da82b80",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 8
@@ -68,6 +116,30 @@
       "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "526860f3_f4efaf61",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d16a9ce_5da82b80",
+      "range": {
+        "startLine": 185,
+        "startChar": 26,
+        "endLine": 185,
+        "endChar": 33
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,54 @@
     },
     {
       "key": {
+        "uuid": "8284ab31_78198458",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1215decf_57de0535",
+      "range": {
+        "startLine": 65,
+        "startChar": 32,
+        "endLine": 65,
+        "endChar": 38
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d3c59807_d8f3e2fd",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done.  I wonder if Tricium can annotate these in the future...",
+      "parentUuid": "0ca7ddfa_b13f1eec",
+      "range": {
+        "startLine": 65,
+        "startChar": 3,
+        "endLine": 65,
+        "endChar": 18
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41eb6e91_5e3851b0",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 8
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "7e32ac49_167d3ed0",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41eb6e91_5e3851b0",
+      "range": {
+        "startLine": 139,
+        "startChar": 38,
+        "endLine": 139,
+        "endChar": 45
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e82583df_7d907513",
         "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
         "patchSetId": 8
@@ -154,6 +298,24 @@
       "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f739c6b_aa7f1459",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done.  I didn\u0027t realize this was a homegrown library.",
+      "parentUuid": "e82583df_7d907513",
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "1e36e0b4_052a610d",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d58092ea_4f4317fd",
+      "range": {
+        "startLine": 436,
+        "startChar": 26,
+        "endLine": 436,
+        "endChar": 33
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e742ea4e_df610d1e",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 8
@@ -200,6 +386,30 @@
       "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35fb3de5_b9e58414",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 672,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e742ea4e_df610d1e",
+      "range": {
+        "startLine": 672,
+        "startChar": 13,
+        "endLine": 672,
+        "endChar": 20
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -226,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "b25e7ddf_9e92f60b",
+        "filename": "milo/buildsource/swarming/expectations/build-pending.json",
+        "patchSetId": 8
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done.  Changed mocked time to be closer to mocked real time.",
+      "parentUuid": "220c21a1_82229a08",
+      "range": {
+        "startLine": 23,
+        "startChar": 17,
+        "endLine": 23,
+        "endChar": 35
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fb112a2e_246ef338",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 8
@@ -246,6 +480,30 @@
       "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e6f03ac_54856707",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fb112a2e_246ef338",
+      "range": {
+        "startLine": 186,
+        "startChar": 14,
+        "endLine": 193,
+        "endChar": 24
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -272,6 +530,30 @@
     },
     {
       "key": {
+        "uuid": "cc51ac42_b097f47e",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "The problem isn\u0027t shorter field names.  The problem is (for the lack of a better word) API boundaries between the view (templates) and the controller.  \nIt smells weird to have a struct with (for example) 50 fields in it, but only having the template use 10.  In that case I would argue that either the controller is doing excessive work, the view isn\u0027t showing enough, or theres a breakdown in abstraction.\n\nMaking ui.MiloBuild simpler wouldn\u0027t fix this, since there is still a struct being passed from the controller to the view with too many fields.\n\nI\u0027ll agree this smells way weird though.  I think making BuildSummary public, and the UI struct field to pass through makes more sense.",
+      "parentUuid": "38a2c97a_3a7cc4df",
+      "range": {
+        "startLine": 83,
+        "startChar": 15,
+        "endLine": 83,
+        "endChar": 27
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c873c2c_da9f027c",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 8
@@ -292,6 +574,30 @@
       "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6a9f174_f2bf8206",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c873c2c_da9f027c",
+      "range": {
+        "startLine": 22,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 9
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -318,6 +624,30 @@
     },
     {
       "key": {
+        "uuid": "24bcc159_59c1ad4f",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Because it\u0027s a method of the MiloBuild struct.  Putting a method in a different file than it\u0027s defined seems like a worse violation.\n\nAnother option would be a function in builder.go named:\nfunc NewBuildSummary(b *MiloBuild) *BuildSummary { ...\n\nBut writing it as a method looks cleaner in code.  wdyt?",
+      "parentUuid": "2c80198a_e4c08444",
+      "range": {
+        "startLine": 64,
+        "startChar": 53,
+        "endLine": 64,
+        "endChar": 67
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8af30d7d_69ea1c48",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 8
@@ -338,6 +668,30 @@
       "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdc8555c_2079d74d",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Made it public.",
+      "parentUuid": "8af30d7d_69ea1c48",
+      "range": {
+        "startLine": 65,
+        "startChar": 20,
+        "endLine": 65,
+        "endChar": 32
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -364,6 +718,30 @@
     },
     {
       "key": {
+        "uuid": "f975d248_d71f1a3c",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "end time without start time is undefined.\n\nDone.",
+      "parentUuid": "2043eea3_c1f1a996",
+      "range": {
+        "startLine": 246,
+        "startChar": 32,
+        "endLine": 246,
+        "endChar": 41
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54e71f89_a65b5c67",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 8
@@ -387,6 +765,30 @@
     },
     {
       "key": {
+        "uuid": "aec8a5b9_b7cbea32",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "I\u0027ll remove this.  Writing this in the template:\n\n{{ if .ExecutionTime.Started }}\n  ...\n{{ end }}\n\nMakes a lot more sense.",
+      "parentUuid": "54e71f89_a65b5c67",
+      "range": {
+        "startLine": 253,
+        "startChar": 34,
+        "endLine": 253,
+        "endChar": 51
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "74f16f7a_838bc532",
         "filename": "milo/frontend/ui/builder.go",
         "patchSetId": 8
@@ -407,6 +809,30 @@
       "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f4f642f_afb3a725",
+        "filename": "milo/frontend/ui/builder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-12T21:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74f16f7a_838bc532",
+      "range": {
+        "startLine": 24,
+        "startChar": 8,
+        "endLine": 24,
+        "endChar": 16
+      },
+      "revId": "11f178f86f55cb1aed2c962724360b6ca3c84b4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
