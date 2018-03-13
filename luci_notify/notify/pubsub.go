@@ -241,6 +241,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 	var build Build
+	build.Build = &buildbucket.Build{}
 	build.Input.Properties = &build.InputProperties
 	if err := build.ParseMessage(&message.Build); err != nil {
 		return nil, errors.Annotate(err, "could not decode buildbucket build").Err()
