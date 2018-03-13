@@ -19,12 +19,18 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
+
+func init() {
+	// Allow using ${appid} in the rule patterns, e.g. "services/${appid}".
+	validation.Rules.RegisterVar("appid", info.TrimmedAppID)
+}
 
 // InstallValidationHandlers installs handlers for config validation.
 //
@@ -33,6 +39,9 @@ import (
 // It requires that the hostname, the email of config service and the name of
 // the trusted group have been defined in the appengine app settings page before
 // the installed endpoints are called.
+//
+// If the given validator is nil, will use global validation rules defined in
+// validation.Rules variable.
 func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, validator *validation.Validator) {
 	a := auth.Authenticator{
 		Methods: []auth.Method{

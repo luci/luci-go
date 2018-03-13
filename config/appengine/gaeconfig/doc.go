@@ -14,4 +14,6 @@
 
 // Package gaeconfig implements LUCI-config service bindings backed by AppEngine
 // storage and caching.
+//
+// Importing this module registers ${appid} variable in config validation rules.
 package gaeconfig

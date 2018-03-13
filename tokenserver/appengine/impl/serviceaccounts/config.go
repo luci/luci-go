@@ -131,6 +131,14 @@ func (rc *RulesCache) ImportConfigs(c context.Context) (rev string, err error) {
 	return rc.policy.ImportConfigs(c)
 }
 
+// SetupConfigValidation registers the config validation rules.
+func (rc *RulesCache) SetupConfigValidation(rules *validation.RuleSet) {
+	rules.Add("services/${appid}", serviceAccountsCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
+		// TODO(vadimsh): Implement.
+		return nil
+	})
+}
+
 // Rules returns in-memory copy of service accounts rules, ready for querying.
 func (rc *RulesCache) Rules(c context.Context) (*Rules, error) {
 	q, err := rc.policy.Queryable(c)
