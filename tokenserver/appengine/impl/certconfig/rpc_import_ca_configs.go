@@ -33,10 +33,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 )
+
+const configFile = "tokenserver.cfg"
 
 // ImportCAConfigsRPC implements Admin.ImportCAConfigs RPC method.
 type ImportCAConfigsRPC struct {
@@ -44,7 +47,7 @@ type ImportCAConfigsRPC struct {
 
 // ImportCAConfigs fetches CA configs from from luci-config right now.
 func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
-	content, meta, err := fetchConfigFile(c, "tokenserver.cfg")
+	content, meta, err := fetchConfigFile(c, configFile)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "can't read config file - %s", err)
 	}
@@ -148,6 +151,16 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 
 	return &admin.ImportedConfigs{Revision: meta.Revision}, nil
 }
+
+// SetupConfigValidation registers the config validation rules.
+func (r *ImportCAConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
+	rules.Add("services/${appid}", configFile, func(ctx *validation.Context, configSet, path string, content []byte) error {
+		// TODO(vadimsh): Implement.
+		return nil
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 // fetchConfigFile fetches a file from this services' config set.
 func fetchConfigFile(c context.Context, path string) (string, *config.Meta, error) {

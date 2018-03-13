@@ -25,12 +25,10 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
-
-	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
-// serverImpl implements admin.AdminServer RPC interface.
-type serverImpl struct {
+// AdminServer implements admin.AdminServer RPC interface.
+type AdminServer struct {
 	certconfig.ImportCAConfigsRPC
 	delegation.ImportDelegationConfigsRPC
 	delegation.InspectDelegationTokenRPC
@@ -42,9 +40,9 @@ type serverImpl struct {
 // NewServer returns prod AdminServer implementation.
 //
 // It assumes authorization has happened already.
-func NewServer() admin.AdminServer {
+func NewServer() *AdminServer {
 	signer := gaesigner.Signer{}
-	return &serverImpl{
+	return &AdminServer{
 		ImportDelegationConfigsRPC: delegation.ImportDelegationConfigsRPC{
 			RulesCache: delegation.GlobalRulesCache,
 		},

@@ -12,6 +12,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
@@ -29,4 +30,9 @@ func (r *ImportServiceAccountsConfigsRPC) ImportServiceAccountsConfigs(c context
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
+}
+
+// SetupConfigValidation registers the config validation rules.
+func (r *ImportServiceAccountsConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
+	r.RulesCache.SetupConfigValidation(rules)
 }
