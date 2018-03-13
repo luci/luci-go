@@ -26,6 +26,8 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -57,9 +59,17 @@ func adminPrelude(serviceName string) func(context.Context, string, proto.Messag
 
 func init() {
 	r := router.New()
+	base := standard.Base()
+
+	// Register config validation rules.
+	adminSrv := adminsrv.NewServer()
+	adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
+	adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
+	adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
 
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
+	gaeconfig.InstallValidationHandlers(r, base, nil)
 
 	// The service has no UI, so just redirect to stock RPC explorer.
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
@@ -76,12 +86,12 @@ func init() {
 		Prelude: adminPrelude("admin.CertificateAuthorities"),
 	})
 	admin.RegisterAdminServer(&api, &admin.DecoratedAdmin{
-		Service: adminsrv.NewServer(),
+		Service: adminSrv,
 		Prelude: adminPrelude("admin.Admin"),
 	})
 	minter.RegisterTokenMinterServer(&api, tokenminter.NewServer()) // auth inside
 	discovery.Enable(&api)
-	api.InstallHandlers(r, standard.Base())
+	api.InstallHandlers(r, base)
 
 	// Expose all this stuff.
 	http.DefaultServeMux.Handle("/", r)

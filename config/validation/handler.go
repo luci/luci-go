@@ -74,7 +74,13 @@ type Validator struct {
 // the given Validator on the given router. It does not implement any
 // authentication checks, thus the passed in router.MiddlewareChain should
 // implement any necessary authentication checks.
+//
+// If the given validator is nil, will use global validation rules defined in
+// Rules variable.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain, validator *Validator) {
+	if validator == nil {
+		validator = Rules.Validator()
+	}
 	r.GET(metadataPath, base, validator.metadataRequestHandler)
 	r.POST(validationPath, base, validator.validationRequestHandler)
 }

@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
@@ -37,4 +38,9 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
+}
+
+// SetupConfigValidation registers the config validation rules.
+func (r *ImportDelegationConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
+	r.RulesCache.SetupConfigValidation(rules)
 }
