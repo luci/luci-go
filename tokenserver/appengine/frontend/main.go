@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -69,7 +68,6 @@ func init() {
 
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
-	gaeconfig.InstallValidationHandlers(r, base, nil)
 
 	// The service has no UI, so just redirect to stock RPC explorer.
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {

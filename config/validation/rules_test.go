@@ -19,8 +19,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/text/pattern"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -53,30 +51,29 @@ func TestRuleSet(t *testing.T) {
 			r.Add("services/${a}", "paths/a", validator("rule_1"))
 			r.Add("services/${a}", "paths/${b}", validator("rule_2"))
 			r.Add("services/c", "paths/c", validator("rule_3"))
+			r.Add("regex:services/.*", "paths/c", validator("rule_4"))
 
-			v := r.Validator()
-
-			patterns, err := v.ConfigPatterns(ctx)
+			patterns, err := r.ConfigPatterns(ctx)
 			So(err, ShouldBeNil)
-			So(patterns, ShouldResemble, []*ConfigPattern{
-				{
-					ConfigSet: pattern.MustParse("exact:services/a_val"),
-					Path:      pattern.MustParse("exact:paths/a"),
-				},
-				{
-					ConfigSet: pattern.MustParse("exact:services/a_val"),
-					Path:      pattern.MustParse("exact:paths/b_val"),
-				},
-				{
-					ConfigSet: pattern.MustParse("exact:services/c"),
-					Path:      pattern.MustParse("exact:paths/c"),
-				},
+
+			type pair struct {
+				configSet string
+				path      string
+			}
+			asPairs := make([]pair, len(patterns))
+			for i, p := range patterns {
+				asPairs[i] = pair{p.ConfigSet.String(), p.Path.String()}
+			}
+			So(asPairs, ShouldResemble, []pair{
+				{"exact:services/a_val", "exact:paths/a"},
+				{"exact:services/a_val", "exact:paths/b_val"},
+				{"exact:services/c", "exact:paths/c"},
+				{"regex:^services/.*$", "exact:paths/c"},
 			})
 
 			callValidator := func(configSet, path string) {
 				c := Context{Context: ctx}
-				err := v.Func(&c, configSet, path, []byte("body"))
-				So(err, ShouldBeNil)
+				So(r.ValidateConfig(&c, configSet, path, []byte("body")), ShouldBeNil)
 			}
 
 			callValidator("services/unknown", "paths/a")
@@ -88,7 +85,9 @@ func TestRuleSet(t *testing.T) {
 			So(calls, ShouldResemble, []call{
 				{"rule_1", "services/a_val", "paths/a"},
 				{"rule_2", "services/a_val", "paths/b_val"},
+				{"rule_4", "services/a_val", "paths/c"},
 				{"rule_3", "services/c", "paths/c"},
+				{"rule_4", "services/c", "paths/c"},
 			})
 		})
 

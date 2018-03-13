@@ -32,6 +32,21 @@ import (
 // Individual packages may register vars and rules there during init() time.
 var Rules RuleSet
 
+// Func performs the actual config validation and stores the associated results
+// in the validation.Context.
+//
+// Returns an error if the validation process itself fails due to causes
+// unrelated to the data being validated. This will result in HTTP Internal
+// Server Error reply, instructing the config service to retry.
+type Func func(ctx *Context, configSet, path string, content []byte) error
+
+// ConfigPattern is a pair of pattern.Pattern of configSets and paths that
+// the importing service is responsible for validating.
+type ConfigPattern struct {
+	ConfigSet pattern.Pattern
+	Path      pattern.Pattern
+}
+
 // RuleSet is a helper for building Validator from a set of rules: each rule
 // specifies a pattern for config set and file names, and a validation function
 // to apply to corresponding configs.
@@ -125,21 +140,12 @@ func (r *RuleSet) Add(configSet, path string, cb Func) {
 	r.r = append(r.r, &rule{configSet, path, cb, nil})
 }
 
-// Validator returns an actual validator that uses the registered rules.
+// ConfigPatterns lazily renders all registered config patterns and returns
+// them.
 //
-// Note that the returned Validator holds references back to Rules object, so
-// it will pick up rules registered after Validator() call too.
-func (r *RuleSet) Validator() *Validator {
-	return &Validator{
-		ConfigPatterns: r.patterns,
-		Func:           r.validate,
-	}
-}
-
-///
-
-// patterns lazily renders all registered patterns and returns them.
-func (r *RuleSet) patterns(c context.Context) ([]*ConfigPattern, error) {
+// Used by the metadata handler to notify the config service about config files
+// we understand.
+func (r *RuleSet) ConfigPatterns(c context.Context) ([]*ConfigPattern, error) {
 	r.l.Lock()
 	defer r.l.Unlock()
 
@@ -154,34 +160,46 @@ func (r *RuleSet) patterns(c context.Context) ([]*ConfigPattern, error) {
 	return out, nil
 }
 
-// validate picks a rule matching the given file and executes its callback.
-func (r *RuleSet) validate(ctx *Context, configSet, path string, content []byte) error {
-	switch cb, err := r.matchingFunc(ctx.Context, configSet, path); {
+// ValidateConfig picks all rules matching the given file and executes their
+// validation callbacks.
+//
+// If there's no rule matching the file, the validation is skipped. If there
+// are multiple rules that match the file, they all are used (in order of their)
+// registration.
+func (r *RuleSet) ValidateConfig(ctx *Context, configSet, path string, content []byte) error {
+	switch cbs, err := r.matchingFuncs(ctx.Context, configSet, path); {
 	case err != nil:
 		return err
-	case cb != nil:
-		return cb(ctx, configSet, path, content)
+	case len(cbs) != 0:
+		for _, cb := range cbs {
+			if err := cb(ctx, configSet, path, content); err != nil {
+				return err
+			}
+		}
 	default:
 		logging.Warningf(ctx.Context, "No validation rule registered for file %q in config set %q", path, configSet)
 	}
 	return nil
 }
 
-// matchingFunc returns a validator callback matching the given file.
-func (r *RuleSet) matchingFunc(c context.Context, configSet, path string) (Func, error) {
+///
+
+// matchingFuncs returns a validator callbacks matching the given file.
+func (r *RuleSet) matchingFuncs(c context.Context, configSet, path string) ([]Func, error) {
 	r.l.Lock()
 	defer r.l.Unlock()
 
+	out := []Func{}
 	for _, rule := range r.r {
 		switch pat, err := r.renderedConfigPattern(c, rule); {
 		case err != nil:
 			return nil, err
 		case pat.ConfigSet.Match(configSet) && pat.Path.Match(path):
-			return rule.cb, nil
+			out = append(out, rule.cb)
 		}
 	}
 
-	return nil, nil
+	return out, nil
 }
 
 // renderedConfigPattern lazily populates rule.rendered and returns it.

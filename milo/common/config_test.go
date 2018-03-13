@@ -44,12 +44,12 @@ func TestConfig(t *testing.T) {
 			path := "luci-milo.cfg"
 			Convey("Load a bad config", func() {
 				content := []byte(badCfg)
-				validateFunc(ctx, configSet, path, content)
+				validateProjectCfg(ctx, configSet, path, content)
 				So(ctx.Finalize().Error(), ShouldResemble, "in <unspecified file>: line 4: unknown field name \"\" in config.Header")
 			})
 			Convey("Load a good config", func() {
 				content := []byte(fooCfg)
-				validateFunc(ctx, configSet, path, content)
+				validateProjectCfg(ctx, configSet, path, content)
 				So(ctx.Finalize(), ShouldBeNil)
 			})
 		})

@@ -28,8 +28,15 @@ import (
 )
 
 func init() {
-	// Allow using ${appid} in the rule patterns, e.g. "services/${appid}".
-	validation.Rules.RegisterVar("appid", info.TrimmedAppID)
+	RegisterValidationVars(&validation.Rules)
+}
+
+// RegisterValidationVars registers placeholders (like ${appid}) that can be
+// used in validation rules patterns.
+//
+// This function is called during init() time for default rule set.
+func RegisterValidationVars(rules *validation.RuleSet) {
+	rules.RegisterVar("appid", info.TrimmedAppID)
 }
 
 // InstallValidationHandlers installs handlers for config validation.
@@ -39,10 +46,7 @@ func init() {
 // It requires that the hostname, the email of config service and the name of
 // the trusted group have been defined in the appengine app settings page before
 // the installed endpoints are called.
-//
-// If the given validator is nil, will use global validation rules defined in
-// validation.Rules variable.
-func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, validator *validation.Validator) {
+func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, rules *validation.RuleSet) {
 	a := auth.Authenticator{
 		Methods: []auth.Method{
 			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
@@ -72,7 +76,7 @@ func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, va
 			}
 		}
 	})
-	validation.InstallHandlers(r, base, validator)
+	validation.InstallHandlers(r, base, rules)
 }
 
 func errStatus(c context.Context, w http.ResponseWriter, status int, msg string) {

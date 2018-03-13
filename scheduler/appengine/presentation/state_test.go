@@ -62,7 +62,7 @@ func TestGetPublicStateKind(t *testing.T) {
 func TestGetJobTraits(t *testing.T) {
 	t.Parallel()
 	Convey("works", t, func() {
-		cat := catalog.New("scheduler.cfg")
+		cat := catalog.New()
 		So(cat.RegisterTaskManager(&urlfetch.TaskManager{}), ShouldBeNil)
 		ctx := context.Background()
 
