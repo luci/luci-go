@@ -13,8 +13,19 @@
     {{ end }}
     -
     {{ if .ParentLabel }} {{ .ParentLabel.Label }} {{ end }}
-    {{ .Label }}
+    {{ .Label.HTML }}
   {{- end }}
+{{end}}
+
+{{define "interval"}}
+  {{ if .Started }}
+    <span class="duration"
+          data-starttime="{{ .Started | formatTime }}"
+          {{ if .Finished -}}
+            data-endtime="{{ .Finished | formatTime }}"
+          {{- end }}>
+          ( {{ .Duration | humanDuration }} )</span>
+  {{ end }}
 {{end}}
 
 {{define "favicon"}}
@@ -42,7 +53,7 @@
       {{ if .Build.Summary.ParentLabel }}
         Builder {{ .Build.Summary.ParentLabel.HTML }}
       {{ end }}
-      Build {{.Build.Summary.Label}}
+      Build {{.Build.Summary.Label.HTML }}
       {{ if .Build.Summary.Banner }}
         {{ range .Build.Summary.Banner.OS }}
           <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
@@ -161,12 +172,7 @@
             {{ if .SubLink }}
             <li class="verbosity-{{.Verbosity.String}}">
               <div class="status-{{.Status}} result">
-                {{ if .Duration -}}
-                <span class="duration"
-                      data-starttime="{{ .Started | formatTime }}"
-                      {{ if .Finished }}data-endtime="{{ .Finished | formatTime }}"{{ end }}>
-                      ( {{ .Duration | humanDuration }} )</span>
-                {{- end }}
+                {{ template "interval" .ExecutionTime }}
                 <b>Steps</b>
               </div>
               <ul>
@@ -181,13 +187,8 @@
           {{ range .Build.Components  }}
           <li class="verbosity-{{.Verbosity.String}}">
             <div class="status-{{.Status}} result">
-              {{ if .Duration -}}
-              <span class="duration"
-                    data-starttime="{{ .Started | formatTime }}"
-                    {{ if .Finished }}data-endtime="{{ .Finished | formatTime }}"{{ end }}>
-                    ( {{ .Duration | humanDuration }} )</span>
-              {{- end }}
-              <b>{{.Label}}</b>
+                {{ template "interval" .ExecutionTime }}
+              <b>{{.Label.HTML}}</b>
               <span>
                 {{ range .TextBR -}}
                   <div class="step-text">
@@ -250,20 +251,32 @@
 
       <h2>Timing:</h2>
       <table class="info" width="100%">
-        <tr class="alt"><td class="left">Start</td>
+        <tr class="alt"><td class="left">Create</td>
         <td>
-          {{ .Build.Summary.Started | localTime "N/A" }}
+          {{ .Build.Summary.PendingTime.Started | localTime "N/A" }}
         </td></tr>
-        <tr><td class="left">End</td>
+        <tr><td class="left">Start</td>
         <td>
-          {{ .Build.Summary.Finished | localTime "N/A" }}
+          {{ .Build.Summary.ExecutionTime.Started | localTime "N/A" }}
         </td></tr>
-        <tr class="alt"><td class="left">Elapsed</td>
+        <tr class="alt"><td class="left">End</td>
+        <td>
+          {{ .Build.Summary.ExecutionTime.Finished | localTime "N/A" }}
+        </td></tr>
+        <tr><td class="left">Pending</td>
         <td id="duration">
-          {{ if .Build.Summary.Started.IsZero }}
+          {{ if .Build.Summary.PendingTime.Started.IsZero }}
             N/A
           {{ else }}
-            {{ .Build.Summary.Duration | humanDuration }}
+            {{ .Build.Summary.PendingTime.Duration | humanDuration }}
+          {{ end }}
+        </td></tr>
+        <tr class="alt"><td class="left">Execution</td>
+        <td id="duration">
+          {{ if .Build.Summary.ExecutionTime.Started.IsZero }}
+            N/A
+          {{ else }}
+            {{ .Build.Summary.ExecutionTime.Duration | humanDuration }}
           {{ end }}
         </td></tr>
       </table>

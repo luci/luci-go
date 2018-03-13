@@ -22,13 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/annotee"
@@ -364,14 +365,14 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 		if err != nil {
 			return fmt.Errorf("invalid task StartedTs: %s", err)
 		}
-		step.Started = google.NewTimestamp(ts)
+		step.Started, _ = ptypes.TimestampProto(ts)
 	}
 	if sr.CompletedTs != "" {
 		ts, err := time.Parse(SwarmingTimeLayout, sr.CompletedTs)
 		if err != nil {
 			return fmt.Errorf("invalid task CompletedTs: %s", err)
 		}
-		step.Ended = google.NewTimestamp(ts)
+		step.Ended, _ = ptypes.TimestampProto(ts)
 	}
 
 	return nil
@@ -423,8 +424,17 @@ func addProjectInfo(build *ui.MiloBuild, tags map[string]string) {
 	}
 }
 
+// addPendingTiming adds pending timing information to the build.
+func addPendingTiming(c context.Context, build *ui.MiloBuild, sr *swarming.SwarmingRpcsTaskResult) {
+	created, err := time.Parse(SwarmingTimeLayout, sr.CreatedTs)
+	if err != nil {
+		return
+	}
+	build.Summary.PendingTime = ui.NewInterval(c, created, build.Summary.ExecutionTime.Started)
+}
+
 func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *ui.MiloBuild) error {
-	build.Summary.Label = sr.TaskId
+	build.Summary.Label = ui.NewEmptyLink(sr.TaskId)
 	build.Summary.Type = ui.Recipe
 	build.Summary.Source = ui.NewLink(
 		"Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String(),
@@ -441,6 +451,7 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 	addBuilderLink(c, build, tags)
 	addRecipeLink(build, tags)
 	addProjectInfo(build, tags)
+	addPendingTiming(c, build, sr)
 
 	// Add a link to the bot.
 	if sr.BotId != "" {
@@ -480,22 +491,19 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 // stream doesn't exist and the swarming job is complete.  It modifies the build
 // to add information that would've otherwise been in the annotation stream.
 func failedToStart(c context.Context, build *ui.MiloBuild, res *swarming.SwarmingRpcsTaskResult, host string) error {
-	var err error
 	build.Summary.Status = model.InfraFailure
-	build.Summary.Started, err = time.Parse(SwarmingTimeLayout, res.StartedTs)
+	started, err := time.Parse(SwarmingTimeLayout, res.StartedTs)
 	if err != nil {
 		return err
 	}
-	build.Summary.Finished, err = time.Parse(SwarmingTimeLayout, res.CompletedTs)
+	ended, err := time.Parse(SwarmingTimeLayout, res.CompletedTs)
 	if err != nil {
 		return err
 	}
-	build.Summary.Duration = build.Summary.Finished.Sub(build.Summary.Started)
+	build.Summary.ExecutionTime = ui.NewInterval(c, started, ended)
 	infoComp := infoComponent(model.InfraFailure,
 		"LogDog stream not found", "Job likely failed to start.")
-	infoComp.Started = build.Summary.Started
-	infoComp.Finished = build.Summary.Finished
-	infoComp.Duration = build.Summary.Duration
+	infoComp.ExecutionTime = build.Summary.ExecutionTime
 	infoComp.Verbosity = ui.Interesting
 	build.Components = append(build.Components, infoComp)
 	return addTaskToBuild(c, host, res, build)
@@ -662,7 +670,7 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 func infoComponent(st model.Status, label, text string) *ui.BuildComponent {
 	return &ui.BuildComponent{
 		Type:   ui.Summary,
-		Label:  label,
+		Label:  ui.NewEmptyLink(label),
 		Text:   []string{text},
 		Status: st,
 	}

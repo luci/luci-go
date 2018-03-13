@@ -1,25 +1,36 @@
 {
   "Summary": {
     "ParentLabel": {
-      "Label": "",
+      "Label": "Fake Builder",
       "URL": ".",
-      "AriaLabel": "Parent builder "
+      "AriaLabel": "Parent builder Fake Builder"
     },
-    "Label": "#0",
+    "Label": {
+      "Label": "#1337",
+      "URL": "/buildbot/master.fake/Fake Builder/1337",
+      "AriaLabel": "Build number 1337 on master master.fake builder Fake Builder"
+    },
     "Status": "Failure",
     "Bot": {
       "Label": "",
-      "URL": "https://build.chromium.org/p//buildslaves/",
+      "URL": "https://build.chromium.org/p/master.fake/buildslaves/",
       "AriaLabel": "Buildbot buildslave "
     },
     "Source": {
-      "Label": "//0",
-      "URL": "https://build.chromium.org/p//builders//builds/0",
-      "AriaLabel": "Build number 0 on master  builder "
+      "Label": "master.fake/Fake Builder/1337",
+      "URL": "https://build.chromium.org/p/master.fake/builders/Fake Builder/builds/1337",
+      "AriaLabel": "Original build number 1337 on master master.fake builder Fake Builder"
     },
-    "Started": "2016-06-27T23:30:30.080228Z",
-    "Finished": "2016-06-27T23:50:06.476459Z",
-    "Duration": 1176396231000,
+    "PendingTime": {
+      "Started": "0001-01-01T00:00:00Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0
+    },
+    "ExecutionTime": {
+      "Started": "2016-06-27T23:30:30.080228Z",
+      "Finished": "2016-06-27T23:50:06.476459Z",
+      "Duration": 1176396231000
+    },
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
@@ -48,7 +59,10 @@
   },
   "Components": [
     {
-      "Label": "steps",
+      "Label": {
+        "Label": "steps",
+        "URL": ""
+      },
       "Status": "Failure",
       "SubLink": [
         [
@@ -59,9 +73,16 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:30:30.081103Z",
-      "Finished": "2016-06-27T23:50:06.47502Z",
-      "Duration": 1176393917000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-27T23:30:30.081103Z",
+        "Finished": "2016-06-27T23:50:06.47502Z",
+        "Duration": 1176393917000
+      },
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 2,

@@ -91,28 +91,34 @@ func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
 			fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
 			fmt.Sprintf("https://%s/%s/builders/%s/builds/%d",
 				host, b.Master, b.Buildername, b.Number),
-			fmt.Sprintf("Build number %d on master %s builder %s", b.Number, b.Master, b.Buildername))
+			fmt.Sprintf("Original build number %d on master %s builder %s", b.Number, b.Master, b.Buildername))
 	}
 
-	// The link to the builder page.
+	// The link to this page and the builder page.
+	label := ui.NewLink(
+		fmt.Sprintf("#%d", b.Number),
+		fmt.Sprintf("/buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
+		fmt.Sprintf("Build number %d on master %s builder %s", b.Number, b.Master, b.Buildername))
+	// Perpetuate emulation mode, if it is currently on.
+	if buildstore.EmulationEnabled(c) {
+		label.URL += "?emulation=1"
+	}
 	parent := ui.NewLink(b.Buildername, ".", fmt.Sprintf("Parent builder %s", b.Buildername))
 
 	// Do a best effort lookup for the bot information to fill in OS/Platform info.
 	banner := getBanner(c, b)
 
 	sum := ui.BuildComponent{
-		ParentLabel: parent,
-		Label:       fmt.Sprintf("#%d", b.Number),
-		Banner:      banner,
-		Status:      status,
-		Started:     b.Times.Start.Time,
-		Finished:    b.Times.Finish.Time,
-		Bot:         bot,
-		Source:      source,
-		Duration:    b.Times.Duration(),
-		Type:        ui.Summary, // This is more or less ignored.
-		LevelsDeep:  1,
-		Text:        mergeText(b.Text), // Status messages.  Eg "This build failed on..xyz"
+		ParentLabel:   parent,
+		Label:         label,
+		Banner:        banner,
+		Status:        status,
+		ExecutionTime: ui.NewInterval(c, b.Times.Start.Time, b.Times.Finish.Time),
+		Bot:           bot,
+		Source:        source,
+		Type:          ui.Summary, // This is more or less ignored.
+		LevelsDeep:    1,
+		Text:          mergeText(b.Text), // Status messages.  Eg "This build failed on..xyz"
 	}
 
 	return sum
@@ -120,13 +126,13 @@ func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
 
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
-func components(b *buildbot.Build) (result []*ui.BuildComponent) {
+func components(c context.Context, b *buildbot.Build) (result []*ui.BuildComponent) {
 	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
 		}
 		bc := &ui.BuildComponent{
-			Label: step.Name,
+			Label: ui.NewEmptyLink(step.Name),
 		}
 		// Step text sometimes contains <br>, which we want to parse into new lines.
 		bc.Text = step.Text
@@ -231,9 +237,7 @@ func components(b *buildbot.Build) (result []*ui.BuildComponent) {
 		if times.Finish.IsZero() {
 			times.Finish = b.Times.Finish
 		}
-		bc.Started = times.Start.Time
-		bc.Finished = times.Finish.Time
-		bc.Duration = times.Duration()
+		bc.ExecutionTime = ui.NewInterval(c, times.Start.Time, times.Finish.Time)
 		result = append(result, bc)
 	}
 	return
@@ -404,15 +408,17 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 	return ss
 }
 
-func renderBuild(c context.Context, b *buildbot.Build) *ui.MiloBuild {
-	// TODO(hinoka): Do all fields concurrently.
-	return &ui.MiloBuild{
-		Trigger:       sourcestamp(c, b),
-		Summary:       summary(c, b),
-		Components:    components(b),
-		PropertyGroup: properties(b),
-		Blame:         blame(b),
+func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool) *ui.MiloBuild {
+	result := &ui.MiloBuild{
+		Trigger: sourcestamp(c, b),
+		Summary: summary(c, b),
+		Blame:   blame(b),
 	}
+	if includeStepsAndProps {
+		result.PropertyGroup = properties(b)
+		result.Components = components(c, b)
+	}
+	return result
 }
 
 // DebugBuild fetches a debugging build for testing.
@@ -430,7 +436,7 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 	if err := json.Unmarshal(raw, b); err != nil {
 		return nil, err
 	}
-	return renderBuild(c, b), nil
+	return renderBuild(c, b, true), nil
 }
 
 // Build fetches a buildbot build and translates it into a miloBuild.
@@ -447,7 +453,7 @@ func Build(c context.Context, master, builder string, buildNum int) (*ui.MiloBui
 			Tag(common.CodeNotFound).
 			Err()
 	}
-	return renderBuild(c, b), nil
+	return renderBuild(c, b, true), nil
 }
 
 // BuildID is buildbots's notion of a Build. See buildsource.ID.

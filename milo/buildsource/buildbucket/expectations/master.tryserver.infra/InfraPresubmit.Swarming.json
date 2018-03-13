@@ -18,9 +18,24 @@
       "ExecutionTime": {
         "Started": "2016-06-30T23:25:02.96203Z",
         "Finished": "0001-01-01T00:00:00Z",
-        "Duration": 0
+        "Duration": 297037970000
       },
-      "Revision": "HEAD",
+      "Revision": {
+        "AuthorName": "",
+        "AuthorEmail": "",
+        "CommitTime": "0001-01-01T00:00:00Z",
+        "Repo": "",
+        "Branch": "",
+        "RequestRevision": {
+          "Label": "HEAD",
+          "URL": ""
+        },
+        "Revision": null,
+        "Description": "",
+        "Changelist": null,
+        "CommitURL": "",
+        "File": null
+      },
       "Text": null,
       "Blame": [
         {
@@ -44,8 +59,7 @@
           "CommitURL": "",
           "File": null
         }
-      ],
-      "Build": null
+      ]
     }
   ],
   "PendingBuilds": null,
@@ -68,7 +82,22 @@
         "Finished": "2016-06-30T23:05:24.93059Z",
         "Duration": 94626130000
       },
-      "Revision": "HEAD",
+      "Revision": {
+        "AuthorName": "",
+        "AuthorEmail": "",
+        "CommitTime": "0001-01-01T00:00:00Z",
+        "Repo": "",
+        "Branch": "",
+        "RequestRevision": {
+          "Label": "HEAD",
+          "URL": ""
+        },
+        "Revision": null,
+        "Description": "",
+        "Changelist": null,
+        "CommitURL": "",
+        "File": null
+      },
       "Text": [
         "Build succeeded"
       ],
@@ -94,8 +123,7 @@
           "CommitURL": "",
           "File": null
         }
-      ],
-      "Build": null
+      ]
     }
   ],
   "MachinePool": null,

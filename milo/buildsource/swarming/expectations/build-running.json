@@ -1,6 +1,9 @@
 {
   "Summary": {
-    "Label": "2d8d62f6be545b10",
+    "Label": {
+      "Label": "2d8d62f6be545b10",
+      "URL": ""
+    },
     "Status": "Running",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
@@ -23,9 +26,16 @@
         }
       ]
     ],
-    "Started": "2016-03-14T10:00:01.85071Z",
-    "Finished": "0001-01-01T00:00:00Z",
-    "Duration": 3598149290000,
+    "PendingTime": {
+      "Started": "0001-01-01T00:00:00Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0
+    },
+    "ExecutionTime": {
+      "Started": "2016-03-14T10:00:01.85071Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 7198149290000
+    },
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Verbosity": 1,
@@ -36,7 +46,11 @@
   "Trigger": null,
   "Components": [
     {
-      "Label": "recipe bootstrap",
+      "Label": {
+        "Label": "recipe bootstrap",
+        "URL": "",
+        "AriaLabel": "recipe bootstrap"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -45,16 +59,27 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-03-14T10:00:02Z",
-      "Finished": "2016-03-14T10:00:03Z",
-      "Duration": 1000000000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-03-14T10:00:02Z",
+        "Finished": "2016-03-14T10:00:03Z",
+        "Duration": 1000000000
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 1,
       "Text": null
     },
     {
-      "Label": "setup_build",
+      "Label": {
+        "Label": "setup_build",
+        "URL": "",
+        "AriaLabel": "setup_build"
+      },
       "Status": "Success",
       "MainLink": [
         {
@@ -72,9 +97,16 @@
           }
         ]
       ],
-      "Started": "2016-03-14T10:00:03Z",
-      "Finished": "2016-03-14T10:00:04Z",
-      "Duration": 1000000000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-03-14T10:00:03Z",
+        "Finished": "2016-03-14T10:00:04Z",
+        "Duration": 1000000000
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 1,
@@ -83,7 +115,11 @@
       ]
     },
     {
-      "Label": "bot_update",
+      "Label": {
+        "Label": "bot_update",
+        "URL": "",
+        "AriaLabel": "bot_update"
+      },
       "Status": "Running",
       "MainLink": [
         {
@@ -92,9 +128,16 @@
           "AriaLabel": "log link for stdout"
         }
       ],
-      "Started": "2016-03-14T10:00:05Z",
-      "Finished": "0001-01-01T00:00:00Z",
-      "Duration": 3595000000000,
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-03-14T10:00:05Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 7195000000000
+      },
       "Type": "Step",
       "LevelsDeep": 0,
       "Verbosity": 0,
