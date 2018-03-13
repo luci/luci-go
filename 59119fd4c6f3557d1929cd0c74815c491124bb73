@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c4ecc8f2_98b64c37",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-13T22:24:34Z",
+      "side": 1,
+      "message": "I had to read this a few times to figure out what it meant.  On first read it sounded like something we didn\u0027t want, but looking at https://github.com/golang/protobuf/blob/master/ptypes/timestamp.go it seems fine to ignore error.\n\nDone.",
+      "parentUuid": "2afce10f_baf62895",
+      "range": {
+        "startLine": 156,
+        "startChar": 46,
+        "endLine": 156,
+        "endChar": 56
+      },
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9279769_519559de",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 13
@@ -39,6 +63,24 @@
       "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcee5818_4b6ed5f6",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-13T22:24:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9279769_519559de",
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f505751a_723e1dfb",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 13
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-13T22:24:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab788d75_6cffa39c",
+      "range": {
+        "startLine": 175,
+        "startChar": 16,
+        "endLine": 175,
+        "endChar": 75
+      },
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
