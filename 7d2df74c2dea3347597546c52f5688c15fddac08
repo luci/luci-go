@@ -22,6 +22,30 @@
       "revId": "7d2df74c2dea3347597546c52f5688c15fddac08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6365ab6_02f1623d",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-13T00:34:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5e8c980_cfe554c5",
+      "range": {
+        "startLine": 218,
+        "startChar": 1,
+        "endLine": 218,
+        "endChar": 2
+      },
+      "revId": "7d2df74c2dea3347597546c52f5688c15fddac08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
