@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "43f54f29_4a2ff177",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T01:23:51Z",
+      "side": 1,
+      "message": ":) Fixed.",
+      "parentUuid": "1b070825_5fbdfe90",
+      "range": {
+        "startLine": 64,
+        "startChar": 20,
+        "endLine": 64,
+        "endChar": 24
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04e5e892_02763b71",
         "filename": "config/validation/rules.go",
         "patchSetId": 1
@@ -187,6 +211,30 @@
       "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c957cf8b_bbdb08a8",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T01:23:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04e5e892_02763b71",
+      "range": {
+        "startLine": 67,
+        "startChar": 35,
+        "endLine": 67,
+        "endChar": 39
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -225,6 +273,24 @@
     },
     {
       "key": {
+        "uuid": "277961a3_f08e614a",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T01:23:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d56291c2_f4c4b6b1",
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b094c41a_380316ea",
         "filename": "config/validation/rules.go",
         "patchSetId": 1
@@ -245,6 +311,30 @@
       "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7baf288d_1fd997cb",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T01:23:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b094c41a_380316ea",
+      "range": {
+        "startLine": 204,
+        "startChar": 53,
+        "endLine": 204,
+        "endChar": 54
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -271,6 +361,30 @@
     },
     {
       "key": {
+        "uuid": "25e3dea4_da0e6df7",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T01:23:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f304832c_0dfaf274",
+      "range": {
+        "startLine": 208,
+        "startChar": 53,
+        "endLine": 208,
+        "endChar": 54
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13fac69a_85bc2b58",
         "filename": "config/validation/rules.go",
         "patchSetId": 1
@@ -291,6 +405,30 @@
       "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0c21339_a56b1b66",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T01:23:51Z",
+      "side": 1,
+      "message": "I took it from https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/cipd/client/cipd/template/template.go?q\u003d%22regexp.MustCompile(%60%5C$%7B%5B%5E%7D%5D*%7D%60)%22\u0026sq\u003dpackage:chromium\u0026l\u003d49",
+      "parentUuid": "13fac69a_85bc2b58",
+      "range": {
+        "startLine": 218,
+        "startChar": 42,
+        "endLine": 218,
+        "endChar": 43
+      },
+      "revId": "a5456cfa332b2e706dead1c9c7b7d6f032b184cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
