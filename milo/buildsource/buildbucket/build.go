@@ -15,9 +15,11 @@
 package buildbucket
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
@@ -25,6 +27,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -163,6 +166,126 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 	return nil
 }
 
+// extractEmail extracts the CL author email from a build message, if available.
+// TODO(hinoka, nodir): Delete after buildbucket v2.
+func extractEmail(msg *bbapi.ApiCommonBuildMessage) (string, error) {
+	var params struct {
+		Changes []struct {
+			Author struct{ Email string }
+		}
+	}
+	if msg.ParametersJson != "" {
+		if err := json.NewDecoder(strings.NewReader(msg.ParametersJson)).Decode(&params); err != nil {
+			return "", errors.Annotate(err, "failed to parse parameters_json").Err()
+		}
+	}
+	if len(params.Changes) == 1 {
+		return params.Changes[0].Author.Email, nil
+	}
+	return "", nil
+}
+
+// extractInfo extracts the resulting info text from a build message.
+// TODO(hinoka, nodir): Delete after buildbucket v2.
+func extractInfo(msg *bbapi.ApiCommonBuildMessage) (string, error) {
+	var resultDetails struct {
+		// TODO(nodir,iannucci): define a proto for build UI data
+		UI struct {
+			Info string
+		}
+	}
+	if msg.ResultDetailsJson != "" {
+		if err := json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails); err != nil {
+			return "", errors.Annotate(err, "failed to parse result_details_json").Err()
+		}
+	}
+	return resultDetails.UI.Info, nil
+}
+
+// toMiloBuild converts a buildbucket build to a milo build.
+// In case of an error, returns a build with a description of the error
+// and logs the error.
+func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
+	// Parse the build message into a buildbucket.Build struct, filling in the
+	// input and output properties that we expect to receive.
+	var b buildbucket.Build
+	var props struct {
+		Revision string `json:"revision"`
+	}
+	var resultDetails struct {
+		GotRevision string `json:"got_revision"`
+	}
+	b.Input.Properties = &props
+	b.Output.Properties = &resultDetails
+	if err := b.ParseMessage(msg); err != nil {
+		return nil, err
+	}
+	// TODO(hinoka,nodir): Replace the following lines after buildbucket v2.
+	info, err := extractInfo(msg)
+	if err != nil {
+		return nil, err
+	}
+	email, err := extractEmail(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &ui.MiloBuild{
+		Summary: ui.BuildComponent{
+			PendingTime:   ui.NewInterval(c, b.CreationTime, b.StartTime),
+			ExecutionTime: ui.NewInterval(c, b.StartTime, b.CompletionTime),
+			Status:        parseStatus(b.Status),
+		},
+		Trigger: &ui.Trigger{},
+	}
+	// Add in revision information, if available.
+	if resultDetails.GotRevision != "" {
+		result.Trigger.Commit.Revision = ui.NewEmptyLink(resultDetails.GotRevision)
+	}
+	if props.Revision != "" {
+		result.Trigger.Commit.RequestRevision = ui.NewEmptyLink(props.Revision)
+	}
+
+	if b.Experimental {
+		result.Summary.Text = []string{"Experimental"}
+	}
+	if info != "" {
+		result.Summary.Text = append(result.Summary.Text, strings.Split(info, "\n")...)
+	}
+
+	for _, bs := range b.BuildSets {
+		// ignore rietveld.
+		cl, ok := bs.(*buildbucket.GerritChange)
+		if !ok {
+			continue
+		}
+
+		// support only one CL per build.
+		result.Blame = []*ui.Commit{{
+			Changelist:      ui.NewPatchLink(cl),
+			RequestRevision: ui.NewLink(props.Revision, "", fmt.Sprintf("request revision %s", props.Revision)),
+		}}
+
+		result.Blame[0].AuthorEmail = email
+		break
+	}
+
+	if b.Number != nil {
+		numStr := strconv.Itoa(*b.Number)
+		result.Summary.Label = ui.NewLink(
+			numStr,
+			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
+			fmt.Sprintf("build #%s", numStr))
+	} else {
+		idStr := strconv.FormatInt(b.ID, 10)
+		result.Summary.Label = ui.NewLink(
+			idStr,
+			fmt.Sprintf("/p/%s/builds/b%s", b.Project, idStr),
+			fmt.Sprintf("build #%s", idStr))
+	}
+	return result, nil
+}
+
 // getUIBuild fetches the full build state from Swarming and LogDog if
 // available, otherwise returns an empty "pending build".
 func getUIBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*ui.MiloBuild, error) {
@@ -182,7 +305,7 @@ func getUIBuild(c context.Context, build *model.BuildSummary, sID *swarming.Buil
 			return nil, err
 		}
 		if buildName := build.GetBuildName(); buildName != "" {
-			ret.Summary.Label = buildName
+			ret.Summary.Label = ui.NewEmptyLink(buildName)
 		}
 	}
 

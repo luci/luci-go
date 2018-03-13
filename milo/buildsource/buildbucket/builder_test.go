@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -35,6 +36,9 @@ import (
 
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
 
+// We use our own custom time to match the time in the test data.
+var RecentTimeUTC = time.Date(2016, time.June, 30, 23, 30, 0, 0, time.UTC)
+
 func TestBuilder(t *testing.T) {
 	t.Parallel()
 
@@ -44,7 +48,7 @@ func TestBuilder(t *testing.T) {
 
 	Convey("Builder", t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
-		c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
+		c, _ = testclock.UseTime(c, RecentTimeUTC)
 		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 		// Update the service config so that the settings are loaded.
 		_, err := common.UpdateServiceConfig(c)

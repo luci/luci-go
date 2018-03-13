@@ -5,7 +5,10 @@
       "URL": "/p/infra/builders/luci.infra.try/Infra Win Tester",
       "AriaLabel": "buildbucket builder Infra Win Tester on bucket luci.infra.try"
     },
-    "Label": "308998ca182a0210",
+    "Label": {
+      "Label": "308998ca182a0210",
+      "URL": ""
+    },
     "Status": "Expired",
     "Banner": {
       "OS": [
@@ -35,9 +38,16 @@
         "AriaLabel": "step link for Task 308998ca182a0210"
       }
     ],
-    "Started": "0001-01-01T00:00:00Z",
-    "Finished": "0001-01-01T00:00:00Z",
-    "Duration": 0,
+    "PendingTime": {
+      "Started": "2016-03-14T10:00:00.85071Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 7199149290000
+    },
+    "ExecutionTime": {
+      "Started": "0001-01-01T00:00:00Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0
+    },
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Verbosity": 0,

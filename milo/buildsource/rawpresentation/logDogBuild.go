@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/milo/common/model"
@@ -46,10 +47,9 @@ var builtIn = map[string]struct{}{
 
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildCompletedTime,
-	now time.Time) []*ui.BuildComponent {
+func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, isMain bool, buildCompletedTime time.Time) []*ui.BuildComponent {
 
-	comp := &ui.BuildComponent{Label: anno.Name}
+	comp := &ui.BuildComponent{Label: ui.NewLink(anno.Name, "", anno.Name)}
 	switch anno.Status {
 	case miloProto.Status_RUNNING:
 		comp.Status = model.Running
@@ -152,21 +152,17 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	comp.LevelsDeep = 0
 
 	// Timestamps
-	comp.Started = google.TimeFromProto(anno.Started)
-	comp.Finished = google.TimeFromProto(anno.Ended)
-
-	var till time.Time
-	switch {
-	case !comp.Finished.IsZero():
-		till = comp.Finished
-	case comp.Status == model.Running:
-		till = now
-	case !buildCompletedTime.IsZero():
-		till = buildCompletedTime
+	var start, end time.Time
+	if t, err := ptypes.Timestamp(anno.Started); err == nil {
+		start = t
 	}
-	if !comp.Started.IsZero() && till.After(comp.Started) {
-		comp.Duration = till.Sub(comp.Started)
+	if t, err := ptypes.Timestamp(anno.Ended); err == nil {
+		end = t
+	} else {
+		// Build is complete but step isn't?  Snap to build complete time.
+		end = buildCompletedTime
 	}
+	comp.ExecutionTime = ui.NewInterval(c, start, end)
 
 	// This should be the exact same thing.
 	comp.Text = append(comp.Text, anno.Text...)
@@ -185,7 +181,7 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 		default:
 			panic(fmt.Errorf("Unknown type %v", s))
 		}
-		for _, subcomp := range miloBuildStep(ub, subanno, false, buildCompletedTime, now) {
+		for _, subcomp := range miloBuildStep(c, ub, subanno, false, buildCompletedTime) {
 			results = append(results, subcomp)
 		}
 	}
@@ -197,12 +193,11 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 // build.Summary.Finished must be set.
 func AddLogDogToBuild(
 	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *ui.MiloBuild) {
-	now := clock.Now(c)
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
 	buildCompletedTime := google.TimeFromProto(mainAnno.Ended)
-	build.Summary = *(miloBuildStep(ub, mainAnno, true, buildCompletedTime, now)[0])
+	build.Summary = *(miloBuildStep(c, ub, mainAnno, true, buildCompletedTime)[0])
 	propMap := map[string]string{}
 	for _, substepContainer := range mainAnno.Substep {
 		anno := substepContainer.GetStep()
@@ -211,14 +206,14 @@ func AddLogDogToBuild(
 			continue
 		}
 
-		bss := miloBuildStep(ub, anno, false, buildCompletedTime, now)
+		bss := miloBuildStep(c, ub, anno, false, buildCompletedTime)
 		for _, bs := range bss {
 			if bs.Status != model.Success {
 				build.Summary.Text = append(
 					build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
 			}
 			build.Components = append(build.Components, bs)
-			propGroup := &ui.PropertyGroup{GroupName: bs.Label}
+			propGroup := &ui.PropertyGroup{GroupName: bs.Label.Label}
 			for _, prop := range anno.Property {
 				propGroup.Property = append(propGroup.Property, &ui.Property{
 					Key:   prop.Name,

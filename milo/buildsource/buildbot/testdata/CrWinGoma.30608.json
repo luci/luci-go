@@ -129,6 +129,7 @@
             "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/result"
         ]
     ],
+    "master": "chromium.fyi",
     "number": 30608,
     "properties": [
         [

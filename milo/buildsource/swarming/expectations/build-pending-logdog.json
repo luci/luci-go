@@ -1,6 +1,9 @@
 {
   "Summary": {
-    "Label": "2fb1b35e1da25710",
+    "Label": {
+      "Label": "2fb1b35e1da25710",
+      "URL": ""
+    },
     "Status": "NotRun",
     "Source": {
       "Label": "Task 2fb1b35e1da25710",
@@ -14,9 +17,16 @@
         "AriaLabel": "step link for Task 2fb1b35e1da25710"
       }
     ],
-    "Started": "0001-01-01T00:00:00Z",
-    "Finished": "0001-01-01T00:00:00Z",
-    "Duration": 0,
+    "PendingTime": {
+      "Started": "2016-03-14T10:00:00.85071Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 7199149290000
+    },
+    "ExecutionTime": {
+      "Started": "0001-01-01T00:00:00Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0
+    },
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Verbosity": 1,

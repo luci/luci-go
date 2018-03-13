@@ -1,4 +1,7 @@
 {
+    "master": "master.fake",
+    "builderName": "Fake Builder",
+    "number": 1337,
     "sourcestamp": {
       "changes": []
     },

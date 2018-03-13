@@ -221,13 +221,13 @@ type SwarmingBuildImplFn func(c context.Context, svc SwarmingService, taskID str
 
 // BuildTestData returns sample test data for swarming build pages.
 func BuildTestData(swarmingRelDir string, swarmingBuildImpl SwarmingBuildImplFn) []common.TestBundle {
+	start := time.Date(2016, 1, 2, 15, 4, 5, 999999999, time.UTC)
+	end := time.Date(2016, 1, 2, 15, 4, 6, 999999999, time.UTC)
 	basic := ui.MiloBuild{
 		Summary: ui.BuildComponent{
-			Label:    "Test swarming build",
-			Status:   model.Success,
-			Started:  time.Date(2016, 1, 2, 15, 4, 5, 999999999, time.UTC),
-			Finished: time.Date(2016, 1, 2, 15, 4, 6, 999999999, time.UTC),
-			Duration: time.Second,
+			Label:         ui.NewEmptyLink("Test swarming build"),
+			ExecutionTime: ui.Interval{start, end, time.Second},
+			Status:        model.Success,
 		},
 	}
 	results := []common.TestBundle{

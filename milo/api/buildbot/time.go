@@ -85,15 +85,3 @@ func (t *TimeRange) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
-
-func (t TimeRange) Duration() time.Duration {
-	switch {
-	case t.Start.IsZero():
-		return 0
-	case t.Finish.IsZero():
-		// FIXME: should not depend on current time.
-		return time.Since(t.Start.Time)
-	default:
-		return t.Finish.Sub(t.Start.Time)
-	}
-}

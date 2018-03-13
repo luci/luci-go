@@ -1,5 +1,5 @@
 {
- "created_ts": "2016-08-09T19:28:41.977650",
+ "created_ts": "2016-03-14T10:00:00.850710",
  "name": "buildbucket-luci.infra.try-Infra Win Tester",
  "task_id": "308998ca182a0210",
  "tags": [
@@ -22,10 +22,10 @@
   "user_agent:cq"
  ],
  "internal_failure": false,
- "abandoned_ts": "2016-08-09T20:29:03.997560",
+ "abandoned_ts": "2016-03-14T10:00:01.850710",
  "failure": false,
  "state": "EXPIRED",
- "modified_ts": "2016-08-09T20:29:03.997560",
+ "modified_ts": "2016-03-14T10:00:01.850710",
  "user": "",
  "kind": "swarming#taskItem",
  "etag": "\"RwulR2ZW4lMmerK_ArGKE3V5R-w/ZT62m1grWq3fx6aAhoOVJjYMJDE\""

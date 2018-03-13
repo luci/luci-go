@@ -16,12 +16,8 @@ package buildbucket
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -63,116 +59,6 @@ func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
 	return msgs, nil
 }
 
-// toMiloBuild converts a buildbucket build to a milo build.
-// In case of an error, returns a build with a description of the error
-// and logs the error.
-func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.BuildSummary, error) {
-	var b buildbucket.Build
-	if err := b.ParseMessage(msg); err != nil {
-		return nil, err
-	}
-
-	var params struct {
-		Changes []struct {
-			Author struct{ Email string }
-		}
-		Properties struct {
-			Revision string `json:"revision"`
-		}
-	}
-	if msg.ParametersJson != "" {
-		if err := json.NewDecoder(strings.NewReader(msg.ParametersJson)).Decode(&params); err != nil {
-			return nil, errors.Annotate(err, "failed to parse parameters_json of build %d", b.ID).Err()
-		}
-	}
-
-	var resultDetails struct {
-		Properties struct {
-			GotRevision string `json:"got_revision"`
-		}
-		// TODO(nodir,iannucci): define a proto for build UI data
-		UI struct {
-			Info string
-		}
-	}
-	if msg.ResultDetailsJson != "" {
-		if err := json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails); err != nil {
-			return nil, errors.Annotate(err, "failed to parse result_details_json of build %d", b.ID).Err()
-		}
-	}
-
-	duration := func(start, end time.Time) time.Duration {
-		if start.IsZero() {
-			return 0
-		}
-		if end.IsZero() {
-			end = clock.Now(c)
-		}
-		if end.Before(start) {
-			return 0
-		}
-		return end.Sub(start)
-	}
-
-	result := &ui.BuildSummary{
-		Revision: resultDetails.Properties.GotRevision,
-		Status:   parseStatus(b.Status),
-		PendingTime: ui.Interval{
-			Started:  b.CreationTime,
-			Finished: b.StartTime,
-			Duration: duration(b.CreationTime, b.StartTime),
-		},
-		ExecutionTime: ui.Interval{
-			Started:  b.StartTime,
-			Finished: b.CompletionTime,
-			Duration: duration(b.StartTime, b.CompletionTime),
-		},
-	}
-	if result.Revision == "" {
-		result.Revision = params.Properties.Revision
-	}
-	if b.Experimental {
-		result.Text = []string{"Experimental"}
-	}
-	if resultDetails.UI.Info != "" {
-		result.Text = append(result.Text, strings.Split(resultDetails.UI.Info, "\n")...)
-	}
-
-	for _, bs := range b.BuildSets {
-		// ignore rietveld.
-		cl, ok := bs.(*buildbucket.GerritChange)
-		if !ok {
-			continue
-		}
-
-		// support only one CL per build.
-		result.Blame = []*ui.Commit{{
-			Changelist:      ui.NewPatchLink(cl),
-			RequestRevision: ui.NewLink(params.Properties.Revision, "", fmt.Sprintf("request revision %s", params.Properties.Revision)),
-		}}
-
-		if len(params.Changes) == 1 {
-			result.Blame[0].AuthorEmail = params.Changes[0].Author.Email
-		}
-		break
-	}
-
-	if b.Number != nil {
-		numStr := strconv.Itoa(*b.Number)
-		result.Link = ui.NewLink(
-			numStr,
-			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
-			fmt.Sprintf("build #%s", numStr))
-	} else {
-		idStr := strconv.FormatInt(b.ID, 10)
-		result.Link = ui.NewLink(
-			idStr,
-			fmt.Sprintf("/p/%s/builds/b%s", b.Project, idStr),
-			fmt.Sprintf("build #%s", idStr))
-	}
-	return result, nil
-}
-
 func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuilds int, target *ui.Builder) error {
 	// ../buildbucket below assumes that
 	// - this code is not executed by tests outside of this dir
@@ -194,16 +80,17 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 		if err != nil {
 			return err
 		}
-		switch mb.Status {
+		bs := mb.BuildSummary()
+		switch mb.Summary.Status {
 		case model.NotRun:
-			target.PendingBuilds = append(target.PendingBuilds, mb)
+			target.PendingBuilds = append(target.PendingBuilds, bs)
 
 		case model.Running:
-			target.CurrentBuilds = append(target.CurrentBuilds, mb)
+			target.CurrentBuilds = append(target.CurrentBuilds, bs)
 
 		case model.Success, model.Failure, model.InfraFailure, model.Warning:
 			if len(target.FinishedBuilds) < maxCompletedBuilds {
-				target.FinishedBuilds = append(target.FinishedBuilds, mb)
+				target.FinishedBuilds = append(target.FinishedBuilds, bs)
 			}
 
 		default:
@@ -250,17 +137,18 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 			return err
 		}
 		for _, m := range msgs {
-			b, err := toMiloBuild(c, m)
+			mb, err := toMiloBuild(c, m)
 			if err != nil {
 				return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
 			}
-			switch b.Status {
+			bs := mb.BuildSummary()
+			switch mb.Summary.Status {
 			case model.NotRun:
-				result.PendingBuilds = append(result.PendingBuilds, b)
+				result.PendingBuilds = append(result.PendingBuilds, bs)
 			case model.Running:
-				result.CurrentBuilds = append(result.CurrentBuilds, b)
+				result.CurrentBuilds = append(result.CurrentBuilds, bs)
 			default:
-				result.FinishedBuilds = append(result.FinishedBuilds, b)
+				result.FinishedBuilds = append(result.FinishedBuilds, bs)
 			}
 		}
 		return nil

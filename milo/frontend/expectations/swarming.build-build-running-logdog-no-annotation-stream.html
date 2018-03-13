@@ -10,7 +10,7 @@
     
     -
     
-    1a2b3c4d5e6f7890
+    &lt;a&gt;1a2b3c4d5e6f7890&lt;/a&gt;
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
@@ -42,7 +42,7 @@
   <div class="content">
     <h1>
       
-      Build 1a2b3c4d5e6f7890
+      Build <a>1a2b3c4d5e6f7890</a>
       
     </h1>
 
@@ -123,8 +123,15 @@
           
           <li class="verbosity-Normal">
             <div class="status-Running result">
-              
-              <b>Waiting...</b>
+                
+  
+    <span class="duration"
+          data-starttime="0001-01-01T00:00:00Z"
+          data-endtime="0001-01-01T00:00:00Z">
+          ( 0 )</span>
+  
+
+              <b><a>Waiting...</a></b>
               <span>
                 <div class="step-text">waiting for annotation stream</div>
               </span>
@@ -157,15 +164,25 @@
 
       <h2>Timing:</h2>
       <table class="info" width="100%">
-        <tr class="alt"><td class="left">Start</td>
+        <tr class="alt"><td class="left">Create</td>
         <td>
           N/A
         </td></tr>
-        <tr><td class="left">End</td>
+        <tr><td class="left">Start</td>
         <td>
           N/A
         </td></tr>
-        <tr class="alt"><td class="left">Elapsed</td>
+        <tr class="alt"><td class="left">End</td>
+        <td>
+          N/A
+        </td></tr>
+        <tr><td class="left">Pending</td>
+        <td id="duration">
+          
+            N/A
+          
+        </td></tr>
+        <tr class="alt"><td class="left">Execution</td>
         <td id="duration">
           
             N/A

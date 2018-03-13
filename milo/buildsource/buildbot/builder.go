@@ -16,7 +16,6 @@ package buildbot
 
 import (
 	"fmt"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -76,26 +75,6 @@ func mergeText(text []string) []string {
 		}
 	}
 	return result
-}
-
-func getBuildSummary(b *buildbot.Build, linkParams url.Values) *ui.BuildSummary {
-	linkURL := fmt.Sprintf("%d", b.Number)
-	if len(linkParams) > 0 {
-		linkURL += "?" + linkParams.Encode()
-	}
-	return &ui.BuildSummary{
-		Link: ui.NewLink(fmt.Sprintf("#%d", b.Number), linkURL,
-			fmt.Sprintf("build number %d on builder %s", b.Number, b.Buildername)),
-		Status: b.Status(),
-		ExecutionTime: ui.Interval{
-			Started:  b.Times.Start.Time,
-			Finished: b.Times.Finish.Time,
-			Duration: b.Times.Duration(),
-		},
-		Text:     mergeText(b.Text),
-		Blame:    blame(b),
-		Revision: b.Sourcestamp.Revision,
-	}
 }
 
 func summarizeSlavePool(
@@ -176,11 +155,8 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	for i, pb := range builder.PendingBuildStates {
 		start := time.Unix(int64(pb.SubmittedAt), 0).UTC()
 		result.PendingBuilds[i] = &ui.BuildSummary{
-			PendingTime: ui.Interval{
-				Started:  start,
-				Duration: clock.Now(c).UTC().Sub(start),
-			},
-			Blame: make([]*ui.Commit, len(pb.Source.Changes)),
+			PendingTime: ui.NewInterval(c, start, time.Time{}),
+			Blame:       make([]*ui.Commit, len(pb.Source.Changes)),
 		}
 		for j, cm := range pb.Source.Changes {
 			result.PendingBuilds[i].Blame[j] = &ui.Commit{
@@ -195,13 +171,6 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 		baseURL = "https://uberchromegw.corp.google.com/i/"
 	}
 	result.MachinePool = summarizeSlavePool(baseURL+master.Name, builder.Slaves, master.Slaves)
-
-	// TODO(nodir,hinoka): move all link generation to a separate package
-	var linkParams url.Values
-	if buildstore.EmulationEnabled(c) {
-		linkParams = url.Values{}
-		linkParams.Set("emulation", "1")
-	}
 
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
 		q := buildstore.Query{
@@ -223,7 +192,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.PrevCursor = res.PrevCursor
 			result.FinishedBuilds = make([]*ui.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
-				result.FinishedBuilds[i] = getBuildSummary(b, linkParams)
+				result.FinishedBuilds[i] = renderBuild(c, b, false).BuildSummary()
 			}
 			return err
 		}
@@ -237,7 +206,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			result.CurrentBuilds = make([]*ui.BuildSummary, len(res.Builds))
 			for i, b := range res.Builds {
 				// currentBuilds is presented in reversed order, so flip it
-				result.CurrentBuilds[len(res.Builds)-i-1] = getBuildSummary(b, linkParams)
+				result.CurrentBuilds[len(res.Builds)-i-1] = renderBuild(c, b, false).BuildSummary()
 			}
 			return err
 		}

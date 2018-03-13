@@ -199,6 +199,7 @@
             "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/reason"
         ]
     ],
+    "master": "tryserver.chromium.win",
     "number": 246309,
     "properties": [
         [
