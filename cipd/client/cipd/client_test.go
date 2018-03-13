@@ -560,7 +560,7 @@ func TestFetch(t *testing.T) {
 		defer os.RemoveAll(tempDir)
 
 		inst := buildInstanceInMemory(ctx, "testing/package", []local.File{
-			local.NewTestFile("file", "test data", false),
+			local.NewTestFile("file", "test data", local.TestFileOpts{}),
 		})
 
 		Convey("fetching once", func() {
@@ -886,9 +886,9 @@ func TestEnsurePackages(t *testing.T) {
 
 		Convey("EnsurePackages full flow", func(c C) {
 			// Prepare a bunch of packages.
-			a1 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 1", "test data", false)})
-			a2 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 2", "test data", false)})
-			b := buildInstanceInMemory(ctx, "pkg/b", []local.File{local.NewTestFile("file b", "test data", false)})
+			a1 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 1", "test data", local.TestFileOpts{})})
+			a2 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 2", "test data", local.TestFileOpts{})})
+			b := buildInstanceInMemory(ctx, "pkg/b", []local.File{local.NewTestFile("file b", "test data", local.TestFileOpts{})})
 
 			pil := func(insts ...local.PackageInstance) []local.PackageInstance {
 				return insts
