@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e82a8f3d_0e622837",
+        "filename": "config/appengine/gaeconfig/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T06:17:47Z",
+      "side": 1,
+      "message": "Looks like this: https://screenshot.googleplex.com/DyhGdhquvnJ.png (disregard vadimsh@google.com instead of a service account, I ran this locally).",
+      "range": {
+        "startLine": 156,
+        "startChar": 20,
+        "endLine": 156,
+        "endChar": 28
+      },
+      "revId": "d565436b53c970b78c86310ca5fe938dcc241143",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "59e7d1ca_f50f9985",
+        "filename": "config/appengine/gaeconfig/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T06:17:47Z",
+      "side": 1,
+      "message": "This hits https://luci-config.appspot.com/auth/api/v1/server/info and caches the response in local memory for 1h.",
+      "range": {
+        "startLine": 95,
+        "startChar": 23,
+        "endLine": 95,
+        "endChar": 54
+      },
+      "revId": "d565436b53c970b78c86310ca5fe938dcc241143",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
