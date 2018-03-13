@@ -22,14 +22,12 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -110,21 +108,9 @@ type Catalog interface {
 	// the context, will panic if it's not there.
 	GetProjectJobs(c context.Context, projectID string) ([]Definition, error)
 
-	// ValidateConfig performs the config validation and stores any errors in
-	// the validation.Context.
-	//
-	// This is part of the components needed to install validation endpoints
-	// on the service. When a config validation request is received by the
-	// service from luci-config, this is called to perform the validation.
-	ValidateConfig(ctx *validation.Context, configSet, path string, content []byte) error
-
-	// ConfigPatterns returns the patterns of configSets and paths that the
-	// service is responsible for validating.
-	//
-	// This is part of the components needed to install validation endpoints
-	// on the service. When request for metadata is received by the service
-	// from luci-config, this is called to return the patterns.
-	ConfigPatterns(c context.Context) ([]*validation.ConfigPattern, error)
+	// RegisterConfigRules adds the config validation rules that verify job config
+	// files.
+	RegisterConfigRules(r *validation.RuleSet)
 }
 
 // JobFlavor describes a category of jobs.
@@ -182,19 +168,14 @@ type Definition struct {
 }
 
 // New returns implementation of Catalog.
-//
-// If configFileName is not "", it specifies name of *.cfg file to read job
-// definitions from. If it is "", <gae-app-id>.cfg will be used instead.
-func New(configFileName string) Catalog {
+func New() Catalog {
 	return &catalog{
-		managers:       map[reflect.Type]task.Manager{},
-		configFileName: configFileName,
+		managers: map[reflect.Type]task.Manager{},
 	}
 }
 
 type catalog struct {
-	managers       map[reflect.Type]task.Manager
-	configFileName string
+	managers map[reflect.Type]task.Manager
 }
 
 func (cat *catalog) RegisterTaskManager(m task.Manager) error {
@@ -226,7 +207,7 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 	// Enumerate all projects that have <config>.cfg. Do not fetch actual configs
 	// yet.
 	var metas []*config.Meta
-	if err := cfgclient.Projects(c, cfgclient.AsService, cat.configFile(c), nil, &metas); err != nil {
+	if err := cfgclient.Projects(c, cfgclient.AsService, info.TrimmedAppID(c)+".cfg", nil, &metas); err != nil {
 		return nil, err
 	}
 
@@ -274,7 +255,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		cfg  messages.ProjectConfig
 		meta config.Meta
 	)
-	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, cat.configFile(c), textproto.Message(&cfg), &meta); err {
+	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, info.TrimmedAppID(c)+".cfg", textproto.Message(&cfg), &meta); err {
 	case nil:
 		break
 	case config.ErrNoConfig:
@@ -401,32 +382,20 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	return out, nil
 }
 
-func (cat *catalog) ConfigPatterns(c context.Context) ([]*validation.ConfigPattern, error) {
-	return []*validation.ConfigPattern{
-		{
-			// Pattern automatically adds ^ and $ to regex strings.
-			pattern.MustParse("regex:projects/.*"),
-			pattern.MustParse(cat.configFile(c)),
-		},
-	}, nil
-}
-
-func (cat *catalog) ValidateConfig(ctx *validation.Context, configSet, path string, content []byte) error {
-	if strings.HasPrefix(configSet, "projects/") && path == cat.configFile(ctx.Context) {
-		cat.validateProjectConfig(ctx, content)
-	}
-	return nil
+func (cat *catalog) RegisterConfigRules(r *validation.RuleSet) {
+	r.Add("regex:projects/.*", "${appid}.cfg", cat.validateProjectConfig)
 }
 
 // validateProjectConfig validates the content of a project config file.
 //
-// Errors are returned via validation.Context.
-func (cat *catalog) validateProjectConfig(ctx *validation.Context, content []byte) {
+// Validation errors are returned via validation.Context. Returns an error if
+// the validation itself fails for some reason.
+func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, path string, content []byte) error {
 	var cfg messages.ProjectConfig
 	err := proto.UnmarshalText(string(content), &cfg)
 	if err != nil {
 		ctx.Error(err)
-		return
+		return nil
 	}
 
 	// AclSets
@@ -461,16 +430,8 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, content []byt
 		ctx.Exit()
 	}
 	ctx.Exit()
-}
 
-// configFile returns a name of *.cfg file (inside project's config set) with
-// all scheduler job definitions for a project. This file contains text-encoded
-// ProjectConfig message.
-func (cat *catalog) configFile(c context.Context) string {
-	if cat.configFileName != "" {
-		return cat.configFileName
-	}
-	return info.AppID(c) + ".cfg"
+	return nil
 }
 
 // validateJobProto validates messages.Job protobuf message.

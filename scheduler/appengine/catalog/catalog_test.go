@@ -23,6 +23,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -44,7 +46,7 @@ func TestRegisterTaskManagerAndFriends(t *testing.T) {
 	t.Parallel()
 
 	Convey("RegisterTaskManager works", t, func() {
-		c := New("scheduler.cfg")
+		c := New()
 		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldBeNil)
 		So(c.GetTaskManager(&messages.NoopTask{}), ShouldNotBeNil)
 		So(c.GetTaskManager(&messages.UrlFetchTask{}), ShouldBeNil)
@@ -52,12 +54,12 @@ func TestRegisterTaskManagerAndFriends(t *testing.T) {
 	})
 
 	Convey("RegisterTaskManager bad proto type", t, func() {
-		c := New("scheduler.cfg")
+		c := New()
 		So(c.RegisterTaskManager(brokenTaskManager{}), ShouldErrLike, "expecting pointer to a struct")
 	})
 
 	Convey("RegisterTaskManager twice", t, func() {
-		c := New("scheduler.cfg")
+		c := New()
 		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldBeNil)
 		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldNotBeNil)
 	})
@@ -69,7 +71,7 @@ func TestProtoValidation(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("validateJobProto works", t, func() {
-		c := New("scheduler.cfg").(*catalog)
+		c := New().(*catalog)
 
 		call := func(j *messages.Job) error {
 			valCtx := &validation.Context{Context: ctx}
@@ -95,7 +97,7 @@ func TestProtoValidation(t *testing.T) {
 	})
 
 	Convey("extractTaskProto works", t, func() {
-		c := New("scheduler.cfg").(*catalog)
+		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
 			name: "noop",
 			task: &messages.NoopTask{},
@@ -153,7 +155,7 @@ func TestProtoValidation(t *testing.T) {
 	})
 
 	Convey("extractTaskProto uses task manager validation", t, func() {
-		c := New("scheduler.cfg").(*catalog)
+		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
 			name:          "broken noop",
 			validationErr: errors.New("boo"),
@@ -172,7 +174,7 @@ func TestTaskMarshaling(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("works", t, func() {
-		c := New("scheduler.cfg").(*catalog)
+		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
 			name: "url fetch",
 			task: &messages.UrlFetchTask{},
@@ -194,7 +196,7 @@ func TestTaskMarshaling(t *testing.T) {
 		So(err, ShouldErrLike, "unrecognized task definition type *messages.NoopTask")
 
 		// Once registered, but not anymore.
-		c = New("scheduler.cfg").(*catalog)
+		c = New().(*catalog)
 		_, err = c.UnmarshalTask(ctx, blob)
 		So(err, ShouldErrLike, "can't find a recognized task definition")
 	})
@@ -206,7 +208,7 @@ func TestConfigReading(t *testing.T) {
 	Convey("with mocked config", t, func() {
 		ctx := testContext()
 		ctx = testconfig.WithCommonClient(ctx, memcfg.New(mockedConfigs))
-		cat := New("scheduler.cfg")
+		cat := New()
 		cat.RegisterTaskManager(fakeTaskManager{
 			name: "noop",
 			task: &messages.NoopTask{},
@@ -215,6 +217,9 @@ func TestConfigReading(t *testing.T) {
 			name: "url_fetch",
 			task: &messages.UrlFetchTask{},
 		})
+
+		// mockedConfigs hardcode 'app' as service name. Verify our mocks are up.
+		So(info.TrimmedAppID(ctx), ShouldEqual, "app")
 
 		Convey("GetAllProjects works", func() {
 			projects, err := cat.GetAllProjects(ctx)
@@ -233,8 +238,8 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Owners:     []string{"group:some-admins"},
 					},
-					Revision:    "a35f8fb73a358661ce9ed2b035b8ef02cd86c256",
-					RevisionURL: "https://example.com/view/here/scheduler.cfg",
+					Revision:    "a24edae75522d308ab23925d0a0feaaaef714be7",
+					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{0xa, 0x0},
 				},
@@ -245,8 +250,8 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Owners:     []string{"group:some-admins"},
 					},
-					Revision:    "a35f8fb73a358661ce9ed2b035b8ef02cd86c256",
-					RevisionURL: "https://example.com/view/here/scheduler.cfg",
+					Revision:    "a24edae75522d308ab23925d0a0feaaaef714be7",
+					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{0xa, 0x0},
 				},
@@ -257,8 +262,8 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{"group:triggerers"},
 						Owners:     []string{"group:debuggers", "group:some-admins"},
 					},
-					Revision:    "a35f8fb73a358661ce9ed2b035b8ef02cd86c256",
-					RevisionURL: "https://example.com/view/here/scheduler.cfg",
+					Revision:    "a24edae75522d308ab23925d0a0feaaaef714be7",
+					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
 				},
@@ -299,7 +304,8 @@ func TestConfigReading(t *testing.T) {
 
 func TestValidateConfig(t *testing.T) {
 	t.Parallel()
-	catalog := New("luci-scheduler.cfg")
+
+	catalog := New()
 	catalog.RegisterTaskManager(fakeTaskManager{
 		name: "noop",
 		task: &messages.NoopTask{},
@@ -309,32 +315,34 @@ func TestValidateConfig(t *testing.T) {
 		task: &messages.UrlFetchTask{},
 	})
 
+	rules := validation.RuleSet{}
+	rules.RegisterVar("appid", func(context.Context) string { return "luci-scheduler" })
+	catalog.RegisterConfigRules(&rules)
+
+	Convey("Patterns are correct", t, func() {
+		patterns, err := rules.ConfigPatterns(context.Background())
+		So(err, ShouldBeNil)
+		So(len(patterns), ShouldEqual, 1)
+		So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
+		So(patterns[0].Path.Match("luci-scheduler.cfg"), ShouldBeTrue)
+	})
+
 	Convey("Config validation works", t, func() {
 		ctx := &validation.Context{Context: testContext()}
 		Convey("correct config file content", func() {
-			catalog.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg))
+			rules.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg))
 			So(ctx.Finalize(), ShouldBeNil)
 		})
 
 		Convey("Config that can't be deserialized", func() {
-			catalog.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef"))
+			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef"))
 			So(ctx.Finalize(), ShouldNotBeNil)
 		})
 
 		Convey("semantic errors", func() {
-			catalog.ValidateConfig(ctx, "projects/validation-error", "luci-scheduler.cfg", []byte(project4Cfg))
+			rules.ValidateConfig(ctx, "projects/validation-error", "luci-scheduler.cfg", []byte(project4Cfg))
 			So(ctx.Finalize(), ShouldErrLike, "referencing AclSet \"standard\" which doesn't exist")
 		})
-	})
-}
-
-func TestConfigPatterns(t *testing.T) {
-	Convey("Match typical project configSet", t, func() {
-		catalog := New("luci-scheduler.cfg")
-		patterns, err := catalog.ConfigPatterns(testContext())
-		So(err, ShouldBeNil)
-		So(len(patterns), ShouldEqual, 1)
-		So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
 	})
 }
 
@@ -400,7 +408,7 @@ func (b brokenTaskManager) ProtoMessageType() proto.Message {
 ////
 
 func testContext() context.Context {
-	c := context.Background()
+	c := gaetesting.TestingContext()
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 	c, _, _ = tsmon.WithFakes(c)
 	tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{}))
@@ -565,12 +573,12 @@ trigger {
 
 var mockedConfigs = map[config.Set]memcfg.Files{
 	"projects/project1": {
-		"scheduler.cfg": project1Cfg,
+		"app.cfg": project1Cfg,
 	},
 	"projects/project2": {
-		"scheduler.cfg": project2Cfg,
+		"app.cfg": project2Cfg,
 	},
 	"projects/broken": {
-		"scheduler.cfg": "broken!!!!111",
+		"app.cfg": "broken!!!!111",
 	},
 }

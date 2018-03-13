@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -37,6 +36,9 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
+
+	// Register "${appid}" placeholder for config validation rules.
+	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 )
 
 // Project is a datastore entity representing a single project.  Its children
@@ -553,36 +555,24 @@ func GetConsolesByBuilderID(c context.Context, builderID string) ([]*Console, er
 	return consoles, datastore.GetAll(c, q, &consoles)
 }
 
-// Config Validators go here.
+// Config validation rules go here.
 
-var Validator = validation.Validator{configPatterns, validateFunc}
-
-// configPatterns implements validation.Validator.ConfigPatterns, and returns
-// a list of ConfigPatterns that this instance of Milo is responsible for validating.
-// In the Milo case, it is only responsible for validating the config matching the
-// instance's appID in a project config.
-func configPatterns(c context.Context) ([]*validation.ConfigPattern, error) {
-	cfgName := info.AppID(c) + ".cfg"
-	return []*validation.ConfigPattern{
-		{
-			pattern.MustParse("regex:projects/.*"),
-			pattern.Exact(cfgName),
-		},
-	}, nil
+func init() {
+	// Milo is only responsible for validating the config matching the instance's
+	// appID in a project config.
+	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", validateProjectCfg)
 }
 
-// validateFunc implements validation.Validator.Func by taking a
-// potential Milo config at path, validating it, and writing the result into ctx.
+// validateProjectCfg implements validation.Func by taking a potential Milo
+// config at path, validating it, and writing the result into ctx.
+//
 // The validation we do include:
 //
 // * Make sure the config is able to be unmarshalled.
-func validateFunc(ctx *validation.Context, configSet, path string, content []byte) error {
-	cfgName := info.AppID(ctx.Context) + ".cfg"
-	if strings.HasPrefix(configSet, "projects/") && path == cfgName {
-		proj := config.Project{}
-		if err := proto.UnmarshalText(string(content), &proj); err != nil {
-			ctx.Error(err)
-		}
+func validateProjectCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	proj := config.Project{}
+	if err := proto.UnmarshalText(string(content), &proj); err != nil {
+		ctx.Error(err)
 	}
 	return nil
 }

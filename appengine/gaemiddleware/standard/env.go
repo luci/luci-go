@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/middleware"
@@ -102,6 +103,7 @@ var classicEnv = gaemiddleware.Environment{
 		gaetsmon.InstallHandlers(r, base)
 		portal.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
 		gaeconfig.InstallCacheCronHandler(r, base.Extend(gaemiddleware.RequireCron))
+		gaeconfig.InstallValidationHandlers(r, base, &validation.Rules)
 		pprof.InstallHandlers(r, base)
 	},
 }

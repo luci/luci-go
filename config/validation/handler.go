@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/server/router"
@@ -39,50 +38,14 @@ const (
 	metaDataFormatVersion = "1.0"
 )
 
-// ConfigPattern is a pair of pattern.Pattern of configSets and paths that
-// the importing service is responsible for validating.
-type ConfigPattern struct {
-	ConfigSet pattern.Pattern
-	Path      pattern.Pattern
-}
-
-// Func performs the actual config validation and stores the associated results
-// in the validation.Context.
+// InstallHandlers installs the metadata and validation handlers that use
+// the given validation rules.
 //
-// Returns an error if the validation process itself fails due to causes
-// unrelated to the data being validated. This will result in HTTP Internal
-// Server Error reply, instructing the config service to retry.
-type Func func(ctx *Context, configSet, path string, content []byte) error
-
-// Validator defines the components needed to install handlers to
-// implement config validation protocol.
-type Validator struct {
-	// GetConfigPatterns takes in context.Context and returns the list of
-	// ConfigPatterns that the implementing service is responsible
-	// for validating.
-	//
-	// Returns an error if it can't assemble this list. This will result in
-	// HTTP Internal Server Error reply, instructing the config service to retry.
-	ConfigPatterns func(c context.Context) ([]*ConfigPattern, error)
-
-	// Func performs the actual config validation and stores the
-	// associated results in the validation.Context.
-	Func Func
-}
-
-// InstallHandlers installs the metadata and validation handlers as defined by
-// the given Validator on the given router. It does not implement any
-// authentication checks, thus the passed in router.MiddlewareChain should
-// implement any necessary authentication checks.
-//
-// If the given validator is nil, will use global validation rules defined in
-// Rules variable.
-func InstallHandlers(r *router.Router, base router.MiddlewareChain, validator *Validator) {
-	if validator == nil {
-		validator = Rules.Validator()
-	}
-	r.GET(metadataPath, base, validator.metadataRequestHandler)
-	r.POST(validationPath, base, validator.validationRequestHandler)
+// It does not implement any authentication checks, thus the passed in
+// router.MiddlewareChain should implement any necessary authentication checks.
+func InstallHandlers(r *router.Router, base router.MiddlewareChain, rules *RuleSet) {
+	r.GET(metadataPath, base, metadataRequestHandler(rules))
+	r.POST(validationPath, base, validationRequestHandler(rules))
 }
 
 func badRequestStatus(c context.Context, w http.ResponseWriter, msg string, err error) {
@@ -103,77 +66,82 @@ func internalErrStatus(c context.Context, w http.ResponseWriter, msg string, err
 
 // validationRequestHandler handles the validation request from luci-config and
 // responds with the corresponding results.
-func (validator *Validator) validationRequestHandler(ctx *router.Context) {
-	c, w, r := ctx.Context, ctx.Writer, ctx.Request
-	var reqBody config.ValidationRequestMessage
-	switch err := json.NewDecoder(r.Body).Decode(&reqBody); {
-	case err != nil:
-		badRequestStatus(c, w, "Validation: error decoding request body", err)
-		return
-	case reqBody.GetConfigSet() == "":
-		badRequestStatus(c, w, "Must specify the config_set of the file to validate", nil)
-		return
-	case reqBody.GetPath() == "":
-		badRequestStatus(c, w, "Must specify the path of the file to validate", nil)
-		return
-	}
+func validationRequestHandler(rules *RuleSet) router.Handler {
+	return func(ctx *router.Context) {
+		c, w, r := ctx.Context, ctx.Writer, ctx.Request
 
-	vc := &Context{Context: c}
-	vc.SetFile(reqBody.GetPath())
-	err := validator.Func(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
-	if err != nil {
-		internalErrStatus(c, w, "Validation: transient failure", err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	var msgList []*config.ValidationResponseMessage_Message
-	if len(vc.errors) == 0 {
-		logging.Infof(c, "No validation errors")
-	} else {
-		var errorBuffer bytes.Buffer
-		for _, error := range vc.errors {
-			// validation.Context currently only supports ERROR severity
-			err := error.Error()
-			msgList = append(msgList, &config.ValidationResponseMessage_Message{
-				Severity: config.ValidationResponseMessage_ERROR.Enum(),
-				Text:     &err,
-			})
-			errorBuffer.WriteString("\n  " + err)
+		var reqBody config.ValidationRequestMessage
+		switch err := json.NewDecoder(r.Body).Decode(&reqBody); {
+		case err != nil:
+			badRequestStatus(c, w, "Validation: error decoding request body", err)
+			return
+		case reqBody.GetConfigSet() == "":
+			badRequestStatus(c, w, "Must specify the config_set of the file to validate", nil)
+			return
+		case reqBody.GetPath() == "":
+			badRequestStatus(c, w, "Must specify the path of the file to validate", nil)
+			return
 		}
-		logging.Warningf(c, "Validation errors%s", errorBuffer.String())
-	}
-	if err := json.NewEncoder(w).Encode(config.ValidationResponseMessage{Messages: msgList}); err != nil {
-		internalErrStatus(c, w, "Validation: failed to JSON encode output", err)
+
+		vc := &Context{Context: c}
+		vc.SetFile(reqBody.GetPath())
+		err := rules.ValidateConfig(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
+		if err != nil {
+			internalErrStatus(c, w, "Validation: transient failure", err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		var msgList []*config.ValidationResponseMessage_Message
+		if len(vc.errors) == 0 {
+			logging.Infof(c, "No validation errors")
+		} else {
+			var errorBuffer bytes.Buffer
+			for _, error := range vc.errors {
+				// validation.Context currently only supports ERROR severity
+				err := error.Error()
+				msgList = append(msgList, &config.ValidationResponseMessage_Message{
+					Severity: config.ValidationResponseMessage_ERROR.Enum(),
+					Text:     &err,
+				})
+				errorBuffer.WriteString("\n  " + err)
+			}
+			logging.Warningf(c, "Validation errors%s", errorBuffer.String())
+		}
+		if err := json.NewEncoder(w).Encode(config.ValidationResponseMessage{Messages: msgList}); err != nil {
+			internalErrStatus(c, w, "Validation: failed to JSON encode output", err)
+		}
 	}
 }
 
 // metadataRequestHandler handles the metadata request from luci-config and
 // responds with the necessary metadata defined by the given Validator.
-func (validator *Validator) metadataRequestHandler(ctx *router.Context) {
-	c, w := ctx.Context, ctx.Writer
+func metadataRequestHandler(rules *RuleSet) router.Handler {
+	return func(ctx *router.Context) {
+		c, w := ctx.Context, ctx.Writer
 
-	patterns, err := validator.ConfigPatterns(c)
-	if err != nil {
-		internalErrStatus(c, w, "Metadata: failed to collect the list of validation patterns", err)
-		return
-	}
+		patterns, err := rules.ConfigPatterns(c)
+		if err != nil {
+			internalErrStatus(c, w, "Metadata: failed to collect the list of validation patterns", err)
+			return
+		}
 
-	meta := config.ServiceDynamicMetadata{
-		Version: proto.String(metaDataFormatVersion),
-		Validation: &config.Validator{
-			Url: proto.String(fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath)),
-		},
-	}
-	for _, p := range patterns {
-		meta.Validation.Patterns = append(meta.Validation.Patterns, &config.ConfigPattern{
-			ConfigSet: proto.String(p.ConfigSet.String()),
-			Path:      proto.String(p.Path.String()),
-		})
-	}
+		meta := config.ServiceDynamicMetadata{
+			Version: proto.String(metaDataFormatVersion),
+			Validation: &config.Validator{
+				Url: proto.String(fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath)),
+			},
+		}
+		for _, p := range patterns {
+			meta.Validation.Patterns = append(meta.Validation.Patterns, &config.ConfigPattern{
+				ConfigSet: proto.String(p.ConfigSet.String()),
+				Path:      proto.String(p.Path.String()),
+			})
+		}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(&meta); err != nil {
-		internalErrStatus(c, w, "Metadata: failed to JSON encode output", err)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(&meta); err != nil {
+			internalErrStatus(c, w, "Metadata: failed to JSON encode output", err)
+		}
 	}
 }

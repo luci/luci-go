@@ -23,9 +23,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/server/router"
@@ -34,16 +32,10 @@ import (
 )
 
 func TestInstallHandlers(t *testing.T) {
+	t.Parallel()
+
 	Convey("Initialization of validator, validation routes and handlers", t, func() {
-		v := &Validator{
-			Func: func(ctx *Context, configSet, path string, content []byte) error {
-				ctx.errors = append(ctx.errors, errors.New("deadbeef"))
-				return nil
-			},
-			ConfigPatterns: func(c context.Context) ([]*ConfigPattern, error) {
-				return nil, nil
-			},
-		}
+		rules := RuleSet{}
 
 		r := router.New()
 		rr := httptest.NewRecorder()
@@ -79,7 +71,7 @@ func TestInstallHandlers(t *testing.T) {
 			return &resp
 		}
 
-		InstallHandlers(r, router.NewMiddlewareChain(), v)
+		InstallHandlers(r, router.NewMiddlewareChain(), &rules)
 
 		Convey("Basic metadataHandler call", func() {
 			So(rr.Code, ShouldEqual, http.StatusOK)
@@ -92,13 +84,7 @@ func TestInstallHandlers(t *testing.T) {
 		})
 
 		Convey("metadataHandler call with patterns", func() {
-			cp, err := pattern.Parse("configSet")
-			So(err, ShouldBeNil)
-			pp, err := pattern.Parse("path")
-			So(err, ShouldBeNil)
-			v.ConfigPatterns = func(c context.Context) ([]*ConfigPattern, error) {
-				return []*ConfigPattern{{cp, pp}}, nil
-			}
+			rules.Add("configSet", "path", nil)
 			meta := metaCall()
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(meta, ShouldResemble, &config.ServiceDynamicMetadata{
@@ -107,8 +93,8 @@ func TestInstallHandlers(t *testing.T) {
 					Url: proto.String(fmt.Sprintf("https://%s%s", host, validationPath)),
 					Patterns: []*config.ConfigPattern{
 						{
-							ConfigSet: proto.String(cp.String()),
-							Path:      proto.String(pp.String()),
+							ConfigSet: proto.String("exact:configSet"),
+							Path:      proto.String("exact:path"),
 						},
 					},
 				},
@@ -116,11 +102,11 @@ func TestInstallHandlers(t *testing.T) {
 		})
 
 		Convey("Basic validationHandler call", func() {
-			v.Func = func(ctx *Context, configSet, path string, content []byte) error {
+			rules.Add("dead", "beef", func(ctx *Context, configSet, path string, content []byte) error {
 				So(string(content), ShouldEqual, "content")
 				ctx.errors = append(ctx.errors, errors.New("deadbeef"))
 				return nil
-			}
+			})
 			valResp := valCall("dead", "beef", "content")
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(valResp, ShouldResemble, &config.ValidationResponseMessage{

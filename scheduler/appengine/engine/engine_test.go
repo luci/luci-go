@@ -1347,7 +1347,7 @@ func getSentDistrValue(c context.Context, m types.Metric, fieldVals ...interface
 
 func newTestEngine() (*engineImpl, *fakeTaskManager) {
 	mgr := &fakeTaskManager{}
-	cat := catalog.New("scheduler.cfg")
+	cat := catalog.New()
 	cat.RegisterTaskManager(mgr)
 	return NewEngine(Config{
 		Catalog:              cat,
