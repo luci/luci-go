@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "7fffa666_bbb5412c",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-13T22:59:44Z",
+      "side": 1,
+      "message": "Ug actually no, this is not what we want.  It returns specifically: 1970-01-01T00:00:00Z.\n\nUnix epoch is kind of arbitrary.  Leaving it as zero time.Time would\u0027ve been more useful, but, eh :/.  Anyways I\u0027m leaving this as is because it does the wrong behavior otherwise.",
+      "parentUuid": "c4ecc8f2_98b64c37",
+      "range": {
+        "startLine": 156,
+        "startChar": 46,
+        "endLine": 156,
+        "endChar": 56
+      },
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9279769_519559de",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 13
