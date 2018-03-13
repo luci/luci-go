@@ -54,9 +54,7 @@ func TestRuleSet(t *testing.T) {
 			r.Add("services/${a}", "paths/${b}", validator("rule_2"))
 			r.Add("services/c", "paths/c", validator("rule_3"))
 
-			v := r.Validator()
-
-			patterns, err := v.ConfigPatterns(ctx)
+			patterns, err := r.ConfigPatterns(ctx)
 			So(err, ShouldBeNil)
 			So(patterns, ShouldResemble, []*ConfigPattern{
 				{
@@ -75,8 +73,7 @@ func TestRuleSet(t *testing.T) {
 
 			callValidator := func(configSet, path string) {
 				c := Context{Context: ctx}
-				err := v.Func(&c, configSet, path, []byte("body"))
-				So(err, ShouldBeNil)
+				So(r.ValidateConfig(&c, configSet, path, []byte("body")), ShouldBeNil)
 			}
 
 			callValidator("services/unknown", "paths/a")

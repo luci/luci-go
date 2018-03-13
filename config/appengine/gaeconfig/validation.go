@@ -39,10 +39,7 @@ func init() {
 // It requires that the hostname, the email of config service and the name of
 // the trusted group have been defined in the appengine app settings page before
 // the installed endpoints are called.
-//
-// If the given validator is nil, will use global validation rules defined in
-// validation.Rules variable.
-func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, validator *validation.Validator) {
+func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain) {
 	a := auth.Authenticator{
 		Methods: []auth.Method{
 			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
@@ -72,7 +69,7 @@ func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, va
 			}
 		}
 	})
-	validation.InstallHandlers(r, base, validator)
+	validation.InstallHandlers(r, base)
 }
 
 func errStatus(c context.Context, w http.ResponseWriter, status int, msg string) {

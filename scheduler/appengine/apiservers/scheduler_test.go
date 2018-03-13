@@ -369,7 +369,7 @@ func registerUrlFetcher(cat catalog.Catalog) ([]byte, error) {
 }
 
 func newTestEngine() (*fakeEngine, catalog.Catalog) {
-	cat := catalog.New("scheduler.cfg")
+	cat := catalog.New()
 	return &fakeEngine{}, cat
 }
 

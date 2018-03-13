@@ -36,6 +36,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
@@ -44,12 +45,10 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/config/appengine/gaeconfig"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 
@@ -144,12 +143,14 @@ func init() {
 	globalDispatcher.RegisterTask(&internal.ReadProjectConfigTask{}, readProjectConfig, "read-project-config", nil)
 
 	// Setup global singletons.
-	globalCatalog = catalog.New("")
+	globalCatalog = catalog.New()
 	for _, m := range managers {
 		if err := globalCatalog.RegisterTaskManager(m); err != nil {
 			panic(err)
 		}
 	}
+	globalCatalog.RegisterConfigRules(&validation.Rules)
+
 	globalEngine = engine.NewEngine(engine.Config{
 		Catalog:              globalCatalog,
 		Dispatcher:           &globalDispatcher,
@@ -178,12 +179,6 @@ func init() {
 		Engine:        globalEngine.PublicAPI(),
 		Catalog:       globalCatalog,
 		TemplatesPath: "templates",
-	})
-
-	// Initialize config validation endpoints.
-	gaeconfig.InstallValidationHandlers(r, base, &validation.Validator{
-		ConfigPatterns: globalCatalog.ConfigPatterns,
-		Func:           globalCatalog.ValidateConfig,
 	})
 
 	r.POST("/pubsub", base, pubsubPushHandler) // auth is via custom tokens
