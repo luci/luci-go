@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2afce10f_baf62895",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-13T04:36:00Z",
+      "side": 1,
+      "message": "not that ptypes.Timestamp is documented to always return a time\n\n\u003e Unlike most Go functions, if Timestamp returns an error, the first return value is not the zero time.Time. Instead, it is the value obtained from the time.Unix function when passed the contents of the Timestamp, in the UTC locale. This may or may not be a meaningful time; many invalid Timestamps do map to valid time.Times.\n\nsince we swallow error here, we could as well just ignore it:\n\n  start, _ :\u003d ptypes.Timestamp(anno.Started)",
+      "range": {
+        "startLine": 156,
+        "startChar": 46,
+        "endLine": 156,
+        "endChar": 56
+      },
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9279769_519559de",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-13T04:36:00Z",
+      "side": 1,
+      "message": "here too, and below",
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab788d75_6cffa39c",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 13
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-13T04:36:00Z",
+      "side": 1,
+      "message": "{{ template \"interval\" .ExecutionTime }}",
+      "range": {
+        "startLine": 175,
+        "startChar": 16,
+        "endLine": 175,
+        "endChar": 75
+      },
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
