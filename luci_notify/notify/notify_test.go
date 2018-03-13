@@ -49,7 +49,7 @@ func extractNotifiers(c context.Context, projectID string, cfg *notifyConfig.Pro
 
 func notifyDummyBuild(status buildbucket.Status, notifyEmails ...string) *Build {
 	var build Build
-	build.Build = testutil.TestBuild("test", "hello", "test-builder", status)
+	build.Build = *testutil.TestBuild("test", "hello", "test-builder", status)
 
 	for _, e := range notifyEmails {
 		build.InputProperties.EmailNotify = append(build.InputProperties.EmailNotify, EmailNotifyValue{e})

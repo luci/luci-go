@@ -107,7 +107,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history test
 					return err
 				}
 				// Initialize the Builder in the datastore.
-				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build.Build)); err != nil {
+				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Revision, &build.Build)); err != nil {
 					return err
 				}
 				return nil
@@ -177,7 +177,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history test
 		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
 			return err
 		}
-		return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build.Build))
+		return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, &build.Build))
 	}, nil)
 }
 
@@ -215,7 +215,7 @@ type EmailNotifyValue struct {
 
 // Build is buildbucket.Build along with the parsed 'email_notify' values.
 type Build struct {
-	*buildbucket.Build
+	buildbucket.Build
 	InputProperties struct {
 		EmailNotify []EmailNotifyValue
 	} `json:"email_notify"`

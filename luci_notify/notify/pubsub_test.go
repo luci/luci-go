@@ -47,7 +47,7 @@ var (
 
 func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime time.Time, revision string, notifyEmails ...string) *Build {
 	var build Build
-	build.Build = testutil.TestBuild("test", "hello", builder, status)
+	build.Build = *testutil.TestBuild("test", "hello", builder, status)
 	build.BuildSets = []buildbucket.BuildSet{buildbucket.BuildSet(&buildbucket.GitilesCommit{
 		Host:     "test.googlesource.com",
 		Project:  "test",
@@ -126,7 +126,7 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`no revision`, func() {
-			build := &Build{Build: testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)}
+			build := &Build{Build: *testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)}
 			testSuccess(build)
 			grepLog("revision")
 		})
