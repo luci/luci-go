@@ -21,9 +21,11 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -54,35 +56,59 @@ func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, ru
 	}
 	base = base.Extend(a.GetMiddleware(), func(c *router.Context, next router.Handler) {
 		cc, w := c.Context, c.Writer
-		switch s := mustFetchCachedSettings(cc); {
-		case s.ConfigServiceHost == "":
-			errStatus(cc, w, http.StatusInternalServerError, "ConfigServiceHost has not been defined in settings")
-		case s.ConfigServiceEmail == "":
-			errStatus(cc, w, http.StatusInternalServerError, "ConfigServiceEmail has not been defined in settings")
-		case s.AdministratorsGroup == "":
-			errStatus(cc, w, http.StatusInternalServerError, "AdministratorsGroup has not been defined in settings")
+		switch yep, err := isAuthorizedCall(cc, mustFetchCachedSettings(cc)); {
+		case err != nil:
+			errStatus(cc, w, err, http.StatusInternalServerError, "Unable to perform authorization")
+		case !yep:
+			errStatus(cc, w, nil, http.StatusForbidden, "Insufficient authority for validation")
 		default:
-			if auth.CurrentIdentity(cc).Email() == s.ConfigServiceEmail {
-				next(c)
-				return
-			}
-			switch isAdmin, err := auth.IsMember(cc, s.AdministratorsGroup); {
-			case err != nil:
-				errStatus(cc, w, http.StatusInternalServerError, "Unable to authenticate")
-			case !isAdmin:
-				errStatus(cc, w, http.StatusForbidden, "Insufficient authority for validation")
-			default:
-				next(c)
-			}
+			next(c)
 		}
 	})
 	validation.InstallHandlers(r, base, rules)
 }
 
-func errStatus(c context.Context, w http.ResponseWriter, status int, msg string) {
+func errStatus(c context.Context, w http.ResponseWriter, err error, status int, msg string) {
 	if status >= http.StatusInternalServerError {
-		logging.Errorf(c, msg)
+		if err != nil {
+			c = logging.SetError(c, err)
+		}
+		logging.Errorf(c, "%s", msg)
 	}
 	w.WriteHeader(status)
 	w.Write([]byte(msg))
+}
+
+// isAuthorizedCall returns true if the current caller is allowed to call the
+// config validation endpoints.
+//
+// This is either the service account of the config service, or someone from
+// an admin group.
+func isAuthorizedCall(c context.Context, s *Settings) (bool, error) {
+	// Someone from an admin group (if it is configured)? This is useful locally
+	// during development.
+	if s.AdministratorsGroup != "" {
+		switch yep, err := auth.IsMember(c, s.AdministratorsGroup); {
+		case err != nil:
+			return false, err
+		case yep:
+			return true, nil
+		}
+	}
+
+	// The config server itself (if it is configured)? May be empty when
+	// running stuff locally.
+	if s.ConfigServiceHost != "" {
+		info, err := signing.FetchServiceInfoFromLUCIService(c, "https://"+s.ConfigServiceHost)
+		if err != nil {
+			return false, err
+		}
+		caller := auth.CurrentIdentity(c)
+		if caller.Kind() == identity.User && caller.Value() == info.ServiceAccountName {
+			return true, nil
+		}
+	}
+
+	// A total stranger.
+	return false, nil
 }

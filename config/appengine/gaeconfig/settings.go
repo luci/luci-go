@@ -17,6 +17,8 @@ package gaeconfig
 import (
 	"errors"
 	"fmt"
+	"html"
+	"html/template"
 	"net/url"
 	"strconv"
 	"strings"
@@ -25,7 +27,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
@@ -68,14 +69,6 @@ type Settings struct {
 
 	// DatastoreCacheMode is the datastore caching mode.
 	DatastoreCacheMode DSCacheMode `json:"datastore_enabled"`
-
-	// ConfigServiceEmail is the email address of the config service with which
-	// the config service will authenticate when calling config validation
-	// endpoints of this service.
-	//
-	// For example, for luci-config.appspot.com service, it would be
-	// luci-config@appspot.gserviceaccount.com.
-	ConfigServiceEmail string `json:"config_service_email"`
 
 	// Administrators is the auth group of users that can call the validation
 	// endpoint.
@@ -160,6 +153,36 @@ func (settingsPage) Title(c context.Context) (string, error) {
 	return "Configuration service settings", nil
 }
 
+func (settingsPage) Overview(c context.Context) (template.HTML, error) {
+	metadataURL := fmt.Sprintf("https://%s/api/config/v1/metadata", info.DefaultVersionHostname(c))
+	serviceAcc, err := info.ServiceAccount(c)
+	if err != nil {
+		return "", err
+	}
+	return template.HTML(fmt.Sprintf(`
+<p>This service may fetch configuration files stored centrally in an instance of
+<a href="https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/config_service">luci-config</a>
+service. This page can be used to configure the location of the config service
+as well as parameters of the local cache that holds the fetched configuration
+files.</p>
+<p>Before your service can start fetching configs, it should be registered in
+the config service's registry of known services (services.cfg config file), by
+adding something similar to this:</p>
+<pre>
+services {
+  id: "%s"
+  owners: &lt;your email&gt;
+  metadata_url: "%s"
+  access: "%s"
+}
+</pre>
+<p>Refer to the documentation in the services.cfg file for more info.</p>`,
+		html.EscapeString(info.TrimmedAppID(c)),
+		html.EscapeString(metadataURL),
+		html.EscapeString(serviceAcc)),
+	), nil
+}
+
 func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 	return []portal.Field{
 		{
@@ -172,11 +195,7 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 				}
 				return nil
 			},
-			Help: `<p>The application may fetch configuration files stored centrally ` +
-				`in an instance of <a href="https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/config_service">luci-config</a> ` +
-				`service. This is the host name (e.g., "example.com") of such service. For legacy purposes, this may be an ` +
-				`URL, in which case the host component will be used. If you don't know what this is, you probably don't ` +
-				`use it and can keep this setting blank.</p>`,
+			Help: `<p>Host name (e.g., "luci-config.appspot.com") of a config service to fetch configuration files from.</p>`,
 		},
 		{
 			ID:    "CacheExpirationSec",
@@ -194,7 +213,7 @@ disable local cache.</p>`,
 		},
 		{
 			ID:    "DatastoreCacheMode",
-			Title: "Enable datastore-backed config caching",
+			Title: "Datastore caching",
 			Type:  portal.FieldChoice,
 			ChoiceVariants: []string{
 				dsCacheDisabledSetting,
@@ -209,19 +228,8 @@ independent cron job out of band with any user requests. See
 package doc for instructions how to setup this cron job.</p>`,
 		},
 		{
-			ID:    "ConfigServiceEmail",
-			Title: "Email of config service",
-			Type:  portal.FieldText,
-			Validator: func(v string) error {
-				_, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, v))
-				return err
-			},
-			Help: `<p>This is the email of the config service. For
-luci-config.appspot.com, it should be luci-config@appspot.gserviceaccount.com.</p>`,
-		},
-		{
 			ID:    "AdministratorsGroup",
-			Title: "Administrator group of config service",
+			Title: "Administrator group",
 			Type:  portal.FieldText,
 			Validator: func(v string) error {
 				if v == "" {
@@ -229,9 +237,9 @@ luci-config.appspot.com, it should be luci-config@appspot.gserviceaccount.com.</
 				}
 				return nil
 			},
-			Help: `<p>Members of this group can call the validation endpoint of
-the service. If you do not know what this is, you probably don't want to use it and can
-leave the field unchanged.</p>`,
+			Help: `<p>Members of this group can directly call the validation endpoint
+of this service. Usually it is called only indirectly by the config service,
+but it may be useful (e.g. for debugging) to call it directly.</p>`,
 		},
 	}, nil
 }
@@ -261,7 +269,6 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 		"ConfigServiceHost":   s.ConfigServiceHost,
 		"CacheExpirationSec":  strconv.Itoa(s.CacheExpirationSec),
 		"DatastoreCacheMode":  cacheModeString,
-		"ConfigServiceEmail":  s.ConfigServiceEmail,
 		"AdministratorsGroup": s.AdministratorsGroup,
 	}, nil
 }
@@ -281,7 +288,6 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 	modified := Settings{
 		ConfigServiceHost:   values["ConfigServiceHost"],
 		DatastoreCacheMode:  dsMode,
-		ConfigServiceEmail:  values["ConfigServiceEmail"],
 		AdministratorsGroup: values["AdministratorsGroup"],
 	}
 
