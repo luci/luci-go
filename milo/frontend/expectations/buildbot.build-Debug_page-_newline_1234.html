@@ -9,8 +9,8 @@
       Failed
     
     -
-      
-    #0
+     Fake Builder 
+    &lt;a href=&#34;/buildbot/master.fake/Fake%20Builder/1337&#34; aria-label=&#34;Build number 1337 on master master.fake builder Fake Builder&#34;&gt;#1337&lt;/a&gt;
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
@@ -42,9 +42,9 @@
   <div class="content">
     <h1>
       
-        Builder <a href="." aria-label="Parent builder "></a>
+        Builder <a href="." aria-label="Parent builder Fake Builder">Fake Builder</a>
       
-      Build #0
+      Build <a href="/buildbot/master.fake/Fake%20Builder/1337" aria-label="Build number 1337 on master master.fake builder Fake Builder">#1337</a>
       
     </h1>
 
@@ -87,9 +87,9 @@
         
         <li>
           Source:
-          <a href="https://build.chromium.org/p//builders//builds/0"
-             aria-label="Source for //0">
-            //0
+          <a href="https://build.chromium.org/p/master.fake/builders/Fake%20Builder/builds/1337"
+             aria-label="Source for master.fake/Fake Builder/1337">
+            master.fake/Fake Builder/1337
           </a>
         </li>
         
@@ -97,7 +97,7 @@
         
         <li>
           Bot:
-          <a href="https://build.chromium.org/p//buildslaves/"
+          <a href="https://build.chromium.org/p/master.fake/buildslaves/"
              aria-label="Bot ">
             
           </a>
@@ -130,11 +130,15 @@
           
           <li class="verbosity-Interesting">
             <div class="status-Failure result">
-              <span class="duration"
-                    data-starttime="2016-06-27T23:30:30Z"
-                    data-endtime="2016-06-27T23:50:06Z">
-                    ( 19 mins 36 secs )</span>
-              <b>steps</b>
+                
+  
+    <span class="duration"
+          data-starttime="2016-06-27T23:30:30Z"
+          data-endtime="2016-06-27T23:50:06Z">
+          ( 19 mins 36 secs )</span>
+  
+
+              <b><a>steps</a></b>
               <span>
                 <div class="step-text">line 1</div><div class="step-text">&nbsp;</div><div class="step-text">line 3</div>
               </span>
@@ -167,15 +171,25 @@
 
       <h2>Timing:</h2>
       <table class="info" width="100%">
-        <tr class="alt"><td class="left">Start</td>
+        <tr class="alt"><td class="left">Create</td>
+        <td>
+          N/A
+        </td></tr>
+        <tr><td class="left">Start</td>
         <td>
           <span class="local-time" data-timestamp="1467070230080">Monday, 27-Jun-16 23:30:30 UTC</span>
         </td></tr>
-        <tr><td class="left">End</td>
+        <tr class="alt"><td class="left">End</td>
         <td>
           <span class="local-time" data-timestamp="1467071406476">Monday, 27-Jun-16 23:50:06 UTC</span>
         </td></tr>
-        <tr class="alt"><td class="left">Elapsed</td>
+        <tr><td class="left">Pending</td>
+        <td id="duration">
+          
+            N/A
+          
+        </td></tr>
+        <tr class="alt"><td class="left">Execution</td>
         <td id="duration">
           
             19 mins 36 secs

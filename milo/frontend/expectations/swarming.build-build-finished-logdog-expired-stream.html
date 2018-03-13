@@ -10,7 +10,7 @@
     
     -
     
-    1a2b3c4d5e6f7890
+    &lt;a&gt;1a2b3c4d5e6f7890&lt;/a&gt;
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
@@ -42,7 +42,7 @@
   <div class="content">
     <h1>
       
-      Build 1a2b3c4d5e6f7890
+      Build <a>1a2b3c4d5e6f7890</a>
       
     </h1>
 
@@ -123,11 +123,15 @@
           
           <li class="verbosity-Interesting">
             <div class="status-InfraFailure result">
-              <span class="duration"
-                    data-starttime="2016-03-14T10:00:01Z"
-                    data-endtime="2016-03-14T11:00:18Z">
-                    ( 1 hrs )</span>
-              <b>LogDog stream not found</b>
+                
+  
+    <span class="duration"
+          data-starttime="2016-03-14T10:00:01Z"
+          data-endtime="2016-03-14T11:00:18Z">
+          ( 1 hrs )</span>
+  
+
+              <b><a>LogDog stream not found</a></b>
               <span>
                 <div class="step-text">Job likely failed to start.</div>
               </span>
@@ -169,15 +173,25 @@
 
       <h2>Timing:</h2>
       <table class="info" width="100%">
-        <tr class="alt"><td class="left">Start</td>
+        <tr class="alt"><td class="left">Create</td>
+        <td>
+          N/A
+        </td></tr>
+        <tr><td class="left">Start</td>
         <td>
           <span class="local-time" data-timestamp="1457949601850">Monday, 14-Mar-16 10:00:01 UTC</span>
         </td></tr>
-        <tr><td class="left">End</td>
+        <tr class="alt"><td class="left">End</td>
         <td>
           <span class="local-time" data-timestamp="1457953218486">Monday, 14-Mar-16 11:00:18 UTC</span>
         </td></tr>
-        <tr class="alt"><td class="left">Elapsed</td>
+        <tr><td class="left">Pending</td>
+        <td id="duration">
+          
+            N/A
+          
+        </td></tr>
+        <tr class="alt"><td class="left">Execution</td>
         <td id="duration">
           
             1 hrs

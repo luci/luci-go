@@ -26,7 +26,10 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -56,6 +59,26 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
+}
+
+// BuildSummary returns the BuildSummary representation of the MiloBuild.  This
+// is the subset of fields that is interesting to the builder view.
+func (b *MiloBuild) BuildSummary() *BuildSummary {
+	if b == nil {
+		return nil
+	}
+	result := &BuildSummary{
+		Link:          b.Summary.Label,
+		Status:        b.Summary.Status,
+		PendingTime:   b.Summary.PendingTime,
+		ExecutionTime: b.Summary.ExecutionTime,
+		Text:          b.Summary.Text,
+		Blame:         b.Blame,
+	}
+	if b.Trigger != nil {
+		result.Revision = &b.Trigger.Commit
+	}
+	return result
 }
 
 // Trigger is the combination of pointing to a single commit, with information
@@ -116,6 +139,21 @@ type Commit struct {
 	CommitURL string
 	// List of changed filenames.
 	File []string
+}
+
+// RevisionHTML returns a single rendered link for the revision, prioritizing
+// Revision over RequestRevision.
+func (c *Commit) RevisionHTML() template.HTML {
+	switch {
+	case c == nil:
+		return ""
+	case c.Revision != nil:
+		return c.Revision.HTML()
+	case c.RequestRevision != nil:
+		return c.RequestRevision.HTML()
+	default:
+		return ""
+	}
 }
 
 // Title is the first line of the commit message (Description).
@@ -190,6 +228,32 @@ const (
 	Interesting
 )
 
+// Interval is a time interval which has a start, an end and a duration.
+type Interval struct {
+	// Started denotes the start time of this interval.
+	Started time.Time
+	// Finished denotest the end time of this interval.
+	Finished time.Time
+	// Duration is the length of the interval.
+	Duration time.Duration
+}
+
+// NewInterval returns a new interval struct.  If end time is empty (eg. Not completed)
+// set end time to empty but set duration to the difference between start and now.
+// Getting called with an empty start time and non-empty end time is undefined.
+func NewInterval(c context.Context, start, end time.Time) Interval {
+	i := Interval{Started: start, Finished: end}
+	if start.IsZero() {
+		return i
+	}
+	if end.IsZero() {
+		i.Duration = clock.Now(c).Sub(start)
+	} else {
+		i.Duration = end.Sub(start)
+	}
+	return i
+}
+
 // BuildComponent represents a single Step, subsetup, attempt, or recipe.
 type BuildComponent struct {
 	// The parent of this component.  For buildbot and swarmbucket builds, this
@@ -197,7 +261,7 @@ type BuildComponent struct {
 	ParentLabel *Link `json:",omitempty"`
 
 	// The main label for the component.
-	Label string
+	Label *Link
 
 	// Status of the build.
 	Status model.Status
@@ -226,15 +290,11 @@ type BuildComponent struct {
 	// Designates the progress of the current component. Set null for no progress.
 	Progress *BuildProgress `json:",omitempty"`
 
-	// When did this step start.
-	Started time.Time
+	// Pending is time interval that this build was pending.
+	PendingTime Interval
 
-	// When did this step finish.
-	Finished time.Time
-
-	// The time it took for this step to finish. If unfinished, this is the
-	// current elapsed duration.
-	Duration time.Duration
+	// Execution is time interval that this build was executing.
+	ExecutionTime Interval
 
 	// The type of component.  This manifests itself as a little label on the
 	// top left corner of the component.
@@ -326,6 +386,11 @@ func NewPatchLink(cl buildbucket.BuildSet) *Link {
 	default:
 		return nil
 	}
+}
+
+// NewEmptyLink creates a Link struct acting as a pure text label.
+func NewEmptyLink(label string) *Link {
+	return &Link{Link: model.Link{Label: label}}
 }
 
 /// HTML methods.

@@ -58,18 +58,17 @@ func shouldMatchExpectationsFor(actualContents interface{}, expectedFilename ...
 
 func TestBuild(t *testing.T) {
 	t.Parallel()
+	c := context.Background()
+	// This is two hours after the start timestamp in the sample test data.
+	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 12, 0, 0, 0, time.UTC))
+	c = memory.UseWithAppID(c, "dev~luci-milo")
+	c = testconfig.WithCommonClient(c, memcfg.New(testdata.AclConfigs))
+	c = auth.WithState(c, &authtest.FakeState{
+		Identity:       "user:alicebob@google.com",
+		IdentityGroups: []string{"all", "googlers"},
+	})
 
 	if *generate {
-		c := context.Background()
-		// This is one hour after the start timestamp in the sample test data.
-		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
-		c = memory.UseWithAppID(c, "dev~luci-milo")
-		c = testconfig.WithCommonClient(c, memcfg.New(testdata.AclConfigs))
-		c = auth.WithState(c, &authtest.FakeState{
-			Identity:       "user:alicebob@google.com",
-			IdentityGroups: []string{"all", "googlers"},
-		})
-
 		for _, tc := range testdata.GetTestCases(".") {
 			fmt.Printf("Generating expectations for %s\n", tc)
 
@@ -92,16 +91,6 @@ func TestBuild(t *testing.T) {
 	}
 
 	Convey(`A test Environment`, t, func() {
-		c := context.Background()
-		// This is one hour after the start timestamp in the sample test data.
-		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
-		c = memory.UseWithAppID(c, "dev~luci-milo")
-		c = testconfig.WithCommonClient(c, memcfg.New(testdata.AclConfigs))
-		c = auth.WithState(c, &authtest.FakeState{
-			Identity:       "user:alicebob@google.com",
-			IdentityGroups: []string{"all", "googlers"},
-		})
-
 		for _, tc := range testdata.GetTestCases(".") {
 			Convey(fmt.Sprintf("Test Case: %s", tc.Name), func() {
 				c := tc.InjectLogdogClient(c)
