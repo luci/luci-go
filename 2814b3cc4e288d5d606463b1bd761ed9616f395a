@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "42e25518_acc23f7b",
+        "filename": "config/appengine/gaeconfig/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T22:52:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bfa6f2f6_4a3f37ff",
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c40ef614_b7a41d75",
         "filename": "config/validation/handler.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "baaed818_be90e407",
+        "filename": "config/validation/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T22:52:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c40ef614_b7a41d75",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 1
+      },
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -86,6 +128,30 @@
       "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "136b2666_74b10cd5",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T22:52:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2a0c147_4d79809b",
+      "range": {
+        "startLine": 165,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 65
+      },
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
