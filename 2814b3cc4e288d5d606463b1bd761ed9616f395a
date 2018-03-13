@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "35864d62_c655cc83",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-13T19:39:23Z",
+      "side": 1,
+      "message": "does developer gets to know that multiple rules are registered s.t. this presumably mistake is corrected?",
+      "range": {
+        "startLine": 165,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 65
+      },
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fdc2cb86_a39f9b32",
         "filename": "milo/common/config.go",
         "patchSetId": 1
