@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "bfa6f2f6_4a3f37ff",
+        "filename": "config/appengine/gaeconfig/validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-13T19:52:29Z",
+      "side": 1,
+      "message": "i prefer this to accept a rule set and the caller to specify \u0026validation.Rules",
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c40ef614_b7a41d75",
+        "filename": "config/validation/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-13T19:52:29Z",
+      "side": 1,
+      "message": "i don\u0027t think this function is useful. I think InstallHandlersWithRules should be the only one, and be called just InstallHandlers",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 1
+      },
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "35864d62_c655cc83",
         "filename": "config/validation/rules.go",
         "patchSetId": 1
@@ -13,6 +53,30 @@
       "writtenOn": "2018-03-13T19:39:23Z",
       "side": 1,
       "message": "does developer gets to know that multiple rules are registered s.t. this presumably mistake is corrected?",
+      "range": {
+        "startLine": 165,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 65
+      },
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2a0c147_4d79809b",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-13T19:52:29Z",
+      "side": 1,
+      "message": "i think all matching rule should run, like python impl https://chromium.googlesource.com/infra/luci/luci-py/+/eefefff7d81f76edb9c07e49cf2c282ff8ed7c58/appengine/components/components/config/validation.py#270",
+      "parentUuid": "35864d62_c655cc83",
       "range": {
         "startLine": 165,
         "startChar": 0,
