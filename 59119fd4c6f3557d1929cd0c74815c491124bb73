@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "b56b12f6_d3811c21",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-13T23:51:33Z",
+      "side": 1,
+      "message": "Exactly, ptypes.Timestamp will use 1970 as \"absense of time\" instead of zero time.\n\nSpecifically, we use zero time.Time in end time to signal \"no end time\".  Passing ptypes.Timestamp() directly would break that, and end time would end up as 1970, instead of \"hasn\u0027t happened yet\".",
+      "parentUuid": "4b788295_1f5835ad",
+      "range": {
+        "startLine": 156,
+        "startChar": 46,
+        "endLine": 156,
+        "endChar": 56
+      },
+      "revId": "59119fd4c6f3557d1929cd0c74815c491124bb73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9279769_519559de",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 13
