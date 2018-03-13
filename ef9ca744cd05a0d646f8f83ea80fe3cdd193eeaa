@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb594c8b_c9aa3251",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T04:56:18Z",
+      "side": 0,
+      "message": "I decided to remove this and always use app ID, as happens in reality. Tests now use GAE Info service mock (that returns \"app\" as app ID).",
+      "range": {
+        "startLine": 188,
+        "startChar": 9,
+        "endLine": 188,
+        "endChar": 30
+      },
+      "revId": "ef9ca744cd05a0d646f8f83ea80fe3cdd193eeaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

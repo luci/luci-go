@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fdc2cb86_a39f9b32",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-13T04:56:18Z",
+      "side": 1,
+      "message": "this is needed because Milo is using ${appid} from init() and it fails in tests that do not import \u0027gaeconfig\u0027 (this is where ${appid} is registered).",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 64
+      },
+      "revId": "2814b3cc4e288d5d606463b1bd761ed9616f395a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
