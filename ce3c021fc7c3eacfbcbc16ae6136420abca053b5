@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "47316d83_eab20fb1",
+        "filename": "config/appengine/gaeconfig/validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-13T20:57:39Z",
+      "side": 1,
+      "message": "nice, i didn\u0027t know about this",
+      "revId": "ce3c021fc7c3eacfbcbc16ae6136420abca053b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
