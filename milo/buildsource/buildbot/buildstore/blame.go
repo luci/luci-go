@@ -128,7 +128,6 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 		logging.Warningf(c, "prev rev of build %q is unknown. Skipping blamelist computation", b.ID())
 		return nil
 	}
-	committish := prevRev + ".." + b.Sourcestamp.Revision
 
 	// Note that prev build may be coming from buildbot and having commit different
 	// from the true previous _LUCI_ build, which may cause blamelist to have
@@ -136,7 +135,7 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 	// next build number bump.
 
 	// we don't really need a blamelist with a length > 50
-	commits, err := git.Log(c, host, project, committish, 50)
+	commits, err := git.Log(c, host, project, b.Sourcestamp.Revision, 50)
 	switch status.Code(err) {
 	case codes.OK:
 		b.Sourcestamp.Changes = make([]buildbot.Change, len(commits))
