@@ -56,7 +56,7 @@ func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime ti
 	build.CreationTime = creationTime
 
 	for _, e := range notifyEmails {
-		build.InputProperties.EmailNotify = append(build.InputProperties.EmailNotify, EmailNotifyValue{e})
+		build.EmailNotify = append(build.EmailNotify, EmailNotifyValue{e})
 	}
 
 	return &build

@@ -132,7 +132,7 @@ func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, o
 	}
 
 	// Notify based on build request properties.
-	for _, r := range build.InputProperties.EmailNotify {
+	for _, r := range build.EmailNotify {
 		recipientSet.Add(r.Email)
 	}
 

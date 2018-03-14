@@ -52,7 +52,7 @@ func notifyDummyBuild(status buildbucket.Status, notifyEmails ...string) *Build 
 	build.Build = *testutil.TestBuild("test", "hello", "test-builder", status)
 
 	for _, e := range notifyEmails {
-		build.InputProperties.EmailNotify = append(build.InputProperties.EmailNotify, EmailNotifyValue{e})
+		build.EmailNotify = append(build.EmailNotify, EmailNotifyValue{e})
 	}
 
 	return &build
