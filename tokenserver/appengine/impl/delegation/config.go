@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
@@ -94,10 +95,10 @@ var GlobalRulesCache = NewRulesCache()
 func NewRulesCache() *RulesCache {
 	return &RulesCache{
 		policy: policy.Policy{
-			Name:     delegationCfg,   // used as part of datastore keys
-			Fetch:    fetchConfigs,    // see below
-			Validate: validateConfigs, // see config_validation.go
-			Prepare:  prepareRules,    // see below
+			Name:     delegationCfg,        // used as part of datastore keys
+			Fetch:    fetchConfigs,         // see below
+			Validate: validateConfigBundle, // see config_validation.go
+			Prepare:  prepareRules,         // see below
 		},
 	}
 }
@@ -112,7 +113,12 @@ func (rc *RulesCache) ImportConfigs(c context.Context) (rev string, err error) {
 // SetupConfigValidation registers the config validation rules.
 func (rc *RulesCache) SetupConfigValidation(rules *validation.RuleSet) {
 	rules.Add("services/${appid}", delegationCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
-		// TODO(vadimsh): Implement.
+		cfg := &admin.DelegationPermissions{}
+		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+			ctx.Errorf("not a valid DelegationPermissions proto message - %s", err)
+		} else {
+			validateDelegationCfg(ctx, cfg)
+		}
 		return nil
 	})
 }

@@ -26,15 +26,20 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
 )
 
-// validateConfigs validates the structure of configs fetched by fetchConfigs.
-func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
+// validateConfigBundle validates the structure of a config bundle fetched by
+// fetchConfigs.
+func validateConfigBundle(ctx *validation.Context, bundle policy.ConfigBundle) {
 	ctx.SetFile(delegationCfg)
 	cfg, ok := bundle[delegationCfg].(*admin.DelegationPermissions)
-	if !ok {
+	if ok {
+		validateDelegationCfg(ctx, cfg)
+	} else {
 		ctx.Errorf("unexpectedly wrong proto type %T", cfg)
-		return
 	}
+}
 
+// validateDelegationCfg checks deserialized delegation.cfg.
+func validateDelegationCfg(ctx *validation.Context, cfg *admin.DelegationPermissions) {
 	names := stringset.New(0)
 	for i, rule := range cfg.Rules {
 		if rule.Name != "" {

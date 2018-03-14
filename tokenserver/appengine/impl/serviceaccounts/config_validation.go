@@ -26,15 +26,20 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
 )
 
-// validateConfigs validates the structure of configs fetched by fetchConfigs.
-func validateConfigs(ctx *validation.Context, bundle policy.ConfigBundle) {
+// validateConfigBundle validates the structure of a config bundle fetched by
+// fetchConfigs.
+func validateConfigBundle(ctx *validation.Context, bundle policy.ConfigBundle) {
 	ctx.SetFile(serviceAccountsCfg)
 	cfg, ok := bundle[serviceAccountsCfg].(*admin.ServiceAccountsPermissions)
-	if !ok {
+	if ok {
+		validateServiceAccountsCfg(ctx, cfg)
+	} else {
 		ctx.Errorf("unexpectedly wrong proto type %T", cfg)
-		return
 	}
+}
 
+// validateServiceAccountsCfg checks deserialized service_accounts.cfg.
+func validateServiceAccountsCfg(ctx *validation.Context, cfg *admin.ServiceAccountsPermissions) {
 	if cfg.Defaults != nil {
 		validateDefaults(ctx, "defaults", cfg.Defaults)
 	}
