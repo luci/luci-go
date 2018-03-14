@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/validation"
@@ -156,7 +157,18 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 func (r *ImportCAConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
 	// Validate CA config protos are well-formed.
 	rules.Add("services/${appid}", configFile, func(ctx *validation.Context, configSet, path string, content []byte) error {
-		// TODO(vadimsh): Implement.
+		cfg := &admin.TokenServerConfig{}
+		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+			ctx.Errorf("not a valid TokenServerConfig proto message - %s", err)
+			return nil
+		}
+		// These are needed to validate unique_ids are not reused. If this call
+		// fails, the validation callback will be retried.
+		idToCN, err := LoadCAUniqueIDToCNMap(ctx.Context)
+		if err != nil {
+			return errors.Annotate(err, "can't load unique_id map").Tag(transient.Tag).Err()
+		}
+		validateCAConfigs(ctx, cfg, idToCN)
 		return nil
 	})
 
@@ -203,6 +215,37 @@ func decodeCACert(certPem string) (cert *x509.Certificate, certDer []byte, err e
 		return nil, nil, fmt.Errorf("not a CA cert")
 	default:
 		return cert, certDer, nil
+	}
+}
+
+// validateCAConfigs checks correctness of CertificateAuthorityConfig messages.
+//
+// Mapping from unique_id to a cert should be unique in time, so this function
+// also accepts an existing mapping (fetched from the datastore), to verify
+// no IDs are reused.
+func validateCAConfigs(ctx *validation.Context, cfg *admin.TokenServerConfig, idToCN map[int64]string) {
+	seenIDs := make(map[int64]string, len(idToCN))
+	for k, v := range idToCN {
+		seenIDs[k] = v
+	}
+	seenCAs := stringset.New(len(cfg.CertificateAuthority))
+	for _, ca := range cfg.CertificateAuthority {
+		ctx.Enter("CA %q", ca.Cn)
+		if seenCAs.Has(ca.Cn) {
+			ctx.Errorf("duplicate CA entries in the config")
+		} else {
+			seenCAs.Add(ca.Cn)
+		}
+		// Check unique ID is not being reused.
+		if existing, seen := seenIDs[ca.UniqueId]; seen {
+			if existing != ca.Cn {
+				ctx.Errorf("unique_id %d has already been used for CA %q and can't be reused, pick another one",
+					ca.UniqueId, existing)
+			}
+		} else {
+			seenIDs[ca.UniqueId] = ca.Cn
+		}
+		ctx.Exit()
 	}
 }
 
