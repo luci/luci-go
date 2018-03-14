@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -116,10 +117,10 @@ var GlobalRulesCache = NewRulesCache()
 func NewRulesCache() *RulesCache {
 	return &RulesCache{
 		policy: policy.Policy{
-			Name:     serviceAccountsCfg, // used as part of datastore keys
-			Fetch:    fetchConfigs,       // see below
-			Validate: validateConfigs,    // see config_validation.go
-			Prepare:  prepareRules,       // see below
+			Name:     serviceAccountsCfg,   // used as part of datastore keys
+			Fetch:    fetchConfigs,         // see below
+			Validate: validateConfigBundle, // see config_validation.go
+			Prepare:  prepareRules,         // see below
 		},
 	}
 }
@@ -134,7 +135,12 @@ func (rc *RulesCache) ImportConfigs(c context.Context) (rev string, err error) {
 // SetupConfigValidation registers the config validation rules.
 func (rc *RulesCache) SetupConfigValidation(rules *validation.RuleSet) {
 	rules.Add("services/${appid}", serviceAccountsCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
-		// TODO(vadimsh): Implement.
+		cfg := &admin.ServiceAccountsPermissions{}
+		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+			ctx.Errorf("not a valid ServiceAccountsPermissions proto message - %s", err)
+		} else {
+			validateServiceAccountsCfg(ctx, cfg)
+		}
 		return nil
 	})
 }
