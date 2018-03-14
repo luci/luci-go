@@ -103,6 +103,9 @@ func fetchChangesCached(c context.Context, b *buildbot.Build) error {
 func fetchChanges(c context.Context, b *buildbot.Build) error {
 	memcache.Set(c, buildRevCache(c, b))
 
+	// initialize the slice so that when serialized to JSON, it is [], not null.
+	b.Sourcestamp.Changes = []buildbot.Change{}
+
 	host, project, err := gitiles.ParseRepoURL(b.Sourcestamp.Repository)
 	if err != nil {
 		logging.Warningf(
@@ -138,9 +141,12 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 	commits, err := git.Log(c, host, project, b.Sourcestamp.Revision, 50)
 	switch status.Code(err) {
 	case codes.OK:
-		b.Sourcestamp.Changes = make([]buildbot.Change, len(commits))
-		for i, commit := range commits {
-			b.Sourcestamp.Changes[i] = changeFromGitiles(b.Sourcestamp.Repository, "master", commit)
+		for _, commit := range commits {
+			if commit.Id == prevRev {
+				break
+			}
+			change := changeFromGitiles(b.Sourcestamp.Repository, "master", commit)
+			b.Sourcestamp.Changes = append(b.Sourcestamp.Changes, change)
 		}
 		return nil
 
