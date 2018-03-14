@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b34299f2_c618611b",
+        "filename": "machine-db/appengine/database/setup/migrations/011_initialize_dracs.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-14T19:59:16Z",
+      "side": 1,
+      "message": "i assume labs didn\u0027t start using dracs yet",
+      "range": {
+        "startLine": 24,
+        "startChar": 14,
+        "endLine": 24,
+        "endChar": 23
+      },
+      "revId": "f32a0d6381596aed7fd69efb4578d48793af0e6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
