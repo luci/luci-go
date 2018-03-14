@@ -46,7 +46,7 @@ func (*Service) CreateDRAC(c context.Context, req *crimson.CreateDRACRequest) (*
 func (*Service) ListDRACs(c context.Context, req *crimson.ListDRACsRequest) (*crimson.ListDRACsResponse, error) {
 	dracs, err := listDRACs(c, database.Get(c), req)
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListDRACsResponse{
 		Dracs: dracs,
@@ -59,6 +59,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 		return nil, err
 	}
 	ip, _ := common.ParseIPv4(d.Ipv4)
+	mac, _ := common.ParseMAC48(d.MacAddress)
 	tx, err := database.Begin(c)
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
@@ -71,9 +72,9 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	}
 
 	_, err = tx.ExecContext(c, `
-		INSERT INTO dracs (hostname_id, machine_id)
-		VALUES (?, (SELECT id FROM machines WHERE name = ?))
-	`, hostnameId, d.Machine)
+		INSERT INTO dracs (hostname_id, machine_id, switch_id, switchport, mac_address)
+		VALUES (?, (SELECT id FROM machines WHERE name = ?), (SELECT id FROM switches WHERE name = ?), ?, ?)
+	`, hostnameId, d.Machine, d.Switch, d.Switchport, mac)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -81,9 +82,15 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
 			return nil, status.Errorf(codes.AlreadyExists, "duplicate DRAC for machine %q", d.Machine)
+		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'mac_address'"):
+			// e.g. "Error 1062: Duplicate entry '1' for key 'mac_address'".
+			return nil, status.Errorf(codes.AlreadyExists, "duplicate MAC address %q", d.MacAddress)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown machine %q", d.Machine)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'switch_id'"):
+			// e.g. "Error 1048: Column 'switch_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown switch %q", d.Switch)
 		}
 		return nil, internalError(c, errors.Annotate(err, "failed to create DRAC").Err())
 	}
@@ -109,16 +116,23 @@ func listDRACs(c context.Context, q database.QueryerContext, req *crimson.ListDR
 	if err != nil {
 		return nil, err
 	}
+	mac48s, err := parseMAC48s(req.MacAddresses)
+	if err != nil {
+		return nil, err
+	}
 
-	stmt := squirrel.Select("h.name", "h.vlan_id", "m.name", "i.ipv4").
-		From("dracs d, hostnames h, machines m, ips i").
+	stmt := squirrel.Select("h.name", "h.vlan_id", "m.name", "s.name", "d.switchport", "d.mac_address", "i.ipv4").
+		From("dracs d, hostnames h, machines m, switches s, ips i").
 		Where("d.hostname_id = h.id").
 		Where("d.machine_id = m.id").
+		Where("d.switch_id = s.id").
 		Where("i.hostname_id = h.id")
 	stmt = selectInString(stmt, "h.name", req.Names)
 	stmt = selectInString(stmt, "m.name", req.Machines)
 	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
 	stmt = selectInInt64(stmt, "h.vlan_id", req.Vlans)
+	stmt = selectInString(stmt, "s.name", req.Switches)
+	stmt = selectInUint64(stmt, "d.mac_address", mac48s)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
@@ -126,17 +140,19 @@ func listDRACs(c context.Context, q database.QueryerContext, req *crimson.ListDR
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch DRACs").Err()
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch DRACs").Err())
 	}
 	defer rows.Close()
 	var dracs []*crimson.DRAC
 	for rows.Next() {
 		d := &crimson.DRAC{}
 		var ipv4 common.IPv4
-		if err = rows.Scan(&d.Name, &d.Vlan, &d.Machine, &ipv4); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch DRAC").Err()
+		var mac48 common.MAC48
+		if err = rows.Scan(&d.Name, &d.Vlan, &d.Machine, &d.Switch, &d.Switchport, &mac48, &ipv4); err != nil {
+			return nil, internalError(c, errors.Annotate(err, "failed to fetch DRAC").Err())
 		}
 		d.Ipv4 = ipv4.String()
+		d.MacAddress = mac48.String()
 		dracs = append(dracs, d)
 	}
 	return dracs, nil
@@ -151,12 +167,20 @@ func validateDRACForCreation(d *crimson.DRAC) error {
 		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
 	case d.Machine == "":
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
+	case d.Switch == "":
+		return status.Error(codes.InvalidArgument, "switch is required and must be non-empty")
+	case d.Switchport < 1:
+		return status.Error(codes.InvalidArgument, "switchport must be positive")
 	case d.Vlan != 0:
 		return status.Error(codes.InvalidArgument, "VLAN must not be specified, use IP address instead")
 	default:
 		_, err := common.ParseIPv4(d.Ipv4)
 		if err != nil {
 			return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", d.Ipv4)
+		}
+		_, err = common.ParseMAC48(d.MacAddress)
+		if err != nil {
+			return status.Errorf(codes.InvalidArgument, "invalid MAC-48 address %q", d.MacAddress)
 		}
 		return nil
 	}

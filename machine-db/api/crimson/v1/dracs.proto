@@ -17,6 +17,12 @@ message DRAC {
   // The VLAN this DRAC belongs to.
   // When creating a DRAC, omit this field. It will be inferred from the IPv4 address.
   int64 vlan = 4;
+  // The MAC address associated with this DRAC.
+  string mac_address = 5;
+  // The switch this DRAC is connected to.
+  string switch = 6;
+  // The switchport this DRAC is connected to.
+  int32 switchport = 7;
 }
 
 // A request to create a new DRAC in the database.
@@ -35,6 +41,10 @@ message ListDRACsRequest {
   repeated string ipv4s = 3;
   // The VLANs to filter returned DRACs on.
   repeated int64 vlans = 4;
+  // The MAC addresses to filter retrieved DRACs on.
+  repeated string mac_addresses = 5;
+  // The switches to filter retrieved DRACs on.
+  repeated string switches = 6;
 }
 
 // A response containing a list of DRACs in the database.

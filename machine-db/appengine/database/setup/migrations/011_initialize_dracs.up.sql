@@ -18,9 +18,17 @@ CREATE TABLE IF NOT EXISTS dracs (
 	hostname_id int NOT NULL,
 	-- The machine this DRAC belongs to.
 	machine_id int NOT NULL,
+	-- The MAC address associated with this DRAC.
+	mac_address bigint unsigned,
+	-- The switch this DRAC is connected to.
+	switch_id int NOT NULL,
+	-- The switchport this DRAC is connected to.
+	switchport int NOT NULL,
 	PRIMARY KEY (id),
 	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE CASCADE,
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
+	FOREIGN KEY (switch_id) REFERENCES switches (id) ON DELETE RESTRICT,
 	UNIQUE (hostname_id),
-	UNIQUE (machine_id)
+	UNIQUE (machine_id),
+	UNIQUE (mac_address)
 );

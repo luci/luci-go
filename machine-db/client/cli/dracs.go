@@ -30,10 +30,10 @@ func printDRACs(tsv bool, dracs ...*crimson.DRAC) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "Machine", "IP Address", "VLAN")
+			p.Row("Name", "Machine", "MAC Address", "Switch", "Port", "IP Address", "VLAN")
 		}
 		for _, d := range dracs {
-			p.Row(d.Name, d.Machine, d.Ipv4, d.Vlan)
+			p.Row(d.Name, d.Machine, d.MacAddress, d.Switch, d.Switchport, d.Ipv4, d.Vlan)
 		}
 	}
 }
@@ -65,13 +65,16 @@ func (c *AddDRACCmd) Run(app subcommands.Application, args []string, env subcomm
 // addDRACCmd returns a command to add a DRAC.
 func addDRACCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-drac -name <name> -machine <machine> -ipv4 <ip address>",
+		UsageLine: "add-drac -name <name> -machine <machine> -mac <mac address> -switch <switch> -port <port> -ipv4 <ip address>",
 		ShortDesc: "adds a DRAC",
 		LongDesc:  "Adds a DRAC to the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddDRACCmd{}
 			cmd.Flags.StringVar(&cmd.drac.Name, "name", "", "The name of the DRAC. Required and must be unique per machine within the database.")
 			cmd.Flags.StringVar(&cmd.drac.Machine, "machine", "", "The machine this DRAC belongs to. Required and must be the name of a machine returned by get-machines.")
+			cmd.Flags.StringVar(&cmd.drac.MacAddress, "mac", "", "The MAC address of this DRAC. Required and must be a valid MAC-48 address.")
+			cmd.Flags.StringVar(&cmd.drac.Switch, "switch", "", "The switch this DRAC is connected to. Required and must be the name of a switch returned by get-switches.")
+			cmd.Flags.Var(flag.Int32(&cmd.drac.Switchport), "port", "The switchport this DRAC is connected to.")
 			cmd.Flags.StringVar(&cmd.drac.Ipv4, "ipv4", "", "The IPv4 address assigned to this DRAC. Required and must be a free IP address returned by get-ips.")
 			cmd.f.Register(cmd)
 			return cmd
@@ -102,13 +105,15 @@ func (c *GetDRACsCmd) Run(app subcommands.Application, args []string, env subcom
 // getDRACCmd returns a command to get DRACs.
 func getDRACsCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-dracs [-name <name>]... [-machine <machine>]... [-ipv4 <ip address>]... [-vlan <id>]...",
+		UsageLine: "get-dracs [-name <name>]... [-machine <machine>]... [-mac <mac address>]... [-switch <switch>]... [-ipv4 <ip address>]... [-vlan <id>]...",
 		ShortDesc: "retrieves DRACs",
 		LongDesc:  "Retrieves DRACs matching the given names and machines, or all DRACs if names and machines are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDRACsCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a DRAC to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.MacAddresses), "mac", "MAC address to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Switches), "switch", "Name of a switch to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Ipv4S), "ipv4", "IPv4 address to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			cmd.f.Register(cmd)
