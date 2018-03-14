@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8de57542_9f470d77",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-14T19:22:54Z",
+      "side": 1,
+      "message": "looks like I misguided you here, sorry!. The email_notify is a parameter, not property.\nWe need to json.Unmarshal message.Build.ParametersJson here. It also means that `EmailNotify []EmailNotifyValue` should be in Build struct, not InputProperties (and we don\u0027t need InputProperties anymore)",
+      "revId": "aa6a315f08b9f8c3fefc54cca91f7b921543b853",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
