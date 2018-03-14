@@ -192,7 +192,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 			So(err, ShouldErrLike, "bad CN in the certificat")
 		})
 
-		Convey("certificate validation rule", func() {
+		Convey("validation rules", func() {
 			rules := validation.RuleSet{}
 			rules.RegisterVar("appid", func(context.Context) string { return "appid" })
 
@@ -200,6 +200,45 @@ func TestImportCAConfigsRPC(t *testing.T) {
 			rpc.SetupConfigValidation(&rules)
 
 			vctx := validation.Context{Context: ctx}
+
+			validateCfg := func(body string) error {
+				return rules.ValidateConfig(&vctx, "services/appid", "tokenserver.cfg", []byte(body))
+			}
+
+			Convey("malformed config", func() {
+				err := validateCfg(`bad_proto{}`)
+				So(err, ShouldBeNil)
+				So(vctx.Finalize(), ShouldErrLike, "not a valid TokenServerConfig proto message")
+			})
+
+			Convey("good config", func() {
+				// Pretend we have already imported CA with ID 0.
+				StoreCAUniqueIDToCNMap(ctx, map[int64]string{0: "Some CA: abc.example.com"})
+				err := validateCfg(`
+					certificate_authority {
+						unique_id: 0
+						cn: "Some CA: abc.example.com"
+					}
+					certificate_authority {
+						unique_id: 1
+						cn: "Another CA: abc.example.com"
+					}
+				`)
+				So(err, ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("bad config (unique ID reuse)", func() {
+				StoreCAUniqueIDToCNMap(ctx, map[int64]string{10: "known CA"})
+				err := validateCfg(`
+					certificate_authority {
+						unique_id: 10
+						cn: "Some CA: abc.example.com"
+					}
+				`)
+				So(err, ShouldBeNil)
+				So(vctx.Finalize(), ShouldErrLike, "unique_id 10 has already been used")
+			})
 
 			Convey("good cert", func() {
 				err := rules.ValidateConfig(&vctx, "services/appid", "certs/fake.ca.pem", []byte(fakeCACrt))
