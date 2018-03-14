@@ -22,6 +22,30 @@
       "revId": "f32a0d6381596aed7fd69efb4578d48793af0e6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f010237e_f7e4de17",
+        "filename": "machine-db/appengine/database/setup/migrations/011_initialize_dracs.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-14T21:36:30Z",
+      "side": 1,
+      "message": "They are used, but I\u0027m the one that added them all. I will need to delete and re-add or fix them later today.",
+      "parentUuid": "b34299f2_c618611b",
+      "range": {
+        "startLine": 24,
+        "startChar": 14,
+        "endLine": 24,
+        "endChar": 23
+      },
+      "revId": "f32a0d6381596aed7fd69efb4578d48793af0e6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
