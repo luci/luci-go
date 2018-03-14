@@ -16,6 +16,8 @@ func (r *LogRequest) Validate() error {
 		return errors.New("page size must not be negative")
 	case r.Treeish == "":
 		return errors.New("treeish is required")
+	case strings.Contains(r.Treeish, ".."):
+		return errors.New("treeish cannot contain \"..\"; use Ancestor instead")
 	default:
 		return nil
 	}
