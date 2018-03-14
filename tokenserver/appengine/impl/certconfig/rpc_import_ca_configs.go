@@ -154,8 +154,17 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 
 // SetupConfigValidation registers the config validation rules.
 func (r *ImportCAConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
+	// Validate CA config protos are well-formed.
 	rules.Add("services/${appid}", configFile, func(ctx *validation.Context, configSet, path string, content []byte) error {
 		// TODO(vadimsh): Implement.
+		return nil
+	})
+
+	// Validate the CA certificates are well-formed.
+	rules.Add("services/${appid}", `regex:certs/.*\.pem`, func(ctx *validation.Context, configSet, path string, content []byte) error {
+		if _, _, err := decodeCACert(string(content)); err != nil {
+			ctx.Errorf("bad CA certificate file - %s", err)
+		}
 		return nil
 	})
 }
@@ -179,22 +188,28 @@ func fetchConfigFile(c context.Context, path string) (string, *config.Meta, erro
 	return content, &meta, nil
 }
 
+// decodeCACert parses x509 pem-encoded certificate and checks it is a CA cert.
+//
+// Returns the decoded cert, as well as its der-encoded representation.
+func decodeCACert(certPem string) (cert *x509.Certificate, certDer []byte, err error) {
+	certDer, err = utils.ParsePEM(certPem, "CERTIFICATE")
+	if err != nil {
+		return nil, nil, fmt.Errorf("bad PEM - %s", err)
+	}
+	switch cert, err = x509.ParseCertificate(certDer); {
+	case err != nil:
+		return nil, nil, fmt.Errorf("bad cert - %s", err)
+	case !cert.IsCA:
+		return nil, nil, fmt.Errorf("not a CA cert")
+	default:
+		return cert, certDer, nil
+	}
+}
+
 // importCA imports CA definition from the config (or updates an existing one).
 func importCA(c context.Context, ca *admin.CertificateAuthorityConfig, certPem string, rev string) error {
-	// Read CA certificate file, convert it to der.
-	certDer, err := utils.ParsePEM(certPem, "CERTIFICATE")
-	if err != nil {
-		return fmt.Errorf("bad PEM - %s", err)
-	}
-
-	// Check the certificate makes sense.
-	cert, err := x509.ParseCertificate(certDer)
-	if err != nil {
-		return fmt.Errorf("bad cert - %s", err)
-	}
-	if !cert.IsCA {
-		return fmt.Errorf("not a CA cert")
-	}
+	// Deserialize the cert and check its name matches the name in the config.
+	cert, certDer, err := decodeCACert(certPem)
 	if cert.Subject.CommonName != ca.Cn {
 		return fmt.Errorf("bad CN in the certificate, expecting %q, got %q", ca.Cn, cert.Subject.CommonName)
 	}

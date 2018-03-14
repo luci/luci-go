@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
@@ -33,6 +34,8 @@ import (
 )
 
 func TestImportCAConfigsRPC(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mock context", t, func() {
 		ctx := gaetesting.TestingContext()
 
@@ -187,6 +190,28 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				}
 			`)
 			So(err, ShouldErrLike, "bad CN in the certificat")
+		})
+
+		Convey("certificate validation rule", func() {
+			rules := validation.RuleSet{}
+			rules.RegisterVar("appid", func(context.Context) string { return "appid" })
+
+			rpc := ImportCAConfigsRPC{}
+			rpc.SetupConfigValidation(&rules)
+
+			vctx := validation.Context{Context: ctx}
+
+			Convey("good cert", func() {
+				err := rules.ValidateConfig(&vctx, "services/appid", "certs/fake.ca.pem", []byte(fakeCACrt))
+				So(err, ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("bad cert", func() {
+				err := rules.ValidateConfig(&vctx, "services/appid", "certs/fake.ca.pem", []byte("?????"))
+				So(err, ShouldBeNil)
+				So(vctx.Finalize(), ShouldErrLike, "bad CA certificate file - bad PEM")
+			})
 		})
 	})
 }
