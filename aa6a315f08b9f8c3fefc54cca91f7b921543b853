@@ -16,6 +16,24 @@
       "revId": "aa6a315f08b9f8c3fefc54cca91f7b921543b853",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "434821dd_cc1d3208",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-14T20:22:15Z",
+      "side": 1,
+      "message": "That makes sense to me. Thanks!\n\nI started looking at this, didn\u0027t get very far, and swapped back to my other big swarming blocker (fixing swarming builds that run hwlab tests). I\u0027ve just sent off the CLs for that, so your timing is perfect. ;\u003e",
+      "parentUuid": "8de57542_9f470d77",
+      "revId": "aa6a315f08b9f8c3fefc54cca91f7b921543b853",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
