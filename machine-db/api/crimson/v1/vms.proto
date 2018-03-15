@@ -44,9 +44,16 @@ message ListVMsRequest {
   repeated string names = 1;
   // The VLANs to filter retrieved VMs on.
   repeated int64 vlans = 2;
-  // The IPv4 addresses to filter returned VMs on.
+  // The IPv4 addresses to filter retrieved VMs on.
   repeated string ipv4s = 3;
-  // TODO(smut): Add the rest of the filters.
+  // The physical hosts to filter retrieved VMs on.
+  repeated string hosts = 4;
+  // The physical host VLANs to filter retrieved VMs on.
+  repeated int64 host_vlans = 5;
+  // The operating system to filter retrieved VMs on.
+  repeated string oses = 6;
+  // The states to filter retrieved VMs on.
+  repeated common.State states = 10;
 }
 
 // A response containing a list of VMs in the database.
