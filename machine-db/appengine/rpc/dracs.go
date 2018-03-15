@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -51,6 +52,11 @@ func (*Service) ListDRACs(c context.Context, req *crimson.ListDRACsRequest) (*cr
 	return &crimson.ListDRACsResponse{
 		Dracs: dracs,
 	}, nil
+}
+
+// UpdateDRAC handles a request to update an existing DRAC.
+func (*Service) UpdateDRAC(c context.Context, req *crimson.UpdateDRACRequest) (*crimson.DRAC, error) {
+	return updateDRAC(c, req.Drac, req.UpdateMask)
 }
 
 // createDRAC creates a new DRAC in the database.
@@ -158,6 +164,77 @@ func listDRACs(c context.Context, q database.QueryerContext, req *crimson.ListDR
 	return dracs, nil
 }
 
+// updateDRAC updates an existing DRAC in the database.
+func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) (*crimson.DRAC, error) {
+	if err := validateDRACForUpdate(d, mask); err != nil {
+		return nil, err
+	}
+	stmt := squirrel.Update("dracs")
+	for _, path := range mask.Paths {
+		switch path {
+		case "machine":
+			stmt = stmt.Set("machine_id", squirrel.Expr("(SELECT id FROM machines WHERE name = ?)", d.Machine))
+		case "mac_address":
+			mac, _ := common.ParseMAC48(d.MacAddress)
+			stmt = stmt.Set("mac_address", mac)
+		case "switch":
+			stmt = stmt.Set("switch_id", squirrel.Expr("(SELECT id FROM switches WHERE name = ?)", d.Switch))
+		case "switchport":
+			stmt = stmt.Set("switchport", d.Switchport)
+		}
+	}
+	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", d.Name, d.Vlan)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+	}
+
+	tx, err := database.Begin(c)
+	if err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+	}
+	defer tx.MaybeRollback(c)
+
+	_, err = tx.ExecContext(c, query, args...)
+	if err != nil {
+		switch e, ok := err.(*mysql.MySQLError); {
+		case !ok:
+			// Type assertion failed.
+		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'machine_id'"):
+			// e.g. "Error 1062: Duplicate entry '1' for key 'machine_id'".
+			return nil, status.Errorf(codes.AlreadyExists, "duplicate DRAC for machine %q", d.Machine)
+		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'mac_address'"):
+			// e.g. "Error 1062: Duplicate entry '1234567890' for key 'mac_address'".
+			return nil, status.Errorf(codes.AlreadyExists, "duplicate MAC address %q", d.MacAddress)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
+			// e.g. "Error 1048: Column 'switch_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown machine %q", d.Machine)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'switch_id'"):
+			// e.g. "Error 1048: Column 'switch_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "unknown switch %q", d.Switch)
+		}
+		return nil, internalError(c, errors.Annotate(err, "failed to update DRAC").Err())
+	}
+	// The number of rows affected cannot distinguish between zero because the NIC didn't exist
+	// and zero because the row already matched, so skip looking at the number of rows affected.
+
+	dracs, err := listDRACs(c, tx, &crimson.ListDRACsRequest{
+		Names: []string{d.Name},
+		Vlans: []int64{d.Vlan},
+	})
+	switch {
+	case err != nil:
+		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated DRAC").Err())
+	case len(dracs) == 0:
+		return nil, status.Errorf(codes.NotFound, "unknown DRAC %q for VLAN %d", d.Name, d.Vlan)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+	}
+	return dracs[0], nil
+}
+
 // validateDRACForCreation validates a DRAC for creation.
 func validateDRACForCreation(d *crimson.DRAC) error {
 	switch {
@@ -184,4 +261,50 @@ func validateDRACForCreation(d *crimson.DRAC) error {
 		}
 		return nil
 	}
+}
+
+// validateDRACForUpdate validates a DRAC for update.
+func validateDRACForUpdate(d *crimson.DRAC, mask *field_mask.FieldMask) error {
+	switch err := validateUpdateMask(mask); {
+	case d == nil:
+		return status.Error(codes.InvalidArgument, "DRAC specification is required")
+	case d.Name == "":
+		return status.Error(codes.InvalidArgument, "DRAC name is required and must be non-empty")
+	case d.Vlan < 1:
+		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
+	case err != nil:
+		return err
+	}
+	for _, path := range mask.Paths {
+		// TODO(smut): Allow IPv4 address to be updated.
+		switch path {
+		case "name":
+			return status.Error(codes.InvalidArgument, "DRAC name cannot be updated, delete and create a new DRAC instead")
+		case "vlan":
+			return status.Error(codes.InvalidArgument, "VLAN cannot be updated, delete and create a new DRAC instead")
+		case "machine":
+			if d.Machine == "" {
+				return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
+			}
+		case "mac_address":
+			if d.MacAddress == "" {
+				return status.Error(codes.InvalidArgument, "MAC address is required and must be non-empty")
+			}
+			_, err := common.ParseMAC48(d.MacAddress)
+			if err != nil {
+				return status.Errorf(codes.InvalidArgument, "invalid MAC-48 address %q", d.MacAddress)
+			}
+		case "switch":
+			if d.Switch == "" {
+				return status.Error(codes.InvalidArgument, "switch is required and must be non-empty")
+			}
+		case "switchport":
+			if d.Switchport < 1 {
+				return status.Error(codes.InvalidArgument, "switchport must be positive")
+			}
+		default:
+			return status.Errorf(codes.InvalidArgument, "unsupported update mask path %q", path)
+		}
+	}
+	return nil
 }

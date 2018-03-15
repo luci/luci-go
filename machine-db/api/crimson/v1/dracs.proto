@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package crimson;
 
+import "google/protobuf/field_mask.proto";
+
 // A DRAC in the database.
 message DRAC {
   // The name of this DRAC on the network. With VLAN, uniquely identifies this DRAC.
@@ -52,4 +54,12 @@ message ListDRACsResponse {
   // The DRACs matching this request.
   repeated DRAC dracs = 1;
   // TODO(smut): Support page tokens.
+}
+
+// A request to update a DRAC in the database.
+message UpdateDRACRequest {
+  // The DRAC to update in the database.
+  DRAC drac = 1;
+  // The fields to update in the DRAC.
+  google.protobuf.FieldMask update_mask = 2;
 }

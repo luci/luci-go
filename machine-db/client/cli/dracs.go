@@ -82,6 +82,56 @@ func addDRACCmd() *subcommands.Command {
 	}
 }
 
+// EditDRACCmd is the command to edit a DRAC.
+type EditDRACCmd struct {
+	subcommands.CommandRunBase
+	drac crimson.DRAC
+	f    FormattingFlags
+}
+
+// Run runs the command to edit a DRAC.
+func (c *EditDRACCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(app, c, env)
+	// TODO(smut): Validate required fields client-side.
+	req := &crimson.UpdateDRACRequest{
+		Drac: &c.drac,
+		UpdateMask: getUpdateMask(&c.Flags, map[string]string{
+			"machine": "machine",
+			"mac":     "mac_address",
+			"switch":  "switch",
+			"port":    "switchport",
+		}),
+	}
+	client := getClient(ctx)
+	resp, err := client.UpdateDRAC(ctx, req)
+	if err != nil {
+		errors.Log(ctx, err)
+		return 1
+	}
+	printDRACs(c.f.tsv, resp)
+	return 0
+}
+
+// editDRACCmd returns a command to edit a DRAC.
+func editDRACCmd() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "edit-drac -name <name> -vlan <id> [-machine <machine>] [-mac <mac address>] [-switch <switch>] [-port <switch port>]",
+		ShortDesc: "edit a DRAC",
+		LongDesc:  "Edits a DRAC in the database.",
+		CommandRun: func() subcommands.CommandRun {
+			cmd := &EditDRACCmd{}
+			cmd.Flags.StringVar(&cmd.drac.Name, "name", "", "The name of the DRAC. Required and must be the name of a DRAC returned by get-dracs.")
+			cmd.Flags.Int64Var(&cmd.drac.Vlan, "vlan", 0, "The VLAN this DRAC belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
+			cmd.Flags.StringVar(&cmd.drac.Machine, "machine", "", "The machine this DRAC belongs to. Must be the name of a machine returned by get-machines.")
+			cmd.Flags.StringVar(&cmd.drac.MacAddress, "mac", "", "The MAC address of this DRAC. Must be a valid MAC-48 address.")
+			cmd.Flags.StringVar(&cmd.drac.Switch, "switch", "", "The switch this DRAC is connected to. Must be the name of a switch returned by get-switches.")
+			cmd.Flags.Var(flag.Int32(&cmd.drac.Switchport), "port", "The switchport this DRAC is connected to.")
+			cmd.f.Register(cmd)
+			return cmd
+		},
+	}
+}
+
 // GetDRACsCmd is the command to get DRACs.
 type GetDRACsCmd struct {
 	subcommands.CommandRunBase
