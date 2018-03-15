@@ -46,6 +46,30 @@
       "revId": "f32a0d6381596aed7fd69efb4578d48793af0e6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c550364e_dd863e15",
+        "filename": "machine-db/appengine/database/setup/migrations/011_initialize_dracs.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-15T00:12:51Z",
+      "side": 1,
+      "message": "They said dracs were not very important so I just dropped the table then re-added them with the new required columns.",
+      "parentUuid": "f010237e_f7e4de17",
+      "range": {
+        "startLine": 24,
+        "startChar": 14,
+        "endLine": 24,
+        "endChar": 23
+      },
+      "revId": "f32a0d6381596aed7fd69efb4578d48793af0e6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
