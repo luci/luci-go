@@ -36,9 +36,6 @@ const vlansFilename = "vlans.cfg"
 // vlanMaxId is the highest ID a VLAN may have.
 const vlanMaxId = 65535
 
-// vlanMaxCIDRBlocks is the maximum number of CIDR blocks a VLAN may have.
-const vlanMaxCIDRBlocks = 32
-
 // vlanMinCIDRBlockSuffix is the minimum suffix of a CIDR block.
 // This limits the length of CIDR blocks. Each block contains 2^(32 - suffix) IP addresses.
 const vlanMinCIDRBlockSuffix = 18
@@ -84,24 +81,14 @@ func validateVLANs(c *validation.Context, cfg *configPB.VLANs) {
 		}
 		vlans[vlan.Id] = struct{}{}
 		c.Enter("VLAN %d", vlan.Id)
-		switch {
-		case len(vlan.CidrBlock) < 1:
-			c.Errorf("VLANs must have at least one CIDR block")
-		case len(vlan.CidrBlock) > vlanMaxCIDRBlocks:
-			c.Errorf("VLANs must have at most %d CIDR blocks", vlanMaxCIDRBlocks)
-		}
-		for _, block := range vlan.CidrBlock {
-			c.Enter("CIDR block %q", vlan.CidrBlock)
-			_, subnet, err := net.ParseCIDR(block)
-			if err != nil {
-				c.Errorf("invalid CIDR block")
-			} else {
-				ones, _ := subnet.Mask.Size()
-				if ones < vlanMinCIDRBlockSuffix {
-					c.Errorf("CIDR block suffix must be at least %d", vlanMinCIDRBlockSuffix)
-				}
+		_, subnet, err := net.ParseCIDR(vlan.CidrBlock)
+		if err != nil {
+			c.Errorf("invalid CIDR block")
+		} else {
+			ones, _ := subnet.Mask.Size()
+			if ones < vlanMinCIDRBlockSuffix {
+				c.Errorf("CIDR block suffix must be at least %d", vlanMinCIDRBlockSuffix)
 			}
-			c.Exit()
 		}
 		c.Exit()
 		// TODO(smut): Check that CIDR blocks are disjoint.

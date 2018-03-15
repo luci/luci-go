@@ -89,17 +89,12 @@ func TestIPs(t *testing.T) {
 		Convey("addition", func() {
 			vlans := []*config.VLAN{
 				{
-					Id: 1,
-					CidrBlock: []string{
-						"127.0.0.1/31",
-					},
+					Id:        1,
+					CidrBlock: "127.0.0.1/31",
 				},
 				{
-					Id: 2,
-					CidrBlock: []string{
-						"192.168.0.0/32",
-						"192.169.0.0/31",
-					},
+					Id:        2,
+					CidrBlock: "192.168.0.0/32",
 				},
 			}
 			table.computeChanges(c, vlans)
@@ -116,14 +111,6 @@ func TestIPs(t *testing.T) {
 					IPv4:   3232235520,
 					VLANId: 2,
 				},
-				{
-					IPv4:   3232301056,
-					VLANId: 2,
-				},
-				{
-					IPv4:   3232301057,
-					VLANId: 2,
-				},
 			})
 			So(table.updates, ShouldBeEmpty)
 			So(table.removals, ShouldBeEmpty)
@@ -137,10 +124,8 @@ func TestIPs(t *testing.T) {
 			})
 			vlans := []*config.VLAN{
 				{
-					Id: 20,
-					CidrBlock: []string{
-						"127.0.0.0/32",
-					},
+					Id:        20,
+					CidrBlock: "127.0.0.0/32",
 				},
 			}
 			table.computeChanges(c, vlans)

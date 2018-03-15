@@ -14,8 +14,8 @@ message VLAN {
   int64 id = 1;
   // An alias for this VLAN.
   string alias = 2;
-  // The blocks of IPv4 addresses belonging to this VLAN.
-  repeated string cidr_block = 3;
+  // The block of IPv4 addresses belonging to this VLAN.
+  string cidr_block = 3;
   // The state of this VLAN.
   common.State state = 4;
 }

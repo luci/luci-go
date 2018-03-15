@@ -43,9 +43,7 @@ func TestValidateVLANs(t *testing.T) {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
+						CidrBlock: "127.0.0.1/32",
 					},
 				},
 			}
@@ -57,10 +55,8 @@ func TestValidateVLANs(t *testing.T) {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						Id: -1,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
+						Id:        -1,
+						CidrBlock: "127.0.0.1/32",
 					},
 				},
 			}
@@ -72,10 +68,8 @@ func TestValidateVLANs(t *testing.T) {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						Id: 0,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
+						Id:        0,
+						CidrBlock: "127.0.0.1/32",
 					},
 				},
 			}
@@ -87,10 +81,8 @@ func TestValidateVLANs(t *testing.T) {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						Id: 65536,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
+						Id:        65536,
+						CidrBlock: "127.0.0.1/32",
 					},
 				},
 			}
@@ -102,22 +94,16 @@ func TestValidateVLANs(t *testing.T) {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						Id: 1,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
+						Id:        1,
+						CidrBlock: "127.0.0.1/32",
 					},
 					{
-						Id: 2,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
+						Id:        2,
+						CidrBlock: "127.0.0.1/32",
 					},
 					{
-						Id: 1,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
+						Id:        1,
+						CidrBlock: "127.0.0.1/32",
 					},
 				},
 			}
@@ -125,52 +111,12 @@ func TestValidateVLANs(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate VLAN")
 		})
 
-		Convey("missing CIDR blocks", func() {
-			vlans := &config.VLANs{
-				Vlan: []*config.VLAN{
-					{
-						Id: 1,
-					},
-				},
-			}
-			validateVLANs(context, vlans)
-			So(context.Finalize(), ShouldErrLike, "VLANs must have at least one CIDR block")
-		})
-
-		Convey("zero CIDR blocks", func() {
-			vlans := &config.VLANs{
-				Vlan: []*config.VLAN{
-					{
-						Id:        1,
-						CidrBlock: []string{},
-					},
-				},
-			}
-			validateVLANs(context, vlans)
-			So(context.Finalize(), ShouldErrLike, "VLANs must have at least one CIDR block")
-		})
-
-		Convey("excessive CIDR blocks", func() {
-			vlans := &config.VLANs{
-				Vlan: []*config.VLAN{
-					{
-						Id:        1,
-						CidrBlock: make([]string, 33),
-					},
-				},
-			}
-			validateVLANs(context, vlans)
-			So(context.Finalize(), ShouldErrLike, "VLANs must have at most 32 CIDR blocks")
-		})
-
 		Convey("invalid CIDR block", func() {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						Id: 1,
-						CidrBlock: []string{
-							"512.0.0.1/128",
-						},
+						Id:        1,
+						CidrBlock: "512.0.0.1/128",
 					},
 				},
 			}
@@ -182,10 +128,8 @@ func TestValidateVLANs(t *testing.T) {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						Id: 1,
-						CidrBlock: []string{
-							"127.0.0.1/1",
-						},
+						Id:        1,
+						CidrBlock: "127.0.0.1/1",
 					},
 				},
 			}
@@ -197,18 +141,14 @@ func TestValidateVLANs(t *testing.T) {
 			vlans := &config.VLANs{
 				Vlan: []*config.VLAN{
 					{
-						Id: 1,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
-						State: common.State_SERVING,
+						Id:        1,
+						CidrBlock: "127.0.0.1/32",
+						State:     common.State_SERVING,
 					},
 					{
-						Id: 2,
-						CidrBlock: []string{
-							"127.0.0.1/32",
-						},
-						State: common.State_PRERELEASE,
+						Id:        2,
+						CidrBlock: "127.0.0.1/32",
+						State:     common.State_PRERELEASE,
 					},
 				},
 			}
