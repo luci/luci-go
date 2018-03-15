@@ -65,14 +65,14 @@ func (c *AddVMCmd) Run(app subcommands.Application, args []string, env subcomman
 // addVMCmd returns a command to add a VM.
 func addVMCmd() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-vm -name <name> -host <name> -vlan <id> -os <os> -ipv4 <ip address> -state <state> [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "add-vm -name <name> -host <name> -hvlan <id> -os <os> -ipv4 <ip address> -state <state> [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a VM",
 		LongDesc:  "Adds a VM to the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddVMCmd{}
 			cmd.Flags.StringVar(&cmd.vm.Name, "name", "", "The name of this VM on the network. Required and must be unique per VLAN within the database.")
 			cmd.Flags.StringVar(&cmd.vm.Host, "host", "", "The physical host backing this VM. Required and must be the name of a physical host returned by get-hosts.")
-			cmd.Flags.Int64Var(&cmd.vm.HostVlan, "vlan", 0, "The VLAN the physical host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
+			cmd.Flags.Int64Var(&cmd.vm.HostVlan, "hvlan", 0, "The VLAN the physical host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.Var(StateFlag(&cmd.vm.State), "state", "The state of this VM. Required and must be the name of a state returned by get-states.")
 			cmd.Flags.StringVar(&cmd.vm.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
 			cmd.Flags.StringVar(&cmd.vm.Ipv4, "ipv4", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
