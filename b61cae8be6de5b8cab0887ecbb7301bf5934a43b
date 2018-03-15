@@ -16,6 +16,24 @@
       "revId": "b61cae8be6de5b8cab0887ecbb7301bf5934a43b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b448d81b_7c7d9f3a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-15T21:17:08Z",
+      "side": 1,
+      "message": "Oh... the anonymous struct in build.go ParseMessage has a properties member.\n\nI think the data transformations along the way are starting to be a lot less magical.\n\nDone.",
+      "parentUuid": "913e614b_9129fade",
+      "revId": "b61cae8be6de5b8cab0887ecbb7301bf5934a43b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
