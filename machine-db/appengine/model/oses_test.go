@@ -22,7 +22,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 
-	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -35,8 +34,8 @@ func TestOSes(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `^SELECT id, name, description, state FROM oses$`
-		columns := []string{"id", "name", "description", "state"}
+		selectStmt := `^SELECT id, name, description FROM oses$`
+		columns := []string{"id", "name", "description"}
 		rows := sqlmock.NewRows(columns)
 		table := &OSesTable{}
 
@@ -55,8 +54,8 @@ func TestOSes(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			rows.AddRow(1, "os 1", "description 1", common.State_FREE)
-			rows.AddRow(2, "os 2", "description 2", common.State_SERVING)
+			rows.AddRow(1, "os 1", "description 1")
+			rows.AddRow(2, "os 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*OS{
@@ -64,7 +63,6 @@ func TestOSes(t *testing.T) {
 					OS: config.OS{
 						Name:        "os 1",
 						Description: "description 1",
-						State:       common.State_FREE,
 					},
 					Id: 1,
 				},
@@ -72,7 +70,6 @@ func TestOSes(t *testing.T) {
 					OS: config.OS{
 						Name:        "os 2",
 						Description: "description 2",
-						State:       common.State_SERVING,
 					},
 					Id: 2,
 				},
@@ -97,12 +94,10 @@ func TestOSes(t *testing.T) {
 				{
 					Name:        "os 1",
 					Description: "description 1",
-					State:       common.State_FREE,
 				},
 				{
 					Name:        "os 2",
 					Description: "description 2",
-					State:       common.State_SERVING,
 				},
 			}
 			table.computeChanges(c, oses)
@@ -111,14 +106,12 @@ func TestOSes(t *testing.T) {
 					OS: config.OS{
 						Name:        "os 1",
 						Description: "description 1",
-						State:       common.State_FREE,
 					},
 				},
 				{
 					OS: config.OS{
 						Name:        "os 2",
 						Description: "description 2",
-						State:       common.State_SERVING,
 					},
 				},
 			})
@@ -131,7 +124,6 @@ func TestOSes(t *testing.T) {
 				OS: config.OS{
 					Name:        "os",
 					Description: "old description",
-					State:       common.State_FREE,
 				},
 				Id: 1,
 			})
@@ -139,7 +131,6 @@ func TestOSes(t *testing.T) {
 				{
 					Name:        table.current[0].Name,
 					Description: "new description",
-					State:       common.State_SERVING,
 				},
 			}
 			table.computeChanges(c, oses)
@@ -150,7 +141,6 @@ func TestOSes(t *testing.T) {
 					OS: config.OS{
 						Name:        table.current[0].Name,
 						Description: oses[0].Description,
-						State:       oses[0].State,
 					},
 					Id: table.current[0].Id,
 				},
@@ -183,7 +173,7 @@ func TestOSes(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `^INSERT INTO oses \(name, description, state\) VALUES \(\?, \?, \?\)$`
+		insertStmt := `^INSERT INTO oses \(name, description\) VALUES \(\?, \?\)$`
 		table := &OSesTable{}
 
 		Convey("empty", func() {
@@ -316,7 +306,7 @@ func TestOSes(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		updateStmt := `^UPDATE oses SET description = \?, state = \? WHERE id = \?$`
+		updateStmt := `^UPDATE oses SET description = \? WHERE id = \?$`
 		table := &OSesTable{}
 
 		Convey("empty", func() {
@@ -331,7 +321,6 @@ func TestOSes(t *testing.T) {
 				OS: config.OS{
 					Name:        "os",
 					Description: "new description",
-					State:       common.State_SERVING,
 				},
 				Id: 1,
 			})
@@ -339,7 +328,6 @@ func TestOSes(t *testing.T) {
 				OS: config.OS{
 					Name:        table.updates[0].Name,
 					Description: "old description",
-					State:       common.State_FREE,
 				},
 				Id: table.updates[0].Id,
 			})
@@ -355,7 +343,6 @@ func TestOSes(t *testing.T) {
 				OS: config.OS{
 					Name:        "os",
 					Description: "new description",
-					State:       common.State_SERVING,
 				},
 				Id: 1,
 			})
@@ -363,7 +350,6 @@ func TestOSes(t *testing.T) {
 				OS: config.OS{
 					Name:        table.updates[0].Name,
 					Description: "old description",
-					State:       common.State_FREE,
 				},
 				Id: table.updates[0].Id,
 			})
@@ -380,7 +366,6 @@ func TestOSes(t *testing.T) {
 				OS: config.OS{
 					Name:        "os",
 					Description: "new description",
-					State:       common.State_SERVING,
 				},
 				Id: 1,
 			})
@@ -388,7 +373,6 @@ func TestOSes(t *testing.T) {
 				OS: config.OS{
 					Name:        table.updates[0].Name,
 					Description: "old description",
-					State:       common.State_FREE,
 				},
 				Id: table.updates[0].Id,
 			})
@@ -398,7 +382,6 @@ func TestOSes(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.current, ShouldHaveLength, 1)
 			So(table.current[0].Description, ShouldEqual, "new description")
-			So(table.current[0].State, ShouldEqual, common.State_SERVING)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})

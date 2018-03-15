@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 
-	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -38,10 +37,10 @@ func TestListPlatforms(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT p.name, p.description, p.state
-			FROM platforms p$
+			^SELECT name, description
+			FROM platforms$
 		`
-		columns := []string{"p.name", "p.description", "p.state"}
+		columns := []string{"p.name", "p.description"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -64,8 +63,8 @@ func TestListPlatforms(t *testing.T) {
 
 		Convey("no matches", func() {
 			names := stringset.NewFromSlice("platform")
-			rows.AddRow("platform 1", "description 1", common.State_FREE)
-			rows.AddRow("platform 2", "description 2", common.State_SERVING)
+			rows.AddRow("platform 1", "description 1")
+			rows.AddRow("platform 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			platforms, err := listPlatforms(c, names)
 			So(err, ShouldBeNil)
@@ -75,9 +74,9 @@ func TestListPlatforms(t *testing.T) {
 
 		Convey("matches", func() {
 			names := stringset.NewFromSlice("platform 2", "platform 3")
-			rows.AddRow("platform 1", "description 1", common.State_FREE)
-			rows.AddRow("platform 2", "description 2", common.State_SERVING)
-			rows.AddRow("platform 3", "description 3", common.State_REPAIR)
+			rows.AddRow("platform 1", "description 1")
+			rows.AddRow("platform 2", "description 2")
+			rows.AddRow("platform 3", "description 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			platforms, err := listPlatforms(c, names)
 			So(err, ShouldBeNil)
@@ -85,12 +84,10 @@ func TestListPlatforms(t *testing.T) {
 				{
 					Name:        "platform 2",
 					Description: "description 2",
-					State:       common.State_SERVING,
 				},
 				{
 					Name:        "platform 3",
 					Description: "description 3",
-					State:       common.State_REPAIR,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -98,8 +95,8 @@ func TestListPlatforms(t *testing.T) {
 
 		Convey("ok", func() {
 			names := stringset.New(0)
-			rows.AddRow("platform 1", "description 1", common.State_FREE)
-			rows.AddRow("platform 2", "description 2", common.State_SERVING)
+			rows.AddRow("platform 1", "description 1")
+			rows.AddRow("platform 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			platforms, err := listPlatforms(c, names)
 			So(err, ShouldBeNil)
@@ -107,12 +104,10 @@ func TestListPlatforms(t *testing.T) {
 				{
 					Name:        "platform 1",
 					Description: "description 1",
-					State:       common.State_FREE,
 				},
 				{
 					Name:        "platform 2",
 					Description: "description 2",
-					State:       common.State_SERVING,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)

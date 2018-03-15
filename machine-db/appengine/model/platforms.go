@@ -47,7 +47,7 @@ type PlatformsTable struct {
 func (t *PlatformsTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT id, name, description, state
+		SELECT id, name, description
 		FROM platforms
 	`)
 	if err != nil {
@@ -56,7 +56,7 @@ func (t *PlatformsTable) fetch(c context.Context) error {
 	defer rows.Close()
 	for rows.Next() {
 		p := &Platform{}
-		if err := rows.Scan(&p.Id, &p.Name, &p.Description, &p.State); err != nil {
+		if err := rows.Scan(&p.Id, &p.Name, &p.Description); err != nil {
 			return errors.Annotate(err, "failed to scan platform").Err()
 		}
 		t.current = append(t.current, p)
@@ -66,7 +66,7 @@ func (t *PlatformsTable) fetch(c context.Context) error {
 
 // needsUpdate returns true if the given row needs to be updated to match the given config.
 func (*PlatformsTable) needsUpdate(row, cfg *Platform) bool {
-	return row.Description != cfg.Description || row.State != cfg.State
+	return row.Description != cfg.Description
 }
 
 // computeChanges computes the changes that need to be made to the platforms in the database.
@@ -77,7 +77,6 @@ func (t *PlatformsTable) computeChanges(c context.Context, platforms []*config.P
 			Platform: config.Platform{
 				Name:        cfg.Name,
 				Description: cfg.Description,
-				State:       cfg.State,
 			},
 		}
 	}
@@ -117,8 +116,8 @@ func (t *PlatformsTable) add(c context.Context) error {
 
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO platforms (name, description, state)
-		VALUES (?, ?, ?)
+		INSERT INTO platforms (name, description)
+		VALUES (?, ?)
 	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
@@ -128,7 +127,7 @@ func (t *PlatformsTable) add(c context.Context) error {
 	// Add each platform to the database, and update the slice of platforms with each addition.
 	for len(t.additions) > 0 {
 		p := t.additions[0]
-		result, err := stmt.ExecContext(c, p.Name, p.Description, p.State)
+		result, err := stmt.ExecContext(c, p.Name, p.Description)
 		if err != nil {
 			return errors.Annotate(err, "failed to add platform %q", p.Name).Err()
 		}
@@ -197,7 +196,7 @@ func (t *PlatformsTable) update(c context.Context) error {
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
 		UPDATE platforms
-		SET description = ?, state = ?
+		SET description = ?
 		WHERE id = ?
 	`)
 	if err != nil {
@@ -212,13 +211,12 @@ func (t *PlatformsTable) update(c context.Context) error {
 		for _, p := range t.current {
 			if u, ok := updated[p.Id]; ok {
 				p.Description = u.Description
-				p.State = u.State
 			}
 		}
 	}()
 	for len(t.updates) > 0 {
 		p := t.updates[0]
-		if _, err := stmt.ExecContext(c, p.Description, p.State, p.Id); err != nil {
+		if _, err := stmt.ExecContext(c, p.Description, p.Id); err != nil {
 			return errors.Annotate(err, "failed to update platform %q", p.Name).Err()
 		}
 		updated[p.Id] = p

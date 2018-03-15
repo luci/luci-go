@@ -20,7 +20,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/config/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,12 +72,10 @@ func TestValidateOSes(t *testing.T) {
 			oses := &config.OSes{
 				OperatingSystem: []*config.OS{
 					{
-						Name:  "os 1",
-						State: common.State_SERVING,
+						Name: "os 1",
 					},
 					{
-						Name:  "os 2",
-						State: common.State_PRERELEASE,
+						Name: "os 2",
 					},
 				},
 			}

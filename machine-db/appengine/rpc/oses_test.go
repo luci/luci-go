@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 
-	"go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -38,10 +37,10 @@ func TestListOSes(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT os.name, os.description, os.state
-			FROM oses os$
+			^SELECT name, description
+			FROM oses$
 		`
-		columns := []string{"os.name", "os.description", "os.state"}
+		columns := []string{"os.name", "os.description"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -64,8 +63,8 @@ func TestListOSes(t *testing.T) {
 
 		Convey("no matches", func() {
 			names := stringset.NewFromSlice("os")
-			rows.AddRow("os 1", "description 1", common.State_FREE)
-			rows.AddRow("os 2", "description 2", common.State_SERVING)
+			rows.AddRow("os 1", "description 1")
+			rows.AddRow("os 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			oses, err := listOSes(c, names)
 			So(err, ShouldBeNil)
@@ -75,9 +74,9 @@ func TestListOSes(t *testing.T) {
 
 		Convey("matches", func() {
 			names := stringset.NewFromSlice("os 2", "os 3")
-			rows.AddRow("os 1", "description 1", common.State_FREE)
-			rows.AddRow("os 2", "description 2", common.State_SERVING)
-			rows.AddRow("os 3", "description 3", common.State_REPAIR)
+			rows.AddRow("os 1", "description 1")
+			rows.AddRow("os 2", "description 2")
+			rows.AddRow("os 3", "description 3")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			oses, err := listOSes(c, names)
 			So(err, ShouldBeNil)
@@ -85,12 +84,10 @@ func TestListOSes(t *testing.T) {
 				{
 					Name:        "os 2",
 					Description: "description 2",
-					State:       common.State_SERVING,
 				},
 				{
 					Name:        "os 3",
 					Description: "description 3",
-					State:       common.State_REPAIR,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -98,8 +95,8 @@ func TestListOSes(t *testing.T) {
 
 		Convey("ok", func() {
 			names := stringset.New(0)
-			rows.AddRow("os 1", "description 1", common.State_FREE)
-			rows.AddRow("os 2", "description 2", common.State_SERVING)
+			rows.AddRow("os 1", "description 1")
+			rows.AddRow("os 2", "description 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			oses, err := listOSes(c, names)
 			So(err, ShouldBeNil)
@@ -107,12 +104,10 @@ func TestListOSes(t *testing.T) {
 				{
 					Name:        "os 1",
 					Description: "description 1",
-					State:       common.State_FREE,
 				},
 				{
 					Name:        "os 2",
 					Description: "description 2",
-					State:       common.State_SERVING,
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)

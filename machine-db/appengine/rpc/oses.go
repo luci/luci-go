@@ -39,8 +39,8 @@ func (*Service) ListOSes(c context.Context, req *crimson.ListOSesRequest) (*crim
 func listOSes(c context.Context, names stringset.Set) ([]*crimson.OS, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT os.name, os.description, os.state
-		FROM oses os
+		SELECT name, description
+		FROM oses
 	`)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch operating systems").Err()
@@ -50,7 +50,7 @@ func listOSes(c context.Context, names stringset.Set) ([]*crimson.OS, error) {
 	var oses []*crimson.OS
 	for rows.Next() {
 		os := &crimson.OS{}
-		if err = rows.Scan(&os.Name, &os.Description, &os.State); err != nil {
+		if err = rows.Scan(&os.Name, &os.Description); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch operating system").Err()
 		}
 		if matches(os.Name, names) {

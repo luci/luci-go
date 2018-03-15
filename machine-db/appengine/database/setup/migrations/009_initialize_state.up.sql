@@ -18,8 +18,6 @@
 ALTER TABLE datacenters ADD COLUMN state tinyint DEFAULT 0;
 ALTER TABLE racks ADD COLUMN state tinyint DEFAULT 0;
 ALTER TABLE switches ADD COLUMN state tinyint DEFAULT 0;
-ALTER TABLE oses ADD COLUMN state tinyint DEFAULT 0;
-ALTER TABLE platforms ADD COLUMN state tinyint DEFAULT 0;
 ALTER TABLE vlans ADD COLUMN state tinyint DEFAULT 0;
 ALTER TABLE machines ADD COLUMN state tinyint DEFAULT 0;
 ALTER TABLE physical_hosts ADD COLUMN state tinyint DEFAULT 0;

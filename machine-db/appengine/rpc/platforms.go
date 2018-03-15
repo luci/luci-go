@@ -39,8 +39,8 @@ func (*Service) ListPlatforms(c context.Context, req *crimson.ListPlatformsReque
 func listPlatforms(c context.Context, names stringset.Set) ([]*crimson.Platform, error) {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT p.name, p.description, p.state
-		FROM platforms p
+		SELECT name, description
+		FROM platforms
 	`)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch platforms").Err()
@@ -50,7 +50,7 @@ func listPlatforms(c context.Context, names stringset.Set) ([]*crimson.Platform,
 	var platforms []*crimson.Platform
 	for rows.Next() {
 		p := &crimson.Platform{}
-		if err = rows.Scan(&p.Name, &p.Description, &p.State); err != nil {
+		if err = rows.Scan(&p.Name, &p.Description); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch platform").Err()
 		}
 		if matches(p.Name, names) {

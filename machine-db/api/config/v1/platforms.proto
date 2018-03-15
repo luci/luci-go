@@ -6,16 +6,12 @@ syntax = "proto3";
 
 package config;
 
-import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
-
 // Platform describes a platform.
 message Platform {
   // The name of this platform.
   string name = 1;
   // A description of this platform.
   string description = 2;
-  // The state of this platform.
-  common.State state = 3;
 }
 
 // Platforms enumerates platforms.
