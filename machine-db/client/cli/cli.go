@@ -120,6 +120,7 @@ func New(params *Parameters) *cli.Application {
 
 			// DRACs.
 			addDRACCmd(),
+			editDRACCmd(),
 			getDRACsCmd(),
 			{},
 

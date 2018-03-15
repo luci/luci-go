@@ -20,6 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
@@ -494,6 +496,97 @@ func TestListDRACs(t *testing.T) {
 					MacAddress: "00:00:00:00:00:02",
 					Ipv4:       "0.0.0.2",
 				},
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+	})
+}
+
+func TestUpdateDRAC(t *testing.T) {
+	Convey("updateDRAC", t, func() {
+		db, m, _ := sqlmock.New()
+		defer db.Close()
+		c := database.With(context.Background(), db)
+		selectStmt := `
+			^SELECT h.name, h.vlan_id, m.name, s.name, d.switchport, d.mac_address, i.ipv4
+			FROM dracs d, hostnames h, machines m, switches s, ips i
+			WHERE d.hostname_id = h.id AND d.machine_id = m.id AND d.switch_id = s.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND h.vlan_id IN \(\?\)$
+		`
+		columns := []string{"h.name", "h.vlan_id", "m.name", "s.name", "d.switchport", "d.mac_address", "i.ipv4"}
+		rows := sqlmock.NewRows(columns)
+
+		Convey("update switch", func() {
+			updateStmt := `
+				^UPDATE dracs
+				SET switch_id = \(SELECT id FROM switches WHERE name = \?\)
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+			`
+			drac := &crimson.DRAC{
+				Name:       "drac",
+				Vlan:       1,
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"switch",
+				},
+			}
+			rows.AddRow(drac.Name, drac.Vlan, drac.Machine, drac.Switch, drac.Switchport, 1, 1)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(drac.Switch, drac.Name, drac.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			drac, err := updateDRAC(c, drac, mask)
+			So(err, ShouldBeNil)
+			So(drac, ShouldResemble, &crimson.DRAC{
+				Name:       drac.Name,
+				Vlan:       drac.Vlan,
+				Machine:    drac.Machine,
+				MacAddress: "00:00:00:00:00:01",
+				Switch:     drac.Switch,
+				Switchport: drac.Switchport,
+				Ipv4:       "0.0.0.1",
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
+		Convey("update switchport", func() {
+			updateStmt := `
+				^UPDATE dracs
+				SET switchport = \?
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+			`
+			drac := &crimson.DRAC{
+				Name:       "drac",
+				Vlan:       1,
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			mask := &field_mask.FieldMask{
+				Paths: []string{
+					"switchport",
+				},
+			}
+			rows.AddRow(drac.Name, drac.Vlan, drac.Machine, drac.Switch, drac.Switchport, 1, 1)
+			m.ExpectBegin()
+			m.ExpectExec(updateStmt).WithArgs(drac.Switchport, drac.Name, drac.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WillReturnRows(rows)
+			m.ExpectCommit()
+			drac, err := updateDRAC(c, drac, mask)
+			So(err, ShouldBeNil)
+			So(drac, ShouldResemble, &crimson.DRAC{
+				Name:       drac.Name,
+				Vlan:       drac.Vlan,
+				Machine:    drac.Machine,
+				MacAddress: "00:00:00:00:00:01",
+				Switch:     drac.Switch,
+				Switchport: drac.Switchport,
+				Ipv4:       "0.0.0.1",
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
