@@ -387,9 +387,11 @@ type inputOptions struct {
 	vars       packageVars
 
 	// Alternative to 'pkg-def'.
-	packageName string
-	inputDir    string
-	installMode local.InstallMode
+	packageName      string
+	inputDir         string
+	installMode      local.InstallMode
+	preserveModTime  bool
+	preserveWritable bool
 
 	// Deflate compression level (if [1-9]) or 0 to disable compression.
 	//
@@ -409,6 +411,10 @@ func (opts *inputOptions) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&opts.inputDir, "in", "", "Path to a directory with files to package (unused with -pkg-def).")
 	f.Var(&opts.installMode, "install-mode",
 		"How the package should be installed: \"copy\" or \"symlink\" (unused with -pkg-def).")
+	f.BoolVar(&opts.preserveModTime, "preserve-mtime", false,
+		"Preserve file's modification time (unused with -pkg-def).")
+	f.BoolVar(&opts.preserveWritable, "preserve-writable", false,
+		"Preserve file's writable permission bit (unused with -pkg-def).")
 
 	// Options for the builder.
 	f.IntVar(&opts.compressionLevel, "compression-level", 5,
@@ -423,6 +429,11 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 
 	if opts.compressionLevel < 0 || opts.compressionLevel > 9 {
 		return empty, makeCLIError("invalid -compression-level: must be in [0-9] set")
+	}
+
+	scanOpts := local.ScanOptions{
+		PreserveModTime:  opts.preserveModTime,
+		PreserveWritable: opts.preserveWritable,
 	}
 
 	// Handle -name and -in if defined. Do not allow -pkg-def and -pkg-var in that case.
@@ -443,11 +454,12 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		}
 
 		// Simply enumerate files in the directory.
-		files, err := local.ScanFileSystem(opts.inputDir, opts.inputDir, nil)
+		files, err := local.ScanFileSystem(opts.inputDir, opts.inputDir, nil, scanOpts)
 		if err != nil {
 			return empty, err
 		}
 		return local.BuildInstanceOptions{
+			ScanOptions:      scanOpts,
 			Input:            files,
 			PackageName:      packageName,
 			InstallMode:      opts.installMode,
@@ -461,7 +473,13 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 			return empty, makeCLIError("-pkg-def and -name can not be used together")
 		}
 		if opts.installMode != "" {
-			return empty, makeCLIError("-install-mode is ignored if -pkd-def is used")
+			return empty, makeCLIError("-install-mode is ignored if -pkg-def is used")
+		}
+		if opts.preserveModTime {
+			return empty, makeCLIError("-preserve-mtime is ignored if -pkg-def is used")
+		}
+		if opts.preserveWritable {
+			return empty, makeCLIError("-preserve-writable is ignored if -pkg-def is used")
 		}
 
 		// Parse the file, perform variable substitution.
@@ -483,6 +501,7 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 			return empty, err
 		}
 		return local.BuildInstanceOptions{
+			ScanOptions:      scanOpts,
 			Input:            files,
 			PackageName:      pkgDef.Package,
 			VersionFile:      pkgDef.VersionFile(),

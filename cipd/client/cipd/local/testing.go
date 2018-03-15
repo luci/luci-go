@@ -19,15 +19,25 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"time"
 )
+
+// TestFileOpts holds options for NewTestFile method. Used in unittests.
+type TestFileOpts struct {
+	Executable bool
+	Writable   bool
+	ModTime    time.Time
+}
 
 // NewTestFile returns File implementation (Symlink == false) backed by a fake
 // in-memory data. It is useful in unit tests.
-func NewTestFile(name string, data string, executable bool) File {
+func NewTestFile(name string, data string, opts TestFileOpts) File {
 	return &testFile{
 		name:       name,
 		data:       data,
-		executable: executable,
+		executable: opts.Executable,
+		writable:   opts.Writable,
+		modTime:    opts.ModTime,
 	}
 }
 
@@ -55,6 +65,8 @@ type testFile struct {
 	name          string
 	data          string
 	executable    bool
+	writable      bool
+	modTime       time.Time
 	symlinkTarget string
 
 	winAttrs WinAttrs
@@ -63,6 +75,8 @@ type testFile struct {
 func (f *testFile) Name() string       { return f.name }
 func (f *testFile) Size() uint64       { return uint64(len(f.data)) }
 func (f *testFile) Executable() bool   { return f.executable }
+func (f *testFile) Writable() bool     { return f.writable }
+func (f *testFile) ModTime() time.Time { return f.modTime }
 func (f *testFile) Symlink() bool      { return f.symlinkTarget != "" }
 func (f *testFile) WinAttrs() WinAttrs { return f.winAttrs }
 

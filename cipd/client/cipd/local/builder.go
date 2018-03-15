@@ -35,6 +35,8 @@ import (
 
 // BuildInstanceOptions defines options for BuildInstance function.
 type BuildInstanceOptions struct {
+	ScanOptions
+
 	// Input is a list of files to add to the package.
 	Input []File
 
@@ -97,12 +99,12 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 	}
 
 	// Write the final zip file.
-	return zipInputFiles(ctx, files, opts.Output, opts.CompressionLevel)
+	return zipInputFiles(ctx, files, opts.Output, opts.CompressionLevel, opts.PreserveWritable)
 }
 
 // zipInputFiles deterministically builds a zip archive out of input files and
 // writes it to the writer. Files are written in the order given.
-func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) error {
+func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int, preserveWritable bool) error {
 	logging.Infof(ctx, "About to zip %d files with compression level %d", len(files), level)
 
 	writer := zip.NewWriter(w)
@@ -129,8 +131,9 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) er
 			return err
 		}
 
-		// Intentionally do not add timestamp or file mode to make zip archive
-		// deterministic. See also zip.FileInfoHeader() implementation.
+		// Intentionally do not add file mode to make zip archive
+		// deterministic. Timestamps sometimes need to be preserved, but normally
+		// are zero valued. See also zip.FileInfoHeader() implementation.
 		fh := zip.FileHeader{
 			Name:   in.Name(),
 			Method: zip.Deflate,
@@ -139,14 +142,22 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) er
 			fh.Method = zip.Store
 		}
 
-		mode := os.FileMode(0600)
+		mode := os.FileMode(0400)
 		if in.Executable() {
 			mode |= 0100
+		}
+		if in.Writable() {
+			mode |= 0200
 		}
 		if in.Symlink() {
 			mode |= os.ModeSymlink
 		}
 		fh.SetMode(mode)
+
+		if !in.ModTime().IsZero() {
+			fh.SetModTime(in.ModTime())
+		}
+
 		fh.ExternalAttrs |= uint32(in.WinAttrs())
 
 		dst, err := writer.CreateHeader(&fh)
@@ -282,6 +293,8 @@ type manifestFile []byte
 func (m *manifestFile) Name() string       { return manifestName }
 func (m *manifestFile) Size() uint64       { return uint64(len(*m)) }
 func (m *manifestFile) Executable() bool   { return false }
+func (m *manifestFile) Writable() bool     { return false }
+func (m *manifestFile) ModTime() time.Time { return time.Time{} }
 func (m *manifestFile) Symlink() bool      { return false }
 func (m *manifestFile) WinAttrs() WinAttrs { return 0 }
 

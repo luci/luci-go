@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -86,7 +87,7 @@ func TestPackageReading(t *testing.T) {
 		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(inst, ShouldNotBeNil)
 		So(err, ShouldBeNil)
-		So(inst.Pin(), ShouldResemble, Pin{"testing", "23f2c4900785ac8faa2f38e473925b840e574ccc"})
+		So(inst.Pin(), ShouldResemble, Pin{"testing", "b1b76479c47e4ea4da7b6f4629c0d58ff7dc6569"})
 		So(len(inst.Files()), ShouldEqual, 1)
 
 		// Contains single manifest file.
@@ -102,7 +103,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		goodManifest := `{
-			"format_version": "1",
+			"format_version": "1.1",
 			"package_name": "testing"
 		}`
 		So(string(manifest), shouldBeSameJSONDict, goodManifest)
@@ -120,10 +121,10 @@ func TestPackageReading(t *testing.T) {
 
 		// Attempt to open it, providing correct instance ID, should work.
 		source := bytesFile(out.Bytes())
-		inst, err := OpenInstance(ctx, source, "23f2c4900785ac8faa2f38e473925b840e574ccc", VerifyHash)
+		inst, err := OpenInstance(ctx, source, "b1b76479c47e4ea4da7b6f4629c0d58ff7dc6569", VerifyHash)
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
-		So(inst.Pin(), ShouldResemble, Pin{"testing", "23f2c4900785ac8faa2f38e473925b840e574ccc"})
+		So(inst.Pin(), ShouldResemble, Pin{"testing", "b1b76479c47e4ea4da7b6f4629c0d58ff7dc6569"})
 
 		// Attempt to open it, providing incorrect instance ID.
 		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", VerifyHash)
@@ -164,10 +165,14 @@ func TestPackageReading(t *testing.T) {
 		// Add a bunch of files to a package.
 		out := bytes.Buffer{}
 
+		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
+
 		inFiles := []File{
-			NewTestFile("testing/qwerty", "12345", false),
-			NewTestFile("abc", "duh", true),
-			NewTestFile("bad_dir/pkg/0/description.json", "{}", false),
+			NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
+			NewTestFile("abc", "duh", TestFileOpts{Executable: true}),
+			NewTestFile("bad_dir/pkg/0/description.json", "{}", TestFileOpts{}),
+			NewTestFile("writable", "write me", TestFileOpts{Writable: true}),
+			NewTestFile("timestamped", "I'm old", TestFileOpts{ModTime: testMTime}),
 			NewTestSymlink("rel_symlink", "abc"),
 			NewTestSymlink("abs_symlink", "/abc/def"),
 		}
@@ -179,6 +184,9 @@ func TestPackageReading(t *testing.T) {
 		}
 
 		err := BuildInstance(ctx, BuildInstanceOptions{
+			ScanOptions: ScanOptions{
+				PreserveWritable: true,
+			},
 			Input:            inFiles,
 			Output:           &out,
 			PackageName:      "testing",
@@ -207,6 +215,8 @@ func TestPackageReading(t *testing.T) {
 			So(names, ShouldResemble, []string{
 				"testing/qwerty",
 				"abc",
+				"writable",
+				"timestamped",
 				"rel_symlink",
 				"abs_symlink",
 				"subpath/version.json",
@@ -216,6 +226,8 @@ func TestPackageReading(t *testing.T) {
 			So(names, ShouldResemble, []string{
 				"testing/qwerty",
 				"abc",
+				"writable",
+				"timestamped",
 				"rel_symlink",
 				"abs_symlink",
 				"secret",
@@ -224,21 +236,30 @@ func TestPackageReading(t *testing.T) {
 				".cipdpkg/manifest.json",
 			})
 		}
+
+		var zeroTime time.Time
+
 		So(string(dest.files[0].Bytes()), ShouldEqual, "12345")
 		So(dest.files[1].executable, ShouldBeTrue)
-		So(dest.files[2].symlinkTarget, ShouldEqual, "abc")
-		So(dest.files[3].symlinkTarget, ShouldEqual, "/abc/def")
+		So(dest.files[1].writable, ShouldBeFalse)
+		So(dest.files[2].writable, ShouldBeTrue)
+		So(dest.files[2].modtime, ShouldEqual, zeroTime)
+
+		So(dest.files[3].name, ShouldEqual, "timestamped")
+		So(dest.files[3].modtime, ShouldEqual, testMTime)
+		So(dest.files[4].symlinkTarget, ShouldEqual, "abc")
+		So(dest.files[5].symlinkTarget, ShouldEqual, "/abc/def")
 
 		// Verify version file is correct.
-		verFileIdx := 4
+		verFileIdx := 6
 		goodVersionFile := `{
-			"instance_id": "45542f54335688804cfba83782140d2624d265a2",
+			"instance_id": "284036fec1eaf6492a4e75d1db0920be5e8b3fd7",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
-			verFileIdx = 6
+			verFileIdx = 8
 			goodVersionFile = `{
-				"instance_id": "2208cc0f800b40895c5c4d5bf0e31235fa5e246f",
+				"instance_id": "7745210cceeb08f108cbb81122f5dbe3a415aaa2",
 				"package_name": "testing"
 			}`
 		}
@@ -247,7 +268,7 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify manifest file is correct.
 		goodManifest := `{
-			"format_version": "1",
+			"format_version": "1.1",
 			"package_name": "testing",
 			"version_file": "subpath/version.json",
 			"files": [
@@ -259,6 +280,14 @@ func TestPackageReading(t *testing.T) {
 					"name": "abc",
 					"size": 3,
 					"executable": true
+				},
+				{
+					"name": "writable",
+					"size": 8
+				},
+				{
+					"name": "timestamped",
+					"size": 7
 				},
 				{
 					"name": "rel_symlink",
@@ -278,7 +307,7 @@ func TestPackageReading(t *testing.T) {
 		}`
 		manifestIdx := 0
 		if runtime.GOOS == "windows" {
-			manifestIdx = 7
+			manifestIdx = 9
 			goodManifest = fmt.Sprintf(goodManifest, `,{
 				"name": "secret",
 				"size": 5,
@@ -290,7 +319,7 @@ func TestPackageReading(t *testing.T) {
 				"win_attrs": "S"
 			}`)
 		} else {
-			manifestIdx = 5
+			manifestIdx = 7
 			goodManifest = fmt.Sprintf(goodManifest, "")
 		}
 		So(dest.files[manifestIdx].name, ShouldEqual, ".cipdpkg/manifest.json")
@@ -310,6 +339,8 @@ type testDestinationFile struct {
 	bytes.Buffer
 	name          string
 	executable    bool
+	writable      bool
+	modtime       time.Time
 	symlinkTarget string
 	winAttrs      WinAttrs
 }
@@ -321,11 +352,13 @@ func (d *testDestination) Begin(context.Context) error {
 	return nil
 }
 
-func (d *testDestination) CreateFile(ctx context.Context, name string, executable bool, winAttrs WinAttrs) (io.WriteCloser, error) {
+func (d *testDestination) CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error) {
 	f := &testDestinationFile{
 		name:       name,
-		executable: executable,
-		winAttrs:   winAttrs,
+		executable: opts.Executable,
+		writable:   opts.Writable,
+		modtime:    opts.ModTime,
+		winAttrs:   opts.WinAttrs,
 	}
 	d.files = append(d.files, f)
 	return f, nil
