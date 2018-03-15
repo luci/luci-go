@@ -28,9 +28,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // This file implements conversion of buildbucket builds to buildbot builds.
@@ -53,6 +55,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 
 	res := &buildbot.Build{
 		Emulated:    true,
+		ViewPath:    (&model.BuildSummary{BuildID: "buildbucket/" + b.Address()}).SelfLink(),
 		Master:      master,
 		Buildername: b.Builder,
 		Number:      num,
