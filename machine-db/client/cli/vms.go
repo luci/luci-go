@@ -168,8 +168,11 @@ func getVMsCmd() *subcommands.Command {
 			cmd := &GetVMsCmd{}
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a VM to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Hosts), "host", "Name of a host to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.Int64Slice(&cmd.req.HostVlans), "hvlan", "ID of a host VLAN to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Oses), "os", "Name of an operating system to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Ipv4S), "ipv4", "IPv4 address to filter by. Can be specified multiple times.")
-			// TODO(smut): Add the other filters.
+			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
 			cmd.f.Register(cmd)
 			return cmd
 		},

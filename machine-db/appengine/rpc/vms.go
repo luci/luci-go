@@ -149,6 +149,10 @@ func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsR
 	stmt = selectInString(stmt, "hv.name", req.Names)
 	stmt = selectInInt64(stmt, "hv.vlan_id", req.Vlans)
 	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
+	stmt = selectInString(stmt, "hp.name", req.Hosts)
+	stmt = selectInInt64(stmt, "hp.vlan_id", req.HostVlans)
+	stmt = selectInString(stmt, "o.name", req.Oses)
+	stmt = selectInState(stmt, "v.state", req.States)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
