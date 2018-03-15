@@ -75,19 +75,17 @@ func (*IPsTable) needsUpdate(row, cfg *IP) bool {
 func (t *IPsTable) computeChanges(c context.Context, vlans []*config.VLAN) error {
 	cfgs := make(map[common.IPv4]*IP, len(vlans))
 	for _, vlan := range vlans {
-		for _, block := range vlan.CidrBlock {
-			ipv4, length, err := common.IPv4Range(block)
-			if err != nil {
-				return errors.Annotate(err, "failed to determine start address and range for CIDR block %q", block).Err()
+		ipv4, length, err := common.IPv4Range(vlan.CidrBlock)
+		if err != nil {
+			return errors.Annotate(err, "failed to determine start address and range for CIDR block %q", vlan.CidrBlock).Err()
+		}
+		// TODO(smut): Mark the first address as the network address and the last address as the broadcast address.
+		for i := int64(0); i < length; i++ {
+			cfgs[ipv4] = &IP{
+				IPv4:   ipv4,
+				VLANId: vlan.Id,
 			}
-			// TODO(smut): Mark the first address as the network address and the last address as the broadcast address.
-			for i := int64(0); i < length; i++ {
-				cfgs[ipv4] = &IP{
-					IPv4:   ipv4,
-					VLANId: vlan.Id,
-				}
-				ipv4 += 1
-			}
+			ipv4 += 1
 		}
 	}
 
@@ -110,17 +108,15 @@ func (t *IPsTable) computeChanges(c context.Context, vlans []*config.VLAN) error
 	// IP addresses remaining in the map are present in the config but not the database.
 	// Iterate deterministically over the slices to determine which IP addresses need to be added.
 	for _, vlan := range vlans {
-		for _, block := range vlan.CidrBlock {
-			ipv4, length, err := common.IPv4Range(block)
-			if err != nil {
-				return errors.Annotate(err, "failed to determine start address and range for CIDR block %q", block).Err()
+		ipv4, length, err := common.IPv4Range(vlan.CidrBlock)
+		if err != nil {
+			return errors.Annotate(err, "failed to determine start address and range for CIDR block %q", vlan.CidrBlock).Err()
+		}
+		for i := int64(0); i < length; i++ {
+			if ip, ok := cfgs[ipv4]; ok {
+				t.additions = append(t.additions, ip)
 			}
-			for i := int64(0); i < length; i++ {
-				if ip, ok := cfgs[ipv4]; ok {
-					t.additions = append(t.additions, ip)
-				}
-				ipv4 += 1
-			}
+			ipv4 += 1
 		}
 	}
 	return nil
