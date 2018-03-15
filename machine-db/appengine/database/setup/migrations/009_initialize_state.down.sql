@@ -19,8 +19,6 @@ ALTER TABLE vms DROP COLUMN state;
 ALTER TABLE physical_hosts DROP COLUMN state;
 ALTER TABLE machines DROP COLUMN state;
 ALTER TABLE vlans DROP COLUMN state;
-ALTER TABLE platforms DROP COLUMN state;
-ALTER TABLE oses DROP COLUMN state;
 ALTER TABLE switches DROP COLUMN state;
 ALTER TABLE racks DROP COLUMN state;
 ALTER TABLE datacenters DROP COLUMN state;
