@@ -149,6 +149,9 @@ type Build struct {
 	// Emulated indicates that this Buildbot build was emulated from non-Buildbot
 	// e.g. from LUCI.
 	Emulated bool `json:"emulated"`
+	// ViewURL is a Milo URL which points to the correct source-of-truth for this
+	// Build.
+	ViewURL string `json:"view_url"`
 }
 
 // ID returns "<master>/<builder>/<number>" string.
