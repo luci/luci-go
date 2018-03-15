@@ -6,16 +6,12 @@ syntax = "proto3";
 
 package crimson;
 
-import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
-
 // A platform in the database.
 message Platform {
   // The name of this platform. Uniquely identifies this platform.
   string name = 1;
   // A description of this platform.
   string description = 2;
-  // The state of this platform.
-  common.State state = 3;
 }
 
 // A request to list platforms in the database.
