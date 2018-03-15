@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f0fe514b_cfa01163",
+        "filename": "milo/api/buildbot/structs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-15T22:34:06Z",
+      "side": 1,
+      "message": "This should be view_path too then.",
+      "range": {
+        "startLine": 156,
+        "startChar": 24,
+        "endLine": 156,
+        "endChar": 32
+      },
+      "revId": "37aab4aff2834b4b1710e98e09b2e25f3f1dc710",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
