@@ -15,6 +15,7 @@
 package buildstore
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -332,6 +334,9 @@ func getDatastoreBuilds(c context.Context, q Query, includeExperimental bool) (*
 		Builds: make([]*buildbot.Build, len(builds)),
 	}
 	for i, b := range builds {
+		b.ViewPath = (&model.BuildSummary{
+			BuildID: fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
+		}).SelfLink()
 		res.Builds[i] = (*buildbot.Build)(b)
 	}
 

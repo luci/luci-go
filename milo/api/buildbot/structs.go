@@ -149,6 +149,11 @@ type Build struct {
 	// Emulated indicates that this Buildbot build was emulated from non-Buildbot
 	// e.g. from LUCI.
 	Emulated bool `json:"emulated"`
+	// ViewPath is an absolute path, relative to this milo host, which can be used
+	// to display this Build. This Path includes a leading "/". Callers can turn
+	// this into a URL by:
+	//   "https://" + MiloHost + Build.ViewPath
+	ViewPath string `json:"view_path"`
 }
 
 // ID returns "<master>/<builder>/<number>" string.
