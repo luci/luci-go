@@ -34,7 +34,7 @@ const (
 	manifestName = packageServiceDir + "/manifest.json"
 
 	// manifestFormatVersion is a version to write to the manifest file.
-	manifestFormatVersion = "1"
+	manifestFormatVersion = "1.1"
 )
 
 // InstallMode defines how to install a package.

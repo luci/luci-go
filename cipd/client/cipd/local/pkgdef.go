@@ -44,6 +44,13 @@ type PackageDef struct {
 	// InstallMode defines how to deploy the package file: "copy" or "symlink".
 	InstallMode InstallMode `yaml:"install_mode"`
 
+	// PreserveModTime instructs CIPD to preserve the mtime of the files.
+	PreserveModTime bool `yaml:"preserve_mtime"`
+
+	// PreserveWritable instructs CIPD to preserve the user-writable permission
+	// mode on the files.
+	PreserveWritable bool `yaml:"preserve_writable"`
+
 	// Data describes what is deployed with the package.
 	Data []PackageChunkDef
 }
@@ -163,6 +170,11 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 		}
 	}
 
+	scanOpts := ScanOptions{
+		PreserveModTime:  def.PreserveModTime,
+		PreserveWritable: def.PreserveWritable,
+	}
+
 	for _, chunk := range def.Data {
 		// Handled elsewhere.
 		if chunk.VersionFile != "" {
@@ -171,7 +183,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 
 		// Individual file.
 		if chunk.File != "" {
-			file, err := WrapFile(makeAbs(chunk.File), root, nil)
+			file, err := WrapFile(makeAbs(chunk.File), root, nil, scanOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -189,7 +201,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 				return nil, err
 			}
 			// Run the scan.
-			files, err := ScanFileSystem(startDir, root, exclude)
+			files, err := ScanFileSystem(startDir, root, exclude, scanOpts)
 			if err != nil {
 				return nil, err
 			}

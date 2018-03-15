@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-// VerificationMode is defines whether to verify hash or not.
+// VerificationMode defines whether to verify hash or not.
 type VerificationMode int
 
 const (
@@ -43,11 +43,12 @@ const (
 	// compare it to the given instanceID.
 	VerifyHash VerificationMode = 0
 
-	// SkipVerification instructs OpenPackage to skip the hash verification and
-	// trust that the given instanceID matches the package.
+	// SkipHashVerification instructs OpenPackage to skip the hash verification
+	// and trust that the given instanceID matches the package.
 	SkipHashVerification VerificationMode = 1
 )
 
+// ErrHashMismatch is an error when package hash doesn't match.
 var ErrHashMismatch = errors.New("package hash mismatch")
 
 // PackageInstance represents a binary CIPD package file (with manifest inside).
@@ -67,7 +68,7 @@ type InstanceFile interface {
 	io.ReadSeeker
 
 	// Close is a bit non-standard, and can be used to indicate to the storage
-	// (filesystem and/or cache) layer that this instance is actaully bad. The
+	// (filesystem and/or cache) layer that this instance is actually bad. The
 	// storage layer can then evict/revoke, etc. the bad file.
 	Close(ctx context.Context, corrupt bool) error
 }
@@ -180,7 +181,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 			}
 			manifest.Files = append(manifest.Files, fi)
 		}
-		out, err := dest.CreateFile(ctx, f.Name(), false, 0)
+		out, err := dest.CreateFile(ctx, f.Name(), CreateFileOptions{})
 		if err != nil {
 			return err
 		}
@@ -203,7 +204,12 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 
 	extractRegularFile := func(f File) (err error) {
 		defer progress.advance(f)
-		out, err := dest.CreateFile(ctx, f.Name(), f.Executable(), f.WinAttrs())
+		out, err := dest.CreateFile(ctx, f.Name(), CreateFileOptions{
+			Executable: f.Executable(),
+			Writable:   f.Writable(),
+			ModTime:    f.ModTime(),
+			WinAttrs:   f.WinAttrs(),
+		})
 		if err != nil {
 			return err
 		}
@@ -425,6 +431,21 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 		inst.files[i] = fiz
 	}
 
+	// Version "1" (legacy format) used to set the writable mode bit (0200) in
+	// zipped files, and then ignored it when unpacking. Newer versions respect
+	// the writable mode bit.  Strip it off for the version "1", to preserve
+	// the old semantics.
+	if inst.manifest.FormatVersion == "1" {
+		for _, f := range inst.files {
+			zf, ok := f.(*fileInZip)
+			if !ok {
+				return fmt.Errorf("file %s is not a fileInZip type", f.Name())
+			}
+
+			zf.z.SetMode(zf.z.Mode() & 0757)
+		}
+	}
+
 	// Generate version_file if needed.
 	if inst.manifest.VersionFile != "" {
 		vf, err := makeVersionFile(inst.manifest.VersionFile, VersionFile{
@@ -511,6 +532,8 @@ type blobFile struct {
 func (b *blobFile) Name() string                   { return b.name }
 func (b *blobFile) Size() uint64                   { return uint64(len(b.blob)) }
 func (b *blobFile) Executable() bool               { return false }
+func (b *blobFile) Writable() bool                 { return false }
+func (b *blobFile) ModTime() time.Time             { return time.Time{} }
 func (b *blobFile) Symlink() bool                  { return false }
 func (b *blobFile) SymlinkTarget() (string, error) { return "", nil }
 func (b *blobFile) WinAttrs() WinAttrs             { return 0 }
@@ -552,6 +575,18 @@ func (f *fileInZip) Executable() bool {
 		return false
 	}
 	return (f.z.Mode() & 0100) != 0
+}
+
+func (f *fileInZip) Writable() bool {
+	return (f.z.Mode() & 0200) != 0
+}
+
+func (f *fileInZip) ModTime() time.Time {
+	var t time.Time
+	if f.z.ModifiedTime != 0 || f.z.ModifiedDate != 0 {
+		t = f.z.ModTime()
+	}
+	return t
 }
 
 func (f *fileInZip) Size() uint64 {
