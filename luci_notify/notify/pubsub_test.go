@@ -54,12 +54,37 @@ func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime ti
 		Revision: revision,
 	})}
 	build.CreationTime = creationTime
-
-	for _, e := range notifyEmails {
-		build.InputProperties.EmailNotify = append(build.InputProperties.EmailNotify, EmailNotifyValue{e})
-	}
+	build.EmailNotify = notifyEmails
 
 	return &build
+}
+
+func TestExtractEmailNotifyValues(t *testing.T) {
+	Convey(`Test Environment for extractEmailNotifyValues`, t, func() {
+		Convey(`empty parametersJson`, func() {
+			results, err := extractEmailNotifyValues("")
+			So(results, ShouldHaveLength, 0)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`populated without email_notify`, func() {
+			results, err := extractEmailNotifyValues(`{"foo": 1}`)
+			So(results, ShouldHaveLength, 0)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`single email_notify value`, func() {
+			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}]}`)
+			So(results, ShouldResemble, []string{"test@email"})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`multiple email_notify values`, func() {
+			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}, {"email": "test2@email"}]}`)
+			So(results, ShouldResemble, []string{"test@email", "test2@email"})
+			So(err, ShouldBeNil)
+		})
+	})
 }
 
 func TestHandleBuild(t *testing.T) {

@@ -62,6 +62,29 @@ func commitIndex(commits []gitiles.Commit, revision string) int {
 	return -1
 }
 
+func extractEmailNotifyValues(parametersJson string) ([]string, error) {
+	if parametersJson == "" {
+		return nil, nil
+	}
+
+	// json equivalent: {"email_notify": [{"email": "<address>"}, ...]}
+	output := struct {
+		EmailNotify []struct {
+			Email string `json:"email"`
+		} `json:"email_notify"`
+	}{}
+
+	if err := json.NewDecoder(strings.NewReader(parametersJson)).Decode(&output); err != nil {
+		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
+	}
+
+	result := []string{}
+	for _, r := range output.EmailNotify {
+		result = append(result, r.Email)
+	}
+	return result, nil
+}
+
 // handleBuild processes a Build and sends appropriate notifications.
 //
 // This function should serve as documentation of the process of going from
@@ -208,17 +231,10 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 	h.WriteHeader(http.StatusOK)
 }
 
-// EmailNotifyValue contains a single email address from properties_json.
-type EmailNotifyValue struct {
-	Email string `json:"email"`
-}
-
 // Build is buildbucket.Build along with the parsed 'email_notify' values.
 type Build struct {
 	buildbucket.Build
-	InputProperties struct {
-		EmailNotify []EmailNotifyValue
-	} `json:"email_notify"`
+	EmailNotify []string
 }
 
 // extractBuild constructs a Build from the PubSub HTTP request.
@@ -241,9 +257,15 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 	var build Build
-	build.Input.Properties = &build.InputProperties
 	if err := build.ParseMessage(&message.Build); err != nil {
 		return nil, errors.Annotate(err, "could not decode buildbucket build").Err()
 	}
+
+	emails, err := extractEmailNotifyValues(message.Build.ParametersJson)
+	if err != nil {
+		return nil, errors.Annotate(err, "could not decode email_notify").Err()
+	}
+	build.EmailNotify = emails
+
 	return &build, nil
 }
