@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "980655bf_502775be",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-16T17:00:47Z",
+      "side": 1,
+      "message": "not for this CL.\n\nit occurred to me that we continue adding these filters directly to list requests, while we may have another RPC which also needs a generic filter like this.\n\nWill we ever need, say, an Update RPC that accepts a filter? e.g. if a whole VLAN is being turn down? Or, are hosts turned down incrementally in which case we don\u0027t need a massive-update-many-entities RPCs?\nRelated: BuildFilter message in go/buildbucket-api-v2 that is used in SearchBuilds and CancelBuilds RPCs\n\nWith filter messages (PhysicalHostFilter, MachineFilter) our messages would be shorter because they can reuse each other, e.g. instead of hosts and host_vlans fields we would have `PhysicalHostFilter hosts`. Also it would allow to filter by physical host state, too.\n\nIt is a API breaking change, so it would require a short period of downtime (or declaring v2, but it seems an overkill to me)",
+      "revId": "7f6887cbe718ad90277dcb87afc67a8327ce5277",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85b36815_0448cb28",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-16T17:00:47Z",
+      "side": 1,
+      "message": "with filter messages, we could have\n\n  (f *PhysicalHostFilter) ApplySelect(s squirrel.SelectBuilder, sourceName string) squirrel.SelectBuilder\n\nand then here\n\n  stmt \u003d hostFilter.Apply(stmt, \"p\")",
+      "revId": "7f6887cbe718ad90277dcb87afc67a8327ce5277",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
