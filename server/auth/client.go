@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/internal"
 )
@@ -153,6 +154,27 @@ func WithDelegationTags(tags ...string) RPCOption {
 	return delegationTagsOption{tags: tags}
 }
 
+type monitoringNameOption struct {
+	name string
+}
+
+func (o monitoringNameOption) apply(opts *rpcOptions) {
+	opts.monitoringName = o.name
+}
+
+// WithMonitoringName allows to override "name" field that goes into HTTP
+// client monitoring metrics (such as 'http/response_status').
+//
+// The default value of the field is "luci-go-server".
+//
+// Note that the metrics also include hostname of the target service, so in most
+// cases it is fine to use default name. Overriding it may be useful if you
+// want to differentiate between requests made to the same host from a bunch of
+// different places in the code.
+func WithMonitoringName(name string) RPCOption {
+	return monitoringNameOption{name: name}
+}
+
 // GetRPCTransport returns http.RoundTripper to use for outbound HTTP RPC
 // requests.
 //
@@ -172,7 +194,7 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 	if config == nil || config.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
-	baseTransport := config.AnonymousTransport(c)
+	baseTransport := metric.InstrumentTransport(c, config.AnonymousTransport(c), options.monitoringName)
 	if options.kind == NoAuth {
 		return baseTransport, nil
 	}
@@ -324,6 +346,7 @@ type rpcOptions struct {
 	serviceAccount  string   // for AsActor
 	delegationToken string   // for AsUser
 	delegationTags  []string // for AsUser
+	monitoringName  string
 	getRPCHeaders   headersGetter
 	rpcMocks        *rpcMocks
 }
@@ -374,6 +397,12 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	default:
 		return nil, fmt.Errorf("auth: unknown RPCAuthorityKind %d", options.kind)
 	}
+
+	// Default value for "name" field in monitoring metrics.
+	if options.monitoringName == "" {
+		options.monitoringName = "luci-go-server"
+	}
+
 	return options, nil
 }
 
