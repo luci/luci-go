@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/internal"
 )
@@ -172,7 +173,7 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 	if config == nil || config.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
-	baseTransport := config.AnonymousTransport(c)
+	baseTransport := metric.InstrumentTransport(c, config.AnonymousTransport(c), "luci-go-server")
 	if options.kind == NoAuth {
 		return baseTransport, nil
 	}
