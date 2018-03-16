@@ -62,25 +62,25 @@ func commitIndex(commits []gitiles.Commit, revision string) int {
 	return -1
 }
 
-func extractEmailNotifyValues(parametersJson string) ([]string, error) {
-	if parametersJson == "" {
+func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
+	if parametersJSON == "" {
 		return nil, nil
 	}
 
 	// json equivalent: {"email_notify": [{"email": "<address>"}, ...]}
-	output := struct {
+	var output struct {
 		EmailNotify []struct {
 			Email string `json:"email"`
 		} `json:"email_notify"`
-	}{}
+	}
 
-	if err := json.NewDecoder(strings.NewReader(parametersJson)).Decode(&output); err != nil {
+	if err := json.NewDecoder(strings.NewReader(parametersJSON)).Decode(&output); err != nil {
 		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
 
-	result := []string{}
-	for _, r := range output.EmailNotify {
-		result = append(result, r.Email)
+	result := make([]string, len(output.EmailNotify))
+	for i, r := range output.EmailNotify {
+		result[i] = r.Email
 	}
 	return result, nil
 }
