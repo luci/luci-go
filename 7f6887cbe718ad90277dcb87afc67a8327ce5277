@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "53810c70_bb3d8d4a",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-16T21:39:03Z",
+      "side": 1,
+      "message": "I think there might be some use cases for filters in Update, but it\u0027s probably rare. For example, right now we\u0027re debating whether to shorten one of the OS names. That involves adding the new OS to oses.cfg, updating all the hosts using the existing OS to point to the new one, then updating oses.cfg to remove the old OS. We could leverage filters to update all the hosts in one go, nut it\u0027s not that hard to script it one by one-- just takes a little longer.\n\nI\u0027m also wondering if maybe go/api-style\u0027s recommendation of a filter string is worth considering. The main downside is that it\u0027s harder to generate and interpret a filter string, but you don\u0027t need to modify the RPCs for each new filter and you can do comparisons like \u003c or \u003e (I need to add something to find hosts where the number of VMs \u003c VM slots, and there may be more use cases if/when we start adding physical properties of the machine like disk size, RAM, etc.).",
+      "parentUuid": "980655bf_502775be",
+      "revId": "7f6887cbe718ad90277dcb87afc67a8327ce5277",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "85b36815_0448cb28",
         "filename": "machine-db/appengine/rpc/vms.go",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2018-03-16T17:00:47Z",
       "side": 1,
       "message": "with filter messages, we could have\n\n  (f *PhysicalHostFilter) ApplySelect(s squirrel.SelectBuilder, sourceName string) squirrel.SelectBuilder\n\nand then here\n\n  stmt \u003d hostFilter.Apply(stmt, \"p\")",
+      "revId": "7f6887cbe718ad90277dcb87afc67a8327ce5277",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f6b0c11_e03d8705",
+        "filename": "machine-db/appengine/rpc/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-16T21:39:03Z",
+      "side": 1,
+      "message": "Yeah that would be pretty good. Shorter, and we\u0027d get every (almost) every host-related filter for free. It gets a little complex though, because the physical host\u0027s OS is in p, but its name is in the hostnames table and its state is in the machines table.",
+      "parentUuid": "85b36815_0448cb28",
       "revId": "7f6887cbe718ad90277dcb87afc67a8327ce5277",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
