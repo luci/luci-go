@@ -354,6 +354,21 @@ func (s *DecoratedCrimson) UpdatePhysicalHost(c context.Context, req *UpdatePhys
 	return
 }
 
+func (s *DecoratedCrimson) FindVMSlots(c context.Context, req *FindVMSlotsRequest) (rsp *FindVMSlotsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "FindVMSlots", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.FindVMSlots(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "FindVMSlots", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) CreateVM(c context.Context, req *CreateVMRequest) (rsp *VM, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {

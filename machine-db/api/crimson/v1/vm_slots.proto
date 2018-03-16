@@ -1,0 +1,23 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+import "go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto";
+
+// A request to find available VM slots in the database.
+message FindVMSlotsRequest {
+  // The number of available VM slots to find.
+  int32 slots = 1;
+}
+
+// A response containing a list of available VM slots in the database.
+message FindVMSlotsResponse {
+  // The hosts with available VM slots.
+  // Only includes name, vlan_id, and vm_slots.
+  // vm_slots in this context means the number of available VM slots.
+  repeated PhysicalHost hosts = 1;
+}

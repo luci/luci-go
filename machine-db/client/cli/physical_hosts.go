@@ -30,7 +30,7 @@ func printPhysicalHosts(tsv bool, hosts ...*crimson.PhysicalHost) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "VLAN", "IP Address", "Machine", "OS", "VM Slots", "Description", "Deployment Ticket", "State")
+			p.Row("Name", "VLAN", "IP Address", "Machine", "OS", "Max VM Slots", "Description", "Deployment Ticket", "State")
 		}
 		for _, h := range hosts {
 			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket, h.State)

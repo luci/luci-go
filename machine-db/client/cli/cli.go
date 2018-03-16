@@ -130,6 +130,10 @@ func New(params *Parameters) *cli.Application {
 			getPhysicalHostsCmd(),
 			{},
 
+			// VM slots.
+			getVMSlotsCmd(),
+			{},
+
 			// Virtual hosts.
 			addVMCmd(),
 			editVMCmd(),
