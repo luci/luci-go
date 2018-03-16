@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "877dd0ae_2c72160c",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-16T15:34:42Z",
+      "side": 1,
+      "message": "Oops, I somehow missed the nits. I\u0027ll put up a another tiny CL in a bit.",
+      "parentUuid": "00ccb8a9_7a11a0be",
+      "range": {
+        "startLine": 65,
+        "startChar": 30,
+        "endLine": 65,
+        "endChar": 44
+      },
+      "revId": "f15fa811608535a46b0c8e573576a69d6a178a8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1f603d49_25f53815",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 2
