@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/internal"
 )
@@ -153,6 +154,30 @@ func WithDelegationTags(tags ...string) RPCOption {
 	return delegationTagsOption{tags: tags}
 }
 
+type monitoringClientOption struct {
+	client string
+}
+
+func (o monitoringClientOption) apply(opts *rpcOptions) {
+	opts.monitoringClient = o.client
+}
+
+// WithMonitoringClient allows to override 'client' field that goes into HTTP
+// client monitoring metrics (such as 'http/response_status').
+//
+// The default value of the field is "luci-go-server".
+//
+// Note that the metrics also include hostname of the target service (in 'name'
+// field), so in most cases it is fine to use the default client name.
+// Overriding it may be useful if you want to differentiate between requests
+// made to the same host from a bunch of different places in the code.
+//
+// This option has absolutely no effect when passed GetPerRPCCredentials() or
+// GetTokenSource(). It applies only to GetRPCTransport().
+func WithMonitoringClient(client string) RPCOption {
+	return monitoringClientOption{client: client}
+}
+
 // GetRPCTransport returns http.RoundTripper to use for outbound HTTP RPC
 // requests.
 //
@@ -172,7 +197,7 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 	if config == nil || config.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
-	baseTransport := config.AnonymousTransport(c)
+	baseTransport := metric.InstrumentTransport(c, config.AnonymousTransport(c), options.monitoringClient)
 	if options.kind == NoAuth {
 		return baseTransport, nil
 	}
@@ -319,13 +344,14 @@ var defaultOAuthScopes = []string{auth.OAuthScopeEmail}
 type headersGetter func(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error)
 
 type rpcOptions struct {
-	kind            RPCAuthorityKind
-	scopes          []string // for AsSelf and AsActor
-	serviceAccount  string   // for AsActor
-	delegationToken string   // for AsUser
-	delegationTags  []string // for AsUser
-	getRPCHeaders   headersGetter
-	rpcMocks        *rpcMocks
+	kind             RPCAuthorityKind
+	scopes           []string // for AsSelf and AsActor
+	serviceAccount   string   // for AsActor
+	delegationToken  string   // for AsUser
+	delegationTags   []string // for AsUser
+	monitoringClient string
+	getRPCHeaders    headersGetter
+	rpcMocks         *rpcMocks
 }
 
 // makeRPCOptions applies all options and validates them.
@@ -374,6 +400,12 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	default:
 		return nil, fmt.Errorf("auth: unknown RPCAuthorityKind %d", options.kind)
 	}
+
+	// Default value for "client" field in monitoring metrics.
+	if options.monitoringClient == "" {
+		options.monitoringClient = "luci-go-server"
+	}
+
 	return options, nil
 }
 
