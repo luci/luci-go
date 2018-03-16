@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3d62385_c81e0f79",
+        "filename": "machine-db/appengine/rpc/dracs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-16T21:41:09Z",
+      "side": 1,
+      "message": "just return? the code below is equivalent\n\nmaybe update the code that you copied this from, too",
+      "range": {
+        "startLine": 59,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 13
+      },
+      "revId": "ecc44bff902f13d3804d53c4f38351e3e2fb148b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
