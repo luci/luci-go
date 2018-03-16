@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb65372a_c387791d",
+        "filename": "cipd/client/cipd/local/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 0,
+      "message": "it wasn\u0027t used",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 38,
+        "endChar": 12
+      },
+      "revId": "3895f426bdf2aa320aa1ceed21f46358ad1d6cf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e98c7d75_f7000ccb",
+        "filename": "cipd/client/cipd/local/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 0,
+      "message": "this was the actual bug. I\u0027m still not sure where 0757 comes from... It removed \"is symlink\" bit, causing symlinks to become regular files. It broke at least git package on canary.",
+      "range": {
+        "startLine": 445,
+        "startChar": 28,
+        "endLine": 445,
+        "endChar": 34
+      },
+      "revId": "3895f426bdf2aa320aa1ceed21f46358ad1d6cf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "289baf82_d0d0e9ae",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 504,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 0,
+      "message": "this was wrong, scan options when using -pkg-def come from the YAML file, not from the command line flags. But as I noted above, this field wasn\u0027t used, so no harm done.",
+      "range": {
+        "startLine": 504,
+        "startChar": 3,
+        "endLine": 504,
+        "endChar": 30
+      },
+      "revId": "3895f426bdf2aa320aa1ceed21f46358ad1d6cf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

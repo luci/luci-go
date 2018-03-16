@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "899da85c_fb6c1f13",
+        "filename": "cipd/client/cipd/local/json_descs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 1,
+      "message": "this is useful it tests, and just nicer to have around",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 41
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1c524a66_15b9ef61",
+        "filename": "cipd/client/cipd/local/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 1,
+      "message": "because unix timestamp of zero time.Time is obviously -62135596800 :)",
+      "range": {
+        "startLine": 176,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 4
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19b10ee0_ce80db86",
+        "filename": "cipd/client/cipd/local/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 1,
+      "message": "https://golang.org/ref/spec#Arithmetic_operators\n\n\u0026^   bit clear (AND NOT)\n\nApparently it is a single operator o_O",
+      "range": {
+        "startLine": 448,
+        "startChar": 28,
+        "endLine": 448,
+        "endChar": 30
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3aab45f8_8f3f8d73",
+        "filename": "cipd/client/cipd/local/reader_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 1,
+      "message": "no changes here, just trying to make the test more readable",
+      "range": {
+        "startLine": 235,
+        "startChar": 2,
+        "endLine": 242,
+        "endChar": 75
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "64dac620_5e371099",
+        "filename": "cipd/client/cipd/local/reader_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-16T23:11:40Z",
+      "side": 1,
+      "message": "copy of the previous test, tweaked to simulate v1 package and confirming it extracts correctly",
+      "range": {
+        "startLine": 317,
+        "startChar": 9,
+        "endLine": 317,
+        "endChar": 54
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
