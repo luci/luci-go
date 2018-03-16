@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "b0d7c1b7_435eb7ac",
+        "filename": "machine-db/api/crimson/v1/vms.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-16T22:02:44Z",
+      "side": 1,
+      "message": "yeah, go/filtering is especially relevant to SQL databases, because you can directly map a go/filtering expression to a SQL expression. I support go/filtering format for this MDB. If you write or port the parser, we\u0027d reuse it in buildbucket v2. See partial parsers internally.",
+      "parentUuid": "53810c70_bb3d8d4a",
+      "revId": "7f6887cbe718ad90277dcb87afc67a8327ce5277",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "85b36815_0448cb28",
         "filename": "machine-db/appengine/rpc/vms.go",
         "patchSetId": 1
