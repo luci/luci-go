@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7e838e5_00dc5b56",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-16T00:34:39Z",
+      "side": 1,
+      "message": "nit: I\u0027d use \"addViewPath\".  \"fixViewPath\" implies that it was previously there, but incorrect.",
+      "range": {
+        "startLine": 491,
+        "startChar": 22,
+        "endLine": 491,
+        "endChar": 33
+      },
+      "revId": "57585bf353a4926c999d0982f542a270092ac5e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e261401_56289508",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-16T00:34:39Z",
+      "side": 1,
+      "message": "Bail out if b is nil (it\u0027s possible if there was an error)",
+      "revId": "57585bf353a4926c999d0982f542a270092ac5e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
