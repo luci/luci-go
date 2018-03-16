@@ -205,6 +205,7 @@ func TestPubSub(t *testing.T) {
 			Currentstep: "this is a string",
 			Times:       buildbot.TimeRange{Start: unixTime(123)},
 			TimeStamp:   ts,
+			ViewPath:    "/buildbot/Fake buildbotMasterEntry/Fake buildername/1234",
 		}
 
 		bDone := &buildbot.Build{

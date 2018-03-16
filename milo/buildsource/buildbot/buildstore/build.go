@@ -170,6 +170,8 @@ func getDatastoreBuild(c context.Context, master, builder string, number int) (*
 		return nil, nil
 	}
 
+	entity.addViewPath()
+
 	return (*buildbot.Build)(entity), err
 }
 
@@ -484,6 +486,18 @@ func (b *buildEntity) Load(pm datastore.PropertyMap) error {
 	}
 
 	return nil
+}
+
+// addViewPath populates the 'ViewPath' field of the underlying buildbot.Build
+// struct.
+func (b *buildEntity) addViewPath() {
+	if b == nil {
+		// Could be nil e.g. as part of a query result.
+		return
+	}
+	b.ViewPath = (&model.BuildSummary{
+		BuildID: fmt.Sprintf("buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
+	}).SelfLink()
 }
 
 // promoteLogdogAliases promotes LogDog links to first-class links.
