@@ -69,11 +69,7 @@ func (*Service) RenameMachine(c context.Context, req *crimson.RenameMachineReque
 
 // UpdateMachine handles a request to update an existing machine.
 func (*Service) UpdateMachine(c context.Context, req *crimson.UpdateMachineRequest) (*crimson.Machine, error) {
-	machine, err := updateMachine(c, req.Machine, req.UpdateMask)
-	if err != nil {
-		return nil, err
-	}
-	return machine, nil
+	return updateMachine(c, req.Machine, req.UpdateMask)
 }
 
 // createMachine creates a new machine in the database.

@@ -39,9 +39,9 @@ message ListDRACsRequest {
   repeated string names = 1;
   // The machines to filter retrieved DRACs on.
   repeated string machines = 2;
-  // The IPv4 addresses to filter returned DRACs on.
+  // The IPv4 addresses to filter retrieved DRACs on.
   repeated string ipv4s = 3;
-  // The VLANs to filter returned DRACs on.
+  // The VLANs to filter retrieved DRACs on.
   repeated int64 vlans = 4;
   // The MAC addresses to filter retrieved DRACs on.
   repeated string mac_addresses = 5;

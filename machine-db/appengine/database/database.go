@@ -20,13 +20,13 @@ import (
 	"net/http"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	_ "github.com/go-sql-driver/mysql"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/machine-db/appengine/settings"
 	"go.chromium.org/luci/server/router"
-
-	"golang.org/x/net/context"
 )
 
 // The open database connection is intended to be reused and shared by multiple concurrent requests,

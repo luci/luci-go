@@ -110,9 +110,9 @@ type ListDRACsRequest struct {
 	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
 	// The machines to filter retrieved DRACs on.
 	Machines []string `protobuf:"bytes,2,rep,name=machines" json:"machines,omitempty"`
-	// The IPv4 addresses to filter returned DRACs on.
+	// The IPv4 addresses to filter retrieved DRACs on.
 	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s" json:"ipv4s,omitempty"`
-	// The VLANs to filter returned DRACs on.
+	// The VLANs to filter retrieved DRACs on.
 	Vlans []int64 `protobuf:"varint,4,rep,packed,name=vlans" json:"vlans,omitempty"`
 	// The MAC addresses to filter retrieved DRACs on.
 	MacAddresses []string `protobuf:"bytes,5,rep,name=mac_addresses,json=macAddresses" json:"mac_addresses,omitempty"`

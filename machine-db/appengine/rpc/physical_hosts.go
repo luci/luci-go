@@ -57,11 +57,7 @@ func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHo
 
 // UpdatePhysicalHost handles a request to update an existing physical host.
 func (*Service) UpdatePhysicalHost(c context.Context, req *crimson.UpdatePhysicalHostRequest) (*crimson.PhysicalHost, error) {
-	host, err := updatePhysicalHost(c, req.Host, req.UpdateMask)
-	if err != nil {
-		return nil, err
-	}
-	return host, nil
+	return updatePhysicalHost(c, req.Host, req.UpdateMask)
 }
 
 // createPhysicalHost creates a new physical host in the database.

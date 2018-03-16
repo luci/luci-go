@@ -17,11 +17,11 @@ package settings
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/server/settings"
-
-	"golang.org/x/net/context"
 )
 
 func TestDatabaseSettings(t *testing.T) {

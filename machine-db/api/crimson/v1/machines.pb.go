@@ -145,13 +145,13 @@ func (m *DeleteMachineRequest) GetName() string {
 type ListMachinesRequest struct {
 	// The names of machines to get.
 	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
-	// The platforms to filter returned machines on.
+	// The platforms to filter retrieved machines on.
 	Platforms []string `protobuf:"bytes,2,rep,name=platforms" json:"platforms,omitempty"`
-	// The racks to filter returned machines on.
+	// The racks to filter retrieved machines on.
 	Racks []string `protobuf:"bytes,3,rep,name=racks" json:"racks,omitempty"`
-	// The states to filter returned machines on.
+	// The states to filter retrieved machines on.
 	States []common.State `protobuf:"varint,4,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
-	// The datacenters to filter returned machines on.
+	// The datacenters to filter retrieved machines on.
 	Datacenters []string `protobuf:"bytes,5,rep,name=datacenters" json:"datacenters,omitempty"`
 }
 

@@ -44,7 +44,7 @@ message ListPhysicalHostsRequest {
   repeated string names = 1;
   // The VLANs to filter retrieved hosts on.
   repeated int64 vlans = 2;
-  // The IPv4 addresses to filter returned hosts on.
+  // The IPv4 addresses to filter retrieved hosts on.
   repeated string ipv4s = 3;
   // The machines to filter retrieved hosts on.
   repeated string machines = 4;
@@ -52,11 +52,11 @@ message ListPhysicalHostsRequest {
   repeated string oses = 5;
   // The states to filter retrieved hosts on.
   repeated common.State states = 6;
-  // The platforms to filter returned hosts on.
+  // The platforms to filter retrieved hosts on.
   repeated string platforms = 7;
-  // The racks to filter returned hosts on.
+  // The racks to filter retrieved hosts on.
   repeated string racks = 8;
-  // The datacenters to filter returned hosts on.
+  // The datacenters to filter retrieved hosts on.
   repeated string datacenters = 9;
 }
 

@@ -129,7 +129,7 @@ type ListPhysicalHostsRequest struct {
 	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
 	// The VLANs to filter retrieved hosts on.
 	Vlans []int64 `protobuf:"varint,2,rep,packed,name=vlans" json:"vlans,omitempty"`
-	// The IPv4 addresses to filter returned hosts on.
+	// The IPv4 addresses to filter retrieved hosts on.
 	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s" json:"ipv4s,omitempty"`
 	// The machines to filter retrieved hosts on.
 	Machines []string `protobuf:"bytes,4,rep,name=machines" json:"machines,omitempty"`
@@ -137,11 +137,11 @@ type ListPhysicalHostsRequest struct {
 	Oses []string `protobuf:"bytes,5,rep,name=oses" json:"oses,omitempty"`
 	// The states to filter retrieved hosts on.
 	States []common.State `protobuf:"varint,6,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
-	// The platforms to filter returned hosts on.
+	// The platforms to filter retrieved hosts on.
 	Platforms []string `protobuf:"bytes,7,rep,name=platforms" json:"platforms,omitempty"`
-	// The racks to filter returned hosts on.
+	// The racks to filter retrieved hosts on.
 	Racks []string `protobuf:"bytes,8,rep,name=racks" json:"racks,omitempty"`
-	// The datacenters to filter returned hosts on.
+	// The datacenters to filter retrieved hosts on.
 	Datacenters []string `protobuf:"bytes,9,rep,name=datacenters" json:"datacenters,omitempty"`
 }
 
