@@ -23,7 +23,6 @@ up-pubsub:
 
 up-dev:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default pubsub
-	appcfg.py -A luci-milo-dev update_dispatch $(projdir)/frontend/appengine
 
 up-dev-default:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default
