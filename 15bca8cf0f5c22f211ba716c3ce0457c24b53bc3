@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "cf40fb71_6ff3070d",
+        "filename": "cipd/client/cipd/local/json_descs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-16T23:24:46Z",
+      "side": 1,
+      "message": "nit: \"May be\" \n\nas in \"allowed to be\" \nas opposed to \"uncertain\"",
+      "range": {
+        "startLine": 86,
+        "startChar": 4,
+        "endLine": 86,
+        "endChar": 9
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "899da85c_fb6c1f13",
         "filename": "cipd/client/cipd/local/json_descs.go",
         "patchSetId": 1
@@ -59,6 +82,30 @@
       "writtenOn": "2018-03-16T23:11:40Z",
       "side": 1,
       "message": "https://golang.org/ref/spec#Arithmetic_operators\n\n\u0026^   bit clear (AND NOT)\n\nApparently it is a single operator o_O",
+      "range": {
+        "startLine": 448,
+        "startChar": 28,
+        "endLine": 448,
+        "endChar": 30
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11398dfe_b2543978",
+        "filename": "cipd/client/cipd/local/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-16T23:24:46Z",
+      "side": 1,
+      "message": "fancy!",
+      "parentUuid": "19b10ee0_ce80db86",
       "range": {
         "startLine": 448,
         "startChar": 28,
