@@ -57,11 +57,7 @@ func (*Service) ListVMs(c context.Context, req *crimson.ListVMsRequest) (*crimso
 
 // UpdateVM handles a request to update an existing VM.
 func (*Service) UpdateVM(c context.Context, req *crimson.UpdateVMRequest) (*crimson.VM, error) {
-	vm, err := updateVM(c, req.Vm, req.UpdateMask)
-	if err != nil {
-		return nil, err
-	}
-	return vm, nil
+	return updateVM(c, req.Vm, req.UpdateMask)
 }
 
 // createVM creates a new VM in the database.

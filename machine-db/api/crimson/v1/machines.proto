@@ -48,13 +48,13 @@ message DeleteMachineRequest {
 message ListMachinesRequest {
   // The names of machines to get.
   repeated string names = 1;
-  // The platforms to filter returned machines on.
+  // The platforms to filter retrieved machines on.
   repeated string platforms = 2;
-  // The racks to filter returned machines on.
+  // The racks to filter retrieved machines on.
   repeated string racks = 3;
-  // The states to filter returned machines on.
+  // The states to filter retrieved machines on.
   repeated common.State states = 4;
-  // The datacenters to filter returned machines on.
+  // The datacenters to filter retrieved machines on.
   repeated string datacenters = 5;
 }
 

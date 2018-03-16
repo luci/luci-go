@@ -513,7 +513,7 @@ func TestValidateNICForCreation(t *testing.T) {
 			Switch:     "switch",
 			Switchport: 1,
 		})
-		So(err, ShouldErrLike, "MAC address is required and must be non-empty")
+		So(err, ShouldErrLike, "invalid MAC-48 address")
 	})
 
 	Convey("MAC address invalid", t, func() {
