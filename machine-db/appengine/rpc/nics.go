@@ -64,11 +64,7 @@ func (*Service) ListNICs(c context.Context, req *crimson.ListNICsRequest) (*crim
 
 // UpdateNIC handles a request to update an existing network interface.
 func (*Service) UpdateNIC(c context.Context, req *crimson.UpdateNICRequest) (*crimson.NIC, error) {
-	nic, err := updateNIC(c, req.Nic, req.UpdateMask)
-	if err != nil {
-		return nil, err
-	}
-	return nic, nil
+	return updateNIC(c, req.Nic, req.UpdateMask)
 }
 
 // createNIC creates a new NIC in the database.
@@ -254,8 +250,6 @@ func validateNICForCreation(n *crimson.NIC) error {
 		return status.Error(codes.InvalidArgument, "NIC name is required and must be non-empty")
 	case n.Machine == "":
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
-	case n.MacAddress == "":
-		return status.Error(codes.InvalidArgument, "MAC address is required and must be non-empty")
 	case n.Switch == "":
 		return status.Error(codes.InvalidArgument, "switch is required and must be non-empty")
 	case n.Switchport < 1:

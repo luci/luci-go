@@ -17,10 +17,10 @@ package settings
 import (
 	"html/template"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
-
-	"golang.org/x/net/context"
 )
 
 // settingsKey is the name used to read/write these settings.
