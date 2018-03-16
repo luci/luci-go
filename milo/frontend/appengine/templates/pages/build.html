@@ -320,7 +320,7 @@
 
         {{ if .Description }}
           <h3>Comments</h3>
-          <pre class="comments">{{ .Description }}</pre>
+          <pre class="comments">{{ .Description | formatCommitDesc }}</pre>
         {{ end }}
 
         {{ if .File }}
