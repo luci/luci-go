@@ -77,6 +77,16 @@ type FileInfo struct {
 	// Only used for Linux\Mac archives. False for symlinks.
 	Executable bool `json:"executable,omitempty"`
 
+	// Writable is true if the file is user-writable.
+	Writable bool `json:"writable,omitempty"`
+
+	// ModTime is Unix timestamp with modification time of the file as it is set
+	// inside CIPD package.
+	//
+	// May be 0 if the package was built without preserving the modification
+	// times.
+	ModTime int64 `json:"modtime,omitempty"`
+
 	// WinAttrs is a string representation of extra windows file attributes.
 	//
 	// Only used for Win archives.

@@ -162,9 +162,6 @@ func TestPackageReading(t *testing.T) {
 	})
 
 	Convey("ExtractInstance works", t, func() {
-		// Add a bunch of files to a package.
-		out := bytes.Buffer{}
-
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 
 		inFiles := []File{
@@ -183,10 +180,8 @@ func TestPackageReading(t *testing.T) {
 			)
 		}
 
+		out := bytes.Buffer{}
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			ScanOptions: ScanOptions{
-				PreserveWritable: true,
-			},
 			Input:            inFiles,
 			Output:           &out,
 			PackageName:      "testing",
@@ -237,34 +232,28 @@ func TestPackageReading(t *testing.T) {
 			})
 		}
 
-		var zeroTime time.Time
-
-		So(string(dest.files[0].Bytes()), ShouldEqual, "12345")
-		So(dest.files[1].executable, ShouldBeTrue)
-		So(dest.files[1].writable, ShouldBeFalse)
-		So(dest.files[2].writable, ShouldBeTrue)
-		So(dest.files[2].modtime, ShouldEqual, zeroTime)
-
-		So(dest.files[3].name, ShouldEqual, "timestamped")
-		So(dest.files[3].modtime, ShouldEqual, testMTime)
-		So(dest.files[4].symlinkTarget, ShouldEqual, "abc")
-		So(dest.files[5].symlinkTarget, ShouldEqual, "/abc/def")
+		So(string(dest.fileByName("testing/qwerty").Bytes()), ShouldEqual, "12345")
+		So(dest.fileByName("abc").executable, ShouldBeTrue)
+		So(dest.fileByName("abc").writable, ShouldBeFalse)
+		So(dest.fileByName("writable").writable, ShouldBeTrue)
+		So(dest.fileByName("writable").modtime.IsZero(), ShouldBeTrue)
+		So(dest.fileByName("timestamped").modtime, ShouldEqual, testMTime)
+		So(dest.fileByName("rel_symlink").symlinkTarget, ShouldEqual, "abc")
+		So(dest.fileByName("abs_symlink").symlinkTarget, ShouldEqual, "/abc/def")
 
 		// Verify version file is correct.
-		verFileIdx := 6
 		goodVersionFile := `{
 			"instance_id": "284036fec1eaf6492a4e75d1db0920be5e8b3fd7",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
-			verFileIdx = 8
 			goodVersionFile = `{
 				"instance_id": "7745210cceeb08f108cbb81122f5dbe3a415aaa2",
 				"package_name": "testing"
 			}`
 		}
-		So(dest.files[verFileIdx].name, ShouldEqual, "subpath/version.json")
-		So(string(dest.files[verFileIdx].Bytes()), shouldBeSameJSONDict, goodVersionFile)
+		So(string(dest.fileByName("subpath/version.json").Bytes()),
+			shouldBeSameJSONDict, goodVersionFile)
 
 		// Verify manifest file is correct.
 		goodManifest := `{
@@ -283,9 +272,11 @@ func TestPackageReading(t *testing.T) {
 				},
 				{
 					"name": "writable",
-					"size": 8
+					"size": 8,
+					"writable": true
 				},
 				{
+					"modtime":1514764800,
 					"name": "timestamped",
 					"size": 7
 				},
@@ -305,9 +296,7 @@ func TestPackageReading(t *testing.T) {
 				}
 			]
 		}`
-		manifestIdx := 0
 		if runtime.GOOS == "windows" {
-			manifestIdx = 9
 			goodManifest = fmt.Sprintf(goodManifest, `,{
 				"name": "secret",
 				"size": 5,
@@ -319,11 +308,147 @@ func TestPackageReading(t *testing.T) {
 				"win_attrs": "S"
 			}`)
 		} else {
-			manifestIdx = 7
 			goodManifest = fmt.Sprintf(goodManifest, "")
 		}
-		So(dest.files[manifestIdx].name, ShouldEqual, ".cipdpkg/manifest.json")
-		So(string(dest.files[manifestIdx].Bytes()), shouldBeSameJSONDict, goodManifest)
+		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
+			shouldBeSameJSONDict, goodManifest)
+	})
+
+	Convey("ExtractInstance handles v1 packages correctly", t, func() {
+		// ZipInfos in packages with format_version "1" always have the writable bit
+		// set, and always have 0 timestamp. During the extraction of such package,
+		// the writable bit should be cleared, and the timestamp should not be reset
+		// to 0 (it will be set to whatever the current time is).
+		inFiles := []File{
+			NewTestFile("testing/qwerty", "12345", TestFileOpts{Writable: true}),
+			NewTestFile("abc", "duh", TestFileOpts{Executable: true, Writable: true}),
+			NewTestFile("bad_dir/pkg/0/description.json", "{}", TestFileOpts{Writable: true}),
+			NewTestSymlink("rel_symlink", "abc"),
+			NewTestSymlink("abs_symlink", "/abc/def"),
+		}
+		if runtime.GOOS == "windows" {
+			inFiles = append(inFiles,
+				NewWinTestFile("secret", "ninja", WinAttrHidden),
+				NewWinTestFile("system", "machine", WinAttrSystem),
+			)
+		}
+
+		out := bytes.Buffer{}
+		err := BuildInstance(ctx, BuildInstanceOptions{
+			Input:                 inFiles,
+			Output:                &out,
+			PackageName:           "testing",
+			VersionFile:           "subpath/version.json",
+			CompressionLevel:      5,
+			overrideFormatVersion: "1",
+		})
+		So(err, ShouldBeNil)
+
+		// Extract files.
+		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
+		So(err, ShouldBeNil)
+		dest := &testDestination{}
+		err = ExtractInstance(ctx, inst, dest, func(f File) bool {
+			return strings.HasPrefix(f.Name(), "bad_dir/")
+		})
+		So(err, ShouldBeNil)
+		So(dest.beginCalls, ShouldEqual, 1)
+		So(dest.endCalls, ShouldEqual, 1)
+
+		// Verify file list, file data and flags are correct.
+		names := make([]string, len(dest.files))
+		for i, f := range dest.files {
+			names[i] = f.name
+		}
+		if runtime.GOOS != "windows" {
+			So(names, ShouldResemble, []string{
+				"testing/qwerty",
+				"abc",
+				"rel_symlink",
+				"abs_symlink",
+				"subpath/version.json",
+				".cipdpkg/manifest.json",
+			})
+		} else {
+			So(names, ShouldResemble, []string{
+				"testing/qwerty",
+				"abc",
+				"rel_symlink",
+				"abs_symlink",
+				"secret",
+				"system",
+				"subpath/version.json",
+				".cipdpkg/manifest.json",
+			})
+		}
+
+		So(string(dest.fileByName("testing/qwerty").Bytes()), ShouldEqual, "12345")
+		So(dest.fileByName("abc").executable, ShouldBeTrue)
+		So(dest.fileByName("abc").writable, ShouldBeFalse)
+		So(dest.fileByName("rel_symlink").symlinkTarget, ShouldEqual, "abc")
+		So(dest.fileByName("abs_symlink").symlinkTarget, ShouldEqual, "/abc/def")
+
+		// Verify version file is correct.
+		goodVersionFile := `{
+			"instance_id": "2caf604d611300332f4f5d97dc2e3e1b40b9fc10",
+			"package_name": "testing"
+		}`
+		if runtime.GOOS == "windows" {
+			goodVersionFile = `{
+				"instance_id": "64ba7831cc5374c8747e24315674b2b966065c5e",
+				"package_name": "testing"
+			}`
+		}
+		So(string(dest.fileByName("subpath/version.json").Bytes()),
+			shouldBeSameJSONDict, goodVersionFile)
+
+		// Verify manifest file is correct.
+		goodManifest := `{
+			"format_version": "1",
+			"package_name": "testing",
+			"version_file": "subpath/version.json",
+			"files": [
+				{
+					"name": "testing/qwerty",
+					"size": 5
+				},
+				{
+					"name": "abc",
+					"size": 3,
+					"executable": true
+				},
+				{
+					"name": "rel_symlink",
+					"size": 0,
+					"symlink": "abc"
+				},
+				{
+					"name": "abs_symlink",
+					"size": 0,
+					"symlink": "/abc/def"
+				}%s,
+				{
+					"name": "subpath/version.json",
+					"size": 92
+				}
+			]
+		}`
+		if runtime.GOOS == "windows" {
+			goodManifest = fmt.Sprintf(goodManifest, `,{
+				"name": "secret",
+				"size": 5,
+				"win_attrs": "H"
+			},
+			{
+				"name": "system",
+				"size": 7,
+				"win_attrs": "S"
+			}`)
+		} else {
+			goodManifest = fmt.Sprintf(goodManifest, "")
+		}
+		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
+			shouldBeSameJSONDict, goodManifest)
 	})
 }
 
@@ -375,5 +500,14 @@ func (d *testDestination) CreateSymlink(ctx context.Context, name string, target
 
 func (d *testDestination) End(ctx context.Context, success bool) error {
 	d.endCalls++
+	return nil
+}
+
+func (d *testDestination) fileByName(name string) *testDestinationFile {
+	for _, f := range d.files {
+		if f.name == name {
+			return f
+		}
+	}
 	return nil
 }

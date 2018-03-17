@@ -170,7 +170,11 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 				Name:       file.Name(),
 				Size:       file.Size(),
 				Executable: file.Executable(),
+				Writable:   file.Writable(),
 				WinAttrs:   file.WinAttrs().String(),
+			}
+			if modTime := file.ModTime(); !modTime.IsZero() {
+				fi.ModTime = modTime.Unix()
 			}
 			if file.Symlink() {
 				target, err := file.SymlinkTarget()
@@ -441,8 +445,7 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 			if !ok {
 				return fmt.Errorf("file %s is not a fileInZip type", f.Name())
 			}
-
-			zf.z.SetMode(zf.z.Mode() & 0757)
+			zf.z.SetMode(zf.z.Mode() &^ 0222)
 		}
 	}
 

@@ -35,8 +35,6 @@ import (
 
 // BuildInstanceOptions defines options for BuildInstance function.
 type BuildInstanceOptions struct {
-	ScanOptions
-
 	// Input is a list of files to add to the package.
 	Input []File
 
@@ -54,6 +52,12 @@ type BuildInstanceOptions struct {
 
 	// CompressionLevel defines deflate compression level in range [0-9].
 	CompressionLevel int
+
+	// overrideFormatVersion, if set, will override the default format version put
+	// into the manifest file.
+	//
+	// This is useful for testing.
+	overrideFormatVersion string
 }
 
 // BuildInstance builds a new package instance.
@@ -99,12 +103,12 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 	}
 
 	// Write the final zip file.
-	return zipInputFiles(ctx, files, opts.Output, opts.CompressionLevel, opts.PreserveWritable)
+	return zipInputFiles(ctx, files, opts.Output, opts.CompressionLevel)
 }
 
 // zipInputFiles deterministically builds a zip archive out of input files and
 // writes it to the writer. Files are written in the order given.
-func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int, preserveWritable bool) error {
+func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) error {
 	logging.Infof(ctx, "About to zip %d files with compression level %d", len(files), level)
 
 	writer := zip.NewWriter(w)
@@ -315,9 +319,13 @@ func makeManifestFile(opts BuildInstanceOptions) (File, error) {
 	if err := ValidateInstallMode(opts.InstallMode); err != nil {
 		return nil, err
 	}
+	formatVer := manifestFormatVersion
+	if opts.overrideFormatVersion != "" {
+		formatVer = opts.overrideFormatVersion
+	}
 	buf := &bytes.Buffer{}
 	err := writeManifest(&Manifest{
-		FormatVersion: manifestFormatVersion,
+		FormatVersion: formatVer,
 		PackageName:   opts.PackageName,
 		VersionFile:   opts.VersionFile,
 		InstallMode:   opts.InstallMode,
