@@ -170,7 +170,11 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 				Name:       file.Name(),
 				Size:       file.Size(),
 				Executable: file.Executable(),
+				Writable:   file.Writable(),
 				WinAttrs:   file.WinAttrs().String(),
+			}
+			if modTime := file.ModTime(); !modTime.IsZero() {
+				fi.ModTime = modTime.Unix()
 			}
 			if file.Symlink() {
 				target, err := file.SymlinkTarget()
@@ -433,7 +437,7 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 
 	// Version "1" (legacy format) used to set the writable mode bit (0200) in
 	// zipped files, and then ignored it when unpacking. Newer versions respect
-	// the writable mode bit.  Strip it off for the version "1", to preserve
+	// the writable mode bit. Strip it off for the version "1", to preserve
 	// the old semantics.
 	if inst.manifest.FormatVersion == "1" {
 		for _, f := range inst.files {
@@ -441,8 +445,16 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 			if !ok {
 				return fmt.Errorf("file %s is not a fileInZip type", f.Name())
 			}
-
-			zf.z.SetMode(zf.z.Mode() & 0757)
+			// SetMode overrides lower 16 bits of ExternalAttrs that we use to store
+			// Windows specific attributes (such as "hidden" and "system file"). Carry
+			// them over manually. Note that if we manually clear only upper 16
+			// bit that correspond to +w Unix flag, we won't clear 'msdosReadOnly'
+			// flag that is stored in lower 16 bits. SetMode does it for us. So we use
+			// SetMode to deal with 'msdosReadOnly' correctly, and then reapply other
+			// Windows attributes.
+			winAttrs := zf.z.ExternalAttrs & uint32(WinAttrsAll)
+			zf.z.SetMode(zf.z.Mode() &^ 0222)
+			zf.z.ExternalAttrs |= winAttrs
 		}
 	}
 
