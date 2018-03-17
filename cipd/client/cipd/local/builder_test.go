@@ -166,10 +166,6 @@ func TestBuildInstance(t *testing.T) {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 		makeOpts := func(out io.Writer, level int) BuildInstanceOptions {
 			return BuildInstanceOptions{
-				ScanOptions: ScanOptions{
-					PreserveModTime:  true,
-					PreserveWritable: true,
-				},
 				Input: []File{
 					NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
 					NewTestFile("abc", "duh", TestFileOpts{Executable: true}),

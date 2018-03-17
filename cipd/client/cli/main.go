@@ -431,11 +431,6 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		return empty, makeCLIError("invalid -compression-level: must be in [0-9] set")
 	}
 
-	scanOpts := local.ScanOptions{
-		PreserveModTime:  opts.preserveModTime,
-		PreserveWritable: opts.preserveWritable,
-	}
-
 	// Handle -name and -in if defined. Do not allow -pkg-def and -pkg-var in that case.
 	if opts.inputDir != "" {
 		if opts.packageName == "" {
@@ -454,12 +449,14 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		}
 
 		// Simply enumerate files in the directory.
-		files, err := local.ScanFileSystem(opts.inputDir, opts.inputDir, nil, scanOpts)
+		files, err := local.ScanFileSystem(opts.inputDir, opts.inputDir, nil, local.ScanOptions{
+			PreserveModTime:  opts.preserveModTime,
+			PreserveWritable: opts.preserveWritable,
+		})
 		if err != nil {
 			return empty, err
 		}
 		return local.BuildInstanceOptions{
-			ScanOptions:      scanOpts,
 			Input:            files,
 			PackageName:      packageName,
 			InstallMode:      opts.installMode,
@@ -501,7 +498,6 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 			return empty, err
 		}
 		return local.BuildInstanceOptions{
-			ScanOptions:      scanOpts,
 			Input:            files,
 			PackageName:      pkgDef.Package,
 			VersionFile:      pkgDef.VersionFile(),
