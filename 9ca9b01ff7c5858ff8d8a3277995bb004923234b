@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5888ee3_cfaf712a",
+        "filename": "cipd/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-17T03:06:40Z",
+      "side": 1,
+      "message": "nice, I didn\u0027t know about that trick",
+      "range": {
+        "startLine": 16,
+        "startChar": 52,
+        "endLine": 16,
+        "endChar": 64
+      },
+      "revId": "9ca9b01ff7c5858ff8d8a3277995bb004923234b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
