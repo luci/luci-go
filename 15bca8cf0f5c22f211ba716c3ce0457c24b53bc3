@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4932bc37_4be66ae8",
+        "filename": "cipd/client/cipd/local/json_descs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-17T02:58:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cf40fb71_6ff3070d",
+      "range": {
+        "startLine": 86,
+        "startChar": 4,
+        "endLine": 86,
+        "endChar": 9
+      },
+      "revId": "15bca8cf0f5c22f211ba716c3ce0457c24b53bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "899da85c_fb6c1f13",
         "filename": "cipd/client/cipd/local/json_descs.go",
         "patchSetId": 1
