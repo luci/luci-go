@@ -143,19 +143,6 @@ message Step {
   // ManifestLink. This name will be used in the milo console definition to
   // indicate which manifest data to sort the console view by.
   map<string, milo.ManifestLink> source_manifests = 25;
-
-  // Used by Kitchen to determine whether to send time series data.
-  // Steps without monitor=true will not send step data to Monarch.
-  // We do not send data for all steps because the metric field cardinality
-  // would be too high. Only set monitor=true for steps for which you'd
-  // like to configure alerts. Otherwise, use step data in BigQuery for
-  // analysis.
-  bool monitor = 26;
-
-  // A "what is this?" identifier for a step, which identifies steps with the
-  // same implementation. This value is set by a human when defining the step.
-  // Required if monitor=true.
-  string step_class = 27;
 }
 
 // A Link is an optional label followed by a typed link to an external

@@ -53,7 +53,7 @@ var ManifestDiff_Stat_value = map[string]int32{
 func (x ManifestDiff_Stat) String() string {
 	return proto.EnumName(ManifestDiff_Stat_name, int32(x))
 }
-func (ManifestDiff_Stat) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+func (ManifestDiff_Stat) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
 
 // ManifestDiff holds basic difference information between two source manifests.
 type ManifestDiff struct {
@@ -69,7 +69,7 @@ type ManifestDiff struct {
 func (m *ManifestDiff) Reset()                    { *m = ManifestDiff{} }
 func (m *ManifestDiff) String() string            { return proto.CompactTextString(m) }
 func (*ManifestDiff) ProtoMessage()               {}
-func (*ManifestDiff) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*ManifestDiff) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *ManifestDiff) GetOld() *Manifest {
 	if m != nil {
@@ -126,7 +126,7 @@ type ManifestDiff_GitCheckout struct {
 func (m *ManifestDiff_GitCheckout) Reset()                    { *m = ManifestDiff_GitCheckout{} }
 func (m *ManifestDiff_GitCheckout) String() string            { return proto.CompactTextString(m) }
 func (*ManifestDiff_GitCheckout) ProtoMessage()               {}
-func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
 
 func (m *ManifestDiff_GitCheckout) GetOverall() ManifestDiff_Stat {
 	if m != nil {
@@ -184,7 +184,7 @@ type ManifestDiff_Directory struct {
 func (m *ManifestDiff_Directory) Reset()                    { *m = ManifestDiff_Directory{} }
 func (m *ManifestDiff_Directory) String() string            { return proto.CompactTextString(m) }
 func (*ManifestDiff_Directory) ProtoMessage()               {}
-func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 1} }
+func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 1} }
 
 func (m *ManifestDiff_Directory) GetOverall() ManifestDiff_Stat {
 	if m != nil {
@@ -236,10 +236,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/manifest_diff.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/manifest_diff.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 547 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0x51, 0x8b, 0xda, 0x40,
 	0x10, 0xc7, 0x9b, 0x33, 0x9e, 0x3a, 0xb1, 0x12, 0x96, 0x42, 0xd3, 0x50, 0x8a, 0x5c, 0x29, 0xf8,
