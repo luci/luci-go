@@ -305,8 +305,8 @@ func newProgressReporter(ctx context.Context, files []File) *progressReporter {
 	}
 	if r.totalCount != 0 {
 		logging.Infof(
-			r.ctx, "cipd: about to extract %.1f Mb (%d files)",
-			float64(r.totalSize)/1024.0/1024.0, r.totalCount)
+			r.ctx, "cipd: about to extract %.1f MB (%d files)",
+			float64(r.totalSize)/1000.0/1000.0, r.totalCount)
 	}
 	return r
 }
