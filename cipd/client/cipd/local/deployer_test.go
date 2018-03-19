@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/cipd/client/cipd/common"
+	. "go.chromium.org/luci/cipd/common"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

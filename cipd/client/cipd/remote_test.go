@@ -21,7 +21,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/cipd/client/cipd/common"
+	. "go.chromium.org/luci/cipd/common"
 )
 
 func TestRemoteImpl(t *testing.T) {

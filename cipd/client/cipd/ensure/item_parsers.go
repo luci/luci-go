@@ -21,8 +21,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // an itemParser should parse the value from `val`, and update s or

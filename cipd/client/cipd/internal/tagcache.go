@@ -23,9 +23,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/logging"
 )
 

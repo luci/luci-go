@@ -31,9 +31,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/common"
 )
 
 const (
