@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/common/api/gitiles"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 
@@ -39,7 +40,7 @@ func TestLog(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		gitilesMock := gitilespb.NewMockGitilesClient(ctl)
-		c = UseFactory(c, func(c context.Context, host string) (gitilespb.GitilesClient, error) {
+		c = gitiles.UseFactory(c, func(c context.Context, host string) (gitilespb.GitilesClient, error) {
 			return gitilesMock, nil
 		})
 

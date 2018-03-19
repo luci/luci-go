@@ -28,16 +28,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// ClientFactory creates a Gitiles client.
-type ClientFactory func(ctx context.Context, host string) (gitilespb.GitilesClient, error)
-
-var factoryKey = "gitiles client factory key"
-
-// UseFactory installs f into c.
-func UseFactory(c context.Context, f ClientFactory) context.Context {
-	return context.WithValue(c, &factoryKey, f)
-}
-
 // AuthenticatedProdClient returns a production Gitiles client,
 // authenticated as self. Implements ClientFactory.
 func AuthenticatedProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
@@ -47,14 +37,4 @@ func AuthenticatedProdClient(c context.Context, host string) (gitilespb.GitilesC
 	}
 
 	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, true)
-}
-
-// Client creates a new Gitiles client using the ClientFactory installed in c.
-// See also UseFactory.
-func Client(c context.Context, host string) (gitilespb.GitilesClient, error) {
-	f, ok := c.Value(&factoryKey).(ClientFactory)
-	if !ok {
-		return nil, errors.New("gitiles client factory is not installed in context")
-	}
-	return f(c, host)
 }

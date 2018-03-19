@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -197,7 +198,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	// cache miss, cache failure or corrupted cache.
 	// Call Gitiles.
 
-	g, err := Client(c, l.host)
+	g, err := gitiles.NewClient(c, l.host)
 	if err != nil {
 		return nil, err
 	}

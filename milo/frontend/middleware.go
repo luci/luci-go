@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/analytics"
@@ -311,7 +312,7 @@ func withRouterContextMiddleware(c *router.Context, next router.Handler) {
 // withGitilesMiddleware is a middleware that installs a prod Gitiles client
 // factory into the context.
 func withGitilesMiddleware(c *router.Context, next router.Handler) {
-	c.Context = git.UseFactory(c.Context, git.AuthenticatedProdClient)
+	c.Context = gitiles.UseFactory(c.Context, git.AuthenticatedProdClient)
 	next(c)
 }
 
