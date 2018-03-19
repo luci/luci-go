@@ -65,10 +65,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/version"
 )
 

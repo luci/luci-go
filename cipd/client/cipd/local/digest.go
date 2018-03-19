@@ -19,7 +19,7 @@ import (
 	"encoding/hex"
 	"hash"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // DefaultHash returns a zero hash.Hash instance to use for package verification

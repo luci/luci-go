@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/local"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/cipd/client/cipd/common"
+	. "go.chromium.org/luci/cipd/common"
 )
 
 func underlyingFile(i local.InstanceFile) *os.File {

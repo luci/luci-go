@@ -25,8 +25,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

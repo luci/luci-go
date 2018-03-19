@@ -19,8 +19,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // PackageDef defines a package line parsed out of an ensure file.

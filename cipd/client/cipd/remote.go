@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // remoteMaxRetries is how many times to retry transient HTTP errors.

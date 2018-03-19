@@ -25,9 +25,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/promise"
 
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // Verifier uses a Client to verify the validity of packages in parallel.

@@ -22,9 +22,9 @@ import (
 	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/cipd/client/cipd"
-	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
