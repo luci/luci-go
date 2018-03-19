@@ -38,8 +38,6 @@
 // You can use tsmon (https://godoc.org/go.chromium.org/luci/common/tsmon) to
 // track upload latency and errors.
 //
-// Uploader has a public field, UploadsMetricName, which will automatically
-// create a counter metric to track successes and failures. It does not
-// automatically create a metric for tracking latency (a cumulative distribution
-// metric is recommended), but could be modified to do so.
+// If Uploader.UploadsMetricName field is not zero, Uploader will
+// create a counter metric to track successes and failures.
 package bq

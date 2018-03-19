@@ -15,11 +15,7 @@
 package bq
 
 import (
-	"fmt"
 	"testing"
-	"time"
-
-	"golang.org/x/net/context"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
@@ -32,34 +28,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// MockUploader is an EventUploader that can be used for testing.
-type MockUploader chan []fakeEvent
-
-// Put sends events on the MockUploader.
-func (u MockUploader) Put(ctx context.Context, src interface{}) error {
-	srcs := src.([]interface{})
-	var fes []fakeEvent
-	for _, fe := range srcs {
-		fes = append(fes, fe.(fakeEvent))
-	}
-	u <- fes
-	return nil
-}
-
-type fakeEvent struct{}
-
-// ShouldHavePut verifies that Put was called with the expected set of events.
-func ShouldHavePut(actual interface{}, expected ...interface{}) string {
-	u := actual.(MockUploader)
-
-	select {
-	case got := <-u:
-		return ShouldResemble([]interface{}{got}, expected)
-	case <-time.After(50 * time.Millisecond):
-		return "timed out waiting for upload"
-	}
-}
-
 func TestMetric(t *testing.T) {
 	t.Parallel()
 	u := Uploader{}
@@ -68,61 +36,6 @@ func TestMetric(t *testing.T) {
 		Convey("Expect uploads metric was created", func() {
 			_ = u.getCounter() // To actually create the metric
 			So(u.uploads.Info().Name, ShouldEqual, "fakeCounter")
-		})
-	})
-}
-
-func TestClose(t *testing.T) {
-	t.Parallel()
-
-	Convey("Test Close", t, func() {
-		u := make(MockUploader, 1)
-		bu, err := NewBatchUploader(context.Background(), u, make(chan time.Time))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		closed := false
-		defer func() {
-			if !closed {
-				bu.Close()
-			}
-		}()
-
-		Convey("Expect Stage to add event to pending queue", func() {
-			bu.Stage(fakeEvent{})
-			So(bu.pending, ShouldHaveLength, 1)
-		})
-
-		Convey("Expect Close to flush pending queue", func() {
-			bu.Stage(fakeEvent{})
-			bu.Close()
-			closed = true
-			So(bu.pending, ShouldHaveLength, 0)
-			So(u, ShouldHavePut, []fakeEvent{{}})
-			So(bu.isClosed(), ShouldBeTrue)
-			So(func() { bu.Stage(fakeEvent{}) }, ShouldPanic)
-		})
-	})
-}
-
-func TestUpload(t *testing.T) {
-	t.Parallel()
-
-	Convey("Test Upload", t, func() {
-		u := make(MockUploader, 1)
-		tickc := make(chan time.Time)
-		bu, err := NewBatchUploader(context.Background(), &u, tickc)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer bu.Close()
-
-		bu.Stage(fakeEvent{})
-		Convey("Expect Put to wait for tick to call upload", func() {
-			So(u, ShouldHaveLength, 0)
-			tickc <- time.Time{}
-			So(u, ShouldHavePut, []fakeEvent{{}})
 		})
 	})
 }
@@ -176,44 +89,6 @@ func TestSave(t *testing.T) {
 			"foo_repeated": []interface{}{"Y", "X"},
 			"struct":       `{"num":1,"str":"a"}`,
 		})
-	})
-}
-
-func TestStage(t *testing.T) {
-	t.Parallel()
-
-	tcs := []struct {
-		desc    string
-		src     interface{}
-		wantLen int
-	}{
-		{
-			desc:    "single event",
-			src:     fakeEvent{},
-			wantLen: 1,
-		},
-		{
-			desc:    "slice of events",
-			src:     []fakeEvent{{}, {}},
-			wantLen: 2,
-		},
-	}
-
-	Convey("Stage can accept single events and slices of events", t, func() {
-		u := make(MockUploader, 1)
-		bu, err := NewBatchUploader(context.Background(), &u, make(chan time.Time))
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer bu.Close()
-
-		for _, tc := range tcs {
-			Convey(fmt.Sprintf("Test %s", tc.desc), func() {
-				bu.Stage(tc.src)
-				So(bu.pending, ShouldHaveLength, tc.wantLen)
-				So(bu.pending[len(bu.pending)-1], ShouldHaveSameTypeAs, fakeEvent{})
-			})
-		}
 	})
 }
 
