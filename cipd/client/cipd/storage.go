@@ -222,7 +222,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 	// download is a separate function to be able to use deferred close.
 	download := func(out io.Writer, src io.ReadCloser, totalLen int64) error {
 		defer src.Close()
-		logging.Infof(ctx, "cipd: about to fetch %.1f Mb", float32(totalLen)/1024.0/1024.0)
+		logging.Infof(ctx, "cipd: about to fetch %.1f MB", float32(totalLen)/1000.0/1000.0)
 		reportProgress(0, totalLen)
 		_, err := io.Copy(out, &readerWithProgress{
 			reader:   src,
