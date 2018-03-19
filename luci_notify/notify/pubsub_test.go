@@ -26,10 +26,10 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/user"
 	"go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
+	gitpb "go.chromium.org/luci/common/proto/git"
 
 	"go.chromium.org/luci/luci_notify/testutil"
 
@@ -39,9 +39,9 @@ import (
 var (
 	rev1        = testutil.TestRevision("some random data here")
 	rev2        = testutil.TestRevision("other random string")
-	testCommits = []gitiles.Commit{
-		{Commit: rev1},
-		{Commit: rev2},
+	testCommits = []*gitpb.Commit{
+		{Id: rev1},
+		{Id: rev2},
 	}
 )
 
@@ -110,13 +110,11 @@ func TestHandleBuild(t *testing.T) {
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
 		newTime := time.Date(2015, 2, 3, 12, 58, 7, 0, time.UTC)
 
-		history := testutil.NewMockHistoryFunc(testCommits)
-
 		dispatcher, taskqueue := createMockTaskQueue(c)
 
 		testSuccess := func(build *Build, emailExpect ...string) {
 			// Test handleBuild.
-			err := handleBuild(c, dispatcher, build, history)
+			err := handleBuild(c, dispatcher, build, mockHistoryFunc(testCommits))
 			So(err, ShouldBeNil)
 
 			// Verify sent messages.
@@ -208,4 +206,29 @@ func TestHandleBuild(t *testing.T) {
 			grepLog("old time")
 		})
 	})
+}
+
+// mockHistoryFunc returns a mock HistoryFunc that gets its history from
+// a given list of gitpb.Commit.
+func mockHistoryFunc(mockCommits []*gitpb.Commit) HistoryFunc {
+	return func(_ context.Context, _, _, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
+		oldCommit := -1
+		newCommit := -1
+		for i, c := range mockCommits {
+			if c.Id == oldRevision {
+				oldCommit = i
+			}
+			if c.Id == newRevision {
+				newCommit = i
+			}
+		}
+		if oldCommit == -1 || newCommit == -1 || newCommit < oldCommit {
+			return nil, nil
+		}
+		commits := make([]*gitpb.Commit, newCommit-oldCommit+1)
+		for i, j := newCommit, 0; i >= oldCommit; i, j = i-1, j+1 {
+			commits[j] = mockCommits[i]
+		}
+		return commits, nil
+	}
 }
