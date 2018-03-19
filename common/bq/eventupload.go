@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"golang.org/x/net/context"
@@ -57,12 +56,6 @@ var protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 
 const insertLimit = 10000
 const batchDefault = 500
-
-// EventUploader is an interface for types which implement a Put method. It
-// exists for the purpose of mocking Uploader in tests.
-type EventUploader interface {
-	Put(ctx context.Context, src interface{}) error
-}
 
 // Uploader contains the necessary data for streaming data to BigQuery.
 type Uploader struct {
@@ -361,124 +354,4 @@ func batch(rows []*Row, batchSize int) [][]*Row {
 		rows = rows[len(batch):]
 	}
 	return rowSets
-}
-
-// BatchUploader contains the necessary data for asynchronously sending batches
-// of event row data to BigQuery.
-type BatchUploader struct {
-	u        EventUploader
-	stopc    chan struct{}
-	stoppedc chan struct{}
-
-	mu      sync.Mutex
-	pending []interface{}
-	closed  int32
-}
-
-// NewBatchUploader constructs a new BatchUploader, which may optionally be
-// further configured by setting its exported fields before the first call to
-// Stage. Its Close method should be called when it is no longer needed.
-//
-// ctx is used by a goroutine, started when a BatchUploader is created by
-// NewBatchUploader, that periodically uploads events. ctx should not be
-// cancelled as a means of closing the BatchUploader, because it is needed for
-// uploading buffered events. Instead, the client must call Close() on the
-// BatchUploader. If ctx is cancelled before calling Close(), the goroutine will
-// panic.
-//
-// Uploader implements EventUploader.
-//
-// c is a channel used by BatchUploader to prompt event upload. A
-// <-chan time.Time with a ticker can be constructed with
-// time.NewTicker(time.Duration).C. If left unset, the default upload
-// interval is one minute.
-func NewBatchUploader(ctx context.Context, u EventUploader, c <-chan time.Time) (*BatchUploader, error) {
-	bu := &BatchUploader{
-		u:        u,
-		stopc:    make(chan struct{}),
-		stoppedc: make(chan struct{}),
-	}
-
-	var ticker *time.Ticker
-	if c == nil {
-		ticker = time.NewTicker(time.Minute)
-		c = ticker.C
-	}
-
-	go func() {
-		if ticker != nil {
-			defer ticker.Stop()
-		}
-		defer close(bu.stoppedc)
-		for {
-			select {
-			case <-ctx.Done():
-				panic("Context was closed before calling Close() on BatchUploader")
-			case <-bu.stopc:
-				// Final upload.
-				bu.upload(ctx)
-				return
-			case <-c:
-				bu.upload(ctx)
-			}
-		}
-	}()
-
-	return bu, nil
-}
-
-// Stage stages one or more rows for sending to BigQuery. src is expected to
-// be a struct matching the schema in Uploader, or a slice containing
-// such structs. Stage returns immediately and batches of rows will be sent to
-// BigQuery at regular intervals.
-//
-// Stage will spawn another goroutine that manages uploads, if it hasn't been
-// started already. That routine depends on ctx, so be aware that if ctx is
-// cancelled immediately after calling Stage, those events will not be uploaded.
-func (bu *BatchUploader) Stage(src interface{}) {
-	if bu.isClosed() {
-		panic("Stage called on closed BatchUploader")
-	}
-
-	bu.mu.Lock()
-	defer bu.mu.Unlock()
-
-	switch reflect.ValueOf(src).Kind() {
-	case reflect.Slice:
-		v := reflect.ValueOf(src)
-		for i := 0; i < v.Len(); i++ {
-			bu.pending = append(bu.pending, v.Index(i).Interface())
-		}
-	case reflect.Struct:
-		bu.pending = append(bu.pending, src)
-	}
-}
-
-// upload streams a batch of event rows to BigQuery. Put takes care of retrying,
-// so if it returns an error there is either an issue with the data it is trying
-// to upload, or BigQuery itself is experiencing a failure. So, we don't retry.
-func (bu *BatchUploader) upload(ctx context.Context) {
-	bu.mu.Lock()
-	pending := bu.pending
-	bu.pending = nil
-	bu.mu.Unlock()
-
-	if len(pending) == 0 {
-		return
-	}
-
-	_ = bu.u.Put(ctx, pending)
-}
-
-// Close flushes any pending event rows and releases any resources held by the
-// uploader. Close should be called when the BatchUploader is no longer needed.
-func (bu *BatchUploader) Close() {
-	if atomic.CompareAndSwapInt32(&bu.closed, 0, 1) {
-		close(bu.stopc)
-		<-bu.stoppedc
-	}
-}
-
-func (bu *BatchUploader) isClosed() bool {
-	return atomic.LoadInt32(&bu.closed) == 1
 }
