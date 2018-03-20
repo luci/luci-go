@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "3b1ab22c_145a1ed9",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-20T22:47:44Z",
+      "side": 1,
+      "message": "This is a bit abstract. PrefixMetadata.prefix is not Prefix.\n\nHow about PrefixRequest or something something requesty in case you add something there in the future?",
+      "range": {
+        "startLine": 64,
+        "startChar": 24,
+        "endLine": 64,
+        "endChar": 30
+      },
+      "revId": "59c3160035fbb3566507f0d578b89473d61bc363",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a213f224_0484b81d",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-20T22:47:44Z",
+      "side": 1,
+      "message": "did you consider squashing GetPrefixMetadata and this into one request with \"bool inherited\" field? what are the use cases of fetching non-inherited prefix metadata?",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 40
+      },
+      "revId": "59c3160035fbb3566507f0d578b89473d61bc363",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "038a9e79_d1ce0937",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 5
@@ -13,6 +59,30 @@
       "writtenOn": "2018-03-20T05:57:43Z",
       "side": 1,
       "message": "can we just... not port this feature? Or are you just porting the enum value for completeness?",
+      "range": {
+        "startLine": 109,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 16
+      },
+      "revId": "59c3160035fbb3566507f0d578b89473d61bc363",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b23ac84c_66d2bb18",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-20T22:47:44Z",
+      "side": 1,
+      "message": "does CLI client use this? can we omit entries with this role in API response?",
+      "parentUuid": "038a9e79_d1ce0937",
       "range": {
         "startLine": 109,
         "startChar": 2,
