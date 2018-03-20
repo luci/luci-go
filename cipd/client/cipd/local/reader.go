@@ -486,7 +486,7 @@ func (inst *packageInstance) DataReader() io.ReadSeeker { return inst.data }
 // IsCorruptionError returns true iff err indicates corruption.
 func IsCorruptionError(err error) bool {
 	switch err {
-	case zip.ErrFormat, zip.ErrChecksum, zip.ErrAlgorithm, ErrHashMismatch:
+	case io.ErrUnexpectedEOF, zip.ErrFormat, zip.ErrChecksum, zip.ErrAlgorithm, ErrHashMismatch:
 		return true
 	}
 	return false
