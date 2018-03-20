@@ -15,7 +15,12 @@
 package repo
 
 import (
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/common"
 )
 
 // Public returns publicly exposed implementation of cipd.Repository service.
@@ -27,3 +32,24 @@ func Public() api.RepositoryServer {
 
 // repoImpl implements api.RepositoryServer.
 type repoImpl struct{}
+
+// GetPathMetadata implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) GetPathMetadata(c context.Context, r *api.PackagePath) (resp *api.PathMetadata, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+// GetInheritedPathMetadata implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) GetInheritedPathMetadata(c context.Context, r *api.PackagePath) (resp *api.InheritedPathMetadata, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+// UpdatePathMetadata implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) UpdatePathMetadata(c context.Context, r *api.PathMetadata) (resp *api.PathMetadata, err error) {
+	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
