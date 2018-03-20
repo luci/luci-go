@@ -8,6 +8,7 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -18,6 +19,190 @@ import (
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// Roles used in package path ACLs.
+//
+// A user can have one or more such roles for a package path. They get inherited
+// by all subpaths.
+//
+// Literal names are important, since roles are stored as strings in the
+// datastore.
+type Role int32
+
+const (
+	Role_ROLE_UNSPECIFIED Role = 0
+	// Readers can fetch package instances and package metadata (e.g. list of
+	// instances, all tags, all refs), but not path metadata (e.g. ACLs).
+	Role_READER Role = 1
+	// Writers can do everything that readers can, plus create new packages,
+	// upload package instances, attach tags, move refs, modify package counters.
+	Role_WRITER Role = 2
+	// Owners can do everything that writers can, plus read and modify path
+	// metadata.
+	Role_OWNER Role = 3
+	// Counter writers can only modify package counters and nothing more.
+	Role_COUNTER_WRITER Role = 4
+)
+
+var Role_name = map[int32]string{
+	0: "ROLE_UNSPECIFIED",
+	1: "READER",
+	2: "WRITER",
+	3: "OWNER",
+	4: "COUNTER_WRITER",
+}
+var Role_value = map[string]int32{
+	"ROLE_UNSPECIFIED": 0,
+	"READER":           1,
+	"WRITER":           2,
+	"OWNER":            3,
+	"COUNTER_WRITER":   4,
+}
+
+func (x Role) String() string {
+	return proto.EnumName(Role_name, int32(x))
+}
+func (Role) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+
+type PackagePath struct {
+	// A path within the repository to get metadata for, e.g. "a/b/c".
+	//
+	// Doesn't necessary point to a real package. It can point to a "directory"
+	// inside the package namespace.
+	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+}
+
+func (m *PackagePath) Reset()                    { *m = PackagePath{} }
+func (m *PackagePath) String() string            { return proto.CompactTextString(m) }
+func (*PackagePath) ProtoMessage()               {}
+func (*PackagePath) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+
+func (m *PackagePath) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+// PathMetadata is metadata defined at some concrete package path node.
+//
+// It applies to this node and all children nodes, recursively.
+type PathMetadata struct {
+	// Path this metadata is defined at, e.g. "a/b/c".
+	//
+	// Note: there's no metadata at the root: path will never be "".
+	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	// An opaque string that identifies a particular version of this metadata.
+	//
+	// Used by UpdatePathMetadata to prevent an accidental overwrite of changes.
+	//
+	// This is a weak etag in RFC 7232 sense.
+	Etag string `protobuf:"bytes,2,opt,name=etag" json:"etag,omitempty"`
+	// When the metadata was modified the last time.
+	UpdateTime *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime" json:"update_time,omitempty"`
+	// Who modified the metadata the last time.
+	UpdatedBy string `protobuf:"bytes,4,opt,name=updated_by,json=updatedBy" json:"updated_by,omitempty"`
+	// ACLs that apply to this package path and all subpaths, as a mapping from
+	// a role to a list of users and groups that have it.
+	Acls []*PathMetadata_ACL `protobuf:"bytes,5,rep,name=acls" json:"acls,omitempty"`
+}
+
+func (m *PathMetadata) Reset()                    { *m = PathMetadata{} }
+func (m *PathMetadata) String() string            { return proto.CompactTextString(m) }
+func (*PathMetadata) ProtoMessage()               {}
+func (*PathMetadata) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+
+func (m *PathMetadata) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *PathMetadata) GetEtag() string {
+	if m != nil {
+		return m.Etag
+	}
+	return ""
+}
+
+func (m *PathMetadata) GetUpdateTime() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.UpdateTime
+	}
+	return nil
+}
+
+func (m *PathMetadata) GetUpdatedBy() string {
+	if m != nil {
+		return m.UpdatedBy
+	}
+	return ""
+}
+
+func (m *PathMetadata) GetAcls() []*PathMetadata_ACL {
+	if m != nil {
+		return m.Acls
+	}
+	return nil
+}
+
+type PathMetadata_ACL struct {
+	// Role that this ACL describes.
+	Role Role `protobuf:"varint,1,opt,name=role,enum=cipd.Role" json:"role,omitempty"`
+	// Users and groups that have the specified role.
+	//
+	// Each entry has a form "<kind>:<value>", e.g "group:..." or "user:...".
+	Principals []string `protobuf:"bytes,2,rep,name=principals" json:"principals,omitempty"`
+}
+
+func (m *PathMetadata_ACL) Reset()                    { *m = PathMetadata_ACL{} }
+func (m *PathMetadata_ACL) String() string            { return proto.CompactTextString(m) }
+func (*PathMetadata_ACL) ProtoMessage()               {}
+func (*PathMetadata_ACL) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
+
+func (m *PathMetadata_ACL) GetRole() Role {
+	if m != nil {
+		return m.Role
+	}
+	return Role_ROLE_UNSPECIFIED
+}
+
+func (m *PathMetadata_ACL) GetPrincipals() []string {
+	if m != nil {
+		return m.Principals
+	}
+	return nil
+}
+
+type InheritedPathMetadata struct {
+	// Per-path metadata that applies package paths, ordered by path length.
+	//
+	// For example, when requesting metadata for path "a/b/c/d" the reply may
+	// contain entries for "a", "a/b", "a/b/c/d" (in that order, with "a/b/c"
+	// skipped in this example as not having any metadata attached).
+	PerPathMetadata []*PathMetadata `protobuf:"bytes,1,rep,name=per_path_metadata,json=perPathMetadata" json:"per_path_metadata,omitempty"`
+}
+
+func (m *InheritedPathMetadata) Reset()                    { *m = InheritedPathMetadata{} }
+func (m *InheritedPathMetadata) String() string            { return proto.CompactTextString(m) }
+func (*InheritedPathMetadata) ProtoMessage()               {}
+func (*InheritedPathMetadata) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+
+func (m *InheritedPathMetadata) GetPerPathMetadata() []*PathMetadata {
+	if m != nil {
+		return m.PerPathMetadata
+	}
+	return nil
+}
+
+func init() {
+	proto.RegisterType((*PackagePath)(nil), "cipd.PackagePath")
+	proto.RegisterType((*PathMetadata)(nil), "cipd.PathMetadata")
+	proto.RegisterType((*PathMetadata_ACL)(nil), "cipd.PathMetadata.ACL")
+	proto.RegisterType((*InheritedPathMetadata)(nil), "cipd.InheritedPathMetadata")
+	proto.RegisterEnum("cipd.Role", Role_name, Role_value)
+}
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
@@ -30,6 +215,23 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Repository service
 
 type RepositoryClient interface {
+	// Returns metadata associated with the given package path.
+	//
+	// If the package path has no metadata associated with it, the response fails
+	// with NOT_FOUND error.
+	GetPathMetadata(ctx context.Context, in *PackagePath, opts ...grpc.CallOption) (*PathMetadata, error)
+	// Returns metadata associated with the given package path and all parent
+	// paths.
+	GetInheritedPathMetadata(ctx context.Context, in *PackagePath, opts ...grpc.CallOption) (*InheritedPathMetadata, error)
+	// Updates or creates metadata associated with the given package path.
+	//
+	// This method checks etags. If the path metadata already exists, and 'etag'
+	// in the request doesn't match the current etag, request fails with CONFICT
+	// error. If the metadata doesn't exist yet, its 'etag' is assumed to be empty
+	// string.
+	//
+	// On success returns PathMetadata object with the updated etag.
+	UpdatePathMetadata(ctx context.Context, in *PathMetadata, opts ...grpc.CallOption) (*PathMetadata, error)
 }
 type repositoryPRPCClient struct {
 	client *prpc.Client
@@ -37,6 +239,33 @@ type repositoryPRPCClient struct {
 
 func NewRepositoryPRPCClient(client *prpc.Client) RepositoryClient {
 	return &repositoryPRPCClient{client}
+}
+
+func (c *repositoryPRPCClient) GetPathMetadata(ctx context.Context, in *PackagePath, opts ...grpc.CallOption) (*PathMetadata, error) {
+	out := new(PathMetadata)
+	err := c.client.Call(ctx, "cipd.Repository", "GetPathMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryPRPCClient) GetInheritedPathMetadata(ctx context.Context, in *PackagePath, opts ...grpc.CallOption) (*InheritedPathMetadata, error) {
+	out := new(InheritedPathMetadata)
+	err := c.client.Call(ctx, "cipd.Repository", "GetInheritedPathMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryPRPCClient) UpdatePathMetadata(ctx context.Context, in *PathMetadata, opts ...grpc.CallOption) (*PathMetadata, error) {
+	out := new(PathMetadata)
+	err := c.client.Call(ctx, "cipd.Repository", "UpdatePathMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type repositoryClient struct {
@@ -47,32 +276,165 @@ func NewRepositoryClient(cc *grpc.ClientConn) RepositoryClient {
 	return &repositoryClient{cc}
 }
 
+func (c *repositoryClient) GetPathMetadata(ctx context.Context, in *PackagePath, opts ...grpc.CallOption) (*PathMetadata, error) {
+	out := new(PathMetadata)
+	err := grpc.Invoke(ctx, "/cipd.Repository/GetPathMetadata", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryClient) GetInheritedPathMetadata(ctx context.Context, in *PackagePath, opts ...grpc.CallOption) (*InheritedPathMetadata, error) {
+	out := new(InheritedPathMetadata)
+	err := grpc.Invoke(ctx, "/cipd.Repository/GetInheritedPathMetadata", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryClient) UpdatePathMetadata(ctx context.Context, in *PathMetadata, opts ...grpc.CallOption) (*PathMetadata, error) {
+	out := new(PathMetadata)
+	err := grpc.Invoke(ctx, "/cipd.Repository/UpdatePathMetadata", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Repository service
 
 type RepositoryServer interface {
+	// Returns metadata associated with the given package path.
+	//
+	// If the package path has no metadata associated with it, the response fails
+	// with NOT_FOUND error.
+	GetPathMetadata(context.Context, *PackagePath) (*PathMetadata, error)
+	// Returns metadata associated with the given package path and all parent
+	// paths.
+	GetInheritedPathMetadata(context.Context, *PackagePath) (*InheritedPathMetadata, error)
+	// Updates or creates metadata associated with the given package path.
+	//
+	// This method checks etags. If the path metadata already exists, and 'etag'
+	// in the request doesn't match the current etag, request fails with CONFICT
+	// error. If the metadata doesn't exist yet, its 'etag' is assumed to be empty
+	// string.
+	//
+	// On success returns PathMetadata object with the updated etag.
+	UpdatePathMetadata(context.Context, *PathMetadata) (*PathMetadata, error)
 }
 
 func RegisterRepositoryServer(s prpc.Registrar, srv RepositoryServer) {
 	s.RegisterService(&_Repository_serviceDesc, srv)
 }
 
+func _Repository_GetPathMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PackagePath)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServer).GetPathMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Repository/GetPathMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServer).GetPathMetadata(ctx, req.(*PackagePath))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Repository_GetInheritedPathMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PackagePath)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServer).GetInheritedPathMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Repository/GetInheritedPathMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServer).GetInheritedPathMetadata(ctx, req.(*PackagePath))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Repository_UpdatePathMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PathMetadata)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServer).UpdatePathMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Repository/UpdatePathMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServer).UpdatePathMetadata(ctx, req.(*PathMetadata))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Repository_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.Repository",
 	HandlerType: (*RepositoryServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetPathMetadata",
+			Handler:    _Repository_GetPathMetadata_Handler,
+		},
+		{
+			MethodName: "GetInheritedPathMetadata",
+			Handler:    _Repository_GetInheritedPathMetadata_Handler,
+		},
+		{
+			MethodName: "UpdatePathMetadata",
+			Handler:    _Repository_UpdatePathMetadata_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto",
 }
 
 func init() { proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/repo.proto", fileDescriptor1) }
 
 var fileDescriptor1 = []byte{
-	// 99 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0x48, 0xcf, 0xd7, 0x4b,
-	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
-	0xd4, 0x4f, 0xce, 0x2c, 0x48, 0xd1, 0x4f, 0x2c, 0x80, 0x32, 0xca, 0x0c, 0xf5, 0x8b, 0x52, 0x0b,
-	0xf2, 0xf5, 0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0x58, 0x40, 0x62, 0x46, 0x3c, 0x5c, 0x5c, 0x41,
-	0xa9, 0x05, 0xf9, 0xc5, 0x99, 0x25, 0xf9, 0x45, 0x95, 0x4e, 0xac, 0x51, 0xcc, 0x89, 0x05, 0x99,
-	0x49, 0x6c, 0x60, 0x15, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x03, 0x13, 0xdd, 0x82, 0x55,
-	0x00, 0x00, 0x00,
+	// 453 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x92, 0x6f, 0x8b, 0xda, 0x30,
+	0x1c, 0xc7, 0x57, 0x5b, 0x0f, 0xfc, 0x39, 0xee, 0x7a, 0x61, 0x1b, 0xc5, 0xb1, 0x9b, 0xf3, 0x91,
+	0xdc, 0x83, 0x76, 0x73, 0x4f, 0x06, 0x1b, 0x03, 0xcf, 0xcb, 0x0e, 0x87, 0x53, 0xc9, 0x29, 0xc2,
+	0x9e, 0x94, 0xd8, 0x66, 0x35, 0xac, 0xbd, 0x84, 0x18, 0x07, 0xbe, 0x80, 0xbd, 0xbf, 0xbd, 0xa4,
+	0x91, 0xb4, 0x1e, 0xca, 0xf5, 0xd9, 0xb7, 0x9f, 0x7c, 0x9b, 0x7c, 0xf2, 0x07, 0xde, 0x67, 0x22,
+	0x4c, 0x36, 0x4a, 0x14, 0x7c, 0x57, 0x84, 0x42, 0x65, 0x51, 0xbe, 0x4b, 0x78, 0x94, 0x70, 0x99,
+	0x46, 0x54, 0x56, 0xe1, 0xcf, 0x87, 0x48, 0x31, 0x29, 0x42, 0xa9, 0x84, 0x16, 0xc8, 0x33, 0xac,
+	0xf3, 0x36, 0x13, 0x22, 0xcb, 0x59, 0x64, 0xd9, 0x7a, 0xf7, 0x2b, 0xd2, 0xbc, 0x60, 0x5b, 0x4d,
+	0x0b, 0x59, 0xd6, 0x7a, 0xef, 0xa0, 0x3d, 0xa7, 0xc9, 0x6f, 0x9a, 0xb1, 0x39, 0xd5, 0x1b, 0x84,
+	0xc0, 0x93, 0x54, 0x6f, 0x02, 0xa7, 0xeb, 0xf4, 0x5b, 0xc4, 0xe6, 0xde, 0xdf, 0x06, 0x3c, 0x37,
+	0x83, 0x3f, 0x98, 0xa6, 0x29, 0xd5, 0xb4, 0xae, 0x64, 0x18, 0xd3, 0x34, 0x0b, 0x1a, 0x25, 0x33,
+	0x19, 0x7d, 0x86, 0xf6, 0x4e, 0xa6, 0x54, 0xb3, 0xd8, 0xac, 0x1a, 0xb8, 0x5d, 0xa7, 0xdf, 0x1e,
+	0x74, 0xc2, 0x52, 0x29, 0x3c, 0x28, 0x85, 0x8b, 0x83, 0x12, 0x81, 0xb2, 0x6e, 0x00, 0x7a, 0x03,
+	0xd5, 0x57, 0x1a, 0xaf, 0xf7, 0x81, 0x67, 0xa7, 0x6d, 0x55, 0xe4, 0x66, 0x8f, 0xae, 0xc1, 0xa3,
+	0x49, 0xbe, 0x0d, 0x9a, 0x5d, 0xb7, 0xdf, 0x1e, 0xbc, 0x0a, 0xcd, 0x6e, 0xc3, 0x63, 0xcb, 0x70,
+	0x38, 0x9a, 0x10, 0xdb, 0xe9, 0x60, 0x70, 0x87, 0xa3, 0x09, 0xba, 0x02, 0x4f, 0x89, 0x9c, 0x59,
+	0xed, 0xf3, 0x01, 0x94, 0xbf, 0x10, 0x91, 0x33, 0x62, 0x39, 0xba, 0x02, 0x90, 0x8a, 0x3f, 0x24,
+	0x5c, 0xd2, 0x7c, 0x1b, 0x34, 0xba, 0x6e, 0xbf, 0x45, 0x8e, 0x48, 0x6f, 0x05, 0x2f, 0xc7, 0x0f,
+	0x1b, 0xa6, 0xb8, 0x66, 0xe9, 0xc9, 0x79, 0x7c, 0x85, 0x4b, 0xc9, 0x54, 0x6c, 0xce, 0x21, 0x2e,
+	0x2a, 0x18, 0x38, 0x56, 0x0c, 0x3d, 0x15, 0x23, 0x17, 0x92, 0xa9, 0x63, 0x70, 0x7d, 0x0f, 0x9e,
+	0xd1, 0x40, 0x2f, 0xc0, 0x27, 0xb3, 0x09, 0x8e, 0x97, 0xd3, 0xfb, 0x39, 0x1e, 0x8d, 0xbf, 0x8d,
+	0xf1, 0xad, 0xff, 0x0c, 0x01, 0x9c, 0x11, 0x3c, 0xbc, 0xc5, 0xc4, 0x77, 0x4c, 0x5e, 0x91, 0xf1,
+	0x02, 0x13, 0xbf, 0x81, 0x5a, 0xd0, 0x9c, 0xad, 0xa6, 0x98, 0xf8, 0x2e, 0x42, 0x70, 0x3e, 0x9a,
+	0x2d, 0xa7, 0x0b, 0x4c, 0xe2, 0x6a, 0xd8, 0x1b, 0xfc, 0x73, 0x00, 0x08, 0x93, 0x62, 0xcb, 0xb5,
+	0x50, 0x7b, 0xf4, 0x09, 0x2e, 0xee, 0x98, 0x3e, 0xd1, 0xbe, 0x3c, 0xb8, 0x3d, 0x5e, 0x7f, 0xa7,
+	0x46, 0x17, 0x7d, 0x87, 0xe0, 0x8e, 0xe9, 0xfa, 0x9d, 0xd7, 0x4c, 0xf1, 0xba, 0x44, 0xf5, 0xfd,
+	0x2f, 0x80, 0x96, 0xf6, 0x0a, 0x4f, 0xdf, 0xd3, 0xd3, 0x55, 0xeb, 0x4c, 0x6e, 0x9a, 0x3f, 0x5d,
+	0x2a, 0xf9, 0xfa, 0xcc, 0xbe, 0x9c, 0x8f, 0xff, 0x03, 0x00, 0x00, 0xff, 0xff, 0x1d, 0x1d, 0x1a,
+	0x0b, 0x14, 0x03, 0x00, 0x00,
 }

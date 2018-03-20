@@ -15,6 +15,9 @@ It has these top-level messages:
 	BeginUploadRequest
 	FinishUploadRequest
 	UploadOperation
+	PackagePath
+	PathMetadata
+	InheritedPathMetadata
 */
 package api
 

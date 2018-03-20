@@ -18,11 +18,147 @@ package cipd;
 
 option go_package = "api";
 
+import "google/protobuf/timestamp.proto";
+
+
 // Manages CIPD packages and their associated metadata.
 //
-// Actual bodies of the packages (package instances) are stored and managed
-// through Storage service.
+// A package is a named collection of one or more versions of some single
+// software component or some dataset. A package instance is a concrete
+// incarnation of a such version: it is a real file, and it is identified by its
+// SHA1 hex digest (referred to as "instance ID"). Thus a package is a named
+// collection of package instances, where each instance is identified by SHA1.
+//
+// Instance files themselves are zip archives with some additional metadata.
+// They are produced and consumed by cipd CLI client, and the backend mostly
+// doesn't care about their internal structure.
+//
+// Package names look like rootless file system paths (e.g. "a/b/c"). The
+// identifier of a package is always the full path. There's no notion of
+// "relative paths", or "..", or any other similar constructs. The name of the
+// last path component has no intrinsic significance either, though it is often
+// used to denote a platform the package is intended for. For example
+// "infra/tools/cipd/linux-amd64" package is intended for Linux running on amd64
+// architecture. This is just a convention, and it is not enforced nor
+// understood by the backend.
+//
+// Each element of the package namespace can have some metadata attached to it.
+// Currently it includes only an access control list (ACL) that specifies what
+// roles are granted to what users for the current package path and all paths
+// underneath it.
+//
+// For example, granting READER role to user@example.com in ACL associated with
+// "a/b/c" gives user@example.com permission to read all package instances of
+// "a/b/c" and any packages below it (e.g. "a/b/c/d"). See Role enum for list of
+// roles.
+//
+// There's no finer permission granularity inside the package itself, e.g. it is
+// not possible to allow to read some particular package instance, without
+// allowing to read all instances of the package.
 service Repository {
-  // TODO
+  // Returns metadata associated with the given package path.
+  //
+  // If the package path has no metadata associated with it, the response fails
+  // with NOT_FOUND error.
+  rpc GetPathMetadata(PackagePath) returns (PathMetadata);
+
+  // Returns metadata associated with the given package path and all parent
+  // paths.
+  rpc GetInheritedPathMetadata(PackagePath) returns (InheritedPathMetadata);
+
+  // Updates or creates metadata associated with the given package path.
+  //
+  // This method checks etags. If the path metadata already exists, and 'etag'
+  // in the request doesn't match the current etag, request fails with CONFICT
+  // error. If the metadata doesn't exist yet, its 'etag' is assumed to be empty
+  // string.
+  //
+  // On success returns PathMetadata object with the updated etag.
+  rpc UpdatePathMetadata(PathMetadata) returns (PathMetadata);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Roles used in package path ACLs.
+//
+// A user can have one or more such roles for a package path. They get inherited
+// by all subpaths.
+//
+// Literal names are important, since roles are stored as strings in the
+// datastore.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+
+  // Readers can fetch package instances and package metadata (e.g. list of
+  // instances, all tags, all refs), but not path metadata (e.g. ACLs).
+  READER = 1;
+
+  // Writers can do everything that readers can, plus create new packages,
+  // upload package instances, attach tags, move refs, modify package counters.
+  WRITER = 2;
+
+  // Owners can do everything that writers can, plus read and modify path
+  // metadata.
+  OWNER = 3;
+
+  // Counter writers can only modify package counters and nothing more.
+  COUNTER_WRITER = 4;
+}
+
+
+message PackagePath {
+  // A path within the repository to get metadata for, e.g. "a/b/c".
+  //
+  // Doesn't necessary point to a real package. It can point to a "directory"
+  // inside the package namespace.
+  string path = 1;
+}
+
+
+// PathMetadata is metadata defined at some concrete package path node.
+//
+// It applies to this node and all children nodes, recursively.
+message PathMetadata {
+  message ACL {
+    // Role that this ACL describes.
+    Role role = 1;
+    // Users and groups that have the specified role.
+    //
+    // Each entry has a form "<kind>:<value>", e.g "group:..." or "user:...".
+    repeated string principals = 2;
+  }
+
+  // Path this metadata is defined at, e.g. "a/b/c".
+  //
+  // Note: there's no metadata at the root: path will never be "".
+  string path = 1;
+
+  // An opaque string that identifies a particular version of this metadata.
+  //
+  // Used by UpdatePathMetadata to prevent an accidental overwrite of changes.
+  //
+  // This is a weak etag in RFC 7232 sense.
+  string etag = 2;
+
+  // When the metadata was modified the last time.
+  google.protobuf.Timestamp update_time = 3;
+
+  // Who modified the metadata the last time.
+  string updated_by = 4;
+
+  // ACLs that apply to this package path and all subpaths, as a mapping from
+  // a role to a list of users and groups that have it.
+  repeated ACL acls = 5;
+}
+
+
+message InheritedPathMetadata {
+  // Per-path metadata that applies package paths, ordered by path length.
+  //
+  // For example, when requesting metadata for path "a/b/c/d" the reply may
+  // contain entries for "a", "a/b", "a/b/c/d" (in that order, with "a/b/c"
+  // skipped in this example as not having any metadata attached).
+  repeated PathMetadata per_path_metadata = 1;
+}
