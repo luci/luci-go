@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "d6cd5cd9_89fdd96b",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-20T01:22:14Z",
+      "side": 1,
+      "message": "maybe:\n\n  a group of files. A package should typically be used for a single software component\n  or dataset, not a conglomeration.",
+      "range": {
+        "startLine": 26,
+        "startChar": 62,
+        "endLine": 27,
+        "endChar": 37
+      },
+      "revId": "ec7f368ff527bde026a0784e02e7da4d1d3b4d8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "536faa2d_f65bcfb8",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-20T01:22:14Z",
+      "side": 1,
+      "message": "can we call these \u0027name prefix\u0027 or something like that? \u0027package path\u0027 without context can be confusing (since packages also contain paths).",
+      "range": {
+        "startLine": 59,
+        "startChar": 56,
+        "endLine": 59,
+        "endChar": 60
+      },
+      "revId": "ec7f368ff527bde026a0784e02e7da4d1d3b4d8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3bbaee1_b62286e7",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-20T01:22:14Z",
+      "side": 1,
+      "message": "I\u0027d drop the mention of etags from this description; it sounds like we\u0027re supposed to set an http `ETag` header.",
+      "range": {
+        "startLine": 71,
+        "startChar": 24,
+        "endLine": 71,
+        "endChar": 29
+      },
+      "revId": "ec7f368ff527bde026a0784e02e7da4d1d3b4d8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "71e20965_4ebd237a",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 1
@@ -18,6 +87,75 @@
         "startChar": 0,
         "endLine": 90,
         "endChar": 13
+      },
+      "revId": "ec7f368ff527bde026a0784e02e7da4d1d3b4d8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "689f4fd6_509cda35",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-20T01:22:14Z",
+      "side": 1,
+      "message": "ok, this filesystem analogy has gone too far, lol... Propose:\n\n  * Name - a/b/c\n  * Name prefix - a/b/c has a and a/b as prefixes",
+      "range": {
+        "startLine": 114,
+        "startChar": 66,
+        "endLine": 114,
+        "endChar": 77
+      },
+      "revId": "ec7f368ff527bde026a0784e02e7da4d1d3b4d8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89a34fc7_99d5011b",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-20T01:22:14Z",
+      "side": 1,
+      "message": "must?",
+      "range": {
+        "startLine": 135,
+        "startChar": 49,
+        "endLine": 135,
+        "endChar": 53
+      },
+      "revId": "ec7f368ff527bde026a0784e02e7da4d1d3b4d8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee0f09c0_63cae470",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-03-20T01:22:14Z",
+      "side": 1,
+      "message": "updated_time\n\nto match updated_by?",
+      "range": {
+        "startLine": 146,
+        "startChar": 28,
+        "endLine": 146,
+        "endChar": 39
       },
       "revId": "ec7f368ff527bde026a0784e02e7da4d1d3b4d8c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
