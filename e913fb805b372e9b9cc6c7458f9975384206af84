@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b9371a2_4cab3570",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-20T17:42:53Z",
+      "side": 1,
+      "message": "should say that switch names must be unique across datacenters",
+      "revId": "e913fb805b372e9b9cc6c7458f9975384206af84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a74e6161_d3274d1e",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-20T17:42:53Z",
+      "side": 1,
+      "message": "should say that rack names must be unique across datacenters",
+      "revId": "e913fb805b372e9b9cc6c7458f9975384206af84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
