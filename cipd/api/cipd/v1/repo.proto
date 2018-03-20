@@ -18,11 +18,139 @@ package cipd;
 
 option go_package = "api";
 
+import "google/protobuf/timestamp.proto";
+
+
 // Manages CIPD packages and their associated metadata.
 //
-// Actual bodies of the packages (package instances) are stored and managed
-// through Storage service.
+// A package is a named collection of one or more versions of a group of files.
+// A package should typically be used for a single software component or
+// dataset, not a conglomeration. A package instance is a concrete incarnation
+// of a such version: it is a real file, and it is identified by its SHA1 hex
+// digest (referred to as "instance ID"). Thus a package is a named collection
+// of package instances, where each instance is identified by SHA1.
+//
+// Instance files themselves are zip archives with some additional metadata.
+// They are produced and consumed by cipd CLI client, and the backend mostly
+// doesn't care about their internal structure.
+//
+// Package names look like rootless file system paths (e.g. "a/b/c"). The
+// identifier of a package is always the full path. There's no notion of
+// "relative paths", or "..", or any other similar constructs. The name of the
+// last path component has no intrinsic significance either, though it is often
+// used to denote a platform the package is intended for. For example
+// "infra/tools/cipd/linux-amd64" package is intended for Linux running on amd64
+// architecture. This is just a convention, and it is not enforced nor
+// understood by the backend.
+//
+// Each element of the package namespace (known as "package path prefix" or just
+// "prefix") can have some metadata attached to it. Currently it includes only
+// an access control list (ACL) that specifies what roles are granted to what
+// users for the given prefix and all packages underneath it.
+//
+// For example, granting READER role to user@example.com in ACL associated with
+// prefix "a/b/c" gives user@example.com permission to read all package
+// instances of "a/b/c" and any packages below it (e.g. "a/b/c/d"). See Role
+// enum for list of roles.
+//
+// There's no finer permission granularity inside the package itself, e.g. it is
+// not possible to allow to read some particular package instance, without
+// allowing to read all instances of the package.
 service Repository {
-  // TODO
+  // Returns metadata associated with the given prefix.
+  //
+  // If the prefix has no metadata associated with it, the response fails with
+  // NOT_FOUND error.
+  rpc GetPrefixMetadata(PrefixRequest) returns (PrefixMetadata);
+
+  // Returns metadata associated with the given prefix and all parent prefixes.
+  rpc GetInheritedPrefixMetadata(PrefixRequest) returns (InheritedPrefixMetadata);
+
+  // Updates or creates metadata associated with the given prefix.
+  //
+  // This method checks 'fingerprint' field of the Prefix object. If the
+  // metadata for the given prefix already exists, and the fingerprint in the
+  // request doesn't match the current fingerprint, the request fails with
+  // CONFICT error.
+  //
+  // If the metadata doesn't exist yet, its fingerprint is assumed to be empty
+  // string. So pass empty fingerprint when creating initial metadata objects.
+  //
+  // On success returns PrefixMetadata object with the updated fingerprint.
+  rpc UpdatePrefixMetadata(PrefixMetadata) returns (PrefixMetadata);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Roles used in package prefix ACLs.
+//
+// A user can have one or more such roles for a package prefix. They get
+// inherited by all subprefixes.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+
+  // Readers can fetch package instances and package metadata (e.g. list of
+  // instances, all tags, all refs), but not prefix metadata (e.g. ACLs).
+  READER = 1;
+
+  // Writers can do everything that readers can, plus create new packages,
+  // upload package instances, attach tags, move refs, modify package counters.
+  WRITER = 2;
+
+  // Owners can do everything that writers can, plus read and modify prefix
+  // metadata.
+  OWNER = 3;
+}
+
+
+message PrefixRequest {
+  // A prefix within the repository, e.g. "a/b/c".
+  string prefix = 1;
+}
+
+
+// PrefixMetadata is metadata defined at some concrete package prefix.
+//
+// It applies to this prefix and all subprefixes, recursively.
+message PrefixMetadata {
+  message ACL {
+    // Role that this ACL describes.
+    Role role = 1;
+    // Users and groups that have the specified role.
+    //
+    // Each entry has a form "<kind>:<value>", e.g "group:..." or "user:...".
+    repeated string principals = 2;
+  }
+
+  // Prefix this metadata is defined at, e.g. "a/b/c".
+  //
+  // Note: there's no metadata at the root, so prefix must never be "".
+  string prefix = 1;
+
+  // An opaque string that identifies a particular version of this metadata.
+  //
+  // Used by UpdatePrefixMetadata to prevent an accidental overwrite of changes.
+  string fingerprint = 2;
+
+  // When the metadata was modified the last time.
+  google.protobuf.Timestamp update_time = 3;
+
+  // Identity string of whoever modified the metadata the last time.
+  string update_user = 4;
+
+  // ACLs that apply to this prefix and all subprefixes, as a mapping from
+  // a role to a list of users and groups that have it.
+  repeated ACL acls = 5;
+}
+
+
+message InheritedPrefixMetadata {
+  // Per-prefix metadata that applies to a prefix, ordered by prefix length.
+  //
+  // For example, when requesting metadata for prefix "a/b/c/d" the reply may
+  // contain entries for "a", "a/b", "a/b/c/d" (in that order, with "a/b/c"
+  // skipped in this example as not having any metadata attached).
+  repeated PrefixMetadata per_prefix_metadata = 1;
+}
