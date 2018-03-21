@@ -15,9 +15,11 @@
 package frontend
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -44,19 +46,20 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
-	"faviconMIMEType": faviconMIMEType,
-	"formatTime":      formatTime,
-	"humanDuration":   humanDuration,
-	"localTime":       localTime,
-	"obfuscateEmail":  obfuscateEmail,
-	"pagedURL":        pagedURL,
-	"parseRFC3339":    parseRFC3339,
-	"percent":         percent,
-	"shortenEmail":    shortenEmail,
-	"shortHash":       shortHash,
-	"startswith":      strings.HasPrefix,
-	"sub":             sub,
-	"toLower":         strings.ToLower,
+	"faviconMIMEType":  faviconMIMEType,
+	"formatCommitDesc": formatCommitDesc,
+	"formatTime":       formatTime,
+	"humanDuration":    humanDuration,
+	"localTime":        localTime,
+	"obfuscateEmail":   obfuscateEmail,
+	"pagedURL":         pagedURL,
+	"parseRFC3339":     parseRFC3339,
+	"percent":          percent,
+	"shortHash":        shortHash,
+	"shortenEmail":     shortenEmail,
+	"startswith":       strings.HasPrefix,
+	"sub":              sub,
+	"toLower":          strings.ToLower,
 }
 
 // localTime returns a <span> element with t in human format
@@ -71,6 +74,69 @@ func localTime(ifZero string, t time.Time) template.HTML {
 		`<span class="local-time" data-timestamp="%d">%s</span>`,
 		milliseconds,
 		t.Format(time.RFC850)))
+}
+
+// rURL matches anything that looks like an https:// URL.
+var rURL = regexp.MustCompile(`\bhttps://\S*\b`)
+
+// rBUGLINE matches a bug line in a commit, including if it is quoted.
+// Expected formats: "BUG: 1234,1234", "bugs=1234", "  >  >  BUG: 123"
+// We use &gt; for > because this needs to deal with HTML escaped text.
+var rBUGLINE = regexp.MustCompile(`(?m)^(&gt;| )*(?i:bugs?)[:=].+$`)
+
+// rBUG matches expected items in a bug line.  Expected format: 12345, project:12345, #12345
+var rBUG = regexp.MustCompile(`\b(\w+:)?#?\d+\b`)
+
+// Expected formats: b/123456, crbug/123456, crbug/project/123456, crbug:123456, etc.
+var rBUGLINK = regexp.MustCompile(`\b(b|crbug(\.com)?([:/]\w+)?)[:/]\d+\b`)
+
+// tURL is a URL template.
+var tURL = template.Must(template.New("tURL").Parse("<a href=\"{{.URL}}\">{{.Label}}</a>"))
+
+type link struct {
+	Label string
+	URL   string
+}
+
+func makeLink(label, href string) string {
+	buf := bytes.Buffer{}
+	if err := tURL.Execute(&buf, link{label, href}); err != nil {
+		return label
+	}
+	return buf.String()
+}
+
+// formatCommitDesc takes a commit message and adds embellishments such as:
+// * Linkify https:// URLs
+// * Linkify bug numbers using https://crbug.com/
+// * Linkify b/ bug links
+// * Linkify crbug/ bug links
+func formatCommitDesc(desc string) template.HTML {
+	// Since we take in a string and return a trusted raw HTML string, escape
+	// everything first.
+	desc = template.HTMLEscapeString(desc)
+	// Replace https:// URLs
+	result := rURL.ReplaceAllStringFunc(desc, func(s string) string {
+		return makeLink(s, s)
+	})
+	// Replace b/ and crbug/ URLs
+	result = rBUGLINK.ReplaceAllStringFunc(result, func(s string) string {
+		// Normalize separator.
+		u := strings.Replace(s, ":", "/", -1)
+		u = strings.Replace(u, "crbug/", "crbug.com/", 1)
+		scheme := "https://"
+		if strings.HasPrefix(u, "b/") {
+			scheme = "http://"
+		}
+		return makeLink(s, scheme+u)
+	})
+	// Replace BUG: lines with URLs by rewriting all bug numbers with links.
+	return template.HTML(rBUGLINE.ReplaceAllStringFunc(result, func(s string) string {
+		return rBUG.ReplaceAllStringFunc(s, func(sBug string) string {
+			path := strings.Replace(strings.Replace(sBug, "#", "", 1), ":", "/", 1)
+			return makeLink(sBug, "https://crbug.com/"+path)
+		})
+	}))
 }
 
 // humanDuration translates d into a human readable string of x units y units,
