@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a6cf2b35_12e374e2",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-21T21:15:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "506bdefe_eedb5611",
+      "range": {
+        "startLine": 151,
+        "startChar": 1,
+        "endLine": 151,
+        "endChar": 2
+      },
+      "revId": "f4c3c6c30f24e8c89cd38f6ca6712769a23b2fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a564693_8e0dff35",
         "filename": "machine-db/client/cli/cli.go",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2018-03-21T19:58:29Z",
       "side": 1,
       "message": "does this work? FWIU it should fail on any non-auth flags.\n\nsee how CIPD does this\n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/cipd/client/cli/main.go?q\u003dcmdInspect\u0026sq\u003dpackage:chromium\u0026l\u003d2039\u0026rcl\u003de18d39eb76c9c7b4c0709c11bda0b2c06483d515\n\n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/cipd/client/cli/main.go?sq\u003dpackage:chromium\u0026q\u003dregisterBaseFlags+file:%5Einfra/go/src/go%5C.chromium%5C.org/luci/cipd/client/+package:%5Echromium$\u0026l\u003d132",
+      "revId": "f4c3c6c30f24e8c89cd38f6ca6712769a23b2fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbe6151e_b561ff64",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-21T21:15:25Z",
+      "side": 1,
+      "message": "Yes it works. I don\u0027t want to have to add the flags to each command. Plus we need to parse the flags before reaching each individual command because we inject a properly authenticated Machine Database RPC client into the context up front.\n\ne.g. \"crimson -service-account-json \u003cwhatever\u003e get-dcs -name dc\" works because flag.FlagSet.Parse() parses until it reaches the first non-flag (\"get-dcs\") on the command line. Everything after that gets passed to subcommands.Run (\"get-dcs\", \"-name\", \"dc\").\n\nParsing will fail on any non-auth flags that appear before the named subcommand, e.g. \"crimson -service-account-json \u003cwhatever\u003e -name dc get-dcs\" will fail because there\u0027s no -name argument to crimson, only a -name argument to get-dcs. To me that\u0027s fine because you pass high-level auth-related flags to crimson and subcommand-related flags to the subcommand.",
+      "parentUuid": "8a564693_8e0dff35",
       "revId": "f4c3c6c30f24e8c89cd38f6ca6712769a23b2fde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
