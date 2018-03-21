@@ -81,6 +81,24 @@
       "revId": "f4c3c6c30f24e8c89cd38f6ca6712769a23b2fde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d20695e7_e1e7245b",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-21T21:35:48Z",
+      "side": 1,
+      "message": "there is no an inconsistency\n\ncrimson $ (review)  crimson --help\nUsage:\n  -service-account-json string\n        Path to JSON file with service account credentials to use.\ncrimson $ (review)  crimson help\nMachine Database client\n\nUsage:  crimson [command] [arguments]\n\nCommands:\n  help           prints help about a command\n\n  auth-login     performs interactive login flow\n  auth-logout    removes cached credentials\n\n  get-dcs        retrieves datacenters\n  get-ips        retrieves free IPs\n  get-oses       retrieves operating systems\n  get-platforms  retrieves platforms\n  get-racks      retrieves racks\n  get-switches   retrieves switches\n  get-vlans      retrieves VLANs\n\n  add-machine    adds a machine\n  del-machine    deletes a machine\n  edit-machine   edits a machine\n  get-machines   retrieves machines\n  name-machine   renames a machine\n\n  add-nic        adds a NIC\n  del-nic        deletes a NIC\n  edit-nic       edit a NIC\n  get-nics       retrieves NICs\n\n  add-drac       adds a DRAC\n  edit-drac      edit a DRAC\n  get-dracs      retrieves DRACs\n\n  add-host       adds a physical host\n  edit-host      edits a physical host\n  get-hosts      retrieves physical hosts\n\n  add-vm         adds a VM\n  edit-vm        edits a VM\n  get-vms        retrieves VMs\n\n  del-host       deletes a host\n\n  get-states     retrieves states\n\n\nUse \"crimson help [command]\" for more information about a command.\nUse \"crimson help -advanced\" to display all commands.",
+      "parentUuid": "dbe6151e_b561ff64",
+      "revId": "f4c3c6c30f24e8c89cd38f6ca6712769a23b2fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
