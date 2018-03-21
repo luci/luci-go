@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e6915061_ec602cd9",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-21T23:13:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d33228f1_260ae211",
+      "range": {
+        "startLine": 91,
+        "startChar": 58,
+        "endLine": 91,
+        "endChar": 68
+      },
+      "revId": "a88508389d0ccf6f1027ead45fa53ea07399818c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2c36d571_a2dc1594",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "a88508389d0ccf6f1027ead45fa53ea07399818c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9de6cbbb_8fecd416",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-21T23:13:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c36d571_a2dc1594",
+      "range": {
+        "startLine": 136,
+        "startChar": 45,
+        "endLine": 136,
+        "endChar": 109
+      },
+      "revId": "a88508389d0ccf6f1027ead45fa53ea07399818c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
