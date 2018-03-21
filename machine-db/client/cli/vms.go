@@ -40,9 +40,8 @@ func printVMs(tsv bool, vms ...*crimson.VM) {
 
 // AddVMCmd is the command to add a VM.
 type AddVMCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	vm crimson.VM
-	f  FormattingFlags
 }
 
 // Run runs the command to add a VM.
@@ -63,13 +62,14 @@ func (c *AddVMCmd) Run(app subcommands.Application, args []string, env subcomman
 }
 
 // addVMCmd returns a command to add a VM.
-func addVMCmd() *subcommands.Command {
+func addVMCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-vm -name <name> -host <name> -hvlan <id> -os <os> -ip <ip address> -state <state> [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a VM",
 		LongDesc:  "Adds a VM to the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddVMCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.vm.Name, "name", "", "The name of this VM on the network. Required and must be unique per VLAN within the database.")
 			cmd.Flags.StringVar(&cmd.vm.Host, "host", "", "The physical host backing this VM. Required and must be the name of a physical host returned by get-hosts.")
 			cmd.Flags.Int64Var(&cmd.vm.HostVlan, "hvlan", 0, "The VLAN the physical host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
@@ -78,7 +78,6 @@ func addVMCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.vm.Ipv4, "ip", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
 			cmd.Flags.StringVar(&cmd.vm.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.vm.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -86,9 +85,8 @@ func addVMCmd() *subcommands.Command {
 
 // EditVMCmd is the command to edit a VM.
 type EditVMCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	vm crimson.VM
-	f  FormattingFlags
 }
 
 // Run runs the command to edit a physical host.
@@ -117,13 +115,14 @@ func (c *EditVMCmd) Run(app subcommands.Application, args []string, env subcomma
 }
 
 // editVMCmd returns a command to edit a VM.
-func editVMCmd() *subcommands.Command {
+func editVMCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-vm -name <name> -vlan <id> [-host <machine> -hvlan <id>] [-os <os>] [-state <state>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a VM",
 		LongDesc:  "Edits a VM in the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditVMCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.vm.Name, "name", "", "The name of this VM on the network. Required and must be the name of a VM returned by get-vms.")
 			cmd.Flags.Int64Var(&cmd.vm.Vlan, "vlan", 0, "The VLAN this VM belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.StringVar(&cmd.vm.Host, "host", "", "The physical host backing this VM. Must be the name of a physical host returned by get-hosts.")
@@ -132,7 +131,6 @@ func editVMCmd() *subcommands.Command {
 			cmd.Flags.Var(StateFlag(&cmd.vm.State), "state", "The state of this VM. Must be a state returned by get-states.")
 			cmd.Flags.StringVar(&cmd.vm.Description, "desc", "", "A description of this VM.")
 			cmd.Flags.StringVar(&cmd.vm.DeploymentTicket, "tick", "", "The deployment ticket associated with this VM.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -140,9 +138,8 @@ func editVMCmd() *subcommands.Command {
 
 // GetVMsCmd is the command to get VMs.
 type GetVMsCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListVMsRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get VMs.
@@ -159,13 +156,14 @@ func (c *GetVMsCmd) Run(app subcommands.Application, args []string, env subcomma
 }
 
 // getVMsCmd returns a command to get VMs.
-func getVMsCmd() *subcommands.Command {
+func getVMsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-vms [-name <name>]... [-vlan <id>]... [-ip <ip address>]...",
 		ShortDesc: "retrieves VMs",
 		LongDesc:  "Retrieves VMs matching the given names and VLANs, or all VMs if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVMsCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a VM to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Hosts), "host", "Name of a host to filter by. Can be specified multiple times.")
@@ -173,7 +171,6 @@ func getVMsCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Oses), "os", "Name of an operating system to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Ipv4S), "ip", "IPv4 address to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

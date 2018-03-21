@@ -40,9 +40,8 @@ func printPhysicalHosts(tsv bool, hosts ...*crimson.PhysicalHost) {
 
 // AddPhysicalHostCmd is the command to add a physical host.
 type AddPhysicalHostCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	host crimson.PhysicalHost
-	f    FormattingFlags
 }
 
 // Run runs the command to add a physical host.
@@ -63,13 +62,14 @@ func (c *AddPhysicalHostCmd) Run(app subcommands.Application, args []string, env
 }
 
 // addPhysicalHostCmd returns a command to add a physical host.
-func addPhysicalHostCmd() *subcommands.Command {
+func addPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-host -name <name> -machine <machine> -os <os> -ip <ip address> [-state <state>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a physical host",
 		LongDesc:  "Adds a physical host to the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddPhysicalHostCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.host.Name, "name", "", "The name of this host on the network. Required and must be unique per VLAN within the database.")
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
@@ -78,7 +78,6 @@ func addPhysicalHostCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -86,9 +85,8 @@ func addPhysicalHostCmd() *subcommands.Command {
 
 // EditPhysicalHostCmd is the command to edit a physical host.
 type EditPhysicalHostCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	host crimson.PhysicalHost
-	f    FormattingFlags
 }
 
 // Run runs the command to edit a physical host.
@@ -117,13 +115,14 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 }
 
 // editPhysicalHostCmd returns a command to edit a physical host.
-func editPhysicalHostCmd() *subcommands.Command {
+func editPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-host -name <name> -vlan <id> [-machine <machine>] [-os <os>] [-state <state>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a physical host",
 		LongDesc:  "Edits a physical host in the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditPhysicalHostCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.host.Name, "name", "", "The name of this host on the network. Required and must be the name of a host returned by get-hosts.")
 			cmd.Flags.Int64Var(&cmd.host.Vlan, "vlan", 0, "The VLAN this host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Must be the name of a machine returned by get-machines.")
@@ -132,7 +131,6 @@ func editPhysicalHostCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -140,9 +138,8 @@ func editPhysicalHostCmd() *subcommands.Command {
 
 // GetPhysicalHostsCmd is the command to get physical hosts.
 type GetPhysicalHostsCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListPhysicalHostsRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get physical hosts.
@@ -159,13 +156,14 @@ func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, en
 }
 
 // getPhysicalHostsCmd returns a command to get physical hosts.
-func getPhysicalHostsCmd() *subcommands.Command {
+func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-os <os>]... [-ip <ip address>]... [-state <state>]...",
 		ShortDesc: "retrieves physical hosts",
 		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPhysicalHostsCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a physical host to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
@@ -175,7 +173,6 @@ func getPhysicalHostsCmd() *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Platforms), "plat", "Name of a platform to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

@@ -40,9 +40,8 @@ func printNICs(tsv bool, nics ...*crimson.NIC) {
 
 // AddNICCmd is the command to add a network interface.
 type AddNICCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	nic crimson.NIC
-	f   FormattingFlags
 }
 
 // Run runs the command to add a network interface.
@@ -63,19 +62,19 @@ func (c *AddNICCmd) Run(app subcommands.Application, args []string, env subcomma
 }
 
 // addNICCmd returns a command to add a network interface.
-func addNICCmd() *subcommands.Command {
+func addNICCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-nic -name <name> -machine <machine> -mac <mac address> -switch <switch> [-port <switch port>]",
 		ShortDesc: "adds a NIC",
 		LongDesc:  "Adds a network interface to the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddNICCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.nic.Name, "name", "", "The name of the NIC. Required and must be unique per machine within the database.")
 			cmd.Flags.StringVar(&cmd.nic.Machine, "machine", "", "The machine this NIC belongs to. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.nic.MacAddress, "mac", "", "The MAC address of this NIC. Required and must be a valid MAC-48 address.")
 			cmd.Flags.StringVar(&cmd.nic.Switch, "switch", "", "The switch this NIC is connected to. Required and must be the name of a switch returned by get-switches.")
 			cmd.Flags.Var(flag.Int32(&cmd.nic.Switchport), "port", "The switchport this NIC is connected to.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -83,7 +82,7 @@ func addNICCmd() *subcommands.Command {
 
 // DeleteNICCmd is the command to delete a network interface.
 type DeleteNICCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.DeleteNICRequest
 }
 
@@ -101,13 +100,14 @@ func (c *DeleteNICCmd) Run(app subcommands.Application, args []string, env subco
 }
 
 // deleteNICCmd returns a command to delete a network interface.
-func deleteNICCmd() *subcommands.Command {
+func deleteNICCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "del-nic -name <name> -machine <machine>",
 		ShortDesc: "deletes a NIC",
 		LongDesc:  "Deletes a network interface from the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &DeleteNICCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.req.Name, "name", "", "The name of the NIC to delete.")
 			cmd.Flags.StringVar(&cmd.req.Machine, "machine", "", "The machine the NIC belongs to.")
 			return cmd
@@ -117,9 +117,8 @@ func deleteNICCmd() *subcommands.Command {
 
 // EditNICCmd is the command to edit a network interface.
 type EditNICCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	nic crimson.NIC
-	f   FormattingFlags
 }
 
 // Run runs the command to edit a network interface.
@@ -145,19 +144,19 @@ func (c *EditNICCmd) Run(app subcommands.Application, args []string, env subcomm
 }
 
 // editNICCmd returns a command to edit a network interface.
-func editNICCmd() *subcommands.Command {
+func editNICCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-nic -name <name> -machine <machine> [-mac <mac address>] [-switch <switch>] [-port <switch port>]",
 		ShortDesc: "edit a NIC",
 		LongDesc:  "Edits a network interface in the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditNICCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.nic.Name, "name", "", "The name of the NIC. Required and must be the name of a NIC returned by get-nics.")
 			cmd.Flags.StringVar(&cmd.nic.Machine, "machine", "", "The machine this NIC belongs to. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.nic.MacAddress, "mac", "", "The MAC address of this NIC. Must be a valid MAC-48 address.")
 			cmd.Flags.StringVar(&cmd.nic.Switch, "switch", "", "The switch this NIC is connected to. Must be the name of a switch returned by get-switches.")
 			cmd.Flags.Var(flag.Int32(&cmd.nic.Switchport), "port", "The switchport this NIC is connected to.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -165,9 +164,8 @@ func editNICCmd() *subcommands.Command {
 
 // GetNICsCmd is the command to get network interfaces.
 type GetNICsCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListNICsRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get network interfaces.
@@ -184,18 +182,18 @@ func (c *GetNICsCmd) Run(app subcommands.Application, args []string, env subcomm
 }
 
 // getNICCmd returns a command to get network interfaces.
-func getNICsCmd() *subcommands.Command {
+func getNICsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-nics [-name <name>]... [-machine <machine>]...",
 		ShortDesc: "retrieves NICs",
 		LongDesc:  "Retrieves network interfaces matching the given names and machines, or all network interfaces if names and machines are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetNICsCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a NIC to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.MacAddresses), "mac", "MAC address to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Switches), "switch", "Name of a switch to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

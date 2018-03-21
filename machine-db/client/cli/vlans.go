@@ -40,9 +40,8 @@ func printVLANs(tsv bool, vlans ...*crimson.VLAN) {
 
 // GetVLANsCmd is the command to get VLANs.
 type GetVLANsCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListVLANsRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get VLANs.
@@ -59,16 +58,16 @@ func (c *GetVLANsCmd) Run(app subcommands.Application, args []string, env subcom
 }
 
 // getVLANsCmd returns a command to get VLANs.
-func getVLANsCmd() *subcommands.Command {
+func getVLANsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-vlans [-id <id>]... [-alias <alias>]...",
 		ShortDesc: "retrieves VLANs",
 		LongDesc:  "Retrieves VLANs matching the given IDs or aliases, or all VLANs if IDs and aliases are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVLANsCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Ids), "id", "ID of a VLAN to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Aliases), "alias", "Alias of a VLAN to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

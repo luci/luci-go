@@ -40,9 +40,8 @@ func printPlatforms(tsv bool, platforms ...*crimson.Platform) {
 
 // GetPlatformsCmd is the command to get platforms.
 type GetPlatformsCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListPlatformsRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get platforms.
@@ -59,15 +58,15 @@ func (c *GetPlatformsCmd) Run(app subcommands.Application, args []string, env su
 }
 
 // getPlatformsCmd returns a command to get platforms.
-func getPlatformsCmd() *subcommands.Command {
+func getPlatformsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-platforms [-name <name>]...",
 		ShortDesc: "retrieves platforms",
 		LongDesc:  "Retrieves platforms matching the given names, or all platforms if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPlatformsCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a platform to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

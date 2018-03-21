@@ -40,9 +40,8 @@ func printSwitches(tsv bool, switches ...*crimson.Switch) {
 
 // GetSwitchesCmd is the command to get switches.
 type GetSwitchesCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListSwitchesRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get switches.
@@ -59,17 +58,17 @@ func (c *GetSwitchesCmd) Run(app subcommands.Application, args []string, env sub
 }
 
 // getSwitchesCmd returns a command to get switches.
-func getSwitchesCmd() *subcommands.Command {
+func getSwitchesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-switches [-name <name>]... [-rack <rack>]... [-dc <datacenter>]...",
 		ShortDesc: "retrieves switches",
 		LongDesc:  "Retrieves switches matching the given names, racks and dcs, or all switches if names, racks, and dcs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetSwitchesCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a switch to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

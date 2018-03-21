@@ -40,9 +40,8 @@ func printOSes(tsv bool, oses ...*crimson.OS) {
 
 // GetOSesCmd is the command to get operating systems.
 type GetOSesCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListOSesRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get operating systems.
@@ -59,15 +58,15 @@ func (c *GetOSesCmd) Run(app subcommands.Application, args []string, env subcomm
 }
 
 // getOSesCmd returns a command to get operating systems.
-func getOSesCmd() *subcommands.Command {
+func getOSesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-oses [-name <name>]...",
 		ShortDesc: "retrieves operating systems",
 		LongDesc:  "Retrieves operating systems matching the given names, or all operating systems if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetOSesCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of an operating system to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

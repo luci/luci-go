@@ -40,9 +40,8 @@ func printDatacenters(tsv bool, datacenters ...*crimson.Datacenter) {
 
 // GetDatacentersCmd is the command to get datacenters.
 type GetDatacentersCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListDatacentersRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get datacenters.
@@ -59,15 +58,15 @@ func (c *GetDatacentersCmd) Run(app subcommands.Application, args []string, env 
 }
 
 // getDatacentersCmd returns a command to get datacenters.
-func getDatacentersCmd() *subcommands.Command {
+func getDatacentersCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-dcs [-name <name>]...",
 		ShortDesc: "retrieves datacenters",
 		LongDesc:  "Retrieves datacenters matching the given names, or all datacenters if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDatacentersCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a datacenter to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
