@@ -16,6 +16,7 @@
 package cli
 
 import (
+	"flag"
 	"os"
 
 	"golang.org/x/net/context"
@@ -147,5 +148,19 @@ func New(params *Parameters) *cli.Application {
 }
 
 func Main(params *Parameters, args []string) int {
-	return subcommands.Run(New(params), os.Args[1:])
+	f := authcli.Flags{}
+	s := &flag.FlagSet{}
+	f.Register(s, params.AuthOptions)
+	if err := s.Parse(args); err != nil {
+		// s.Parse emits help output on failure.
+		// subcommands.Run returns 2 for flag-related failures.
+		return 2
+	}
+	opts, err := f.Options()
+	if err != nil {
+		return 2
+	}
+	params.AuthOptions = opts
+	// s.Args contains the remaining arguments to be parsed by the command itself.
+	return subcommands.Run(New(params), s.Args())
 }
