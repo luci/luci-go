@@ -40,9 +40,8 @@ func printVMSlots(tsv bool, hosts ...*crimson.PhysicalHost) {
 
 // GetVMSlotsCmd is the command to get available VM slots.
 type GetVMSlotsCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.FindVMSlotsRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get available VM slots.
@@ -59,15 +58,15 @@ func (c *GetVMSlotsCmd) Run(app subcommands.Application, args []string, env subc
 }
 
 // getVMSlotsCmd returns a command to get available VM slots.
-func getVMSlotsCmd() *subcommands.Command {
+func getVMSlotsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-slots -n <slots>",
 		ShortDesc: "retrieves available VM slots",
 		LongDesc:  "Retrieves available VM slots.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVMSlotsCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.Int32(&cmd.req.Slots), "n", "The number of available VM slots to get.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

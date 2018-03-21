@@ -25,7 +25,7 @@ import (
 
 // DeleteHostCmd is the command to delete a host.
 type DeleteHostCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.DeleteHostRequest
 }
 
@@ -43,13 +43,14 @@ func (c *DeleteHostCmd) Run(app subcommands.Application, args []string, env subc
 }
 
 // deleteHostCmd returns a command to delete a host.
-func deleteHostCmd() *subcommands.Command {
+func deleteHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "del-host -name name -vlan vlan",
 		ShortDesc: "deletes a host",
 		LongDesc:  "Deletes a physical or virtual host from the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &DeleteHostCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.req.Name, "name", "", "The name of the host to delete.")
 			cmd.Flags.Int64Var(&cmd.req.Vlan, "vlan", 0, "The VLAN the host belongs to.")
 			return cmd

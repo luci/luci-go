@@ -24,13 +24,16 @@ import (
 
 // GetStatesCmd is the command to get states.
 type GetStatesCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	prefix string
 }
 
 // Run runs the command to get state.
 func (c *GetStatesCmd) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	if c.prefix == "" {
+		if !c.f.tsv {
+			fmt.Println("State")
+		}
 		for _, state := range common.ValidStates() {
 			fmt.Println(state.Name())
 		}
@@ -40,18 +43,22 @@ func (c *GetStatesCmd) Run(app subcommands.Application, args []string, env subco
 	if err != nil {
 		return 1
 	}
+	if !c.f.tsv {
+		fmt.Println("State")
+	}
 	fmt.Println(state.Name())
 	return 0
 }
 
 // getStatesCmd returns a command to get states.
-func getStatesCmd() *subcommands.Command {
+func getStatesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-states [-prefix <prefix>]",
 		ShortDesc: "retrieves states",
 		LongDesc:  "Retrieves the state matching the given prefix, or all states if prefix is omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetStatesCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.prefix, "prefix", "", "Prefix to get the matching state for.")
 			return cmd
 		},

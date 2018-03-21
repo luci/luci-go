@@ -21,21 +21,19 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	"github.com/maruel/subcommands"
-
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/common/v1"
 )
 
-// FormattingFlags contains common flags related to output formatting.
-type FormattingFlags struct {
+// CommonFlags contains common flags for all commands.
+type CommonFlags struct {
 	tsv bool
 }
 
-// Register registers these formatting flags with the given command.
-func (f *FormattingFlags) Register(c subcommands.CommandRun) {
-	c.GetFlags().BoolVar(&f.tsv, "tsv", false, "Whether to emit data in tsv instead of human-readable format.")
+// Register registers common flags with the given flag.FlagSet.
+func (f *CommonFlags) Register(flags *flag.FlagSet) {
+	flags.BoolVar(&f.tsv, "tsv", false, "Whether to emit data in tsv instead of human-readable format.")
 }
 
 // getUpdateMask returns a *field_mask.FieldMask containing paths based on which flags have been set.
