@@ -69,18 +69,36 @@ func withClient(c context.Context, client crimson.CrimsonClient) context.Context
 	return context.WithValue(c, &clientKey, client)
 }
 
+// CommandBase is the base command all subcommands should embed.
+// Implements cli.ContextModificator.
+type CommandBase struct {
+	subcommands.CommandRunBase
+	f CommonFlags
+	p *Parameters
+}
+
+// Initialize initializes the CommandBase instance, registering common flags.
+func (c *CommandBase) Initialize(params *Parameters) {
+	c.p = params
+	c.f.Register(c.GetFlags())
+}
+
+// ModifyContext modifies the given context to be used with subcommands.
+// Configures the context's logging and embeds the Machine Database RPC client.
+func (c *CommandBase) ModifyContext(ctx context.Context) context.Context {
+	cfg := gologger.LoggerConfig{
+		Format: gologger.StdFormatWithColor,
+		Out:    os.Stderr,
+	}
+	return withClient(cfg.Use(ctx), createClient(ctx, c.p))
+}
+
 // New returns the Machine Database command-line application.
 func New(params *Parameters) *cli.Application {
 	return &cli.Application{
 		Name:  "crimson",
 		Title: "Machine Database client",
 		Context: func(c context.Context) context.Context {
-			cfg := gologger.LoggerConfig{
-				Format: gologger.StdFormatWithColor,
-				Out:    os.Stderr,
-			}
-			c = cfg.Use(c)
-			c = withClient(c, createClient(c, params))
 			return c
 		},
 		Commands: []*subcommands.Command{
@@ -94,54 +112,54 @@ func New(params *Parameters) *cli.Application {
 			{},
 
 			// Static entities.
-			getDatacentersCmd(),
-			getIPsCmd(),
-			getOSesCmd(),
-			getPlatformsCmd(),
-			getRacksCmd(),
-			getSwitchesCmd(),
-			getVLANsCmd(),
+			getDatacentersCmd(params),
+			getIPsCmd(params),
+			getOSesCmd(params),
+			getPlatformsCmd(params),
+			getRacksCmd(params),
+			getSwitchesCmd(params),
+			getVLANsCmd(params),
 			{},
 
 			// Machines.
-			addMachineCmd(),
-			deleteMachineCmd(),
-			editMachineCmd(),
-			getMachinesCmd(),
-			renameMachineCmd(),
+			addMachineCmd(params),
+			deleteMachineCmd(params),
+			editMachineCmd(params),
+			getMachinesCmd(params),
+			renameMachineCmd(params),
 			{},
 
 			// Network interfaces.
-			addNICCmd(),
-			deleteNICCmd(),
-			editNICCmd(),
-			getNICsCmd(),
+			addNICCmd(params),
+			deleteNICCmd(params),
+			editNICCmd(params),
+			getNICsCmd(params),
 			{},
 
 			// DRACs.
-			addDRACCmd(),
-			editDRACCmd(),
-			getDRACsCmd(),
+			addDRACCmd(params),
+			editDRACCmd(params),
+			getDRACsCmd(params),
 			{},
 
 			// Physical hosts.
-			addPhysicalHostCmd(),
-			editPhysicalHostCmd(),
-			getPhysicalHostsCmd(),
+			addPhysicalHostCmd(params),
+			editPhysicalHostCmd(params),
+			getPhysicalHostsCmd(params),
 			{},
 
 			// Virtual hosts.
-			addVMCmd(),
-			editVMCmd(),
-			getVMsCmd(),
+			addVMCmd(params),
+			editVMCmd(params),
+			getVMsCmd(params),
 			{},
 
 			// Hostnames.
-			deleteHostCmd(),
+			deleteHostCmd(params),
 			{},
 
 			// States.
-			getStatesCmd(),
+			getStatesCmd(params),
 		},
 	}
 }

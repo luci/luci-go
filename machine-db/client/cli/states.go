@@ -24,7 +24,7 @@ import (
 
 // GetStatesCmd is the command to get states.
 type GetStatesCmd struct {
-	subcommands.CommandRunBase
+	CommandBase
 	prefix string
 }
 
@@ -45,13 +45,14 @@ func (c *GetStatesCmd) Run(app subcommands.Application, args []string, env subco
 }
 
 // getStatesCmd returns a command to get states.
-func getStatesCmd() *subcommands.Command {
+func getStatesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-states [-prefix <prefix>]",
 		ShortDesc: "retrieves states",
 		LongDesc:  "Retrieves the state matching the given prefix, or all states if prefix is omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetStatesCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.prefix, "prefix", "", "Prefix to get the matching state for.")
 			return cmd
 		},
