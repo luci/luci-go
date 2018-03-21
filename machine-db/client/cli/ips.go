@@ -40,9 +40,8 @@ func printIPs(tsv bool, ips ...*crimson.IP) {
 
 // GetIPsCmd is the command to get free IP addresses.
 type GetIPsCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListFreeIPsRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get free IP addresses.
@@ -59,16 +58,16 @@ func (c *GetIPsCmd) Run(app subcommands.Application, args []string, env subcomma
 }
 
 // getIPsCmd returns a command to get free IP addresses.
-func getIPsCmd() *subcommands.Command {
+func getIPsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-ips -vlan <id> [-n <limit>]",
 		ShortDesc: "retrieves free IPs",
 		LongDesc:  "Retrieves free IP addresses on the given VLAN.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetIPsCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Int64Var(&cmd.req.Vlan, "vlan", 0, "VLAN to get free IP addresses on.")
 			cmd.Flags.Var(flag.Int32(&cmd.req.PageSize), "n", "The number of free IP addresses to get.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

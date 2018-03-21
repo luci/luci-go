@@ -40,9 +40,8 @@ func printMachines(tsv bool, machines ...*crimson.Machine) {
 
 // AddMachineCmd is the command to add a machine.
 type AddMachineCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	machine crimson.Machine
-	f       FormattingFlags
 }
 
 // Run runs the command to add a machine.
@@ -63,13 +62,14 @@ func (c *AddMachineCmd) Run(app subcommands.Application, args []string, env subc
 }
 
 // addMachineCmd returns a command to add a machine.
-func addMachineCmd() *subcommands.Command {
+func addMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-machine -name <name> -plat <platform> -rack <rack> -state <state> [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a machine",
 		LongDesc:  "Adds a machine to the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddMachineCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.machine.Name, "name", "", "The name of the machine. Required and must be unique within the database.")
 			cmd.Flags.StringVar(&cmd.machine.Platform, "plat", "", "The platform type this machine is. Required and must be the name of a platform returned by get-platforms.")
 			cmd.Flags.StringVar(&cmd.machine.Rack, "rack", "", "The rack this machine belongs to. Required and must be the name of a rack returned by get-racks.")
@@ -78,7 +78,6 @@ func addMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -86,9 +85,8 @@ func addMachineCmd() *subcommands.Command {
 
 // DeleteMachineCmd is the command to delete a machine.
 type DeleteMachineCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.DeleteMachineRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to delete a machine.
@@ -105,13 +103,14 @@ func (c *DeleteMachineCmd) Run(app subcommands.Application, args []string, env s
 }
 
 // deleteMachineCmd returns a command to delete a machine.
-func deleteMachineCmd() *subcommands.Command {
+func deleteMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "del-machine -name <name>",
 		ShortDesc: "deletes a machine",
 		LongDesc:  "Deletes a machine from the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &DeleteMachineCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.req.Name, "name", "", "The name of the machine to delete.")
 			return cmd
 		},
@@ -120,9 +119,8 @@ func deleteMachineCmd() *subcommands.Command {
 
 // EditMachineCmd is the command to edit a machine.
 type EditMachineCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	machine crimson.Machine
-	f       FormattingFlags
 }
 
 // Run runs the command to edit a machine.
@@ -152,13 +150,14 @@ func (c *EditMachineCmd) Run(app subcommands.Application, args []string, env sub
 }
 
 // editMachineCmd returns a command to edit a machine.
-func editMachineCmd() *subcommands.Command {
+func editMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-machine -name <name> [-plat <platform>] [-rack <rack>] [-state <state>] [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a machine",
 		LongDesc:  "Edits a machine in the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditMachineCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.machine.Name, "name", "", "The name of the machine. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.machine.Platform, "plat", "", "The platform type this machine is. Must be the name of a platform returned by get-platforms.")
 			cmd.Flags.StringVar(&cmd.machine.Rack, "rack", "", "The rack this machine belongs to. Must be the name of a rack returned by get-racks.")
@@ -167,7 +166,6 @@ func editMachineCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -175,9 +173,8 @@ func editMachineCmd() *subcommands.Command {
 
 // GetMachinesCmd is the command to get machines.
 type GetMachinesCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListMachinesRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get machines.
@@ -194,19 +191,19 @@ func (c *GetMachinesCmd) Run(app subcommands.Application, args []string, env sub
 }
 
 // getMachinesCmd returns a command to get machines.
-func getMachinesCmd() *subcommands.Command {
+func getMachinesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-machines [-name <name>]... [-plat <plat>]... [-rack <rack>]... [-dc <dc>]... [-state <state>]...",
 		ShortDesc: "retrieves machines",
 		LongDesc:  "Retrieves machines matching the given names, platforms, racks, and states, or all machines if names are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetMachinesCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a machine to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Platforms), "plat", "Name of a platform to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
@@ -214,9 +211,8 @@ func getMachinesCmd() *subcommands.Command {
 
 // RenameMachineCmd is the command to rename a machine.
 type RenameMachineCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.RenameMachineRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to rename a machine.
@@ -234,16 +230,16 @@ func (c *RenameMachineCmd) Run(app subcommands.Application, args []string, env s
 }
 
 // renameMachineCmd returns a command to rename a machine.
-func renameMachineCmd() *subcommands.Command {
+func renameMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "name-machine -old <name> -new <name>",
 		ShortDesc: "renames a machine",
 		LongDesc:  "Renames a machine in the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &RenameMachineCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.req.Name, "old", "", "The name of the machine. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.req.NewName, "new", "", "The new name of the machine. Required and must be unique within the database.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}

@@ -40,9 +40,8 @@ func printRacks(tsv bool, racks ...*crimson.Rack) {
 
 // GetRacksCmd is the command to get racks.
 type GetRacksCmd struct {
-	subcommands.CommandRunBase
+	commandBase
 	req crimson.ListRacksRequest
-	f   FormattingFlags
 }
 
 // Run runs the command to get racks.
@@ -59,16 +58,16 @@ func (c *GetRacksCmd) Run(app subcommands.Application, args []string, env subcom
 }
 
 // getRacksCmd returns a command to get racks.
-func getRacksCmd() *subcommands.Command {
+func getRacksCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-racks [-name <name>]... [-dc <datacenter>]...",
 		ShortDesc: "retrieves racks",
 		LongDesc:  "Retrieves racks matching the given names and dcs, or all racks if names and dcs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetRacksCmd{}
+			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
-			cmd.f.Register(cmd)
 			return cmd
 		},
 	}
