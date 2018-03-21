@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d33228f1_260ae211",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-21T01:10:38Z",
+      "side": 1,
+      "message": "this is specific to crbug, so i think it should be there, something like\n\n  `\\b(b|crbug(\\.com)?([:/]\\w+)?)[:/]\\d+\\b`",
+      "range": {
+        "startLine": 91,
+        "startChar": 58,
+        "endLine": 91,
+        "endChar": 68
+      },
+      "revId": "a88508389d0ccf6f1027ead45fa53ea07399818c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c36d571_a2dc1594",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-21T01:10:38Z",
+      "side": 1,
+      "message": "nit: this line is a bit long. please consider splitting to 3 lines",
+      "range": {
+        "startLine": 136,
+        "startChar": 45,
+        "endLine": 136,
+        "endChar": 109
+      },
+      "revId": "a88508389d0ccf6f1027ead45fa53ea07399818c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
