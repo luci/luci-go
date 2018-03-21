@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/cipd/appengine/impl/common"
+	"go.chromium.org/luci/cipd/appengine/impl/shared"
 
 	// Install TQ task handlers.
 	_ "go.chromium.org/luci/cipd/appengine/impl/cas"
@@ -31,6 +31,6 @@ import (
 func init() {
 	r := router.New()
 	standard.InstallHandlers(r)
-	common.TQ.InstallRoutes(r, standard.Base())
+	shared.TQ.InstallRoutes(r, standard.Base())
 	http.DefaultServeMux.Handle("/", r)
 }

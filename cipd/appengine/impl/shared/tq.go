@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package common contains utility methods used internally by CIPD service.
-package common
+package shared
+
+import (
+	"go.chromium.org/luci/appengine/tq"
+)
+
+// TQ is global Task Queue dispatcher used by the CIPD service.
+//
+// It serializes and routes Task Queue tasks. The tasks are registered during
+// init() time in corresponding modules. The router is installed in 'backend'
+// module only, since we executed tasks only there.
+var TQ = tq.Dispatcher{BaseURL: "/internal/tq/"}

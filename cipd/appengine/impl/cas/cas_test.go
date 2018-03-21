@@ -38,9 +38,9 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
-	"go.chromium.org/luci/cipd/appengine/impl/common"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
+	"go.chromium.org/luci/cipd/appengine/impl/shared"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -320,7 +320,7 @@ func TestFinishUpload(t *testing.T) {
 		ctx := gaetesting.TestingContext()
 		ctx, _ = testclock.UseTime(ctx, testTime)
 
-		tq := tqtesting.GetTestable(ctx, &common.TQ)
+		tq := tqtesting.GetTestable(ctx, &shared.TQ)
 		tq.CreateQueues()
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
