@@ -42,6 +42,7 @@ import (
 // Setting a lower value increases cache hit probability.
 //
 // Returns an error if a client factory is not installed in c. See UseFactory.
+// May return gRPC errors returned by the underlying Gitiles service.
 func Log(c context.Context, host, project, commitish string, limit int) ([]*gitpb.Commit, error) {
 	if limit <= 0 {
 		limit = 50

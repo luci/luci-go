@@ -17,18 +17,18 @@ package buildbucket
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -127,7 +127,7 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 	case err == nil:
 	case err == model.ErrUnknownPreviousBuild:
 		return nil
-	case gitiles.HTTPStatus(err) == http.StatusForbidden:
+	case status.Code(err) == codes.PermissionDenied:
 		return common.CodeUnauthorized.Tag().Apply(err)
 	default:
 		return err
