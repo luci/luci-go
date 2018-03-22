@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -38,7 +39,6 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
-	"go.chromium.org/luci/cipd/appengine/impl/common"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
@@ -319,10 +319,6 @@ func TestFinishUpload(t *testing.T) {
 
 		ctx := gaetesting.TestingContext()
 		ctx, _ = testclock.UseTime(ctx, testTime)
-
-		tq := tqtesting.GetTestable(ctx, &common.TQ)
-		tq.CreateQueues()
-
 		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
 
 		gsMock := &mockedUploadGS{
@@ -340,6 +336,11 @@ func TestFinishUpload(t *testing.T) {
 				}, nil
 			},
 		}
+
+		dispatcher := &tq.Dispatcher{BaseURL: "/internal/tq/"}
+		impl.registerTasks(dispatcher)
+		tq := tqtesting.GetTestable(ctx, dispatcher)
+		tq.CreateQueues()
 
 		Convey("With force hash", func() {
 			// Initiate an upload to get operation ID.

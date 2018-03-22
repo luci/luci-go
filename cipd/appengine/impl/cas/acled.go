@@ -28,10 +28,11 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
-// Public returns publicly exposed implementation of cipd.Storage service.
-func Public() api.StorageServer {
+// Public returns publicly exposed implementation of cipd.Storage service that
+// wraps the given internal implementation with ACLs.
+func Public(internal api.StorageServer) api.StorageServer {
 	return &api.DecoratedStorage{
-		Service: Internal(),
+		Service: internal,
 		Prelude: aclPrelude,
 	}
 }

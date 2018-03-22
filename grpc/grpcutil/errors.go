@@ -15,6 +15,8 @@
 package grpcutil
 
 import (
+	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -166,4 +168,32 @@ func IsTransientCode(code codes.Code) bool {
 	default:
 		return false
 	}
+}
+
+// GRPCifyAndLogErr converts an annotated LUCI error to a gRPC error and logs
+// internal details (including stack trace) for errors with Internal or Unknown
+// codes.
+//
+// If err is already gRPC error (or nil), it is silently passed through, even
+// if it is Internal. There's nothing interesting to log in this case.
+//
+// Intended to be used in defer section of gRPC handlers like so:
+//
+//   func (...) Method(...) (resp *pb.Response, err error) {
+//     defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+//     ...
+//   }
+func GRPCifyAndLogErr(c context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	if _, yep := status.FromError(err); yep {
+		return err
+	}
+	grpcErr := ToGRPCErr(err)
+	code := grpc.Code(grpcErr)
+	if code == codes.Internal || code == codes.Unknown {
+		errors.Log(c, err)
+	}
+	return grpcErr
 }
