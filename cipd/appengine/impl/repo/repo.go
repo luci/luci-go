@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl/common"
+	"go.chromium.org/luci/cipd/appengine/impl/shared"
 )
 
 // Public returns publicly exposed implementation of cipd.Repository service.
@@ -35,21 +35,21 @@ type repoImpl struct{}
 
 // GetPrefixMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) GetPrefixMetadata(c context.Context, r *api.PrefixRequest) (resp *api.PrefixMetadata, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
 
 // GetInheritedPrefixMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) GetInheritedPrefixMetadata(c context.Context, r *api.PrefixRequest) (resp *api.InheritedPrefixMetadata, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
 
 // UpdatePrefixMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetadata) (resp *api.PrefixMetadata, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }

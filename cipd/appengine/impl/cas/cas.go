@@ -37,9 +37,9 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
-	"go.chromium.org/luci/cipd/appengine/impl/common"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
+	"go.chromium.org/luci/cipd/appengine/impl/shared"
 )
 
 // readBufferSize is size of a buffer used to read Google Storage files.
@@ -64,7 +64,7 @@ var impl = &storageImpl{
 
 func init() {
 	// See queue.yaml for "verify-upload" task queue definition.
-	common.TQ.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
+	shared.TQ.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
 		return impl.verifyUploadTask(c, m.(*tasks.VerifyUpload))
 	}, "verify-upload", nil)
 }
@@ -81,7 +81,7 @@ type storageImpl struct {
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.
 func (s *storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest) (resp *api.ObjectURL, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
 	if err := ValidateObjectRef(r.Object); err != nil {
 		return nil, errors.Annotate(err, "bad 'object' field").Err()
@@ -115,7 +115,7 @@ func (s *storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest
 
 // BeginUpload implements the corresponding RPC method, see the proto doc.
 func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) (resp *api.UploadOperation, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
 	// Either Object or HashAlgo should be given. If both are, algos must match.
 	var hashAlgo api.HashAlgo
@@ -211,7 +211,7 @@ func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) 
 
 // FinishUpload implements the corresponding RPC method, see the proto doc.
 func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest) (resp *api.UploadOperation, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
 	if r.ForceHash != nil {
 		if err := ValidateObjectRef(r.ForceHash); err != nil {
@@ -258,7 +258,7 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 	// Otherwise start the hash verification task, see verifyUploadTask below.
 	mutated, err := op.Advance(c, func(c context.Context, op *upload.Operation) error {
 		op.Status = api.UploadStatus_VERIFYING
-		return common.TQ.AddTask(c, &tq.Task{
+		return shared.TQ.AddTask(c, &tq.Task{
 			Payload: &tasks.VerifyUpload{UploadOperationId: opID},
 			Title:   fmt.Sprintf("%d", opID),
 		})
