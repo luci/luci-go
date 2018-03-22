@@ -37,7 +37,6 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
-	"go.chromium.org/luci/cipd/appengine/impl/common"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 )
@@ -51,37 +50,43 @@ const readBufferSize = 4 * 1024 * 1024
 //
 // It can be used internally by the backend. Assumes ACL checks are already
 // done.
-func Internal() api.StorageServer {
+//
+// Registers some task queue tasks in the given dispatcher.
+func Internal(d *tq.Dispatcher) api.StorageServer {
+	impl := &storageImpl{
+		getGS:        gs.Get,
+		settings:     settings.Get,
+		getSignedURL: getSignedURL,
+	}
+	impl.registerTasks(d)
 	return impl
-}
-
-// impl is the actual real implementation of api.StorageServer.
-var impl = &storageImpl{
-	getGS:        gs.Get,
-	settings:     settings.Get,
-	getSignedURL: getSignedURL,
-}
-
-func init() {
-	// See queue.yaml for "verify-upload" task queue definition.
-	common.TQ.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
-		return impl.verifyUploadTask(c, m.(*tasks.VerifyUpload))
-	}, "verify-upload", nil)
 }
 
 // storageImpl implements api.StorageServer and task queue handlers.
 //
 // Doesn't do any ACL checks.
 type storageImpl struct {
+	tq *tq.Dispatcher // as passed to the constructor or registerTasks
+
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(c context.Context) gs.GoogleStorage
 	settings     func(c context.Context) (*settings.Settings, error)
 	getSignedURL func(c context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error)
 }
 
+// registerTasks adds tasks to the tq Dispatcher.
+func (s *storageImpl) registerTasks(d *tq.Dispatcher) {
+	s.tq = d
+
+	// See queue.yaml for "verify-upload" task queue definition.
+	s.tq.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
+		return s.verifyUploadTask(c, m.(*tasks.VerifyUpload))
+	}, "verify-upload", nil)
+}
+
 // GetObjectURL implements the corresponding RPC method, see the proto doc.
 func (s *storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest) (resp *api.ObjectURL, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	if err := ValidateObjectRef(r.Object); err != nil {
 		return nil, errors.Annotate(err, "bad 'object' field").Err()
@@ -115,7 +120,7 @@ func (s *storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest
 
 // BeginUpload implements the corresponding RPC method, see the proto doc.
 func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) (resp *api.UploadOperation, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Either Object or HashAlgo should be given. If both are, algos must match.
 	var hashAlgo api.HashAlgo
@@ -211,7 +216,7 @@ func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) 
 
 // FinishUpload implements the corresponding RPC method, see the proto doc.
 func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest) (resp *api.UploadOperation, err error) {
-	defer func() { err = common.GRPCifyAndLogErr(c, err) }()
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	if r.ForceHash != nil {
 		if err := ValidateObjectRef(r.ForceHash); err != nil {
@@ -258,7 +263,7 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 	// Otherwise start the hash verification task, see verifyUploadTask below.
 	mutated, err := op.Advance(c, func(c context.Context, op *upload.Operation) error {
 		op.Status = api.UploadStatus_VERIFYING
-		return common.TQ.AddTask(c, &tq.Task{
+		return s.tq.AddTask(c, &tq.Task{
 			Payload: &tasks.VerifyUpload{UploadOperationId: opID},
 			Title:   fmt.Sprintf("%d", opID),
 		})
