@@ -19,7 +19,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/auth"
+
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/shared"
 )
 
@@ -27,29 +33,126 @@ import (
 //
 // It checks ACLs.
 func Public() api.RepositoryServer {
-	return &repoImpl{}
+	return &repoImpl{meta: metadata.GetStorage()}
 }
 
 // repoImpl implements api.RepositoryServer.
-type repoImpl struct{}
+type repoImpl struct {
+	meta metadata.Storage
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Prefix metadata RPC methods + related helpers.
 
 // GetPrefixMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) GetPrefixMetadata(c context.Context, r *api.PrefixRequest) (resp *api.PrefixMetadata, err error) {
-	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
+	// It is fine to implement this in terms of GetInheritedPrefixMetadata, since
+	// we need to fetch all inherited metadata anyway to check ACLs.
+	inherited, err := impl.GetInheritedPrefixMetadata(c, r)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Have the metadata for the requested prefix? It should be the last if so.
+	if m := inherited.PerPrefixMetadata; len(m) != 0 && m[len(m)-1].Prefix == r.Prefix {
+		return m[len(m)-1], nil
+	}
+
+	return nil, noMetadataErr(r.Prefix)
 }
 
-// GetInheritedPrefixMetadata implements the corresponding RPC method, see the proto doc.
+// GetInheritedPrefixMetadata implements the corresponding RPC method, see the
+// proto doc.
+//
+// Note: it normalizes Prefix field inside the request.
 func (impl *repoImpl) GetInheritedPrefixMetadata(c context.Context, r *api.PrefixRequest) (resp *api.InheritedPrefixMetadata, err error) {
 	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+	}
+
+	metas, err := impl.checkOwner(c, r.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	return &api.InheritedPrefixMetadata{PerPrefixMetadata: metas}, nil
 }
 
 // UpdatePrefixMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetadata) (resp *api.PrefixMetadata, err error) {
 	defer func() { err = shared.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Fill in server-assigned fields.
+	r.UpdateTime = google.NewTimestamp(clock.Now(c))
+	r.UpdateUser = string(auth.CurrentIdentity(c))
+
+	// Validate and normalize format of the PrefixMetadata.
+	if err := common.ValidatePrefixMetadata(r); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad prefix metadata - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkOwner(c, r.Prefix); err != nil {
+		return nil, err
+	}
+
+	// Transactionally check the fingerprint and update the metadata. impl.meta
+	// will recalculate the new fingerprint. Note there's a small chance the
+	// caller no longer has OWNER role to modify the metadata inside the
+	// transaction. We ignore it. It happens when caller's permissions are revoked
+	// by someone else exactly during UpdatePrefixMetadata call.
+	return impl.meta.UpdateMetadata(c, r.Prefix, func(cur *api.PrefixMetadata) error {
+		if cur.Fingerprint != r.Fingerprint {
+			switch {
+			case cur.Fingerprint == "":
+				// The metadata was deleted while the caller was messing with it.
+				return noMetadataErr(r.Prefix)
+			case r.Fingerprint == "":
+				// Caller tries to make a new one, but we already have it.
+				return status.Errorf(
+					codes.AlreadyExists, "metadata for prefix %q already exists, use combination "+
+						"of GetPrefixMetadata and UpdatePrefixMetadata to update it", r.Prefix)
+			default:
+				// Fingerprint changed while the caller was messing with the metadata.
+				return status.Errorf(
+					codes.FailedPrecondition, "metadata for prefix %q was updated concurrently (fingerprints "+
+						"don't match), fetch new metadata with GetPrefixMetadata and reapply "+
+						"your changes again", r.Prefix)
+			}
+		}
+		*cur = *r
+		return nil
+	})
+}
+
+// checkOwner checks where caller has OWNER role in the given prefix or any of
+// its parent prefixes.
+//
+// Returns grpc error if the caller is not an owner. Fetches and returns
+// metadata of the prefix and all parent prefixes as a side effect.
+func (impl *repoImpl) checkOwner(c context.Context, prefix string) ([]*api.PrefixMetadata, error) {
+	metas, err := impl.meta.GetMetadata(c, prefix)
+	if err != nil {
+		return nil, err
+	}
+	switch yes, err := hasRole(c, metas, api.Role_OWNER); {
+	case err != nil:
+		return nil, err
+	case !yes:
+		// Do not leak presence of the prefix to unauthorized callers.
+		return nil, noMetadataErr(prefix)
+	default:
+		return metas, nil
+	}
+}
+
+// noMetadataErr produces a grpc error saying that the given prefix doesn't have
+// metadata attached.
+//
+// It is returned on a genuine NotFound, and on Forbidden, to avoid leaking
+// information about ACL-protected prefixes.
+func noMetadataErr(prefix string) error {
+	return status.Errorf(codes.NotFound, "prefix %q has no metadata or the caller is not allowed to see it", prefix)
 }
