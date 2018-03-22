@@ -6,15 +6,15 @@ syntax = "proto3";
 
 package config;
 
-// Platform describes a platform.
+// A platform to store in the database.
 message Platform {
-  // The name of this platform.
+  // The name of this platform. Must be unique.
   string name = 1;
   // A description of this platform.
   string description = 2;
 }
 
-// Platforms enumerates platforms.
+// A list of platforms.
 message Platforms {
   // A list of platforms.
   repeated Platform platform = 1;

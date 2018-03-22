@@ -8,9 +8,9 @@ package config;
 
 import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// Switch describes a switch.
+// A switch to store in the database.
 message Switch {
-  // The name of this switch.
+  // The name of this switch. Must be globally unique.
   string name = 1;
   // A description of this switch.
   string description = 2;
@@ -20,9 +20,9 @@ message Switch {
   common.State state = 4;
 }
 
-// Rack describes a rack.
+// A rack to store in the database.
 message Rack {
-  // The name of this rack.
+  // The name of this rack. Must be globally unique.
   string name = 1;
   // A description of this rack.
   string description = 2;
@@ -32,9 +32,9 @@ message Rack {
   common.State state = 4;
 }
 
-// Datacenter describes a datacenter.
+// A datacenter to store in the database.
 message Datacenter {
-  // The name of this datacenter.
+  // The name of this datacenter. Must be globally unique.
   string name = 1;
   // A description of this datacenter.
   string description = 2;
@@ -44,7 +44,7 @@ message Datacenter {
   common.State state = 4;
 }
 
-// Datacenters enumerates datacenter config files.
+// A list of datacenter config files.
 message Datacenters {
   // A list of names of datacenter config files.
   repeated string datacenter = 1;

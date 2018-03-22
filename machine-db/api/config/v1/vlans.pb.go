@@ -13,9 +13,9 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// VLAN describes a VLAN.
+// A VLAN to store in the database.
 type VLAN struct {
-	// The ID of this VLAN.
+	// The ID of this VLAN. Must be unique.
 	Id int64 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
 	// An alias for this VLAN.
 	Alias string `protobuf:"bytes,2,opt,name=alias" json:"alias,omitempty"`
@@ -58,7 +58,7 @@ func (m *VLAN) GetState() common.State {
 	return common.State_STATE_UNSPECIFIED
 }
 
-// VLANs enumerates VLANs.
+// A list of VLANs.
 type VLANs struct {
 	// A list of VLANs.
 	Vlan []*VLAN `protobuf:"bytes,1,rep,name=vlan" json:"vlan,omitempty"`

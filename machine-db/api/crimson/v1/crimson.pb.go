@@ -22,8 +22,8 @@ It is generated from these files:
 	go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto
 
 It has these top-level messages:
-	ListDatacentersRequest
 	Datacenter
+	ListDatacentersRequest
 	ListDatacentersResponse
 	DRAC
 	CreateDRACRequest
