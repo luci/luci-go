@@ -27,8 +27,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl/cas"
-	"go.chromium.org/luci/cipd/appengine/impl/repo"
+	"go.chromium.org/luci/cipd/appengine/impl"
 )
 
 func init() {
@@ -43,8 +42,8 @@ func init() {
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(
 			grpcutil.NewUnaryServerPanicCatcher(nil)),
 	}
-	api.RegisterStorageServer(srv, cas.Public())
-	api.RegisterRepositoryServer(srv, repo.Public())
+	api.RegisterStorageServer(srv, impl.PublicCAS)
+	api.RegisterRepositoryServer(srv, impl.PublicRepo)
 	discovery.Enable(srv)
 
 	srv.InstallHandlers(r, standard.Base())
