@@ -12,8 +12,7 @@
       {{ .Status.String }}
     {{ end }}
     -
-    {{ if .ParentLabel }} {{ .ParentLabel.Label }} {{ end }}
-    {{ .Label.HTML }}
+    {{ .ParentLabel }} {{ .Label }}
   {{- end }}
 {{end}}
 
