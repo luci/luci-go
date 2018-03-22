@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "35860ef9_1af0c500",
+        "filename": "machine-db/api/crimson/v1/vm_slots.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T01:22:59Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "6d0cd1ec_b6abee3f",
+      "range": {
+        "startLine": 20,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 62
+      },
+      "revId": "1ddf0298cdd061457d0388408ad557e95446207d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "460836d0_b9e3590f",
         "filename": "machine-db/api/crimson/v1/vm_slots.proto",
         "patchSetId": 1
