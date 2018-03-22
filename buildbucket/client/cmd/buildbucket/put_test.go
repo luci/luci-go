@@ -27,7 +27,7 @@ func TestPut(t *testing.T) {
 	t.Parallel()
 
 	Convey("Put", t, func() {
-		parse := func(args ...string) ([]*buildbucket.ApiPutRequestMessage, error) {
+		parse := func(args ...string) (*buildbucket.ApiPutBatchRequestMessage, error) {
 			return parsePutRequest(args, func() (string, error) {
 				return "prefix", nil
 			})
@@ -38,10 +38,12 @@ func TestPut(t *testing.T) {
 
 		reqs, err := parse(`{"bucket": "master.tryserver.chromium.linux"}`)
 		So(err, ShouldBeNil)
-		So(reqs, ShouldResemble, []*buildbucket.ApiPutRequestMessage{
-			{
-				Bucket:            "master.tryserver.chromium.linux",
-				ClientOperationId: "prefix-0",
+		So(reqs, ShouldResemble, &buildbucket.ApiPutBatchRequestMessage{
+			Builds: []*buildbucket.ApiPutRequestMessage{
+				{
+					Bucket:            "master.tryserver.chromium.linux",
+					ClientOperationId: "prefix-0",
+				},
 			},
 		})
 	})
