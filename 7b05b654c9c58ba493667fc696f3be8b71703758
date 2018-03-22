@@ -22,6 +22,30 @@
       "revId": "7b05b654c9c58ba493667fc696f3be8b71703758",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "35ee0a5f_3c579d4f",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T21:51:20Z",
+      "side": 1,
+      "message": "Sorry I thought you meant across the racks inside the datacenter, not across all datacenters.",
+      "parentUuid": "83c0399b_7d3d933e",
+      "range": {
+        "startLine": 13,
+        "startChar": 38,
+        "endLine": 13,
+        "endChar": 46
+      },
+      "revId": "7b05b654c9c58ba493667fc696f3be8b71703758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
