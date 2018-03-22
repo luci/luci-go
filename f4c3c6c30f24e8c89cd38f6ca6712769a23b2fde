@@ -99,6 +99,24 @@
       "revId": "f4c3c6c30f24e8c89cd38f6ca6712769a23b2fde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7324da2_73f6239d",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T02:09:08Z",
+      "side": 1,
+      "message": "Added to each individual command.",
+      "parentUuid": "d20695e7_e1e7245b",
+      "revId": "f4c3c6c30f24e8c89cd38f6ca6712769a23b2fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
