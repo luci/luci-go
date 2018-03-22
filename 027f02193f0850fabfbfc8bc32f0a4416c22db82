@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "98d6f973_aaf29197",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:35:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1306469_041d2589",
+      "range": {
+        "startLine": 7,
+        "startChar": 65,
+        "endLine": 7,
+        "endChar": 70
+      },
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c58760b_669f8009",
         "filename": "machine-db/client/cli/cli.go",
         "patchSetId": 1
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "cd1f3479_f9420978",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:35:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c58760b_669f8009",
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9609450_9afea0b8",
         "filename": "machine-db/client/cli/cli.go",
         "patchSetId": 1
@@ -53,6 +95,30 @@
       "writtenOn": "2018-03-22T01:02:17Z",
       "side": 1,
       "message": "one can\u0027t really modify a context because it is immutable",
+      "range": {
+        "startLine": 86,
+        "startChar": 17,
+        "endLine": 86,
+        "endChar": 43
+      },
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c79ccc0b_22f399d1",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:35:44Z",
+      "side": 1,
+      "message": "If you\u0027re storing keys in a given context are you not modifying it?",
+      "parentUuid": "f9609450_9afea0b8",
       "range": {
         "startLine": 86,
         "startChar": 17,
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "fc2fe1a6_78aa5fc6",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:35:44Z",
+      "side": 1,
+      "message": "It\u0027s not unused, it gets called automatically to set up the context when invoking cli.GetContext in each individual subcommand.\n\nhttps://godoc.org/go.chromium.org/luci/common/cli#GetContext",
+      "parentUuid": "f78aa20e_22eaf363",
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "380e0c9d_2fec6321",
         "filename": "machine-db/client/cli/cli.go",
         "patchSetId": 1
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "0be5d84c_16ec5bdb",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:35:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "380e0c9d_2fec6321",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 103,
+        "endChar": 4
+      },
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f0c5a4e_7eb75f88",
         "filename": "machine-db/client/cli/nics.go",
         "patchSetId": 1
@@ -116,6 +224,24 @@
       "writtenOn": "2018-03-22T01:02:17Z",
       "side": 1,
       "message": "this adds unused -tsv flag. Perhaps Initialize should have a parameter to customize flags being registered?\n\nsame in other delete subcommands",
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37c6bc59_333cf1e6",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:35:44Z",
+      "side": 1,
+      "message": "It\u0027s not a big deal. delete* has no output which is valid tsv. Therefore -tsv is technically being respected.",
+      "parentUuid": "9f0c5a4e_7eb75f88",
       "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -136,6 +262,24 @@
       "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da22bc5c_e7b957e9",
+        "filename": "machine-db/client/cli/states.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:35:44Z",
+      "side": 1,
+      "message": "Added header when !tsv to mimic behavior of other commands.",
+      "parentUuid": "143aa4dd_b0314963",
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
