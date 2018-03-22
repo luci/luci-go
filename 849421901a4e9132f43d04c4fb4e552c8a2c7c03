@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8db07ed0_317e7bae",
+        "filename": "buildbucket/client/cmd/buildbucket/base_command.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2018-03-22T20:25:32Z",
+      "side": 1,
+      "message": "silly question: why do we not print errors to stderr?",
+      "range": {
+        "startLine": 111,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 85
+      },
+      "revId": "849421901a4e9132f43d04c4fb4e552c8a2c7c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
