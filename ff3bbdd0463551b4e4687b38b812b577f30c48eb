@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6bf27043_2a804a15",
+        "filename": "cipd/appengine/impl/metadata/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T19:08:29Z",
+      "side": 1,
+      "message": "malformed prefix shouldn\u0027t be a transient error though",
+      "range": {
+        "startLine": 47,
+        "startChar": 17,
+        "endLine": 47,
+        "endChar": 26
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8be80b92_bc79341c",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T19:08:29Z",
+      "side": 1,
+      "message": "when I read \"impliedRoles\", I though the opposite: OWNER implies OWNER, WRITE, READER\n\nbut i couldn\u0027t came up with a better name :(",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 51
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "473f7169_175897e9",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T19:08:29Z",
+      "side": 1,
+      "message": "understands",
+      "range": {
+        "startLine": 56,
+        "startChar": 6,
+        "endLine": 56,
+        "endChar": 16
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8357d588_377b310a",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T19:08:29Z",
+      "side": 1,
+      "message": "can a group have \":\"?\nmaybe SplitN to avoid the assumption",
+      "range": {
+        "startLine": 85,
+        "startChar": 22,
+        "endLine": 85,
+        "endChar": 35
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c98dd91a_250adcd2",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T19:08:29Z",
+      "side": 1,
+      "message": "FWIU, the shorter the prefix, the more restricted its ACLs are. E.g. only administrators group owns root. The longer the prefix, the broader group can own it.\n\ni find the following a bit strange:\n\nGiven a random user U\n- if U doesn\u0027t own any prefixes, U can\u0027t see metadata of any prefix\n- if admins give U permissions for prefix a/b/c/d/e/f, which is super specific and it is OK for U to own it, suddenly U can see metadata of all prefixes of a/b/c/d/e/f. This is somewhat backwards to how inheritance works in other places. Normally, if you own a prefix, you can see its descendants, NOT ancestors.\n\nWhat do you think about this?\ndid you consider to maybe return metadata only of prefixes that the requester owns?\n\non the other hand, I admit that U may want to know how can fetch their packages.\n\nif you knew all this already, maybe document it somewhere",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 4
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97760bae_c8378503",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T19:08:29Z",
+      "side": 1,
+      "message": "i think this should mention the fingerprint itself",
+      "range": {
+        "startLine": 115,
+        "startChar": 66,
+        "endLine": 116,
+        "endChar": 65
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
