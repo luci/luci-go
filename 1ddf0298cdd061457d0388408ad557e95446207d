@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1b5f44ff_3618b307",
+        "filename": "machine-db/api/crimson/v1/vm_slots.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T00:49:26Z",
+      "side": 1,
+      "message": "after reading this, I still don\u0027t understand what PhysicalHost fields are included in the response.\n\nalso, i suspect that hosts.vm_slots in this response is repurposed from total number of vm slots to available number of vm slots. Is that right?\n\nmaybe make a sub-message here with only fields that we actually return?",
+      "range": {
+        "startLine": 20,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 62
+      },
+      "revId": "1ddf0298cdd061457d0388408ad557e95446207d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "460836d0_b9e3590f",
+        "filename": "machine-db/api/crimson/v1/vm_slots.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T00:49:26Z",
+      "side": 1,
+      "message": "i\u0027d rather put a reasonable cap on FindVMSlotsRequest.slots and remove the need to page through results",
+      "revId": "1ddf0298cdd061457d0388408ad557e95446207d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3eba3c4_312a54f0",
+        "filename": "machine-db/appengine/rpc/vm_slots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T00:49:26Z",
+      "side": 1,
+      "message": "nit: maybe \"ph\" to indicate that this is associated with p, not v",
+      "range": {
+        "startLine": 52,
+        "startChar": 48,
+        "endLine": 52,
+        "endChar": 49
+      },
+      "revId": "1ddf0298cdd061457d0388408ad557e95446207d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60bdf8aa_db6c4d09",
+        "filename": "machine-db/appengine/rpc/vm_slots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T00:49:26Z",
+      "side": 1,
+      "message": "i think squirrel adds more harm than value in this case. this isn\u0027t easy to read",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 33
+      },
+      "revId": "1ddf0298cdd061457d0388408ad557e95446207d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7832b5cd_9f6fe093",
+        "filename": "machine-db/appengine/rpc/vm_slots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T00:49:26Z",
+      "side": 1,
+      "message": "non necessarily physical hosts",
+      "range": {
+        "startLine": 68,
+        "startChar": 63,
+        "endLine": 68,
+        "endChar": 83
+      },
+      "revId": "1ddf0298cdd061457d0388408ad557e95446207d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f07e2ca_5f7370ba",
+        "filename": "machine-db/appengine/rpc/vm_slots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T00:49:26Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 80,
+        "startChar": 64,
+        "endLine": 80,
+        "endChar": 82
+      },
+      "revId": "1ddf0298cdd061457d0388408ad557e95446207d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
