@@ -51,12 +51,30 @@ func (pin Pin) String() string {
 
 // ValidatePackageName returns error if a string isn't a valid package name.
 func ValidatePackageName(name string) error {
-	if !packageNameRe.MatchString(name) {
-		return fmt.Errorf("invalid package name: %s", name)
+	return validatePathishString(name, "package name")
+}
+
+// ValidatePackagePrefix normalizes and validates a package prefix.
+//
+// A prefix is basically like a package name, except it is allowed to have '/'
+// at the end. Such trailing '/' is stripped by this function.
+func ValidatePackagePrefix(p string) (string, error) {
+	p = strings.TrimSuffix(p, "/")
+	if err := validatePathishString(p, "package prefix"); err != nil {
+		return "", err
 	}
-	for _, chunk := range strings.Split(name, "/") {
+	return p, nil
+}
+
+// validatePathishString is common implementation of ValidatePackageName and
+// ValidatePackagePrefix.
+func validatePathishString(p, title string) error {
+	if !packageNameRe.MatchString(p) {
+		return fmt.Errorf("invalid %s: %q", title, p)
+	}
+	for _, chunk := range strings.Split(p, "/") {
 		if strings.Count(chunk, ".") == len(chunk) {
-			return fmt.Errorf("invalid package name (dots-only names are forbidden): %s", name)
+			return fmt.Errorf("invalid %s (dots-only names are forbidden): %q", title, p)
 		}
 	}
 	return nil
