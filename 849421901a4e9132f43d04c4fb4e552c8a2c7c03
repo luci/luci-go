@@ -22,6 +22,30 @@
       "revId": "849421901a4e9132f43d04c4fb4e552c8a2c7c03",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "983476d5_14c3c362",
+        "filename": "buildbucket/client/cmd/buildbucket/base_command.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T20:36:42Z",
+      "side": 1,
+      "message": "not silly at all! thanks for catching. Done",
+      "parentUuid": "8db07ed0_317e7bae",
+      "range": {
+        "startLine": 111,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 85
+      },
+      "revId": "849421901a4e9132f43d04c4fb4e552c8a2c7c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
