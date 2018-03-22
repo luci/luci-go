@@ -80,7 +80,7 @@ type commandBase struct {
 // Initialize initializes the commandBase instance, registering common flags.
 func (c *commandBase) Initialize(params *Parameters) {
 	c.p = params
-	c.f.Register(c.GetFlags())
+	c.f.Register(c.GetFlags(), params)
 }
 
 // ModifyContext returns a new context to be used with subcommands.
@@ -91,6 +91,12 @@ func (c *commandBase) ModifyContext(ctx context.Context) context.Context {
 		Format: gologger.StdFormatWithColor,
 		Out:    os.Stderr,
 	}
+	opts, err := c.f.authFlags.Options()
+	if err != nil {
+		errors.Log(ctx, err)
+		panic("failed to get authentication options")
+	}
+	c.p.AuthOptions = opts
 	return withClient(cfg.Use(ctx), createClient(ctx, c.p))
 }
 

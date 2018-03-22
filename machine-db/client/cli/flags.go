@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/common/v1"
@@ -28,11 +29,13 @@ import (
 
 // CommonFlags contains common flags for all commands.
 type CommonFlags struct {
-	tsv bool
+	authFlags authcli.Flags
+	tsv       bool
 }
 
 // Register registers common flags with the given flag.FlagSet.
-func (f *CommonFlags) Register(flags *flag.FlagSet) {
+func (f *CommonFlags) Register(flags *flag.FlagSet, params *Parameters) {
+	f.authFlags.Register(flags, params.AuthOptions)
 	flags.BoolVar(&f.tsv, "tsv", false, "Whether to emit data in tsv instead of human-readable format.")
 }
 
