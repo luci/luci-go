@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "62f0858a_eff7fbab",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T01:42:20Z",
+      "side": 1,
+      "message": "i mean, it creates a new context, not modifying the existing one. Users of the existing one won\u0027t notice if you call this function\n\nhowever, I see now that is a part of https://godoc.org/go.chromium.org/luci/common/cli#ContextModificator\nmaybe mention in the doc that this function implements cli.ContextModificator\nit wasn\u0027t obvious",
+      "parentUuid": "c79ccc0b_22f399d1",
+      "range": {
+        "startLine": 86,
+        "startChar": 17,
+        "endLine": 86,
+        "endChar": 43
+      },
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f78aa20e_22eaf363",
         "filename": "machine-db/client/cli/cli.go",
         "patchSetId": 1
@@ -160,6 +184,24 @@
       "side": 1,
       "message": "It\u0027s not unused, it gets called automatically to set up the context when invoking cli.GetContext in each individual subcommand.\n\nhttps://godoc.org/go.chromium.org/luci/common/cli#GetContext",
       "parentUuid": "f78aa20e_22eaf363",
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f134b6c8_f03ca52c",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T01:42:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fc2fe1a6_78aa5fc6",
       "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -245,6 +287,24 @@
       "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3286521b_62889a2e",
+        "filename": "machine-db/client/cli/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T01:42:20Z",
+      "side": 1,
+      "message": "you are technically correct",
+      "parentUuid": "37c6bc59_333cf1e6",
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
