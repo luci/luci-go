@@ -39,10 +39,7 @@
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Verbosity": 2,
-    "Text": [
-      "InfraFailure bot_update",
-      "InfraFailure Uncaught Exception"
-    ]
+    "Text": null
   },
   "Trigger": {
     "AuthorName": "",
