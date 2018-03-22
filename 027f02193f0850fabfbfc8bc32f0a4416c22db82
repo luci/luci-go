@@ -155,6 +155,30 @@
     },
     {
       "key": {
+        "uuid": "fe6a75de_d81a4555",
+        "filename": "machine-db/client/cli/cli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T01:51:04Z",
+      "side": 1,
+      "message": "Ah, context.WithValue creates a new context from the existing context with the new value. Updated comment. ContextModificator was mentioned in struct-level comment, but I\u0027ve mentioned it here as well.\n\nNot sure who named this interface (what is a \"Modificator\" anyway?)",
+      "parentUuid": "62f0858a_eff7fbab",
+      "range": {
+        "startLine": 86,
+        "startChar": 17,
+        "endLine": 86,
+        "endChar": 43
+      },
+      "revId": "027f02193f0850fabfbfc8bc32f0a4416c22db82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f78aa20e_22eaf363",
         "filename": "machine-db/client/cli/cli.go",
         "patchSetId": 1
