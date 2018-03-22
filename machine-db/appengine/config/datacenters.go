@@ -27,6 +27,7 @@ import (
 
 	configPB "go.chromium.org/luci/machine-db/api/config/v1"
 	"go.chromium.org/luci/machine-db/appengine/model"
+	"go.chromium.org/luci/machine-db/common"
 )
 
 // datacentersFilename is the name of the config file enumerating datacenter files.
@@ -82,6 +83,7 @@ func importDatacenters(c context.Context, configSet config.Set) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure switches").Err()
 	}
+	// TODO(smut): Ensure KVMs.
 	return nil
 }
 
@@ -107,6 +109,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*configPB
 	names := stringset.New(len(datacenters))
 	racks := stringset.New(0)
 	switches := stringset.New(0)
+	kvms := stringset.New(0)
 
 	for filename, dc := range datacenters {
 		c.SetFile(filename)
@@ -143,6 +146,27 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*configPB
 					c.Errorf("switches must have at most %d ports", switchMaxPorts)
 				}
 				c.Exit()
+			}
+			c.Exit()
+		}
+		for _, kvm := range dc.Kvm {
+			switch {
+			case kvm.Name == "":
+				c.Errorf("KVM names are required and must be non-empty")
+			case !kvms.Add(kvm.Name):
+				c.Errorf("duplicate KVM %q", kvm.Name)
+			}
+			c.Enter("kvm %q", kvm.Name)
+			if !racks.Has(kvm.Rack) {
+				c.Errorf("unknown rack %q", kvm.Rack)
+			}
+			_, err := common.ParseMAC48(kvm.MacAddress)
+			if err != nil {
+				c.Errorf("invalid MAC-48 address %q", kvm.MacAddress)
+			}
+			_, err = common.ParseIPv4(kvm.Ipv4)
+			if err != nil {
+				c.Errorf("invalid IPv4 address %q", kvm.Ipv4)
 			}
 			c.Exit()
 		}

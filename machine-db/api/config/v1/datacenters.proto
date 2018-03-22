@@ -20,6 +20,25 @@ message Switch {
   common.State state = 4;
 }
 
+// A KVM to store in the database.
+message KVM {
+  // The name of this KVM on the network. Must be globally unique.
+  string name = 1;
+  // A description of this KVM.
+  string description = 2;
+  // The type of platform this KVM is.
+  string platform = 3;
+  // The rack this KVM belongs to.
+  // Must be the name of a rack in the same datacenter.
+  string rack = 4;
+  // The MAC address associated with this KVM.
+  string mac_address = 5;
+  // The IPv4 address associated with this KVM.
+  string ipv4 = 6;
+  // The state of this KVM.
+  common.State state = 7;
+}
+
 // A rack to store in the database.
 message Rack {
   // The name of this rack. Must be globally unique.
@@ -42,6 +61,8 @@ message Datacenter {
   repeated Rack rack = 3;
   // The state of this datacenter.
   common.State state = 4;
+  // The KVMs belonging to this datacenter.
+  repeated KVM kvm = 5;
 }
 
 // A list of datacenter config files.

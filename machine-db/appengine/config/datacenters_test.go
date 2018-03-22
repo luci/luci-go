@@ -337,6 +337,176 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "switches must have at most 65535 ports")
 		})
 
+		Convey("unnamed KVM", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Rack:       "rack",
+							MacAddress: "00:00:00:00:00:01",
+							Ipv4:       "0.0.0.1",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "KVM names are required and must be non-empty")
+		})
+
+		Convey("duplicate KVMs in the same datacenter", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "duplicate",
+							Rack:       "rack",
+							MacAddress: "01:02:03:04:05:06",
+							Ipv4:       "127.0.0.1",
+						},
+						{
+							Name:       "unique",
+							Rack:       "rack",
+							MacAddress: "11:22:33:44:55:66",
+							Ipv4:       "127.0.0.2",
+						},
+						{
+							Name:       "duplicate",
+							Rack:       "rack",
+							MacAddress: "00:00:00:00:00:01",
+							Ipv4:       "0.0.0.1",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "duplicate KVM")
+		})
+
+		Convey("duplicate KVMs in different datacenters", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter1.cfg": {
+					Name: "datacenter 1",
+					Rack: []*config.Rack{
+						{
+							Name: "rack 1",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "duplicate",
+							Rack:       "rack 1",
+							MacAddress: "01:02:03:04:05:06",
+							Ipv4:       "127.0.0.1",
+						},
+						{
+							Name:       "unique",
+							Rack:       "rack 1",
+							MacAddress: "11:22:33:44:55:66",
+							Ipv4:       "127.0.0.2",
+						},
+					},
+				},
+				"datacenter2.cfg": {
+					Name: "datacenter 2",
+					Rack: []*config.Rack{
+						{
+							Name: "rack 2",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "duplicate",
+							Rack:       "rack 2",
+							MacAddress: "00:00:00:00:00:01",
+							Ipv4:       "0.0.0.1",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "duplicate KVM")
+		})
+
+		Convey("unknown rack", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "kvm",
+							MacAddress: "00:00:00:00:00:01",
+							Ipv4:       "0.0.0.1",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "unknown rack")
+		})
+
+		Convey("invalid MAC-48 address", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "kvm",
+							Rack:       "rack",
+							MacAddress: "01:02:03:04:05:06:07:08",
+							Ipv4:       "127.0.0.1",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "invalid MAC-48 address")
+		})
+
+		Convey("invalid IPv4 address", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "kvm",
+							Rack:       "rack",
+							MacAddress: "01:02:03:04:05:06",
+							Ipv4:       "2001:db8:a0b:12f0::1",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "invalid IPv4 address")
+		})
+
 		Convey("ok", func() {
 			datacenters := map[string]*config.Datacenter{
 				"datacenter1.cfg": {
@@ -360,6 +530,22 @@ func TestValidateDatacenters(t *testing.T) {
 						{
 							Name:  "rack 2",
 							State: common.State_DECOMMISSIONED,
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:        "kvm 1",
+							Rack:        "rack 1",
+							Description: "A description of kvm 1",
+							MacAddress:  "01:02:03:04:05:06",
+							Ipv4:        "127.0.0.1",
+							State:       common.State_PRERELEASE,
+						},
+						{
+							Name:       "kvm 2",
+							Rack:       "rack 2",
+							MacAddress: "11:22:33:44:55:66",
+							Ipv4:       "127.0.0.2",
 						},
 					},
 				},
@@ -386,6 +572,15 @@ func TestValidateDatacenters(t *testing.T) {
 									State: common.State_SERVING,
 								},
 							},
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "kvm 3",
+							Rack:       "rack 3",
+							MacAddress: "00:00:00:00:00:01",
+							Ipv4:       "0.0.0.1",
+							State:      common.State_SERVING,
 						},
 					},
 				},
