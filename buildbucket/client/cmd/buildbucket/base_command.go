@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -25,6 +26,8 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 )
@@ -93,12 +96,23 @@ func (r *baseCommandRun) callAndDone(ctx context.Context, method, relURL string,
 		return r.done(ctx, err)
 	}
 
-	res, err := client.call(ctx, method, relURL, body)
+	resBytes, err := client.call(ctx, method, relURL, body)
 	if err != nil {
 		return r.done(ctx, err)
 	}
 
-	fmt.Printf("%s\n", res)
+	var res struct {
+		Error *buildbucket.ApiErrorMessage
+	}
+	switch err := json.Unmarshal(resBytes, &res); {
+	case err != nil:
+		return r.done(ctx, err)
+	case res.Error != nil:
+		logging.Errorf(ctx, "Request error (reason: %s): %s", res.Error.Reason, res.Error.Message)
+		return 1
+	}
+
+	fmt.Printf("%s\n", resBytes)
 	return 0
 }
 

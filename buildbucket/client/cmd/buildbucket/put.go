@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 func cmdPutBatch(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -48,12 +49,12 @@ type putBatchRun struct {
 	baseCommandRun
 }
 
-func parsePutRequest(args []string, prefixFunc func() (string, error)) ([]*buildbucket.ApiPutRequestMessage, error) {
+func parsePutRequest(args []string, prefixFunc func() (string, error)) (*buildbucket.ApiPutBatchRequestMessage, error) {
 	if len(args) <= 0 {
 		return nil, fmt.Errorf("missing parameter: <JSON Request>")
 	}
 
-	var reqs []*buildbucket.ApiPutRequestMessage
+	req := &buildbucket.ApiPutBatchRequestMessage{}
 	opIDPrefix := ""
 	for i, a := range args {
 		// verify that args are valid here before sending the request.
@@ -71,23 +72,51 @@ func parsePutRequest(args []string, prefixFunc func() (string, error)) ([]*build
 			}
 			putReq.ClientOperationId = opIDPrefix + "-" + strconv.Itoa(i)
 		}
-		reqs = append(reqs, putReq)
+		req.Builds = append(req.Builds, putReq)
 	}
 
-	return reqs, nil
+	return req, nil
 }
 
 func (r *putBatchRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
-	builds, err := parsePutRequest(args, func() (string, error) {
+	req, err := parsePutRequest(args, func() (string, error) {
 		id, err := uuid.NewRandom()
 		return id.String(), err
 	})
 	if err != nil {
 		return r.done(ctx, err)
 	}
-	return r.callAndDone(ctx, "PUT", "builds/batch", map[string]interface{}{
-		"builds": builds,
-	})
+
+	client, err := r.createClient(ctx)
+	if err != nil {
+		return r.done(ctx, err)
+	}
+
+	resBytes, err := client.call(ctx, "PUT", "builds/batch", req)
+	if err != nil {
+		return r.done(ctx, err)
+	}
+
+	var res buildbucket.ApiPutBatchResponseMessage
+	if err := json.Unmarshal(resBytes, &res); err != nil {
+		return r.done(ctx, err)
+	}
+
+	hasErrors := false
+	for i, r := range res.Results {
+		if r.Error != nil {
+			hasErrors = true
+			logging.Errorf(ctx, "Failed to schedule build #%d (reason: %s): %s\n",
+				i, r.Error.Reason, r.Error.Message)
+		}
+	}
+	if hasErrors {
+		return 1
+	}
+
+	fmt.Printf("%s\n", resBytes)
+	return 0
+
 }
