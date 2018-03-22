@@ -19,6 +19,7 @@ import "go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/vm_slots.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto";
 
 // Crimson implements the Crimson service.
@@ -71,6 +72,9 @@ service Crimson {
   rpc ListPhysicalHosts(ListPhysicalHostsRequest) returns (ListPhysicalHostsResponse);
   // Updates a physical host in the database.
   rpc UpdatePhysicalHost(UpdatePhysicalHostRequest) returns (PhysicalHost);
+
+  // Finds available VM slots in the database.
+  rpc FindVMSlots(FindVMSlotsRequest) returns (FindVMSlotsResponse);
 
   // Creates a new VM in the database.
   rpc CreateVM(CreateVMRequest) returns (VM);
