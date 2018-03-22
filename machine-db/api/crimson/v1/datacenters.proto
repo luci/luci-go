@@ -8,13 +8,7 @@ package crimson;
 
 import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// ListDatacentersRequest is a request to retrieve datacenters.
-message ListDatacentersRequest {
-  // The names of datacenters to retrieve.
-  repeated string names = 1;
-}
-
-// Datacenter describes a datacenter.
+// A datacenter in the database.
 message Datacenter {
   // The name of this datacenter. Uniquely identifies this datacenter.
   string name = 1;
@@ -24,7 +18,13 @@ message Datacenter {
   common.State state = 3;
 }
 
-// ListDatacentersResponse is a response to a request to retrieve datacenters.
+// A request to list datacenters in the database.
+message ListDatacentersRequest {
+  // The names of datacenters to retrieve.
+  repeated string names = 1;
+}
+
+// A response containing a list of datacenters in the database.
 message ListDatacentersResponse {
   // The datacenters matching the request.
   repeated Datacenter datacenters = 1;

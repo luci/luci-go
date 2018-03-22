@@ -40,9 +40,9 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-// Switch describes a switch.
+// A switch to store in the database.
 type Switch struct {
-	// The name of this switch.
+	// The name of this switch. Must be globally unique.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this switch.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
@@ -85,9 +85,9 @@ func (m *Switch) GetState() common.State {
 	return common.State_STATE_UNSPECIFIED
 }
 
-// Rack describes a rack.
+// A rack to store in the database.
 type Rack struct {
-	// The name of this rack.
+	// The name of this rack. Must be globally unique.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this rack.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
@@ -130,9 +130,9 @@ func (m *Rack) GetState() common.State {
 	return common.State_STATE_UNSPECIFIED
 }
 
-// Datacenter describes a datacenter.
+// A datacenter to store in the database.
 type Datacenter struct {
-	// The name of this datacenter.
+	// The name of this datacenter. Must be globally unique.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this datacenter.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
@@ -175,7 +175,7 @@ func (m *Datacenter) GetState() common.State {
 	return common.State_STATE_UNSPECIFIED
 }
 
-// Datacenters enumerates datacenter config files.
+// A list of datacenter config files.
 type Datacenters struct {
 	// A list of names of datacenter config files.
 	Datacenter []string `protobuf:"bytes,1,rep,name=datacenter" json:"datacenter,omitempty"`

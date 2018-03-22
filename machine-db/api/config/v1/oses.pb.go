@@ -12,9 +12,9 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// OS describes an operating system.
+// An operating system to store in the database.
 type OS struct {
-	// The name of this operating system.
+	// The name of this operating system. Must be unique.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this operating system.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
@@ -39,7 +39,7 @@ func (m *OS) GetDescription() string {
 	return ""
 }
 
-// OSes enumerates operating systems.
+// A list of operating systems.
 type OSes struct {
 	// A list of operating systems.
 	OperatingSystem []*OS `protobuf:"bytes,1,rep,name=operating_system,json=operatingSystem" json:"operating_system,omitempty"`

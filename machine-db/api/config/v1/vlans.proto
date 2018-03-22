@@ -8,9 +8,9 @@ package config;
 
 import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
-// VLAN describes a VLAN.
+// A VLAN to store in the database.
 message VLAN {
-  // The ID of this VLAN.
+  // The ID of this VLAN. Must be unique.
   int64 id = 1;
   // An alias for this VLAN.
   string alias = 2;
@@ -20,7 +20,7 @@ message VLAN {
   common.State state = 4;
 }
 
-// VLANs enumerates VLANs.
+// A list of VLANs.
 message VLANs {
   // A list of VLANs.
   repeated VLAN vlan = 1;

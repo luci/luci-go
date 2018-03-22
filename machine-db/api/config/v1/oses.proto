@@ -6,15 +6,15 @@ syntax = "proto3";
 
 package config;
 
-// OS describes an operating system.
+// An operating system to store in the database.
 message OS {
-  // The name of this operating system.
+  // The name of this operating system. Must be unique.
   string name = 1;
   // A description of this operating system.
   string description = 2;
 }
 
-// OSes enumerates operating systems.
+// A list of operating systems.
 message OSes {
   // A list of operating systems.
   repeated OS operating_system = 1;

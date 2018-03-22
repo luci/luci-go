@@ -12,9 +12,9 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// Platform describes a platform.
+// A platform to store in the database.
 type Platform struct {
-	// The name of this platform.
+	// The name of this platform. Must be unique.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this platform.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
@@ -39,7 +39,7 @@ func (m *Platform) GetDescription() string {
 	return ""
 }
 
-// Platforms enumerates platforms.
+// A list of platforms.
 type Platforms struct {
 	// A list of platforms.
 	Platform []*Platform `protobuf:"bytes,1,rep,name=platform" json:"platform,omitempty"`
