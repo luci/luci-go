@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83c0399b_7d3d933e",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T21:41:14Z",
+      "side": 1,
+      "message": "in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/741075/10/machine-db/api/config/v1/datacenters.proto#11\ni said \"across datacenters\" not \"per databcenter\"\n\ni generally avoid \"globally\" because it is really per MP instance, but it is not a big deal",
+      "range": {
+        "startLine": 13,
+        "startChar": 38,
+        "endLine": 13,
+        "endChar": 46
+      },
+      "revId": "7b05b654c9c58ba493667fc696f3be8b71703758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
