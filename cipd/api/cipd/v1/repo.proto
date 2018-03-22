@@ -71,10 +71,12 @@ service Repository {
   // This method checks 'fingerprint' field of the Prefix object. If the
   // metadata for the given prefix already exists, and the fingerprint in the
   // request doesn't match the current fingerprint, the request fails with
-  // CONFICT error.
+  // FAILED_PRECONDITION error.
   //
   // If the metadata doesn't exist yet, its fingerprint is assumed to be empty
   // string. So pass empty fingerprint when creating initial metadata objects.
+  // If the caller passes empty fingerprint, but the metadata already exists,
+  // the request fails with ALREADY_EXISTS error.
   //
   // On success returns PrefixMetadata object with the updated fingerprint.
   rpc UpdatePrefixMetadata(PrefixMetadata) returns (PrefixMetadata);
@@ -96,7 +98,7 @@ enum Role {
   READER = 1;
 
   // Writers can do everything that readers can, plus create new packages,
-  // upload package instances, attach tags, move refs, modify package counters.
+  // upload package instances, attach tags, move refs.
   WRITER = 2;
 
   // Owners can do everything that writers can, plus read and modify prefix
@@ -135,9 +137,13 @@ message PrefixMetadata {
   string fingerprint = 2;
 
   // When the metadata was modified the last time.
+  //
+  // Managed by the server, ignored when passed to UpdatePrefixMetadata.
   google.protobuf.Timestamp update_time = 3;
 
   // Identity string of whoever modified the metadata the last time.
+  //
+  // Managed by the server, ignored when passed to UpdatePrefixMetadata.
   string update_user = 4;
 
   // ACLs that apply to this prefix and all subprefixes, as a mapping from

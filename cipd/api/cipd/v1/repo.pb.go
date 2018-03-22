@@ -32,7 +32,7 @@ const (
 	// instances, all tags, all refs), but not prefix metadata (e.g. ACLs).
 	Role_READER Role = 1
 	// Writers can do everything that readers can, plus create new packages,
-	// upload package instances, attach tags, move refs, modify package counters.
+	// upload package instances, attach tags, move refs.
 	Role_WRITER Role = 2
 	// Owners can do everything that writers can, plus read and modify prefix
 	// metadata.
@@ -87,8 +87,12 @@ type PrefixMetadata struct {
 	// Used by UpdatePrefixMetadata to prevent an accidental overwrite of changes.
 	Fingerprint string `protobuf:"bytes,2,opt,name=fingerprint" json:"fingerprint,omitempty"`
 	// When the metadata was modified the last time.
+	//
+	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
 	UpdateTime *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime" json:"update_time,omitempty"`
 	// Identity string of whoever modified the metadata the last time.
+	//
+	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
 	UpdateUser string `protobuf:"bytes,4,opt,name=update_user,json=updateUser" json:"update_user,omitempty"`
 	// ACLs that apply to this prefix and all subprefixes, as a mapping from
 	// a role to a list of users and groups that have it.
@@ -215,10 +219,12 @@ type RepositoryClient interface {
 	// This method checks 'fingerprint' field of the Prefix object. If the
 	// metadata for the given prefix already exists, and the fingerprint in the
 	// request doesn't match the current fingerprint, the request fails with
-	// CONFICT error.
+	// FAILED_PRECONDITION error.
 	//
 	// If the metadata doesn't exist yet, its fingerprint is assumed to be empty
 	// string. So pass empty fingerprint when creating initial metadata objects.
+	// If the caller passes empty fingerprint, but the metadata already exists,
+	// the request fails with ALREADY_EXISTS error.
 	//
 	// On success returns PrefixMetadata object with the updated fingerprint.
 	UpdatePrefixMetadata(ctx context.Context, in *PrefixMetadata, opts ...grpc.CallOption) (*PrefixMetadata, error)
@@ -308,10 +314,12 @@ type RepositoryServer interface {
 	// This method checks 'fingerprint' field of the Prefix object. If the
 	// metadata for the given prefix already exists, and the fingerprint in the
 	// request doesn't match the current fingerprint, the request fails with
-	// CONFICT error.
+	// FAILED_PRECONDITION error.
 	//
 	// If the metadata doesn't exist yet, its fingerprint is assumed to be empty
 	// string. So pass empty fingerprint when creating initial metadata objects.
+	// If the caller passes empty fingerprint, but the metadata already exists,
+	// the request fails with ALREADY_EXISTS error.
 	//
 	// On success returns PrefixMetadata object with the updated fingerprint.
 	UpdatePrefixMetadata(context.Context, *PrefixMetadata) (*PrefixMetadata, error)
