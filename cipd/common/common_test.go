@@ -44,6 +44,40 @@ func TestValidatePackageName(t *testing.T) {
 	})
 }
 
+func TestValidatePackagePrefix(t *testing.T) {
+	t.Parallel()
+
+	Convey("ValidatePackagePrefix strips suffix", t, func() {
+		p, err := ValidatePackagePrefix("good/name/")
+		So(err, ShouldBeNil)
+		So(p, ShouldEqual, "good/name")
+	})
+
+	Convey("ValidatePackagePrefix works", t, func() {
+		call := func(p string) error {
+			_, err := ValidatePackagePrefix(p)
+			return err
+		}
+
+		So(call("good/name"), ShouldBeNil)
+		So(call("good/name/"), ShouldBeNil)
+		So(call("good_name"), ShouldBeNil)
+		So(call("123-_/also/good/name"), ShouldBeNil)
+		So(call("good.name/.name/..name"), ShouldBeNil)
+		So(call(""), ShouldNotBeNil)
+		So(call("/"), ShouldNotBeNil)
+		So(call("BAD/name"), ShouldNotBeNil)
+		So(call("bad//name"), ShouldNotBeNil)
+		So(call("bad/name//"), ShouldNotBeNil)
+		So(call("/bad/name"), ShouldNotBeNil)
+		So(call("bad/name\nyeah"), ShouldNotBeNil)
+		So(call("./name"), ShouldNotBeNil)
+		So(call("name/../name"), ShouldNotBeNil)
+		So(call("../../yeah"), ShouldNotBeNil)
+		So(call("..."), ShouldNotBeNil)
+	})
+}
+
 func TestValidateInstanceID(t *testing.T) {
 	t.Parallel()
 
