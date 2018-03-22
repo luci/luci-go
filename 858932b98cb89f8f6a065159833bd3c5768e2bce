@@ -22,6 +22,30 @@
       "revId": "858932b98cb89f8f6a065159833bd3c5768e2bce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9360cae6_5bf3b7d4",
+        "filename": "cipd/common/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-22T18:46:22Z",
+      "side": 1,
+      "message": "while reviewing https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/974896/3/cipd/appengine/impl/repo/repo.go#92\n\nconsider renaming to NormalizePrefixMetadata that returns an error if the input is invalid.",
+      "parentUuid": "9ca38c18_ef0b36e0",
+      "range": {
+        "startLine": 206,
+        "startChar": 7,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "858932b98cb89f8f6a065159833bd3c5768e2bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
