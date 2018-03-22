@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "86678d90_f3e26e40",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T21:28:19Z",
+      "side": 1,
+      "message": "Names are globally unique, not per datacenter. https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/976681",
+      "parentUuid": "9b9371a2_4cab3570",
+      "revId": "e913fb805b372e9b9cc6c7458f9975384206af84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a74e6161_d3274d1e",
         "filename": "machine-db/api/config/v1/datacenters.proto",
         "patchSetId": 10
@@ -33,6 +51,24 @@
       "revId": "e913fb805b372e9b9cc6c7458f9975384206af84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a681ba32_ca7b84f8",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-22T21:28:19Z",
+      "side": 1,
+      "message": "Same here.",
+      "parentUuid": "a74e6161_d3274d1e",
+      "revId": "e913fb805b372e9b9cc6c7458f9975384206af84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
