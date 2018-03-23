@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0c1e4ab8_5294dbf9",
+        "filename": "cipd/appengine/impl/metadata/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T00:49:40Z",
+      "side": 1,
+      "message": "Done. In practice it doesn\u0027t matter, since the callers are expected to validate the prefix before calling this function. So it is still fine to treat \"bad prefix\" error as transient, it will never happen in normal case. It\u0027s the reason I\u0027m not adding additional err check in GetInheritedPrefixMetadata implementation.",
+      "parentUuid": "6bf27043_2a804a15",
+      "range": {
+        "startLine": 47,
+        "startChar": 17,
+        "endLine": 47,
+        "endChar": 26
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8be80b92_bc79341c",
         "filename": "cipd/appengine/impl/repo/acl.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "597a9fa1_2572fc6c",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T00:49:40Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8be80b92_bc79341c",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 51
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b573f02c_20744fab",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T00:49:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "473f7169_175897e9",
+      "range": {
+        "startLine": 56,
+        "startChar": 6,
+        "endLine": 56,
+        "endChar": 16
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8357d588_377b310a",
         "filename": "cipd/appengine/impl/repo/acl.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f0bad16_14a078ee",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T00:49:40Z",
+      "side": 1,
+      "message": "Groups can\u0027t have \u0027:\u0027. Added SplitN anyway for clarity.",
+      "parentUuid": "8357d588_377b310a",
+      "range": {
+        "startLine": 85,
+        "startChar": 22,
+        "endLine": 85,
+        "endChar": 35
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "866023ca_54aba671",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T00:49:40Z",
+      "side": 1,
+      "message": "I think it\u0027s important to let owners know who precisely can fetch their packages. I\u0027ll document this behavior in repo.proto in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/974881\n\nNote I also consider later adding separate role METADATA_READER and grant it to all googlers at the root (or somewhere up top), so non-owners can also see metadata (but not actual package data). This is important to let people know who should they ping or to what group should they apply if they want to get access to some prefix.",
+      "parentUuid": "c98dd91a_250adcd2",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 4
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97760bae_c8378503",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 3
@@ -137,6 +257,30 @@
       "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7d98f3b_aa8e41ee",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T00:49:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97760bae_c8378503",
+      "range": {
+        "startLine": 115,
+        "startChar": 66,
+        "endLine": 116,
+        "endChar": 65
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
