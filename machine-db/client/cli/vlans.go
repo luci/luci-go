@@ -30,10 +30,10 @@ func printVLANs(tsv bool, vlans ...*crimson.VLAN) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("ID", "Alias", "Description", "State")
+			p.Row("ID", "Alias", "Description", "State", "CIDR Block")
 		}
 		for _, v := range vlans {
-			p.Row(v.Id, v.Alias, v.Description, v.State)
+			p.Row(v.Id, v.Alias, v.Description, v.State, v.CidrBlock)
 		}
 	}
 }

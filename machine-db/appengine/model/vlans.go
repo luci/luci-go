@@ -46,7 +46,7 @@ type VLANsTable struct {
 func (t *VLANsTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT id, alias, state
+		SELECT id, alias, state, cidr_block
 		FROM vlans
 	`)
 	if err != nil {
@@ -55,7 +55,7 @@ func (t *VLANsTable) fetch(c context.Context) error {
 	defer rows.Close()
 	for rows.Next() {
 		vlan := &VLAN{}
-		if err := rows.Scan(&vlan.Id, &vlan.Alias, &vlan.State); err != nil {
+		if err := rows.Scan(&vlan.Id, &vlan.Alias, &vlan.State, &vlan.CidrBlock); err != nil {
 			return errors.Annotate(err, "failed to scan VLAN").Err()
 		}
 		t.current = append(t.current, vlan)
@@ -65,7 +65,7 @@ func (t *VLANsTable) fetch(c context.Context) error {
 
 // needsUpdate returns true if the given row needs to be updated to match the given config.
 func (*VLANsTable) needsUpdate(row, cfg *VLAN) bool {
-	return row.Alias != cfg.Alias || row.State != cfg.State
+	return row.Alias != cfg.Alias || row.State != cfg.State || row.CidrBlock != cfg.CidrBlock
 }
 
 // computeChanges computes the changes that need to be made to the VLANs in the database.
@@ -74,9 +74,10 @@ func (t *VLANsTable) computeChanges(c context.Context, vlans []*config.VLAN) {
 	for _, cfg := range vlans {
 		cfgs[cfg.Id] = &VLAN{
 			VLAN: config.VLAN{
-				Id:    cfg.Id,
-				Alias: cfg.Alias,
-				State: cfg.State,
+				Id:        cfg.Id,
+				Alias:     cfg.Alias,
+				State:     cfg.State,
+				CidrBlock: cfg.CidrBlock,
 			},
 		}
 	}
@@ -115,8 +116,8 @@ func (t *VLANsTable) add(c context.Context) error {
 
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO vlans (id, alias, state)
-		VALUES (?, ?, ?)
+		INSERT INTO vlans (id, alias, state, cidr_block)
+		VALUES (?, ?, ?, ?)
 	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
@@ -126,7 +127,7 @@ func (t *VLANsTable) add(c context.Context) error {
 	// Add each VLAN to the database, and update the slice of VLANs with each addition.
 	for len(t.additions) > 0 {
 		vlan := t.additions[0]
-		_, err := stmt.ExecContext(c, vlan.Id, vlan.Alias, vlan.State)
+		_, err := stmt.ExecContext(c, vlan.Id, vlan.Alias, vlan.State, vlan.CidrBlock)
 		if err != nil {
 			return errors.Annotate(err, "failed to add VLAN %d", vlan.Id).Err()
 		}
@@ -191,7 +192,7 @@ func (t *VLANsTable) update(c context.Context) error {
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
 		UPDATE vlans
-		SET alias = ?, state = ?
+		SET alias = ?, state = ?, cidr_block = ?
 		WHERE id = ?
 	`)
 	if err != nil {
@@ -207,12 +208,13 @@ func (t *VLANsTable) update(c context.Context) error {
 			if u, ok := updated[vlan.Id]; ok {
 				vlan.Alias = u.Alias
 				vlan.State = u.State
+				vlan.CidrBlock = u.CidrBlock
 			}
 		}
 	}()
 	for len(t.updates) > 0 {
 		vlan := t.updates[0]
-		if _, err := stmt.ExecContext(c, vlan.Alias, vlan.State, vlan.Id); err != nil {
+		if _, err := stmt.ExecContext(c, vlan.Alias, vlan.State, vlan.CidrBlock, vlan.Id); err != nil {
 			return errors.Annotate(err, "failed to update VLAN %d", vlan.Id).Err()
 		}
 		updated[vlan.Id] = vlan

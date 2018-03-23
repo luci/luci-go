@@ -18,6 +18,8 @@ message VLAN {
   string description = 3;
   // The state of this VLAN.
   common.State state = 4;
+  // The block of IPv4 addresses belonging to this VLAN.
+  string cidr_block = 5;
 }
 
 // A request to list VLANs in the database.
