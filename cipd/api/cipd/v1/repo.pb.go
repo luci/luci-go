@@ -32,10 +32,11 @@ const (
 	// instances, all tags, all refs), but not prefix metadata (e.g. ACLs).
 	Role_READER Role = 1
 	// Writers can do everything that readers can, plus create new packages,
-	// upload package instances, attach tags, move refs, modify package counters.
+	// upload package instances, attach tags, move refs.
 	Role_WRITER Role = 2
-	// Owners can do everything that writers can, plus read and modify prefix
-	// metadata.
+	// Owners can do everything that writers can, plus read prefix metadata for
+	// all parent prefixes and all subprefixes, and modify prefix metadata for
+	// all subprefixes.
 	Role_OWNER Role = 3
 )
 
@@ -87,8 +88,12 @@ type PrefixMetadata struct {
 	// Used by UpdatePrefixMetadata to prevent an accidental overwrite of changes.
 	Fingerprint string `protobuf:"bytes,2,opt,name=fingerprint" json:"fingerprint,omitempty"`
 	// When the metadata was modified the last time.
+	//
+	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
 	UpdateTime *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime" json:"update_time,omitempty"`
 	// Identity string of whoever modified the metadata the last time.
+	//
+	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
 	UpdateUser string `protobuf:"bytes,4,opt,name=update_user,json=updateUser" json:"update_user,omitempty"`
 	// ACLs that apply to this prefix and all subprefixes, as a mapping from
 	// a role to a list of users and groups that have it.
@@ -205,20 +210,41 @@ const _ = grpc.SupportPackageIsVersion4
 type RepositoryClient interface {
 	// Returns metadata associated with the given prefix.
 	//
-	// If the prefix has no metadata associated with it, the response fails with
+	// Requires the caller to have OWNER role for the requested prefix or any of
+	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	//
+	// If the caller has OWNER permission in any of parent prefixes, but the
+	// requested prefix has no metadata associated with it, the call fails with
 	// NOT_FOUND error.
 	GetPrefixMetadata(ctx context.Context, in *PrefixRequest, opts ...grpc.CallOption) (*PrefixMetadata, error)
 	// Returns metadata associated with the given prefix and all parent prefixes.
+	//
+	// Requires the caller to have OWNER role for the requested prefix or any of
+	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	//
+	// Note that if the caller has permission to see the metadata for the
+	// requested prefix, they will also see metadata for all parent prefixes,
+	// since it is needed to assemble the final metadata for the prefix (it
+	// includes inherited properties from all parent prefixes).
 	GetInheritedPrefixMetadata(ctx context.Context, in *PrefixRequest, opts ...grpc.CallOption) (*InheritedPrefixMetadata, error)
 	// Updates or creates metadata associated with the given prefix.
 	//
-	// This method checks 'fingerprint' field of the Prefix object. If the
+	// Requires the caller to have OWNER role for the requested prefix or any of
+	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	//
+	// This method checks 'fingerprint' field of the PrefixMetadata object. If the
 	// metadata for the given prefix already exists, and the fingerprint in the
 	// request doesn't match the current fingerprint, the request fails with
-	// CONFICT error.
+	// FAILED_PRECONDITION error.
 	//
 	// If the metadata doesn't exist yet, its fingerprint is assumed to be empty
 	// string. So pass empty fingerprint when creating initial metadata objects.
+	//
+	// If the caller passes empty fingerprint, but the metadata already exists,
+	// the request fails with ALREADY_EXISTS error.
+	//
+	// Note that there's no way to delete metadata once it was created. Passing
+	// empty PrefixMetadata object is the best that can be done.
 	//
 	// On success returns PrefixMetadata object with the updated fingerprint.
 	UpdatePrefixMetadata(ctx context.Context, in *PrefixMetadata, opts ...grpc.CallOption) (*PrefixMetadata, error)
@@ -298,20 +324,41 @@ func (c *repositoryClient) UpdatePrefixMetadata(ctx context.Context, in *PrefixM
 type RepositoryServer interface {
 	// Returns metadata associated with the given prefix.
 	//
-	// If the prefix has no metadata associated with it, the response fails with
+	// Requires the caller to have OWNER role for the requested prefix or any of
+	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	//
+	// If the caller has OWNER permission in any of parent prefixes, but the
+	// requested prefix has no metadata associated with it, the call fails with
 	// NOT_FOUND error.
 	GetPrefixMetadata(context.Context, *PrefixRequest) (*PrefixMetadata, error)
 	// Returns metadata associated with the given prefix and all parent prefixes.
+	//
+	// Requires the caller to have OWNER role for the requested prefix or any of
+	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	//
+	// Note that if the caller has permission to see the metadata for the
+	// requested prefix, they will also see metadata for all parent prefixes,
+	// since it is needed to assemble the final metadata for the prefix (it
+	// includes inherited properties from all parent prefixes).
 	GetInheritedPrefixMetadata(context.Context, *PrefixRequest) (*InheritedPrefixMetadata, error)
 	// Updates or creates metadata associated with the given prefix.
 	//
-	// This method checks 'fingerprint' field of the Prefix object. If the
+	// Requires the caller to have OWNER role for the requested prefix or any of
+	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	//
+	// This method checks 'fingerprint' field of the PrefixMetadata object. If the
 	// metadata for the given prefix already exists, and the fingerprint in the
 	// request doesn't match the current fingerprint, the request fails with
-	// CONFICT error.
+	// FAILED_PRECONDITION error.
 	//
 	// If the metadata doesn't exist yet, its fingerprint is assumed to be empty
 	// string. So pass empty fingerprint when creating initial metadata objects.
+	//
+	// If the caller passes empty fingerprint, but the metadata already exists,
+	// the request fails with ALREADY_EXISTS error.
+	//
+	// Note that there's no way to delete metadata once it was created. Passing
+	// empty PrefixMetadata object is the best that can be done.
 	//
 	// On success returns PrefixMetadata object with the updated fingerprint.
 	UpdatePrefixMetadata(context.Context, *PrefixMetadata) (*PrefixMetadata, error)
