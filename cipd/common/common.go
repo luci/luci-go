@@ -22,7 +22,10 @@ import (
 	"sort"
 	"strings"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
 // packageNameRe is a regular expression for a superset of a set of allowed
@@ -176,6 +179,70 @@ func ValidateSubdir(subdir string) error {
 	if strings.HasPrefix(subdir, "/") {
 		return fmt.Errorf("bad subdir: absolute paths not allowed: %q", subdir)
 	}
+	return nil
+}
+
+// ValidatePrincipalName validates strings used to identify principals in ACLs.
+//
+// The expected format is "<key>:<value>" pair, where <key> is one of "group",
+// "user", "anonymous", "service". See also go.chromium.org/luci/auth/identity.
+func ValidatePrincipalName(p string) error {
+	chunks := strings.Split(p, ":")
+	if len(chunks) != 2 || chunks[0] == "" || chunks[1] == "" {
+		return fmt.Errorf("%q doesn't look like principal id (<type>:<id>)", p)
+	}
+	if chunks[0] == "group" {
+		return nil // any non-empty group name is OK
+	}
+	// Should be valid identity otherwise.
+	_, err := identity.MakeIdentity(p)
+	return err
+}
+
+// NormalizePrefixMetadata validates and normalizes the prefix metadata proto.
+//
+// Updates r.Prefix in-place by stripping trailing '/', sorts r.Acls and
+// principals lists inside them. Skips r.Fingerprint, r.UpdateTime and
+// r.UpdateUser, since they are always overridden on the server side.
+func NormalizePrefixMetadata(m *api.PrefixMetadata) error {
+	var err error
+	if m.Prefix, err = ValidatePackagePrefix(m.Prefix); err != nil {
+		return err
+	}
+
+	// There should be only one ACL section per role.
+	perRole := make(map[api.Role]*api.PrefixMetadata_ACL, len(m.Acls))
+	keys := make([]int, 0, len(perRole))
+	for i, acl := range m.Acls {
+		switch {
+		// Note: we allow roles not currently present in *.proto, maybe they came
+		// from a newer server. 0 is never OK though.
+		case acl.Role == 0:
+			return fmt.Errorf("ACL entry #%d doesn't have a role specified", i)
+		case perRole[acl.Role] != nil:
+			return fmt.Errorf("role %s is specified twice", acl.Role)
+		}
+
+		perRole[acl.Role] = acl
+		keys = append(keys, int(acl.Role))
+
+		sort.Strings(acl.Principals)
+		for _, p := range acl.Principals {
+			if err := ValidatePrincipalName(p); err != nil {
+				return fmt.Errorf("in ACL entry for role %s - %s", acl.Role, err)
+			}
+		}
+	}
+
+	// Sort ACLs by role.
+	if len(keys) != len(m.Acls) {
+		panic("must not happen")
+	}
+	sort.Ints(keys)
+	for i, role := range keys {
+		m.Acls[i] = perRole[api.Role(role)]
+	}
+
 	return nil
 }
 
