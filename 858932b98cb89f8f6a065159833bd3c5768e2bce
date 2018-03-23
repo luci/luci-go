@@ -46,6 +46,30 @@
       "revId": "858932b98cb89f8f6a065159833bd3c5768e2bce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1409a7d_b98520e1",
+        "filename": "cipd/common/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T00:25:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9360cae6_5bf3b7d4",
+      "range": {
+        "startLine": 206,
+        "startChar": 7,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "858932b98cb89f8f6a065159833bd3c5768e2bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
