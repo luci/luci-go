@@ -38,10 +38,10 @@ func TestListVLANs(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT v.id, v.alias, v.state
-			FROM vlans v$
+			^SELECT id, alias, state, cidr_block
+			FROM vlans$
 		`
-		columns := []string{"v.id", "v.alias", "v.state"}
+		columns := []string{"id", "alias", "state", "cidr_block"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
@@ -67,8 +67,8 @@ func TestListVLANs(t *testing.T) {
 		Convey("no matches", func() {
 			ids := map[int64]struct{}{0: {}}
 			aliases := stringset.NewFromSlice("vlan")
-			rows.AddRow(1, "vlan 1", common.State_FREE)
-			rows.AddRow(2, "vlan 2", common.State_SERVING)
+			rows.AddRow(1, "vlan 1", common.State_FREE, "127.0.0.1/20")
+			rows.AddRow(2, "vlan 2", common.State_SERVING, "192.168.0.1/20")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
@@ -79,22 +79,24 @@ func TestListVLANs(t *testing.T) {
 		Convey("matches", func() {
 			ids := map[int64]struct{}{2: {}}
 			aliases := stringset.NewFromSlice("vlan 3")
-			rows.AddRow(1, "vlan 1", common.State_FREE)
-			rows.AddRow(2, "vlan 2", common.State_SERVING)
-			rows.AddRow(3, "vlan 3", common.State_REPAIR)
+			rows.AddRow(1, "vlan 1", common.State_FREE, "0.0.0.1/20")
+			rows.AddRow(2, "vlan 2", common.State_SERVING, "127.0.0.1/20")
+			rows.AddRow(3, "vlan 3", common.State_REPAIR, "192.168.0.1/20")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{
-					Id:    2,
-					Alias: "vlan 2",
-					State: common.State_SERVING,
+					Id:        2,
+					Alias:     "vlan 2",
+					State:     common.State_SERVING,
+					CidrBlock: "127.0.0.1/20",
 				},
 				{
-					Id:    3,
-					Alias: "vlan 3",
-					State: common.State_REPAIR,
+					Id:        3,
+					Alias:     "vlan 3",
+					State:     common.State_REPAIR,
+					CidrBlock: "192.168.0.1/20",
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -103,17 +105,18 @@ func TestListVLANs(t *testing.T) {
 		Convey("no IDs", func() {
 			ids := make(map[int64]struct{}, 0)
 			aliases := stringset.NewFromSlice("vlan 3")
-			rows.AddRow(1, "vlan 1", common.State_FREE)
-			rows.AddRow(2, "vlan 2", common.State_SERVING)
-			rows.AddRow(3, "vlan 3", common.State_REPAIR)
+			rows.AddRow(1, "vlan 1", common.State_FREE, "0.0.0.1/20")
+			rows.AddRow(2, "vlan 2", common.State_SERVING, "127.0.0.1/20")
+			rows.AddRow(3, "vlan 3", common.State_REPAIR, "192.168.0.1/20")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{
-					Id:    3,
-					Alias: "vlan 3",
-					State: common.State_REPAIR,
+					Id:        3,
+					Alias:     "vlan 3",
+					State:     common.State_REPAIR,
+					CidrBlock: "192.168.0.1/20",
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -122,17 +125,18 @@ func TestListVLANs(t *testing.T) {
 		Convey("no aliases", func() {
 			ids := map[int64]struct{}{2: {}}
 			aliases := stringset.New(0)
-			rows.AddRow(1, "vlan 1", common.State_FREE)
-			rows.AddRow(2, "vlan 2", common.State_SERVING)
-			rows.AddRow(3, "vlan 3", common.State_REPAIR)
+			rows.AddRow(1, "vlan 1", common.State_FREE, "0.0.0.1/20")
+			rows.AddRow(2, "vlan 2", common.State_SERVING, "127.0.0.1/20")
+			rows.AddRow(3, "vlan 3", common.State_REPAIR, "192.168.0.1/20")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{
-					Id:    2,
-					Alias: "vlan 2",
-					State: common.State_SERVING,
+					Id:        2,
+					Alias:     "vlan 2",
+					State:     common.State_SERVING,
+					CidrBlock: "127.0.0.1/20",
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
@@ -141,21 +145,23 @@ func TestListVLANs(t *testing.T) {
 		Convey("ok", func() {
 			ids := make(map[int64]struct{}, 0)
 			aliases := stringset.New(0)
-			rows.AddRow(1, "vlan 1", common.State_FREE)
-			rows.AddRow(2, "vlan 2", common.State_SERVING)
+			rows.AddRow(1, "vlan 1", common.State_FREE, "127.0.0.1/20")
+			rows.AddRow(2, "vlan 2", common.State_SERVING, "192.168.0.1/20")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			vlans, err := listVLANs(c, ids, aliases)
 			So(err, ShouldBeNil)
 			So(vlans, ShouldResemble, []*crimson.VLAN{
 				{
-					Id:    1,
-					Alias: "vlan 1",
-					State: common.State_FREE,
+					Id:        1,
+					Alias:     "vlan 1",
+					State:     common.State_FREE,
+					CidrBlock: "127.0.0.1/20",
 				},
 				{
-					Id:    2,
-					Alias: "vlan 2",
-					State: common.State_SERVING,
+					Id:        2,
+					Alias:     "vlan 2",
+					State:     common.State_SERVING,
+					CidrBlock: "192.168.0.1/20",
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
