@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS vlans (
 	id int,
 	-- An alias for this VLAN.
 	alias varchar(255),
+	-- The CIDR block of IPv4 addresses belonging to this VLAN.
+	cidr_block varchar(255),
 	PRIMARY KEY (id)
 );
 
