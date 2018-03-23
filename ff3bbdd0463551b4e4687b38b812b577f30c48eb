@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "7ff6fa28_2f66d69a",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-23T04:37:53Z",
+      "side": 1,
+      "message": "METADATA_READER SGTM",
+      "parentUuid": "866023ca_54aba671",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 4
+      },
+      "revId": "ff3bbdd0463551b4e4687b38b812b577f30c48eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97760bae_c8378503",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 3
