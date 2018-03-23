@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df6a8348_ddeffffc",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-03-23T23:22:50Z",
+      "side": 1,
+      "message": "lack of an existing test for triggering job made me sad",
+      "range": {
+        "startLine": 273,
+        "startChar": 5,
+        "endLine": 273,
+        "endChar": 31
+      },
+      "revId": "7695ce8e862298e37c67ecbc970197e02dfece11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
