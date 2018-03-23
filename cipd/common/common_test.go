@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -143,6 +145,8 @@ func TestValidateInstanceVersion(t *testing.T) {
 }
 
 func TestValidateSubdir(t *testing.T) {
+	t.Parallel()
+
 	badSubdirs := []struct {
 		name   string
 		subdir string
@@ -183,6 +187,95 @@ func TestValidateSubdir(t *testing.T) {
 				})
 			}
 		})
+	})
+}
+
+func TestValidatePrincipalName(t *testing.T) {
+	t.Parallel()
+
+	Convey("ValidatePrincipalName OK", t, func() {
+		cases := []string{
+			"group:abc",
+			"user:a@example.com",
+			"anonymous:anonymous",
+			"bot:blah",
+			"service:blah",
+		}
+		for _, tc := range cases {
+			So(ValidatePrincipalName(tc), ShouldBeNil)
+		}
+	})
+
+	Convey("ValidatePrincipalName not OK", t, func() {
+		cases := []struct{ p, err string }{
+			{"", "doesn't look like principal id"},
+			{":", "doesn't look like principal id"},
+			{":zzz", "doesn't look like principal id"},
+			{"group:", "doesn't look like principal id"},
+			{"user:", "doesn't look like principal id"},
+			{"anonymous:zzz", `bad value "zzz" for identity kind "anonymous"`},
+			{"user:abc", `bad value "abc" for identity kind "user"`},
+		}
+		for _, tc := range cases {
+			So(ValidatePrincipalName(tc.p), ShouldErrLike, tc.err)
+		}
+	})
+}
+
+func TestNormalizePrefixMetadata(t *testing.T) {
+	t.Parallel()
+
+	Convey("Happy path", t, func() {
+		m := &api.PrefixMetadata{
+			Prefix: "abc/",
+			Acls: []*api.PrefixMetadata_ACL{
+				{Role: api.Role_OWNER, Principals: []string{"user:abc@example.com", "group:a"}},
+				{Role: api.Role_READER, Principals: []string{"group:z"}},
+				{Role: 123}, // some future unknown role
+			},
+		}
+		So(NormalizePrefixMetadata(m), ShouldBeNil)
+		So(m, ShouldResemble, &api.PrefixMetadata{
+			Prefix: "abc",
+			Acls: []*api.PrefixMetadata_ACL{
+				{Role: api.Role_READER, Principals: []string{"group:z"}},
+				{Role: api.Role_OWNER, Principals: []string{"group:a", "user:abc@example.com"}},
+				{Role: 123},
+			},
+		})
+	})
+
+	Convey("Validates prefix", t, func() {
+		So(NormalizePrefixMetadata(&api.PrefixMetadata{Prefix: "//"}),
+			ShouldErrLike, "invalid package prefix")
+	})
+
+	Convey("No role", t, func() {
+		So(NormalizePrefixMetadata(&api.PrefixMetadata{
+			Prefix: "abc",
+			Acls: []*api.PrefixMetadata_ACL{
+				{},
+			},
+		}), ShouldErrLike, "ACL entry #0 doesn't have a role specified")
+	})
+
+	Convey("Double ACL entries", t, func() {
+		So(NormalizePrefixMetadata(&api.PrefixMetadata{
+			Prefix: "abc",
+			Acls: []*api.PrefixMetadata_ACL{
+				{Role: api.Role_READER},
+				{Role: api.Role_READER},
+			},
+		}), ShouldErrLike, "role READER is specified twice")
+	})
+
+	Convey("Bad principal", t, func() {
+		So(NormalizePrefixMetadata(&api.PrefixMetadata{
+			Prefix: "abc",
+			Acls: []*api.PrefixMetadata_ACL{
+				{Role: api.Role_READER, Principals: []string{":"}},
+			},
+		}), ShouldErrLike, `in ACL entry for role READER - ":" doesn't look like principal id`)
 	})
 }
 
