@@ -59,22 +59,43 @@ import "google/protobuf/timestamp.proto";
 service Repository {
   // Returns metadata associated with the given prefix.
   //
-  // If the prefix has no metadata associated with it, the response fails with
+  // Requires the caller to have OWNER role for the requested prefix or any of
+  // parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+  //
+  // If the caller has OWNER permission in any of parent prefixes, but the
+  // requested prefix has no metadata associated with it, the call fails with
   // NOT_FOUND error.
   rpc GetPrefixMetadata(PrefixRequest) returns (PrefixMetadata);
 
   // Returns metadata associated with the given prefix and all parent prefixes.
+  //
+  // Requires the caller to have OWNER role for the requested prefix or any of
+  // parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+  //
+  // Note that if the caller has permission to see the metadata for the
+  // requested prefix, they will also see metadata for all parent prefixes,
+  // since it is needed to assemble the final metadata for the prefix (it
+  // includes inherited properties from all parent prefixes).
   rpc GetInheritedPrefixMetadata(PrefixRequest) returns (InheritedPrefixMetadata);
 
   // Updates or creates metadata associated with the given prefix.
   //
-  // This method checks 'fingerprint' field of the Prefix object. If the
+  // Requires the caller to have OWNER role for the requested prefix or any of
+  // parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+  //
+  // This method checks 'fingerprint' field of the PrefixMetadata object. If the
   // metadata for the given prefix already exists, and the fingerprint in the
   // request doesn't match the current fingerprint, the request fails with
-  // CONFICT error.
+  // FAILED_PRECONDITION error.
   //
   // If the metadata doesn't exist yet, its fingerprint is assumed to be empty
   // string. So pass empty fingerprint when creating initial metadata objects.
+  //
+  // If the caller passes empty fingerprint, but the metadata already exists,
+  // the request fails with ALREADY_EXISTS error.
+  //
+  // Note that there's no way to delete metadata once it was created. Passing
+  // empty PrefixMetadata object is the best that can be done.
   //
   // On success returns PrefixMetadata object with the updated fingerprint.
   rpc UpdatePrefixMetadata(PrefixMetadata) returns (PrefixMetadata);
@@ -96,11 +117,12 @@ enum Role {
   READER = 1;
 
   // Writers can do everything that readers can, plus create new packages,
-  // upload package instances, attach tags, move refs, modify package counters.
+  // upload package instances, attach tags, move refs.
   WRITER = 2;
 
-  // Owners can do everything that writers can, plus read and modify prefix
-  // metadata.
+  // Owners can do everything that writers can, plus read prefix metadata for
+  // all parent prefixes and all subprefixes, and modify prefix metadata for
+  // all subprefixes.
   OWNER = 3;
 }
 
@@ -135,9 +157,13 @@ message PrefixMetadata {
   string fingerprint = 2;
 
   // When the metadata was modified the last time.
+  //
+  // Managed by the server, ignored when passed to UpdatePrefixMetadata.
   google.protobuf.Timestamp update_time = 3;
 
   // Identity string of whoever modified the metadata the last time.
+  //
+  // Managed by the server, ignored when passed to UpdatePrefixMetadata.
   string update_user = 4;
 
   // ACLs that apply to this prefix and all subprefixes, as a mapping from
