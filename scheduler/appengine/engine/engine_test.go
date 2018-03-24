@@ -590,16 +590,20 @@ func TestFullTriggeredFlow(t *testing.T) {
 		// Create a new triggering noop job (ticks every 5 sec).
 		jobsDefinitions := []catalog.Definition{
 			{
-				JobID:           "abc/1",
-				Revision:        "rev1",
-				Schedule:        "*/5 * * * * * *",
-				Task:            taskBytes,
-				Flavor:          catalog.JobFlavorTrigger,
-				TriggeredJobIDs: []string{"abc/2-triggered", "abc/3-triggered"},
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
+				Task:     taskBytes,
+				Flavor:   catalog.JobFlavorTrigger,
+				TriggeredJobIDs: []string{
+					"abc/2-triggered",
+					"abc/3-triggered",
+					"abc/4-triggered",
+				},
 			},
 		}
-		// And also jobs 2, 3 to be triggered by job 1.
-		for i := 2; i <= 3; i++ {
+		// And also jobs 2, 3, 4 to be triggered by job 1.
+		for i := 2; i <= 4; i++ {
 			jobsDefinitions = append(jobsDefinitions, catalog.Definition{
 				JobID:    fmt.Sprintf("abc/%d-triggered", i),
 				Revision: "rev1",
@@ -609,6 +613,12 @@ func TestFullTriggeredFlow(t *testing.T) {
 			})
 		}
 		So(e.UpdateProjectJobs(c, "abc", jobsDefinitions), ShouldBeNil)
+
+		// Pause job #4. It should skip the incoming trigger.
+		job4 := getJob(c, "abc/4-triggered")
+		So(e.setJobPausedFlag(c, &job4, true, "user:someone@example.com"), ShouldBeNil)
+		So(getJob(c, "abc/4-triggered").State.State, ShouldEqual, JobStateSuspended)
+
 		// Enqueued timer task to launch it.
 		tsk := ensureOneTask(c, "timers-q")
 		So(tsk.Path, ShouldEqual, "/timers")
@@ -622,7 +632,11 @@ func TestFullTriggeredFlow(t *testing.T) {
 		// Job1 is in queued state now.
 		job1 := getJob(c, "abc/1")
 		So(job1.Flavor, ShouldEqual, catalog.JobFlavorTrigger)
-		So(job1.TriggeredJobIDs, ShouldResemble, []string{"abc/2-triggered", "abc/3-triggered"})
+		So(job1.TriggeredJobIDs, ShouldResemble, []string{
+			"abc/2-triggered",
+			"abc/3-triggered",
+			"abc/4-triggered",
+		})
 		So(job1.State.State, ShouldEqual, JobStateQueued)
 
 		// Next tick task is added.
@@ -650,7 +664,11 @@ func TestFullTriggeredFlow(t *testing.T) {
 			invID = j1.State.InvocationID
 			inv, err := e.getInvocation(c, "abc/1", invID)
 			So(err, ShouldBeNil)
-			So(inv.TriggeredJobIDs, ShouldResemble, []string{"abc/2-triggered", "abc/3-triggered"})
+			So(inv.TriggeredJobIDs, ShouldResemble, []string{
+				"abc/2-triggered",
+				"abc/3-triggered",
+				"abc/4-triggered",
+			})
 			So(inv.DebugLog, ShouldEqual, "[22:42:05.000] Invocation initiated (attempt 1)\n[22:42:05.000] Starting\n")
 			So(inv.Status, ShouldEqual, task.StatusRunning)
 			So(inv.MutationsCount, ShouldEqual, 1)
@@ -694,9 +712,15 @@ func TestFullTriggeredFlow(t *testing.T) {
 		for _, triggerTask := range popAllTasks(c, "invs-q") {
 			So(e.ExecuteSerializedAction(c, triggerTask.Payload, 0), ShouldBeNil)
 		}
+
 		// Triggers should result in new invocations for previously suspended jobs.
 		So(getJob(c, "abc/2-triggered").State.State, ShouldEqual, JobStateQueued)
 		So(getJob(c, "abc/3-triggered").State.State, ShouldEqual, JobStateQueued)
+
+		// Except job 4, which is paused.
+		job4 = getJob(c, "abc/4-triggered")
+		So(job4.State.State, ShouldEqual, JobStateSuspended)
+		So(job4.State.PendingTriggersRaw, ShouldBeNil)
 
 		// Prepare to track triggers passed to task launchers.
 		deliveredTriggers := map[string][]string{}
