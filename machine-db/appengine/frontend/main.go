@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 
@@ -41,7 +42,10 @@ func init() {
 	config.InstallHandlers(r, databaseMiddleware)
 	r.GET("/", standard.Base(), handler)
 
-	api := prpc.Server{}
+	api := prpc.Server{
+		// Install an interceptor capable of reporting tsmon metrics.
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+	}
 	crimson.RegisterCrimsonServer(&api, rpc.NewServer())
 	discovery.Enable(&api)
 	api.InstallHandlers(r, databaseMiddleware)
