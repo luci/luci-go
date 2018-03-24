@@ -36,6 +36,11 @@ type jobControllerV1 struct {
 
 func (ctl *jobControllerV1) onJobScheduleChange(c context.Context, job *Job) error {
 	return ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
+		// Paused jobs can't have any pending triggers. This check will clear them
+		// once the job is paused.
+		if job.Paused {
+			sm.PendingTriggers = nil
+		}
 		sm.OnScheduleChange()
 		return nil
 	})

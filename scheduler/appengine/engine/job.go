@@ -64,6 +64,11 @@ type Job struct {
 
 	// Paused is true if job's schedule is ignored and job can only be started
 	// manually via "Run now" button.
+	//
+	// Paused jobs ignore incoming triggers. They are completely skipped (not even
+	// enqueued). Pausing a job clears the pending triggers set.
+	//
+	// TODO(vadimsh): Handling of paused state is not implemented for v2 jobs yet.
 	Paused bool `gae:",noindex"`
 
 	// Revision is last seen job definition revision.

@@ -432,6 +432,9 @@ func (e *engineImpl) GetInvocation(c context.Context, job *Job, invID int64) (*I
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) PauseJob(c context.Context, job *Job) error {
+	if err := job.CheckRole(c, acl.Owner); err != nil {
+		return err
+	}
 	return e.setJobPausedFlag(c, job, true, auth.CurrentIdentity(c))
 }
 
@@ -439,6 +442,9 @@ func (e *engineImpl) PauseJob(c context.Context, job *Job) error {
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) ResumeJob(c context.Context, job *Job) error {
+	if err := job.CheckRole(c, acl.Owner); err != nil {
+		return err
+	}
 	return e.setJobPausedFlag(c, job, false, auth.CurrentIdentity(c))
 }
 
@@ -898,10 +904,9 @@ func (e *engineImpl) filterForRole(c context.Context, jobs []*Job, role acl.Role
 }
 
 // setJobPausedFlag is implementation of PauseJob/ResumeJob.
+//
+// Doesn't check ACLs, assumes the check was done already.
 func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, who identity.Identity) error {
-	if err := job.CheckRole(c, acl.Owner); err != nil {
-		return err
-	}
 	return e.jobTxn(c, job.JobID, func(c context.Context, job *Job, isNew bool) error {
 		switch {
 		case isNew || !job.Enabled:
@@ -1461,8 +1466,15 @@ func (e *engineImpl) newBatchOfTriggers(c context.Context, triggeredJobIDs []str
 // Used by v1 engine only!
 func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []*internal.Trigger) error {
 	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
-		if isNew {
+		switch {
+		case isNew:
 			logging.Errorf(c, "Triggered job is unexpectedly gone")
+			return errSkipPut
+		case !job.Enabled:
+			logging.Warningf(c, "Skipping %d incoming triggers: the job is disabled", len(triggers))
+			return errSkipPut
+		case job.Paused:
+			logging.Warningf(c, "Skipping %d incoming triggers: the job is paused", len(triggers))
 			return errSkipPut
 		}
 		logging.Infof(c, "Triggered %d times", len(triggers))
