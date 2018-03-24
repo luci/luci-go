@@ -13,6 +13,12 @@ message ProjectConfig {
   // Notifiers is a list of Notifiers which watch builders and send
   // notifications for this project.
   repeated Notifier notifiers = 1;
+
+  // This is a list of email formatting templates. The first one is the default
+  // used for all emails for this project, if not otherwise specified.
+  //
+  // Optional (will use a luci-notify default, if not present).
+  repeated Template templates = 3;
 }
 
 // Notifier contains a set of notification configurations (which specify
@@ -65,6 +71,12 @@ message Notification {
   //
   // Optional.
   Email email = 4;
+
+  // Refers to which project template name to use to format this email.
+  // If not present, the project detault will be used.
+  //
+  // optional
+  string template = 5;
 }
 
 // Builder references a buildbucket builder in the current project.
@@ -80,3 +92,25 @@ message Builder {
   string name = 2;
 }
 
+
+// Define how to format an email notification.
+message Template {
+
+  // Name of the template, which may be referred to in Notification definitions,
+  // as well as from parameters_json.
+  //
+  // Required.
+  string name = 1;
+
+  // This is a golang text/template definition for the email's title.
+  // See https://golang.org/pkg/text/template/ for the format.
+  //
+  // Required.
+  string title = 2;
+
+  // This is a golang html/template definition for the email's body.
+  // See https://golang.org/pkg/html/template/ for the format.
+  //
+  // Required.
+  string body = 3;
+}
