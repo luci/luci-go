@@ -38,7 +38,7 @@
     },
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 2,
+    "Verbosity": 1,
     "Text": [
       "InfraFailure bot_update",
       "InfraFailure Uncaught Exception"

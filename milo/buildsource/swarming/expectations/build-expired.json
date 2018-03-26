@@ -50,7 +50,7 @@
     },
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 0,
+    "Verbosity": 1,
     "Text": [
       "Task expired"
     ]
@@ -74,7 +74,7 @@
     "Source": "",
     "Project": "infra"
   },
-  "Components": null,
+  "Components": [],
   "PropertyGroup": [
     {
       "GroupName": "Main",

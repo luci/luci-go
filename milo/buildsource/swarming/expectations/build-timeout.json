@@ -64,7 +64,7 @@
     },
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 2,
+    "Verbosity": 1,
     "Text": [
       "Task timed out"
     ]
