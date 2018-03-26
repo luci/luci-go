@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4723911d_b52741fb",
+        "filename": "cipd/appengine/impl/metadata/fingerprint.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T20:05:23Z",
+      "side": 1,
+      "message": "maybe accept a value, as opposed to a pointer, then",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 38,
+        "endChar": 4
+      },
+      "revId": "09f8d80f79a21c48abf21cefc83ad9c0d14f8642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b151c790_a84dc822",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T20:05:23Z",
+      "side": 1,
+      "message": "looks like this is needed only for metas key.\n\nmaybe add metasKey var, and remove TrimSuffix() calls",
+      "range": {
+        "startLine": 99,
+        "startChar": 7,
+        "endLine": 99,
+        "endChar": 14
+      },
+      "revId": "09f8d80f79a21c48abf21cefc83ad9c0d14f8642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17c35fc6_7f31eb9f",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T20:05:23Z",
+      "side": 1,
+      "message": "https://godoc.org/github.com/gogo/protobuf/proto#Clone",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 38
+      },
+      "revId": "09f8d80f79a21c48abf21cefc83ad9c0d14f8642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
