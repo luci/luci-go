@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6399367e_a0b97bca",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T16:56:45Z",
+      "side": 1,
+      "message": "parameters_json",
+      "range": {
+        "startLine": 13,
+        "startChar": 28,
+        "endLine": 13,
+        "endChar": 43
+      },
+      "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f05f081f_dd4ed51a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T16:56:45Z",
+      "side": 1,
+      "message": "let\u0027s define a constraint on this. How about ^[a-z][a-z0-9\\-]{0,39}$",
+      "range": {
+        "startLine": 99,
+        "startChar": 5,
+        "endLine": 99,
+        "endChar": 9
+      },
+      "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfaeaf85_3e9ad64c",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T16:56:45Z",
+      "side": 1,
+      "message": "let\u0027s say \"in a builds\" or \"at build level\". \nin v2, parameters_json is going away.",
+      "range": {
+        "startLine": 100,
+        "startChar": 16,
+        "endLine": 100,
+        "endChar": 36
+      },
+      "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f4b0fd4_fc40cb5e",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T16:56:45Z",
+      "side": 1,
+      "message": "what effect does this value have on anything that the user cares about? can we reuse name?\n\ndo we allow one template to call into another? that would be useful",
+      "range": {
+        "startLine": 105,
+        "startChar": 3,
+        "endLine": 108,
+        "endChar": 14
+      },
+      "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dab776ac_91746fc9",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T16:56:45Z",
+      "side": 1,
+      "message": "didn\u0027t you also planned to include subject line?\n\nstepping back, i am thinking of simplifying this. WDYT about separate template files instead of a single text proto files with a bunch of embedded HTML files? I think it would be simpler for users. The file structure could be \n\nluci-notify/\n  email-templates/\n    default.template\n    foo.template\n    mysteps.template\n\nthe name of the file defines the template name. A file can include another template as\n  \n  {{template \"mysteps\" .Build.Steps}}\n  \nWe could define its format as: one or more headers, each on its own line; then a blank line, then the body. A header format matches HTTP headers, so e.g. \"Subject: [Build Status] Builder {{ .Builder }} on]{{ .Status }}\"\n\nThe parsing of the text as headers-and-body takes place AFTER the template is rendered, so that allows the subject line to be a template.",
+      "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
