@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26716167_1013e4cd",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-03-26T20:57:38Z",
+      "side": 0,
+      "message": "This is now done in MiloBuild.Fix()",
+      "revId": "29867aae2100e0372c479d7d398360fd86b30c53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
