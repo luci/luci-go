@@ -29,8 +29,11 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	logDogTypes "go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -50,6 +53,8 @@ type BuildID struct {
 var ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
 
 // GetSwarmingID returns the swarming task ID of a buildbucket build.
+// TODO(hinoka): BuildInfo and Skia requires this.
+// Remove this when buildbucket v2 is out and Skia is on Kitchen.
 func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *model.BuildSummary, error) {
 	host, err := getHost(c)
 	if err != nil {
@@ -270,12 +275,28 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.MiloB
 		break
 	}
 
+	// Sprinkle in some extra information from Swarming
+	swarmingTags := strpair.ParseMap(b.Tags["swarming_tag"])
+	swarming.AddBanner(result, swarmingTags)
+	swarming.AddRecipeLink(result, swarmingTags)
+	swarming.AddProjectInfo(result, swarmingTags)
+	task := b.Tags.Get("swarming_task_id")
+	result.Summary.Source = ui.NewLink(
+		"Task "+task,
+		swarming.TaskPageURL(b.Tags.Get("swarming_hostname"), task).String(),
+		"Swarming task page for task %s"+task)
+	// TODO(hinoka): Add in Swarming Bot ID when it is surfaced in buildbucket.
+
 	if b.Number != nil {
 		numStr := strconv.Itoa(*b.Number)
 		result.Summary.Label = ui.NewLink(
 			numStr,
 			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
 			fmt.Sprintf("build #%s", numStr))
+		result.Summary.ParentLabel = ui.NewLink(
+			b.Builder,
+			fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
+			fmt.Sprintf("builder %s", b.Builder))
 	} else {
 		idStr := strconv.FormatInt(b.ID, 10)
 		result.Summary.Label = ui.NewLink(
@@ -288,10 +309,8 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.MiloB
 
 // getUIBuild fetches the full build state from Swarming and LogDog if
 // available, otherwise returns an empty "pending build".
+// TODO(hinoka): Remove this when Skia migrates to Kitchen.
 func getUIBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*ui.MiloBuild, error) {
-	// TODO(nodir,hinoka): squash getUIBuild with toMiloBuild.
-
-	// TODO(nodir,hinoka,iannucci): use annotations directly without fetching swarming task
 	ret, err := sID.Get(c)
 	if err != nil {
 		return nil, err
@@ -329,14 +348,103 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	}
 }
 
-// Get returns a resp.MiloBuild based off of the buildbucket ID given by
-// finding the coorisponding swarming build.
-func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
-	sID, bs, err := GetSwarmingID(c, b.Address)
+func getBuildbucketBuild(c context.Context, address string) (*bbapi.ApiCommonBuildMessage, error) {
+	host, err := getHost(c)
 	if err != nil {
 		return nil, err
 	}
-	return getUIBuild(c, bs, sID)
+
+	client, err := newBuildbucketClient(c, host)
+	if err != nil {
+		return nil, err
+	}
+	// This runs a search RPC against BuildBucket, but it is optimized for speed.
+	build, err := buildbucket.GetByAddressRaw(c, client, address)
+	switch {
+	case err != nil:
+		return nil, errors.Annotate(err, "could not get build at %q", address).Err()
+	case build == nil:
+		return nil, errors.Reason("build at %q not found", address).Tag(common.CodeNotFound).Err()
+	}
+
+	return build, nil
+}
+
+// addSteps adds step and property information from LogDog to mb.
+func addSteps(c context.Context, bbBuildMessage *bbapi.ApiCommonBuildMessage, mb *ui.MiloBuild) error {
+	swarmingTags := strpair.ParseMap(bbBuildMessage.Tags)["swarming_tag"]
+	logLocation := strpair.ParseMap(swarmingTags).Get("log_location")
+	if logLocation == "" {
+		return errors.New("Build is missing log_location")
+	}
+	addr, err := logDogTypes.ParseURL(logLocation)
+	if err != nil {
+		return errors.Annotate(err, "%s is invalid", addr).Err()
+	}
+
+	step, err := rawpresentation.ReadAnnotations(c, addr)
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch steps from LogDog").Err()
+	}
+	ub := rawpresentation.NewURLBuilder(addr)
+	mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep)
+	mb.Fix()
+	return nil
+}
+
+// addBlame adds blame information from Gitiles to mb.  This requires the
+// BuildSummary to be indexed in Milo.
+func addBlame(c context.Context, buildAddress string, mb *ui.MiloBuild) error {
+	host, err := getHost(c)
+	if err != nil {
+		return err
+	}
+	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, host, buildAddress)}
+
+	if err := datastore.Get(c, bs); err != nil {
+		return errors.Annotate(err, "could not find buildsummary for this build").Err()
+	}
+	return mixInSimplisticBlamelist(c, bs, mb)
+}
+
+// Get returns a resp.MiloBuild based off of the Buildbucket address.
+// It performs the following actions:
+// * Fetch the full Buildbucket build from Buildbucket
+// * Fetch the step information from LogDog
+// * Fetch the blame information from Gitiles
+// This only errors out on failures to reach BuildBucket.  LogDog and Gitiles errors
+// are surfaced in the UI.
+// TODO(hinoka): Some of this can be done concurrently.  Investigate if this call
+// takes >500ms on average.
+func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
+	bbBuildMessage, err := getBuildbucketBuild(c, b.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	mb, err := toMiloBuild(c, bbBuildMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add step information from LogDog.  If this fails, we still have perfectly
+	// valid information from Buildbucket, so just annotate the build with the
+	// error and continue.
+	if err := addSteps(c, bbBuildMessage, mb); err != nil {
+		mb.Components = append(mb.Components, &ui.BuildComponent{
+			Label:  ui.NewEmptyLink("Failed to fetch step information from LogDog"),
+			Text:   strings.Split(err.Error(), "\n"),
+			Status: model.InfraFailure,
+		})
+	}
+
+	// Add blame information.  If this fails, just add in a placeholder with an error.
+	if err := addBlame(c, b.Address, mb); err != nil {
+		mb.Blame = append(mb.Blame, &ui.Commit{
+			Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
+		})
+	}
+	return mb, nil
 }
 
 func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {
