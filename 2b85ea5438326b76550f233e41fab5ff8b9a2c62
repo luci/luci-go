@@ -1,0 +1,261 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2eceabf7_903e22aa",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "nit: maybe use \"Message\" here. Other functions that work with v1 messages use Message term\n\nstepping back, i should probably refactor buildbucket package to use v2 protocols. This is needed for some luci-notify work too. Filed crbug.com/826006. As a part of this refactoring, this and ParseMessage will probably be renamed to something like GetByAddressV1 and ParseV1",
+      "range": {
+        "startLine": 398,
+        "startChar": 17,
+        "endLine": 398,
+        "endChar": 20
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d27a3d5_b466d5d7",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "why buildbucket v2 is required for this?",
+      "range": {
+        "startLine": 57,
+        "startChar": 20,
+        "endLine": 57,
+        "endChar": 42
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e12194d_f31d9693",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "nit: maybe put it into a default case. It prevents accidental not-returning in a case, and switch becomes exhaustive (covers all cases)",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12c59878_371b66ff",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "why calling Fix is addSteps\u0027 responsibility? shouldn\u0027t we call Fix right before rendering?",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85ac6944_b26c648c",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "do i understand correctly that we wouldn\u0027t find it if was not ingested by pubsub yet?\ni don\u0027t think it should be a critical path\nstepping back, why can\u0027t we derive BuilderSummmary struct from the buildbucket build that we have at hand",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6450ea5e_ff6e289a",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 407,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "why mixInSimplisticBlamelist accepts a build summary, as opposed to a buildbucket build?",
+      "range": {
+        "startLine": 407,
+        "startChar": 36,
+        "endLine": 407,
+        "endChar": 38
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a845122_365aea2b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "this overwrites finalized properties received from buildbucket.\n\ni think it would be simpler if addXXX functions were renamed to extractXXX and did not make side effects, but instead returned the extracted value to the client. Then the client can decide what to do with it, e.g. conditionally add to the build",
+      "range": {
+        "startLine": 433,
+        "startChar": 11,
+        "endLine": 433,
+        "endChar": 19
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc2b1469_eae4b00e",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "optional: ideally we have a dedicated field to indicate that there was an error. Applies to blame as well",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "446da75a_a5322874",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b859efd9_eba7e278",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "this should have been a separate CL",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cd5dee85_3fec73fe",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "move closer to usage",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daa3cd4f_280215a2",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "this is not idempotent. Name \"fix\" sounds idempotent, i.e. fixedBuild.Fix() should be a noop. Other packages have \u003e1 Fix() calls\n\nConsider making Fix() internal and call it only once for a miloBuild, right before rendering.",
+      "range": {
+        "startLine": 79,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 66
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e642f1e_f2cb66f5",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T21:37:22Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 84,
+        "startChar": 5,
+        "endLine": 84,
+        "endChar": 6
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
