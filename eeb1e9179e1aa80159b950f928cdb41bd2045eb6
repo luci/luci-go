@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65f6c5ad_6f4bea77",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T20:08:19Z",
+      "side": 1,
+      "message": "nit: a bit long name for a var with a 2LOC lifetime",
+      "range": {
+        "startLine": 85,
+        "startChar": 7,
+        "endLine": 85,
+        "endChar": 13
+      },
+      "revId": "eeb1e9179e1aa80159b950f928cdb41bd2045eb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87e31489_dca7a9d4",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T20:08:19Z",
+      "side": 1,
+      "message": "at this point, i don\u0027t know what \"under prefix\" means",
+      "range": {
+        "startLine": 165,
+        "startChar": 74,
+        "endLine": 165,
+        "endChar": 79
+      },
+      "revId": "eeb1e9179e1aa80159b950f928cdb41bd2045eb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
