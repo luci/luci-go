@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd3fa69d_2985d07a",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T18:04:20Z",
+      "side": 1,
+      "message": "also, the kvm of the rack must be this kvm?\n\ni assume you will add in a CL where you add kvm to Rack",
+      "revId": "1bbe5a681683b95a693ea323a99d68977a0ad972",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea466f5b_9077905e",
+        "filename": "machine-db/appengine/database/setup/migrations/012_initialize_kvms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T18:04:20Z",
+      "side": 1,
+      "message": "kvm?",
+      "range": {
+        "startLine": 17,
+        "startChar": 35,
+        "endLine": 17,
+        "endChar": 48
+      },
+      "revId": "1bbe5a681683b95a693ea323a99d68977a0ad972",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7e7bfaa_02c06cd0",
+        "filename": "machine-db/appengine/database/setup/migrations/012_initialize_kvms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-26T18:04:20Z",
+      "side": 1,
+      "message": "I assume rack\u0027s FK will be RESTRICT too. Then, FWIU, you cannot delete a rack+kvm pair (after deleting all racks that use the KVM) because they would protected each other. I didn\u0027t check it, is that right? if so, maybe use CASCADE here. With RESTRICT on rack-\u003ekvm, it should be ok",
+      "range": {
+        "startLine": 32,
+        "startChar": 55,
+        "endLine": 32,
+        "endChar": 63
+      },
+      "revId": "1bbe5a681683b95a693ea323a99d68977a0ad972",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
