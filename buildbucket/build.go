@@ -383,6 +383,19 @@ func ValidateBuildAddress(address string) error {
 // GetByAddress fetches a build by its address.
 // Returns (nil, nil) if build is not found.
 func GetByAddress(c context.Context, client *buildbucket.Service, address string) (*Build, error) {
+	msg, err := GetByAddressRaw(c, client, address)
+	if err != nil {
+		return nil, err
+	}
+
+	var build Build
+	err = build.ParseMessage(msg)
+	return &build, err
+}
+
+// GetByAddressRaw fetches a build message by its address.
+// Returns (nil, nil) if build is not found.
+func GetByAddressRaw(c context.Context, client *buildbucket.Service, address string) (*buildbucket.ApiCommonBuildMessage, error) {
 	id, _, _, _, _, err := ParseBuildAddress(address)
 	if err != nil {
 		return nil, err
@@ -412,8 +425,5 @@ func GetByAddress(c context.Context, client *buildbucket.Service, address string
 			msg = msgs[0]
 		}
 	}
-
-	var build Build
-	err = build.ParseMessage(msg)
-	return &build, err
+	return msg, nil
 }

@@ -45,7 +45,7 @@
     },
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 1,
+    "Verbosity": 0,
     "Text": [
       "Running bot_update"
     ]
