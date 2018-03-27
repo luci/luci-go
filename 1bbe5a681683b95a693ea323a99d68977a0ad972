@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f22892ce_31647b6a",
+        "filename": "machine-db/api/config/v1/datacenters.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-27T23:29:14Z",
+      "side": 1,
+      "message": "I don\u0027t know if it happens in practice, but I imagine a KVM could be racked in R1 and serve R2 while the KVM racked in R2 serves R1. It could also be that new KVM K is deployed which references rack R, but rack R is not set to be served by K yet.",
+      "parentUuid": "fd3fa69d_2985d07a",
+      "revId": "1bbe5a681683b95a693ea323a99d68977a0ad972",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ea466f5b_9077905e",
         "filename": "machine-db/appengine/database/setup/migrations/012_initialize_kvms.up.sql",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "dd7838fb_730bbd69",
+        "filename": "machine-db/appengine/database/setup/migrations/012_initialize_kvms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-27T23:29:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea466f5b_9077905e",
+      "range": {
+        "startLine": 17,
+        "startChar": 35,
+        "endLine": 17,
+        "endChar": 48
+      },
+      "revId": "1bbe5a681683b95a693ea323a99d68977a0ad972",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b7e7bfaa_02c06cd0",
         "filename": "machine-db/appengine/database/setup/migrations/012_initialize_kvms.up.sql",
         "patchSetId": 1
@@ -62,6 +104,30 @@
       "revId": "1bbe5a681683b95a693ea323a99d68977a0ad972",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f372e443_18525508",
+        "filename": "machine-db/appengine/database/setup/migrations/012_initialize_kvms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-27T23:29:14Z",
+      "side": 1,
+      "message": "Rack\u0027s FK is currently \"on delete set null\" (see below), but I think you\u0027re right it should cascade here and restrict below.\n\nAssuming KVM K and Rack R exist in the config and reference one another, the deletion cases are:\n1. Both are deleted from config. Server should delete R and cascade the deletion to K.\n2. K is deleted and the R-\u003eK reference is removed from the config. Server should update R to set its KVM to NULL, which removes the FK so K can be deleted. Server should delete K.\n3. K is not deleted and the R-\u003eK reference is removed from the config. Server should update R to set its KVM to NULL.\n4. K is deleted and the R-\u003eK reference is not removed from the config. Server should reject this as invalid (R references unknown KVM K).\n5. R is deleted and K is not deleted. Server should reject this as invalid (K references unknown rack R).",
+      "parentUuid": "b7e7bfaa_02c06cd0",
+      "range": {
+        "startLine": 32,
+        "startChar": 55,
+        "endLine": 32,
+        "endChar": 63
+      },
+      "revId": "1bbe5a681683b95a693ea323a99d68977a0ad972",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
