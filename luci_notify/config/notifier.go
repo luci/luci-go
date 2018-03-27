@@ -42,6 +42,9 @@ type NotificationConfig struct {
 
 	// EmailRecipients is a list of email recipients to notify.
 	EmailRecipients []string `json:"email_recipients"`
+
+	// EmailRecipients is a list of email recipients to notify.
+	Template string `json:"template"`
 }
 
 func newNotificationConfig(cfg *notifyConfig.Notification) NotificationConfig {
@@ -54,6 +57,7 @@ func newNotificationConfig(cfg *notifyConfig.Notification) NotificationConfig {
 		OnFailure:       cfg.OnFailure,
 		OnChange:        cfg.OnChange,
 		EmailRecipients: recipients,
+		Template:        cfg.Template,
 	}
 }
 

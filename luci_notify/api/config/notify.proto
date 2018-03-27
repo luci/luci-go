@@ -4,6 +4,32 @@
 
 // Schema for project-level configuration in luci-notify.
 
+
+// Template named "default-subject", and "default-body" will be defined by
+// luci-notify, but files may be provided in this configuration may add new
+// template names, or override either or both of the default templates.
+// Notification or build requests may name the template to be used (a single
+// name without -subject and -body), and if the don't "default" will be used.
+//
+// If a template name is provided then both <name>-subject, and <name>-body
+// must be defined or email will not be sent.
+//
+// Subject templates should result in single line values, and should
+// be formatted as defined in:
+//   https://golang.org/pkg/text/template/
+//
+// Body templates should be formatted as defined in (notice html, not text):
+//   https://golang.org/pkg/html/template/
+//
+// Template file structures, notice that no file extensions are used. The file
+// names are the default names for the templates, but additional names can be
+// defined inside the files.
+//
+// luci-notify/
+//   email-templates/
+//     *-subject
+//     *-body
+
 syntax = "proto3";
 
 package config;
@@ -65,6 +91,13 @@ message Notification {
   //
   // Optional.
   Email email = 4;
+
+  // Refers to which project template name to use to format this email.
+  // If not present, "default" will be used. This value is expanded to
+  // "<template>-subject", and "<template>-body".
+  //
+  // optional
+  string template = 5;
 }
 
 // Builder references a buildbucket builder in the current project.
@@ -79,4 +112,3 @@ message Builder {
   // Required.
   string name = 2;
 }
-
