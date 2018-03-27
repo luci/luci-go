@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "21297571_0ae67234",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-27T01:42:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6399367e_a0b97bca",
+      "range": {
+        "startLine": 13,
+        "startChar": 28,
+        "endLine": 13,
+        "endChar": 43
+      },
+      "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f05f081f_dd4ed51a",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 2
@@ -147,6 +171,24 @@
       "side": 1,
       "message": "I think external files would be easier to work with, except:\n\n1) subject lines\n2) I have no idea how they make it from luci-config into the luci-notify environment. I didn\u0027t even know it was an option until you mentioned it.",
       "parentUuid": "dab776ac_91746fc9",
+      "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8b73637_c8dacedd",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-27T01:42:00Z",
+      "side": 1,
+      "message": "I thought config files had multiline support, but they do not.\n  https://github.com/luci/luci-go/blob/master/common/proto/multiline_test.go\n\nAfter reading the template docs, I think we have to define subject and body definitions independently, partly because one uses text/template, and the other html/template.\n\nThe templating library has support for parsing all template files in a directory, which would make them all available in the same namespace and be able to include from each other, but the file names become the template names.\n\nWhat about:\n\nluci-notify/\n  email-templates/\n    subject/\n      foo\n    body/\n      foo\n\nAlternatively, it could be:\n\nluci-notify/\n  email-templates/\n    foo-subject\n    foo-body\n\nBut the names of the templates would have to be \"foo-subject\" and \"foo-body\" whenever it was explicitly defined. The subject/body name spaces would still be independent, which leads me towards two different directories.\n\nThe files can define additional template names internally, if people want to get fancy.",
+      "parentUuid": "76739c86_363fd5a1",
       "revId": "d2b6ed8db1683f6656c75d7881e926bcca338f73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
