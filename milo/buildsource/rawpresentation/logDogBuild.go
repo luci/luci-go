@@ -23,7 +23,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -47,7 +46,7 @@ var builtIn = map[string]struct{}{
 
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, isMain bool, buildCompletedTime time.Time) []*ui.BuildComponent {
+func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step) []*ui.BuildComponent {
 
 	comp := &ui.BuildComponent{Label: ui.NewLink(anno.Name, "", anno.Name)}
 	switch anno.Status {
@@ -85,21 +84,10 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, isMai
 		comp.Status = model.NotRun
 	}
 
-	if !(buildCompletedTime.IsZero() || comp.Status.Terminal()) {
-		// The build has completed, but this step has not. Mark it as an
-		// infrastructure failure.
-		comp.Status = model.InfraFailure
-	}
-
 	// Hide the unimportant steps, highlight the interesting ones.
 	switch comp.Status {
-	case model.NotRun, model.Running:
-		if isMain {
-			comp.Verbosity = ui.Hidden
-		}
-
 	case model.Success:
-		if _, ok := builtIn[anno.Name]; ok || isMain {
+		if _, ok := builtIn[anno.Name]; ok {
 			comp.Verbosity = ui.Hidden
 		}
 	case model.InfraFailure, model.Failure:
@@ -158,9 +146,6 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, isMai
 	}
 	if t, err := ptypes.Timestamp(anno.Ended); err == nil {
 		end = t
-	} else {
-		// Build is complete but step isn't?  Snap to build complete time.
-		end = buildCompletedTime
 	}
 	comp.ExecutionTime = ui.NewInterval(c, start, end)
 
@@ -181,12 +166,41 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, isMai
 		default:
 			panic(fmt.Errorf("Unknown type %v", s))
 		}
-		for _, subcomp := range miloBuildStep(c, ub, subanno, false, buildCompletedTime) {
+		for _, subcomp := range miloBuildStep(c, ub, subanno) {
 			results = append(results, subcomp)
 		}
 	}
 
 	return results
+}
+
+// SubStepsToUI converts a slice of annotation substeps to ui.BuildComponent and
+// slice of ui.PropertyGroups.
+func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_Substep) ([]*ui.BuildComponent, []*ui.PropertyGroup) {
+	components := make([]*ui.BuildComponent, 0, len(substeps))
+	propGroups := make([]*ui.PropertyGroup, 0, len(substeps)+1) // This is the max number or property groups.
+	for _, substepContainer := range substeps {
+		anno := substepContainer.GetStep()
+		if anno == nil {
+			// TODO: We ignore non-embedded substeps for now.
+			continue
+		}
+
+		bss := miloBuildStep(c, ub, anno)
+		for _, bs := range bss {
+			components = append(components, bs)
+			propGroup := &ui.PropertyGroup{GroupName: bs.Label.Label}
+			for _, prop := range anno.Property {
+				propGroup.Property = append(propGroup.Property, &ui.Property{
+					Key:   prop.Name,
+					Value: prop.Value,
+				})
+			}
+			propGroups = append(propGroups, propGroup)
+		}
+	}
+
+	return components, propGroups
 }
 
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
@@ -196,34 +210,8 @@ func AddLogDogToBuild(
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
-	buildCompletedTime := google.TimeFromProto(mainAnno.Ended)
-	build.Summary = *(miloBuildStep(c, ub, mainAnno, true, buildCompletedTime)[0])
-	propMap := map[string]string{}
-	for _, substepContainer := range mainAnno.Substep {
-		anno := substepContainer.GetStep()
-		if anno == nil {
-			// TODO: We ignore non-embedded substeps for now.
-			continue
-		}
-
-		bss := miloBuildStep(c, ub, anno, false, buildCompletedTime)
-		for _, bs := range bss {
-			if bs.Status != model.Success {
-				build.Summary.Text = append(
-					build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
-			}
-			build.Components = append(build.Components, bs)
-			propGroup := &ui.PropertyGroup{GroupName: bs.Label.Label}
-			for _, prop := range anno.Property {
-				propGroup.Property = append(propGroup.Property, &ui.Property{
-					Key:   prop.Name,
-					Value: prop.Value,
-				})
-				propMap[prop.Name] = prop.Value
-			}
-			build.PropertyGroup = append(build.PropertyGroup, propGroup)
-		}
-	}
+	build.Summary = *(miloBuildStep(c, ub, mainAnno)[0])
+	build.Components, build.PropertyGroup = SubStepsToUI(c, ub, mainAnno.Substep)
 
 	// Take care of properties
 	propGroup := &ui.PropertyGroup{GroupName: "Main"}
@@ -232,10 +220,16 @@ func AddLogDogToBuild(
 			Key:   prop.Name,
 			Value: prop.Value,
 		})
-		propMap[prop.Name] = prop.Value
 	}
 	build.PropertyGroup = append(build.PropertyGroup, propGroup)
 
+	// Build a property map so we can extract revision properties.
+	propMap := map[string]string{}
+	for _, pg := range build.PropertyGroup {
+		for _, p := range pg.Property {
+			propMap[p.Key] = p.Value
+		}
+	}
 	// HACK(hinoka,iannucci): Extract revision out of properties. This should use
 	// source manifests instead.
 	jrev, ok := propMap["got_revision"]

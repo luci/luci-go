@@ -59,6 +59,41 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
+
+	// fixed indicates that this build already contains UI tweaks from Fix().
+	fixed bool
+}
+
+// Fix fixes various inconsistencies that users expect to see as part of the Build,
+// but didn't make sense as part of the individual components, including:
+// * If the build is complete, all open steps should be closed.
+// * The main step text should contain a list of all failing builds.
+func (b *MiloBuild) Fix() {
+	if b.fixed {
+		return
+	}
+	switch b.Summary.Status {
+	case model.InfraFailure, model.Failure:
+		b.Summary.Verbosity = Interesting
+	case model.Success, model.Running, model.NotRun:
+		b.Summary.Verbosity = Hidden
+	}
+	for _, comp := range b.Components {
+		// Add interesting information into the main summary text.
+		if comp.Status != model.Success {
+			b.Summary.Text = append(
+				b.Summary.Text, fmt.Sprintf("%s %s", comp.Status, comp.Label))
+		}
+
+		finished := b.Summary.ExecutionTime.Finished
+		// If the build is finished but the step is not finished.
+		if !finished.IsZero() && comp.ExecutionTime.Finished.IsZero() {
+			// Then set the finish time to be the same as the build finish time.
+			comp.ExecutionTime.Finished = finished
+			comp.Status = model.InfraFailure
+		}
+	}
+	b.fixed = true
 }
 
 // BuildSummary returns the BuildSummary representation of the MiloBuild.  This
