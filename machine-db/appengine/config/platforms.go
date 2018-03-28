@@ -33,11 +33,12 @@ import (
 const platformsFilename = "platforms.cfg"
 
 // importPlatforms fetches, validates, and applies platform configs.
-func importPlatforms(c context.Context, configSet config.Set) error {
+// Returns a map of platform names to IDs.
+func importPlatforms(c context.Context, configSet config.Set) (map[string]int64, error) {
 	platform := &configPB.Platforms{}
 	metadata := &config.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, platformsFilename, textproto.Message(platform), metadata); err != nil {
-		return errors.Annotate(err, "failed to load %s", platformsFilename).Err()
+		return nil, errors.Annotate(err, "failed to load %s", platformsFilename).Err()
 	}
 	logging.Infof(c, "Found %s revision %q", platformsFilename, metadata.Revision)
 
@@ -45,13 +46,14 @@ func importPlatforms(c context.Context, configSet config.Set) error {
 	ctx.SetFile(platformsFilename)
 	validatePlatforms(ctx, platform)
 	if err := ctx.Finalize(); err != nil {
-		return errors.Annotate(err, "invalid config").Err()
+		return nil, errors.Annotate(err, "invalid config").Err()
 	}
 
-	if err := model.EnsurePlatforms(c, platform.Platform); err != nil {
-		return errors.Annotate(err, "failed to ensure platforms").Err()
+	ids, err := model.EnsurePlatforms(c, platform.Platform)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to ensure platforms").Err()
 	}
-	return nil
+	return ids, nil
 }
 
 // validatePlatforms validates platforms.cfg.

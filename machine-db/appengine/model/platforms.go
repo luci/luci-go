@@ -238,20 +238,21 @@ func (t *PlatformsTable) ids(c context.Context) map[string]int64 {
 }
 
 // EnsurePlatforms ensures the database contains exactly the given platforms.
-func EnsurePlatforms(c context.Context, cfgs []*config.Platform) error {
+// Returns a map of platform names to IDs.
+func EnsurePlatforms(c context.Context, cfgs []*config.Platform) (map[string]int64, error) {
 	t := &PlatformsTable{}
 	if err := t.fetch(c); err != nil {
-		return errors.Annotate(err, "failed to fetch platforms").Err()
+		return nil, errors.Annotate(err, "failed to fetch platforms").Err()
 	}
 	t.computeChanges(c, cfgs)
 	if err := t.add(c); err != nil {
-		return errors.Annotate(err, "failed to add platforms").Err()
+		return nil, errors.Annotate(err, "failed to add platforms").Err()
 	}
 	if err := t.remove(c); err != nil {
-		return errors.Annotate(err, "failed to remove platforms").Err()
+		return nil, errors.Annotate(err, "failed to remove platforms").Err()
 	}
 	if err := t.update(c); err != nil {
-		return errors.Annotate(err, "failed to update platforms").Err()
+		return nil, errors.Annotate(err, "failed to update platforms").Err()
 	}
-	return nil
+	return t.ids(c), nil
 }
