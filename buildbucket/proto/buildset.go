@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucket
+package buildbucketpb
 
 import (
 	"fmt"
@@ -27,14 +27,6 @@ type BuildSet interface {
 	BuildSet() string
 }
 
-// GerritChange is a patchset on gerrit.
-type GerritChange struct {
-	Host     string
-	Change   int64
-	Patchset int64
-}
-
-// BuildSet encodes the change in buildset tag format,
 // e.g. "patch/gerrit/chromium-review.googlesource.com/677784/5".
 func (c *GerritChange) BuildSet() string {
 	return fmt.Sprintf("patch/gerrit/%s/%d/%d", c.Host, c.Change, c.Patchset)
@@ -43,15 +35,6 @@ func (c *GerritChange) BuildSet() string {
 // URL returns URL of the change.
 func (c *GerritChange) URL() string {
 	return fmt.Sprintf("https://%s/c/%d/%d", c.Host, c.Change, c.Patchset)
-}
-
-// GitilesCommit is a Git commit on a Gitiles server.
-// Builds that have a Gitiles commit buildset, usually also have gitiles_ref
-// tag.
-type GitilesCommit struct {
-	Host    string
-	Project string
-	Id      string // i.e. commit hex sha1
 }
 
 // BuildSet encodes the commit in buildset tag format,

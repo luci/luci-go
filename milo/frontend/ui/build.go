@@ -28,7 +28,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -371,9 +371,9 @@ func NewLink(label, url, ariaLabel string) *Link {
 // NewPatchLink is the right way (TM) to generate links to Rietveld/Gerrit CLs.
 //
 // Returns nil if provided buildset is not Rietveld or Gerrit CL.
-func NewPatchLink(cl buildbucket.BuildSet) *Link {
+func NewPatchLink(cl buildbucketpb.BuildSet) *Link {
 	switch v := cl.(type) {
-	case *buildbucket.GerritChange:
+	case *buildbucketpb.GerritChange:
 		return NewLink(
 			fmt.Sprintf("Gerrit CL %d (ps#%d)", v.Change, v.Patchset),
 			v.URL(),

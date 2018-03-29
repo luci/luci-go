@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -182,9 +183,9 @@ var errMissingProperties = errors.New("missing required properties")
 func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSummary) error {
 	funcs := []struct {
 		Name string
-		CB   func() (buildbucket.BuildSet, error)
+		CB   func() (buildbucketpb.BuildSet, error)
 	}{
-		{"GitilesCommit", func() (buildbucket.BuildSet, error) {
+		{"GitilesCommit", func() (buildbucketpb.BuildSet, error) {
 			repoI, revI := b.PropertyValue("repository"), b.PropertyValue("revision")
 			repo, _ := repoI.(string)
 			rev, _ := revI.(string)
@@ -207,14 +208,14 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 				return nil, errors.Reason("path has '+': %q", u.Path).Err()
 			}
 
-			return &buildbucket.GitilesCommit{
+			return &buildbucketpb.GitilesCommit{
 				Project: strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), ".git"),
 				Host:    u.Host,
 				Id:      rev,
 			}, nil
 		}},
 
-		{"GerritChange", func() (buildbucket.BuildSet, error) {
+		{"GerritChange", func() (buildbucketpb.BuildSet, error) {
 			pgu, _ := b.PropertyValue("patch_gerrit_url").(string)
 			pi, _ := b.PropertyValue("patch_issue").(float64)
 			ps, _ := b.PropertyValue("patch_set").(float64)
@@ -232,7 +233,7 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 				return nil, errors.Reason("unknown host: %q", u.Host).Err()
 			}
 
-			return &buildbucket.GerritChange{
+			return &buildbucketpb.GerritChange{
 				Host:     u.Host,
 				Change:   int64(pi),
 				Patchset: int64(ps),

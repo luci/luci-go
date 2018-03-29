@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 
@@ -46,7 +47,12 @@ func TestBuild(t *testing.T) {
 			Bucket:       "luci.chromium.try",
 			Builder:      "linux_chromium_rel_ng",
 			Number:       &num,
-			BuildSets:    []BuildSet{&GerritChange{"chromium-review.googlesource.com", 678507, 3}},
+			BuildSets: []buildbucketpb.BuildSet{
+				&buildbucketpb.GerritChange{
+					Host:     "chromium-review.googlesource.com",
+					Change:   678507,
+					Patchset: 3,
+				}},
 			Tags: strpair.Map{
 				"build_address":                    []string{"luci.chromium.try/linux_chromium_rel_ng/4124"},
 				"builder":                          []string{"linux_chromium_rel_ng"},
