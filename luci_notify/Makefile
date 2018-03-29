@@ -18,3 +18,6 @@ switch-dev:
 
 test:
 	go test ./...
+
+proto:
+	protoc api/config/*.proto --go_out .
