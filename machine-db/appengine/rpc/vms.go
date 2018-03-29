@@ -32,6 +32,7 @@ import (
 	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/appengine/model"
 	"go.chromium.org/luci/machine-db/common"
 )
 
@@ -68,7 +69,7 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := assignHostnameAndIP(c, tx, v.Name, ip)
+	hostnameId, err := model.AssignHostnameAndIP(c, tx, v.Name, ip)
 	if err != nil {
 		return nil, err
 	}
