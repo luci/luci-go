@@ -153,9 +153,9 @@ func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
 		return
 	}
 	commit := buildbucket.GitilesCommit{
-		Host:     repo.Host,
-		Project:  strings.TrimPrefix(repo.Path, "/"),
-		Revision: t.Revision,
+		Host:    repo.Host,
+		Project: strings.TrimPrefix(repo.Path, "/"),
+		Id:      t.Revision,
 	}
 
 	r.Properties = structFromMap(map[string]string{
@@ -164,7 +164,7 @@ func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
 		"repository": t.Repo,
 	})
 	r.Tags = []string{
-		"buildset:" + commit.String(),
+		"buildset:" + commit.BuildSet(),
 		"gitiles_ref:" + t.Ref,
 	}
 }

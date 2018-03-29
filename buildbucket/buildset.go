@@ -23,46 +23,41 @@ import (
 // BuildSet is a parsed buildset tag value.
 // It is implemented by *GerritChange, *GitilesCommit.
 type BuildSet interface {
-	fmt.Stringer
-
-	isABuildSet()
+	// BuildSet returns a tag value in buildset format.
+	BuildSet() string
 }
 
 // GerritChange is a patchset on gerrit.
 type GerritChange struct {
 	Host     string
 	Change   int64
-	PatchSet int
+	Patchset int64
 }
 
-func (*GerritChange) isABuildSet() {}
-
-// String returns a buildset string for the change,
+// BuildSet encodes the change in buildset tag format,
 // e.g. "patch/gerrit/chromium-review.googlesource.com/677784/5".
-func (c *GerritChange) String() string {
-	return fmt.Sprintf("patch/gerrit/%s/%d/%d", c.Host, c.Change, c.PatchSet)
+func (c *GerritChange) BuildSet() string {
+	return fmt.Sprintf("patch/gerrit/%s/%d/%d", c.Host, c.Change, c.Patchset)
 }
 
 // URL returns URL of the change.
 func (c *GerritChange) URL() string {
-	return fmt.Sprintf("https://%s/c/%d/%d", c.Host, c.Change, c.PatchSet)
+	return fmt.Sprintf("https://%s/c/%d/%d", c.Host, c.Change, c.Patchset)
 }
 
 // GitilesCommit is a Git commit on a Gitiles server.
 // Builds that have a Gitiles commit buildset, usually also have gitiles_ref
 // tag.
 type GitilesCommit struct {
-	Host     string
-	Project  string
-	Revision string // i.e. commit hex sha1
+	Host    string
+	Project string
+	Id      string // i.e. commit hex sha1
 }
 
-func (*GitilesCommit) isABuildSet() {}
-
-// String returns a buildset string for the commit,
+// BuildSet encodes the commit in buildset tag format,
 // e.g. "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
-func (c *GitilesCommit) String() string {
-	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Revision)
+func (c *GitilesCommit) BuildSet() string {
+	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Id)
 }
 
 // RepoURL returns the URL for the gitiles repo.
@@ -74,7 +69,7 @@ func (c *GitilesCommit) RepoURL() string {
 // URL returns the URL for the gitiles commit.
 // e.g. "https://chromium.googlesource.com/chromium/src/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
 func (c *GitilesCommit) URL() string {
-	return fmt.Sprintf("%s/+/%s", c.RepoURL(), c.Revision)
+	return fmt.Sprintf("%s/+/%s", c.RepoURL(), c.Id)
 }
 
 // ParseBuildSet tries to parse buildset as one of the known formats.
@@ -101,7 +96,7 @@ func ParseBuildSet(buildSet string) BuildSet {
 		if gerrit.Change, err = strconv.ParseInt(p[3], 10, 64); err != nil {
 			return nil
 		}
-		if gerrit.PatchSet, err = strconv.Atoi(p[4]); err != nil {
+		if gerrit.Patchset, err = strconv.ParseInt(p[4], 10, 64); err != nil {
 			return nil
 		}
 		return gerrit
@@ -111,9 +106,9 @@ func ParseBuildSet(buildSet string) BuildSet {
 			return nil
 		}
 		return &GitilesCommit{
-			Host:     p[2],
-			Project:  strings.Join(p[3:n-2], "/"), // exclude plus
-			Revision: p[n-1],
+			Host:    p[2],
+			Project: strings.Join(p[3:n-2], "/"), // exclude plus
+			Id:      p[n-1],
 		}
 
 	default:

@@ -81,7 +81,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 	for _, bs := range b.BuildSets {
 		if commit, ok := bs.(*buildbucket.GitilesCommit); ok {
 			res.Sourcestamp.Repository = commit.RepoURL()
-			res.Sourcestamp.Revision = commit.Revision
+			res.Sourcestamp.Revision = commit.Id
 			break
 		}
 	}

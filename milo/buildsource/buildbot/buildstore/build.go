@@ -208,9 +208,9 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 			}
 
 			return &buildbucket.GitilesCommit{
-				Project:  strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), ".git"),
-				Host:     u.Host,
-				Revision: rev,
+				Project: strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), ".git"),
+				Host:    u.Host,
+				Id:      rev,
 			}, nil
 		}},
 
@@ -235,14 +235,14 @@ func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSum
 			return &buildbucket.GerritChange{
 				Host:     u.Host,
 				Change:   int64(pi),
-				PatchSet: int(ps),
+				Patchset: int64(ps),
 			}, nil
 		}},
 	}
 
 	for _, f := range funcs {
 		if bset, err := f.CB(); err == nil {
-			bs.BuildSet = append(bs.BuildSet, bset.String())
+			bs.BuildSet = append(bs.BuildSet, bset.BuildSet())
 		} else if err != errMissingProperties {
 			logging.WithError(err).Warningf(c, "failed to apply %s", f.Name)
 		}

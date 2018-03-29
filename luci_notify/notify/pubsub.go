@@ -129,7 +129,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 					return err
 				}
 				// Initialize the Builder in the datastore.
-				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Revision, &build.Build)); err != nil {
+				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build)); err != nil {
 					return err
 				}
 				return nil
@@ -149,7 +149,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	}
 
 	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
-	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Revision)
+	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
 			return err
 		}
-		return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, &build.Build))
+		return datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build))
 	}, nil)
 }
 

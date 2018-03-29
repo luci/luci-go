@@ -246,13 +246,13 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 			continue
 		}
 
-		revision, err := hex.DecodeString(commit.Revision)
+		revision, err := hex.DecodeString(commit.Id)
 		switch {
 		case err != nil:
-			logging.WithError(err).Warningf(c, "failed to decode revision: %v", commit.Revision)
+			logging.WithError(err).Warningf(c, "failed to decode revision: %v", commit.Id)
 
 		case len(revision) != sha1.Size:
-			logging.Warningf(c, "wrong revision size %d v %d: %q", len(revision), sha1.Size, commit.Revision)
+			logging.Warningf(c, "wrong revision size %d v %d: %q", len(revision), sha1.Size, commit.Id)
 
 		default:
 			consoles, err := common.GetAllConsoles(c, bs.BuilderID)
@@ -313,7 +313,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	// i.e. some commits may not have builds.
 
 	// We don't really need a blamelist longer than 50 commits.
-	commits, err = git.Log(c, gc.Host, gc.Project, gc.Revision, 50)
+	commits, err = git.Log(c, gc.Host, gc.Project, gc.Id, 50)
 	if err != nil || len(commits) == 0 {
 		return
 	}
@@ -323,8 +323,8 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	curGC := &buildbucket.GitilesCommit{Host: gc.Host, Project: gc.Project}
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
 	for i, commit := range commits[1:] { // skip the first commit... it's us!
-		curGC.Revision = commit.Id
-		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.String()), &builds); err != nil {
+		curGC.Id = commit.Id
+		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.BuildSet()), &builds); err != nil {
 			return
 		}
 		if len(builds) > 0 {
