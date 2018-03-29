@@ -375,9 +375,9 @@ func NewPatchLink(cl buildbucket.BuildSet) *Link {
 	switch v := cl.(type) {
 	case *buildbucket.GerritChange:
 		return NewLink(
-			fmt.Sprintf("Gerrit CL %d (ps#%d)", v.Change, v.PatchSet),
+			fmt.Sprintf("Gerrit CL %d (ps#%d)", v.Change, v.Patchset),
 			v.URL(),
-			fmt.Sprintf("gerrit changelist number %d patchset %d", v.Change, v.PatchSet))
+			fmt.Sprintf("gerrit changelist number %d patchset %d", v.Change, v.Patchset))
 	default:
 		return nil
 	}
