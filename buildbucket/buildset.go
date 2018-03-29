@@ -21,7 +21,7 @@ import (
 )
 
 // BuildSet is a parsed buildset tag value.
-// It is implemented by *RietveldChange, *GerritChange, *GitilesCommit.
+// It is implemented by **GerritChange, *GitilesCommit.
 type BuildSet interface {
 	fmt.Stringer
 
@@ -32,26 +32,6 @@ type BuildSet interface {
 // See also ParseBuildSet.
 // When a build triggers a new build, the buildset tag must be copied.
 const TagBuildSet = "buildset"
-
-// RietveldChange is a patchset on Rietveld.
-type RietveldChange struct {
-	Host     string
-	Issue    int64
-	PatchSet int
-}
-
-func (*RietveldChange) isABuildSet() {}
-
-// String returns a buildset string for the change,
-// e.g. "patch/rietveld/codereview.chromium.org/2979743003/1".
-func (c *RietveldChange) String() string {
-	return fmt.Sprintf("patch/rietveld/%s/%d/%d", c.Host, c.Issue, c.PatchSet)
-}
-
-// URL returns URL of the change.
-func (c *RietveldChange) URL() string {
-	return fmt.Sprintf("https://%s/%d/#ps%d", c.Host, c.Issue, c.PatchSet)
-}
 
 // GerritChange is a patchset on gerrit.
 type GerritChange struct {
@@ -130,19 +110,6 @@ func ParseBuildSet(buildSet string) BuildSet {
 			return nil
 		}
 		return gerrit
-
-	case n == 5 && p[0] == "patch" && p[1] == "rietveld":
-		rietveld := &RietveldChange{
-			Host: p[2],
-		}
-		var err error
-		if rietveld.Issue, err = strconv.ParseInt(p[3], 10, 64); err != nil {
-			return nil
-		}
-		if rietveld.PatchSet, err = strconv.Atoi(p[4]); err != nil {
-			return nil
-		}
-		return rietveld
 
 	case n >= 5 && p[0] == "commit" && p[1] == "gitiles":
 		if p[n-2] != "+" || !looksLikeSha1(p[n-1]) {

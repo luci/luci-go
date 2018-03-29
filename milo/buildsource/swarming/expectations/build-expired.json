@@ -64,11 +64,7 @@
     "RequestRevision": null,
     "Revision": null,
     "Description": "",
-    "Changelist": {
-      "Label": "Rietveld CL 2225073005 (ps#1)",
-      "URL": "https://codereview.chromium.org/2225073005/#ps1",
-      "AriaLabel": "rietveld changelist number 2225073005 patchset 1"
-    },
+    "Changelist": null,
     "CommitURL": "",
     "File": null,
     "Source": "",
