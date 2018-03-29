@@ -28,8 +28,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket"
-	bucketApi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
@@ -46,10 +45,10 @@ import (
 // Buildbucket timestamps round off to milliseconds, so define a reference.
 var RefTime = time.Date(2016, time.February, 3, 4, 5, 6, 0, time.UTC)
 
-func makeReq(build bucketApi.ApiCommonBuildMessage) io.ReadCloser {
+func makeReq(build buildbucket.ApiCommonBuildMessage) io.ReadCloser {
 	bmsg := struct {
-		Build    bucketApi.ApiCommonBuildMessage `json:"build"`
-		Hostname string                          `json:"hostname"`
+		Build    buildbucket.ApiCommonBuildMessage `json:"build"`
+		Hostname string                            `json:"hostname"`
 	}{build, "hostname"}
 	bm, _ := json.Marshal(bmsg)
 
@@ -85,7 +84,7 @@ func TestPubSub(t *testing.T) {
 		datastore.Put(c, builderSummary)
 
 		// We'll copy this ApiCommonBuildMessage base for convenience.
-		buildBase := bucketApi.ApiCommonBuildMessage{
+		buildBase := buildbucket.ApiCommonBuildMessage{
 			Bucket:    "luci.fake.bucket",
 			Tags:      []string{"builder:fake_builder"},
 			CreatedBy: string(identity.AnonymousIdentity),
@@ -174,7 +173,7 @@ func TestPubSub(t *testing.T) {
 			})
 
 			Convey("results in earlier update not being ingested", func() {
-				eBuild := bucketApi.ApiCommonBuildMessage{
+				eBuild := buildbucket.ApiCommonBuildMessage{
 					Id:        2234,
 					Bucket:    "luci.fake.bucket",
 					Tags:      []string{"builder:fake_builder"},
