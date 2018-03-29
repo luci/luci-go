@@ -38,7 +38,7 @@ func TestBuildSet(t *testing.T) {
 				Change:   678507,
 				Patchset: 3,
 			}
-			So(bs.BuildSet(), ShouldEqual, "patch/gerrit/chromium-review.googlesource.com/678507/3")
+			So(bs.BuildSetString(), ShouldEqual, "patch/gerrit/chromium-review.googlesource.com/678507/3")
 		})
 	})
 
@@ -70,7 +70,7 @@ func TestBuildSet(t *testing.T) {
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
 			}
-			So(bs.BuildSet(), ShouldEqual, "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
+			So(bs.BuildSetString(), ShouldEqual, "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
 		})
 	})
 }
