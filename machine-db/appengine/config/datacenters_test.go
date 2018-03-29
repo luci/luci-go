@@ -461,6 +461,30 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "unknown rack")
 		})
 
+		Convey("unknown KVM", func() {
+			datacenters := map[string]*config.Datacenter{
+				"datacenter.cfg": {
+					Name: "datacenter",
+					Rack: []*config.Rack{
+						{
+							Name: "rack",
+							Kvm:  "asdf",
+						},
+					},
+					Kvm: []*config.KVM{
+						{
+							Name:       "kvm",
+							Rack:       "rack",
+							MacAddress: "00:00:00:00:00:01",
+							Ipv4:       "0.0.0.1",
+						},
+					},
+				},
+			}
+			validateDatacenters(context, datacenters)
+			So(context.Finalize(), ShouldErrLike, "unknown KVM")
+		})
+
 		Convey("invalid MAC-48 address", func() {
 			datacenters := map[string]*config.Datacenter{
 				"datacenter.cfg": {

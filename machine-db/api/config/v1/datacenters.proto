@@ -49,6 +49,8 @@ message Rack {
   repeated Switch switch = 3;
   // The state of this rack.
   common.State state = 4;
+  // The KVM serving this rack.
+  string kvm = 5;
 }
 
 // A datacenter to store in the database.

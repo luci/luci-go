@@ -170,6 +170,15 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*configPB
 			}
 			c.Exit()
 		}
+		for _, rack := range dc.Rack {
+			if rack.Kvm != "" {
+				c.Enter("rack %q", rack.Name)
+				if !kvms.Has(rack.Kvm) {
+					c.Errorf("unknown KVM %q", rack.Kvm)
+				}
+				c.Exit()
+			}
+		}
 		c.Exit()
 	}
 }
