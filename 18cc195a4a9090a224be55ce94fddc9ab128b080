@@ -16,6 +16,24 @@
       "revId": "18cc195a4a9090a224be55ce94fddc9ab128b080",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "451cb679_2e3d57cd",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-29T01:23:32Z",
+      "side": 1,
+      "message": "Ack, will think about it.\n\nInstead of validating racks, then KVMs, then rack KVM references, I could get the KVM names up front without validating anything about KVMs, use that to validate racks + rack KVM references all at once, then validate KVMs.",
+      "parentUuid": "c69c47dc_166dc02c",
+      "revId": "18cc195a4a9090a224be55ce94fddc9ab128b080",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
