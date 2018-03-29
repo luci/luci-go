@@ -29,14 +29,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-const (
-	// TagBuilder is the key of builder name tag.
-	TagBuilder = "builder"
-	// TagBuildAddress is the key of the build address tag.
-	// See also Build.Address().
-	TagBuildAddress = "build_address"
-)
-
 // Build is a buildbucket build.
 // It is a more type-safe version of buildbucket.ApiCommonBuildMessage.
 type Build struct {
@@ -174,14 +166,14 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 	}
 
 	tags := strpair.ParseMap(msg.Tags)
-	builder := tags.Get(TagBuilder)
+	builder := tags.Get(v1.TagBuilder)
 
 	canaryPref, err := parseEndpointsCanaryPreference(msg.CanaryPreference)
 	if err != nil {
 		return err
 	}
 
-	address := tags.Get(TagBuildAddress)
+	address := tags.Get(v1.TagBuildAddress)
 	var number *int
 	if address == "" {
 		address = strconv.FormatInt(msg.Id, 10)
@@ -228,7 +220,7 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 	}
 
 	var bs []BuildSet
-	for _, t := range tags[TagBuildSet] {
+	for _, t := range tags[v1.TagBuildSet] {
 		if parsed := ParseBuildSet(t); parsed != nil {
 			bs = append(bs, parsed)
 		}
@@ -279,11 +271,11 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 // Returns an error if properties could not be marshaled to JSON.
 func (b *Build) PutRequest() (*v1.ApiPutRequestMessage, error) {
 	tags := b.Tags.Copy()
-	tags.Del(TagBuilder) // buildbucket adds it automatically
+	tags.Del(v1.TagBuilder) // buildbucket adds it automatically
 	for _, bs := range b.BuildSets {
 		s := bs.String()
-		if !tags.Contains(TagBuildSet, s) {
-			tags.Add(TagBuildSet, s)
+		if !tags.Contains(v1.TagBuildSet, s) {
+			tags.Add(v1.TagBuildSet, s)
 		}
 	}
 
@@ -401,7 +393,7 @@ func GetByAddress(c context.Context, client *v1.Service, address string) (*Build
 	} else {
 		msgs, err := client.Search().
 			Context(c).
-			Tag(strpair.Format(TagBuildAddress, address)).
+			Tag(strpair.Format(v1.TagBuildAddress, address)).
 			Fetch(1, nil)
 		switch {
 		case err != nil:

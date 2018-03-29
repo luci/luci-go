@@ -28,11 +28,6 @@ type BuildSet interface {
 	isABuildSet()
 }
 
-// TagBuildSet is a key of a tag used to group related builds.
-// See also ParseBuildSet.
-// When a build triggers a new build, the buildset tag must be copied.
-const TagBuildSet = "buildset"
-
 // RietveldChange is a patchset on Rietveld.
 type RietveldChange struct {
 	Host     string

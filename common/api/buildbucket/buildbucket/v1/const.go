@@ -49,3 +49,15 @@ const (
 	// ReasonNotFound means the given build ID was not found on the BuildBucket service.
 	ReasonNotFound = "BUILD_NOT_FOUND"
 )
+
+const (
+	// TagBuilder is the key of builder name tag.
+	TagBuilder = "builder"
+	// TagBuildAddress is the key of the build address tag.
+	// See also Build.Address().
+	TagBuildAddress = "build_address"
+	// TagBuildSet is a key of a tag used to group related builds.
+	// See also ParseBuildSet.
+	// When a build triggers a new build, the buildset tag must be copied.
+	TagBuildSet = "buildset"
+)
