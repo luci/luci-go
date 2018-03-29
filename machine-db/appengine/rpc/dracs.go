@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/appengine/model"
 	"go.chromium.org/luci/machine-db/common"
 )
 
@@ -68,7 +69,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := assignHostnameAndIP(c, tx, d.Name, ip)
+	hostnameId, err := model.AssignHostnameAndIP(c, tx, d.Name, ip)
 	if err != nil {
 		return nil, err
 	}

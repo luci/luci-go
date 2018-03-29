@@ -32,6 +32,7 @@ import (
 	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/appengine/model"
 	"go.chromium.org/luci/machine-db/common"
 )
 
@@ -68,7 +69,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := assignHostnameAndIP(c, tx, h.Name, ip)
+	hostnameId, err := model.AssignHostnameAndIP(c, tx, h.Name, ip)
 	if err != nil {
 		return nil, err
 	}
