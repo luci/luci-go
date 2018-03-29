@@ -22,8 +22,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 
-	"go.chromium.org/luci/common/data/stringset"
-
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 
@@ -36,78 +34,104 @@ func TestListPlatforms(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `
-			^SELECT name, description
-			FROM platforms$
-		`
-		columns := []string{"p.name", "p.description"}
+		columns := []string{"name", "description", "manufacturer"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
-			names := stringset.NewFromSlice("platform")
+			selectStmt := `
+				^SELECT name, description, manufacturer
+				FROM platforms
+				WHERE names IN \(\?\)$
+			`
+			req := &crimson.ListPlatformsRequest{
+				Names: []string{"platform"},
+			}
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
-			platforms, err := listPlatforms(c, names)
-			So(err, ShouldErrLike, "failed to fetch platforms")
+			platforms, err := listPlatforms(c, req)
+			So(err, ShouldErrLike, "Internal server error")
 			So(platforms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("empty", func() {
-			names := stringset.NewFromSlice("platform")
+		Convey("empty request", func() {
+			selectStmt := `
+				^SELECT name, description, manufacturer
+				FROM platforms$
+			`
+			req := &crimson.ListPlatformsRequest{}
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := listPlatforms(c, names)
+			platforms, err := listPlatforms(c, req)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("no matches", func() {
-			names := stringset.NewFromSlice("platform")
-			rows.AddRow("platform 1", "description 1")
-			rows.AddRow("platform 2", "description 2")
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := listPlatforms(c, names)
+		Convey("empty response", func() {
+			selectStmt := `
+				^SELECT name, description, manufacturer
+				FROM platforms
+				WHERE names IN \(\?\)$
+			`
+			req := &crimson.ListPlatformsRequest{
+				Names: []string{"platform"},
+			}
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0]).WillReturnRows(rows)
+			platforms, err := listPlatforms(c, req)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("matches", func() {
-			names := stringset.NewFromSlice("platform 2", "platform 3")
-			rows.AddRow("platform 1", "description 1")
-			rows.AddRow("platform 2", "description 2")
-			rows.AddRow("platform 3", "description 3")
-			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := listPlatforms(c, names)
+		Convey("non-empty", func() {
+			selectStmt := `
+				^SELECT name, description, manufacturer
+				FROM platforms
+				WHERE names IN \(\?,\?\)$
+			`
+			req := &crimson.ListPlatformsRequest{
+				Names: []string{"platform 1", "platform 2"},
+			}
+			rows.AddRow("platform 1", "description 1", "manufacturer 1")
+			rows.AddRow("platform 2", "description 2", "manufacturer 2")
+			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Names[1]).WillReturnRows(rows)
+			platforms, err := listPlatforms(c, req)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldResemble, []*crimson.Platform{
 				{
-					Name:        "platform 2",
-					Description: "description 2",
+					Name:         "platform 1",
+					Description:  "description 1",
+					Manufacturer: "manufacturer 1",
 				},
 				{
-					Name:        "platform 3",
-					Description: "description 3",
+					Name:         "platform 2",
+					Description:  "description 2",
+					Manufacturer: "manufacturer 2",
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
 		Convey("ok", func() {
-			names := stringset.New(0)
-			rows.AddRow("platform 1", "description 1")
-			rows.AddRow("platform 2", "description 2")
+			selectStmt := `
+				^SELECT name, description, manufacturer
+				FROM platforms$
+			`
+			req := &crimson.ListPlatformsRequest{}
+			rows.AddRow("platform 1", "description 1", "manufacturer 1")
+			rows.AddRow("platform 2", "description 2", "manufacturer 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
-			platforms, err := listPlatforms(c, names)
+			platforms, err := listPlatforms(c, req)
 			So(err, ShouldBeNil)
 			So(platforms, ShouldResemble, []*crimson.Platform{
 				{
-					Name:        "platform 1",
-					Description: "description 1",
+					Name:         "platform 1",
+					Description:  "description 1",
+					Manufacturer: "manufacturer 1",
 				},
 				{
-					Name:        "platform 2",
-					Description: "description 2",
+					Name:         "platform 2",
+					Description:  "description 2",
+					Manufacturer: "manufacturer 2",
 				},
 			})
 			So(m.ExpectationsWereMet(), ShouldBeNil)

@@ -12,6 +12,8 @@ message Platform {
   string name = 1;
   // A description of this platform.
   string description = 2;
+  // The name of the hardware manufacturer of this platform.
+  string manufacturer = 3;
 }
 
 // A list of platforms.
