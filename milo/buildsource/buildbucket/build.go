@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -255,7 +256,7 @@ func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.MiloB
 
 	for _, bs := range b.BuildSets {
 		// ignore rietveld.
-		cl, ok := bs.(*buildbucket.GerritChange)
+		cl, ok := bs.(*buildbucketpb.GerritChange)
 		if !ok {
 			continue
 		}

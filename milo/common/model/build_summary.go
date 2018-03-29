@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -241,7 +242,7 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 	}
 
 	for _, bsetRaw := range bs.BuildSet {
-		commit, ok := buildbucket.ParseBuildSet(bsetRaw).(*buildbucket.GitilesCommit)
+		commit, ok := buildbucketpb.ParseBuildSet(bsetRaw).(*buildbucketpb.GitilesCommit)
 		if !ok {
 			continue
 		}
@@ -277,9 +278,9 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 // GitilesCommit extracts the first BuildSet which is a valid GitilesCommit.
 //
 // If no such BuildSet is found, this returns nil.
-func (bs *BuildSummary) GitilesCommit() *buildbucket.GitilesCommit {
+func (bs *BuildSummary) GitilesCommit() *buildbucketpb.GitilesCommit {
 	for _, bset := range bs.BuildSet {
-		if gc, ok := buildbucket.ParseBuildSet(bset).(*buildbucket.GitilesCommit); ok {
+		if gc, ok := buildbucketpb.ParseBuildSet(bset).(*buildbucketpb.GitilesCommit); ok {
 			return gc
 		}
 	}
@@ -320,7 +321,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 
 	// TODO(iannucci): This bit could be parallelized, but I think in the typical
 	// case this will be fast enough.
-	curGC := &buildbucket.GitilesCommit{Host: gc.Host, Project: gc.Project}
+	curGC := &buildbucketpb.GitilesCommit{Host: gc.Host, Project: gc.Project}
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
 	for i, commit := range commits[1:] { // skip the first commit... it's us!
 		curGC.Id = commit.Id

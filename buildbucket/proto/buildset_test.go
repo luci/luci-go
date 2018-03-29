@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucket
+package buildbucketpb
 
 import (
 	"testing"
@@ -24,7 +24,7 @@ func TestBuildSet(t *testing.T) {
 	t.Parallel()
 
 	Convey("Gerrit", t, func() {
-		Convey("ParseMap", func() {
+		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("patch/gerrit/chromium-review.googlesource.com/678507/3")
 			So(actual, ShouldResemble, &GerritChange{
 				Host:     "chromium-review.googlesource.com",
@@ -43,7 +43,7 @@ func TestBuildSet(t *testing.T) {
 	})
 
 	Convey("Gitiles", t, func() {
-		Convey("ParseMap", func() {
+		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
 			So(actual, ShouldResemble, &GitilesCommit{
 				Host:    "chromium.googlesource.com",

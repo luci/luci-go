@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 
@@ -152,7 +152,7 @@ func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
 		r.debugLog("Bad repo URL %q in the trigger - %s", t.Repo, err)
 		return
 	}
-	commit := buildbucket.GitilesCommit{
+	commit := buildbucketpb.GitilesCommit{
 		Host:    repo.Host,
 		Project: strings.TrimPrefix(repo.Path, "/"),
 		Id:      t.Revision,

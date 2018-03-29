@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -79,7 +80,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 	}
 
 	for _, bs := range b.BuildSets {
-		if commit, ok := bs.(*buildbucket.GitilesCommit); ok {
+		if commit, ok := bs.(*buildbucketpb.GitilesCommit); ok {
 			res.Sourcestamp.Repository = commit.RepoURL()
 			res.Sourcestamp.Revision = commit.Id
 			break

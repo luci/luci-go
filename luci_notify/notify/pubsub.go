@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -39,9 +40,9 @@ var (
 	errBuilderDeleted = fmt.Errorf("builder deleted between datastore.Get calls")
 )
 
-func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
+func getCommitBuildSet(sets []buildbucketpb.BuildSet) *buildbucketpb.GitilesCommit {
 	for _, set := range sets {
-		if commit, ok := set.(*buildbucket.GitilesCommit); ok {
+		if commit, ok := set.(*buildbucketpb.GitilesCommit); ok {
 			return commit
 		}
 	}
