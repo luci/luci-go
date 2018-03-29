@@ -140,70 +140,70 @@ func TestHandleBuild(t *testing.T) {
 		}
 
 		Convey(`no config`, func() {
-			build := pubsubDummyBuild("not-a-builder", buildbucket.StatusFailure, oldTime, rev1)
+			build := pubsubDummyBuild("not-a-builder", buildbucket.Status_FAILURE, oldTime, rev1)
 			testSuccess(build)
 			grepLog("Nobody to notify")
 		})
 
 		Convey(`no config w/property`, func() {
-			build := pubsubDummyBuild("not-a-builder", buildbucket.StatusFailure, oldTime, rev1, "property@google.com")
+			build := pubsubDummyBuild("not-a-builder", buildbucket.Status_FAILURE, oldTime, rev1, "property@google.com")
 			testSuccess(build, "property@google.com")
 		})
 
 		Convey(`no revision`, func() {
-			build := &Build{Build: *testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.StatusSuccess)}
+			build := &Build{Build: *testutil.TestBuild("test", "hello", "test-builder-1", buildbucket.Status_SUCCESS)}
 			testSuccess(build)
 			grepLog("revision")
 		})
 
 		Convey(`init builder`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, oldTime, rev1)
+			build := pubsubDummyBuild("test-builder-1", buildbucket.Status_FAILURE, oldTime, rev1)
 			testSuccess(build, "test-example-failure@google.com")
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`init builder w/property`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucket.StatusFailure, oldTime, rev1, "property@google.com")
+			build := pubsubDummyBuild("test-builder-1", buildbucket.Status_FAILURE, oldTime, rev1, "property@google.com")
 			testSuccess(build, "test-example-failure@google.com", "property@google.com")
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`out-of-order revision`, func() {
-			build := pubsubDummyBuild("test-builder-2", buildbucket.StatusSuccess, oldTime, rev2)
+			build := pubsubDummyBuild("test-builder-2", buildbucket.Status_SUCCESS, oldTime, rev2)
 			testSuccess(build, "test-example-success@google.com")
 			verifyBuilder(build, rev2)
 
-			oldRevBuild := pubsubDummyBuild("test-builder-2", buildbucket.StatusFailure, newTime, rev1)
+			oldRevBuild := pubsubDummyBuild("test-builder-2", buildbucket.Status_FAILURE, newTime, rev1)
 			testSuccess(oldRevBuild, "test-example-failure@google.com")
 			grepLog("old commit")
 		})
 
 		Convey(`revision update`, func() {
-			build := pubsubDummyBuild("test-builder-3", buildbucket.StatusSuccess, oldTime, rev1)
+			build := pubsubDummyBuild("test-builder-3", buildbucket.Status_SUCCESS, oldTime, rev1)
 			testSuccess(build, "test-example-success@google.com")
 			verifyBuilder(build, rev1)
 
-			newBuild := pubsubDummyBuild("test-builder-3", buildbucket.StatusFailure, newTime, rev2)
+			newBuild := pubsubDummyBuild("test-builder-3", buildbucket.Status_FAILURE, newTime, rev2)
 			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com")
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`revision update w/property`, func() {
-			build := pubsubDummyBuild("test-builder-3", buildbucket.StatusSuccess, oldTime, rev1, "property@google.com")
+			build := pubsubDummyBuild("test-builder-3", buildbucket.Status_SUCCESS, oldTime, rev1, "property@google.com")
 			testSuccess(build, "test-example-success@google.com", "property@google.com")
 			verifyBuilder(build, rev1)
 
-			newBuild := pubsubDummyBuild("test-builder-3", buildbucket.StatusFailure, newTime, rev2, "property@google.com")
+			newBuild := pubsubDummyBuild("test-builder-3", buildbucket.Status_FAILURE, newTime, rev2, "property@google.com")
 			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com", "property@google.com")
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`out-of-order creation time`, func() {
-			build := pubsubDummyBuild("test-builder-4", buildbucket.StatusSuccess, newTime, rev1)
+			build := pubsubDummyBuild("test-builder-4", buildbucket.Status_SUCCESS, newTime, rev1)
 			testSuccess(build, "test-example-success@google.com")
 			verifyBuilder(build, rev1)
 
-			oldBuild := pubsubDummyBuild("test-builder-4", buildbucket.StatusFailure, oldTime, rev1)
+			oldBuild := pubsubDummyBuild("test-builder-4", buildbucket.Status_FAILURE, oldTime, rev1)
 			testSuccess(oldBuild, "test-example-failure@google.com")
 			grepLog("old time")
 		})

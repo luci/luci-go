@@ -118,17 +118,17 @@ func TestNotify(t *testing.T) {
 		notifiers := extractNotifiers(c, cfgName, cfg)
 
 		// Re-usable builds and builders for running Notify.
-		goodBuild := notifyDummyBuild(buildbucket.StatusSuccess)
-		goodEmailBuild := notifyDummyBuild(buildbucket.StatusSuccess, "property@google.com", "bogus@gmail.com")
-		badBuild := notifyDummyBuild(buildbucket.StatusFailure)
-		badEmailBuild := notifyDummyBuild(buildbucket.StatusFailure, "property@google.com", "bogus@gmail.com")
+		goodBuild := notifyDummyBuild(buildbucket.Status_SUCCESS)
+		goodEmailBuild := notifyDummyBuild(buildbucket.Status_SUCCESS, "property@google.com", "bogus@gmail.com")
+		badBuild := notifyDummyBuild(buildbucket.Status_FAILURE)
+		badEmailBuild := notifyDummyBuild(buildbucket.Status_FAILURE, "property@google.com", "bogus@gmail.com")
 		goodBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
-			Status:          buildbucket.StatusSuccess,
+			Status:          buildbucket.Status_SUCCESS,
 		}
 		badBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
-			Status:          buildbucket.StatusFailure,
+			Status:          buildbucket.Status_FAILURE,
 		}
 
 		dispatcher, taskqueue := createMockTaskQueue(c)

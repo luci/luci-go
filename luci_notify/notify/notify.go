@@ -95,8 +95,8 @@ func createEmailTask(c context.Context, recipients []string, oldStatus buildbuck
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
 func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucket.Status) bool {
 	switch {
-	case n.OnSuccess && newStatus == buildbucket.StatusSuccess:
-	case n.OnFailure && newStatus == buildbucket.StatusFailure:
+	case n.OnSuccess && newStatus == buildbucket.Status_SUCCESS:
+	case n.OnFailure && newStatus == buildbucket.Status_FAILURE:
 	case n.OnChange && oldStatus != StatusUnknown && newStatus != oldStatus:
 	default:
 		return false
