@@ -21,7 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/milo/common/model"
@@ -59,17 +59,17 @@ func newBuildbucketClient(c context.Context, server string) (*bbapi.Service, err
 // statusMap maps buildbucket status to milo status.
 // Buildbucket statuses not in the map must be treated
 // as InfraFailure.
-var statusMap = map[buildbucket.Status]model.Status{
-	buildbucket.Status_SCHEDULED:     model.NotRun,
-	buildbucket.Status_STARTED:       model.Running,
-	buildbucket.Status_SUCCESS:       model.Success,
-	buildbucket.Status_FAILURE:       model.Failure,
-	buildbucket.Status_INFRA_FAILURE: model.InfraFailure,
-	buildbucket.Status_CANCELED:      model.Cancelled,
+var statusMap = map[buildbucketpb.Status]model.Status{
+	buildbucketpb.Status_SCHEDULED:     model.NotRun,
+	buildbucketpb.Status_STARTED:       model.Running,
+	buildbucketpb.Status_SUCCESS:       model.Success,
+	buildbucketpb.Status_FAILURE:       model.Failure,
+	buildbucketpb.Status_INFRA_FAILURE: model.InfraFailure,
+	buildbucketpb.Status_CANCELED:      model.Cancelled,
 }
 
 // parseStatus converts a buildbucket status to model.Status.
-func parseStatus(status buildbucket.Status) model.Status {
+func parseStatus(status buildbucketpb.Status) model.Status {
 	if st, ok := statusMap[status]; ok {
 		return st
 	}
