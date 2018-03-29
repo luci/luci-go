@@ -19,6 +19,8 @@ import (
 
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 
+	"go.chromium.org/luci/buildbucket/proto"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -26,35 +28,35 @@ func TestStatus(t *testing.T) {
 	t.Parallel()
 
 	Convey("ParseStatus", t, func() {
-		cases := map[Status]*v1.ApiCommonBuildMessage{
+		cases := map[buildbucketpb.Status]*v1.ApiCommonBuildMessage{
 			0: {},
 
-			Status_SCHEDULED: {
+			buildbucketpb.Status_SCHEDULED: {
 				Status: "SCHEDULED",
 			},
 
-			Status_STARTED: {
+			buildbucketpb.Status_STARTED: {
 				Status: "STARTED",
 			},
 
-			Status_SUCCESS: {
+			buildbucketpb.Status_SUCCESS: {
 				Status: "COMPLETED",
 				Result: "SUCCESS",
 			},
 
-			Status_FAILURE: {
+			buildbucketpb.Status_FAILURE: {
 				Status:        "COMPLETED",
 				Result:        "FAILURE",
 				FailureReason: "BUILD_FAILURE",
 			},
 
-			Status_INFRA_FAILURE: {
+			buildbucketpb.Status_INFRA_FAILURE: {
 				Status:        "COMPLETED",
 				Result:        "FAILURE",
 				FailureReason: "INFRA_FAILURE",
 			},
 
-			Status_CANCELED: {
+			buildbucketpb.Status_CANCELED: {
 				Status:            "COMPLETED",
 				Result:            "CANCELED",
 				CancelationReason: "CANCELED_EXPLICITLY",

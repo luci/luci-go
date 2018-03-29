@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -70,7 +70,7 @@ at {{ .Build.StatusChangeTime }}.
 <a href="{{ .Build.URL }}">Full details are available here.</a>`))
 
 // createEmailTask constructs an EmailTask to be dispatched onto the task queue.
-func createEmailTask(c context.Context, recipients []string, oldStatus buildbucket.Status, build *Build) (*tq.Task, error) {
+func createEmailTask(c context.Context, recipients []string, oldStatus buildbucketpb.Status, build *Build) (*tq.Task, error) {
 	templateContext := map[string]interface{}{
 		"OldStatus": oldStatus.String(),
 		"Build":     build,
@@ -93,10 +93,10 @@ func createEmailTask(c context.Context, recipients []string, oldStatus buildbuck
 }
 
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
-func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucket.Status) bool {
+func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucketpb.Status) bool {
 	switch {
-	case n.OnSuccess && newStatus == buildbucket.Status_SUCCESS:
-	case n.OnFailure && newStatus == buildbucket.Status_FAILURE:
+	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
+	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
 	case n.OnChange && oldStatus != StatusUnknown && newStatus != oldStatus:
 	default:
 		return false
@@ -116,7 +116,7 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 
 // Notify discovers, consolidates and filters recipients from notifiers, and
 // 'email_notify' properties, then dispatches notifications if necessary.
-func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucket.Status, build *Build) error {
+func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
 	recipientSet := stringset.New(0)
 
 	// Notify based on configured notifiers.

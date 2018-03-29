@@ -58,7 +58,7 @@ type Build struct {
 
 	// fields that can change during build lifetime
 
-	Status           Status
+	Status           buildbucketpb.Status
 	StatusChangeTime time.Time
 	URL              string
 	StartTime        time.Time
