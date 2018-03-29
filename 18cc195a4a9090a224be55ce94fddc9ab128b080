@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c69c47dc_166dc02c",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-29T01:09:18Z",
+      "side": 1,
+      "message": "it would be a bit weird to have errors\n\nrack a: error 1\nrack b: error 1\nrack a: unknown KVM\nrack b: unknown KVM\n\nbut not a big deal",
+      "revId": "18cc195a4a9090a224be55ce94fddc9ab128b080",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
