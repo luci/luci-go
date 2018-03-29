@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,7 +34,7 @@ func TestBuild(t *testing.T) {
 		// Load test message.
 		msgBytes, err := ioutil.ReadFile("testdata/build.json")
 		So(err, ShouldBeNil)
-		msg := &buildbucket.ApiCommonBuildMessage{}
+		msg := &v1.ApiCommonBuildMessage{}
 		err = json.Unmarshal(msgBytes, msg)
 		So(err, ShouldBeNil)
 
@@ -63,7 +63,7 @@ func TestBuild(t *testing.T) {
 					"build_address:luci.chromium.try/linux_chromium_rel_ng/4124",
 					"buildbucket_bucket:luci.chromium.try",
 					"buildbucket_build_id:8967467172028179648",
-					"buildbucket_hostname:cr-buildbucket.appspot.com",
+					"buildbucket_hostname:cr-v1.appspot.com",
 					"buildbucket_template_revision:e345c8ccccd935552f9d58c0a64beeb88dcc320d",
 				},
 				"swarming_task_id": []string{"38d281e8c20fd510"},
@@ -169,7 +169,7 @@ func TestBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			actual, err := build.PutRequest()
 			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, &buildbucket.ApiPutRequestMessage{
+			So(actual, ShouldResemble, &v1.ApiPutRequestMessage{
 				Bucket:           "luci.chromium.try",
 				CanaryPreference: "AUTO",
 				ParametersJson:   string(paramsJSON),
@@ -185,7 +185,7 @@ func TestBuild(t *testing.T) {
 					"swarming_tag:build_address:luci.chromium.try/linux_chromium_rel_ng/4124",
 					"swarming_tag:buildbucket_bucket:luci.chromium.try",
 					"swarming_tag:buildbucket_build_id:8967467172028179648",
-					"swarming_tag:buildbucket_hostname:cr-buildbucket.appspot.com",
+					"swarming_tag:buildbucket_hostname:cr-v1.appspot.com",
 					"swarming_tag:buildbucket_template_revision:e345c8ccccd935552f9d58c0a64beeb88dcc320d",
 					"swarming_task_id:38d281e8c20fd510",
 					"user_agent:luci-migration",
