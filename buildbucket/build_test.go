@@ -96,7 +96,6 @@ func TestBuild(t *testing.T) {
 					"got_revision": "ea69a470367f45ef9c98b9cb79d540c689154d0d",
 				},
 			},
-			CanaryPreference: CanaryAllowed,
 			StartTime:        time.Date(2017, 9, 25, 15, 38, 19, 345070000, time.UTC),
 			Status:           buildbucketpb.Status_SUCCESS,
 			StatusChangeTime: time.Date(2017, 9, 25, 15, 44, 52, 983790000, time.UTC),
@@ -176,9 +175,8 @@ func TestBuild(t *testing.T) {
 			actual, err := build.PutRequest()
 			So(err, ShouldBeNil)
 			So(actual, ShouldResemble, &v1.ApiPutRequestMessage{
-				Bucket:           "luci.chromium.try",
-				CanaryPreference: "AUTO",
-				ParametersJson:   string(paramsJSON),
+				Bucket:         "luci.chromium.try",
+				ParametersJson: string(paramsJSON),
 				Tags: []string{
 					"build_address:luci.chromium.try/linux_chromium_rel_ng/4124",
 					"buildset:patch/gerrit/chromium-review.googlesource.com/678507/3",

@@ -51,10 +51,9 @@ type Build struct {
 	//
 	// If a buildset is present in tags, but not recognized
 	// it won't be included here.
-	BuildSets        []buildbucketpb.BuildSet
-	Tags             strpair.Map
-	Input            Input
-	CanaryPreference CanaryPreference
+	BuildSets []buildbucketpb.BuildSet
+	Tags      strpair.Map
+	Input     Input
 
 	// fields that can change during build lifetime
 
@@ -170,11 +169,6 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 	tags := strpair.ParseMap(msg.Tags)
 	builder := tags.Get(v1.TagBuilder)
 
-	canaryPref, err := parseEndpointsCanaryPreference(msg.CanaryPreference)
-	if err != nil {
-		return err
-	}
-
 	address := tags.Get(v1.TagBuildAddress)
 	var number *int
 	if address == "" {
@@ -235,16 +229,15 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 	}
 
 	*b = Build{
-		ID:               msg.Id,
-		CreationTime:     v1.ParseTimestamp(msg.CreatedTs),
-		CreatedBy:        createdBy,
-		Project:          msg.Project,
-		Bucket:           msg.Bucket,
-		Builder:          builder,
-		Number:           number,
-		BuildSets:        bs,
-		Tags:             tags,
-		CanaryPreference: canaryPref,
+		ID:           msg.Id,
+		CreationTime: v1.ParseTimestamp(msg.CreatedTs),
+		CreatedBy:    createdBy,
+		Project:      msg.Project,
+		Bucket:       msg.Bucket,
+		Builder:      builder,
+		Number:       number,
+		BuildSets:    bs,
+		Tags:         tags,
 		Input: Input{
 			Properties: input.Properties,
 		},
@@ -281,14 +274,9 @@ func (b *Build) PutRequest() (*v1.ApiPutRequestMessage, error) {
 		}
 	}
 
-	canaryPref, err := b.CanaryPreference.endpointsString()
-	if err != nil {
-		return nil, err
-	}
 	msg := &v1.ApiPutRequestMessage{
-		Bucket:           b.Bucket,
-		Tags:             tags.Format(),
-		CanaryPreference: canaryPref,
+		Bucket: b.Bucket,
+		Tags:   tags.Format(),
 	}
 
 	parameters := map[string]interface{}{
