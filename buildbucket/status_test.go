@@ -59,12 +59,6 @@ func TestStatus(t *testing.T) {
 				Result:            "CANCELED",
 				CancelationReason: "CANCELED_EXPLICITLY",
 			},
-
-			StatusTimeout: {
-				Status:            "COMPLETED",
-				Result:            "CANCELED",
-				CancelationReason: "TIMEOUT",
-			},
 		}
 		for expected, build := range cases {
 			expected := expected
