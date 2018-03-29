@@ -26,47 +26,47 @@ import (
 type Status int
 
 const (
-	// StatusScheduled means a build was created, but did not start or finish.
+	// Status_SCHEDULED means a build was created, but did not start or finish.
 	// The initial state of a build.
-	StatusScheduled Status = 1 << 0
-	// StatusStarted means a build has started.
-	StatusStarted Status = 1 << 1
+	Status_SCHEDULED Status = 1 << 0
+	// Status_STARTED means a build has started.
+	Status_STARTED Status = 1 << 1
 )
 
 // Statuses of completed builds, aka final statuses.
 // Once a build reached one of these statuses, it becomes immutable.
 const (
 	statusMaskCompleted Status = 1 << 2
-	// StatusSuccess means a build has completed successfully.
-	StatusSuccess = 1<<3 | statusMaskCompleted
-	// StatusFailure means a build has failed due to its input,
+	// Status_SUCCESS means a build has completed successfully.
+	Status_SUCCESS = 1<<3 | statusMaskCompleted
+	// Status_FAILURE means a build has failed due to its input,
 	// for example input source code is incorrect.
-	StatusFailure = 1<<4 | statusMaskCompleted
-	// StatusError means a build has failed not due to its input,
+	Status_FAILURE = 1<<4 | statusMaskCompleted
+	// Status_INFRA_FAILURE means a build has failed not due to its input,
 	// for example build infrastructure is unavailable.
 	// It combines Buildbucket API v1's failure reasons "INFRA_FAILURE",
 	// "BUILDBUCKET_FAILURE" and "INVALID_BUILD_DEFINITION".
-	StatusError = 1<<5 | statusMaskCompleted
-	// StatusCancelled means a build was cancelled.
+	Status_INFRA_FAILURE = 1<<5 | statusMaskCompleted
+	// Status_CANCELED means a build was cancelled.
 	// It is equivalent to buildbucket API v1's cancelation reason
 	// "CANCELED_EXPLICITLY".
-	StatusCancelled = 1<<6 | statusMaskCompleted
+	Status_CANCELED = 1<<6 | statusMaskCompleted
 )
 
 // String returns status name, e.g. "Scheduled".
 func (s Status) String() string {
 	switch s {
-	case StatusScheduled:
+	case Status_SCHEDULED:
 		return "Scheduled"
-	case StatusStarted:
+	case Status_STARTED:
 		return "Started"
-	case StatusSuccess:
+	case Status_SUCCESS:
 		return "Success"
-	case StatusFailure:
+	case Status_FAILURE:
 		return "Failure"
-	case StatusError:
+	case Status_INFRA_FAILURE:
 		return "Error"
-	case StatusCancelled:
+	case Status_CANCELED:
 		return "Cancelled"
 	default:
 		return fmt.Sprintf("unknown status %d", s)
@@ -89,22 +89,22 @@ func ParseStatus(build *v1.ApiCommonBuildMessage) (Status, error) {
 		return 0, nil
 
 	case "SCHEDULED":
-		return StatusScheduled, nil
+		return Status_SCHEDULED, nil
 
 	case "STARTED":
-		return StatusStarted, nil
+		return Status_STARTED, nil
 
 	case "COMPLETED":
 		switch build.Result {
 		case "SUCCESS":
-			return StatusSuccess, nil
+			return Status_SUCCESS, nil
 
 		case "FAILURE":
 			switch build.FailureReason {
 			case "", "BUILD_FAILURE":
-				return StatusFailure, nil
+				return Status_FAILURE, nil
 			case "INFRA_FAILURE", "BUILDBUCKET_FAILURE", "INVALID_BUILD_DEFINITION":
-				return StatusError, nil
+				return Status_INFRA_FAILURE, nil
 			default:
 				return 0, fmt.Errorf("unexpected failure reason %q", build.FailureReason)
 			}
@@ -112,9 +112,9 @@ func ParseStatus(build *v1.ApiCommonBuildMessage) (Status, error) {
 		case "CANCELED":
 			switch build.CancelationReason {
 			case "", "CANCELED_EXPLICITLY":
-				return StatusCancelled, nil
+				return Status_CANCELED, nil
 			case "TIMEOUT":
-				return StatusError, nil
+				return Status_INFRA_FAILURE, nil
 			default:
 				return 0, fmt.Errorf("unexpected cancellation reason %q", build.CancelationReason)
 			}

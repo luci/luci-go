@@ -60,12 +60,12 @@ func newBuildbucketClient(c context.Context, server string) (*bbapi.Service, err
 // Buildbucket statuses not in the map must be treated
 // as InfraFailure.
 var statusMap = map[buildbucket.Status]model.Status{
-	buildbucket.StatusScheduled: model.NotRun,
-	buildbucket.StatusStarted:   model.Running,
-	buildbucket.StatusSuccess:   model.Success,
-	buildbucket.StatusFailure:   model.Failure,
-	buildbucket.StatusError:     model.InfraFailure,
-	buildbucket.StatusCancelled: model.Cancelled,
+	buildbucket.Status_SCHEDULED:     model.NotRun,
+	buildbucket.Status_STARTED:       model.Running,
+	buildbucket.Status_SUCCESS:       model.Success,
+	buildbucket.Status_FAILURE:       model.Failure,
+	buildbucket.Status_INFRA_FAILURE: model.InfraFailure,
+	buildbucket.Status_CANCELED:      model.Cancelled,
 }
 
 // parseStatus converts a buildbucket status to model.Status.
