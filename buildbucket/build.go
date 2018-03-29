@@ -76,12 +76,13 @@ type Build struct {
 // If b has a number, the address is "<bucket>/<builder>/<number>".
 // Otherwise it is "<id>".
 //
-// See also ParseBuildAddress.
+// See also "go.chromium.org/luci/common/api/buildbucket/v1".FormatBuildAddress.
 func (b *Build) Address() string {
+	num := 0
 	if b.Number != nil {
-		return fmt.Sprintf("%s/%s/%d", b.Bucket, b.Builder, *b.Number)
+		num = *b.Number
 	}
-	return strconv.FormatInt(b.ID, 10)
+	return v1.FormatBuildAddress(b.ID, b.Bucket, b.Builder, num)
 }
 
 // RunDuration returns duration between build start and completion.
@@ -230,7 +231,7 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 	project := msg.Project
 	if project == "" {
 		// old builds do not have project attribute.
-		project = projectFromBucket(msg.Bucket)
+		project = v1.ProjectFromBucket(msg.Bucket)
 	}
 
 	*b = Build{
@@ -314,82 +315,12 @@ func parseJSON(data string, v interface{}) error {
 	return dec.Decode(v)
 }
 
-// projectFromBucket tries to retrieve project id from bucket name.
-// Returns "" on failure.
-func projectFromBucket(bucket string) string {
-	// Buildbucket guarantees that buckets that start with "luci."
-	// have "luci.<project id>." prefix.
-	parts := strings.Split(bucket, ".")
-	if len(parts) >= 3 && parts[0] == "luci" {
-		return parts[1]
-	}
-	return ""
-}
-
-// ParseBuildAddress parses a build address returned by Build.Address().
-//
-// If id is non-zero, project, bucket and builder are zero.
-// If bucket is non-zero, id is zero.
-func ParseBuildAddress(address string) (id int64, project, bucket, builder string, number int, err error) {
-	parts := strings.Split(address, "/")
-	switch len(parts) {
-	case 4:
-		// future-proof
-		project = parts[0]
-		parts = parts[1:]
-		fallthrough
-	case 3:
-		var numberStr string
-		bucket, builder, numberStr = parts[0], parts[1], parts[2]
-		if project == "" {
-			project = projectFromBucket(bucket)
-		}
-		number, err = strconv.Atoi(numberStr)
-	case 1:
-		id, err = strconv.ParseInt(parts[0], 10, 64)
-	default:
-		err = fmt.Errorf("unrecognized build address format %q", address)
-	}
-	return
-}
-
-// ValidateBuildAddress returns an error if the build address is invalid.
-func ValidateBuildAddress(address string) error {
-	_, _, _, _, _, err := ParseBuildAddress(address)
-	return err
-}
-
 // GetByAddress fetches a build by its address.
 // Returns (nil, nil) if build is not found.
 func GetByAddress(c context.Context, client *v1.Service, address string) (*Build, error) {
-	id, _, _, _, _, err := ParseBuildAddress(address)
+	msg, err := v1.GetByAddress(c, client, address)
 	if err != nil {
 		return nil, err
-	}
-	var msg *v1.ApiCommonBuildMessage
-	if id != 0 {
-		res, err := client.Get(id).Context(c).Do()
-		switch {
-		case err != nil:
-			return nil, err
-		case res.Error != nil && res.Error.Reason == v1.ReasonNotFound:
-			return nil, nil
-		default:
-			msg = res.Build
-		}
-	} else {
-		msgs, err := client.Search().
-			Context(c).
-			Tag(strpair.Format(v1.TagBuildAddress, address)).
-			Fetch(1, nil)
-		switch {
-		case err != nil:
-			return nil, err
-		case len(msgs) == 0:
-			return nil, nil
-		default:
-			msg = msgs[0]
-		}
 	}
 
 	var build Build
