@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45ba2beb_3fa3fdd5",
+        "filename": "machine-db/appengine/database/setup/migrations/003_initialize_platforms.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-29T22:14:07Z",
+      "side": 1,
+      "message": "For new dbs. Existing db migrated with:\n\nALTER TABLE platforms ADD COLUMN manufacturer varchar(255) DEFAULT \"\";",
+      "revId": "8d1294887ae23c4cd9aa3adc6d3c91590bfa1007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
