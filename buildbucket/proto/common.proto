@@ -26,15 +26,19 @@ enum Status {
   SCHEDULED = 1;
   // Build/step has started.
   STARTED = 2;
+  // A bit present in all completed statuses. A build cannot have this value.
+  // Exists for backward compatibility.
+  COMPLETED_STATUS_MASK = 4;
   // A build/step ended successfully.
-  SUCCESS = 4;
-  // A build/step ended unsuccessfully due to the input,
+  SUCCESS = 12;  // 8 | COMPLETED_STATUS_MASK
+  // A build/step ended unsuccessfully due to its Build.Input,
   // e.g. tests failed, and NOT due to a build infrastructure failure.
-  FAILURE = 8;
-  // A build/step ended unsuccessfully due to a build infrastructure failure.
-  INFRA_FAILURE = 16;
+  FAILURE = 20;  // 16 | COMPLETED_STATUS_MASK
+  // A build/step ended unsuccessfully due to a failure independent of the input,
+  // e.g. swarming failed, or the recipe was unable to read the patch from gerrit..
+  INFRA_FAILURE = 36;  // 32 | COMPLETED_STATUS_MASK
   // A build was cancelled explicitly, e.g. via an RPC.
-  CANCELED = 32;
+  CANCELED = 68;  // 64 | COMPLETED_STATUS_MASK
 }
 
 // A Gerrit patchset.
