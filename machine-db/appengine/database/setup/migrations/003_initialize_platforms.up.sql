@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS platforms (
 	name varchar(255),
 	-- A description of this platform.
 	description varchar(255),
+	-- The manufacturer of this platform.
+	manufacturer varchar(255),
 	PRIMARY KEY (id),
 	UNIQUE (name)
 );

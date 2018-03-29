@@ -47,7 +47,7 @@ type PlatformsTable struct {
 func (t *PlatformsTable) fetch(c context.Context) error {
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, `
-		SELECT id, name, description
+		SELECT id, name, description, manufacturer
 		FROM platforms
 	`)
 	if err != nil {
@@ -56,7 +56,7 @@ func (t *PlatformsTable) fetch(c context.Context) error {
 	defer rows.Close()
 	for rows.Next() {
 		p := &Platform{}
-		if err := rows.Scan(&p.Id, &p.Name, &p.Description); err != nil {
+		if err := rows.Scan(&p.Id, &p.Name, &p.Description, &p.Manufacturer); err != nil {
 			return errors.Annotate(err, "failed to scan platform").Err()
 		}
 		t.current = append(t.current, p)
@@ -66,7 +66,7 @@ func (t *PlatformsTable) fetch(c context.Context) error {
 
 // needsUpdate returns true if the given row needs to be updated to match the given config.
 func (*PlatformsTable) needsUpdate(row, cfg *Platform) bool {
-	return row.Description != cfg.Description
+	return row.Description != cfg.Description || row.Manufacturer != cfg.Manufacturer
 }
 
 // computeChanges computes the changes that need to be made to the platforms in the database.
@@ -75,8 +75,9 @@ func (t *PlatformsTable) computeChanges(c context.Context, platforms []*config.P
 	for _, cfg := range platforms {
 		cfgs[cfg.Name] = &Platform{
 			Platform: config.Platform{
-				Name:        cfg.Name,
-				Description: cfg.Description,
+				Name:         cfg.Name,
+				Description:  cfg.Description,
+				Manufacturer: cfg.Manufacturer,
 			},
 		}
 	}
@@ -116,8 +117,8 @@ func (t *PlatformsTable) add(c context.Context) error {
 
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
-		INSERT INTO platforms (name, description)
-		VALUES (?, ?)
+		INSERT INTO platforms (name, description, manufacturer)
+		VALUES (?, ?, ?)
 	`)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare statement").Err()
@@ -127,7 +128,7 @@ func (t *PlatformsTable) add(c context.Context) error {
 	// Add each platform to the database, and update the slice of platforms with each addition.
 	for len(t.additions) > 0 {
 		p := t.additions[0]
-		result, err := stmt.ExecContext(c, p.Name, p.Description)
+		result, err := stmt.ExecContext(c, p.Name, p.Description, p.Manufacturer)
 		if err != nil {
 			return errors.Annotate(err, "failed to add platform %q", p.Name).Err()
 		}
@@ -196,7 +197,7 @@ func (t *PlatformsTable) update(c context.Context) error {
 	db := database.Get(c)
 	stmt, err := db.PrepareContext(c, `
 		UPDATE platforms
-		SET description = ?
+		SET description = ?, manufacturer = ?
 		WHERE id = ?
 	`)
 	if err != nil {
@@ -211,12 +212,13 @@ func (t *PlatformsTable) update(c context.Context) error {
 		for _, p := range t.current {
 			if u, ok := updated[p.Id]; ok {
 				p.Description = u.Description
+				p.Manufacturer = u.Manufacturer
 			}
 		}
 	}()
 	for len(t.updates) > 0 {
 		p := t.updates[0]
-		if _, err := stmt.ExecContext(c, p.Description, p.Id); err != nil {
+		if _, err := stmt.ExecContext(c, p.Description, p.Manufacturer, p.Id); err != nil {
 			return errors.Annotate(err, "failed to update platform %q", p.Name).Err()
 		}
 		updated[p.Id] = p
