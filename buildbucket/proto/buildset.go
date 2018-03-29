@@ -23,12 +23,12 @@ import (
 // BuildSet is a parsed buildset tag value.
 // It is implemented by *GerritChange, *GitilesCommit.
 type BuildSet interface {
-	// BuildSet returns a tag value in buildset format.
-	BuildSet() string
+	// BuildSetString returns a tag value in buildset format.
+	BuildSetString() string
 }
 
 // e.g. "patch/gerrit/chromium-review.googlesource.com/677784/5".
-func (c *GerritChange) BuildSet() string {
+func (c *GerritChange) BuildSetString() string {
 	return fmt.Sprintf("patch/gerrit/%s/%d/%d", c.Host, c.Change, c.Patchset)
 }
 
@@ -37,9 +37,9 @@ func (c *GerritChange) URL() string {
 	return fmt.Sprintf("https://%s/c/%d/%d", c.Host, c.Change, c.Patchset)
 }
 
-// BuildSet encodes the commit in buildset tag format,
+// BuildSetString encodes the commit in buildset tag format,
 // e.g. "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
-func (c *GitilesCommit) BuildSet() string {
+func (c *GitilesCommit) BuildSetString() string {
 	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Id)
 }
 

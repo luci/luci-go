@@ -325,7 +325,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
 	for i, commit := range commits[1:] { // skip the first commit... it's us!
 		curGC.Id = commit.Id
-		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.BuildSet()), &builds); err != nil {
+		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.BuildSetString()), &builds); err != nil {
 			return
 		}
 		if len(builds) > 0 {
