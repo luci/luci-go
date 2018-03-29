@@ -172,7 +172,7 @@ func statusResult(status buildbucket.Status) buildbot.Result {
 		return buildbot.Success
 	case buildbucket.StatusFailure:
 		return buildbot.Failure
-	case buildbucket.StatusError, buildbucket.StatusTimeout, buildbucket.StatusCancelled:
+	case buildbucket.StatusError, buildbucket.StatusCancelled:
 		return buildbot.Exception
 	default:
 		panic(errors.Reason("unexpected buildbucket status %q", status).Err())
