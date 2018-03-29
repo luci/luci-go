@@ -388,14 +388,8 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 			setIfStr(&repository)
 		}
 	}
-	if issue != -1 && patchset != -1 {
-		var cl buildbucket.BuildSet = nil
-		switch {
-		case rietveld.Host != "":
-			cl = &buildbucket.RietveldChange{rietveld.Host, issue, int(patchset)}
-		case gerrit.Host != "":
-			cl = &buildbucket.GerritChange{gerrit.Host, issue, int(patchset)}
-		}
+	if gerrit.Host != "" && issue != -1 && patchset != -1 {
+		cl := &buildbucket.GerritChange{gerrit.Host, issue, int(patchset)}
 		ss.Changelist = ui.NewPatchLink(cl)
 	}
 

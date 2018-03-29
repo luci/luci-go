@@ -42,25 +42,6 @@ func TestBuildSet(t *testing.T) {
 		})
 	})
 
-	Convey("Rietveld", t, func() {
-		Convey("ParseMap", func() {
-			actual := ParseBuildSet("patch/rietveld/codereview.chromium.org/2979743003/1")
-			So(actual, ShouldResemble, &RietveldChange{
-				Host:     "codereview.chromium.org",
-				Issue:    2979743003,
-				PatchSet: 1,
-			})
-		})
-		Convey("String", func() {
-			bs := &RietveldChange{
-				Host:     "codereview.chromium.org",
-				Issue:    2979743003,
-				PatchSet: 1,
-			}
-			So(bs.String(), ShouldEqual, "patch/rietveld/codereview.chromium.org/2979743003/1")
-		})
-	})
-
 	Convey("Gitiles", t, func() {
 		Convey("ParseMap", func() {
 			actual := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
