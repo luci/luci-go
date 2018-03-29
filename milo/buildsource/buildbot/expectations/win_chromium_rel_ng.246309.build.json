@@ -51,11 +51,7 @@
       "AriaLabel": "got revision cb7c961aea3ee23c4e246f50441e5dc582565129"
     },
     "Description": "",
-    "Changelist": {
-      "Label": "Rietveld CL 2101793003 (ps#1)",
-      "URL": "https://codereview.chromium.org/2101793003/#ps1",
-      "AriaLabel": "rietveld changelist number 2101793003 patchset 1"
-    },
+    "Changelist": null,
     "CommitURL": "",
     "File": null,
     "Source": "",
