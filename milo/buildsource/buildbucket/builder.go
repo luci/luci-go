@@ -21,7 +21,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
@@ -43,7 +42,7 @@ func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
 	search := client.Search()
 	search.Bucket(bucket)
 	search.Status(status)
-	search.Tag(strpair.Format(buildbucket.TagBuilder, builder))
+	search.Tag(strpair.Format(bbapi.TagBuilder, builder))
 	search.IncludeExperimental(true)
 
 	if limit < 0 {

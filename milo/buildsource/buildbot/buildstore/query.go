@@ -191,7 +191,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 
 	search := bb.Search().
 		Bucket(bucket).
-		Tag(strpair.Format(buildbucket.TagBuilder, q.Builder)).
+		Tag(strpair.Format(bbapi.TagBuilder, q.Builder)).
 		Context(c)
 	switch q.Finished {
 	case Yes:

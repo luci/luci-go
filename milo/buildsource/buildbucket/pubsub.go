@@ -89,7 +89,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		BuildKey:      MakeBuildKey(c, hostname, build.Address()),
 		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
 		BuildID:       fmt.Sprintf("buildbucket/%s", build.Address()),
-		BuildSet:      build.Tags[buildbucket.TagBuildSet],
+		BuildSet:      build.Tags[bucketApi.TagBuildSet],
 		ContextURI: []string{
 			fmt.Sprintf("buildbucket://%s/build/%d", hostname, build.ID),
 		},
