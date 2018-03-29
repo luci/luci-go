@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -50,7 +51,7 @@ type Build struct {
 	//
 	// If a buildset is present in tags, but not recognized
 	// it won't be included here.
-	BuildSets        []BuildSet
+	BuildSets        []buildbucketpb.BuildSet
 	Tags             strpair.Map
 	Input            Input
 	CanaryPreference CanaryPreference
@@ -219,9 +220,9 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 		outErr = errors.New(output.Error.Message)
 	}
 
-	var bs []BuildSet
+	var bs []buildbucketpb.BuildSet
 	for _, t := range tags[v1.TagBuildSet] {
-		if parsed := ParseBuildSet(t); parsed != nil {
+		if parsed := buildbucketpb.ParseBuildSet(t); parsed != nil {
 			bs = append(bs, parsed)
 		}
 	}
