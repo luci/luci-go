@@ -29,32 +29,32 @@ func TestStatus(t *testing.T) {
 		cases := map[Status]*v1.ApiCommonBuildMessage{
 			0: {},
 
-			StatusScheduled: {
+			Status_SCHEDULED: {
 				Status: "SCHEDULED",
 			},
 
-			StatusStarted: {
+			Status_STARTED: {
 				Status: "STARTED",
 			},
 
-			StatusSuccess: {
+			Status_SUCCESS: {
 				Status: "COMPLETED",
 				Result: "SUCCESS",
 			},
 
-			StatusFailure: {
+			Status_FAILURE: {
 				Status:        "COMPLETED",
 				Result:        "FAILURE",
 				FailureReason: "BUILD_FAILURE",
 			},
 
-			StatusError: {
+			Status_INFRA_FAILURE: {
 				Status:        "COMPLETED",
 				Result:        "FAILURE",
 				FailureReason: "INFRA_FAILURE",
 			},
 
-			StatusCancelled: {
+			Status_CANCELED: {
 				Status:            "COMPLETED",
 				Result:            "CANCELED",
 				CancelationReason: "CANCELED_EXPLICITLY",
