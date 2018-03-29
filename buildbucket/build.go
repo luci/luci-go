@@ -273,7 +273,7 @@ func (b *Build) PutRequest() (*v1.ApiPutRequestMessage, error) {
 	tags := b.Tags.Copy()
 	tags.Del(v1.TagBuilder) // buildbucket adds it automatically
 	for _, bs := range b.BuildSets {
-		s := bs.String()
+		s := bs.BuildSet()
 		if !tags.Contains(v1.TagBuildSet, s) {
 			tags.Add(v1.TagBuildSet, s)
 		}

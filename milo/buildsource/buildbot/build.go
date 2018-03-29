@@ -389,7 +389,11 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 		}
 	}
 	if gerrit.Host != "" && issue != -1 && patchset != -1 {
-		cl := &buildbucket.GerritChange{gerrit.Host, issue, int(patchset)}
+		cl := &buildbucket.GerritChange{
+			Host:     gerrit.Host,
+			Change:   issue,
+			Patchset: patchset,
+		}
 		ss.Changelist = ui.NewPatchLink(cl)
 	}
 
