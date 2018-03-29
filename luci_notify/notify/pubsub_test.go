@@ -25,7 +25,9 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/user"
+
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -48,7 +50,7 @@ var (
 func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime time.Time, revision string, notifyEmails ...string) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", builder, status)
-	build.BuildSets = []buildbucket.BuildSet{buildbucket.BuildSet(&buildbucket.GitilesCommit{
+	build.BuildSets = []buildbucketpb.BuildSet{buildbucketpb.BuildSet(&buildbucketpb.GitilesCommit{
 		Host:    "test.googlesource.com",
 		Project: "test",
 		Id:      revision,

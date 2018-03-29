@@ -27,7 +27,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -389,7 +389,7 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 		}
 	}
 	if gerrit.Host != "" && issue != -1 && patchset != -1 {
-		cl := &buildbucket.GerritChange{
+		cl := &buildbucketpb.GerritChange{
 			Host:     gerrit.Host,
 			Change:   issue,
 			Patchset: patchset,
