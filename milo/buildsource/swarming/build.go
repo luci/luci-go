@@ -26,7 +26,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -380,7 +380,7 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 
 func addBuildsetInfo(build *ui.MiloBuild, tags map[string]string) {
 	buildset := tags["buildset"]
-	cl := buildbucket.ParseBuildSet(buildset)
+	cl := buildbucketpb.ParseBuildSet(buildset)
 	if cl == nil {
 		return
 	}
