@@ -1,0 +1,227 @@
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buildbucket.v2;
+
+option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/step.proto";
+
+// A single build, identified by an int64 id.
+// Belongs to a builder.
+//
+// RPC: see Builds service for build creation and retrieval.
+// Some Build fields are marked as excluded from responses by default.
+// Use build_fields request field to specify that a field must be included.
+//
+// BigQuery: this message also defines schema of a BigQuery table of completed builds.
+// A BigQuery row is inserted soon after build ends, i.e. a row represents a state of
+// a build at completion time and does not change after that.
+// All fields are included.
+message Build {
+
+  // Defines what to build/test.
+  message Input {
+    // Arbitrary JSON object. Available at build run time.
+    //
+    // RPC: By default, this field is excluded from responses.
+    //
+    // V1 equivalent: corresponds to "properties" key in "parameters_json".
+    google.protobuf.Struct properties = 1;
+
+    // Gitiles commits to run against.
+    // Usually present in CI builds, set by LUCI Scheduler.
+    // Usually describe different repositories.
+    // If not present, the build may checkout "refs/heads/master".
+    // NOT a blamelist.
+    //
+    // V1 equivalent: supersedes "revision" property and "buildset"
+    // tag that starts with "commit/gitiles/".
+    repeated GitilesCommit gitiles_commits = 2;
+
+    // Gerrit patchsets to run against.
+    // Usually present in tryjobs, set by CQ, Gerrit, git-cl-try.
+    // Applied on top of the corresponding commit in gitiles_commits
+    // or tip of the tree if the commit is not specified.
+    //
+    // V1 equivalent: supersedes patch_* properties and "buildset"
+    // tag that starts with "patch/gerrit/".
+    repeated GerritChange gerrit_changes = 3;
+
+    // If true, the build does not affect prod. In recipe land, runtime.is_experimental will
+    // return true and recipes should not make prod-visible side effects.
+    // By default, experimental builds are not surfaced in RPCs, PubSub
+    // notifications (unless it is callback), and reported in metrics / BigQuery tables
+    // under a different name.
+    // See also include_experimental fields to in request messages.
+    bool experimental = 5;
+  }
+
+  // Output of the build script / recipe.
+  message Output {
+    // Arbitrary JSON object produced by the build.
+    //
+    // V1 equivalent: corresponds to "properties" key in
+    // "result_details_json".
+    // In V1 output properties are not populated until build ends.
+    google.protobuf.Struct properties = 1;
+  }
+
+  // Identifier of the build, unique per LUCI deployment.
+  // IDs are monotonically decreasing.
+  int64 id = 1;
+
+  // Required. The builder this build belongs to.
+  //
+  // Tuple (builder.project, builder.bucket) defines build ACL
+  // which may change after build has ended.
+  Builder.ID builder = 2;
+
+  // Human-oriented identifier of the build with the following properties:
+  // - unique within the builder
+  // - a monotonically increasing number
+  // - mostly contiguous
+  // - much shorter than id
+  //
+  // Caution: populated (positive number) iff build numbers were enabled
+  // in the builder configuration at the time of build creation.
+  //
+  // Caution: Build numbers are not guaranteed to be contiguous.
+  // There may be gaps during outages.
+  //
+  // Caution: Build numbers, while monotonically increasing, do not
+  // necessarily reflect source-code order. For example, force builds
+  // or rebuilds can allocate new, higher, numbers, but build an older-
+  // than-HEAD version of the source.
+  int32 number = 3;
+
+  // Verified identity which created this build.
+  // Derived by the server from OAuth 2.0 token and verified against Google
+  // OAuth servers at the build creation time.
+  string created_by = 4;
+
+  // URL of a human-oriented build page.
+  // Always populated.
+  string view_url = 5;
+
+  // When the build was created.
+  google.protobuf.Timestamp create_time = 6;
+  // When the build started.
+  google.protobuf.Timestamp start_time = 7;
+  // When the build ended.
+  google.protobuf.Timestamp end_time = 8;
+  // When the build was most recently updated.
+  //
+  // RPC: can be > end_time if, e.g. new tags were attached to a completed
+  // build.
+  google.protobuf.Timestamp update_time = 9;
+
+  // Status of the build.
+  // Must be specified, i.e. not STATUS_UNSPECIFIED.
+  //
+  // RPC: Responses have most current status.
+  //
+  // BigQuery: Final status of the build. Cannot be SCHEDULED or STARTED.
+  Status status = 12;
+
+  // Input to the build script / recipe.
+  Input input = 15;
+
+  // Output of the build script / recipe.
+  // SHOULD depend only on input field and NOT other fields.
+  //
+  // RPC: By default, this field is excluded from responses.
+  // Updated while the build is running and finalized when the build ends.
+  Output output = 16;
+
+  // Current list of build steps.
+  // Updated as build runs.
+  //
+  // RPC: By default, this field is excluded from responses.
+  repeated Step steps = 17;
+
+  // Build infrastructure used by the build.
+  //
+  // RPC: By default, this field is excluded from responses.
+  BuildInfra infra = 18;
+
+  // Arbitrary annotations for the build.
+  // One key may have multiple values, which is why this is not a map<string,string>.
+  // Indexed by the server, see also BuildFilter.tags.
+  repeated StringPair tags = 19;
+}
+
+// Build infrastructure that was used for a particular build.
+message BuildInfra {
+
+  // Buildbucket-specific information, captured at the build creation time.
+  message Buildbucket {
+    // Version of swarming task template. Defines
+    // versions of kitchen, git, git wrapper, python, vpython, etc.
+    string service_config_revision = 2;
+
+    // Whether canary version of the swarming task template was used for this
+    // build.
+    bool canary = 4;
+  }
+
+  // Swarming-specific information.
+  message Swarming {
+    // Swarming hostname, e.g. "chromium-swarm.appspot.com".
+    // Populated at the build creation time.
+    string hostname = 1;
+
+    // Swarming task id.
+    // Not guaranteed to be populated at the build creation time.
+    string task_id = 2;
+
+    // Task service account email address.
+    // This is the service account used for all authenticated requests by the
+    // build.
+    string task_service_account = 3;
+
+    // Priority of the task. The lower the more important.
+    // Valid values are [1..255].
+    int32 priority = 4;
+
+    // Swarming dimensions for the task.
+    repeated StringPair task_dimensions = 5;
+
+    // Swarming dimensions of the bot used for the task.
+    repeated StringPair bot_dimensions = 6;
+  }
+
+  Buildbucket buildbucket = 1;
+  Swarming swarming = 2;
+}
+
+message Builder {
+
+  // Identifies a builder.
+  // Canonical string representation: “{project}/{bucket}/{builder}”.
+  message ID {
+    // Project ID, e.g. "chromium". Unique within a LUCI deployment.
+    string project = 1;
+    // Bucket name, e.g. "try". Unique within the project.
+    // Together with project, defines an ACL.
+    string bucket = 2;
+    // Builder name, e.g. "linux-rel". Unique within the bucket.
+    string builder = 3;
+  }
+}
