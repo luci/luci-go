@@ -164,7 +164,7 @@ func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
 		"repository": t.Repo,
 	})
 	r.Tags = []string{
-		"buildset:" + commit.BuildSet(),
+		"buildset:" + commit.BuildSetString(),
 		"gitiles_ref:" + t.Ref,
 	}
 }
