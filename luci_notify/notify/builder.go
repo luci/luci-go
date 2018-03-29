@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 )
 
 // Builder represents the state of the last build seen from a particular
@@ -31,7 +32,7 @@ type Builder struct {
 	//   1) the new build has a newer revision than StatusRevision, or
 	//   2) the new build's revision == StatusRevision, but it has a newer
 	//      creation time.
-	Status buildbucket.Status
+	Status buildbucketpb.Status
 
 	// StatusBuildTime can be used to decide whether Status should be updated.
 	// It is computed as the creation time of the build that caused a change
@@ -46,7 +47,7 @@ type Builder struct {
 
 // StatusUnknown is used in the LookupBuilder return value
 // if builder status is unknown.
-const StatusUnknown buildbucket.Status = -1
+const StatusUnknown buildbucketpb.Status = -1
 
 // NewBuilder creates a new builder from an ID, a revision, and a build.
 func NewBuilder(id, revision string, build *buildbucket.Build) *Builder {

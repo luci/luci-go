@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/gae/service/user"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -47,7 +47,7 @@ func extractNotifiers(c context.Context, projectID string, cfg *notifyConfig.Pro
 	return notifiers
 }
 
-func notifyDummyBuild(status buildbucket.Status, notifyEmails ...string) *Build {
+func notifyDummyBuild(status buildbucketpb.Status, notifyEmails ...string) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", "test-builder", status)
 	build.EmailNotify = notifyEmails
@@ -118,17 +118,17 @@ func TestNotify(t *testing.T) {
 		notifiers := extractNotifiers(c, cfgName, cfg)
 
 		// Re-usable builds and builders for running Notify.
-		goodBuild := notifyDummyBuild(buildbucket.Status_SUCCESS)
-		goodEmailBuild := notifyDummyBuild(buildbucket.Status_SUCCESS, "property@google.com", "bogus@gmail.com")
-		badBuild := notifyDummyBuild(buildbucket.Status_FAILURE)
-		badEmailBuild := notifyDummyBuild(buildbucket.Status_FAILURE, "property@google.com", "bogus@gmail.com")
+		goodBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS)
+		goodEmailBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS, "property@google.com", "bogus@gmail.com")
+		badBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE)
+		badEmailBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE, "property@google.com", "bogus@gmail.com")
 		goodBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
-			Status:          buildbucket.Status_SUCCESS,
+			Status:          buildbucketpb.Status_SUCCESS,
 		}
 		badBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
-			Status:          buildbucket.Status_FAILURE,
+			Status:          buildbucketpb.Status_FAILURE,
 		}
 
 		dispatcher, taskqueue := createMockTaskQueue(c)

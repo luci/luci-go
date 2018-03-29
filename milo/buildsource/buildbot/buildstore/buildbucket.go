@@ -87,7 +87,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 		}
 	}
 
-	if fetchAnnotations && b.Status != buildbucket.Status_SCHEDULED {
+	if fetchAnnotations && b.Status != buildbucketpb.Status_SCHEDULED {
 		addr, err := logLocation(b)
 		if err != nil {
 			return nil, err
@@ -123,7 +123,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 		}
 	}
 
-	if len(res.Text) == 0 && b.Status == buildbucket.Status_SUCCESS {
+	if len(res.Text) == 0 && b.Status == buildbucketpb.Status_SUCCESS {
 		res.Text = []string{"Build successful"}
 	}
 
@@ -164,15 +164,15 @@ func buildNumber(b *buildbucket.Build) (int, error) {
 	return strconv.Atoi(parts[2])
 }
 
-func statusResult(status buildbucket.Status) buildbot.Result {
+func statusResult(status buildbucketpb.Status) buildbot.Result {
 	switch status {
-	case buildbucket.Status_SCHEDULED, buildbucket.Status_STARTED:
+	case buildbucketpb.Status_SCHEDULED, buildbucketpb.Status_STARTED:
 		return buildbot.NoResult
-	case buildbucket.Status_SUCCESS:
+	case buildbucketpb.Status_SUCCESS:
 		return buildbot.Success
-	case buildbucket.Status_FAILURE:
+	case buildbucketpb.Status_FAILURE:
 		return buildbot.Failure
-	case buildbucket.Status_INFRA_FAILURE, buildbucket.Status_CANCELED:
+	case buildbucketpb.Status_INFRA_FAILURE, buildbucketpb.Status_CANCELED:
 		return buildbot.Exception
 	default:
 		panic(errors.Reason("unexpected buildbucket status %q", status).Err())
