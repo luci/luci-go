@@ -30,10 +30,10 @@ func printPlatforms(tsv bool, platforms ...*crimson.Platform) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "Description")
+			p.Row("Name", "Description", "Manufacturer")
 		}
 		for _, plat := range platforms {
-			p.Row(plat.Name, plat.Description)
+			p.Row(plat.Name, plat.Description, plat.Manufacturer)
 		}
 	}
 }
@@ -60,13 +60,14 @@ func (c *GetPlatformsCmd) Run(app subcommands.Application, args []string, env su
 // getPlatformsCmd returns a command to get platforms.
 func getPlatformsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-platforms [-name <name>]...",
+		UsageLine: "get-platforms [-name <name>]... [-man <man>]...",
 		ShortDesc: "retrieves platforms",
-		LongDesc:  "Retrieves platforms matching the given names, or all platforms if names are omitted.",
+		LongDesc:  "Retrieves platforms matching the given names, or all platforms if names and manufacturers are omitted.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPlatformsCmd{}
 			cmd.Initialize(params)
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a platform to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Manufacturers), "man", "Manufacturer to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}

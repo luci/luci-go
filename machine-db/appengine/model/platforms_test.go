@@ -34,8 +34,8 @@ func TestPlatforms(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `^SELECT id, name, description FROM platforms$`
-		columns := []string{"id", "name", "description"}
+		selectStmt := `^SELECT id, name, description, manufacturer FROM platforms$`
+		columns := []string{"id", "name", "description", "manufacturer"}
 		rows := sqlmock.NewRows(columns)
 		table := &PlatformsTable{}
 
@@ -54,22 +54,24 @@ func TestPlatforms(t *testing.T) {
 		})
 
 		Convey("ok", func() {
-			rows.AddRow(1, "platform 1", "description 1")
-			rows.AddRow(2, "platform 2", "description 2")
+			rows.AddRow(1, "platform 1", "description 1", "manufacturer 1")
+			rows.AddRow(2, "platform 2", "description 2", "manufacturer 2")
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			So(table.fetch(c), ShouldBeNil)
 			So(table.current, ShouldResemble, []*Platform{
 				{
 					Platform: config.Platform{
-						Name:        "platform 1",
-						Description: "description 1",
+						Name:         "platform 1",
+						Description:  "description 1",
+						Manufacturer: "manufacturer 1",
 					},
 					Id: 1,
 				},
 				{
 					Platform: config.Platform{
-						Name:        "platform 2",
-						Description: "description 2",
+						Name:         "platform 2",
+						Description:  "description 2",
+						Manufacturer: "manufacturer 2",
 					},
 					Id: 2,
 				},
@@ -92,26 +94,30 @@ func TestPlatforms(t *testing.T) {
 		Convey("addition", func() {
 			platforms := []*config.Platform{
 				{
-					Name:        "platform 1",
-					Description: "description 1",
+					Name:         "platform 1",
+					Description:  "description 1",
+					Manufacturer: "manufacturer 1",
 				},
 				{
-					Name:        "platform 2",
-					Description: "description 2",
+					Name:         "platform 2",
+					Description:  "description 2",
+					Manufacturer: "manufacturer 2",
 				},
 			}
 			table.computeChanges(c, platforms)
 			So(table.additions, ShouldResemble, []*Platform{
 				{
 					Platform: config.Platform{
-						Name:        "platform 1",
-						Description: "description 1",
+						Name:         "platform 1",
+						Description:  "description 1",
+						Manufacturer: "manufacturer 1",
 					},
 				},
 				{
 					Platform: config.Platform{
-						Name:        "platform 2",
-						Description: "description 2",
+						Name:         "platform 2",
+						Description:  "description 2",
+						Manufacturer: "manufacturer 2",
 					},
 				},
 			})
@@ -122,15 +128,17 @@ func TestPlatforms(t *testing.T) {
 		Convey("update", func() {
 			table.current = append(table.current, &Platform{
 				Platform: config.Platform{
-					Name:        "platform",
-					Description: "old description",
+					Name:         "platform",
+					Description:  "old description",
+					Manufacturer: "old manufacturer",
 				},
 				Id: 1,
 			})
 			platforms := []*config.Platform{
 				{
-					Name:        table.current[0].Name,
-					Description: "new description",
+					Name:         table.current[0].Name,
+					Description:  "new description",
+					Manufacturer: "new manufacturer",
 				},
 			}
 			table.computeChanges(c, platforms)
@@ -139,8 +147,9 @@ func TestPlatforms(t *testing.T) {
 			So(table.updates, ShouldResemble, []*Platform{
 				{
 					Platform: config.Platform{
-						Name:        table.current[0].Name,
-						Description: platforms[0].Description,
+						Name:         table.current[0].Name,
+						Description:  platforms[0].Description,
+						Manufacturer: platforms[0].Manufacturer,
 					},
 					Id: table.current[0].Id,
 				},
@@ -173,7 +182,7 @@ func TestPlatforms(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `^INSERT INTO platforms \(name, description\) VALUES \(\?, \?\)$`
+		insertStmt := `^INSERT INTO platforms \(name, description, manufacturer\) VALUES \(\?, \?, \?\)$`
 		table := &PlatformsTable{}
 
 		Convey("empty", func() {
@@ -306,7 +315,7 @@ func TestPlatforms(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		updateStmt := `^UPDATE platforms SET description = \? WHERE id = \?$`
+		updateStmt := `^UPDATE platforms SET description = \?, manufacturer = \? WHERE id = \?$`
 		table := &PlatformsTable{}
 
 		Convey("empty", func() {
@@ -319,15 +328,17 @@ func TestPlatforms(t *testing.T) {
 		Convey("prepare failed", func() {
 			table.updates = append(table.updates, &Platform{
 				Platform: config.Platform{
-					Name:        "platform",
-					Description: "new description",
+					Name:         "platform",
+					Description:  "new description",
+					Manufacturer: "new manufacturer",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Platform{
 				Platform: config.Platform{
-					Name:        table.updates[0].Name,
-					Description: "old description",
+					Name:         table.updates[0].Name,
+					Description:  "old description",
+					Manufacturer: "old manufacturer",
 				},
 				Id: table.updates[0].Id,
 			})
@@ -341,15 +352,17 @@ func TestPlatforms(t *testing.T) {
 		Convey("exec failed", func() {
 			table.updates = append(table.updates, &Platform{
 				Platform: config.Platform{
-					Name:        "platform",
-					Description: "new description",
+					Name:         "platform",
+					Description:  "new description",
+					Manufacturer: "new manufacturer",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Platform{
 				Platform: config.Platform{
-					Name:        table.updates[0].Name,
-					Description: "old description",
+					Name:         table.updates[0].Name,
+					Description:  "old description",
+					Manufacturer: "old manufacturer",
 				},
 				Id: table.updates[0].Id,
 			})
@@ -364,15 +377,17 @@ func TestPlatforms(t *testing.T) {
 		Convey("ok", func() {
 			table.updates = append(table.updates, &Platform{
 				Platform: config.Platform{
-					Name:        "platform",
-					Description: "new description",
+					Name:         "platform",
+					Description:  "new description",
+					Manufacturer: "new manufacturer",
 				},
 				Id: 1,
 			})
 			table.current = append(table.current, &Platform{
 				Platform: config.Platform{
-					Name:        table.updates[0].Name,
-					Description: "old description",
+					Name:         table.updates[0].Name,
+					Description:  "old description",
+					Manufacturer: "old manufacturer",
 				},
 				Id: table.updates[0].Id,
 			})
@@ -382,6 +397,7 @@ func TestPlatforms(t *testing.T) {
 			So(table.updates, ShouldBeEmpty)
 			So(table.current, ShouldHaveLength, 1)
 			So(table.current[0].Description, ShouldEqual, "new description")
+			So(table.current[0].Manufacturer, ShouldEqual, "new manufacturer")
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 	})
