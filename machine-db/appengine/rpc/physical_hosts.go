@@ -72,7 +72,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := assignHostnameAndIP(c, tx, h.Name, ip)
+	hostnameId, err := AssignHostnameAndIP(c, tx, h.Name, ip)
 	if err != nil {
 		return nil, err
 	}

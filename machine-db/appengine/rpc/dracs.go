@@ -72,7 +72,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := assignHostnameAndIP(c, tx, d.Name, ip)
+	hostnameId, err := AssignHostnameAndIP(c, tx, d.Name, ip)
 	if err != nil {
 		return nil, err
 	}

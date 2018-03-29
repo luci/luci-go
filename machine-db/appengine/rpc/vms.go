@@ -72,7 +72,7 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := assignHostnameAndIP(c, tx, v.Name, ip)
+	hostnameId, err := AssignHostnameAndIP(c, tx, v.Name, ip)
 	if err != nil {
 		return nil, err
 	}
