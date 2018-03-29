@@ -234,7 +234,7 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 
 	*b = Build{
 		ID:               msg.Id,
-		CreationTime:     ParseTimestamp(msg.CreatedTs),
+		CreationTime:     v1.ParseTimestamp(msg.CreatedTs),
 		CreatedBy:        createdBy,
 		Project:          msg.Project,
 		Bucket:           msg.Bucket,
@@ -248,14 +248,14 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 		},
 
 		Status:           status,
-		StatusChangeTime: ParseTimestamp(msg.StatusChangedTs),
+		StatusChangeTime: v1.ParseTimestamp(msg.StatusChangedTs),
 		URL:              msg.Url,
-		StartTime:        ParseTimestamp(msg.StartedTs),
-		UpdateTime:       ParseTimestamp(msg.UpdatedTs),
+		StartTime:        v1.ParseTimestamp(msg.StartedTs),
+		UpdateTime:       v1.ParseTimestamp(msg.UpdatedTs),
 		Canary:           msg.Canary,
 		Experimental:     msg.Experimental,
 
-		CompletionTime: ParseTimestamp(msg.CompletedTs),
+		CompletionTime: v1.ParseTimestamp(msg.CompletedTs),
 		Output: Output{
 			Properties: output.Properties,
 			Err:        outErr,
@@ -311,20 +311,6 @@ func parseJSON(data string, v interface{}) error {
 	dec := json.NewDecoder(strings.NewReader(data))
 	dec.UseNumber()
 	return dec.Decode(v)
-}
-
-// ParseTimestamp parses a buildbucket timestamp.
-func ParseTimestamp(usec int64) time.Time {
-	if usec == 0 {
-		return time.Time{}
-	}
-	// TODO(nodir): will start to overflow in year ~2250+, fix it then.
-	return time.Unix(0, usec*1000).UTC()
-}
-
-// FormatTimestamp converts t to a buildbucket timestamp.
-func FormatTimestamp(t time.Time) int64 {
-	return t.UnixNano() / 1000
 }
 
 // projectFromBucket tries to retrieve project id from bucket name.
