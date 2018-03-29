@@ -49,9 +49,9 @@ func pubsubDummyBuild(builder string, status buildbucket.Status, creationTime ti
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", builder, status)
 	build.BuildSets = []buildbucket.BuildSet{buildbucket.BuildSet(&buildbucket.GitilesCommit{
-		Host:     "test.googlesource.com",
-		Project:  "test",
-		Revision: revision,
+		Host:    "test.googlesource.com",
+		Project: "test",
+		Id:      revision,
 	})}
 	build.CreationTime = creationTime
 	build.EmailNotify = notifyEmails
