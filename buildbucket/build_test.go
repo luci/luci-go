@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,7 +34,7 @@ func TestBuild(t *testing.T) {
 		// Load test message.
 		msgBytes, err := ioutil.ReadFile("testdata/build.json")
 		So(err, ShouldBeNil)
-		msg := &buildbucket.ApiCommonBuildMessage{}
+		msg := &v1.ApiCommonBuildMessage{}
 		err = json.Unmarshal(msgBytes, msg)
 		So(err, ShouldBeNil)
 
@@ -169,7 +169,7 @@ func TestBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			actual, err := build.PutRequest()
 			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, &buildbucket.ApiPutRequestMessage{
+			So(actual, ShouldResemble, &v1.ApiPutRequestMessage{
 				Bucket:           "luci.chromium.try",
 				CanaryPreference: "AUTO",
 				ParametersJson:   string(paramsJSON),

@@ -17,7 +17,7 @@ package buildbucket
 import (
 	"fmt"
 
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 )
 
 // Status is a buildbucket build status.
@@ -88,7 +88,7 @@ func (s Status) Completed() bool {
 //
 // If build.Status is "", returns (0, nil). It may happen with partial
 // buildbucket responses.
-func ParseStatus(build *buildbucket.ApiCommonBuildMessage) (Status, error) {
+func ParseStatus(build *v1.ApiCommonBuildMessage) (Status, error) {
 	switch build.Status {
 	case "":
 		return 0, nil
