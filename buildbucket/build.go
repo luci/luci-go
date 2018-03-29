@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 )
@@ -159,7 +159,7 @@ type Output struct {
 // json.Number.
 //
 // If an error is returned, the state of b is undefined.
-func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
+func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 	status, err := ParseStatus(msg)
 	if err != nil {
 		return err
@@ -277,7 +277,7 @@ func (b *Build) ParseMessage(msg *buildbucket.ApiCommonBuildMessage) error {
 // If a buildset is present in both b.BuildSets and b.Map, it is deduped.
 // Returned value has zero ClientOperationId.
 // Returns an error if properties could not be marshaled to JSON.
-func (b *Build) PutRequest() (*buildbucket.ApiPutRequestMessage, error) {
+func (b *Build) PutRequest() (*v1.ApiPutRequestMessage, error) {
 	tags := b.Tags.Copy()
 	tags.Del(TagBuilder) // buildbucket adds it automatically
 	for _, bs := range b.BuildSets {
@@ -291,7 +291,7 @@ func (b *Build) PutRequest() (*buildbucket.ApiPutRequestMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	msg := &buildbucket.ApiPutRequestMessage{
+	msg := &v1.ApiPutRequestMessage{
 		Bucket:           b.Bucket,
 		Tags:             tags.Format(),
 		CanaryPreference: canaryPref,
@@ -382,18 +382,18 @@ func ValidateBuildAddress(address string) error {
 
 // GetByAddress fetches a build by its address.
 // Returns (nil, nil) if build is not found.
-func GetByAddress(c context.Context, client *buildbucket.Service, address string) (*Build, error) {
+func GetByAddress(c context.Context, client *v1.Service, address string) (*Build, error) {
 	id, _, _, _, _, err := ParseBuildAddress(address)
 	if err != nil {
 		return nil, err
 	}
-	var msg *buildbucket.ApiCommonBuildMessage
+	var msg *v1.ApiCommonBuildMessage
 	if id != 0 {
 		res, err := client.Get(id).Context(c).Do()
 		switch {
 		case err != nil:
 			return nil, err
-		case res.Error != nil && res.Error.Reason == buildbucket.ReasonNotFound:
+		case res.Error != nil && res.Error.Reason == v1.ReasonNotFound:
 			return nil, nil
 		default:
 			msg = res.Build

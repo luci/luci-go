@@ -17,7 +17,7 @@ package buildbucket
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -26,7 +26,7 @@ func TestStatus(t *testing.T) {
 	t.Parallel()
 
 	Convey("ParseStatus", t, func() {
-		cases := map[Status]*buildbucket.ApiCommonBuildMessage{
+		cases := map[Status]*v1.ApiCommonBuildMessage{
 			0: {},
 
 			StatusScheduled: {
