@@ -51,9 +51,6 @@ const (
 	// It is equivalent to buildbucket API v1's cancelation reason
 	// "CANCELED_EXPLICITLY".
 	StatusCancelled = 1<<6 | statusMaskCompleted
-	// StatusTimeout means a build did not reach other final status in time.
-	// It is equivalent to buildbucket API v1's cancelation reason "TIMEOUT".
-	StatusTimeout = 1<<7 | statusMaskCompleted
 )
 
 // String returns status name, e.g. "Scheduled".
@@ -71,8 +68,6 @@ func (s Status) String() string {
 		return "Error"
 	case StatusCancelled:
 		return "Cancelled"
-	case StatusTimeout:
-		return "Timeout"
 	default:
 		return fmt.Sprintf("unknown status %d", s)
 	}
@@ -119,7 +114,7 @@ func ParseStatus(build *v1.ApiCommonBuildMessage) (Status, error) {
 			case "", "CANCELED_EXPLICITLY":
 				return StatusCancelled, nil
 			case "TIMEOUT":
-				return StatusTimeout, nil
+				return StatusError, nil
 			default:
 				return 0, fmt.Errorf("unexpected cancellation reason %q", build.CancelationReason)
 			}
