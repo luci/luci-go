@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
-	bucketApi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -89,7 +89,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		BuildKey:      MakeBuildKey(c, hostname, build.Address()),
 		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
 		BuildID:       fmt.Sprintf("buildbucket/%s", build.Address()),
-		BuildSet:      build.Tags[bucketApi.TagBuildSet],
+		BuildSet:      build.Tags[bbv1.TagBuildSet],
 		ContextURI: []string{
 			fmt.Sprintf("buildbucket://%s/build/%d", hostname, build.ID),
 		},
@@ -140,8 +140,8 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	}
 
 	event := struct {
-		Build    bucketApi.ApiCommonBuildMessage `json:"build"`
-		Hostname string                          `json:"hostname"`
+		Build    bbv1.ApiCommonBuildMessage `json:"build"`
+		Hostname string                     `json:"hostname"`
 	}{}
 	if err := json.Unmarshal(bData, &event); err != nil {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()

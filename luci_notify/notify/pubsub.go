@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -251,7 +251,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	}
 
 	var message struct {
-		Build bbapi.ApiCommonBuildMessage
+		Build bbv1.ApiCommonBuildMessage
 	}
 	if err := json.Unmarshal(msg.Message.Data, &message); err != nil {
 		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
