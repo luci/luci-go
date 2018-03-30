@@ -19,8 +19,11 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"golang.org/x/net/context"
 
@@ -36,9 +39,14 @@ import (
 	"go.chromium.org/luci/luci_notify/internal"
 )
 
-var emailTemplate = template.Must(template.New("email").Parse(`
-luci-notify detected a status change for builder "{{ .Build.Builder }}"
-at {{ .Build.StatusChangeTime }}.
+var emailTemplate = template.Must(template.New("email").Funcs(template.FuncMap{
+	"time": func(ts *tspb.Timestamp) time.Time {
+		t, _ := ptypes.Timestamp(ts)
+		return t
+	},
+}).Parse(`
+luci-notify detected a status change for builder "{{ .Build.Builder.IDString }}"
+at {{ .Build.EndTime | time }}.
 
 <table>
   <tr>
@@ -50,8 +58,8 @@ at {{ .Build.StatusChangeTime }}.
     <td>{{ .OldStatus }}</td>
   </tr>
   <tr>
-    <td>Bucket:</td>
-    <td>{{ .Build.Bucket }}</td>
+    <td>Builder:</td>
+    <td>{{ .Build.Builder.IDString }}</td>
   </tr>
   <tr>
     <td>Created by:</td>
@@ -59,15 +67,15 @@ at {{ .Build.StatusChangeTime }}.
   </tr>
   <tr>
     <td>Created at:</td>
-    <td>{{ .Build.CreationTime }}</td>
+    <td>{{ .Build.CreateTime | time }}</td>
   </tr>
   <tr>
     <td>Finished at:</td>
-    <td>{{ .Build.CompletionTime }}</td>
+    <td>{{ .Build.EndTime | time }}</td>
   </tr>
 </table>
 
-<a href="{{ .Build.URL }}">Full details are available here.</a>`))
+<a href="{{ .Build.ViewUrl }}">Full details are available here.</a>`))
 
 // createEmailTask constructs an EmailTask to be dispatched onto the task queue.
 func createEmailTask(c context.Context, recipients []string, oldStatus buildbucketpb.Status, build *Build) (*tq.Task, error) {
@@ -79,9 +87,7 @@ func createEmailTask(c context.Context, recipients []string, oldStatus buildbuck
 	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
 		return nil, errors.Annotate(err, "constructing email body").Err()
 	}
-	subject := fmt.Sprintf(`[Build Status] Builder %s on %s`,
-		build.Builder,
-		build.Bucket)
+	subject := fmt.Sprintf(`[Build Status] Builder %s`, build.Builder.IDString())
 
 	return &tq.Task{
 		Payload: &internal.EmailTask{
@@ -110,7 +116,7 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 	if strings.HasSuffix(recipient, "@google.com") || strings.HasSuffix(recipient, "@chromium.org") {
 		return true
 	}
-	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", build.ID)
+	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", recipient, build.Id)
 	return false
 }
 
