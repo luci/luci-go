@@ -98,7 +98,7 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown switch %q", n.Switch)
 		}
-		return internalError(c, errors.Annotate(err, "failed to create NIC").Err())
+		return errors.Annotate(err, "failed to create NIC").Err()
 	}
 	return nil
 }
@@ -117,11 +117,11 @@ func deleteNIC(c context.Context, name, machine string) error {
 		DELETE FROM nics WHERE name = ? AND machine_id = (SELECT id FROM machines WHERE name = ?)
 	`, name, machine)
 	if err != nil {
-		return internalError(c, errors.Annotate(err, "failed to delete NIC").Err())
+		return errors.Annotate(err, "failed to delete NIC").Err()
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
-		return internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", name, machine)
 	}
@@ -144,12 +144,12 @@ func listNICs(c context.Context, q database.QueryerContext, req *crimson.ListNIC
 	stmt = selectInString(stmt, "s.name", req.Switches)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch NICs").Err())
+		return nil, errors.Annotate(err, "failed to fetch NICs").Err()
 	}
 	defer rows.Close()
 	var nics []*crimson.NIC
@@ -157,7 +157,7 @@ func listNICs(c context.Context, q database.QueryerContext, req *crimson.ListNIC
 		n := &crimson.NIC{}
 		var mac48 common.MAC48
 		if err = rows.Scan(&n.Name, &n.Machine, &mac48, &n.Switch, &n.Switchport); err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to fetch NIC").Err())
+			return nil, errors.Annotate(err, "failed to fetch NIC").Err()
 		}
 		n.MacAddress = mac48.String()
 		nics = append(nics, n)
@@ -198,12 +198,12 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (*
 	stmt = stmt.Where("name = ?", n.Name).Where("machine_id = (SELECT id FROM machines WHERE name = ?)", n.Machine)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -219,7 +219,7 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (*
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown switch %q", n.Switch)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to update NIC").Err())
+		return nil, errors.Annotate(err, "failed to update NIC").Err()
 	}
 	// The number of rows affected cannot distinguish between zero because the NIC didn't exist
 	// and zero because the row already matched, so skip looking at the number of rows affected.
@@ -230,13 +230,13 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (*
 	})
 	switch {
 	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated NIC").Err())
+		return nil, errors.Annotate(err, "failed to fetch updated NIC").Err()
 	case len(nics) == 0:
 		return nil, status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", n.Name, n.Machine)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return nics[0], nil
 }

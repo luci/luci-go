@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -38,17 +38,16 @@ func authPrelude(c context.Context, methodName string, req proto.Message) (conte
 	}
 	switch is, err := auth.IsMember(c, groups...); {
 	case err != nil:
-		return c, internalError(c, err)
+		return c, err
 	case !is:
-		return c, status.Errorf(codes.PermissionDenied, "Unauthorized user")
+		return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
 	}
 	return c, nil
 }
 
-// internalError logs and returns an internal gRPC error.
-func internalError(c context.Context, err error) error {
-	errors.Log(c, err)
-	return status.Errorf(codes.Internal, "Internal server error")
+// gRPCifyAndLogErr ensures any error being returned is a gRPC error, logging Internal and Unknown errors.
+func gRPCifyAndLogErr(c context.Context, methodName string, rsp proto.Message, err error) error {
+	return grpcutil.GRPCifyAndLogErr(c, err)
 }
 
 // matches returns whether the given string matches the given set.
@@ -60,11 +59,13 @@ func matches(s string, set stringset.Set) bool {
 // NewServer returns a new Crimson RPC server.
 func NewServer() crimson.CrimsonServer {
 	return &crimson.DecoratedCrimson{
-		Prelude: authPrelude,
-		Service: &Service{},
+		Prelude:  authPrelude,
+		Service:  &Service{},
+		Postlude: gRPCifyAndLogErr,
 	}
 }
 
 // Service handles Crimson RPCs.
+// Not a proper gRPC service, errors may not be gRPC errors. Use NewServer to get a proper gRPC service.
 type Service struct {
 }

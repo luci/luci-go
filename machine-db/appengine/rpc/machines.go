@@ -55,7 +55,7 @@ func (*Service) DeleteMachine(c context.Context, req *crimson.DeleteMachineReque
 func (*Service) ListMachines(c context.Context, req *crimson.ListMachinesRequest) (*crimson.ListMachinesResponse, error) {
 	machines, err := listMachines(c, database.Get(c), req)
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListMachinesResponse{
 		Machines: machines,
@@ -100,7 +100,7 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 			// e.g. "Error 1048: Column 'rack_id' cannot be null".
 			return status.Errorf(codes.NotFound, "unknown rack %q", m.Rack)
 		}
-		return internalError(c, errors.Annotate(err, "failed to create machine").Err())
+		return errors.Annotate(err, "failed to create machine").Err()
 	}
 	return nil
 }
@@ -123,11 +123,11 @@ func deleteMachine(c context.Context, name string) error {
 			// e.g. "Error 1452: Cannot add or update a child row: a foreign key constraint fails (FOREIGN KEY (`machine_id`) REFERENCES `machines` (`id`))".
 			return status.Errorf(codes.FailedPrecondition, "delete entities referencing this machine first")
 		}
-		return internalError(c, errors.Annotate(err, "failed to delete machine").Err())
+		return errors.Annotate(err, "failed to delete machine").Err()
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
-		return internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "unknown machine %q", name)
 	}
@@ -156,7 +156,7 @@ func listMachines(c context.Context, q database.QueryerContext, req *crimson.Lis
 	stmt = selectInState(stmt, "m.state", req.States)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	rows, err := q.QueryContext(c, query, args...)
@@ -198,7 +198,7 @@ func renameMachine(c context.Context, name, newName string) (*crimson.Machine, e
 
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -215,11 +215,11 @@ func renameMachine(c context.Context, name, newName string) (*crimson.Machine, e
 			// e.g. "Error 1062: Duplicate entry 'machine-name' for key 'name'".
 			return nil, status.Errorf(codes.AlreadyExists, "duplicate machine %q", newName)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to rename machine").Err())
+		return nil, errors.Annotate(err, "failed to rename machine").Err()
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+		return nil, errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
 		return nil, status.Errorf(codes.NotFound, "unknown machine %q", name)
 	}
@@ -228,11 +228,11 @@ func renameMachine(c context.Context, name, newName string) (*crimson.Machine, e
 		Names: []string{newName},
 	})
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch renamed machine").Err())
+		return nil, errors.Annotate(err, "failed to fetch renamed machine").Err()
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return machines[0], nil
 }
@@ -264,12 +264,12 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 	stmt = stmt.Where("name = ?", m.Name)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -285,7 +285,7 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 			// e.g. "Error 1048: Column 'rack_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown rack %q", m.Rack)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to update machine").Err())
+		return nil, errors.Annotate(err, "failed to update machine").Err()
 	}
 	// The number of rows affected cannot distinguish between zero because the machine didn't exist
 	// and zero because the row already matched, so skip looking at the number of rows affected.
@@ -295,13 +295,13 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 	})
 	switch {
 	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated machine").Err())
+		return nil, errors.Annotate(err, "failed to fetch updated machine").Err()
 	case len(machines) == 0:
 		return nil, status.Errorf(codes.NotFound, "unknown machine %q", m.Name)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return machines[0], nil
 }

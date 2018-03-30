@@ -52,7 +52,7 @@ func TestCreateMachine(t *testing.T) {
 				State:    common.State_FREE,
 			}
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(fmt.Errorf("error"))
-			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
+			So(createMachine(c, machine), ShouldErrLike, "failed to create machine")
 		})
 
 		Convey("duplicate machine", func() {
@@ -96,7 +96,7 @@ func TestCreateMachine(t *testing.T) {
 				State:    common.State_FREE,
 			}
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
-			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
+			So(createMachine(c, machine), ShouldErrLike, "failed to create machine")
 		})
 
 		Convey("unexpected error", func() {
@@ -107,7 +107,7 @@ func TestCreateMachine(t *testing.T) {
 				State:    common.State_FREE,
 			}
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
-			So(createMachine(c, machine), ShouldErrLike, "Internal server error")
+			So(createMachine(c, machine), ShouldErrLike, "failed to create machine")
 		})
 
 		Convey("ok", func() {
@@ -134,7 +134,7 @@ func TestDeleteMachine(t *testing.T) {
 
 		Convey("query failed", func() {
 			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnError(fmt.Errorf("error"))
-			So(deleteMachine(c, "machine"), ShouldErrLike, "Internal server error")
+			So(deleteMachine(c, "machine"), ShouldErrLike, "failed to delete machine")
 		})
 
 		Convey("referenced", func() {

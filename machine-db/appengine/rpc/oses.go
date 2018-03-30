@@ -28,7 +28,7 @@ import (
 func (*Service) ListOSes(c context.Context, req *crimson.ListOSesRequest) (*crimson.ListOSesResponse, error) {
 	oses, err := listOSes(c, stringset.NewFromSlice(req.Names...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListOSesResponse{
 		Oses: oses,

@@ -55,9 +55,9 @@ func TestCreateVM(t *testing.T) {
 			\)
 		`
 		updateIPStmt := `
-			UPDATE ips
+			^UPDATE ips
 			SET hostname_id = \?
-			WHERE ipv4 = \? AND hostname_id IS NULL
+			WHERE ipv4 = \? AND hostname_id IS NULL$
 		`
 		selectStmt := `
 			^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
@@ -92,7 +92,7 @@ func TestCreateVM(t *testing.T) {
 			}
 			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
 			res, err := createVM(c, vm)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to begin transaction")
 			So(res, ShouldBeNil)
 		})
 
@@ -145,7 +145,7 @@ func TestCreateVM(t *testing.T) {
 			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create VM")
 			So(res, ShouldBeNil)
 		})
 
@@ -202,7 +202,7 @@ func TestCreateVM(t *testing.T) {
 			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create VM")
 			So(res, ShouldBeNil)
 		})
 
@@ -221,7 +221,7 @@ func TestCreateVM(t *testing.T) {
 			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create VM")
 			So(res, ShouldBeNil)
 		})
 
@@ -243,7 +243,7 @@ func TestCreateVM(t *testing.T) {
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to commit transaction")
 			So(res, ShouldBeNil)
 		})
 
@@ -312,7 +312,7 @@ func TestListVMs(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0], 1, 2).WillReturnError(fmt.Errorf("error"))
 			vms, err := listVMs(c, db, req)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to fetch VMs")
 			So(vms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

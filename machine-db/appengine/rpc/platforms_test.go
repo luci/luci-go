@@ -48,7 +48,7 @@ func TestListPlatforms(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WillReturnError(fmt.Errorf("error"))
 			platforms, err := listPlatforms(c, req)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to fetch platforms")
 			So(platforms, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
