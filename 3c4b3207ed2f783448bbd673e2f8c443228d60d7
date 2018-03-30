@@ -22,6 +22,30 @@
       "revId": "3c4b3207ed2f783448bbd673e2f8c443228d60d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9acb73b6_8f790364",
+        "filename": "machine-db/api/config/v1/platforms.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-03-30T21:33:10Z",
+      "side": 1,
+      "message": "Yeah the name of the company which manufactures the hardware. For most of our platforms it\u0027d be Dell or Apple. It\u0027s intended to be used when finding available VM slots, because we need to distinguish between Apple and non-Apple (since Macs can only be deployed as VMs on Apple hardware).\n\nI\u0027m hesitant to add the name of any specific company. I\u0027ve updated the comment without adding an example, can you let me know if it\u0027s any clearer?",
+      "parentUuid": "dc41ea7c_3d56842c",
+      "range": {
+        "startLine": 15,
+        "startChar": 9,
+        "endLine": 15,
+        "endChar": 21
+      },
+      "revId": "3c4b3207ed2f783448bbd673e2f8c443228d60d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
