@@ -18,3 +18,7 @@ switch-dev:
 
 test:
 	go test ./...
+
+# Used mostly for .proto files.
+generate:
+	go generate ./...
