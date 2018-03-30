@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/luci_notify/testutil"
 
+	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -49,12 +50,16 @@ var (
 func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...string) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", builder, status)
-	build.BuildSets = []buildbucketpb.BuildSet{buildbucketpb.BuildSet(&buildbucketpb.GitilesCommit{
-		Host:    "test.googlesource.com",
-		Project: "test",
-		Id:      revision,
-	})}
-	build.CreationTime = creationTime
+	build.Input = &buildbucketpb.Build_Input{
+		GitilesCommits: []*buildbucketpb.GitilesCommit{
+			{
+				Host:    "test.googlesource.com",
+				Project: "test",
+				Id:      revision,
+			},
+		},
+	}
+	build.CreateTime, _ = ptypes.TimestampProto(creationTime)
 	build.EmailNotify = notifyEmails
 
 	return &build
