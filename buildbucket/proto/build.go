@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+
+	"go.chromium.org/luci/common/data/strpair"
 )
 
 // RunDuration returns duration between build start and end.
@@ -40,4 +42,13 @@ func (b *Build) SchedulingDuration() (duration time.Duration, ok bool) {
 	}
 
 	return start.Sub(create), true
+}
+
+// ParseTags parses b.Tags as a strpair.Map.
+func (b *Build) ParseTags() strpair.Map {
+	m := make(strpair.Map, len(b.Tags))
+	for _, t := range b.Tags {
+		m.Add(t.Key, t.Value)
+	}
+	return m
 }
