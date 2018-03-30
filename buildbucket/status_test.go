@@ -66,7 +66,7 @@ func TestStatus(t *testing.T) {
 			expected := expected
 			build := build
 			Convey(expected.String(), func() {
-				actual, err := ParseStatus(build)
+				actual, err := StatusToV2(build)
 				So(err, ShouldBeNil)
 				So(actual, ShouldEqual, expected)
 			})
