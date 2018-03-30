@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -169,7 +169,7 @@ func mixInSimplisticBlamelist(c context.Context, build *model.BuildSummary, rb *
 
 // extractEmail extracts the CL author email from a build message, if available.
 // TODO(hinoka, nodir): Delete after buildbucket v2.
-func extractEmail(msg *bbapi.ApiCommonBuildMessage) (string, error) {
+func extractEmail(msg *bbv1.ApiCommonBuildMessage) (string, error) {
 	var params struct {
 		Changes []struct {
 			Author struct{ Email string }
@@ -188,7 +188,7 @@ func extractEmail(msg *bbapi.ApiCommonBuildMessage) (string, error) {
 
 // extractInfo extracts the resulting info text from a build message.
 // TODO(hinoka, nodir): Delete after buildbucket v2.
-func extractInfo(msg *bbapi.ApiCommonBuildMessage) (string, error) {
+func extractInfo(msg *bbv1.ApiCommonBuildMessage) (string, error) {
 	var resultDetails struct {
 		// TODO(nodir,iannucci): define a proto for build UI data
 		UI struct {
@@ -206,7 +206,7 @@ func extractInfo(msg *bbapi.ApiCommonBuildMessage) (string, error) {
 // toMiloBuild converts a buildbucket build to a milo build.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuild(c context.Context, msg *bbapi.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
+func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
 	// Parse the build message into a buildbucket.Build struct, filling in the
 	// input and output properties that we expect to receive.
 	var b buildbucket.Build

@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/proto"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -377,7 +377,7 @@ func buildIDLink(b string, project string) string {
 
 	case "buildbucket":
 		address := strings.TrimPrefix(b, source+"/")
-		id, proj, bucket, builder, number, err := bbapi.ParseBuildAddress(address)
+		id, proj, bucket, builder, number, err := bbv1.ParseBuildAddress(address)
 		if err != nil {
 			return InvalidBuildIDURL
 		}

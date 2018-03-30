@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
@@ -45,10 +45,10 @@ import (
 // Buildbucket timestamps round off to milliseconds, so define a reference.
 var RefTime = time.Date(2016, time.February, 3, 4, 5, 6, 0, time.UTC)
 
-func makeReq(build buildbucket.ApiCommonBuildMessage) io.ReadCloser {
+func makeReq(build bbv1.ApiCommonBuildMessage) io.ReadCloser {
 	bmsg := struct {
-		Build    buildbucket.ApiCommonBuildMessage `json:"build"`
-		Hostname string                            `json:"hostname"`
+		Build    bbv1.ApiCommonBuildMessage `json:"build"`
+		Hostname string                     `json:"hostname"`
 	}{build, "hostname"}
 	bm, _ := json.Marshal(bmsg)
 
@@ -84,11 +84,11 @@ func TestPubSub(t *testing.T) {
 		datastore.Put(c, builderSummary)
 
 		// We'll copy this ApiCommonBuildMessage base for convenience.
-		buildBase := buildbucket.ApiCommonBuildMessage{
+		buildBase := bbv1.ApiCommonBuildMessage{
 			Bucket:    "luci.fake.bucket",
 			Tags:      []string{"builder:fake_builder"},
 			CreatedBy: string(identity.AnonymousIdentity),
-			CreatedTs: buildbucket.FormatTimestamp(RefTime.Add(2 * time.Hour)),
+			CreatedTs: bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour)),
 		}
 
 		Convey("New in-process build", func() {
@@ -96,9 +96,9 @@ func TestPubSub(t *testing.T) {
 			buildExp := buildBase
 			buildExp.Id = 1234
 			buildExp.Status = "STARTED"
-			buildExp.CreatedTs = buildbucket.FormatTimestamp(RefTime.Add(2 * time.Hour))
-			buildExp.StartedTs = buildbucket.FormatTimestamp(RefTime.Add(3 * time.Hour))
-			buildExp.UpdatedTs = buildbucket.FormatTimestamp(RefTime.Add(5 * time.Hour))
+			buildExp.CreatedTs = bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour))
+			buildExp.StartedTs = bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour))
+			buildExp.UpdatedTs = bbv1.FormatTimestamp(RefTime.Add(5 * time.Hour))
 			buildExp.Experimental = true
 
 			h := httptest.NewRecorder()
@@ -137,10 +137,10 @@ func TestPubSub(t *testing.T) {
 			buildExp.Id = 2234
 			buildExp.Status = "COMPLETED"
 			buildExp.Result = "SUCCESS"
-			buildExp.CreatedTs = buildbucket.FormatTimestamp(RefTime.Add(2 * time.Hour))
-			buildExp.StartedTs = buildbucket.FormatTimestamp(RefTime.Add(3 * time.Hour))
-			buildExp.UpdatedTs = buildbucket.FormatTimestamp(RefTime.Add(6 * time.Hour))
-			buildExp.CompletedTs = buildbucket.FormatTimestamp(RefTime.Add(6 * time.Hour))
+			buildExp.CreatedTs = bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour))
+			buildExp.StartedTs = bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour))
+			buildExp.UpdatedTs = bbv1.FormatTimestamp(RefTime.Add(6 * time.Hour))
+			buildExp.CompletedTs = bbv1.FormatTimestamp(RefTime.Add(6 * time.Hour))
 
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
@@ -173,14 +173,14 @@ func TestPubSub(t *testing.T) {
 			})
 
 			Convey("results in earlier update not being ingested", func() {
-				eBuild := buildbucket.ApiCommonBuildMessage{
+				eBuild := bbv1.ApiCommonBuildMessage{
 					Id:        2234,
 					Bucket:    "luci.fake.bucket",
 					Tags:      []string{"builder:fake_builder"},
 					CreatedBy: string(identity.AnonymousIdentity),
-					CreatedTs: buildbucket.FormatTimestamp(RefTime.Add(2 * time.Hour)),
-					StartedTs: buildbucket.FormatTimestamp(RefTime.Add(3 * time.Hour)),
-					UpdatedTs: buildbucket.FormatTimestamp(RefTime.Add(4 * time.Hour)),
+					CreatedTs: bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour)),
+					StartedTs: bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour)),
+					UpdatedTs: bbv1.FormatTimestamp(RefTime.Add(4 * time.Hour)),
 					Status:    "STARTED",
 				}
 
