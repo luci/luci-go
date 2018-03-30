@@ -4,6 +4,30 @@
 
 // Schema for project-level configuration in luci-notify.
 
+// Email formatting template files can be added to the project. The file names
+// (without .template) are the names of the templates they define. They must
+// match the regex ^[a-z][a-z0-9\_]*$.
+//
+// luci-notify/
+//   email-templates/
+//     <template_name>.template
+//
+// Each template file is expected to have a single line text/template on
+// the first line for the subject of the email, followed by a blank line,
+// and the html/template for the body of the email.
+//
+// Text and HTML template syntax definitions.
+//   https://godoc.org/text/template/
+//   https://godoc.org/html/template/
+//
+// Templates can refer to other templates in the project by name. The text and
+// html templates exist in independent namespaces.
+//
+// The system will define a template named "default". Users can override it by
+// defining "default" in the project. "default" is used if no explicit template
+// name is used.
+//
+
 syntax = "proto3";
 
 package config;
@@ -65,6 +89,12 @@ message Notification {
   //
   // Optional.
   Email email = 4;
+
+  // Refers to which project template name to use to format this email.
+  // If not present, "default" will be used.
+  //
+  // Optional
+  string template = 5;
 }
 
 // Builder references a buildbucket builder in the current project.
@@ -79,4 +109,3 @@ message Builder {
   // Required.
   string name = 2;
 }
-
