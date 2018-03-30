@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc41ea7c_3d56842c",
+        "filename": "machine-db/api/config/v1/platforms.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-30T05:08:52Z",
+      "side": 1,
+      "message": "What is this? Could you add an example. Is it a company name, like Microsoft?",
+      "range": {
+        "startLine": 15,
+        "startChar": 9,
+        "endLine": 15,
+        "endChar": 21
+      },
+      "revId": "3c4b3207ed2f783448bbd673e2f8c443228d60d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
