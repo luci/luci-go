@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f87718c_4a5e304d",
+        "filename": "luci_notify/Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-30T18:13:50Z",
+      "side": 1,
+      "message": "normally we use go generate subcommand for compiling proto to go:\nhttps://cs.chromium.org/search/?q\u003d//go:generate+cproto\u0026sq\u003dpackage:chromium\u0026type\u003dcs",
+      "revId": "579bdf118f6fa4b26c268b850041683bf58ca999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cc7645a_62eae302",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-30T18:13:50Z",
+      "side": 1,
+      "message": "let\u0027s use godoc.org:\n\n  https://godoc.org/text/template\n  https://godoc.org/html/template",
+      "range": {
+        "startLine": 20,
+        "startChar": 13,
+        "endLine": 20,
+        "endChar": 42
+      },
+      "revId": "579bdf118f6fa4b26c268b850041683bf58ca999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81cc2464_904a1405",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-30T18:13:50Z",
+      "side": 1,
+      "message": "please update",
+      "range": {
+        "startLine": 95,
+        "startChar": 6,
+        "endLine": 95,
+        "endChar": 49
+      },
+      "revId": "579bdf118f6fa4b26c268b850041683bf58ca999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16346ef8_3608703e",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-30T18:13:50Z",
+      "side": 1,
+      "message": "nit: Optional",
+      "revId": "579bdf118f6fa4b26c268b850041683bf58ca999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34a8534d_ce301be0",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-03-30T18:13:50Z",
+      "side": 1,
+      "message": "update",
+      "range": {
+        "startLine": 46,
+        "startChar": 4,
+        "endLine": 46,
+        "endChar": 60
+      },
+      "revId": "579bdf118f6fa4b26c268b850041683bf58ca999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
