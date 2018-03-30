@@ -19,18 +19,19 @@ import (
 	"fmt"
 	"io"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
 )
 
 // TestBuild creates a minimal dummy buildbucket.Build struct for use in
 // testing.
-func TestBuild(project, bucket, builder string, status buildbucketpb.Status) *buildbucket.Build {
-	return &buildbucket.Build{
-		Project: project,
-		Bucket:  bucket,
-		Builder: builder,
-		Status:  status,
+func TestBuild(project, bucket, builder string, status buildbucketpb.Status) *buildbucketpb.Build {
+	return &buildbucketpb.Build{
+		Builder: &buildbucketpb.Builder_ID{
+			Project: project,
+			Bucket:  bucket,
+			Builder: builder,
+		},
+		Status: status,
 	}
 }
 

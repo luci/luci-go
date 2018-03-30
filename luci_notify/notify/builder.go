@@ -17,7 +17,8 @@ package notify
 import (
 	"time"
 
-	"go.chromium.org/luci/buildbucket"
+	"github.com/golang/protobuf/ptypes"
+
 	"go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -50,11 +51,12 @@ type Builder struct {
 const StatusUnknown buildbucketpb.Status = -1
 
 // NewBuilder creates a new builder from an ID, a revision, and a build.
-func NewBuilder(id, revision string, build *buildbucket.Build) *Builder {
-	return &Builder{
-		ID:              id,
-		Status:          build.Status,
-		StatusBuildTime: build.CreationTime,
-		StatusRevision:  revision,
+func NewBuilder(id, revision string, build *buildbucketpb.Build) *Builder {
+	ret := &Builder{
+		ID:             id,
+		Status:         build.Status,
+		StatusRevision: revision,
 	}
+	ret.StatusBuildTime, _ = ptypes.Timestamp(build.CreateTime)
+	return ret
 }
