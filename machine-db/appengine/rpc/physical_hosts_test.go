@@ -55,14 +55,14 @@ func TestCreatePhysicalHost(t *testing.T) {
 		\)$
 		`
 		updateIPStmt := `
-			UPDATE ips
+			^UPDATE ips
 			SET hostname_id = \?
-			WHERE ipv4 = \? AND hostname_id IS NULL
+			WHERE ipv4 = \? AND hostname_id IS NULL$
 		`
 		updateMachineStmt := `
-			UPDATE machines
+			^UPDATE machines
 			SET state = \?
-			WHERE name = \?
+			WHERE name = \?$
 		`
 		selectStmt := `
 			^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.description, h.deployment_ticket, i.ipv4, m.state
@@ -95,7 +95,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			}
 			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to begin transaction")
 			So(res, ShouldBeNil)
 		})
 
@@ -145,7 +145,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create physical host")
 			So(res, ShouldBeNil)
 		})
 
@@ -217,7 +217,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create physical host")
 			So(res, ShouldBeNil)
 		})
 
@@ -235,26 +235,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "Internal server error")
-			So(res, ShouldBeNil)
-		})
-
-		Convey("commit failed", func() {
-			host := &crimson.PhysicalHost{
-				Name:    "host",
-				Machine: "machine",
-				Os:      "os",
-				Ipv4:    "127.0.0.1",
-				State:   common.State_SERVING,
-			}
-			m.ExpectBegin()
-			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
-			m.ExpectRollback()
-			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create physical host")
 			So(res, ShouldBeNil)
 		})
 
@@ -273,7 +254,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Machine).WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to update machine")
 			So(res, ShouldBeNil)
 		})
 
@@ -301,6 +282,28 @@ func TestCreatePhysicalHost(t *testing.T) {
 				Ipv4:    host.Ipv4,
 				State:   common.State_SERVING,
 			})
+		})
+
+		Convey("commit failed", func() {
+			host := &crimson.PhysicalHost{
+				Name:    "host",
+				Machine: "machine",
+				Os:      "os",
+				Ipv4:    "127.0.0.1",
+				State:   common.State_SERVING,
+			}
+			rows.AddRow(host.Name, 1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket, 2130706433, host.State)
+			m.ExpectBegin()
+			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WithArgs(host.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			res, err := createPhysicalHost(c, host)
+			So(err, ShouldErrLike, "failed to commit transaction")
+			So(res, ShouldBeNil)
 		})
 
 		Convey("ok", func() {
@@ -367,7 +370,7 @@ func TestListPhysicalHosts(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Vlans[0], 1, 2).WillReturnError(fmt.Errorf("error"))
 			hosts, err := listPhysicalHosts(c, db, req)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to fetch physical hosts")
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

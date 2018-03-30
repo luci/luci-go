@@ -80,7 +80,7 @@ func TestFindVMSlots(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs().WillReturnError(fmt.Errorf("error"))
 			hosts, err := findVMSlots(c, db, req)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to fetch VM slots")
 			So(hosts, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

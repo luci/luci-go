@@ -32,7 +32,7 @@ func (*Service) ListVLANs(c context.Context, req *crimson.ListVLANsRequest) (*cr
 	}
 	vlans, err := listVLANs(c, ids, stringset.NewFromSlice(req.Aliases...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListVLANsResponse{
 		Vlans: vlans,
