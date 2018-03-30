@@ -62,18 +62,18 @@ func deleteHost(c context.Context, name string, vlan int64) error {
 			// e.g. "Error 1452: Cannot add or update a child row: a foreign key constraint fails (FOREIGN KEY (`physical_host_id`) REFERENCES `physical_hosts` (`id`))".
 			return status.Errorf(codes.FailedPrecondition, "delete entities referencing this host first")
 		}
-		return internalError(c, errors.Annotate(err, "failed to delete host").Err())
+		return errors.Annotate(err, "failed to delete host").Err()
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
-		return internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "unknown host %q for VLAN %d", name, vlan)
 	case rows == 1:
 		return nil
 	default:
 		// Shouldn't happen because name is unique in the database.
-		return internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
+		return errors.Reason("unexpected number of affected rows %d", rows).Err()
 	}
 }
 
@@ -97,11 +97,11 @@ func assignHostnameAndIP(c context.Context, tx database.ExecerContext, hostname 
 			// e.g. "Error 1048: Column 'vlan_id' cannot be null".
 			return 0, status.Errorf(codes.NotFound, "ensure IPv4 address %q exists and is free first", ipv4)
 		}
-		return 0, internalError(c, errors.Annotate(err, "failed to create hostname").Err())
+		return 0, errors.Annotate(err, "failed to create hostname").Err()
 	}
 	hostnameId, err := res.LastInsertId()
 	if err != nil {
-		return 0, internalError(c, errors.Annotate(err, "failed to fetch hostname").Err())
+		return 0, errors.Annotate(err, "failed to fetch hostname").Err()
 	}
 
 	res, err = tx.ExecContext(c, `
@@ -111,15 +111,15 @@ func assignHostnameAndIP(c context.Context, tx database.ExecerContext, hostname 
 			AND hostname_id IS NULL
 	`, hostnameId, ipv4)
 	if err != nil {
-		return 0, internalError(c, errors.Annotate(err, "failed to assign IP address").Err())
+		return 0, errors.Annotate(err, "failed to assign IP address").Err()
 	}
 	switch rows, err := res.RowsAffected(); {
 	case err != nil:
-		return 0, internalError(c, errors.Annotate(err, "failed to fetch affected rows").Err())
+		return 0, errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 1:
 		return hostnameId, nil
 	default:
 		// Shouldn't happen because IP address is unique per VLAN in the database.
-		return 0, internalError(c, errors.Reason("unexpected number of affected rows %d", rows).Err())
+		return 0, errors.Reason("unexpected number of affected rows %d", rows).Err()
 	}
 }

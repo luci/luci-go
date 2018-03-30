@@ -28,7 +28,7 @@ import (
 func (*Service) ListDatacenters(c context.Context, req *crimson.ListDatacentersRequest) (*crimson.ListDatacentersResponse, error) {
 	datacenters, err := listDatacenters(c, stringset.NewFromSlice(req.Names...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListDatacentersResponse{
 		Datacenters: datacenters,

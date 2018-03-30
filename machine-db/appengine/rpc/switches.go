@@ -28,7 +28,7 @@ import (
 func (*Service) ListSwitches(c context.Context, req *crimson.ListSwitchesRequest) (*crimson.ListSwitchesResponse, error) {
 	switches, err := listSwitches(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Racks...), stringset.NewFromSlice(req.Datacenters...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListSwitchesResponse{
 		Switches: switches,

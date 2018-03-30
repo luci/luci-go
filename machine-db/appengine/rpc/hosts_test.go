@@ -41,7 +41,7 @@ func TestDeleteHost(t *testing.T) {
 
 		Convey("query failed", func() {
 			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnError(fmt.Errorf("error"))
-			So(deleteHost(c, "host", 1), ShouldErrLike, "Internal server error")
+			So(deleteHost(c, "host", 1), ShouldErrLike, "failed to delete host")
 		})
 
 		Convey("referenced", func() {

@@ -28,7 +28,7 @@ import (
 func (*Service) ListRacks(c context.Context, req *crimson.ListRacksRequest) (*crimson.ListRacksResponse, error) {
 	racks, err := listRacks(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Datacenters...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListRacksResponse{
 		Racks: racks,

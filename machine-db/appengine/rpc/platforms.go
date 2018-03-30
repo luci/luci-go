@@ -43,13 +43,13 @@ func listPlatforms(c context.Context, req *crimson.ListPlatformsRequest) ([]*cri
 	stmt = selectInString(stmt, "manufacturer", req.Manufacturers)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	db := database.Get(c)
 	rows, err := db.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch platforms").Err())
+		return nil, errors.Annotate(err, "failed to fetch platforms").Err()
 	}
 	defer rows.Close()
 
@@ -57,7 +57,7 @@ func listPlatforms(c context.Context, req *crimson.ListPlatformsRequest) ([]*cri
 	for rows.Next() {
 		p := &crimson.Platform{}
 		if err = rows.Scan(&p.Name, &p.Description, &p.Manufacturer); err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to fetch platform").Err())
+			return nil, errors.Annotate(err, "failed to fetch platform").Err()
 		}
 		platforms = append(platforms, p)
 	}

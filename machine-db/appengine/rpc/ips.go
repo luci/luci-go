@@ -42,7 +42,7 @@ func (*Service) ListFreeIPs(c context.Context, req *crimson.ListFreeIPsRequest) 
 	}
 	ips, err := listFreeIPs(c, req.Vlan, req.PageSize)
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, err
 	}
 	return &crimson.ListIPsResponse{
 		Ips: ips,

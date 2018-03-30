@@ -59,7 +59,7 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 		LIMIT ?
 	`, req.Slots)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch VM slots").Err())
+		return nil, errors.Annotate(err, "failed to fetch VM slots").Err()
 	}
 	defer rows.Close()
 	var hosts []*crimson.PhysicalHost
@@ -71,7 +71,7 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 			&h.Vlan,
 			&h.VmSlots,
 		); err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to fetch VM slots").Err())
+			return nil, errors.Annotate(err, "failed to fetch VM slots").Err()
 		}
 		hosts = append(hosts, h)
 		slots += h.VmSlots
