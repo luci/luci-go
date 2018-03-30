@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "18b03fd2_4ca3a54c",
+        "filename": "buildbucket/testdata/v1_builds.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-30T21:48:41Z",
+      "side": 1,
+      "message": "what about test case where both are present (see also question about duplicate dimensions in code below).",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 5
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc1b342b_e4dccf2c",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-30T21:48:41Z",
+      "side": 1,
+      "message": "in the unlikely event of two buildsets present, do we care to error out? or is specifying both GerritChanges and GitilesCommits valid for a build in v2?",
+      "range": {
+        "startLine": 199,
+        "startChar": 3,
+        "endLine": 202,
+        "endChar": 69
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5459d2f_b4a13a42",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-30T21:48:41Z",
+      "side": 1,
+      "message": "won\u0027t this create duplicates in light of line 177..181 for completed builds?",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 210,
+        "endChar": 4
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a33910f_86d552b3",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-30T21:48:41Z",
+      "side": 1,
+      "message": "won\u0027t this create duplicates in light of line 177..181 for completed builds?",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 210,
+        "endChar": 4
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff142353_8de2a66c",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-03-30T21:48:41Z",
+      "side": 1,
+      "message": "nit: add  // e.g. \"try\" for \"luci.chromium.try\"",
+      "range": {
+        "startLine": 232,
+        "startChar": 41,
+        "endLine": 232,
+        "endChar": 42
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
