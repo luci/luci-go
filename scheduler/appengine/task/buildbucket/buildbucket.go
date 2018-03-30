@@ -29,7 +29,7 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/service/info"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
@@ -199,12 +199,12 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("PubSub topic is %q", topic)
 
 	// Prepare the request.
-	request := bbapi.ApiPutRequestMessage{
+	request := bbv1.ApiPutRequestMessage{
 		Bucket:            cfg.Bucket,
 		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationNonce()),
 		ParametersJson:    paramsJSON,
 		Tags:              tags,
-		PubsubCallback: &bbapi.ApiPubSubCallbackMessage{
+		PubsubCallback: &bbv1.ApiPubSubCallbackMessage{
 			AuthToken: "...", // set a bit later, after printing this struct
 			Topic:     topic,
 		},
@@ -308,12 +308,12 @@ func makeServerUrl(s string) string {
 }
 
 // createBuildbucketService makes a configured Buildbucket API client.
-func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*bbapi.Service, error) {
+func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*bbv1.Service, error) {
 	client, err := ctl.GetClient(c, time.Minute)
 	if err != nil {
 		return nil, err
 	}
-	service, err := bbapi.New(client)
+	service, err := bbv1.New(client)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 
 // handleBuildResult processes buildbucket results message updating the state
 // of the invocation.
-func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *bbapi.ApiCommonBuildMessage) {
+func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *bbv1.ApiCommonBuildMessage) {
 	ctl.DebugLog(
 		"Build %d: status %q, result %q, failure_reason %q, cancelation_reason %q",
 		r.Id, r.Status, r.Result, r.FailureReason, r.CancelationReason)

@@ -29,7 +29,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -113,7 +113,7 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 
 	msgs, err := bb.Search().
 		// this search is optimized, a datastore.get.
-		Tag(strpair.Format(bbapi.TagBuildAddress, bbapi.FormatBuildAddress(0, bucket, builder, number))).
+		Tag(strpair.Format(bbv1.TagBuildAddress, bbv1.FormatBuildAddress(0, bucket, builder, number))).
 		Context(c).
 		Fetch(1, nil)
 	switch {

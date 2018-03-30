@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket/proto"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
@@ -42,13 +42,13 @@ func newSwarmbucketClient(c context.Context, server string) (*swarmbucket.Servic
 	return client, nil
 }
 
-func newBuildbucketClient(c context.Context, server string) (*bbapi.Service, error) {
+func newBuildbucketClient(c context.Context, server string) (*bbv1.Service, error) {
 	c, _ = context.WithTimeout(c, time.Minute)
 	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
-	client, err := bbapi.New(&http.Client{Transport: t})
+	client, err := bbv1.New(&http.Client{Transport: t})
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -36,13 +36,13 @@ import (
 // fetchBuilds fetches builds given a criteria.
 // The returned builds are sorted by build creation descending.
 // count defines maximum number of builds to fetch; if <0, defaults to 100.
-func fetchBuilds(c context.Context, client *bbapi.Service, bucket, builder,
-	status string, limit int) ([]*bbapi.ApiCommonBuildMessage, error) {
+func fetchBuilds(c context.Context, client *bbv1.Service, bucket, builder,
+	status string, limit int) ([]*bbv1.ApiCommonBuildMessage, error) {
 
 	search := client.Search()
 	search.Bucket(bucket)
 	search.Status(status)
-	search.Tag(strpair.Format(bbapi.TagBuilder, builder))
+	search.Tag(strpair.Format(bbv1.TagBuilder, builder))
 	search.IncludeExperimental(true)
 
 	if limit < 0 {
@@ -69,7 +69,7 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 	}
 	defer resFile.Close()
 
-	res := &bbapi.ApiSearchResponseMessage{}
+	res := &bbv1.ApiSearchResponseMessage{}
 	if err := json.NewDecoder(resFile).Decode(res); err != nil {
 		return err
 	}
@@ -154,13 +154,13 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error {
-			return fetch(bbapi.StatusScheduled, -1)
+			return fetch(bbv1.StatusScheduled, -1)
 		}
 		work <- func() error {
-			return fetch(bbapi.StatusStarted, -1)
+			return fetch(bbv1.StatusStarted, -1)
 		}
 		work <- func() error {
-			return fetch(bbapi.StatusCompleted, limit)
+			return fetch(bbv1.StatusCompleted, limit)
 		}
 	})
 }

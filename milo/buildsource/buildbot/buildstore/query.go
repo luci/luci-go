@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/buildbucket"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -191,13 +191,13 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 
 	search := bb.Search().
 		Bucket(bucket).
-		Tag(strpair.Format(bbapi.TagBuilder, q.Builder)).
+		Tag(strpair.Format(bbv1.TagBuilder, q.Builder)).
 		Context(c)
 	switch q.Finished {
 	case Yes:
-		search.Status(bbapi.StatusCompleted)
+		search.Status(bbv1.StatusCompleted)
 	case No:
-		search.Status(bbapi.StatusFilterIncomplete)
+		search.Status(bbv1.StatusFilterIncomplete)
 	}
 
 	start := clock.Now(c)

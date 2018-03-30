@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -130,12 +130,12 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 	return res, nil
 }
 
-func buildbucketClient(c context.Context) (*bbapi.Service, error) {
+func buildbucketClient(c context.Context) (*bbv1.Service, error) {
 	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
-	client, err := bbapi.New(&http.Client{Transport: t})
+	client, err := bbv1.New(&http.Client{Transport: t})
 	if err != nil {
 		return nil, err
 	}
