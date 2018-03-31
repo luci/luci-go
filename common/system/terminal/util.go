@@ -1,23 +1,24 @@
-// Copyright 2011 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be that can be found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-// Source: https://github.com/golang/crypto/blob/master/ssh/terminal/util.go
-// Revision: 30ad74476e5c37a080ab5999ce9ab4465a2ecfac
-// License: BSD
-
-// +build darwin dragonfly freebsd linux,!appengine netbsd openbsd
+// +build !appengine
 
 package terminal
 
 import (
-	"syscall"
-	"unsafe"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
-// IsTerminal returns true if the given file descriptor is a terminal.
-func IsTerminal(fd int) bool {
-	var termios syscall.Termios
-	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, uintptr(fd), ioctlReadTermios, uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
-	return err == 0
-}
+// IsTerminal is just forwarded to "golang.org/x/crypto/ssh/terminal".IsTerminal
+var IsTerminal = terminal.IsTerminal
