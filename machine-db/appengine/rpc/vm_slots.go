@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -33,7 +34,7 @@ const maxVMSlots = 32
 func (*Service) FindVMSlots(c context.Context, req *crimson.FindVMSlotsRequest) (*crimson.FindVMSlotsResponse, error) {
 	hosts, err := findVMSlots(c, database.Get(c), req)
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.FindVMSlotsResponse{
 		Hosts: hosts,
@@ -59,7 +60,7 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 		LIMIT ?
 	`, req.Slots)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch VM slots").Err())
+		return nil, errors.Annotate(err, "failed to fetch VM slots").Err()
 	}
 	defer rows.Close()
 	var hosts []*crimson.PhysicalHost
@@ -71,7 +72,7 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 			&h.Vlan,
 			&h.VmSlots,
 		); err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to fetch VM slots").Err())
+			return nil, errors.Annotate(err, "failed to fetch VM slots").Err()
 		}
 		hosts = append(hosts, h)
 		slots += h.VmSlots

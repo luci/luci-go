@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -32,7 +33,7 @@ func (*Service) ListVLANs(c context.Context, req *crimson.ListVLANsRequest) (*cr
 	}
 	vlans, err := listVLANs(c, ids, stringset.NewFromSlice(req.Aliases...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.ListVLANsResponse{
 		Vlans: vlans,

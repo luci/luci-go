@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -42,7 +43,7 @@ func (*Service) ListFreeIPs(c context.Context, req *crimson.ListFreeIPsRequest) 
 	}
 	ips, err := listFreeIPs(c, req.Vlan, req.PageSize)
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.ListIPsResponse{
 		Ips: ips,

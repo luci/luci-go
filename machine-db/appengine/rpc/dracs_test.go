@@ -47,9 +47,9 @@ func TestCreateDRAC(t *testing.T) {
 			VALUES \(\?, \(SELECT id FROM machines WHERE name = \?\), \(SELECT id FROM switches WHERE name = \?\), \?, \?\)$
 		`
 		updateIPStmt := `
-			UPDATE ips
+			^UPDATE ips
 			SET hostname_id = \?
-			WHERE ipv4 = \? AND hostname_id IS NULL
+			WHERE ipv4 = \? AND hostname_id IS NULL$
 		`
 		selectStmt := `
 			^SELECT h.name, h.vlan_id, m.name, s.name, d.switchport, d.mac_address, i.ipv4
@@ -99,7 +99,7 @@ func TestCreateDRAC(t *testing.T) {
 			}
 			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
 			res, err := createDRAC(c, drac)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to begin transaction")
 			So(res, ShouldBeNil)
 		})
 
@@ -149,10 +149,10 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine).WillReturnError(fmt.Errorf("error"))
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create DRAC")
 			So(res, ShouldBeNil)
 		})
 
@@ -168,7 +168,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'machine_id'"})
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'machine_id'"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
 			So(err, ShouldErrLike, "duplicate DRAC for machine")
@@ -187,7 +187,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'mac_address'"})
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'mac_address'"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
 			So(err, ShouldErrLike, "duplicate MAC address")
@@ -206,7 +206,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
 			So(err, ShouldErrLike, "unknown machine")
@@ -225,7 +225,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'switch_id' is null"})
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'switch_id' is null"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
 			So(err, ShouldErrLike, "unknown switch")
@@ -244,10 +244,10 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create DRAC")
 			So(res, ShouldBeNil)
 		})
 
@@ -263,10 +263,10 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to create DRAC")
 			So(res, ShouldBeNil)
 		})
 
@@ -279,14 +279,16 @@ func TestCreateDRAC(t *testing.T) {
 				MacAddress: "00:00:00:00:00:01",
 				Ipv4:       "127.0.0.1",
 			}
+			rows.AddRow(drac.Name, 1, drac.Machine, drac.Switch, drac.Switchport, 1, 2130706433)
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WithArgs(drac.Name, 2130706433).WillReturnRows(rows)
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to commit transaction")
 			So(res, ShouldBeNil)
 		})
 
@@ -303,7 +305,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, 1, 1).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WithArgs(drac.Name, 2130706433).WillReturnRows(rows)
 			m.ExpectCommit()
 			res, err := createDRAC(c, drac)
@@ -357,7 +359,7 @@ func TestListDRACs(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Machines[0], req.Machines[1], 1, 2, req.Vlans[0]).WillReturnError(fmt.Errorf("error"))
 			dracs, err := listDRACs(c, db, req)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to fetch DRACs")
 			So(dracs, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

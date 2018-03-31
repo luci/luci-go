@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -28,7 +29,7 @@ import (
 func (*Service) ListRacks(c context.Context, req *crimson.ListRacksRequest) (*crimson.ListRacksResponse, error) {
 	racks, err := listRacks(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Datacenters...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.ListRacksResponse{
 		Racks: racks,

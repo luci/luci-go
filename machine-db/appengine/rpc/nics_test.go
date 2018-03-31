@@ -53,7 +53,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(fmt.Errorf("error"))
-			So(createNIC(c, nic), ShouldErrLike, "Internal server error")
+			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
 
 		Convey("duplicate NIC/machine", func() {
@@ -113,7 +113,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
-			So(createNIC(c, nic), ShouldErrLike, "Internal server error")
+			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
 
 		Convey("unexpected error", func() {
@@ -125,7 +125,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name machine_id switch_id"})
-			So(createNIC(c, nic), ShouldErrLike, "Internal server error")
+			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
 
 		Convey("ok", func() {
@@ -153,7 +153,7 @@ func TestDeleteNIC(t *testing.T) {
 
 		Convey("query failed", func() {
 			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnError(fmt.Errorf("error"))
-			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "Internal server error")
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to delete NIC")
 		})
 
 		Convey("invalid", func() {
@@ -200,7 +200,7 @@ func TestListNICs(t *testing.T) {
 			}
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Machines[0]).WillReturnError(fmt.Errorf("error"))
 			nics, err := listNICs(c, db, req)
-			So(err, ShouldErrLike, "Internal server error")
+			So(err, ShouldErrLike, "failed to fetch NICs")
 			So(nics, ShouldBeEmpty)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

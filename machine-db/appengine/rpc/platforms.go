@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -28,7 +29,7 @@ import (
 func (*Service) ListPlatforms(c context.Context, req *crimson.ListPlatformsRequest) (*crimson.ListPlatformsResponse, error) {
 	platforms, err := listPlatforms(c, stringset.NewFromSlice(req.Names...))
 	if err != nil {
-		return nil, internalError(c, err)
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.ListPlatformsResponse{
 		Platforms: platforms,

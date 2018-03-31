@@ -28,6 +28,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
@@ -38,7 +39,7 @@ import (
 func (*Service) CreateDRAC(c context.Context, req *crimson.CreateDRACRequest) (*crimson.DRAC, error) {
 	drac, err := createDRAC(c, req.Drac)
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return drac, nil
 }
@@ -47,7 +48,7 @@ func (*Service) CreateDRAC(c context.Context, req *crimson.CreateDRACRequest) (*
 func (*Service) ListDRACs(c context.Context, req *crimson.ListDRACsRequest) (*crimson.ListDRACsResponse, error) {
 	dracs, err := listDRACs(c, database.Get(c), req)
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.ListDRACsResponse{
 		Dracs: dracs,
@@ -56,7 +57,11 @@ func (*Service) ListDRACs(c context.Context, req *crimson.ListDRACsRequest) (*cr
 
 // UpdateDRAC handles a request to update an existing DRAC.
 func (*Service) UpdateDRAC(c context.Context, req *crimson.UpdateDRACRequest) (*crimson.DRAC, error) {
-	return updateDRAC(c, req.Drac, req.UpdateMask)
+	drac, err := updateDRAC(c, req.Drac, req.UpdateMask)
+	if err != nil {
+		return drac, grpcutil.GRPCifyAndLogErr(c, err)
+	}
+	return drac, nil
 }
 
 // createDRAC creates a new DRAC in the database.
@@ -68,7 +73,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	mac, _ := common.ParseMAC48(d.MacAddress)
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -98,7 +103,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown switch %q", d.Switch)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to create DRAC").Err())
+		return nil, errors.Annotate(err, "failed to create DRAC").Err()
 	}
 
 	dracs, err := listDRACs(c, tx, &crimson.ListDRACsRequest{
@@ -107,11 +112,11 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 		Ipv4S: []string{d.Ipv4},
 	})
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch created DRAC").Err())
+		return nil, errors.Annotate(err, "failed to fetch created DRAC").Err()
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return dracs[0], nil
 }
@@ -141,12 +146,12 @@ func listDRACs(c context.Context, q database.QueryerContext, req *crimson.ListDR
 	stmt = selectInUint64(stmt, "d.mac_address", mac48s)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch DRACs").Err())
+		return nil, errors.Annotate(err, "failed to fetch DRACs").Err()
 	}
 	defer rows.Close()
 	var dracs []*crimson.DRAC
@@ -155,7 +160,7 @@ func listDRACs(c context.Context, q database.QueryerContext, req *crimson.ListDR
 		var ipv4 common.IPv4
 		var mac48 common.MAC48
 		if err = rows.Scan(&d.Name, &d.Vlan, &d.Machine, &d.Switch, &d.Switchport, &mac48, &ipv4); err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to fetch DRAC").Err())
+			return nil, errors.Annotate(err, "failed to fetch DRAC").Err()
 		}
 		d.Ipv4 = ipv4.String()
 		d.MacAddress = mac48.String()
@@ -186,12 +191,12 @@ func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) 
 	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", d.Name, d.Vlan)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -213,7 +218,7 @@ func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) 
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown switch %q", d.Switch)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to update DRAC").Err())
+		return nil, errors.Annotate(err, "failed to update DRAC").Err()
 	}
 	// The number of rows affected cannot distinguish between zero because the NIC didn't exist
 	// and zero because the row already matched, so skip looking at the number of rows affected.
@@ -224,13 +229,13 @@ func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) 
 	})
 	switch {
 	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated DRAC").Err())
+		return nil, errors.Annotate(err, "failed to fetch updated DRAC").Err()
 	case len(dracs) == 0:
 		return nil, status.Errorf(codes.NotFound, "unknown DRAC %q for VLAN %d", d.Name, d.Vlan)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return dracs[0], nil
 }

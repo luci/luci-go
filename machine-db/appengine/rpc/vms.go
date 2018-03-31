@@ -28,6 +28,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -39,7 +40,7 @@ import (
 func (*Service) CreateVM(c context.Context, req *crimson.CreateVMRequest) (*crimson.VM, error) {
 	vm, err := createVM(c, req.Vm)
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return vm, nil
 }
@@ -48,7 +49,7 @@ func (*Service) CreateVM(c context.Context, req *crimson.CreateVMRequest) (*crim
 func (*Service) ListVMs(c context.Context, req *crimson.ListVMsRequest) (*crimson.ListVMsResponse, error) {
 	vms, err := listVMs(c, database.Get(c), req)
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.ListVMsResponse{
 		Vms: vms,
@@ -57,7 +58,11 @@ func (*Service) ListVMs(c context.Context, req *crimson.ListVMsRequest) (*crimso
 
 // UpdateVM handles a request to update an existing VM.
 func (*Service) UpdateVM(c context.Context, req *crimson.UpdateVMRequest) (*crimson.VM, error) {
-	return updateVM(c, req.Vm, req.UpdateMask)
+	vm, err := updateVM(c, req.Vm, req.UpdateMask)
+	if err != nil {
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
+	}
+	return vm, nil
 }
 
 // createVM creates a new VM in the database.
@@ -68,7 +73,7 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 	ip, _ := common.ParseIPv4(v.Ipv4)
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -100,7 +105,7 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to create VM").Err())
+		return nil, errors.Annotate(err, "failed to create VM").Err()
 	}
 
 	vms, err := listVMs(c, tx, &crimson.ListVMsRequest{
@@ -109,11 +114,11 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 		Ipv4S: []string{v.Ipv4},
 	})
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch created VM").Err())
+		return nil, errors.Annotate(err, "failed to fetch created VM").Err()
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return vms[0], nil
 }
@@ -151,12 +156,12 @@ func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsR
 	stmt = selectInState(stmt, "v.state", req.States)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch VMs").Err())
+		return nil, errors.Annotate(err, "failed to fetch VMs").Err()
 	}
 	defer rows.Close()
 	var vms []*crimson.VM
@@ -174,7 +179,7 @@ func listVMs(c context.Context, q database.QueryerContext, req *crimson.ListVMsR
 			&ipv4,
 			&v.State,
 		); err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to fetch VM").Err())
+			return nil, errors.Annotate(err, "failed to fetch VM").Err()
 		}
 		v.Ipv4 = ipv4.String()
 		vms = append(vms, v)
@@ -209,12 +214,12 @@ func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (*cr
 	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", v.Name, v.Vlan)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -230,7 +235,7 @@ func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (*cr
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to update VM").Err())
+		return nil, errors.Annotate(err, "failed to update VM").Err()
 	}
 	// The number of rows affected cannot distinguish between zero because the VM didn't exist
 	// and zero because the row already matched, so skip looking at the number of rows affected.
@@ -241,13 +246,13 @@ func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (*cr
 	})
 	switch {
 	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated VM").Err())
+		return nil, errors.Annotate(err, "failed to fetch updated VM").Err()
 	case len(vms) == 0:
 		return nil, status.Errorf(codes.NotFound, "unknown VM %q for VLAN %d", v.Name, v.Vlan)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return vms[0], nil
 }

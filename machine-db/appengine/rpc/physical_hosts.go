@@ -28,6 +28,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -39,7 +40,7 @@ import (
 func (*Service) CreatePhysicalHost(c context.Context, req *crimson.CreatePhysicalHostRequest) (*crimson.PhysicalHost, error) {
 	host, err := createPhysicalHost(c, req.Host)
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return host, nil
 }
@@ -48,7 +49,7 @@ func (*Service) CreatePhysicalHost(c context.Context, req *crimson.CreatePhysica
 func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHostsRequest) (*crimson.ListPhysicalHostsResponse, error) {
 	hosts, err := listPhysicalHosts(c, database.Get(c), req)
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 	return &crimson.ListPhysicalHostsResponse{
 		Hosts: hosts,
@@ -57,7 +58,11 @@ func (*Service) ListPhysicalHosts(c context.Context, req *crimson.ListPhysicalHo
 
 // UpdatePhysicalHost handles a request to update an existing physical host.
 func (*Service) UpdatePhysicalHost(c context.Context, req *crimson.UpdatePhysicalHostRequest) (*crimson.PhysicalHost, error) {
-	return updatePhysicalHost(c, req.Host, req.UpdateMask)
+	host, err := updatePhysicalHost(c, req.Host, req.UpdateMask)
+	if err != nil {
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
+	}
+	return host, nil
 }
 
 // createPhysicalHost creates a new physical host in the database.
@@ -68,7 +73,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 	ip, _ := common.ParseIPv4(h.Ipv4)
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -103,7 +108,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
 		}
-		return nil, internalError(c, errors.Annotate(err, "failed to create physical host").Err())
+		return nil, errors.Annotate(err, "failed to create physical host").Err()
 	}
 
 	// Physical host state is stored with the backing machine. Update if necessary.
@@ -114,7 +119,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 			WHERE name = ?
 		`, h.State, h.Machine)
 		if err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to update machine").Err())
+			return nil, errors.Annotate(err, "failed to update machine").Err()
 		}
 	}
 
@@ -124,11 +129,11 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 		Ipv4S: []string{h.Ipv4},
 	})
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch created physical host").Err())
+		return nil, errors.Annotate(err, "failed to fetch created physical host").Err()
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return hosts[0], nil
 }
@@ -176,12 +181,12 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	stmt = selectInString(stmt, "p.name", req.Platforms)
 	query, args, err := stmt.ToSql()
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
 	}
 
 	rows, err := q.QueryContext(c, query, args...)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch physical hosts").Err())
+		return nil, errors.Annotate(err, "failed to fetch physical hosts").Err()
 	}
 	defer rows.Close()
 	var hosts []*crimson.PhysicalHost
@@ -199,7 +204,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 			&ipv4,
 			&h.State,
 		); err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to fetch physical host").Err())
+			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 		}
 		h.Ipv4 = ipv4.String()
 		hosts = append(hosts, h)
@@ -243,13 +248,13 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 		stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", h.Name, h.Vlan)
 		query, args, err = stmt.ToSql()
 		if err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to generate statement").Err())
+			return nil, errors.Annotate(err, "failed to generate statement").Err()
 		}
 	}
 
 	tx, err := database.Begin(c)
 	if err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to begin transaction").Err())
+		return nil, errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
 
@@ -269,7 +274,7 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 				// e.g. "Error 1048: Column 'os_id' cannot be null".
 				return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
 			}
-			return nil, internalError(c, errors.Annotate(err, "failed to update physical host").Err())
+			return nil, errors.Annotate(err, "failed to update physical host").Err()
 		}
 		// The number of rows affected cannot distinguish between zero because the physical host didn't exist
 		// and zero because the row already matched, so skip looking at the number of rows affected.
@@ -281,7 +286,7 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 			WHERE id = (SELECT machine_id FROM physical_hosts WHERE hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?))
 		`, h.State, h.Name, h.Vlan)
 		if err != nil {
-			return nil, internalError(c, errors.Annotate(err, "failed to update machine").Err())
+			return nil, errors.Annotate(err, "failed to update machine").Err()
 		}
 	}
 
@@ -291,13 +296,13 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 	})
 	switch {
 	case err != nil:
-		return nil, internalError(c, errors.Annotate(err, "failed to fetch updated physical host").Err())
+		return nil, errors.Annotate(err, "failed to fetch updated physical host").Err()
 	case len(hosts) == 0:
 		return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", h.Name, h.Vlan)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, internalError(c, errors.Annotate(err, "failed to commit transaction").Err())
+		return nil, errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return hosts[0], nil
 }
