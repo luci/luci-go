@@ -45,6 +45,9 @@ type TransactionOptions struct {
 	// Attempts controls the number of retries to perform when commits fail
 	// due to a conflicting transaction. If omitted, it defaults to 3.
 	Attempts int
+	// ReadOnly controls whether the transaction is a read only transaction.
+	// Read only transactions are potentially more efficient.
+	ReadOnly bool
 }
 
 // Toggle is a tri-state boolean (Auto/True/False), which allows structs
