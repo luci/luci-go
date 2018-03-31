@@ -46,7 +46,7 @@ var (
 	}
 )
 
-func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...string) *Build {
+func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", builder, status)
 	build.BuildSets = []buildbucketpb.BuildSet{buildbucketpb.BuildSet(&buildbucketpb.GitilesCommit{
@@ -76,13 +76,13 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 
 		Convey(`single email_notify value`, func() {
 			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}]}`)
-			So(results, ShouldResemble, []string{"test@email"})
+			So(results, ShouldResemble, []EmailNotify{{Email: "test@email"}})
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`multiple email_notify values`, func() {
 			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}, {"email": "test2@email"}]}`)
-			So(results, ShouldResemble, []string{"test@email", "test2@email"})
+			So(results, ShouldResemble, []EmailNotify{{Email: "test@email"}, {Email: "test2@email"}})
 			So(err, ShouldBeNil)
 		})
 	})
@@ -113,7 +113,7 @@ func TestHandleBuild(t *testing.T) {
 
 		dispatcher, taskqueue := createMockTaskQueue(c)
 
-		testSuccess := func(build *Build, emailExpect ...string) {
+		testSuccess := func(build *Build, emailExpect templateEmailMap) {
 			// Test handleBuild.
 			err := handleBuild(c, dispatcher, build, mockHistoryFunc(testCommits))
 			So(err, ShouldBeNil)
@@ -140,70 +140,70 @@ func TestHandleBuild(t *testing.T) {
 
 		Convey(`no config`, func() {
 			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(build)
+			testSuccess(build, defaultTemplate())
 			grepLog("Nobody to notify")
 		})
 
 		Convey(`no config w/property`, func() {
-			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, "property@google.com")
-			testSuccess(build, "property@google.com")
+			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, EmailNotify{Email: "property@google.com"})
+			testSuccess(build, defaultTemplate("property@google.com"))
 		})
 
 		Convey(`no revision`, func() {
 			build := &Build{Build: *testutil.TestBuild("test", "hello", "test-builder-1", buildbucketpb.Status_SUCCESS)}
-			testSuccess(build)
+			testSuccess(build, defaultTemplate())
 			grepLog("revision")
 		})
 
 		Convey(`init builder`, func() {
 			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(build, "test-example-failure@google.com")
+			testSuccess(build, defaultTemplate("test-example-failure@google.com"))
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`init builder w/property`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, "property@google.com")
-			testSuccess(build, "test-example-failure@google.com", "property@google.com")
+			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, EmailNotify{Email: "property@google.com"})
+			testSuccess(build, defaultTemplate("test-example-failure@google.com", "property@google.com"))
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`out-of-order revision`, func() {
 			build := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_SUCCESS, oldTime, rev2)
-			testSuccess(build, "test-example-success@google.com")
+			testSuccess(build, defaultTemplate("test-example-success@google.com"))
 			verifyBuilder(build, rev2)
 
 			oldRevBuild := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_FAILURE, newTime, rev1)
-			testSuccess(oldRevBuild, "test-example-failure@google.com")
+			testSuccess(oldRevBuild, defaultTemplate("test-example-failure@google.com"))
 			grepLog("old commit")
 		})
 
 		Convey(`revision update`, func() {
 			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1)
-			testSuccess(build, "test-example-success@google.com")
+			testSuccess(build, defaultTemplate("test-example-success@google.com"))
 			verifyBuilder(build, rev1)
 
 			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2)
-			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com")
+			testSuccess(newBuild, defaultTemplate("test-example-failure@google.com", "test-example-change@google.com"))
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`revision update w/property`, func() {
-			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, "property@google.com")
-			testSuccess(build, "test-example-success@google.com", "property@google.com")
+			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, EmailNotify{Email: "property@google.com"})
+			testSuccess(build, defaultTemplate("test-example-success@google.com", "property@google.com"))
 			verifyBuilder(build, rev1)
 
-			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, "property@google.com")
-			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com", "property@google.com")
+			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, EmailNotify{Email: "property@google.com"})
+			testSuccess(newBuild, defaultTemplate("test-example-failure@google.com", "test-example-change@google.com", "property@google.com"))
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`out-of-order creation time`, func() {
 			build := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_SUCCESS, newTime, rev1)
-			testSuccess(build, "test-example-success@google.com")
+			testSuccess(build, defaultTemplate("test-example-success@google.com"))
 			verifyBuilder(build, rev1)
 
 			oldBuild := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(oldBuild, "test-example-failure@google.com")
+			testSuccess(oldBuild, defaultTemplate("test-example-failure@google.com"))
 			grepLog("old time")
 		})
 	})
