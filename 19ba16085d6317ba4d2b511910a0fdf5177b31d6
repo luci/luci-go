@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6d299a1_4c745185",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-03-31T03:31:21Z",
+      "side": 1,
+      "message": "During testing, this works for the \"default\" template, but not for any other template names.\n\nI suspect that either this code, or the test framework can only handle having a single email task queued up.",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
