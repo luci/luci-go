@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "f2490049_811ad6cf",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 648,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T22:48:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe5aaf6b_a37b5d9f",
+      "revId": "45406f22805e4bd2d3f7e25bcfaf3a1081deaeb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d1b7ffc0_f83f6121",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 13
@@ -59,6 +77,24 @@
     },
     {
       "key": {
+        "uuid": "3acd358e_f2bad9cf",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 656,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T22:48:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d1b7ffc0_f83f6121",
+      "revId": "45406f22805e4bd2d3f7e25bcfaf3a1081deaeb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3aabebd0_a674ab9a",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 13
@@ -73,6 +109,24 @@
       "revId": "45406f22805e4bd2d3f7e25bcfaf3a1081deaeb0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fb1f782_9553885f",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 822,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T22:48:31Z",
+      "side": 1,
+      "message": "Moved.",
+      "parentUuid": "3aabebd0_a674ab9a",
+      "revId": "45406f22805e4bd2d3f7e25bcfaf3a1081deaeb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
