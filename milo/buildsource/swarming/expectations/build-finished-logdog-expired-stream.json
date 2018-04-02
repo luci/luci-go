@@ -22,8 +22,10 @@
     },
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 0,
-    "Text": null
+    "Verbosity": 2,
+    "Text": [
+      "InfraFailure LogDog stream not found"
+    ]
   },
   "Trigger": {
     "AuthorName": "",
