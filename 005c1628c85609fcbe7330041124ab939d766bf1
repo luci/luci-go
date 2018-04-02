@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3109fba7_9cca4aca",
+        "filename": "buildbucket/testdata/v1_builds.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T18:58:40Z",
+      "side": 1,
+      "message": "i think those pieces of code are orthogonal, but I\u0027ve added a test case anyway.",
+      "parentUuid": "18b03fd2_4ca3a54c",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 5
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc1b342b_e4dccf2c",
         "filename": "buildbucket/v1.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "093e1413_fcd96698",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T18:58:40Z",
+      "side": 1,
+      "message": "it is a likely and valid event. Migration app specifies both 1) base revision and 2) patchset to apply",
+      "parentUuid": "cc1b342b_e4dccf2c",
+      "range": {
+        "startLine": 199,
+        "startChar": 3,
+        "endLine": 202,
+        "endChar": 69
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "29baf360_a6934012",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T18:58:40Z",
+      "side": 1,
+      "message": "these are two different fields? TaskDimensions and BotDimensions.\nUnless I misunderstood you",
+      "parentUuid": "3a33910f_86d552b3",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 210,
+        "endChar": 4
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e17edc91_6b9fa0b1",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T18:58:40Z",
+      "side": 1,
+      "message": "dup comment",
+      "parentUuid": "d5459d2f_b4a13a42",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 210,
+        "endChar": 4
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff142353_8de2a66c",
         "filename": "buildbucket/v1.go",
         "patchSetId": 2
@@ -114,6 +210,30 @@
       "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d181ae63_bc6220bf",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T18:58:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff142353_8de2a66c",
+      "range": {
+        "startLine": 232,
+        "startChar": 41,
+        "endLine": 232,
+        "endChar": 42
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
