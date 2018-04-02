@@ -85,7 +85,7 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 		Loader:          templates.FileSystemLoader(templatesPath),
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
-		DefaultArgs: func(c context.Context) (templates.Args, error) {
+		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			loginURL, err := auth.LoginURL(c, "/")
 			if err != nil {
 				return nil, err

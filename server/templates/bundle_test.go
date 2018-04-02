@@ -17,6 +17,7 @@ package templates
 import (
 	"bytes"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -64,11 +65,14 @@ func loaderTest(conv C, l Loader) {
 	b := Bundle{
 		Loader:          l,
 		DefaultTemplate: "base",
-		DefaultArgs: func(c context.Context) (Args, error) {
+		DefaultArgs: func(c context.Context, e *Extra) (Args, error) {
+			conv.So(e.Request.Host, ShouldEqual, "hi.example.com")
 			return Args{"arg1": "val1"}, nil
 		},
 	}
-	c := Use(context.Background(), &b)
+	c := Use(context.Background(), &b, &Extra{
+		Request: &http.Request{Host: "hi.example.com"},
+	})
 
 	tmpl, err := Get(c, "pages/page")
 	conv.So(tmpl, ShouldNotBeNil)

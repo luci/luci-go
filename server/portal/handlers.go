@@ -58,7 +58,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 			"includeCSS": func(name string) template.CSS { return template.CSS(assets.GetAsset(name)) },
 			"includeJS":  func(name string) template.JS { return template.JS(assets.GetAsset(name)) },
 		},
-		DefaultArgs: func(c context.Context) (templates.Args, error) {
+		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			logoutURL, err := auth.LogoutURL(c, "/")
 			if err != nil {
 				return nil, err
