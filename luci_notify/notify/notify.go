@@ -78,10 +78,11 @@ at {{ .Build.EndTime | time }}.
 <a href="{{ .Build.ViewUrl }}">Full details are available here.</a>`))
 
 // createEmailTask constructs an EmailTask to be dispatched onto the task queue.
-func createEmailTask(c context.Context, recipients []string, oldStatus buildbucketpb.Status, build *Build) (*tq.Task, error) {
+func createEmailTask(c context.Context, template string, recipients []string, oldStatus buildbucketpb.Status, build *Build) (*tq.Task, error) {
 	templateContext := map[string]interface{}{
 		"OldStatus": oldStatus.String(),
 		"Build":     build,
+		"template":  template,
 	}
 	var bodyBuffer bytes.Buffer
 	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
@@ -120,10 +121,40 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 	return false
 }
 
+// Helper structure for handling a set of unique EmailNotify values.
+type templateEmailMap map[string]stringset.Set
+
+func (m templateEmailMap) Add(template string, emails ...string) {
+	if len(emails) == 0 {
+		return
+	}
+
+	if template == "" {
+		template = "default"
+	}
+	if _, ok := m[template]; ok {
+		for _, e := range emails {
+			m[template].Add(e)
+		}
+	} else {
+		m[template] = stringset.NewFromSlice(emails...)
+	}
+}
+
+func (m templateEmailMap) Del(template, email string) {
+	if template == "" {
+		template = "default"
+	}
+	m[template].Del(email)
+	if m[template].Len() == 0 {
+		delete(m, template)
+	}
+}
+
 // Notify discovers, consolidates and filters recipients from notifiers, and
 // 'email_notify' properties, then dispatches notifications if necessary.
 func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
-	recipientSet := stringset.New(0)
+	recipients := templateEmailMap{}
 
 	// Notify based on configured notifiers.
 	for _, n := range notifiers {
@@ -131,32 +162,38 @@ func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, o
 			if !shouldNotify(&nc, oldStatus, build.Status) {
 				continue
 			}
-			for _, r := range nc.EmailRecipients {
-				recipientSet.Add(r)
-			}
+			recipients.Add(nc.Template, nc.EmailRecipients...)
 		}
 	}
 
 	// Notify based on build request properties.
-	for _, r := range build.EmailNotify {
-		recipientSet.Add(r)
+	for _, en := range build.EmailNotify {
+		recipients.Add(en.Template, en.Email)
 	}
 
-	for _, r := range recipientSet.ToSlice() {
-		if !isRecipientAllowed(c, r, build) {
-			recipientSet.Del(r)
+	// Remove illegal email addresses.
+	for template, emails := range recipients {
+		for _, e := range emails.ToSlice() {
+			if !isRecipientAllowed(c, e, build) {
+				recipients.Del(template, e)
+			}
 		}
 	}
 
-	if recipientSet.Len() == 0 {
+	if len(recipients) == 0 {
 		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
-	task, err := createEmailTask(c, recipientSet.ToSlice(), oldStatus, build)
-	if err != nil {
-		return errors.Annotate(err, "failed to create email task").Err()
+
+	// Create email tasks
+	for template, emails := range recipients {
+		task, err := createEmailTask(c, template, emails.ToSlice(), oldStatus, build)
+		if err != nil {
+			return errors.Annotate(err, "failed to create email task").Err()
+		}
+		d.AddTask(c, task)
 	}
-	d.AddTask(c, task)
+
 	return nil
 }
 

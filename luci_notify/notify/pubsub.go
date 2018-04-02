@@ -37,6 +37,19 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 )
 
+// EmailNotify holds an address and email format to send. A "Template"
+// value of "" is equivalent to "default".
+type EmailNotify struct {
+	Email    string `json:"email"`
+	Template string `json:"template"`
+}
+
+// Build is buildbucket.Build along with the parsed 'email_notify' values.
+type Build struct {
+	buildbucketpb.Build
+	EmailNotify []EmailNotify
+}
+
 var (
 	errBuilderDeleted = fmt.Errorf("builder deleted between datastore.Get calls")
 )
@@ -54,27 +67,21 @@ func commitIndex(commits []*gitpb.Commit, revision string) int {
 	return -1
 }
 
-func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
+func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 	if parametersJSON == "" {
 		return nil, nil
 	}
 
 	// json equivalent: {"email_notify": [{"email": "<address>"}, ...]}
 	var output struct {
-		EmailNotify []struct {
-			Email string `json:"email"`
-		} `json:"email_notify"`
+		EmailNotify []EmailNotify `json:"email_notify"`
 	}
 
 	if err := json.NewDecoder(strings.NewReader(parametersJSON)).Decode(&output); err != nil {
 		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
 
-	result := make([]string, len(output.EmailNotify))
-	for i, r := range output.EmailNotify {
-		result[i] = r.Email
-	}
-	return result, nil
+	return output.EmailNotify, nil
 }
 
 // handleBuild processes a Build and sends appropriate notifications.
@@ -224,12 +231,6 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 		}
 	}
 	h.WriteHeader(http.StatusOK)
-}
-
-// Build is buildbucketpb.Build along with the parsed 'email_notify' values.
-type Build struct {
-	buildbucketpb.Build
-	EmailNotify []string
 }
 
 // extractBuild constructs a Build from the PubSub HTTP request.
