@@ -47,7 +47,7 @@
     "Source": "",
     "Project": "testproject"
   },
-  "Components": null,
+  "Components": [],
   "PropertyGroup": [
     {
       "GroupName": "Main",
