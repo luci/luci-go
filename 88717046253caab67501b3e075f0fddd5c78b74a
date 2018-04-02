@@ -275,6 +275,24 @@
       "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1f126c4b_19337fe3",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T21:29:04Z",
+      "side": 1,
+      "message": "is calling Fix() harmful for buildbot builds? it should not be.",
+      "parentUuid": "6fe68ede_279472cb",
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
