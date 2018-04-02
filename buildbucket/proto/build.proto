@@ -81,6 +81,12 @@ message Build {
     // "result_details_json".
     // In V1 output properties are not populated until build ends.
     google.protobuf.Struct properties = 1;
+
+    // Human-oriented summary of the build provided by the build itself,
+    // in Markdown format (https://spec.commonmark.org/0.28/).
+    //
+    // BigQuery: excluded from rows.
+    string summary_markdown = 2;
   }
 
   // Identifier of the build, unique per LUCI deployment.
