@@ -16,7 +16,6 @@ package buildbucket
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -139,9 +138,14 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		return nil, err
 	}
 
+	builder, err := builderToV2(msg, tags, params)
+	if err != nil {
+		return nil, err
+	}
+
 	b = &buildbucketpb.Build{
 		Id:        msg.Id,
-		Builder:   builderToV2(msg, tags, params),
+		Builder:   builder,
 		Number:    int32(number),
 		CreatedBy: msg.CreatedBy,
 		ViewUrl:   msg.Url,
@@ -231,21 +235,35 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) {
 	}
 }
 
-func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) *buildbucketpb.Builder_ID {
+func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (*buildbucketpb.Builder_ID, error) {
 	ret := &buildbucketpb.Builder_ID{
 		Project: msg.Project,
-		// v2 uses short names for LUCI buckets,
-		// e.g. "try" for "luci.chromium.try"
-		Bucket:  strings.TrimPrefix(msg.Bucket, fmt.Sprintf("luci.%s.", msg.Project)),
+		Bucket:  msg.Bucket,
 		Builder: params.Builder,
 	}
+
 	if ret.Project == "" {
 		ret.Project = v1.ProjectFromBucket(msg.Bucket)
 	}
+
+	// v2 uses short names for LUCI buckets,
+	// e.g. "try" for "luci.chromium.try"
+	// Strip "luci.<project>." prefix from bucket.
+	if p := strings.SplitN(ret.Bucket, ".", 3); len(p) == 3 && p[0] == "luci" {
+		switch {
+		case ret.Project == "":
+			ret.Project = p[1]
+		case ret.Project != p[1]:
+			return nil, errors.Reason("inconsistent bucket %q and project %q", ret.Bucket, ret.Project).
+				Tag(MalformedBuild).Err()
+		}
+		ret.Bucket = p[2]
+	}
+
 	if ret.Builder == "" {
 		ret.Builder = tags.Get(v1.TagBuilder)
 	}
-	return ret
+	return ret, nil
 }
 
 func timestampToV2(ts int64) *tspb.Timestamp {

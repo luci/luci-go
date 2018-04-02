@@ -1,6 +1,12 @@
 [
     {},
     {
+        "builder": {
+            "project" : "chromium",
+            "bucket": "try"
+        }
+    },
+    {
         "id": 1,
         "builder": {
             "project": "chromium",
