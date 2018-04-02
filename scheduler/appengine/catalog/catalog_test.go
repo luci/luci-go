@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -238,7 +240,7 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Owners:     []string{"group:some-admins"},
 					},
-					Revision:    "a24edae75522d308ab23925d0a0feaaaef714be7",
+					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{0xa, 0x0},
@@ -250,7 +252,7 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Owners:     []string{"group:some-admins"},
 					},
-					Revision:    "a24edae75522d308ab23925d0a0feaaaef714be7",
+					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{0xa, 0x0},
@@ -262,16 +264,70 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{"group:triggerers"},
 						Owners:     []string{"group:debuggers", "group:some-admins"},
 					},
-					Revision:    "a24edae75522d308ab23925d0a0feaaaef714be7",
+					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
 				},
+				{
+					JobID: "project1/trigger",
+					Acls: acl.GrantsByRole{
+						Readers:    []string{"group:all"},
+						Triggerers: []string{},
+						Owners:     []string{"group:some-admins"},
+					},
+					Flavor:      JobFlavorTrigger,
+					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
+					RevisionURL: "https://example.com/view/here/app.cfg",
+					Schedule:    "with 30s interval",
+					Task:        []uint8{10, 0},
+					TriggeredJobIDs: []string{
+						"project1/noop-job-1",
+						"project1/noop-job-2",
+						"project1/noop-job-3",
+					},
+				},
 			})
 			So(getConfiguredProjectValue(ctx, "project1"), ShouldBeTrue)
-			So(getConfiguredJobsValue(ctx, "project1", "valid"), ShouldEqual, 3)
+			So(getConfiguredJobsValue(ctx, "project1", "valid"), ShouldEqual, 4)
 			So(getConfiguredJobsValue(ctx, "project1", "invalid"), ShouldEqual, 1)
 			So(getConfiguredJobsValue(ctx, "project1", "disabled"), ShouldEqual, 1)
+		})
+
+		Convey("GetProjectJobs filters unknown job IDs in triggers", func() {
+			defs, err := cat.GetProjectJobs(ctx, "project2")
+			So(err, ShouldBeNil)
+			So(defs, ShouldResemble, []Definition{
+				{
+					JobID: "project2/noop-job-1",
+					Acls: acl.GrantsByRole{
+						Owners:     []string{"group:all"},
+						Triggerers: []string{},
+						Readers:    []string{},
+					},
+					Revision:    "469369fef447369fbc3f4c287d416fd233d97d7c",
+					RevisionURL: "https://example.com/view/here/app.cfg",
+					Schedule:    "*/10 * * * * * *",
+					Task:        []uint8{10, 0},
+				},
+				{
+					JobID: "project2/trigger",
+					Acls: acl.GrantsByRole{
+						Owners:     []string{"group:all"},
+						Triggerers: []string{},
+						Readers:    []string{},
+					},
+					Flavor:      2,
+					Revision:    "469369fef447369fbc3f4c287d416fd233d97d7c",
+					RevisionURL: "https://example.com/view/here/app.cfg",
+					Schedule:    "with 30s interval",
+					Task:        []uint8{10, 0},
+					TriggeredJobIDs: []string{
+						// No noop-job-2 here!
+						"project2/noop-job-1",
+					},
+				},
+			})
 		})
 
 		Convey("GetProjectJobs unknown project", func() {
@@ -340,8 +396,13 @@ func TestValidateConfig(t *testing.T) {
 		})
 
 		Convey("semantic errors", func() {
-			rules.ValidateConfig(ctx, "projects/validation-error", "luci-scheduler.cfg", []byte(project4Cfg))
+			rules.ValidateConfig(ctx, "projects/validation-error", "luci-scheduler.cfg", []byte(project5Cfg))
 			So(ctx.Finalize(), ShouldErrLike, "referencing AclSet \"standard\" which doesn't exist")
+		})
+
+		Convey("rejects triggers with unknown references", func() {
+			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(project2Cfg))
+			So(ctx.Finalize(), ShouldErrLike, `referencing unknown job "noop-job-2" in 'triggers' field`)
 		})
 	})
 }
@@ -409,6 +470,8 @@ func (b brokenTaskManager) ProtoMessageType() proto.Message {
 
 func testContext() context.Context {
 	c := gaetesting.TestingContext()
+	c = gologger.StdConfig.Use(c)
+	c = logging.SetLevel(c, logging.Debug)
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 	c, _, _ = tsmon.WithFakes(c)
 	tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{}))
@@ -442,32 +505,32 @@ acl_sets {
 }
 
 job {
-  id: "noop-job-1"
-  schedule: "*/10 * * * * * *"
+	id: "noop-job-1"
+	schedule: "*/10 * * * * * *"
 	acl_sets: "public"
 
-  noop: {}
+	noop: {}
 }
 
 job {
-  id: "noop-job-2"
-  schedule: "*/10 * * * * * *"
+	id: "noop-job-2"
+	schedule: "*/10 * * * * * *"
 	acl_sets: "public"
 
-  noop: {}
+	noop: {}
 }
 
 job {
-  id: "noop-job-3"
-  schedule: "*/10 * * * * * *"
-  disabled: true
+	id: "noop-job-3"
+	schedule: "*/10 * * * * * *"
+	disabled: true
 
-  noop: {}
+	noop: {}
 }
 
 job {
-  id: "urlfetch-job-1"
-  schedule: "*/10 * * * * * *"
+	id: "urlfetch-job-1"
+	schedule: "*/10 * * * * * *"
 	acl_sets: "public"
 	acls {
 		role: OWNER
@@ -478,96 +541,129 @@ job {
 		granted_to: "group:triggerers"
 	}
 
-  url_fetch: {
-    url: "https://example.com"
-  }
+	url_fetch: {
+		url: "https://example.com"
+	}
+}
+
+trigger {
+	id: "trigger"
+	acl_sets: "public"
+
+	noop: {}
+
+	triggers: "noop-job-1"
+	triggers: "noop-job-2"
+	triggers: "noop-job-3"
 }
 
 # Will be skipped since BuildbucketTask Manager is not registered.
 job {
-  id: "buildbucket-job"
-  schedule: "*/10 * * * * * *"
+	id: "buildbucket-job"
+	schedule: "*/10 * * * * * *"
 
-  buildbucket: {}
+	buildbucket: {}
 }
 `
 
+// project2Cfg has a trigger that references non-existing job. It will fail
+// the config validation, but will still load by GetProjectJobs. We need this
+// behavior since unfortunately some inconsistencies crept in into the configs.
 const project2Cfg = `
+acl_sets {
+	name: "default"
+	acls {
+		role: OWNER
+		granted_to: "group:all"
+	}
+}
+
 job {
-  id: "noop-job-1"
-  schedule: "*/10 * * * * * *"
-  noop: {}
+	id: "noop-job-1"
+	acl_sets: "default"
+	schedule: "*/10 * * * * * *"
+	noop: {}
+}
+
+trigger {
+	id: "trigger"
+	acl_sets: "default"
+
+	noop: {}
+
+	triggers: "noop-job-1"
+	triggers: "noop-job-2"  # no such job
 }
 `
 
 const project3Cfg = `
 acl_sets {
-  name: "default"
-  acls {
-    role: READER
-    granted_to: "group:all"
-  }
-  acls {
-    role: OWNER
-    granted_to: "group:all"
-  }
+	name: "default"
+	acls {
+		role: READER
+		granted_to: "group:all"
+	}
+	acls {
+		role: OWNER
+		granted_to: "group:all"
+	}
 }
 
 job {
-  id: "noop-job-v2"
-  acl_sets: "default"
-  noop: {
-    sleep_ms: 1000
-  }
+	id: "noop-job-v2"
+	acl_sets: "default"
+	noop: {
+		sleep_ms: 1000
+	}
 }
 
 trigger {
-  id: "noop-trigger-v2"
-  acl_sets: "default"
+	id: "noop-trigger-v2"
+	acl_sets: "default"
 
-  noop: {
-    sleep_ms: 1000
-    triggers_count: 2
-  }
+	noop: {
+		sleep_ms: 1000
+		triggers_count: 2
+	}
 
-  triggers: "noop-job-v2"
+	triggers: "noop-job-v2"
 }
 `
 
-// project4cfg should contain validation errors related to only "standard"
+// project5Cfg should contain validation errors related to only "standard"
 // acl_set (referencing AclSet "standard" that does not exist, no OWNER
 // AclSet and no READER AclSet).
-const project4Cfg = `
+const project5Cfg = `
 acl_sets {
-  name: "default"
-  acls {
-    role: READER
-    granted_to: "group:all"
-  }
-  acls {
-    role: OWNER
-    granted_to: "group:all"
-  }
+	name: "default"
+	acls {
+		role: READER
+		granted_to: "group:all"
+	}
+	acls {
+		role: OWNER
+		granted_to: "group:all"
+	}
 }
 
 job {
-  id: "noop-job-v2"
-  acl_sets: "default"
-  noop: {
-    sleep_ms: 1000
-  }
+	id: "noop-job-v2"
+	acl_sets: "default"
+	noop: {
+		sleep_ms: 1000
+	}
 }
 
 trigger {
-  id: "noop-trigger-v2"
-  acl_sets: "standard"
+	id: "noop-trigger-v2"
+	acl_sets: "standard"
 
-  noop: {
-    sleep_ms: 1000
-    triggers_count: 2
-  }
+	noop: {
+		sleep_ms: 1000
+		triggers_count: 2
+	}
 
-  triggers: "noop-job-v2"
+	triggers: "noop-job-v2"
 }
 `
 
