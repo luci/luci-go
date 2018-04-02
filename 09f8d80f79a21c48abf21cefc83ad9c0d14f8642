@@ -140,6 +140,30 @@
       "revId": "09f8d80f79a21c48abf21cefc83ad9c0d14f8642",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46aedd77_d5fefe08",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:47:22Z",
+      "side": 1,
+      "message": "oops",
+      "parentUuid": "42729d83_4994f8ca",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 38
+      },
+      "revId": "09f8d80f79a21c48abf21cefc83ad9c0d14f8642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
