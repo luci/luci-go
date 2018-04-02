@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "1f1fa854_fbe769be",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "i don\u0027t think we will be passing template name into the template when we use variable\nrather, we will probably use something like https://godoc.org/html/template#Template.Lookup",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cf1bc6b_873be799",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "i am not sure about the need for this type as an abstraction separate from its usages.\n\nit is a bit inconsistent with itself: Add() replaces \"\" to \"default\", but myMap[\"\"] does not, so a client of this type has to know about \"default\" anyway.\n\nIts Del() method is used only in one place: Notify. It seems that Notify would simpler if, instead of creating a the map, placing stuff there and then removing stuff, we had \n\n  var recipients map[string]stringset.Set\n  maybeAddRecipient :\u003d func(email, template string) {\n     if allowed(email):\n       template \u003d template or \"default\"\n        add to map\n  }\n\ninside Notify() and called it in two Notify()\u0027s loops.",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b6d299a1_4c745185",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -13,6 +47,131 @@
       "writtenOn": "2018-03-31T03:31:21Z",
       "side": 1,
       "message": "During testing, this works for the \"default\" template, but not for any other template names.\n\nI suspect that either this code, or the test framework can only handle having a single email task queued up.",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23ddd4d1_67cc3744",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "we should be creating all tasks in one batch RPC, not one by one",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b086191d_c8e1db2a",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "combination of this check with the set check above seems to be checking that we have same list, but in a possibly different order? then please sort both strings and compare them to exactly resemble one another",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65c09bae_728de2cb",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "before this test compared recipients in a task with expected recipients specified by the test (emailExpect).\nnow it tests that recipients in a message match recipients in a task.\n\nThis test got weaker to me. Shouldn\u0027t we compare recipients in a message to recipients in emailExpect?",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47c6b6db_3c42c69c",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "would we still need this test if we checked that emails that we sent match what we expect?\nnote that this test does NOT check that the emails that we sent used the expected template, so this test and (all the code that supports it) seems unnecessary if the test above compares sent messages to expectEmail, i.e. what would this test add if the test above did the right thing?",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75640725_11e92450",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "all tests that use templateEmailMap do not actually use keys for testing (only for reporting), so there is not much value in using and having this type in tests. Using [][]string (expected list of recipient lists) would work as well and would be simpler. If you are concerned that [][]string, we can define an alias\n\n  type RecipientList []string",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69993367_ee93195c",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "not for this CL:\n\nsince the email_notify protocol is likely to become a part of v2 API, we should define it in the proto. Then we don\u0027t need Build type in this app.",
+      "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0378d27_b2aab122",
+        "filename": "luci_notify/notify/pubsub_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:12:14Z",
+      "side": 1,
+      "message": "nil?\n\nsame below",
+      "range": {
+        "startLine": 143,
+        "startChar": 22,
+        "endLine": 143,
+        "endChar": 39
+      },
       "revId": "19ba16085d6317ba4d2b511910a0fdf5177b31d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
