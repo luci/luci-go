@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "45935abc_0f338d9e",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:16:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2dd383fc_b6869c35",
+      "range": {
+        "startLine": 120,
+        "startChar": 34,
+        "endLine": 120,
+        "endChar": 42
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d7ff6717_8ea3b328",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:16:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8774f92e_760fa454",
+      "range": {
+        "startLine": 120,
+        "startChar": 23,
+        "endLine": 120,
+        "endChar": 29
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8048546f_bb95e121",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 12
@@ -62,6 +110,24 @@
       "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68c020ff_d22bfca1",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:16:35Z",
+      "side": 1,
+      "message": "My bad, I misread this.",
+      "parentUuid": "8048546f_bb95e121",
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "3a561970_06ea8b03",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:16:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b08f877_8e633bcb",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 59
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0102a2f_1df9e8d1",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 12
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "cf8ca758_d190c0bf",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:16:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0102a2f_1df9e8d1",
+      "range": {
+        "startLine": 390,
+        "startChar": 54,
+        "endLine": 390,
+        "endChar": 56
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6a5e9d4_83dd5167",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 12
@@ -125,6 +239,24 @@
       "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da8a635d_df89ad52",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:16:35Z",
+      "side": 1,
+      "message": "Because it introduced some behavior change, mostly in the swarming case, due to the order of information being added.  See latest patchset to see the behavior changes.",
+      "parentUuid": "f6a5e9d4_83dd5167",
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
