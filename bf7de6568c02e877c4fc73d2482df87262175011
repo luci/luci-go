@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6c8f1c8_7ba93c8c",
+        "filename": "milo/frontend/expectations/buildbot.build-Debug_page-_win_chromium_rel_ng_246309.html",
+        "patchSetId": 15
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:25:28Z",
+      "side": 1,
+      "message": "For example, this is not supposed to be here.",
+      "range": {
+        "startLine": 55,
+        "startChar": 136,
+        "endLine": 55,
+        "endChar": 164
+      },
+      "revId": "bf7de6568c02e877c4fc73d2482df87262175011",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
