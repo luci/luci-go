@@ -16,6 +16,24 @@
       "revId": "18281782b0590a882ce74dc70b7539975e16d2ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b5d3d0a_594b0f7f",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:57:18Z",
+      "side": 1,
+      "message": "changed to ret.Bucket and ret.Project.",
+      "parentUuid": "b080ea98_836b8940",
+      "revId": "18281782b0590a882ce74dc70b7539975e16d2ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
