@@ -331,6 +331,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	}
 
 	// Triggering jobs.
+	allJobIDs := getAllJobIDs(&cfg)
 	for _, trigger := range cfg.Trigger {
 		if trigger.Disabled {
 			disabledCount++
@@ -341,7 +342,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			id = trigger.Id
 		}
 		ctx = &validation.Context{Context: c}
-		task := cat.validateTriggerProto(ctx, trigger)
+		task := cat.validateTriggerProto(ctx, trigger, allJobIDs, false)
 		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Invalid trigger definition %s: %s", id, err)
 			continue
@@ -360,7 +361,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
-		// TODO(tandrii): validate triggered job names after collecting all valid job names.
 		out = append(out, Definition{
 			JobID:           fmt.Sprintf("%s/%s", projectID, trigger.Id),
 			Acls:            *acls,
@@ -369,7 +369,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			RevisionURL:     revisionURL,
 			Schedule:        schedule,
 			Task:            packed,
-			TriggeredJobIDs: cat.normalizeTriggeredJobIDs(projectID, trigger),
+			TriggeredJobIDs: normalizeTriggeredJobIDs(projectID, trigger),
 		})
 	}
 
@@ -398,12 +398,12 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		return nil
 	}
 
-	// AclSets
+	// AclSets.
 	ctx.Enter("acl_sets")
 	knownACLSets := acl.ValidateACLSets(ctx, cfg.GetAclSets())
 	ctx.Exit()
 
-	// Jobs
+	// Jobs.
 	ctx.Enter("job")
 	for _, job := range cfg.Job {
 		id := "(empty)"
@@ -417,15 +417,16 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 	}
 	ctx.Exit()
 
-	// Triggers
+	// Triggers.
 	ctx.Enter("trigger")
+	allJobIDs := getAllJobIDs(&cfg)
 	for _, trigger := range cfg.Trigger {
 		id := "(empty)"
 		if trigger.Id != "" {
 			id = trigger.Id
 		}
 		ctx.Enter(id)
-		cat.validateTriggerProto(ctx, trigger)
+		cat.validateTriggerProto(ctx, trigger, allJobIDs, true)
 		acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
 		ctx.Exit()
 	}
@@ -454,11 +455,17 @@ func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job) p
 	return cat.validateTaskProto(ctx, j)
 }
 
-// validateTriggerProto validates messages.Trigger protobuf message.
+// validateTriggerProto validates and filters messages.Trigger protobuf message.
 //
 // It also extracts a task definition from it.
+//
+// Takes a set of all defined job IDs, to verify the trigger triggers only
+// declared jobs. If failOnMissing is true, referencing an undefined job is
+// reported as a validation error. Otherwise it is logged as a warning, and the
+// reference to the undefined job is removed.
+//
 // Errors are returned via validation.Context.
-func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Trigger) proto.Message {
+func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Trigger, jobIDs stringset.Set, failOnMissing bool) proto.Message {
 	if t.Id == "" {
 		ctx.Errorf("missing 'id' field'")
 	} else if !jobIDRe.MatchString(t.Id) {
@@ -471,18 +478,20 @@ func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Tr
 		}
 		ctx.Exit()
 	}
-	return cat.validateTaskProto(ctx, t)
-}
-
-// normalizeTriggeredJobIDs returns sorted list without duplicates.
-func (cat *catalog) normalizeTriggeredJobIDs(projectID string, t *messages.Trigger) []string {
-	set := stringset.New(len(t.Triggers))
-	for _, j := range t.Triggers {
-		set.Add(projectID + "/" + j)
+	filtered := make([]string, 0, len(t.Triggers))
+	for _, id := range t.Triggers {
+		switch {
+		case jobIDs.Has(id):
+			filtered = append(filtered, id)
+		case failOnMissing:
+			ctx.Errorf("referencing unknown job %q in 'triggers' field", id)
+		default:
+			logging.Warningf(ctx.Context,
+				"Trigger %q references unknown job %q in 'triggers' field", t.Id, id)
+		}
 	}
-	out := set.ToSlice()
-	sort.Strings(out)
-	return out
+	t.Triggers = filtered
+	return cat.validateTaskProto(ctx, t)
 }
 
 // validateTaskProto visits all fields of a proto and sniffs ones that correspond
@@ -561,4 +570,36 @@ func (cat *catalog) marshalTask(task proto.Message) ([]byte, error) {
 	// This can happen only if TaskDefWrapper wasn't updated when a new task type
 	// was added. This is a developer's mistake, not a config mistake.
 	return nil, fmt.Errorf("could not find a field of type %T in TaskDefWrapper", task)
+}
+
+/// Helper functions.
+
+// getAllJobIDs returns a set of IDs of regular jobs and triggering jobs.
+//
+// Doesn't filter out disabled jobs. IDs don't include project prefixes, e.g.
+// they are just "job" instead of "project/job".
+func getAllJobIDs(cfg *messages.ProjectConfig) stringset.Set {
+	out := stringset.New(len(cfg.Job) + len(cfg.Trigger))
+	for _, job := range cfg.Job {
+		if job.Id != "" {
+			out.Add(job.Id)
+		}
+	}
+	for _, job := range cfg.Trigger {
+		if job.Id != "" {
+			out.Add(job.Id)
+		}
+	}
+	return out
+}
+
+// normalizeTriggeredJobIDs returns sorted list without duplicates.
+func normalizeTriggeredJobIDs(projectID string, t *messages.Trigger) []string {
+	set := stringset.New(len(t.Triggers))
+	for _, j := range t.Triggers {
+		set.Add(projectID + "/" + j)
+	}
+	out := set.ToSlice()
+	sort.Strings(out)
+	return out
 }
