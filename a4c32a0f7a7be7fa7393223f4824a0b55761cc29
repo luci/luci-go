@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e248d792_90619646",
+        "filename": "examples/appengine/helloworld_standard/frontend/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-02T23:41:40Z",
+      "side": 1,
+      "message": "Note that we could potentially put this inside the context and add a function templates.Extra(c) (or something) to get it, but I decided against it because:\n \n * I believe explicit argument is a more friendly API. No spooky action at a distance, no functions to learn.\n * There\u0027s a lot of crap already in our contexts. And the context is organized as linked list with O(N) access time, more crap \u003d\u003e slower.",
+      "range": {
+        "startLine": 42,
+        "startChar": 19,
+        "endLine": 42,
+        "endChar": 56
+      },
+      "revId": "a4c32a0f7a7be7fa7393223f4824a0b55761cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "16d9c79d_f44a2997",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-02T23:41:40Z",
+      "side": 1,
+      "message": "Strictly speaking this is incorrect: it drops ?query\u003darguments. I plan to remove getRouterContext(...) completely in the next CL and fix this along the way. I believe getRouterContext is not needed anymore.",
+      "range": {
+        "startLine": 328,
+        "startChar": 3,
+        "endLine": 328,
+        "endChar": 30
+      },
+      "revId": "a4c32a0f7a7be7fa7393223f4824a0b55761cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
