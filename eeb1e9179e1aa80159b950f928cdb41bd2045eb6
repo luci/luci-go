@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9d4cf49f_6e25ce90",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-02T16:42:23Z",
+      "side": 1,
+      "message": "Changed to glorious \"s\".",
+      "parentUuid": "65f6c5ad_6f4bea77",
+      "range": {
+        "startLine": 85,
+        "startChar": 7,
+        "endLine": 85,
+        "endChar": 13
+      },
+      "revId": "eeb1e9179e1aa80159b950f928cdb41bd2045eb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87e31489_dca7a9d4",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "eeb1e9179e1aa80159b950f928cdb41bd2045eb6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18e182cc_a4c87d97",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-02T16:42:23Z",
+      "side": 1,
+      "message": "removed this comment, it is not important any more",
+      "parentUuid": "87e31489_dca7a9d4",
+      "range": {
+        "startLine": 165,
+        "startChar": 74,
+        "endLine": 165,
+        "endChar": 79
+      },
+      "revId": "eeb1e9179e1aa80159b950f928cdb41bd2045eb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
