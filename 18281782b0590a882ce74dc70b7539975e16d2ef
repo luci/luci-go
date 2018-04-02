@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b080ea98_836b8940",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:44:01Z",
+      "side": 1,
+      "message": "This error is confusing since it doesn\u0027t match the test case above.  Using ret.Bucket and ret.Project would be clearer.",
+      "revId": "18281782b0590a882ce74dc70b7539975e16d2ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
