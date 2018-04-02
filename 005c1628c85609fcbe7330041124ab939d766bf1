@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "9c59dc46_c274c01b",
+        "filename": "buildbucket/testdata/v1_builds.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-02T19:22:44Z",
+      "side": 1,
+      "message": "i was wrong, feel free to remove it.",
+      "parentUuid": "3109fba7_9cca4aca",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 5
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc1b342b_e4dccf2c",
         "filename": "buildbucket/v1.go",
         "patchSetId": 2
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "it is a likely and valid event. Migration app specifies both 1) base revision and 2) patchset to apply",
       "parentUuid": "cc1b342b_e4dccf2c",
+      "range": {
+        "startLine": 199,
+        "startChar": 3,
+        "endLine": 202,
+        "endChar": 69
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b397ea9b_21afc920",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-02T19:22:44Z",
+      "side": 1,
+      "message": "after IM discussion: yeah, this makes sense.",
+      "parentUuid": "093e1413_fcd96698",
       "range": {
         "startLine": 199,
         "startChar": 3,
@@ -178,6 +226,30 @@
       "side": 1,
       "message": "dup comment",
       "parentUuid": "d5459d2f_b4a13a42",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 210,
+        "endChar": 4
+      },
+      "revId": "005c1628c85609fcbe7330041124ab939d766bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8a157cb5_9069386f",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-02T19:22:44Z",
+      "side": 1,
+      "message": "nah, i misread the CL.",
+      "parentUuid": "29baf360_a6934012",
       "range": {
         "startLine": 208,
         "startChar": 3,
