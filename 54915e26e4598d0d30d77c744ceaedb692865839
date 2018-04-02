@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9306258a_8c095c91",
+        "filename": "machine-db/appengine/rpc/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T16:19:52Z",
+      "side": 1,
+      "message": "calling this function in every method is a bit repetitive. Could we do it only in postlude?\n\nif you are concerned that that would mean that type Service is no longer a true gRPC service (because it returns non-GRPC errors), then consider making it internal and exposing one func\n\nfunc Service() CrimsonService {\n  return a decorated service that grpcifies and logs each error\n}",
+      "range": {
+        "startLine": 32,
+        "startChar": 14,
+        "endLine": 32,
+        "endChar": 47
+      },
+      "revId": "54915e26e4598d0d30d77c744ceaedb692865839",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
