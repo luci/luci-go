@@ -257,6 +257,24 @@
       "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6fe68ede_279472cb",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T21:23:04Z",
+      "side": 1,
+      "message": "Also, we want to fix Swarming and Buildbucket builds (to make them resemble buildbot builds), but not Buildbot builds (since they\u0027re already \"Fixed\" by virtue of being a buildbot build)",
+      "parentUuid": "da8a635d_df89ad52",
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
