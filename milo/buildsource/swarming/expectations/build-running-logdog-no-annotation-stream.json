@@ -22,7 +22,7 @@
     },
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 0,
+    "Verbosity": 1,
     "Text": null
   },
   "Trigger": {
