@@ -107,17 +107,18 @@ func TestPages(t *testing.T) {
 	}
 
 	Convey("Testing basic rendering.", t, func() {
+		r := &http.Request{URL: &url.URL{Path: "/foobar"}}
 		c := context.Background()
 		c = memory.Use(c)
 		c = withRouterContext(c, &router.Context{
-			Request: &http.Request{URL: &url.URL{Path: "/foobar"}},
+			Request: r,
 		})
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 		c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
 		err := settings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
 		So(err, ShouldBeNil)
-		c = templates.Use(c, getTemplateBundle("appengine/templates"))
+		c = templates.Use(c, getTemplateBundle("appengine/templates"), &templates.Extra{Request: r})
 		for _, p := range allPackages {
 			Convey(fmt.Sprintf("Testing handler %q", p.DisplayName), func() {
 				for _, b := range p.Data() {

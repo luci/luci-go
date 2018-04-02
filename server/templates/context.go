@@ -22,20 +22,34 @@ import (
 	"golang.org/x/net/context"
 )
 
-var errNoBundle = errors.New("templates: context doesn't have templates.Bundle")
+var (
+	errNoBundle = errors.New("templates: context doesn't have templates.Bundle")
+	contextKey  = "templates.Bundle"
+)
 
-type contextKey int
+// boundBundle is stored in the context by Use(...). It lives for a duration of
+// one request and stores extra information about this request.
+type boundBundle struct {
+	*Bundle
+	*Extra
+}
 
 // Use replaces the template bundle in the context. There can be only one bundle
 // installed at any time.
-func Use(c context.Context, b *Bundle) context.Context {
+//
+// It also takes an Extra to be passed to bundle's DefaultArgs(...) callback
+// when using Render(...) or MustRender(...) top-level functions.
+//
+// DefaultArgs(...) can use the context and the given Extra to extract
+// information about the environment.
+func Use(c context.Context, b *Bundle, e *Extra) context.Context {
 	b.EnsureLoaded(c)
-	return context.WithValue(c, contextKey(0), b)
+	return context.WithValue(c, &contextKey, &boundBundle{b, e})
 }
 
 // Get returns template from the currently loaded bundle or error if not found.
 func Get(c context.Context, name string) (*template.Template, error) {
-	if b, _ := c.Value(contextKey(0)).(*Bundle); b != nil {
+	if b, _ := c.Value(&contextKey).(*boundBundle); b != nil {
 		return b.Get(name)
 	}
 	return nil, errNoBundle
@@ -47,8 +61,8 @@ func Get(c context.Context, name string) (*template.Template, error) {
 // It always renders output into a byte buffer, to avoid partial results in case
 // of errors.
 func Render(c context.Context, name string, args Args) ([]byte, error) {
-	if b, _ := c.Value(contextKey(0)).(*Bundle); b != nil {
-		return b.Render(c, name, args)
+	if b, _ := c.Value(&contextKey).(*boundBundle); b != nil {
+		return b.Render(c, b.Extra, name, args)
 	}
 	return nil, errNoBundle
 }
@@ -58,8 +72,8 @@ func Render(c context.Context, name string, args Args) ([]byte, error) {
 // It never writes partial output. It also panics if attempt to write to
 // the output fails.
 func MustRender(c context.Context, out io.Writer, name string, args Args) {
-	if b, _ := c.Value(contextKey(0)).(*Bundle); b != nil {
-		b.MustRender(c, out, name, args)
+	if b, _ := c.Value(&contextKey).(*boundBundle); b != nil {
+		b.MustRender(c, b.Extra, out, name, args)
 		return
 	}
 	panic(errNoBundle)

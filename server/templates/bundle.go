@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net/http"
 	"sync"
 
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 )
 
@@ -86,11 +88,24 @@ type Bundle struct {
 	//
 	// Additional arguments passed to Render will be merged on top of the
 	// default ones. DefaultArgs is called each time Render is called.
-	DefaultArgs func(c context.Context) (Args, error)
+	//
+	// Extra will be whatever is passed to Render(...) or MustRender(...). Usually
+	// (when installing the bundle into the context via WithTemplates(...)
+	// middleware) Extra contains information about the request being processed.
+	DefaultArgs func(c context.Context, e *Extra) (Args, error)
 
 	once      sync.Once
 	templates map[string]*template.Template // result of call to Loader(...)
 	err       error                         // error from Loader, if any
+}
+
+// Extra is passed to DefaultArgs, it contains additional information about the
+// request being processed (usually populated by the middleware).
+//
+// Must be treated as read only.
+type Extra struct {
+	Request *http.Request
+	Params  httprouter.Params
 }
 
 // EnsureLoaded loads all the templates if they haven't been loaded yet.
@@ -122,11 +137,15 @@ func (b *Bundle) Get(name string) (*template.Template, error) {
 // Render finds template with given name and calls its Execute or
 // ExecuteTemplate method (depending on the value of DefaultTemplate).
 //
+// It passes the given context and Extra verbatim to DefaultArgs(...).
+// If DefaultArgs(...) doesn't access either of them, it is fine to pass nil
+// instead.
+//
 // It always renders output into byte buffer, to avoid partial results in case
 // of errors.
 //
 // The bundle must be loaded by this point (via call to EnsureLoaded).
-func (b *Bundle) Render(c context.Context, name string, args Args) ([]byte, error) {
+func (b *Bundle) Render(c context.Context, e *Extra, name string, args Args) ([]byte, error) {
 	templ, err := b.Get(name)
 	if err != nil {
 		return nil, err
@@ -135,7 +154,7 @@ func (b *Bundle) Render(c context.Context, name string, args Args) ([]byte, erro
 	var defArgs Args
 	if b.DefaultArgs != nil {
 		var err error
-		if defArgs, err = b.DefaultArgs(c); err != nil {
+		if defArgs, err = b.DefaultArgs(c, e); err != nil {
 			return nil, err
 		}
 	}
@@ -159,8 +178,8 @@ func (b *Bundle) Render(c context.Context, name string, args Args) ([]byte, erro
 // the output fails.
 //
 // The bundle must be loaded by this point (via call to EnsureLoaded).
-func (b *Bundle) MustRender(c context.Context, out io.Writer, name string, args Args) {
-	blob, err := b.Render(c, name, args)
+func (b *Bundle) MustRender(c context.Context, e *Extra, out io.Writer, name string, args Args) {
+	blob, err := b.Render(c, e, name, args)
 	if err != nil {
 		panic(err)
 	}

@@ -323,7 +323,7 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 		Loader:          templates.FileSystemLoader(templatePath),
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
-		DefaultArgs: func(c context.Context) (templates.Args, error) {
+		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			rc := getRouterContext(c)
 			path := rc.Request.URL.Path
 			loginURL, err := auth.LoginURL(c, path)
@@ -362,6 +362,10 @@ var routerContextKey = "router context"
 
 // withRouterContext returns a context with the router.Context object
 // in it.
+//
+// TODO(vadimsh): Remove. Templates can access the request in DefaultArgs
+// through templates.Extra argument and pRPC handlers shouldn't mess with
+// HTTP layer at all (they should grab UserAgent through RPC metadata API).
 func withRouterContext(c context.Context, r *router.Context) context.Context {
 	return context.WithValue(c, &routerContextKey, r)
 }

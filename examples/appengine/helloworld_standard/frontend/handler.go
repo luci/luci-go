@@ -39,12 +39,12 @@ import (
 var templateBundle = &templates.Bundle{
 	Loader:    templates.FileSystemLoader("templates"),
 	DebugMode: info.IsDevAppServer,
-	DefaultArgs: func(c context.Context) (templates.Args, error) {
-		loginURL, err := auth.LoginURL(c, "/")
+	DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
+		loginURL, err := auth.LoginURL(c, e.Request.URL.RequestURI())
 		if err != nil {
 			return nil, err
 		}
-		logoutURL, err := auth.LogoutURL(c, "/")
+		logoutURL, err := auth.LogoutURL(c, e.Request.URL.RequestURI())
 		if err != nil {
 			return nil, err
 		}
@@ -106,6 +106,7 @@ func init() {
 	r := router.New()
 	standard.InstallHandlers(r)
 	r.GET("/", pageBase(), indexPage)
+	r.GET("/test/*something", pageBase(), indexPage) // to test redirect on login
 
 	var api prpc.Server
 	helloworld.RegisterGreeterServer(&api, &helloworld.DecoratedGreeter{
