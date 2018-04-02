@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2dd383fc_b6869c35",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "ui.MiloBuild.Blame",
+      "range": {
+        "startLine": 120,
+        "startChar": 34,
+        "endLine": 120,
+        "endChar": 42
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8774f92e_760fa454",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "nit: returns",
+      "range": {
+        "startLine": 120,
+        "startChar": 23,
+        "endLine": 120,
+        "endChar": 29
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8048546f_bb95e121",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "this means that we compute blamelist and then throw it away because the true list is longer than what we return.\nThis is a breaking change. I don\u0027t think you intended that.",
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b08f877_8e633bcb",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "no longer accurate here. please rephrase or move to the callsite",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 59
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0102a2f_1df9e8d1",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "there is no mb anymore",
+      "range": {
+        "startLine": 390,
+        "startChar": 54,
+        "endLine": 390,
+        "endChar": 56
+      },
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6a5e9d4_83dd5167",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "what if b was changed after it was Fixed? Fix() will stop working.\nThis behavior is not obvious.\n\nwhy not call Fix() right before sending to HTML template?",
+      "revId": "88717046253caab67501b3e075f0fddd5c78b74a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

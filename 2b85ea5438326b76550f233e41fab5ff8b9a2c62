@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "f01b991f_be7bbb02",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b313c195_215b17a0",
+      "range": {
+        "startLine": 57,
+        "startChar": 20,
+        "endLine": 57,
+        "endChar": 42
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e12194d_f31d9693",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 9
@@ -283,6 +307,30 @@
       "side": 1,
       "message": "Actually properties are derived from annotations, not buildbucket.  This is because BuildBucket strips out source information, which means we lose a significant amount of information.  The goal of this CL is to minimize changes before/after the refactor.",
       "parentUuid": "5a845122_365aea2b",
+      "range": {
+        "startLine": 433,
+        "startChar": 11,
+        "endLine": 433,
+        "endChar": 19
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a17c390f_bad3c29d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-02T20:55:52Z",
+      "side": 1,
+      "message": "ok, we can do it in a separate CL. Buildbucket v2 won\u0027t support property sources.",
+      "parentUuid": "08eae0ae_98ced5da",
       "range": {
         "startLine": 433,
         "startChar": 11,
