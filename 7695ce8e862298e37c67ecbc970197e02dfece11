@@ -210,6 +210,30 @@
       "revId": "7695ce8e862298e37c67ecbc970197e02dfece11",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f16a0210_28812515",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 474,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-02T17:20:33Z",
+      "side": 1,
+      "message": "\"go test\" of many tests when I\u0027m debugging them, but yeah, it\u0027s fine to land since presumably CQ is requires all tests to pass.",
+      "parentUuid": "4762311b_da83ac83",
+      "range": {
+        "startLine": 473,
+        "startChar": 0,
+        "endLine": 474,
+        "endChar": 39
+      },
+      "revId": "7695ce8e862298e37c67ecbc970197e02dfece11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
