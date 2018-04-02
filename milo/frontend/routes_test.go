@@ -61,7 +61,9 @@ var (
 			return swarmingTestdata.BuildTestData(
 				"../buildsource/swarming",
 				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
-					return swarming.SwarmingBuildImpl(c, svc, taskID)
+					build, err := swarming.SwarmingBuildImpl(c, svc, taskID)
+					build.Fix()
+					return build, err
 				})
 		}, "swarming.build", "build.html"},
 		{swarmingTestdata.LogTestData, "swarming.log", "log.html"},
