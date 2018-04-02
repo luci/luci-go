@@ -1,0 +1,52 @@
+[
+    {},
+    {
+    	"id": "1",
+    	"project": "chromium",
+    	"bucket": "luci.chromium.try",
+    	"status": "COMPLETED",
+    	"result": "SUCCESS",
+		"created_by": "johndoe@example.com",
+		"url": "https://example.com"
+    },
+    {
+		"created_ts": "1522360000000000",
+		"started_ts": "1522360010000000",
+		"completed_ts": "1522360030000000",
+		"updated_ts": "1522360030000000"
+    },
+    {
+        "parameters_json": "{\"properties\": {\"a\": 1}}",
+        "result_details_json": "{\"properties\": {\"a\": 2}}"
+    },
+    {
+        "project": "chromium",
+        "bucket": "luci.chromium.try",
+        "tags": [
+            "t1:1",
+            "t1:2",
+            "t2:1",
+            "buildset:commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
+            "buildset:patch/gerrit/chromium-review.googlesource.com/677784/5",
+            "buildset:x",
+            "builder:linux-rel",
+            "build_address:luci.a.b/c/1",
+            "swarming_dimension:d1:dv1",
+            "swarming_dimension:d2:dv2",
+            "swarming_tag:st1:stv1",
+            "swarming_tag:st2:stv2",
+            "swarming_tag:priority:100",
+            "swarming_tag:buildbucket_template_revision:deadbeef"
+        ]
+    },
+    {
+        "result_details_json": "{\"task_result\": {\"bot_dimensions\": [{\"value\": [\"1\", \"2\"], \"key\": \"d1\"}, {\"value\": [\"3\"], \"key\": \"d2\"}]}}"
+    },
+    {
+        "result_details_json": "{\"task_result\": {\"bot_dimensions\": [{\"value\": [\"1\", \"2\"], \"key\": \"d1\"}, {\"value\": [\"3\"], \"key\": \"d2\"}]}}",
+        "tags": [
+            "swarming_dimension:d1:1",
+            "swarming_dimension:d2:3"
+        ]
+    }
+]

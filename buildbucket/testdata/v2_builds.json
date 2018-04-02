@@ -1,0 +1,95 @@
+[
+    {},
+    {
+        "id": 1,
+        "builder": {
+            "project": "chromium",
+            "bucket": "try"
+        },
+        "status": "SUCCESS",
+        "created_by": "johndoe@example.com",
+        "view_url": "https://example.com"
+    },
+    {
+        "create_time": "2018-03-29T21:46:40.000000000Z",
+        "start_time": "2018-03-29T21:46:50.000000000Z",
+        "end_time": "2018-03-29T21:47:10.000000000Z",
+        "update_time": "2018-03-29T21:47:10.000000000Z"
+    },
+    {
+        "input": {
+            "properties": {
+                "a": 1
+            }
+        },
+        "output": {
+            "properties": {
+                "a": 2
+            }
+        }
+    },
+    {
+        "builder": {
+            "project": "chromium",
+            "bucket": "try",
+            "builder": "linux-rel"
+        },
+        "number": 1,
+        "input": {
+            "gitilesCommits": [{
+                "host": "chromium.googlesource.com",
+                "project": "infra/luci/luci-go",
+                "id": "b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
+            }],
+            "gerritChanges": [{
+                "host": "chromium-review.googlesource.com",
+                "change": 677784,
+                "patchset": 5
+            }]
+        },
+        "tags": [
+            {"key": "t1", "value": "1"},
+            {"key": "t1", "value": "2"},
+            {"key": "t2", "value": "1"},
+            {"key": "buildset", "value": "x"}
+        ],
+        "infra": {
+            "buildbucket": {
+                "service_config_revision": "deadbeef"
+            },
+            "swarming": {
+                "task_dimensions": [
+                    {"key": "d1", "value": "dv1"},
+                    {"key": "d2", "value": "dv2"}
+                ],
+                "priority": 100
+            }
+        }
+    },
+    {
+        "infra": {
+            "swarming": {
+                "botDimensions": [
+                    {"key": "d1", "value": "1"},
+                    {"key": "d1", "value": "2"},
+                    {"key": "d2", "value": "3"}
+                ]
+            }
+        }
+    },
+   {
+        "infra": {
+            "swarming": {
+                "botDimensions": [
+                    {"key": "d1", "value": "1"},
+                    {"key": "d1", "value": "2"},
+                    {"key": "d2", "value": "3"}
+                ],
+                "task_dimensions": [
+                    {"key": "d1", "value": "1"},
+                    {"key": "d2", "value": "3"}
+                ]
+            }
+        }
+    }
+]
