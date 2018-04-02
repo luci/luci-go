@@ -48,5 +48,8 @@
             "swarming_dimension:d1:1",
             "swarming_dimension:d2:3"
         ]
+    },
+    {
+        "result_details_json": "{\"ui\": {\"info\": \"everything failed\"}}"
     }
 ]

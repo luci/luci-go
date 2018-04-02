@@ -114,6 +114,9 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 	resultDetails := &struct {
 		Properties json.RawMessage                 `json:"properties"`
 		TaskResult swarming.SwarmingRpcsTaskResult `json:"task_result"`
+		UI         struct {
+			Info string `json:"info"`
+		} `json:"ui"`
 	}{}
 	if msg.ResultDetailsJson != "" {
 		if err = json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(resultDetails); err != nil {
@@ -153,7 +156,9 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		Input: &buildbucketpb.Build_Input{
 			Experimental: msg.Experimental,
 		},
-		Output: &buildbucketpb.Build_Output{},
+		Output: &buildbucketpb.Build_Output{
+			SummaryMarkdown: resultDetails.UI.Info,
+		},
 
 		Infra: &buildbucketpb.BuildInfra{
 			Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{

@@ -91,5 +91,10 @@
                 ]
             }
         }
+    },
+    {
+        "output": {
+            "summaryMarkdown": "everything failed"
+        }
     }
 ]
