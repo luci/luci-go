@@ -32,6 +32,8 @@ import (
 
 // Build is a buildbucket build.
 // It is a more type-safe version of buildbucket.ApiCommonBuildMessage.
+//
+// DEPRECATED: use BuildToV2.
 type Build struct {
 	// fields set at the build creation time, immutable.
 
@@ -152,8 +154,10 @@ type Output struct {
 // json.Number.
 //
 // If an error is returned, the state of b is undefined.
+//
+// DEPRECATED: use BuildToV2.
 func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
-	status, err := ParseStatus(msg)
+	status, err := StatusToV2(msg)
 	if err != nil {
 		return err
 	}
