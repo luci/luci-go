@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0dc9f6d0_ec59dc27",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2eceabf7_903e22aa",
+      "range": {
+        "startLine": 398,
+        "startChar": 17,
+        "endLine": 398,
+        "endChar": 20
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d27a3d5_b466d5d7",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 9
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "b313c195_215b17a0",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "IIUC buildbucket v2 replaces buildinfo for goldeneye",
+      "parentUuid": "6d27a3d5_b466d5d7",
+      "range": {
+        "startLine": 57,
+        "startChar": 20,
+        "endLine": 57,
+        "endChar": 42
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e12194d_f31d9693",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 9
@@ -62,6 +110,24 @@
       "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df9eea01_2bf803d6",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e12194d_f31d9693",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "77d6bdd8_b92cea57",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12c59878_371b66ff",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "85ac6944_b26c648c",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 9
@@ -96,6 +180,24 @@
       "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22d38289_1e996b70",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85ac6944_b26c648c",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -122,6 +224,30 @@
     },
     {
       "key": {
+        "uuid": "79735e04_2f276da7",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 407,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "I didn\u0027t write it, but from what I can tell, mixInSimplisiticBlamelist uses BuildSummary queries in order to find the \"previous\" build, so it kind of makes sense to pass in a BuildSummary.\n\nDeriving BuildSummary from the buildbucket build is a much better idea tho.  Adopted.",
+      "parentUuid": "6450ea5e_ff6e289a",
+      "range": {
+        "startLine": 407,
+        "startChar": 36,
+        "endLine": 407,
+        "endChar": 38
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a845122_365aea2b",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 9
@@ -145,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "08eae0ae_98ced5da",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Actually properties are derived from annotations, not buildbucket.  This is because BuildBucket strips out source information, which means we lose a significant amount of information.  The goal of this CL is to minimize changes before/after the refactor.",
+      "parentUuid": "5a845122_365aea2b",
+      "range": {
+        "startLine": 433,
+        "startChar": 11,
+        "endLine": 433,
+        "endChar": 19
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc2b1469_eae4b00e",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 9
@@ -162,6 +312,24 @@
     },
     {
       "key": {
+        "uuid": "3c903cb6_d266f98a",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Added TODO.",
+      "parentUuid": "dc2b1469_eae4b00e",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "446da75a_a5322874",
         "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
         "patchSetId": 9
@@ -176,6 +344,24 @@
       "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31d5ddb0_0fd4a005",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "moved to SwarmingBuildImpl",
+      "parentUuid": "446da75a_a5322874",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -213,6 +399,24 @@
     },
     {
       "key": {
+        "uuid": "9b3486f9_cfc650f7",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd5dee85_3fec73fe",
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "daa3cd4f_280215a2",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 9
@@ -236,6 +440,30 @@
     },
     {
       "key": {
+        "uuid": "6712f0f8_09515f26",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Used bool for idempotency.",
+      "parentUuid": "daa3cd4f_280215a2",
+      "range": {
+        "startLine": 79,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 66
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3e642f1e_f2cb66f5",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 9
@@ -256,6 +484,30 @@
       "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dc34ccc_b5579992",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-02T20:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e642f1e_f2cb66f5",
+      "range": {
+        "startLine": 84,
+        "startChar": 5,
+        "endLine": 84,
+        "endChar": 6
+      },
+      "revId": "2b85ea5438326b76550f233e41fab5ff8b9a2c62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
