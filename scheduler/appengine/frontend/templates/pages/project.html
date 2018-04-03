@@ -5,6 +5,11 @@
 #jobs-table {
   table-layout: fixed;
 }
+#jobs-table td.long {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
 {{template "job-action-scripts" .}}
 {{end}}
@@ -12,13 +17,21 @@
 {{define "content"}}
 
 <ol class="breadcrumb">
-  <li><a href="/">All projects</a></li>
-  <li class="active"><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></li>
+  <li class="breadcrumb-item"><a href="/">All projects</a></li>
+  <li class="breadcrumb-item active">{{.ProjectID}}</li>
 </ol>
 
 <div class="container">
   <div class="row">
     <div class="col-sm-12">
+      {{if not .Jobs}}
+      <p>
+        No jobs in this project or no READER permission to view them.
+        {{if .IsAnonymous}}
+        You may need to <a href="{{.LoginURL}}">login</a> first.
+        {{end}}
+      </p>
+      {{else}}
       <table class="table" id="jobs-table">
         <thead>
           <tr>
@@ -32,15 +45,16 @@
         <tbody>
         {{range .Jobs }}
           <tr>
-            <td>{{template "job-id-ref" .}}</td>
+            <td class="long">{{template "job-id-ref" .}}</td>
             <td>{{.Schedule}}</td>
             <td><span class="label {{.LabelClass}}">{{.State}}</span></td>
-            <td>{{.NextRun}}</td>
+            <td class="long">{{.NextRun}}</td>
             <td>{{template "job-action-buttons" .}}</td>
           </tr>
         {{end}}
         </tbody>
       </table>
+      {{end}}
     </div>
   </div>
 </div>

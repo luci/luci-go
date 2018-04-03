@@ -15,8 +15,6 @@
 package ui
 
 import (
-	"net/http"
-
 	"go.chromium.org/luci/scheduler/appengine/engine"
 	"go.chromium.org/luci/server/router"
 )
@@ -30,7 +28,7 @@ func jobFromEngine(c *router.Context, projectID, jobName string) *engine.Job {
 	job, err := config(c.Context).Engine.GetVisibleJob(c.Context, projectID+"/"+jobName)
 	switch {
 	case err == engine.ErrNoSuchJob:
-		http.Error(c.Writer, "No such job or no READER permission", http.StatusNotFound)
+		uiErrNoJobOrNoPerm.render(c)
 		return nil
 	case err != nil:
 		panic(err)

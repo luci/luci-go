@@ -16,6 +16,7 @@
 package ui
 
 import (
+	"html/template"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -85,12 +86,22 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 		Loader:          templates.FileSystemLoader(templatesPath),
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
+		FuncMap: template.FuncMap{
+			// Count returns sequential integers in range [0, n] (inclusive).
+			"Count": func(n int) []int {
+				out := make([]int, n+1)
+				for i := range out {
+					out[i] = i
+				}
+				return out
+			},
+		},
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
-			loginURL, err := auth.LoginURL(c, "/")
+			loginURL, err := auth.LoginURL(c, e.Request.URL.RequestURI())
 			if err != nil {
 				return nil, err
 			}
-			logoutURL, err := auth.LogoutURL(c, "/")
+			logoutURL, err := auth.LogoutURL(c, e.Request.URL.RequestURI())
 			if err != nil {
 				return nil, err
 			}

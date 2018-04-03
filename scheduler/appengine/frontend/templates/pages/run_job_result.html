@@ -6,9 +6,9 @@
 {{define "content"}}
 
 <ol class="breadcrumb">
-  <li><a href="/">All projects</a></li>
-  <li><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></li>
-  <li class="active"><a href="/jobs/{{.ProjectID}}/{{.JobName}}">{{.JobName}}</a></li>
+  <li class="breadcrumb-item"><a href="/">All projects</a></li>
+  <li class="breadcrumb-item"><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></li>
+  <li class="breadcrumb-item active">{{.JobName}}</li>
 </ol>
 
 <div class="container">

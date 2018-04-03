@@ -180,6 +180,12 @@ var postInvocationAction = function(btn, action) {
 <a href="/jobs/{{.ProjectID}}/{{.JobName}}">{{.JobName}}</a>
 {{end}}
 
+{{define "job-id-static"}}
+<span class="glyphicon {{.JobFlavorIcon}}" aria-hidden="true" title="{{.JobFlavorTitle}}">
+</span>
+{{.JobName}}
+{{end}}
+
 {{define "triggers-list"}}
 <ul>
   {{range .}}
