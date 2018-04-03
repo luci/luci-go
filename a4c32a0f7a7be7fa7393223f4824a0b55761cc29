@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b3e4e2f0_6c465eec",
+        "filename": "examples/appengine/helloworld_standard/frontend/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-03T00:54:46Z",
+      "side": 1,
+      "message": "personally, I dislike opaque context because I have difficult time remembering how to fetch what i want from it, so i like this. But I\u0027d defer to nodir@ for review of this decision.",
+      "parentUuid": "e248d792_90619646",
+      "range": {
+        "startLine": 42,
+        "startChar": 19,
+        "endLine": 42,
+        "endChar": 56
+      },
+      "revId": "a4c32a0f7a7be7fa7393223f4824a0b55761cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16d9c79d_f44a2997",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 1
@@ -45,6 +69,52 @@
       "revId": "a4c32a0f7a7be7fa7393223f4824a0b55761cc29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4891c28e_d3c6bd23",
+        "filename": "scheduler/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-03T00:54:46Z",
+      "side": 1,
+      "message": "here and elsewhere, why didn\u0027t you change to e.Request.URL.RequestURI() in this CL?",
+      "range": {
+        "startLine": 89,
+        "startChar": 37,
+        "endLine": 89,
+        "endChar": 40
+      },
+      "revId": "a4c32a0f7a7be7fa7393223f4824a0b55761cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c90f68d_05fc2eb1",
+        "filename": "scheduler/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-03T00:54:46Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 93,
+        "startChar": 39,
+        "endLine": 93,
+        "endChar": 42
+      },
+      "revId": "a4c32a0f7a7be7fa7393223f4824a0b55761cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
