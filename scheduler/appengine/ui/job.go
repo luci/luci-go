@@ -145,7 +145,7 @@ func runJobAction(ctx *router.Context) {
 	future, err := e.ForceInvocation(c, job)
 	switch {
 	case err == engine.ErrNoPermission:
-		http.Error(w, "Forbidden", 403)
+		uiErrActionForbidden.render(ctx)
 		return
 	case err != nil:
 		genericReply(err)
@@ -205,7 +205,7 @@ func handleJobAction(c *router.Context, cb func(*engine.Job) error) {
 
 	switch err := cb(job); {
 	case err == engine.ErrNoPermission:
-		http.Error(c.Writer, "Forbidden", 403)
+		uiErrActionForbidden.render(c)
 	case err != nil:
 		panic(err)
 	default:

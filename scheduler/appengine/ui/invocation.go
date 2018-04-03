@@ -30,7 +30,7 @@ func invocationPage(c *router.Context) {
 	jobName := c.Params.ByName("JobName")
 	invID, err := strconv.ParseInt(c.Params.ByName("InvID"), 10, 64)
 	if err != nil {
-		http.Error(c.Writer, "No such invocation", http.StatusNotFound)
+		uiErrBadInvocationID.render(c)
 		return
 	}
 
@@ -42,7 +42,7 @@ func invocationPage(c *router.Context) {
 	inv, err := config(c.Context).Engine.GetInvocation(c.Context, job, invID)
 	switch {
 	case err == engine.ErrNoSuchInvocation:
-		http.Error(c.Writer, "No such invocation", http.StatusNotFound)
+		uiErrNoInvocation.render(c)
 		return
 	case err != nil:
 		panic(err)
@@ -70,7 +70,7 @@ func handleInvAction(c *router.Context, cb func(*engine.Job, int64) error) {
 	invID := c.Params.ByName("InvID")
 	invIDAsInt, err := strconv.ParseInt(invID, 10, 64)
 	if err != nil {
-		http.Error(c.Writer, "Bad invocation ID", 400)
+		uiErrBadInvocationID.render(c)
 		return
 	}
 
@@ -81,7 +81,7 @@ func handleInvAction(c *router.Context, cb func(*engine.Job, int64) error) {
 
 	switch err := cb(job, invIDAsInt); {
 	case err == engine.ErrNoPermission:
-		http.Error(c.Writer, "Forbidden", 403)
+		uiErrActionForbidden.render(c)
 		return
 	case err != nil:
 		panic(err)
