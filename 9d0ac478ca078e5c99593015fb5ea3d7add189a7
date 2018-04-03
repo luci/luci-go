@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c84703f7_a2663680",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-03T23:37:02Z",
+      "side": 0,
+      "message": "The +1 was problematic because it results in the last item sometimes being nil, which the template code did not expect.  Setting size to 0 is less error-prone imo.",
+      "range": {
+        "startLine": 144,
+        "startChar": 42,
+        "endLine": 144,
+        "endChar": 44
+      },
+      "revId": "9d0ac478ca078e5c99593015fb5ea3d7add189a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
