@@ -1,0 +1,35 @@
+{{define "title"}}
+LUCI Scheduler{{range $crumb := .Breadcrumps}} :: {{$crumb}}{{end}}
+{{end}}
+
+{{define "head"}}
+{{end}}
+
+{{define "content"}}
+
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="/">All projects</a>
+  </li>
+  {{range $index, $title := .Breadcrumps }}
+    {{if eq $index $.LastCrumbIdx}}
+    <li class="breadcrumb-item active">{{$title}}</li>
+    {{else}}
+    <li class="breadcrumb-item">
+      <a href="/jobs{{range $i := Count $index}}/{{index $.Breadcrumps $i}}{{end}}">
+        {{$title}}
+      </a>
+    </li>
+    {{end}}
+  {{end}}
+</ol>
+
+<div class="container">
+  <b>{{.Message}}
+  {{if and .ReloginMayHelp .IsAnonymous}}
+  You may need to <a href="{{.LoginURL}}">login</a> first.
+  {{end}}
+  </b>
+</div>
+
+{{end}}
