@@ -9,7 +9,7 @@
   text-decoration: underline !important;
 }
 
-#invocations-table td.text {
+#invocations-table td.long {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -21,9 +21,9 @@
 {{define "content"}}
 
 <ol class="breadcrumb">
-  <li><a href="/">All projects</a></li>
-  <li><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
-  <li class="active">{{template "job-id-ref" .Job}}</li>
+  <li class="breadcrumb-item"><a href="/">All projects</a></li>
+  <li class="breadcrumb-item"><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
+  <li class="breadcrumb-item active">{{template "job-id-static" .Job}}</li>
 </ol>
 
 <div class="container">
@@ -80,7 +80,7 @@
           <tr class="{{.RowClass}}">
             <td><a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}/{{.InvID}}">{{.InvID}}</a></td>
             <td>{{.Started}}</td>
-            <td class="text" title="{{.TriggeredBy}}">{{.TriggeredBy}}</td>
+            <td class="long" title="{{.TriggeredBy}}">{{.TriggeredBy}}</td>
             <td>{{.Duration}}</td>
             <td>
             {{if .ViewURL}}
