@@ -141,9 +141,9 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 	}
 
 	gc := build.GitilesCommit()
-	result := make([]*ui.Commit, len(commits)+1)
-	for i, c := range commits {
-		result[i] = &ui.Commit{
+	result := make([]*ui.Commit, 0, len(commits)+1)
+	for _, c := range commits {
+		commit := &ui.Commit{
 			AuthorName:  c.Author.Name,
 			AuthorEmail: c.Author.Email,
 			Repo:        gc.RepoURL(),
@@ -157,7 +157,8 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 				gc.RepoURL()+"/+/"+c.Id, fmt.Sprintf("commit by %s", c.Author.Email)),
 		}
 
-		result[i].CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
+		commit.CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
+		result = append(result, commit)
 	}
 
 	logging.Infof(c, "Fetched %d commit blamelist from Gitiles", len(result))
