@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
@@ -237,22 +238,11 @@ func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *ui.PropertyGroup {
 	return props
 }
 
-func tagsToMap(tags []string) map[string]string {
-	result := make(map[string]string, len(tags))
-	for _, t := range tags {
-		parts := strings.SplitN(t, ":", 2)
-		if len(parts) == 2 {
-			result[parts[0]] = parts[1]
-		}
-	}
-	return result
-}
-
 // addBuilderLink adds a link to the buildbucket builder view.
-func addBuilderLink(c context.Context, build *ui.MiloBuild, tags map[string]string) {
-	bucket := tags["buildbucket_bucket"]
-	builder := tags["builder"]
-	project := tags["luci_project"]
+func addBuilderLink(c context.Context, build *ui.MiloBuild, tags strpair.Map) {
+	bucket := tags.Get("buildbucket_bucket")
+	builder := tags.Get("builder")
+	project := tags.Get("luci_project")
 	if bucket != "" && builder != "" {
 		build.Summary.ParentLabel = ui.NewLink(
 			builder, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder),
@@ -260,11 +250,11 @@ func addBuilderLink(c context.Context, build *ui.MiloBuild, tags map[string]stri
 	}
 }
 
-// addBanner adds an OS banner derived from "os" swarming tag, if present.
-func addBanner(build *ui.MiloBuild, tags map[string]string) {
-	os := tags["os"]
-	var ver string
+// AddBanner adds an OS banner derived from "os" swarming tag, if present.
+func AddBanner(build *ui.MiloBuild, tags strpair.Map) {
+	os := tags.Get("os")
 	parts := strings.SplitN(os, "-", 2)
+	var ver string
 	if len(parts) == 2 {
 		os = parts[0]
 		ver = parts[1]
@@ -283,7 +273,6 @@ func addBanner(build *ui.MiloBuild, tags map[string]string) {
 	default:
 		return
 	}
-
 	build.Summary.Banner = &ui.LogoBanner{
 		OS: []ui.Logo{{
 			LogoBase: base,
@@ -299,7 +288,7 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 	step.Link = &miloProto.Link{
 		Label: "Task " + sr.TaskId,
 		Value: &miloProto.Link_Url{
-			Url: taskPageURL(host, sr.TaskId).String(),
+			Url: TaskPageURL(host, sr.TaskId).String(),
 		},
 	}
 
@@ -378,8 +367,8 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 	return nil
 }
 
-func addBuildsetInfo(build *ui.MiloBuild, tags map[string]string) {
-	buildset := tags["buildset"]
+func addBuildsetInfo(build *ui.MiloBuild, tags strpair.Map) {
+	buildset := tags.Get("buildset")
 	cl := buildbucketpb.ParseBuildSet(buildset)
 	if cl == nil {
 		return
@@ -394,9 +383,9 @@ func addBuildsetInfo(build *ui.MiloBuild, tags map[string]string) {
 	build.Trigger.Changelist = link
 }
 
-func addRecipeLink(build *ui.MiloBuild, tags map[string]string) {
-	name := tags["recipe_name"]
-	repoURL := tags["recipe_repository"]
+func AddRecipeLink(build *ui.MiloBuild, tags strpair.Map) {
+	name := tags.Get("recipe_name")
+	repoURL := tags.Get("recipe_repository")
 	if name == "" || repoURL == "" {
 		return
 	}
@@ -415,8 +404,8 @@ func addRecipeLink(build *ui.MiloBuild, tags map[string]string) {
 }
 
 // addProjectInfo adds the luci_project swarming tag to the build.
-func addProjectInfo(build *ui.MiloBuild, tags map[string]string) {
-	if proj, ok := tags["luci_project"]; ok {
+func AddProjectInfo(build *ui.MiloBuild, tags strpair.Map) {
+	if proj := tags.Get("luci_project"); proj != "" {
 		if build.Trigger == nil {
 			build.Trigger = &ui.Trigger{}
 		}
@@ -437,20 +426,20 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 	build.Summary.Label = ui.NewEmptyLink(sr.TaskId)
 	build.Summary.Type = ui.Recipe
 	build.Summary.Source = ui.NewLink(
-		"Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String(),
+		"Task "+sr.TaskId, TaskPageURL(host, sr.TaskId).String(),
 		fmt.Sprintf("swarming task %s", sr.TaskId))
 
 	// Extract more swarming specific information into the properties.
 	if props := taskProperties(sr); len(props.Property) > 0 {
 		build.PropertyGroup = append(build.PropertyGroup, props)
 	}
-	tags := tagsToMap(sr.Tags)
+	tags := strpair.ParseMap(sr.Tags)
 
 	addBuildsetInfo(build, tags)
-	addBanner(build, tags)
+	AddBanner(build, tags)
 	addBuilderLink(c, build, tags)
-	addRecipeLink(build, tags)
-	addProjectInfo(build, tags)
+	AddRecipeLink(build, tags)
+	AddProjectInfo(build, tags)
 	addPendingTiming(c, build, sr)
 
 	// Add a link to the bot.
@@ -584,9 +573,22 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 		return nil, err
 	}
 	rawpresentation.AddLogDogToBuild(c, ub, step, &build)
+	addFailureSummary(&build)
 
 	err := addTaskToBuild(c, taskURL.Host, fr.res, &build)
 	return &build, err
+}
+
+// addFailureSummary adds failure summary information to the main status,
+// derivied from individual steps.
+func addFailureSummary(b *ui.MiloBuild) {
+	for _, comp := range b.Components {
+		// Add interesting information into the main summary text.
+		if comp.Status != model.Success {
+			b.Summary.Text = append(
+				b.Summary.Text, fmt.Sprintf("%s %s", comp.Status, comp.Label))
+		}
+	}
 }
 
 // SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuild
@@ -602,7 +604,7 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 	// Legacy codepath - Annotations are encoded in the swarming log instead of LogDog.
 	// TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
 	if logDogStreamAddr == nil {
-		taskURL := taskPageURL(svc.GetHost(), taskID)
+		taskURL := TaskPageURL(svc.GetHost(), taskID)
 		return buildFromLogs(c, taskURL, fr)
 	}
 
@@ -655,6 +657,7 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 		// Milo Resp Build += Milo Step Proto.
 		if step != nil {
 			rawpresentation.AddLogDogToBuild(c, ub, step, &build)
+			addFailureSummary(&build)
 		}
 	}
 
@@ -704,9 +707,9 @@ func isAllowed(c context.Context, tags []string) bool {
 	return false
 }
 
-// taskPageURL returns a URL to a human-consumable page of a swarming task.
+// TaskPageURL returns a URL to a human-consumable page of a swarming task.
 // Supports host aliases.
-func taskPageURL(swarmingHostname, taskID string) *url.URL {
+func TaskPageURL(swarmingHostname, taskID string) *url.URL {
 	val := url.Values{}
 	val.Set("id", taskID)
 	val.Set("show_raw", "1")
@@ -823,7 +826,11 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 		return nil, err
 	}
 
-	return SwarmingBuildImpl(c, sf, b.TaskID)
+	mb, err := SwarmingBuildImpl(c, sf, b.TaskID)
+	if err != nil {
+		return nil, err
+	}
+	return mb, nil
 }
 
 // GetLog implements buildsource.ID
