@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97a33546_26799bc7",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-03T23:56:45Z",
+      "side": 1,
+      "message": "using .RequestURI() instead of just .Path preserves ?query\u003darguments.",
+      "range": {
+        "startLine": 327,
+        "startChar": 50,
+        "endLine": 327,
+        "endChar": 63
+      },
+      "revId": "849650591e6b30474b87bdb9c4a81494d31808c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cba7efae_160e9b31",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-03T23:56:45Z",
+      "side": 0,
+      "message": "pRPC handlers shouldn\u0027t generally assume HTTP environment (since it will be inaccessible if we switch to gRPC).",
+      "range": {
+        "startLine": 224,
+        "startChar": 70,
+        "endLine": 224,
+        "endChar": 109
+      },
+      "revId": "9d0ac478ca078e5c99593015fb5ea3d7add189a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
