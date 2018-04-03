@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4204bf24_ca02e23f",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-03T15:42:46Z",
+      "side": 1,
+      "message": "maybe +1 because we may add an artificial commit",
+      "range": {
+        "startLine": 144,
+        "startChar": 42,
+        "endLine": 144,
+        "endChar": 43
+      },
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "524e9eb1_034352c9",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-03T15:42:46Z",
+      "side": 1,
+      "message": "please do this before adding an artificial ui.Commit",
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5c66a53_4ab73137",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-03T15:42:46Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 289,
+        "startChar": 31,
+        "endLine": 289,
+        "endChar": 33
+      },
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae147e84_9c040cb9",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 834,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-03T15:42:46Z",
+      "side": 1,
+      "message": "why does it have to be here?",
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb0fbdee_63980859",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-03T15:42:46Z",
+      "side": 1,
+      "message": "what about verbosity for sub-components? should we try to fix it if it is green but verbosity is Normal?",
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
