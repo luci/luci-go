@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9b9af83d_e77343b7",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-03T23:06:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4204bf24_ca02e23f",
+      "range": {
+        "startLine": 144,
+        "startChar": 42,
+        "endLine": 144,
+        "endChar": 43
+      },
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "524e9eb1_034352c9",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 16
@@ -39,6 +63,24 @@
       "revId": "710ef8ac5182399248224874097301045346a246",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bd89d81_9f905d28",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-03T23:06:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "524e9eb1_034352c9",
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "fc61f593_9c560848",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-03T23:06:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5c66a53_4ab73137",
+      "range": {
+        "startLine": 289,
+        "startChar": 31,
+        "endLine": 289,
+        "endChar": 33
+      },
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae147e84_9c040cb9",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 16
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "32dc58fe_8cd1f8c3",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 834,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-03T23:06:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae147e84_9c040cb9",
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bb0fbdee_63980859",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 16
@@ -96,6 +180,24 @@
       "revId": "710ef8ac5182399248224874097301045346a246",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29f4cb6a_27ad962b",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-03T23:06:49Z",
+      "side": 1,
+      "message": "Verbosity of sub-components is already done elsewhere.  Only fixed here since the refactoring removed it for the summary.",
+      "parentUuid": "bb0fbdee_63980859",
+      "revId": "710ef8ac5182399248224874097301045346a246",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
