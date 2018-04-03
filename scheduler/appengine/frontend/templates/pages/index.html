@@ -5,6 +5,11 @@
 #jobs-table {
   table-layout: fixed;
 }
+#jobs-table td.long {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
 {{template "job-action-scripts" .}}
 {{end}}
@@ -12,7 +17,7 @@
 {{define "content"}}
 
 <ol class="breadcrumb">
-  <li class="active"><a href="/">All projects</a></li>
+  <li class="breadcrumb-item active">All projects</li>
 </ol>
 
 <div class="container">
@@ -22,8 +27,8 @@
         <thead>
           <tr>
             <th style="width: 180px;">Project</th>
-            <th style="width: 300px;">Job</th>
-            <th style="width: 200px;">Schedule</th>
+            <th style="width: 340px;">Job</th>
+            <th style="width: 180px;">Schedule</th>
             <th style="width: 120px;">State</th>
             <th>Next run</th>
             <th>Actions</th>
@@ -33,10 +38,10 @@
         {{range .Jobs }}
           <tr>
             <td><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></td>
-            <td>{{template "job-id-ref" .}}</td>
+            <td class="long">{{template "job-id-ref" .}}</td>
             <td>{{.Schedule}}</td>
             <td><span class="label {{.LabelClass}}">{{.State}}</span></td>
-            <td>{{.NextRun}}</td>
+            <td class="long">{{.NextRun}}</td>
             <td>{{template "job-action-buttons" .}}</td>
           </tr>
         {{end}}

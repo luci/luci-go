@@ -17,10 +17,10 @@
 {{define "content"}}
 
 <ol class="breadcrumb">
-  <li><a href="/">All projects</a></li>
-  <li><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
-  <li>{{template "job-id-ref" .Job}}</li>
-  <li class="active"><a href="/jobs/{{.Job.ProjectID}}/{{.Job.JobName}}/{{.Inv.InvID}}">{{.Inv.InvID}}</a></li>
+  <li class="breadcrumb-item"><a href="/">All projects</a></li>
+  <li class="breadcrumb-item"><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
+  <li class="breadcrumb-item">{{template "job-id-ref" .Job}}</li>
+  <li class="breadcrumb-item active">{{.Inv.InvID}}</li>
 </ol>
 
 <div class="container">
