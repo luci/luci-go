@@ -324,19 +324,17 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
-			rc := getRouterContext(c)
-			path := rc.Request.URL.Path
-			loginURL, err := auth.LoginURL(c, path)
+			loginURL, err := auth.LoginURL(c, e.Request.URL.RequestURI())
 			if err != nil {
 				return nil, err
 			}
-			logoutURL, err := auth.LogoutURL(c, path)
+			logoutURL, err := auth.LogoutURL(c, e.Request.URL.RequestURI())
 			if err != nil {
 				return nil, err
 			}
 
-			project := rc.Params.ByName("project")
-			group := rc.Params.ByName("group")
+			project := e.Params.ByName("project")
+			group := e.Params.ByName("group")
 
 			return templates.Args{
 				"AppVersion":  strings.Split(info.VersionID(c), ".")[0],
@@ -347,35 +345,13 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 				"CurrentTime": clock.Now(c),
 				"Analytics":   analytics.Snippet(c),
 				"RequestID":   info.RequestID(c),
-				"Request":     rc.Request,
+				"Request":     e.Request,
 				"Navi":        ProjectLinks(project, group),
 				"ProjectID":   project,
 			}, nil
 		},
 		FuncMap: funcMap,
 	}
-}
-
-// A context key used to insert a *router.Context into
-// a context.Context.
-var routerContextKey = "router context"
-
-// withRouterContext returns a context with the router.Context object
-// in it.
-//
-// TODO(vadimsh): Remove. Templates can access the request in DefaultArgs
-// through templates.Extra argument and pRPC handlers shouldn't mess with
-// HTTP layer at all (they should grab UserAgent through RPC metadata API).
-func withRouterContext(c context.Context, r *router.Context) context.Context {
-	return context.WithValue(c, &routerContextKey, r)
-}
-
-// withRouterContextMiddleware is a middleware that installs a router context
-// into the context.
-// This is used for various things in the default template.
-func withRouterContextMiddleware(c *router.Context, next router.Handler) {
-	c.Context = withRouterContext(c.Context, c)
-	next(c)
 }
 
 // withGitilesMiddleware is a middleware that installs a prod Gitiles client
@@ -398,13 +374,6 @@ func withAccessClientMiddleware(c *router.Context, next router.Handler) {
 	}
 	c.Context = common.WithAccessClient(c.Context, client)
 	next(c)
-}
-
-func getRouterContext(c context.Context) *router.Context {
-	if rc, ok := c.Value(&routerContextKey).(*router.Context); ok {
-		return rc
-	}
-	panic("No http.request found in context")
 }
 
 // projectACLMiddleware adds ACL checks on a per-project basis.

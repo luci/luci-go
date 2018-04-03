@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
@@ -52,7 +53,7 @@ func Run(templatePath string) {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	baseMW := standard.Base().Extend(withRouterContextMiddleware, withGitilesMiddleware)
+	baseMW := standard.Base().Extend(withGitilesMiddleware)
 	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute), withAccessClientMiddleware)
 	htmlMW := frontendMW.Extend(
 		auth.Authenticate(server.CookieAuth),
@@ -221,7 +222,13 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 		GetExcludeDeprecated() bool
 	})
 	if ok && !deprecatable.GetExcludeDeprecated() {
-		logging.Warningf(c, "user agent %q might be using deprecated API!", getRouterContext(c).Request.UserAgent())
+		ua := "-"
+		if md, ok := metadata.FromIncomingContext(c); ok {
+			if m := md["user-agent"]; len(m) > 0 {
+				ua = m[0]
+			}
+		}
+		logging.Warningf(c, "user agent %q might be using deprecated API!", ua)
 	}
 
 	c = buildstore.WithEmulation(c, true)
