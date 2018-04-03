@@ -33,7 +33,7 @@
     "Text": null
   },
   "Trigger": null,
-  "Components": null,
+  "Components": [],
   "PropertyGroup": [
     {
       "GroupName": "Main",

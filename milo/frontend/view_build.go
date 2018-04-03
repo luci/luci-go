@@ -20,6 +20,7 @@ func BuildHandler(c *router.Context, buildID buildsource.ID) error {
 	if err != nil {
 		return err
 	}
+	build.Fix()
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"Build": build,
 	})
