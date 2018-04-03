@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39a9901e_189bfc33",
+        "filename": "scheduler/appengine/ui/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-03T22:17:27Z",
+      "side": 1,
+      "message": "8",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "ba1dccb0290ddc4f3fdda6381d824355395d80b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02346c5e_9f497991",
+        "filename": "scheduler/appengine/ui/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-03T22:17:27Z",
+      "side": 1,
+      "message": "above?",
+      "range": {
+        "startLine": 53,
+        "startChar": 49,
+        "endLine": 53,
+        "endChar": 54
+      },
+      "revId": "ba1dccb0290ddc4f3fdda6381d824355395d80b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
