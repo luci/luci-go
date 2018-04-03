@@ -95,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "34ffcf98_9a9c79d3",
+        "filename": "scheduler/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-03T01:03:47Z",
+      "side": 1,
+      "message": "To make the CL more focused. There\u0027ll be scheduler-specific CL next (it fixes few more related UI issues).",
+      "parentUuid": "4891c28e_d3c6bd23",
+      "range": {
+        "startLine": 89,
+        "startChar": 37,
+        "endLine": 89,
+        "endChar": 40
+      },
+      "revId": "a4c32a0f7a7be7fa7393223f4824a0b55761cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6c90f68d_05fc2eb1",
         "filename": "scheduler/appengine/ui/common.go",
         "patchSetId": 1
