@@ -87,6 +87,7 @@ func GetByAddress(c context.Context, client *Service, address string) (*ApiCommo
 	msgs, err := client.Search().
 		Context(c).
 		Tag(strpair.Format(TagBuildAddress, address)).
+		IncludeExperimental(true).
 		Fetch(1, nil)
 	switch {
 	case err != nil:
