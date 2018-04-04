@@ -79,6 +79,8 @@ const (
 	TaskBotDied = "BOT_DIED"
 	// TaskCanceled means the task was canceled. See CompletedTs to determine whether it was started.
 	TaskCanceled = "CANCELED"
+	// TaskKill means the task was canceled. See CompletedTs to determine whether it was started.
+	TaskKilled = "KILLED"
 	// TaskCompleted means task is complete.
 	TaskCompleted = "COMPLETED"
 )
@@ -204,7 +206,7 @@ func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req sw
 
 	if logErr != nil {
 		switch fr.res.State {
-		case TaskCompleted, TaskRunning, TaskCanceled:
+		case TaskCompleted, TaskRunning, TaskCanceled, TaskKilled:
 		default:
 			//  Ignore log errors if the task might be pending, timed out, expired, etc.
 			if err != nil {
@@ -320,7 +322,7 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 			}
 		}
 
-	case TaskCanceled:
+	case TaskCanceled, TaskKilled:
 		// Cancelled build is user action, so it is not an infra failure.
 		step.Status = miloProto.Status_FAILURE
 		step.FailureDetails = &miloProto.FailureDetails{
@@ -516,7 +518,7 @@ func swarmingFetchMaybeLogs(c context.Context, svc SwarmingService, taskID strin
 			case TaskPending, TaskExpired:
 				return false
 
-			case TaskCanceled:
+			case TaskCanceled, TaskKilled:
 				// If the task wasn't created, then it wasn't started.
 				if res.CreatedTs == "" {
 					return false
