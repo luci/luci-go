@@ -60,7 +60,7 @@ func (c *GetPlatformsCmd) Run(app subcommands.Application, args []string, env su
 // getPlatformsCmd returns a command to get platforms.
 func getPlatformsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-platforms [-name <name>]... [-man <man>]...",
+		UsageLine: "get-platforms [-name <name>]... [-man <manufacturer>]...",
 		ShortDesc: "retrieves platforms",
 		LongDesc:  "Retrieves platforms matching the given names, or all platforms if names and manufacturers are omitted.",
 		CommandRun: func() subcommands.CommandRun {

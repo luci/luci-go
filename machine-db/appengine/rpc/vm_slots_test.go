@@ -34,16 +34,7 @@ func TestFindVMSlots(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		selectStmt := `
-			^SELECT h.name, h.vlan_id, p.vm_slots - COUNT\(v.physical_host_id\)
-			FROM \(physical_hosts p, hostnames h\)
-			LEFT JOIN vms v on v.physical_host_id = p.id
-			WHERE p.hostname_id = h.id AND p.vm_slots > 0
-			GROUP BY h.name, h.vlan_id, p.vm_slots
-			HAVING p.vm_slots > COUNT\(v.physical_host_id\)
-			LIMIT \?$
-		`
-		columns := []string{"h.name", "h.vlan_id", "p.vm_slots - COUNT(v.physical_host_id)"}
+		columns := []string{"h.name", "h.vlan_id", "ph.vm_slots - COUNT(v.physical_host_id)"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("unspecified slots", func() {
@@ -75,10 +66,19 @@ func TestFindVMSlots(t *testing.T) {
 		})
 
 		Convey("query failed", func() {
+			selectStmt := `
+				^SELECT h.name, h.vlan_id, ph.vm_slots - COUNT\(v.physical_host_id\)
+				FROM \(physical_hosts ph, hostnames h\)
+				LEFT JOIN vms v on v.physical_host_id = ph.id
+				WHERE ph.hostname_id = h.id AND ph.vm_slots > 0
+				GROUP BY h.name, h.vlan_id, ph.vm_slots
+				HAVING ph.vm_slots > COUNT\(v.physical_host_id\)
+				LIMIT 5$
+			`
 			req := &crimson.FindVMSlotsRequest{
 				Slots: 5,
 			}
-			m.ExpectQuery(selectStmt).WithArgs(req.Slots).WillReturnError(fmt.Errorf("error"))
+			m.ExpectQuery(selectStmt).WithArgs().WillReturnError(fmt.Errorf("error"))
 			hosts, err := findVMSlots(c, db, req)
 			So(err, ShouldErrLike, "Internal server error")
 			So(hosts, ShouldBeEmpty)
@@ -86,10 +86,19 @@ func TestFindVMSlots(t *testing.T) {
 		})
 
 		Convey("empty", func() {
+			selectStmt := `
+				^SELECT h.name, h.vlan_id, ph.vm_slots - COUNT\(v.physical_host_id\)
+				FROM \(physical_hosts ph, hostnames h\)
+				LEFT JOIN vms v on v.physical_host_id = ph.id
+				WHERE ph.hostname_id = h.id AND ph.vm_slots > 0
+				GROUP BY h.name, h.vlan_id, ph.vm_slots
+				HAVING ph.vm_slots > COUNT\(v.physical_host_id\)
+				LIMIT 5$
+			`
 			req := &crimson.FindVMSlotsRequest{
 				Slots: 5,
 			}
-			m.ExpectQuery(selectStmt).WithArgs(req.Slots).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs().WillReturnRows(rows)
 			hosts, err := findVMSlots(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldBeEmpty)
@@ -97,13 +106,22 @@ func TestFindVMSlots(t *testing.T) {
 		})
 
 		Convey("extra slots", func() {
+			selectStmt := `
+				^SELECT h.name, h.vlan_id, ph.vm_slots - COUNT\(v.physical_host_id\)
+				FROM \(physical_hosts ph, hostnames h\)
+				LEFT JOIN vms v on v.physical_host_id = ph.id
+				WHERE ph.hostname_id = h.id AND ph.vm_slots > 0
+				GROUP BY h.name, h.vlan_id, ph.vm_slots
+				HAVING ph.vm_slots > COUNT\(v.physical_host_id\)
+				LIMIT 5$
+			`
 			req := &crimson.FindVMSlotsRequest{
 				Slots: 5,
 			}
 			rows.AddRow("host-1", 1, 1)
 			rows.AddRow("host-2", 1, 7)
 			rows.AddRow("host-3", 1, 3)
-			m.ExpectQuery(selectStmt).WithArgs(req.Slots).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs().WillReturnRows(rows)
 			hosts, err := findVMSlots(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
@@ -121,13 +139,58 @@ func TestFindVMSlots(t *testing.T) {
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
+		Convey("manufacturer", func() {
+			selectStmt := `
+				^SELECT h.name, h.vlan_id, ph.vm_slots - COUNT\(v.physical_host_id\)
+				FROM \(physical_hosts ph, hostnames h\)
+				JOIN machines m ON ph.machine_id = m.id
+				JOIN platforms pl ON m.platform_id = pl.id
+				LEFT JOIN vms v on v.physical_host_id = ph.id
+				WHERE ph.hostname_id = h.id AND ph.vm_slots > 0 AND pl.manufacturer IN \(\?\)
+				GROUP BY h.name, h.vlan_id, ph.vm_slots
+				HAVING ph.vm_slots > COUNT\(v.physical_host_id\)
+				LIMIT 5$
+			`
+			req := &crimson.FindVMSlotsRequest{
+				Manufacturers: []string{"manufacturer"},
+				Slots:         5,
+			}
+			rows.AddRow("host-1", 1, 2)
+			rows.AddRow("host-2", 1, 3)
+			m.ExpectQuery(selectStmt).WithArgs().WillReturnRows(rows)
+			hosts, err := findVMSlots(c, db, req)
+			So(err, ShouldBeNil)
+			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
+				{
+					Name:    "host-1",
+					Vlan:    1,
+					VmSlots: 2,
+				},
+				{
+					Name:    "host-2",
+					Vlan:    1,
+					VmSlots: 3,
+				},
+			})
+			So(m.ExpectationsWereMet(), ShouldBeNil)
+		})
+
 		Convey("ok", func() {
+			selectStmt := `
+				^SELECT h.name, h.vlan_id, ph.vm_slots - COUNT\(v.physical_host_id\)
+				FROM \(physical_hosts ph, hostnames h\)
+				LEFT JOIN vms v on v.physical_host_id = ph.id
+				WHERE ph.hostname_id = h.id AND ph.vm_slots > 0
+				GROUP BY h.name, h.vlan_id, ph.vm_slots
+				HAVING ph.vm_slots > COUNT\(v.physical_host_id\)
+				LIMIT 5$
+			`
 			req := &crimson.FindVMSlotsRequest{
 				Slots: 5,
 			}
 			rows.AddRow("host-1", 1, 2)
 			rows.AddRow("host-2", 1, 3)
-			m.ExpectQuery(selectStmt).WithArgs(req.Slots).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs().WillReturnRows(rows)
 			hosts, err := findVMSlots(c, db, req)
 			So(err, ShouldBeNil)
 			So(hosts, ShouldResemble, []*crimson.PhysicalHost{
