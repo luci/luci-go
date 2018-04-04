@@ -445,7 +445,7 @@ div.BuildWaterfall {
   border-color: #4F8530;
 }
 
-.failure, .status-Failure, .tree-status-closed {
+.failure, .status-Failure, .status-Cancelled, .tree-status-closed {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
