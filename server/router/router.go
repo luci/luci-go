@@ -36,10 +36,11 @@ type Router struct {
 // Context contains the context, response writer, request, and params shared
 // across Middleware and Handler functions.
 type Context struct {
-	Context context.Context
-	Writer  http.ResponseWriter
-	Request *http.Request
-	Params  httprouter.Params
+	Context     context.Context
+	Writer      http.ResponseWriter
+	Request     *http.Request
+	Params      httprouter.Params
+	HandlerPath string // the path with which the handler was registered
 }
 
 var _ http.Handler = (*Router)(nil)
@@ -119,8 +120,9 @@ func (r *Router) DELETE(path string, mc MiddlewareChain, h Handler) {
 // path. len(mc)==0 is allowed. See https://godoc.org/github.com/julienschmidt/httprouter
 // for documentation on how the path may be formatted.
 func (r *Router) Handle(method, path string, mc MiddlewareChain, h Handler) {
-	handle := r.adapt(mc, h)
-	r.hrouter.Handle(method, makeBasePath(r.BasePath, path), handle)
+	p := makeBasePath(r.BasePath, path)
+	handle := r.adapt(mc, h, p)
+	r.hrouter.Handle(method, p, handle)
 }
 
 // ServeHTTP makes Router implement the http.Handler interface.
@@ -140,20 +142,21 @@ func (r *Router) GetParams(method, path string) (httprouter.Params, bool) {
 
 // NotFound sets the handler to be called when no matching route is found.
 func (r *Router) NotFound(mc MiddlewareChain, h Handler) {
-	handle := r.adapt(mc, h)
+	handle := r.adapt(mc, h, "")
 	r.hrouter.NotFound = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		handle(rw, req, nil)
 	})
 }
 
 // adapt adapts given middleware chain and handler into a httprouter-style handle.
-func (r *Router) adapt(mc MiddlewareChain, h Handler) httprouter.Handle {
+func (r *Router) adapt(mc MiddlewareChain, h Handler, path string) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
 		runChains(&Context{
-			Context: r.rootCtx,
-			Writer:  rw,
-			Request: req,
-			Params:  p,
+			Context:     r.rootCtx,
+			Writer:      rw,
+			Request:     req,
+			Params:      p,
+			HandlerPath: path,
 		}, r.middleware, mc, h)
 	})
 }
