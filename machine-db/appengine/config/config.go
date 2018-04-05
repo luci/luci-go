@@ -41,17 +41,18 @@ func importHandler(c *router.Context) {
 // Import fetches, validates, and applies configs from the config service.
 func Import(c context.Context) error {
 	configSet := cfgclient.CurrentServiceConfigSet(c)
-	if err := importDatacenters(c, configSet); err != nil {
-		return errors.Annotate(err, "failed to import datacenters").Err()
-	}
 	if err := importOSes(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import operating systems").Err()
 	}
-	if err := importPlatforms(c, configSet); err != nil {
+	platformIds, err := importPlatforms(c, configSet)
+	if err != nil {
 		return errors.Annotate(err, "failed to import platforms").Err()
 	}
 	if err := importVLANs(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import vlans").Err()
+	}
+	if err := importDatacenters(c, configSet, platformIds); err != nil {
+		return errors.Annotate(err, "failed to import datacenters").Err()
 	}
 	return nil
 }

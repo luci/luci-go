@@ -37,7 +37,7 @@ const datacentersFilename = "datacenters.cfg"
 const switchMaxPorts = 65535
 
 // importDatacenters fetches, validates, and applies datacenter configs.
-func importDatacenters(c context.Context, configSet config.Set) error {
+func importDatacenters(c context.Context, configSet config.Set, platformIds map[string]int64) error {
 	cfg := &configPB.Datacenters{}
 	metadata := &config.Meta{}
 	if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacentersFilename, textproto.Message(cfg), metadata); err != nil {
@@ -82,6 +82,10 @@ func importDatacenters(c context.Context, configSet config.Set) error {
 	err = model.EnsureSwitches(c, datacenters, rackIds)
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure switches").Err()
+	}
+	err = model.EnsureKVMs(c, datacenters, platformIds, rackIds)
+	if err != nil {
+		return errors.Annotate(err, "failed to ensure KVMs").Err()
 	}
 	// TODO(smut): Ensure KVMs.
 	return nil
