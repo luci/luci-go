@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "257a9165_c1977994",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-05T10:00:48Z",
+      "side": 1,
+      "message": "Shouldn\u0027t we use purple color for that instead? It\u0027s more like an infra failure than a build failure.",
+      "range": {
+        "startLine": 450,
+        "startChar": 20,
+        "endLine": 450,
+        "endChar": 24
+      },
+      "revId": "a664d557032fd3fbf506bccdc088095bddbd854a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
