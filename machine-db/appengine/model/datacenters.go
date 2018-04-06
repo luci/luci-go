@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// Datacenter represents a datacenter.
+// Datacenter represents a row in the datacenters table.
 type Datacenter struct {
 	config.Datacenter
 	Id int64
@@ -161,7 +161,7 @@ func (t *DatacentersTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each datacenter from the database. It's more efficient to update the slice of
+	// Remove each datacenter from the table. It's more efficient to update the slice of
 	// datacenters once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
@@ -205,7 +205,7 @@ func (t *DatacentersTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each datacenter in the database. It's more efficient to update the slice of
+	// Update each datacenter in the table. It's more efficient to update the slice of
 	// datacenters once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*Datacenter, len(t.updates))
 	defer func() {

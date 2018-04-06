@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// OS represents an operating system.
+// OS represents a row in the oses table.
 type OS struct {
 	config.OS
 	Id int64
@@ -160,7 +160,7 @@ func (t *OSesTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each operating systems from the database. It's more efficient to update the slice of
+	// Remove each operating system from the table. It's more efficient to update the slice of
 	// operating systems once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
@@ -204,7 +204,7 @@ func (t *OSesTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each operating system in the database. It's more efficient to update the slice of
+	// Update each operating system in the table. It's more efficient to update the slice of
 	// operating systems once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*OS, len(t.updates))
 	defer func() {

@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// Switch represents a switch.
+// Switch represents a row in the switches table.
 type Switch struct {
 	config.Switch
 	RackId int64
@@ -179,7 +179,7 @@ func (t *SwitchesTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each switch from the database. It's more efficient to update the slice of
+	// Remove each switch from the table. It's more efficient to update the slice of
 	// switches once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
@@ -223,7 +223,7 @@ func (t *SwitchesTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each switch in the database. It's more efficient to update the slice of
+	// Update each switch in the table. It's more efficient to update the slice of
 	// switches once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*Switch, len(t.updates))
 	defer func() {

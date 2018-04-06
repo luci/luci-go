@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// Rack represents a rack.
+// Rack represents a row in the racks table.
 type Rack struct {
 	config.Rack
 	DatacenterId int64
@@ -174,7 +174,7 @@ func (t *RacksTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each rack from the database. It's more efficient to update the slice of
+	// Remove each rack from the table. It's more efficient to update the slice of
 	// racks once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
@@ -218,7 +218,7 @@ func (t *RacksTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each rack in the database. It's more efficient to update the slice of
+	// Update each rack in the table. It's more efficient to update the slice of
 	// racks once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*Rack, len(t.updates))
 	defer func() {

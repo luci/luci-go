@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// VLAN represents a VLAN.
+// VLAN represents a row in the vlans table.
 type VLAN struct {
 	config.VLAN
 }
@@ -156,7 +156,7 @@ func (t *VLANsTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each VLANs from the database. It's more efficient to update the slice of
+	// Remove each VLAN from the table. It's more efficient to update the slice of
 	// VLANs once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
@@ -200,7 +200,7 @@ func (t *VLANsTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each VLAN in the database. It's more efficient to update the slice of
+	// Update each VLAN in the table. It's more efficient to update the slice of
 	// VLANs once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*VLAN, len(t.updates))
 	defer func() {

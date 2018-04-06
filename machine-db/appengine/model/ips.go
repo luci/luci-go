@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/machine-db/common"
 )
 
-// IP represents an IP address.
+// IP represents a row in the ips table.
 type IP struct {
 	Id     int64
 	IPv4   common.IPv4
@@ -178,7 +178,7 @@ func (t *IPsTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each IP address from the database. It's more efficient to update the slice of
+	// Remove each IP address from the table. It's more efficient to update the slice of
 	// IP addresses once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
@@ -222,7 +222,7 @@ func (t *IPsTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each IP address in the database. It's more efficient to update the slice of
+	// Update each IP address in the table. It's more efficient to update the slice of
 	// IP addresses once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*IP, len(t.updates))
 	defer func() {

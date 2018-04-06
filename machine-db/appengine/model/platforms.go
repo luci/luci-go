@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
 
-// Platform represents a platform.
+// Platform represents a row in the platforms table.
 type Platform struct {
 	config.Platform
 	Id int64
@@ -161,7 +161,7 @@ func (t *PlatformsTable) remove(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Remove each platforms from the database. It's more efficient to update the slice of
+	// Remove each platform from the table. It's more efficient to update the slice of
 	// platforms once at the end rather than for each removal, so use a defer.
 	removed := make(map[int64]struct{}, len(t.removals))
 	defer func() {
@@ -205,7 +205,7 @@ func (t *PlatformsTable) update(c context.Context) error {
 	}
 	defer stmt.Close()
 
-	// Update each platform in the database. It's more efficient to update the slice of
+	// Update each platform in the table. It's more efficient to update the slice of
 	// platforms once at the end rather than for each update, so use a defer.
 	updated := make(map[int64]*Platform, len(t.updates))
 	defer func() {
