@@ -22,6 +22,30 @@
       "revId": "2cbc5ce5b44affa2b73deb064f6a27f340107575",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c822ccb8_78c8d594",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-06T18:09:53Z",
+      "side": 1,
+      "message": "https://screenshot.googleplex.com/ptckZbyZFWL\n\nSo you\u0027re right.  Just one of those things i\u0027ve never bothered to question in life.",
+      "parentUuid": "03466586_7eeefa82",
+      "range": {
+        "startLine": 9,
+        "startChar": 27,
+        "endLine": 9,
+        "endChar": 29
+      },
+      "revId": "2cbc5ce5b44affa2b73deb064f6a27f340107575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
