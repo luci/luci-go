@@ -39,7 +39,7 @@ func (*Service) ListPlatforms(c context.Context, req *crimson.ListPlatformsReque
 // listPlatforms returns a slice of platforms in the database.
 func listPlatforms(c context.Context, req *crimson.ListPlatformsRequest) ([]*crimson.Platform, error) {
 	stmt := squirrel.Select("name", "description", "manufacturer").From("platforms")
-	stmt = selectInString(stmt, "names", req.Names)
+	stmt = selectInString(stmt, "name", req.Names)
 	stmt = selectInString(stmt, "manufacturer", req.Manufacturers)
 	query, args, err := stmt.ToSql()
 	if err != nil {

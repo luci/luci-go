@@ -41,7 +41,7 @@ func TestListPlatforms(t *testing.T) {
 			selectStmt := `
 				^SELECT name, description, manufacturer
 				FROM platforms
-				WHERE names IN \(\?\)$
+				WHERE name IN \(\?\)$
 			`
 			req := &crimson.ListPlatformsRequest{
 				Names: []string{"platform"},
@@ -70,7 +70,7 @@ func TestListPlatforms(t *testing.T) {
 			selectStmt := `
 				^SELECT name, description, manufacturer
 				FROM platforms
-				WHERE names IN \(\?\)$
+				WHERE name IN \(\?\)$
 			`
 			req := &crimson.ListPlatformsRequest{
 				Names: []string{"platform"},
@@ -86,7 +86,7 @@ func TestListPlatforms(t *testing.T) {
 			selectStmt := `
 				^SELECT name, description, manufacturer
 				FROM platforms
-				WHERE names IN \(\?,\?\)$
+				WHERE name IN \(\?,\?\)$
 			`
 			req := &crimson.ListPlatformsRequest{
 				Names: []string{"platform 1", "platform 2"},
