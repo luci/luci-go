@@ -29,6 +29,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 
@@ -90,16 +91,21 @@ type remoteImpl struct {
 }
 
 func isTemporaryNetError(err error) bool {
+	// net/http.Client seems to be wrapping errors into *url.Error. Unwrap if so.
+	if uerr, ok := err.(*url.Error); ok {
+		err = uerr.Err
+	}
 	// TODO(vadimsh): Figure out how to recognize dial timeouts, read timeouts,
 	// etc. For now all network related errors that end up here are considered
 	// temporary.
 	switch err {
-	case context.Canceled:
+	case context.Canceled, context.DeadlineExceeded:
 		return false
-	case context.DeadlineExceeded:
+	case auth.ErrBadCredentials:
 		return false
+	default:
+		return true
 	}
-	return true
 }
 
 // isTemporaryHTTPError returns true for HTTP status codes that indicate
@@ -157,7 +163,7 @@ func (r *remoteImpl) makeRequest(ctx context.Context, path, method string, reque
 		resp, err := ctxhttp.Do(ctx, r.client, req)
 		if err != nil {
 			if isTemporaryNetError(err) {
-				logWarning("cipd: connectivity error (%s)", err)
+				logWarning("cipd: %s", err)
 				continue
 			}
 			return err
@@ -166,7 +172,7 @@ func (r *remoteImpl) makeRequest(ctx context.Context, path, method string, reque
 		resp.Body.Close()
 		if err != nil {
 			if isTemporaryNetError(err) {
-				logWarning("cipd: temporary error when reading response (%s)", err)
+				logWarning("cipd: error when reading response (%s)", err)
 				continue
 			}
 			return err

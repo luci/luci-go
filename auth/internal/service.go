@@ -89,7 +89,7 @@ func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, 
 	cfg, err := p.jwtConfig(ctx)
 	if err != nil {
 		logging.Errorf(ctx, "Failed to load private key JSON - %s", err)
-		return nil, err
+		return nil, ErrBadCredentials
 	}
 	// PrivateKeyID is optional part of the private key JSON. If not given, use
 	// a digest of the private key itself. This ID is used strictly locally, it
