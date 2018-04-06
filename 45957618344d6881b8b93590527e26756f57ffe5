@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b4a225e_c9260e7a",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-06T19:36:03Z",
+      "side": 1,
+      "message": "nit: this is a bit abstract, doesn\u0027t explain much\n\nmaybe explain that this represents a row in \"kvm\" table or something",
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43e95c02_54f157e4",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-06T19:36:03Z",
+      "side": 1,
+      "message": "this assumes that cfg.Name is unique. Maybe mention the assumption in the function comment",
+      "range": {
+        "startLine": 105,
+        "startChar": 3,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34ad8697_3a77fd7b",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-06T19:36:03Z",
+      "side": 1,
+      "message": "should this part be extracted and reused too? it would be consistent with AssignHostnameAndIP function",
+      "range": {
+        "startLine": 204,
+        "startChar": 1,
+        "endLine": 211,
+        "endChar": 19
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05e36466_43a1c02b",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-06T19:36:03Z",
+      "side": 1,
+      "message": "what about deleting the kvm itself?\n\ncurse of copy pasta",
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38c32603_323ec371",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-06T19:36:03Z",
+      "side": 1,
+      "message": "s/database/t/\n? it should have been removed from the database by now",
+      "range": {
+        "startLine": 213,
+        "startChar": 29,
+        "endLine": 213,
+        "endChar": 37
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "466e4886_9d005fa3",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-06T19:36:03Z",
+      "side": 1,
+      "message": "wrong order",
+      "range": {
+        "startLine": 274,
+        "startChar": 78,
+        "endLine": 274,
+        "endChar": 105
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
