@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a60f6f73_b6a0608e",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-06T22:04:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b4a225e_c9260e7a",
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43e95c02_54f157e4",
         "filename": "machine-db/appengine/model/kvms.go",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2018-04-06T19:36:03Z",
       "side": 1,
       "message": "this assumes that cfg.Name is unique. Maybe mention the assumption in the function comment",
+      "range": {
+        "startLine": 105,
+        "startChar": 3,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5aae6a4b_018f336b",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-06T22:04:23Z",
+      "side": 1,
+      "message": "This is the same assumption in all models/*.go which is documented per entity in api/config/*.proto and enforced at the call site where we call validate* first.",
+      "parentUuid": "43e95c02_54f157e4",
       "range": {
         "startLine": 105,
         "startChar": 3,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "3b92f55b_60f9437e",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-06T22:04:23Z",
+      "side": 1,
+      "message": "It can be extracted, but nothing reuses it. Deleting other kinds of hosts requires two arguments, hostname and VLAN. For KVMs hostname must be globally unique (hostname \u003d\u003d \"machine name\" for KVMs).",
+      "parentUuid": "34ad8697_3a77fd7b",
+      "range": {
+        "startLine": 204,
+        "startChar": 1,
+        "endLine": 211,
+        "endChar": 19
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "05e36466_43a1c02b",
         "filename": "machine-db/appengine/model/kvms.go",
         "patchSetId": 1
@@ -79,6 +145,24 @@
       "revId": "45957618344d6881b8b93590527e26756f57ffe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e08dbc4b_ccded014",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-06T22:04:23Z",
+      "side": 1,
+      "message": "It gets deleted for free because kvms have hostname_id with ON DELETE CASCADE.",
+      "parentUuid": "05e36466_43a1c02b",
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "210f5c4e_186bce8e",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-06T22:04:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38c32603_323ec371",
+      "range": {
+        "startLine": 213,
+        "startChar": 29,
+        "endLine": 213,
+        "endChar": 37
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "466e4886_9d005fa3",
         "filename": "machine-db/appengine/model/kvms.go",
         "patchSetId": 1
@@ -125,6 +233,30 @@
       "revId": "45957618344d6881b8b93590527e26756f57ffe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b482c467_f525df6e",
+        "filename": "machine-db/appengine/model/kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-06T22:04:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "466e4886_9d005fa3",
+      "range": {
+        "startLine": 274,
+        "startChar": 78,
+        "endLine": 274,
+        "endChar": 105
+      },
+      "revId": "45957618344d6881b8b93590527e26756f57ffe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
