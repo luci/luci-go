@@ -290,16 +290,16 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		"Swarming task page for task "+task)
 	// TODO(hinoka): Add in Swarming Bot ID when it is surfaced in buildbucket.
 
+	result.Summary.ParentLabel = ui.NewLink(
+		b.Builder,
+		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
+		fmt.Sprintf("builder %s", b.Builder))
 	if b.Number != nil {
 		numStr := strconv.Itoa(*b.Number)
 		result.Summary.Label = ui.NewLink(
 			numStr,
 			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
 			fmt.Sprintf("build #%s", numStr))
-		result.Summary.ParentLabel = ui.NewLink(
-			b.Builder,
-			fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
-			fmt.Sprintf("builder %s", b.Builder))
 	} else {
 		idStr := strconv.FormatInt(b.ID, 10)
 		result.Summary.Label = ui.NewLink(
