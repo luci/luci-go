@@ -24,7 +24,7 @@ type FindVMSlotsRequest struct {
 func (m *FindVMSlotsRequest) Reset()                    { *m = FindVMSlotsRequest{} }
 func (m *FindVMSlotsRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindVMSlotsRequest) ProtoMessage()               {}
-func (*FindVMSlotsRequest) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{0} }
+func (*FindVMSlotsRequest) Descriptor() ([]byte, []int) { return fileDescriptor14, []int{0} }
 
 func (m *FindVMSlotsRequest) GetSlots() int32 {
 	if m != nil {
@@ -51,7 +51,7 @@ type FindVMSlotsResponse struct {
 func (m *FindVMSlotsResponse) Reset()                    { *m = FindVMSlotsResponse{} }
 func (m *FindVMSlotsResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindVMSlotsResponse) ProtoMessage()               {}
-func (*FindVMSlotsResponse) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{1} }
+func (*FindVMSlotsResponse) Descriptor() ([]byte, []int) { return fileDescriptor14, []int{1} }
 
 func (m *FindVMSlotsResponse) GetHosts() []*PhysicalHost {
 	if m != nil {
@@ -66,10 +66,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vm_slots.proto", fileDescriptor13)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vm_slots.proto", fileDescriptor14)
 }
 
-var fileDescriptor13 = []byte{
+var fileDescriptor14 = []byte{
 	// 213 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x8e, 0xbf, 0x4b, 0xc4, 0x30,
 	0x14, 0x80, 0xa9, 0x47, 0x15, 0x23, 0x2e, 0x51, 0xa1, 0x38, 0x95, 0xc3, 0xa1, 0x20, 0x26, 0xa8,

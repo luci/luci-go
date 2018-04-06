@@ -11,6 +11,7 @@ import "go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto";
+import "go.chromium.org/luci/machine-db/api/crimson/v1/kvms.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto";
 import "go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto";
@@ -28,6 +29,8 @@ service Crimson {
   rpc ListDatacenters(ListDatacentersRequest) returns (ListDatacentersResponse);
   // Lists free IP addresses in the database.
   rpc ListFreeIPs(ListFreeIPsRequest) returns (ListIPsResponse);
+  // Lists KVMs in the database.
+  rpc ListKVMs(ListKVMsRequest) returns (ListKVMsResponse);
   // Lists operating systems in the database.
   rpc ListOSes(ListOSesRequest) returns (ListOSesResponse);
   // Lists platforms in the database.

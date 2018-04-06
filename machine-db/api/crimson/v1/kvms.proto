@@ -1,0 +1,57 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package crimson;
+
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
+
+// A KVM in the database.
+message KVM {
+  // The name of this KVM on the network. Uniquely identifies this KVM.
+  string name = 1;
+  // The VLAN this KVM belongs to.
+  int64 vlan = 2;
+  // The type of platform this KVM is.
+  string platform = 3;
+  // The datacenter this KVM belongs to.
+  string datacenter = 4;
+  // The rack this KVM belongs to.
+  string rack = 5;
+  // A description of this KVM.
+  string description = 6;
+  // The MAC address associated with this KVM.
+  string mac_address = 7;
+  // The IPv4 address associated with this KVM.
+  string ipv4 = 8;
+  // The state of this KVM.
+  common.State state = 9;
+}
+
+// A request to list KVMs in the database.
+message ListKVMsRequest {
+  // The names of KVMs to retrieve.
+  repeated string names = 1;
+  // The VLANs to filter retrieved KVMs on.
+  repeated int64 vlans = 2;
+  // The platforms to filter retrieved KVMs on.
+  repeated string platforms = 3;
+  // The datacenters to filter retrieved KVMs on.
+  repeated string datacenters = 4;
+  // The racks to filter retrieved KVMs on.
+  repeated string racks = 5;
+  // The MAC addresses to filter retrieved KVMs on.
+  repeated string mac_addresses = 6;
+  // The IPv4 addresses to filter retrieved KVMs on.
+  repeated string ipv4s = 7;
+  // The states to filter retrieved KVMs on.
+  repeated common.State states = 8;
+}
+
+// A response containing a list of KVMs in the database.
+message ListKVMsResponse {
+  // The KVMs matching the request.
+  repeated KVM kvms = 1;
+}
