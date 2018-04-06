@@ -54,6 +54,21 @@ func (s *DecoratedCrimson) ListFreeIPs(c context.Context, req *ListFreeIPsReques
 	return
 }
 
+func (s *DecoratedCrimson) ListKVMs(c context.Context, req *ListKVMsRequest) (rsp *ListKVMsResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ListKVMs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ListKVMs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ListKVMs", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedCrimson) ListOSes(c context.Context, req *ListOSesRequest) (rsp *ListOSesResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
