@@ -48,6 +48,15 @@ type State struct {
 	// A disabled cron machine ignores all events except 'Enable'.
 	Enabled bool
 
+	// Generation is increased each time state mutates.
+	//
+	// Monotonic, never resets. Should not be assumed sequential: some calls
+	// mutate the state multiple times during one transition.
+	//
+	// Used to deduplicate StartInvocationAction in case of retries of cron state
+	// transitions.
+	Generation int64
+
 	// LastRewind is a time when the cron machine was restarted last time.
 	//
 	// For relative schedules, it's a time RewindIfNecessary() was called. For
@@ -59,6 +68,14 @@ type State struct {
 	//
 	// It may be scheduled for "distant future" for paused cron machines.
 	LastTick TickLaterAction
+}
+
+// Equal reports whether two structs are equal.
+func (s *State) Equal(o *State) bool {
+	return s.Enabled == o.Enabled &&
+		s.Generation == o.Generation &&
+		s.LastRewind.Equal(o.LastRewind) &&
+		s.LastTick.Equal(&o.LastTick)
 }
 
 // IsSuspended returns true if the cron machine is not waiting for a tick.
@@ -90,6 +107,11 @@ type TickLaterAction struct {
 	TickNonce int64
 }
 
+// Equal reports whether two structs are equal.
+func (a *TickLaterAction) Equal(o *TickLaterAction) bool {
+	return a.TickNonce == o.TickNonce && a.When.Equal(o.When)
+}
+
 // IsAction makes TickLaterAction implement Action interface.
 func (a TickLaterAction) IsAction() bool { return true }
 
@@ -104,7 +126,9 @@ func (a TickLaterAction) IsAction() bool { return true }
 // day") don't need rewinding, they'll start counting time until next invocation
 // automatically. Calling RewindIfNecessary() for them won't hurt though, it
 // will be noop.
-type StartInvocationAction struct{}
+type StartInvocationAction struct {
+	Generation int64 // value of state.Generation when the action was emitted
+}
 
 // IsAction makes StartInvocationAction implement Action interface.
 func (a StartInvocationAction) IsAction() bool { return true }
@@ -132,7 +156,11 @@ type Machine struct {
 // Does nothing if already enabled.
 func (m *Machine) Enable() {
 	if !m.State.Enabled {
-		m.State = State{Enabled: true, LastRewind: m.Now} // reset state
+		m.State = State{
+			Enabled:    true,
+			Generation: m.nextGen(),
+			LastRewind: m.Now,
+		}
 		m.scheduleTick()
 	}
 }
@@ -141,7 +169,7 @@ func (m *Machine) Enable() {
 //
 // The cron machine will ignore any events until Enable is called to turn it on.
 func (m *Machine) Disable() {
-	m.State = State{Enabled: false}
+	m.State = State{Enabled: false, Generation: m.nextGen()}
 }
 
 // RewindIfNecessary is called to restart the cron after it has fired the
@@ -151,6 +179,7 @@ func (m *Machine) Disable() {
 func (m *Machine) RewindIfNecessary() {
 	if m.State.Enabled && m.State.LastTick.When.IsZero() {
 		m.State.LastRewind = m.Now
+		m.State.Generation = m.nextGen()
 		m.scheduleTick()
 	}
 }
@@ -209,7 +238,10 @@ func (m *Machine) OnTimerTick(tickNonce int64) error {
 	}
 
 	// The scheduled time has come!
-	m.Actions = append(m.Actions, StartInvocationAction{})
+	m.State.Generation = m.nextGen()
+	m.Actions = append(m.Actions, StartInvocationAction{
+		Generation: m.State.Generation,
+	})
 	m.State.LastTick = TickLaterAction{}
 
 	// Start waiting for a new tick right away if on an absolute schedule or just
@@ -229,6 +261,7 @@ func (m *Machine) OnTimerTick(tickNonce int64) error {
 func (m *Machine) scheduleTick() {
 	nextTickTime := m.Schedule.Next(m.Now, m.State.LastRewind)
 	if nextTickTime != m.State.LastTick.When {
+		m.State.Generation = m.nextGen()
 		m.State.LastTick = TickLaterAction{
 			When:      nextTickTime,
 			TickNonce: m.Nonce(),
@@ -237,4 +270,11 @@ func (m *Machine) scheduleTick() {
 			m.Actions = append(m.Actions, m.State.LastTick)
 		}
 	}
+}
+
+// nextGen returns the next generation number.
+//
+// It does NOT update Generation in-place, just produces the next number.
+func (m *Machine) nextGen() int64 {
+	return m.State.Generation + 1
 }
