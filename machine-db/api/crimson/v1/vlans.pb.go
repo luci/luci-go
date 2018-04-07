@@ -30,7 +30,7 @@ type VLAN struct {
 func (m *VLAN) Reset()                    { *m = VLAN{} }
 func (m *VLAN) String() string            { return proto.CompactTextString(m) }
 func (*VLAN) ProtoMessage()               {}
-func (*VLAN) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{0} }
+func (*VLAN) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{0} }
 
 func (m *VLAN) GetId() int64 {
 	if m != nil {
@@ -78,7 +78,7 @@ type ListVLANsRequest struct {
 func (m *ListVLANsRequest) Reset()                    { *m = ListVLANsRequest{} }
 func (m *ListVLANsRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListVLANsRequest) ProtoMessage()               {}
-func (*ListVLANsRequest) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{1} }
+func (*ListVLANsRequest) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{1} }
 
 func (m *ListVLANsRequest) GetIds() []int64 {
 	if m != nil {
@@ -103,7 +103,7 @@ type ListVLANsResponse struct {
 func (m *ListVLANsResponse) Reset()                    { *m = ListVLANsResponse{} }
 func (m *ListVLANsResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListVLANsResponse) ProtoMessage()               {}
-func (*ListVLANsResponse) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{2} }
+func (*ListVLANsResponse) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{2} }
 
 func (m *ListVLANsResponse) GetVlans() []*VLAN {
 	if m != nil {
@@ -119,10 +119,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto", fileDescriptor12)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vlans.proto", fileDescriptor13)
 }
 
-var fileDescriptor12 = []byte{
+var fileDescriptor13 = []byte{
 	// 281 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0x41, 0x4b, 0x03, 0x31,
 	0x10, 0x85, 0xd9, 0x6e, 0x6b, 0xe9, 0x14, 0x4b, 0x0d, 0x1e, 0x82, 0x20, 0x2c, 0xf5, 0xb2, 0x17,

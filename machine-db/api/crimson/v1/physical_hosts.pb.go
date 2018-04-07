@@ -40,7 +40,7 @@ type PhysicalHost struct {
 func (m *PhysicalHost) Reset()                    { *m = PhysicalHost{} }
 func (m *PhysicalHost) String() string            { return proto.CompactTextString(m) }
 func (*PhysicalHost) ProtoMessage()               {}
-func (*PhysicalHost) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
+func (*PhysicalHost) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
 
 func (m *PhysicalHost) GetName() string {
 	if m != nil {
@@ -114,7 +114,7 @@ type CreatePhysicalHostRequest struct {
 func (m *CreatePhysicalHostRequest) Reset()                    { *m = CreatePhysicalHostRequest{} }
 func (m *CreatePhysicalHostRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreatePhysicalHostRequest) ProtoMessage()               {}
-func (*CreatePhysicalHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
+func (*CreatePhysicalHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{1} }
 
 func (m *CreatePhysicalHostRequest) GetHost() *PhysicalHost {
 	if m != nil {
@@ -148,7 +148,7 @@ type ListPhysicalHostsRequest struct {
 func (m *ListPhysicalHostsRequest) Reset()                    { *m = ListPhysicalHostsRequest{} }
 func (m *ListPhysicalHostsRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListPhysicalHostsRequest) ProtoMessage()               {}
-func (*ListPhysicalHostsRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
+func (*ListPhysicalHostsRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{2} }
 
 func (m *ListPhysicalHostsRequest) GetNames() []string {
 	if m != nil {
@@ -222,7 +222,7 @@ type ListPhysicalHostsResponse struct {
 func (m *ListPhysicalHostsResponse) Reset()                    { *m = ListPhysicalHostsResponse{} }
 func (m *ListPhysicalHostsResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListPhysicalHostsResponse) ProtoMessage()               {}
-func (*ListPhysicalHostsResponse) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{3} }
+func (*ListPhysicalHostsResponse) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{3} }
 
 func (m *ListPhysicalHostsResponse) GetHosts() []*PhysicalHost {
 	if m != nil {
@@ -242,7 +242,7 @@ type UpdatePhysicalHostRequest struct {
 func (m *UpdatePhysicalHostRequest) Reset()                    { *m = UpdatePhysicalHostRequest{} }
 func (m *UpdatePhysicalHostRequest) String() string            { return proto.CompactTextString(m) }
 func (*UpdatePhysicalHostRequest) ProtoMessage()               {}
-func (*UpdatePhysicalHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{4} }
+func (*UpdatePhysicalHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{4} }
 
 func (m *UpdatePhysicalHostRequest) GetHost() *PhysicalHost {
 	if m != nil {
@@ -267,10 +267,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor8)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor9)
 }
 
-var fileDescriptor8 = []byte{
+var fileDescriptor9 = []byte{
 	// 516 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0xcf, 0x8b, 0x13, 0x4d,
 	0x10, 0x65, 0x66, 0xf2, 0xb3, 0xf2, 0x7d, 0x8b, 0x36, 0x0a, 0x9d, 0xe0, 0x61, 0x88, 0x08, 0x23,
