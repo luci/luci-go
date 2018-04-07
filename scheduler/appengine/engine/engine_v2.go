@@ -19,8 +19,10 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -31,15 +33,24 @@ type jobControllerV2 struct {
 }
 
 func (ctl *jobControllerV2) onJobScheduleChange(c context.Context, job *Job) error {
-	return nil
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		m.OnScheduleChange()
+		return nil
+	})
 }
 
 func (ctl *jobControllerV2) onJobEnabled(c context.Context, job *Job) error {
-	return nil
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		m.Enable()
+		return nil
+	})
 }
 
 func (ctl *jobControllerV2) onJobDisabled(c context.Context, job *Job) error {
-	return nil
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		m.Disable()
+		return nil
+	})
 }
 
 func (ctl *jobControllerV2) onJobAbort(c context.Context, job *Job) (invs []int64, err error) {
@@ -141,6 +152,14 @@ func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocat
 	}
 
 	return ctl.eng.cfg.Dispatcher.AddTask(c, tasks...)
+}
+
+func (ctl *jobControllerV2) onJobCronTick(c context.Context, job *Job, tick *internal.CronTickTask) error {
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		// OnTimerTick returns an error if the tick happened too soon. Mark this
+		// error as transient to trigger task queue retry at a later time.
+		return transient.Tag.Apply(m.OnTimerTick(tick.TickNonce))
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
