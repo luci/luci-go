@@ -33,10 +33,23 @@ message Trigger {
   // Actual trigger data. Its type defines how the trigger will be processed
   // by the Scheduler, see corresponding protos.
   oneof payload {
+    CronTrigger cron = 40;
     NoopTrigger noop = 50;
     GitilesTrigger gitiles = 51;
     BuildbucketTrigger buildbucket = 52;
   }
+}
+
+
+// CronTrigger is used internally by Scheduler to implement periodic jobs.
+//
+// It is emitted by the cron state machines whenever it decides the scheduler
+// should launch the invocation.
+//
+// Note: such triggers can't be scheduled through external Scheduler API. They
+// may appear in the API responses though.
+message CronTrigger {
+  int64 generation = 1; // monotonically increasing number
 }
 
 

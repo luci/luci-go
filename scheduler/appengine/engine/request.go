@@ -72,6 +72,8 @@ func requestFromTriggers(c context.Context, t []*internal.Trigger) task.Request 
 	// Derive properties and tags from the most recent trigger for now.
 	newest := req.IncomingTriggers[len(req.IncomingTriggers)-1]
 	switch p := newest.Payload.(type) {
+	case *internal.Trigger_Cron:
+		req.prepareCronRequest(p.Cron)
 	case *internal.Trigger_Noop:
 		req.prepareNoopRequest(p.Noop)
 	case *internal.Trigger_Gitiles:
@@ -138,6 +140,10 @@ func getRequestFromInv(inv *Invocation) (r task.Request, err error) {
 
 func (r *requestBuilder) debugLog(format string, args ...interface{}) {
 	debugLog(r.ctx, &r.DebugLog, format, args...)
+}
+
+func (r *requestBuilder) prepareCronRequest(t *scheduler.CronTrigger) {
+	// nothing here for now
 }
 
 func (r *requestBuilder) prepareNoopRequest(t *scheduler.NoopTrigger) {
