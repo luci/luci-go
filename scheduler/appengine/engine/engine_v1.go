@@ -86,6 +86,10 @@ func (ctl *jobControllerV1) onJobForceInvocation(c context.Context, job *Job) (F
 	return &nonceFutureInvocation{jobID: job.JobID, nonce: nonce}, nil
 }
 
+func (ctl *jobControllerV1) onJobCronTick(c context.Context, job *Job, tick *internal.CronTickTask) error {
+	panic("must not be called for v1 jobs")
+}
+
 func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocation, timers []*internal.Timer, triggers []*internal.Trigger) error {
 	assertInTransaction(c)
 

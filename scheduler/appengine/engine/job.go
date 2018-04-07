@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
@@ -97,6 +98,11 @@ type Job struct {
 	// Used by v1 jobs only.
 	State JobState
 
+	// Cron holds the state of the cron state machine.
+	//
+	// Used by v2 jobs only.
+	Cron cron.State `gae:",noindex"`
+
 	// ActiveInvocations is ordered set of active invocation IDs.
 	//
 	// It contains IDs of pending, running or recently finished invocations,
@@ -156,6 +162,7 @@ func (e *Job) IsEqual(other *Job) bool {
 		bytes.Equal(e.Task, other.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
 		e.State.Equal(&other.State) &&
+		e.Cron.Equal(&other.Cron) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations))
 }
 
