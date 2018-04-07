@@ -18,8 +18,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMachine(t *testing.T) {
@@ -75,7 +76,7 @@ func TestMachine(t *testing.T) {
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
 		So(err, ShouldBeNil)
 		So(tm.Actions, ShouldResemble, []Action{
-			StartInvocationAction{},
+			StartInvocationAction{Generation: 3},
 			TickLaterAction{
 				When:      parseTime("02:00"),
 				TickNonce: 2,
@@ -130,7 +131,7 @@ func TestMachine(t *testing.T) {
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
 		So(err, ShouldBeNil)
 		So(tm.Actions, ShouldResemble, []Action{
-			StartInvocationAction{},
+			StartInvocationAction{Generation: 3},
 		})
 
 		// Some time later (when invocation has presumably finished), rewind the
@@ -228,7 +229,7 @@ func TestMachine(t *testing.T) {
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
 		So(err, ShouldBeNil)
 		So(tm.Actions, ShouldResemble, []Action{
-			StartInvocationAction{},
+			StartInvocationAction{Generation: 4},
 		})
 
 		// Some time later we switch it to another relative schedule. Nothing
@@ -310,6 +311,20 @@ func TestMachine(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(tm.Actions, ShouldBeNil)
+	})
+
+	Convey("Equals uses time.Equal", t, func() {
+		s1 := State{
+			Enabled:    true,
+			Generation: 123,
+			LastRewind: parseTime("00:15"),
+		}
+		s2 := State{
+			Enabled:    true,
+			Generation: 123,
+			LastRewind: parseTime("00:15").Local(), // same time, different TZ
+		}
+		So(s1.Equal(&s2), ShouldBeTrue)
 	})
 
 	Convey("Petty code coverage", t, func() {
