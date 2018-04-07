@@ -90,7 +90,8 @@ message FanOutTriggersTask {
 
 // EnqueueTriggersTask adds given triggers to a job's pending triggers set.
 //
-// Enqueued non-transactionally.
+// Enqueued non-transactionally (from FanOutTriggersTask) and transactionally
+// (when emitting single trigger from a cron).
 //
 // Queue: "triggers".
 message EnqueueTriggersTask {
@@ -121,4 +122,17 @@ message TimerTask {
   string job_id = 1;
   int64 inv_id = 2;
   timers.Timer timer = 3;
+}
+
+
+// CronTickTask is scheduled based on the job's cron schedule.
+//
+// It is enqueued transactionally when the job changes state (e.g. the job
+// appears for the first time or its schedule changes) or from previous cron
+// ticks.
+//
+// Queue: "crons".
+message CronTickTask {
+  string job_id = 1;
+  int64 tick_nonce = 2; // used to skip no longer interesting ticks
 }

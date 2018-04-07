@@ -19,12 +19,14 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -46,6 +48,9 @@ var errTriagePrepareFail = errors.New("error while fetching sets, see logs", tra
 type triageOp struct {
 	// jobID is ID of the job being examined, must be provided externally.
 	jobID string
+
+	// dispatcher routes task queue tasks.
+	dispatcher *tq.Dispatcher
 
 	// triggeringPolicy decides how to convert a set of pending triggers into
 	// a bunch of new invocations.
@@ -137,10 +142,25 @@ func (op *triageOp) transaction(c context.Context, job *Job) error {
 	}
 	logging.Infof(c, "Active invocations: %v", job.ActiveInvocations)
 
-	// Process pending triggers set by emitting new invocations.
+	// Process pending triggers set by emitting new invocations. Note that this
+	// modifies ActiveInvocations list when emitting invocations.
 	triggersOp, err := op.processTriggers(c, job)
 	if err != nil {
 		return err
+	}
+
+	// If nothing is running anymore, make sure the cron is ticking again. This is
+	// useful for schedules like "with 10min interval" that initiate an invocation
+	// after some time after the previous one finishes. Note that it is no harm
+	// in calling this multiple times.
+	if len(job.ActiveInvocations) == 0 {
+		err := pokeCron(c, job, op.dispatcher, func(m *cron.Machine) error {
+			m.RewindIfNecessary()
+			return nil
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// Submit set modifications. This may produce more garbage that we need to
