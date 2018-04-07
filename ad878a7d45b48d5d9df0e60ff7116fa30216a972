@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "54552ce6_aff8b60f",
+        "filename": "scheduler/api/scheduler/v1/triggers.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-07T03:40:59Z",
+      "side": 1,
+      "message": "This is not really needed, but I was afraid empty structs won\u0027t be handled correctly by \u0027oneof\u0027, esp. in JSON encoding. Having \u0027generation\u0027 here won\u0027t hurt, I think...",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 18
+      },
+      "revId": "ad878a7d45b48d5d9df0e60ff7116fa30216a972",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
