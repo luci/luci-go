@@ -20,6 +20,7 @@ It has these top-level messages:
 	JobState
 	Invocation
 	Trigger
+	CronTrigger
 	NoopTrigger
 	GitilesTrigger
 	BuildbucketTrigger
