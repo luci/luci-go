@@ -60,6 +60,10 @@ func (ctl *jobControllerV1) onJobDisabled(c context.Context, job *Job) error {
 	})
 }
 
+func (ctl *jobControllerV1) onJobCronTick(c context.Context, job *Job, tick *internal.CronTickTask) error {
+	panic("must not be called for v1 jobs")
+}
+
 func (ctl *jobControllerV1) onJobAbort(c context.Context, job *Job) (invs []int64, err error) {
 	err = ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
 		if sm.State.InvocationID != 0 {

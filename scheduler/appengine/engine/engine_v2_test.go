@@ -184,7 +184,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 			{
 				JobID:    "project/job-v2",
 				Revision: "rev1",
-				Schedule: "*/5 * * * * * *",
+				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 				Acls:     aclOne,
 			},
@@ -301,14 +301,14 @@ func TestForceInvocationV2(t *testing.T) {
 			{
 				JobID:    "project/job-v2",
 				Revision: "rev1",
-				Schedule: "*/5 * * * * * *",
+				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 				Acls:     aclOne,
 			},
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const expectedInvID int64 = 9200093523825174512
+			const expectedInvID int64 = 9200093523825193008
 
 			job, err := e.getJob(c, "project/job-v2")
 			So(err, ShouldBeNil)
@@ -431,8 +431,8 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const triggeringInvID int64 = 9200093523825174512
-			const triggeredInvID int64 = 9200093521728243376
+			const triggeringInvID int64 = 9200093523824911856
+			const triggeredInvID int64 = 9200093521728457040
 
 			// Force launch the triggering job.
 			job, err := e.getJob(c, triggeringJob)
@@ -595,7 +595,7 @@ func TestInvocationTimers(t *testing.T) {
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const testInvID int64 = 9200093523825174512
+			const testInvID int64 = 9200093523825193008
 
 			// Force launch the job.
 			job, err := e.getJob(c, testJobID)
