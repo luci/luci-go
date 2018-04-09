@@ -19,8 +19,10 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -31,15 +33,38 @@ type jobControllerV2 struct {
 }
 
 func (ctl *jobControllerV2) onJobScheduleChange(c context.Context, job *Job) error {
-	return nil
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		// TODO(vadimsh): Remove this branch once all jobs are updated to v2. For
+		// now it allows to manually kick start v2 cron by pausing and then
+		// unpausing a job.
+		if job.Enabled {
+			m.Enable()
+		}
+		m.OnScheduleChange()
+		return nil
+	})
 }
 
 func (ctl *jobControllerV2) onJobEnabled(c context.Context, job *Job) error {
-	return nil
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		m.Enable()
+		return nil
+	})
 }
 
 func (ctl *jobControllerV2) onJobDisabled(c context.Context, job *Job) error {
-	return nil
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		m.Disable()
+		return nil
+	})
+}
+
+func (ctl *jobControllerV2) onJobCronTick(c context.Context, job *Job, tick *internal.CronTickTask) error {
+	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+		// OnTimerTick returns an error if the tick happened too soon. Mark this
+		// error as transient to trigger task queue retry at a later time.
+		return transient.Tag.Apply(m.OnTimerTick(tick.TickNonce))
+	})
 }
 
 func (ctl *jobControllerV2) onJobAbort(c context.Context, job *Job) (invs []int64, err error) {
