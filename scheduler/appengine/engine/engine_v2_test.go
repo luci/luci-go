@@ -127,7 +127,7 @@ func TestTriageTaskDedup(t *testing.T) {
 		tq.CreateQueues()
 
 		Convey("single task", func() {
-			So(e.kickTriageJobStateTask(c, "fake/job"), ShouldBeNil)
+			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
 
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
@@ -136,13 +136,13 @@ func TestTriageTaskDedup(t *testing.T) {
 		})
 
 		Convey("a bunch of tasks, deduplicated by hitting memcache", func() {
-			So(e.kickTriageJobStateTask(c, "fake/job"), ShouldBeNil)
+			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(time.Second)
-			So(e.kickTriageJobStateTask(c, "fake/job"), ShouldBeNil)
+			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(900 * time.Millisecond)
-			So(e.kickTriageJobStateTask(c, "fake/job"), ShouldBeNil)
+			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
 
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
@@ -154,13 +154,13 @@ func TestTriageTaskDedup(t *testing.T) {
 			c, fb := featureBreaker.FilterMC(c, fmt.Errorf("omg, memcache error"))
 			fb.BreakFeatures(nil, "GetMulti", "SetMulti")
 
-			So(e.kickTriageJobStateTask(c, "fake/job"), ShouldBeNil)
+			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(time.Second)
-			So(e.kickTriageJobStateTask(c, "fake/job"), ShouldBeNil)
+			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(900 * time.Millisecond)
-			So(e.kickTriageJobStateTask(c, "fake/job"), ShouldBeNil)
+			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
 
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)

@@ -43,6 +43,13 @@ func assertInTransaction(c context.Context) {
 	}
 }
 
+// assertNotInTransaction panics if the context is transactional.
+func assertNotInTransaction(c context.Context) {
+	if datastore.CurrentTransaction(c) != nil {
+		panic("expecting to be called from outside transactions")
+	}
+}
+
 // debugLog mutates a string by appending a line to it.
 func debugLog(c context.Context, str *string, format string, args ...interface{}) {
 	prefix := clock.Now(c).UTC().Format("[15:04:05.000] ")

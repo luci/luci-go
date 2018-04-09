@@ -263,21 +263,22 @@ type engineImpl struct {
 func (e *engineImpl) init() {
 	// TODO(vadimsh): We probably need some non-default retry policies for all
 	// tasks, not just launchInvocationTask.
-	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationsBatchTask{}, e.launchInvocationsBatchTask, "batches", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationTask{}, e.launchInvocationTask, "launches", &taskqueue.RetryOptions{
+	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationsBatchTask{}, e.execLaunchInvocationsBatchTask, "batches", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationTask{}, e.execLaunchInvocationTask, "launches", &taskqueue.RetryOptions{
 		// Give 5 attempts to mark the job as failed. See 'launchInvocationTask'.
 		RetryLimit: invocationRetryLimit + 5,
 		MinBackoff: time.Second,
 		MaxBackoff: maxInvocationRetryBackoff,
 		AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
 	})
-	e.cfg.Dispatcher.RegisterTask(&internal.TriageJobStateTask{}, e.triageJobStateTask, "triages", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.InvocationFinishedTask{}, e.invocationFinishedTask, "completions", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.FanOutTriggersTask{}, e.fanOutTriggersTask, "triggers", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.EnqueueTriggersTask{}, e.enqueueTriggersTask, "triggers", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.ScheduleTimersTask{}, e.scheduleTimersTask, "timers", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.TimerTask{}, e.timerTask, "timers", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.CronTickTask{}, e.cronTickTask, "crons", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.TriageJobStateTask{}, e.execTriageJobStateTask, "triages", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.KickTriageTask{}, e.execKickTriageTask, "triages", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.InvocationFinishedTask{}, e.execInvocationFinishedTask, "completions", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.FanOutTriggersTask{}, e.execFanOutTriggersTask, "triggers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.EnqueueTriggersTask{}, e.execEnqueueTriggersTask, "triggers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.ScheduleTimersTask{}, e.execScheduleTimersTask, "timers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.TimerTask{}, e.execTimerTask, "timers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.CronTickTask{}, e.execCronTickTask, "crons", nil)
 }
 
 // jobController is a part of engine that directly deals with state transitions
@@ -1854,14 +1855,14 @@ func (e *engineImpl) kickLaunchInvocationsBatchTask(c context.Context, jobID str
 	})
 }
 
-// launchInvocationsBatchTask handles LaunchInvocationsBatchTask by fanning out
-// the tasks.
+// execLaunchInvocationsBatchTask handles LaunchInvocationsBatchTask by fanning
+// out the tasks.
 //
 // It is the entry point into starting new invocations. Even if the batch
 // contains only one task, it still MUST come through LaunchInvocationsBatchTask
 // since this is where we "gate" all launches (for example, we can pause the
 // corresponding GAE task queue to shutdown new launches during an emergency).
-func (e *engineImpl) launchInvocationsBatchTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execLaunchInvocationsBatchTask(c context.Context, tqTask proto.Message) error {
 	batch := tqTask.(*internal.LaunchInvocationsBatchTask)
 
 	tasks := []*tq.Task{}
@@ -1875,10 +1876,10 @@ func (e *engineImpl) launchInvocationsBatchTask(c context.Context, tqTask proto.
 	return e.cfg.Dispatcher.AddTask(c, tasks...)
 }
 
-// launchInvocationTask handles LaunchInvocationTask.
+// execLaunchInvocationTask handles LaunchInvocationTask.
 //
 // It can be redelivered a bunch of times in case the invocation fails to start.
-func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execLaunchInvocationTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.LaunchInvocationTask)
 
 	c = logging.SetField(c, "JobID", msg.JobId)
@@ -1961,7 +1962,7 @@ func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Messag
 	return e.launchTask(c, &lastInvState)
 }
 
-// invocationFinishedTask handles invocation completion notification.
+// execInvocationFinishedTask handles invocation completion notification.
 //
 // It is emitted by jobControllerV2.onInvUpdating when invocation switches into
 // a final state.
@@ -1976,7 +1977,7 @@ func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Messag
 //
 // If the invocation emitted some triggers when it was finishing, we route them
 // here as well.
-func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execInvocationFinishedTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.InvocationFinishedTask)
 
 	c = logging.SetField(c, "JobID", msg.JobId)
@@ -1998,7 +1999,7 @@ func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Mess
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if errs[0] = e.kickTriageJobStateTask(c, msg.JobId); errs[0] != nil {
+		if errs[0] = e.kickTriageNow(c, msg.JobId); errs[0] != nil {
 			logging.WithError(errs[0]).Errorf(c, "Failed to kick job triage task")
 		}
 	}()
@@ -2007,7 +2008,7 @@ func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Mess
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if errs[1] = e.fanOutTriggersTask(c, msg.Triggers); errs[1] != nil {
+			if errs[1] = e.execFanOutTriggersTask(c, msg.Triggers); errs[1] != nil {
 				logging.WithError(errs[1]).Errorf(c, "Failed to fan out triggers")
 			}
 		}()
@@ -2025,11 +2026,11 @@ func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Mess
 ////////////////////////////////////////////////////////////////////////////////
 // Triggers handling (v2 engine).
 
-// fanOutTriggersTask handles a batch enqueue of triggers.
+// execFanOutTriggersTask handles a batch enqueue of triggers.
 //
 // It is enqueued transactionally by the invocation, and results in a bunch of
 // non-transactional EnqueueTriggersTask tasks.
-func (e *engineImpl) fanOutTriggersTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execFanOutTriggersTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.FanOutTriggersTask)
 
 	tasks := make([]*tq.Task, len(msg.JobIds))
@@ -2045,9 +2046,9 @@ func (e *engineImpl) fanOutTriggersTask(c context.Context, tqTask proto.Message)
 	return e.cfg.Dispatcher.AddTask(c, tasks...)
 }
 
-// enqueueTriggersTask adds a bunch of triggers to job's pending triggers set
-// and kicks the triage process to process them.
-func (e *engineImpl) enqueueTriggersTask(c context.Context, tqTask proto.Message) error {
+// execEnqueueTriggersTask adds a bunch of triggers to job's pending triggers
+// set and kicks the triage process to process them.
+func (e *engineImpl) execEnqueueTriggersTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.EnqueueTriggersTask)
 
 	c = logging.SetField(c, "JobID", msg.JobId)
@@ -2062,17 +2063,17 @@ func (e *engineImpl) enqueueTriggersTask(c context.Context, tqTask proto.Message
 		return err
 	}
 
-	return e.kickTriageJobStateTask(c, msg.JobId)
+	return e.kickTriageNow(c, msg.JobId)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Timers handling (v2 engine).
 
-// scheduleTimersTask adds a bunch of TimerTask tasks.
+// execScheduleTimersTask adds a bunch of TimerTask tasks.
 //
 // It is emitted by Invocation transaction when it wants to schedule multiple
 // timers.
-func (e *engineImpl) scheduleTimersTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execScheduleTimersTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.ScheduleTimersTask)
 
 	tasks := make([]*tq.Task, len(msg.Timers))
@@ -2090,8 +2091,8 @@ func (e *engineImpl) scheduleTimersTask(c context.Context, tqTask proto.Message)
 	return e.cfg.Dispatcher.AddTask(c, tasks...)
 }
 
-// timerTask corresponds to a tick of a timer added via AddTimer.
-func (e *engineImpl) timerTask(c context.Context, tqTask proto.Message) error {
+// execTimerTask corresponds to a tick of a timer added via AddTimer.
+func (e *engineImpl) execTimerTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.TimerTask)
 	timer := msg.Timer
 	action := fmt.Sprintf("timer %q (%s)", timer.Title, timer.Id)
@@ -2131,10 +2132,11 @@ func (e *engineImpl) timerTask(c context.Context, tqTask proto.Message) error {
 ////////////////////////////////////////////////////////////////////////////////
 // Cron handling (v2 engine).
 
-// cronTickTask corresponds to a delayed tick emitted by a cron state machine.
+// execCronTickTask corresponds to a delayed tick emitted by a cron state
+// machine.
 //
 // See jobTimerTick for (deprecated) v1 equivalent.
-func (e *engineImpl) cronTickTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execCronTickTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.CronTickTask)
 	return e.jobTxn(c, msg.JobId, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
@@ -2149,12 +2151,18 @@ func (e *engineImpl) cronTickTask(c context.Context, tqTask proto.Message) error
 ////////////////////////////////////////////////////////////////////////////////
 // Triage procedure (v2 engine).
 
-// kickTriageJobStateTask enqueues a task to perform a triage for some job, if
-// no such task was enqueued recently.
+// kickTriageNow enqueues a task to perform a triage for some job, if no such
+// task was enqueued recently.
 //
 // Does it even if the job no longer exists or has been disabled. Such triage
 // will just be skipped later.
-func (e *engineImpl) kickTriageJobStateTask(c context.Context, jobID string) error {
+//
+// Uses named tasks and memcache internally, thus can't be part of a
+// transaction. If you want to kick the triage transactionally, use
+// kickTriageLater().
+func (e *engineImpl) kickTriageNow(c context.Context, jobID string) error {
+	assertNotInTransaction(c)
+
 	c = logging.SetField(c, "JobID", jobID)
 
 	// Throttle to once per 2 sec (and make sure it is always in the future).
@@ -2189,13 +2197,30 @@ func (e *engineImpl) kickTriageJobStateTask(c context.Context, jobID string) err
 	return nil
 }
 
-// triageJobStateTask performs the triage of a job.
+// kickTriageLater schedules a triage to be kicked later.
+//
+// Unlike kickTriageNow, this just posts a single TQ task, and thus can be
+// used inside transactions.
+func (e *engineImpl) kickTriageLater(c context.Context, jobID string, delay time.Duration) error {
+	c = logging.SetField(c, "JobID", jobID)
+	return e.cfg.Dispatcher.AddTask(c, &tq.Task{
+		Payload: &internal.KickTriageTask{JobId: jobID},
+		Delay:   delay,
+	})
+}
+
+// execKickTriageTask handles delayed KickTriageTask by scheduling a triage.
+func (e *engineImpl) execKickTriageTask(c context.Context, tqTask proto.Message) error {
+	return e.kickTriageNow(c, tqTask.(*internal.KickTriageTask).JobId)
+}
+
+// execTriageJobStateTask performs the triage of a job.
 //
 // It is throttled to run at most once per 2 seconds.
 //
 // It looks at pending triggers and recently finished invocations and launches
 // new invocations (or schedules timers to do it later).
-func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Message) error {
 	jobID := tqTask.(*internal.TriageJobStateTask).JobId
 
 	c = logging.SetField(c, "JobID", jobID)
