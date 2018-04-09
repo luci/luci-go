@@ -64,6 +64,19 @@ message TriageJobStateTask {
 }
 
 
+// KickTriageTask can be used to transactionally initiate a new triage.
+//
+// We can't transactionally enqueue TriageJobStateTask, since its throttling
+// mechanism uses memcache and named tasks, which are not available inside
+// transactions. So instead transactions can enqueue KickTriageTask, which in
+// turn will enqueue TriageJobStateTask (with throttling).
+//
+// Queue: "triages".
+message KickTriageTask {
+  string job_id = 1;
+}
+
+
 // InvocationFinishedTask is emitted by the invocation when it finishes.
 //
 // It is enqueued transactionally.

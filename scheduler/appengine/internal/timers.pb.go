@@ -16,6 +16,7 @@ It has these top-level messages:
 	LaunchInvocationTask
 	LaunchInvocationsBatchTask
 	TriageJobStateTask
+	KickTriageTask
 	InvocationFinishedTask
 	FanOutTriggersTask
 	EnqueueTriggersTask
