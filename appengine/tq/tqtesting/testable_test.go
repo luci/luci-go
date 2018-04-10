@@ -237,6 +237,24 @@ func TestRunSimulation(t *testing.T) {
 			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
 		})
 
+		Convey("ShouldStopAfter", func() {
+			addTask(ctx, 1, 0, "")
+
+			executed, pending, err := tst.RunSimulation(ctx, &SimulationParams{
+				ShouldStopAfter: func(t Task) bool {
+					return toIndex(t) == 5
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// The next task is the one submitted by the task we stopped at.
+			So(toIndexes(pending), ShouldResemble, []int64{6})
+			// Tasks executed in correct sequence.
+			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3, 4, 5})
+			// The clock matches last executed task.
+			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
+		})
+
 		Convey("Error", func() {
 			addTask(ctx, 1, 0, "")
 
