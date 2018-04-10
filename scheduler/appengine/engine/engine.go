@@ -133,8 +133,11 @@ type Engine interface {
 
 	// PauseJob prevents new automatic invocations of a job.
 	//
-	// It replaces job's schedule with "triggered", effectively preventing it from
-	// running automatically (until it is resumed).
+	// It clears the pending triggers queue, and makes the job ignore all incoming
+	// triggers until it is resumed.
+	//
+	// For cron jobs it also replaces job's schedule with "triggered", effectively
+	// preventing it from running automatically (until it is resumed).
 	//
 	// Manual invocations (via ForceInvocation) are still allowed. Does nothing if
 	// the job is already paused. Any pending or running invocations are still
@@ -2053,11 +2056,27 @@ func (e *engineImpl) execEnqueueTriggersTask(c context.Context, tqTask proto.Mes
 
 	c = logging.SetField(c, "JobID", msg.JobId)
 
-	logging.Infof(c, "Adding following triggers to pending triggers set")
-	for _, t := range msg.Triggers {
-		logging.Infof(c, "  %s (emitted by %q, inv %d)", t.Id, t.JobId, t.InvocationId)
+	logTriggers := func(title string) {
+		logging.Infof(c, "%s", title)
+		for _, t := range msg.Triggers {
+			logging.Infof(c, "  %s (emitted by %q, inv %d)", t.Id, t.JobId, t.InvocationId)
+		}
 	}
 
+	// Don't even bother if the job is paused or disabled. Note that if the job
+	// became inactive after this check, the triage will get rid of pending
+	// triggers itself. Thus the check here is just an optimization.
+	job, err := e.getJob(c, msg.JobId)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to grab Job entity")
+		return err // transient error getting the job
+	}
+	if job == nil || !job.Enabled || job.Paused {
+		logTriggers("Discarding the following triggers since the job is inactive")
+		return nil
+	}
+
+	logTriggers("Adding the following triggers to the pending triggers set")
 	if err := pendingTriggersSet(c, msg.JobId).Add(c, msg.Triggers); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to update pending triggers set")
 		return err
