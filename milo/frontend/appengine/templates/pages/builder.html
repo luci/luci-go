@@ -143,7 +143,13 @@
       {{ range .Builder.FinishedBuilds }}
         <tr>
           <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
-          <td>{{ .ExecutionTime.Duration | humanDuration }}</td>
+          <td>
+            {{ if .ExecutionTime.Duration }}
+              {{ .ExecutionTime.Duration | humanDuration }}
+            {{ else }}
+              {{ .PendingTime.Duration | humanDuration }}
+            {{ end }}
+          </td>
           <td class="revision">
             {{ .Revision.RevisionHTML }}
           </td>
