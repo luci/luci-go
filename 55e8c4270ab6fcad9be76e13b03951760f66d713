@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3085b347_0618492a",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-10T23:37:25Z",
+      "side": 1,
+      "message": "sg",
+      "range": {
+        "startLine": 135,
+        "startChar": 12,
+        "endLine": 135,
+        "endChar": 16
+      },
+      "revId": "55e8c4270ab6fcad9be76e13b03951760f66d713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
