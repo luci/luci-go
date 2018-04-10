@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -184,7 +185,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 			{
 				JobID:    "project/job-v2",
 				Revision: "rev1",
-				Schedule: "*/5 * * * * * *",
+				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 				Acls:     aclOne,
 			},
@@ -301,14 +302,14 @@ func TestForceInvocationV2(t *testing.T) {
 			{
 				JobID:    "project/job-v2",
 				Revision: "rev1",
-				Schedule: "*/5 * * * * * *",
+				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 				Acls:     aclOne,
 			},
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const expectedInvID int64 = 9200093523825174512
+			const expectedInvID int64 = 9200093523825193008
 
 			job, err := e.getJob(c, "project/job-v2")
 			So(err, ShouldBeNil)
@@ -431,8 +432,8 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const triggeringInvID int64 = 9200093523825174512
-			const triggeredInvID int64 = 9200093521728243376
+			const triggeringInvID int64 = 9200093523824911856
+			const triggeredInvID int64 = 9200093521728457040
 
 			// Force launch the triggering job.
 			job, err := e.getJob(c, triggeringJob)
@@ -595,7 +596,7 @@ func TestInvocationTimers(t *testing.T) {
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const testInvID int64 = 9200093523825174512
+			const testInvID int64 = 9200093523825193008
 
 			// Force launch the job.
 			job, err := e.getJob(c, testJobID)
@@ -696,5 +697,315 @@ func TestInvocationTimers(t *testing.T) {
 				&internal.TriageJobStateTask{JobId: testJobID},
 			})
 		})
+	})
+}
+
+func TestCron(t *testing.T) {
+	t.Parallel()
+
+	Convey("with fake env", t, func() {
+		const testJobID = "project/job-v2"
+
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+
+		updateJob := func(schedule string) {
+			So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+				{
+					JobID:    testJobID,
+					Revision: "rev1",
+					Schedule: schedule,
+					Task:     noopTaskBytes(),
+					Acls:     aclOne,
+				},
+			}), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+		}
+
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+			ctl.State().Status = task.StatusSucceeded
+			return nil
+		}
+
+		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tq.CreateQueues()
+
+		Convey("relative schedule", func() {
+			updateJob("with 10s interval")
+
+			Convey("happy path", func() {
+				// Let the TQ spin for two full cycles.
+				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					Deadline: epoch.Add(30 * time.Second),
+				})
+				So(err, ShouldBeNil)
+
+				// Collect the list of TQ tasks we expect to be executed.
+				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
+				// 10 sec after the job is created, a tick comes and emits a trigger.
+				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
+				// It causes an invocation.
+				expect.invocationSequence(9200093511241999856)
+				// 10 sec after it finishes, new tick comes (4 extra seconds are from
+				// 2 sec delays induced by 2 triages).
+				expect.cronTickSequence(928953616732700780, 6, 24*time.Second)
+				// It causes an invocation.
+				expect.invocationSequence(9200093496562633040)
+				// ... and so on
+
+				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+			})
+
+			Convey("schedule changes", func() {
+				// Let the TQ spin until it hits the task execution.
+				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					ShouldStopBefore: func(t tqtesting.Task) bool {
+						_, ok := t.Payload.(*internal.LaunchInvocationTask)
+						return ok
+					},
+				})
+				So(err, ShouldBeNil)
+
+				// At this point the job's schedule changes.
+				updateJob("with 30s interval")
+
+				// We let the TQ spin some more.
+				moreTasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					Deadline: epoch.Add(50 * time.Second),
+				})
+				So(err, ShouldBeNil)
+
+				// Here's what we expect to execute.
+				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
+				// 10 sec after the job is created, a tick comes and emits a trigger.
+				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
+				// It causes an invocation. We changed the schedule to 30s after that.
+				expect.invocationSequence(9200093511241999856)
+				// 30 sec after it finishes, new tick comes (4 extra seconds are from
+				// 2 sec delays induced by 2 triages).
+				expect.cronTickSequence(928953616732700780, 6, 44*time.Second)
+				// It causes an invocation.
+				expect.invocationSequence(9200093475591113040)
+
+				// Got it?
+				So(append(tasks, moreTasks...).Payloads(), ShouldResemble, expect.Tasks)
+			})
+
+			Convey("pause/unpause", func() {
+				// Let the TQ spin until it hits the task execution.
+				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					ShouldStopBefore: func(t tqtesting.Task) bool {
+						_, ok := t.Payload.(*internal.LaunchInvocationTask)
+						return ok
+					},
+				})
+				So(err, ShouldBeNil)
+
+				// At this point we pause the job.
+				j, err := e.getJob(c, testJobID)
+				So(err, ShouldBeNil)
+				So(e.setJobPausedFlag(c, j, true, ""), ShouldBeNil)
+
+				// We let the TQ spin some more.
+				moreTasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					Deadline: epoch.Add(time.Hour),
+				})
+				So(err, ShouldBeNil)
+
+				// Here's what we expect to execute.
+				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
+				// 10 sec after the job is created, a tick comes and emits a trigger.
+				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
+				// It causes an invocation. We pause the job after that.
+				expect.invocationSequence(9200093511241999856)
+				// and nothing else happens ...
+
+				// Got it?
+				So(append(tasks, moreTasks...).Payloads(), ShouldResemble, expect.Tasks)
+
+				// Some time later we unpause the job, it starts again immediately.
+				clock.Get(c).(testclock.TestClock).Set(epoch.Add(time.Hour))
+				So(e.setJobPausedFlag(c, j, false, ""), ShouldBeNil)
+
+				tasks, _, err = tq.RunSimulation(c, &tqtesting.SimulationParams{
+					Deadline: epoch.Add(time.Hour + 10*time.Second),
+				})
+				So(err, ShouldBeNil)
+
+				// Did it?
+				expect.clear()
+				expect.cronTickSequence(325298467681248558, 7, time.Hour)
+				expect.invocationSequence(9200089746854060480)
+				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+			})
+
+			Convey("disabling", func() {
+				// Let the TQ spin until it hits the task execution.
+				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					ShouldStopBefore: func(t tqtesting.Task) bool {
+						_, ok := t.Payload.(*internal.LaunchInvocationTask)
+						return ok
+					},
+				})
+				So(err, ShouldBeNil)
+
+				// At this point we disable the job.
+				So(e.UpdateProjectJobs(c, "project", nil), ShouldBeNil)
+
+				// We let the TQ spin some more...
+				moreTasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					Deadline: epoch.Add(time.Hour),
+				})
+				So(err, ShouldBeNil)
+
+				// Here's what we expect to execute.
+				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
+				// 10 sec after the job is created, a tick comes and emits a trigger.
+				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
+				// It causes an invocation. We pause the job after that.
+				expect.invocationSequence(9200093511241999856)
+				// and nothing else happens ...
+
+				// Got it?
+				So(append(tasks, moreTasks...).Payloads(), ShouldResemble, expect.Tasks)
+			})
+		})
+
+		Convey("absolute schedule", func() {
+			updateJob("5,10 * * * * * *") // on 5th and 10th sec
+
+			Convey("happy path", func() {
+				// Let the TQ spin for two full cycles.
+				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					Deadline: epoch.Add(14 * time.Second),
+				})
+				So(err, ShouldBeNil)
+
+				// Collect the list of TQ tasks we expect to be executed.
+				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
+				// 5 sec after the job is created, a tick comes and emits a trigger.
+				expect.cronTickSequence(6278013164014963328, 3, 5*time.Second)
+				// It causes an invocation.
+				expect.invocationSequence(9200093517533908688)
+				// Next tick comes right on schedule, 10 sec after the start.
+				expect.cronTickSequence(2673062197574995716, 6, 10*time.Second)
+				// It causes an invocation.
+				expect.invocationSequence(9200093511241900480)
+				// ... and so on
+
+				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+			})
+
+			Convey("overrun", func() {
+				// Currently cron just keeps submitting triggers that ends up in the
+				// pending triggers queue if there's some invocation currently running.
+				// Once the invocation finishes, the next one start right away (just
+				// like with any other kind of trigger). Overruns are not recorded.
+
+				// Simulate "long" task with timers.
+				mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+					ctl.AddTimer(ctx, 5*time.Second, "5 sec", nil)
+					ctl.State().Status = task.StatusRunning
+					return nil
+				}
+				mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
+					ctl.State().Status = task.StatusSucceeded
+					return nil
+				}
+
+				// Let the TQ spin for two full cycles.
+				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+					Deadline: epoch.Add(15 * time.Second),
+				})
+				So(err, ShouldBeNil)
+
+				// Collect the list of TQ tasks we expect to be executed.
+				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
+				// 5 sec after the job is created, a tick comes and emits a trigger.
+				expect.cronTickSequence(6278013164014963328, 3, 5*time.Second)
+				// It causes an invocation to start (and keep running).
+				expect.invocationStart(9200093517533908688)
+				// The next tick comes right on the schedule, but it doesn't start an
+				// invocation yet, just submits a trigger.
+				expect.cronTickSequence(2673062197574995716, 6, 10*time.Second)
+				// A scheduled invocation timer arrives and finishes the invocation.
+				expect.invocationTimer(9200093517533908688, 1, "5 sec", 7*time.Second, 12*time.Second)
+				expect.invocationEnd(9200093517533908688)
+				// The triage detects pending cron trigger and launches a new invocation
+				// right away.
+				expect.invocationStart(9200093509144748480)
+
+				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+			})
+		})
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type expectedTasks struct {
+	JobID string
+	Epoch time.Time
+	Tasks []proto.Message
+}
+
+func (e *expectedTasks) clear() {
+	e.Tasks = nil
+}
+
+func (e *expectedTasks) triage() {
+	e.Tasks = append(e.Tasks, &internal.TriageJobStateTask{JobId: e.JobID})
+}
+
+func (e *expectedTasks) cronTickSequence(nonce, gen int64, when time.Duration) {
+	e.Tasks = append(e.Tasks,
+		&internal.CronTickTask{JobId: e.JobID, TickNonce: nonce},
+		&internal.EnqueueTriggersTask{
+			JobId: e.JobID,
+			Triggers: []*internal.Trigger{
+				{
+					Id:      fmt.Sprintf("cron:v1:%d", gen),
+					Created: google.NewTimestamp(e.Epoch.Add(when)),
+					Payload: &internal.Trigger_Cron{
+						Cron: &api.CronTrigger{Generation: gen},
+					},
+				},
+			},
+		},
+	)
+	e.triage()
+}
+
+func (e *expectedTasks) invocationSequence(invID int64) {
+	e.invocationStart(invID)
+	e.invocationEnd(invID)
+}
+
+func (e *expectedTasks) invocationStart(invID int64) {
+	e.Tasks = append(e.Tasks,
+		&internal.LaunchInvocationsBatchTask{
+			Tasks: []*internal.LaunchInvocationTask{
+				{JobId: e.JobID, InvId: invID},
+			},
+		},
+		&internal.LaunchInvocationTask{JobId: e.JobID, InvId: invID},
+	)
+}
+
+func (e *expectedTasks) invocationEnd(invID int64) {
+	e.Tasks = append(e.Tasks, &internal.InvocationFinishedTask{JobId: e.JobID, InvId: invID})
+	e.triage()
+}
+
+func (e *expectedTasks) invocationTimer(invID, seq int64, title string, created, eta time.Duration) {
+	e.Tasks = append(e.Tasks, &internal.TimerTask{
+		JobId: e.JobID,
+		InvId: invID,
+		Timer: &internal.Timer{
+			Id:      fmt.Sprintf("%s:%d:%d:0", e.JobID, invID, seq),
+			Title:   title,
+			Created: google.NewTimestamp(e.Epoch.Add(created)),
+			Eta:     google.NewTimestamp(e.Epoch.Add(eta)),
+		},
 	})
 }

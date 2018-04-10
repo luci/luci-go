@@ -277,6 +277,7 @@ func (e *engineImpl) init() {
 	e.cfg.Dispatcher.RegisterTask(&internal.EnqueueTriggersTask{}, e.enqueueTriggersTask, "triggers", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.ScheduleTimersTask{}, e.scheduleTimersTask, "timers", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.TimerTask{}, e.timerTask, "timers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.CronTickTask{}, e.cronTickTask, "crons", nil)
 }
 
 // jobController is a part of engine that directly deals with state transitions
@@ -293,6 +294,7 @@ type jobController interface {
 	onJobScheduleChange(c context.Context, job *Job) error
 	onJobEnabled(c context.Context, job *Job) error
 	onJobDisabled(c context.Context, job *Job) error
+	onJobCronTick(c context.Context, job *Job, tick *internal.CronTickTask) error
 	onJobAbort(c context.Context, job *Job) (invs []int64, err error)
 	onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error)
 
@@ -2127,6 +2129,24 @@ func (e *engineImpl) timerTask(c context.Context, tqTask proto.Message) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Cron handling (v2 engine).
+
+// cronTickTask corresponds to a delayed tick emitted by a cron state machine.
+//
+// See jobTimerTick for (deprecated) v1 equivalent.
+func (e *engineImpl) cronTickTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.CronTickTask)
+	return e.jobTxn(c, msg.JobId, func(c context.Context, job *Job, isNew bool) error {
+		if isNew {
+			logging.Errorf(c, "Scheduled job is unexpectedly gone")
+			return errSkipPut
+		}
+		logging.Infof(c, "Tick %d has arrived", msg.TickNonce)
+		return e.jobController(msg.JobId).onJobCronTick(c, job, msg)
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Triage procedure (v2 engine).
 
 // kickTriageJobStateTask enqueues a task to perform a triage for some job, if
@@ -2188,6 +2208,7 @@ func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message)
 	// There's error logging inside of triageOp already.
 	op := triageOp{
 		jobID:            jobID,
+		dispatcher:       e.cfg.Dispatcher,
 		triggeringPolicy: e.triggeringPolicy,
 		enqueueInvocations: func(c context.Context, job *Job, req []task.Request) error {
 			_, err := e.enqueueInvocations(c, job, req)

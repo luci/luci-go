@@ -21,6 +21,7 @@ It has these top-level messages:
 	EnqueueTriggersTask
 	ScheduleTimersTask
 	TimerTask
+	CronTickTask
 	Trigger
 	TriggerList
 */
