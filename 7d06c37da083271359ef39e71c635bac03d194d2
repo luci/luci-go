@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "01c79584_bfca8bea",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-10T20:41:21Z",
+      "side": 1,
+      "message": "nit: i think this code would be a little simpler/readable if we only introduced a variable for the end of pending interval, something like\n\npendingEnd :\u003d b.StartTime\nif pendingEnd.IsZero() {\n  // ....\n  pendingEnd \u003d b.CompletionTime\n}",
+      "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90917b0d_4172210d",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-10T20:41:21Z",
+      "side": 1,
+      "message": "could we clarify what is this duration somehow? duration is an abstract word and it is not obvious if it is a run duration or scheduling duration.",
+      "range": {
+        "startLine": 135,
+        "startChar": 12,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c214ea16_91271fcb",
         "filename": "milo/frontend/appengine/templates/pages/builder.html",
         "patchSetId": 3
@@ -16,6 +56,23 @@
       "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2ac8a477_b9db5880",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-10T20:41:21Z",
+      "side": 1,
+      "message": "i find it confusing when a column meaning depends on values in other columns. It is hard to just look at a list of values in column and easily tell what\u0027s going on. Since this column was execution duration, I\u0027d prefer not to show anything if the build didn\u0027t run.\n\nAdding Pending duration column is fine too, if you think it won\u0027t make the table bloated.",
+      "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
