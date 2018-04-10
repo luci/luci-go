@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f99c429_fba4a622",
+        "filename": "scheduler/appengine/ui/presentation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-10T04:27:32Z",
+      "side": 0,
+      "message": "wasn\u0027t actually used from templates",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 19
+      },
+      "revId": "028f31c5aa65327d814017241a99219a59cb3ad9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40325d77_4d2c2800",
+        "filename": "scheduler/appengine/ui/presentation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-10T04:27:32Z",
+      "side": 0,
+      "message": "Eh, no big deal. JobStateSlowQueue happens only if TQ is misbehaving, and in v2 this will be detected in some other way anyhow (if at all).",
+      "range": {
+        "startLine": 111,
+        "startChar": 1,
+        "endLine": 115,
+        "endChar": 2
+      },
+      "revId": "028f31c5aa65327d814017241a99219a59cb3ad9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

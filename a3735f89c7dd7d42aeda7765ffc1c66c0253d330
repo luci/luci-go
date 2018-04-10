@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa7698c_648643f2",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-10T04:27:32Z",
+      "side": 1,
+      "message": "This will actually become a boolean field in the future, when we start dynamically migrate existing jobs to be v2",
+      "range": {
+        "startLine": 170,
+        "startChar": 14,
+        "endLine": 170,
+        "endChar": 20
+      },
+      "revId": "a3735f89c7dd7d42aeda7765ffc1c66c0253d330",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "07d218dc_f616a462",
+        "filename": "scheduler/appengine/frontend/templates/includes/base.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-10T04:27:32Z",
+      "side": 1,
+      "message": "I demonstrate unmatched UI skill :)",
+      "range": {
+        "startLine": 41,
+        "startChar": 6,
+        "endLine": 41,
+        "endChar": 32
+      },
+      "revId": "a3735f89c7dd7d42aeda7765ffc1c66c0253d330",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eb71faef_500ba5ce",
+        "filename": "scheduler/appengine/presentation/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-10T04:27:32Z",
+      "side": 1,
+      "message": "I\u0027m not yet sure what will happen to them. Some will probably be removed. E.g. I can\u0027t even remember now what\u0027s the difference between Suspended in Paused in v1...",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 25
+      },
+      "revId": "a3735f89c7dd7d42aeda7765ffc1c66c0253d330",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
