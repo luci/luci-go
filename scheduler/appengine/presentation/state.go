@@ -20,14 +20,15 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/schedule"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // PublicStateKind defines state of the job which is exposed in UI and API
-// instead of internal engine.StateKind which is kept as an implementation
-// detail.
+// instead of internal states which are kept as an implementation detail.
 type PublicStateKind string
 
 // When a PublicStateKind is added/removed/updated, update scheduler api proto
@@ -55,8 +56,11 @@ var jobStateInternalToPublic = map[engine.StateKind]PublicStateKind{
 	engine.JobStateOverrun:   PublicStateOverrun,
 }
 
-// GetPublicStateKind returns user-friendly state and labelClass.
+// GetPublicStateKind returns user-friendly state for a job.
 func GetPublicStateKind(j *engine.Job, traits task.Traits) PublicStateKind {
+	if j.IsV2() {
+		return getPublicStateKindV2(j, traits)
+	}
 	switch {
 	case j.State.IsRetrying():
 		// Retries happen when invocation fails to launch (move from "STARTING" to
@@ -95,8 +99,31 @@ func GetPublicStateKind(j *engine.Job, traits task.Traits) PublicStateKind {
 	}
 }
 
+// getPublicStateKindV2 implements GetPublicStateKind for v2 jobs.
+//
+// Very rough for now. The following states are never reported by v2 currently:
+//   PublicStateOverrun
+//   PublicStateRetrying
+//   PublicStateStarting
+//   PublicStateSuspended
+func getPublicStateKindV2(j *engine.Job, traits task.Traits) PublicStateKind {
+	cronTick := j.CronTickTime()
+	switch {
+	case len(j.ActiveInvocations) != 0:
+		return PublicStateRunning
+	case !j.Enabled:
+		return PublicStateDisabled
+	case j.Paused:
+		return PublicStatePaused
+	case !cronTick.IsZero() && cronTick != schedule.DistantFuture:
+		return PublicStateScheduled
+	default:
+		return PublicStateWaiting
+	}
+}
+
+// GetJobTraits asks the corresponding task manager for a traits struct.
 func GetJobTraits(ctx context.Context, cat catalog.Catalog, j *engine.Job) (task.Traits, error) {
-	// trais = task.Traits{}
 	taskDef, err := cat.UnmarshalTask(ctx, j.Task)
 	if err != nil {
 		logging.WithError(err).Warningf(ctx, "Failed to unmarshal task proto for %s", j.JobID)
