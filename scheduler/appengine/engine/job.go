@@ -166,6 +166,11 @@ func (e *Job) IsEqual(other *Job) bool {
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations))
 }
 
+// IsV2 returns true for v2 jobs.
+func (e *Job) IsV2() bool {
+	return strings.HasSuffix(e.JobID, "-v2")
+}
+
 // MatchesDefinition returns true if job definition in the entity matches the
 // one specified by catalog.Definition struct.
 func (e *Job) MatchesDefinition(def catalog.Definition) bool {
@@ -175,6 +180,19 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 		e.Acls.Equal(&def.Acls) &&
 		bytes.Equal(e.Task, def.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
+}
+
+// CronTickTime returns time when the cron job is expected to start again.
+//
+// May return:
+//  Zero time if the job is using relative schedule, or not a cron job at all.
+//  schedule.DistantFuture if the job is paused.
+func (e *Job) CronTickTime() time.Time {
+	if e.IsV2() {
+		// Note: LastTick is "last scheduled tick", it is in the future.
+		return e.Cron.LastTick.When
+	}
+	return e.State.TickTime
 }
 
 // CheckRole returns nil if the caller has the given role or ErrNoPermission

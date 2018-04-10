@@ -47,12 +47,12 @@ import (
 type schedulerJob struct {
 	ProjectID      string
 	JobName        string
+	IsV2           bool
 	Schedule       string
 	Definition     string
 	Revision       string
 	RevisionURL    string
 	State          string
-	Overruns       int
 	NextRun        string
 	Paused         bool
 	LabelClass     string
@@ -96,7 +96,7 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 
 	now := clock.Now(c).UTC()
 	nextRun := ""
-	switch ts := j.State.TickTime; {
+	switch ts := j.CronTickTime(); {
 	case ts == schedule.DistantFuture:
 		nextRun = "-"
 	case !ts.IsZero():
@@ -108,11 +108,7 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 	// Internal state names aren't very user friendly. Introduce some aliases.
 	state := presentation.GetPublicStateKind(j, traits)
 	labelClass := stateToLabelClass[state]
-	if j.State.State == engine.JobStateSlowQueue {
-		// Job invocation is still in the task queue, but new invocation should be
-		// starting now (so the queue is lagging for some reason).
-		labelClass = "label-warning"
-	}
+
 	// Put triggers after regular jobs.
 	sortGroup := "A"
 	if j.Flavor == catalog.JobFlavorTrigger {
@@ -122,12 +118,12 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 	return &schedulerJob{
 		ProjectID:      j.ProjectID,
 		JobName:        j.JobName(),
+		IsV2:           j.IsV2(),
 		Schedule:       j.Schedule,
 		Definition:     taskToText(j.Task),
 		Revision:       j.Revision,
 		RevisionURL:    j.RevisionURL,
 		State:          string(state),
-		Overruns:       j.State.Overruns,
 		NextRun:        nextRun,
 		Paused:         j.Paused,
 		LabelClass:     labelClass,
