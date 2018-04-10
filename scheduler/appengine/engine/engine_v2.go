@@ -33,7 +33,7 @@ type jobControllerV2 struct {
 }
 
 func (ctl *jobControllerV2) onJobScheduleChange(c context.Context, job *Job) error {
-	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+	err := pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
 		// TODO(vadimsh): Remove this branch once all jobs are updated to v2. For
 		// now it allows to manually kick start v2 cron by pausing and then
 		// unpausing a job.
@@ -43,6 +43,17 @@ func (ctl *jobControllerV2) onJobScheduleChange(c context.Context, job *Job) err
 		m.OnScheduleChange()
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// If paused, kick the triage to clear the pending triggers. We can pop them
+	// only within the triage procedure.
+	if job.Paused {
+		return ctl.eng.kickTriageLater(c, job.JobID, 0)
+	}
+
+	return nil
 }
 
 func (ctl *jobControllerV2) onJobEnabled(c context.Context, job *Job) error {
@@ -53,10 +64,16 @@ func (ctl *jobControllerV2) onJobEnabled(c context.Context, job *Job) error {
 }
 
 func (ctl *jobControllerV2) onJobDisabled(c context.Context, job *Job) error {
-	return pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
+	err := pokeCron(c, job, ctl.eng.cfg.Dispatcher, func(m *cron.Machine) error {
 		m.Disable()
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	// Kick the triage to clear the pending triggers. We can pop them only within
+	// the triage procedure.
+	return ctl.eng.kickTriageLater(c, job.JobID, 0)
 }
 
 func (ctl *jobControllerV2) onJobCronTick(c context.Context, job *Job, tick *internal.CronTickTask) error {

@@ -746,11 +746,13 @@ func TestCron(t *testing.T) {
 				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
 				// It causes an invocation.
 				expect.invocationSequence(9200093511241999856)
+				expect.triage()
 				// 10 sec after it finishes, new tick comes (4 extra seconds are from
 				// 2 sec delays induced by 2 triages).
 				expect.cronTickSequence(928953616732700780, 6, 24*time.Second)
 				// It causes an invocation.
 				expect.invocationSequence(9200093496562633040)
+				expect.triage()
 				// ... and so on
 
 				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
@@ -781,21 +783,23 @@ func TestCron(t *testing.T) {
 				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
 				// It causes an invocation. We changed the schedule to 30s after that.
 				expect.invocationSequence(9200093511241999856)
+				expect.triage()
 				// 30 sec after it finishes, new tick comes (4 extra seconds are from
 				// 2 sec delays induced by 2 triages).
 				expect.cronTickSequence(928953616732700780, 6, 44*time.Second)
 				// It causes an invocation.
 				expect.invocationSequence(9200093475591113040)
+				expect.triage()
 
 				// Got it?
 				So(append(tasks, moreTasks...).Payloads(), ShouldResemble, expect.Tasks)
 			})
 
 			Convey("pause/unpause", func() {
-				// Let the TQ spin until it hits the task execution.
+				// Let the TQ spin until it hits the end of task execution.
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
-					ShouldStopBefore: func(t tqtesting.Task) bool {
-						_, ok := t.Payload.(*internal.LaunchInvocationTask)
+					ShouldStopAfter: func(t tqtesting.Task) bool {
+						_, ok := t.Payload.(*internal.InvocationFinishedTask)
 						return ok
 					},
 				})
@@ -818,6 +822,9 @@ func TestCron(t *testing.T) {
 				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
 				// It causes an invocation. We pause the job after that.
 				expect.invocationSequence(9200093511241999856)
+				// The pause kicks the triage, which later executes.
+				expect.kickTriage()
+				expect.triage()
 				// and nothing else happens ...
 
 				// Got it?
@@ -836,14 +843,15 @@ func TestCron(t *testing.T) {
 				expect.clear()
 				expect.cronTickSequence(325298467681248558, 7, time.Hour)
 				expect.invocationSequence(9200089746854060480)
+				expect.triage()
 				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
 			})
 
 			Convey("disabling", func() {
-				// Let the TQ spin until it hits the task execution.
+				// Let the TQ spin until it hits the end of task execution.
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
-					ShouldStopBefore: func(t tqtesting.Task) bool {
-						_, ok := t.Payload.(*internal.LaunchInvocationTask)
+					ShouldStopAfter: func(t tqtesting.Task) bool {
+						_, ok := t.Payload.(*internal.InvocationFinishedTask)
 						return ok
 					},
 				})
@@ -862,8 +870,11 @@ func TestCron(t *testing.T) {
 				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
 				// 10 sec after the job is created, a tick comes and emits a trigger.
 				expect.cronTickSequence(6278013164014963328, 3, 10*time.Second)
-				// It causes an invocation. We pause the job after that.
+				// It causes an invocation. We disable the job after that.
 				expect.invocationSequence(9200093511241999856)
+				// Disabling kicks the triage, which later executes.
+				expect.kickTriage()
+				expect.triage()
 				// and nothing else happens ...
 
 				// Got it?
@@ -887,10 +898,12 @@ func TestCron(t *testing.T) {
 				expect.cronTickSequence(6278013164014963328, 3, 5*time.Second)
 				// It causes an invocation.
 				expect.invocationSequence(9200093517533908688)
+				expect.triage()
 				// Next tick comes right on schedule, 10 sec after the start.
 				expect.cronTickSequence(2673062197574995716, 6, 10*time.Second)
 				// It causes an invocation.
 				expect.invocationSequence(9200093511241900480)
+				expect.triage()
 				// ... and so on
 
 				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
@@ -931,6 +944,7 @@ func TestCron(t *testing.T) {
 				// A scheduled invocation timer arrives and finishes the invocation.
 				expect.invocationTimer(9200093517533908688, 1, "5 sec", 7*time.Second, 12*time.Second)
 				expect.invocationEnd(9200093517533908688)
+				expect.triage()
 				// The triage detects pending cron trigger and launches a new invocation
 				// right away.
 				expect.invocationStart(9200093509144748480)
@@ -955,6 +969,10 @@ func (e *expectedTasks) clear() {
 
 func (e *expectedTasks) triage() {
 	e.Tasks = append(e.Tasks, &internal.TriageJobStateTask{JobId: e.JobID})
+}
+
+func (e *expectedTasks) kickTriage() {
+	e.Tasks = append(e.Tasks, &internal.KickTriageTask{JobId: e.JobID})
 }
 
 func (e *expectedTasks) cronTickSequence(nonce, gen int64, when time.Duration) {
@@ -994,7 +1012,6 @@ func (e *expectedTasks) invocationStart(invID int64) {
 
 func (e *expectedTasks) invocationEnd(invID int64) {
 	e.Tasks = append(e.Tasks, &internal.InvocationFinishedTask{JobId: e.JobID, InvId: invID})
-	e.triage()
 }
 
 func (e *expectedTasks) invocationTimer(invID, seq int64, title string, created, eta time.Duration) {

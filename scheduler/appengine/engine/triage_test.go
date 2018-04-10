@@ -39,6 +39,7 @@ func TestTriageOp(t *testing.T) {
 		Convey("noop triage", func() {
 			before := &Job{
 				JobID:             "job",
+				Enabled:           true,
 				ActiveInvocations: []int64{1, 2, 3},
 			}
 			after, err := tb.runTestTriage(c, before)
@@ -49,6 +50,7 @@ func TestTriageOp(t *testing.T) {
 		Convey("pops finished invocations", func() {
 			before := &Job{
 				JobID:             "job",
+				Enabled:           true,
 				ActiveInvocations: []int64{1, 2, 3, 4, 5},
 			}
 			recentlyFinishedSet(c, before.JobID).Add(c, []int64{1, 2, 4})
@@ -78,7 +80,10 @@ func TestTriageOp(t *testing.T) {
 				},
 			}
 
-			before := &Job{JobID: "job"}
+			before := &Job{
+				JobID:   "job",
+				Enabled: true,
+			}
 			pendingTriggersSet(c, before.JobID).Add(c, triggers)
 
 			// Cycle 1. Pops triggers, converts them into a bunch of invocations.
@@ -100,6 +105,36 @@ func TestTriageOp(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(after.ActiveInvocations, ShouldResemble, []int64{1, 2, 3, 4})
 			So(tb.requests, ShouldBeNil)
+		})
+
+		Convey("ignores triggers if paused", func() {
+			triggers := []*internal.Trigger{
+				{
+					Id:      "t0",
+					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+				},
+				{
+					Id:      "t1",
+					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+				},
+			}
+
+			pendingTriggersSet(c, "job").Add(c, triggers)
+
+			// Just pops and discards triggers without starting anything.
+			after, err := tb.runTestTriage(c, &Job{
+				JobID:   "job",
+				Enabled: true,
+				Paused:  true,
+			})
+			So(err, ShouldBeNil)
+			So(len(after.ActiveInvocations), ShouldEqual, 0)
+			So(len(tb.requests), ShouldEqual, 0)
+
+			// No triggers there anymore.
+			listing, err := pendingTriggersSet(c, "job").List(c)
+			So(err, ShouldBeNil)
+			So(len(listing.Items), ShouldEqual, 0)
 		})
 	})
 }
