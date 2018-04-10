@@ -238,9 +238,14 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		return nil, err
 	}
 
+	pendingEnd := b.StartTime
+	if pendingEnd.IsZero() {
+		// Maybe the build expired and never started.  Use the expiration time, if any.
+		pendingEnd = b.CompletionTime
+	}
 	result := &ui.MiloBuild{
 		Summary: ui.BuildComponent{
-			PendingTime:   ui.NewInterval(c, b.CreationTime, b.StartTime),
+			PendingTime:   ui.NewInterval(c, b.CreationTime, pendingEnd),
 			ExecutionTime: ui.NewInterval(c, b.StartTime, b.CompletionTime),
 			Status:        parseStatus(b.Status),
 		},
@@ -431,16 +436,18 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	// Add step information from LogDog.  If this fails, we still have perfectly
 	// valid information from Buildbucket, so just annotate the build with the
 	// error and continue.
-	if addr, step, err := getStep(c, bbBuildMessage); err == nil {
-		ub := rawpresentation.NewURLBuilder(addr)
-		mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep)
-	} else if bbBuildMessage.Status == bbv1.StatusCompleted {
-		// TODO(hinoka): This might be better placed in a error butterbar.
-		mb.Components = append(mb.Components, &ui.BuildComponent{
-			Label:  ui.NewEmptyLink("Failed to fetch step information from LogDog"),
-			Text:   strings.Split(err.Error(), "\n"),
-			Status: model.InfraFailure,
-		})
+	if bbBuildMessage.StartedTs != 0 {
+		if addr, step, err := getStep(c, bbBuildMessage); err == nil {
+			ub := rawpresentation.NewURLBuilder(addr)
+			mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep)
+		} else if bbBuildMessage.Status == bbv1.StatusCompleted {
+			// TODO(hinoka): This might be better placed in a error butterbar.
+			mb.Components = append(mb.Components, &ui.BuildComponent{
+				Label:  ui.NewEmptyLink("Failed to fetch step information from LogDog"),
+				Text:   strings.Split(err.Error(), "\n"),
+				Status: model.InfraFailure,
+			})
+		}
 	}
 
 	// Add blame information.  If this fails, just add in a placeholder with an error.
