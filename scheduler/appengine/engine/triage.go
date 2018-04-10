@@ -263,14 +263,26 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 		return popOp, nil
 	}
 
-	// Look at what's left and decide what invocations to start (if any) by
-	// getting a bunch of task.Requests from the triggering policy function.
+	// Look at what's left and decide what invocations to start (if any).
 	now := clock.Now(c)
 	logging.Infof(c, "Pending triggers:")
 	for _, t := range triggers {
 		logging.Infof(c, "  %q submitted %s ago by %q inv %d",
 			t.Id, now.Sub(google.TimeFromProto(t.Created)), t.JobId, t.InvocationId)
 	}
+
+	// If the job is paused or disabled, just pop all triggers without starting
+	// anything. Note: there's a best-effort shortcut for ignoring triggers
+	// for paused jobs in execEnqueueTriggersTask.
+	if job.Paused || !job.Enabled {
+		logging.Infof(c, "The job is inactive, clearing the pending triggers queue")
+		for _, t := range triggers {
+			popOp.Pop(t.Id)
+		}
+		return popOp, nil
+	}
+
+	// Otherwise ask the policy to convert triggers into invocations.
 	requests, err := op.triggeringPolicy(c, job, triggers)
 	if err != nil {
 		return nil, err
