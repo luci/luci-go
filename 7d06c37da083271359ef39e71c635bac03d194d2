@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c214ea16_91271fcb",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-10T19:58:01Z",
+      "side": 1,
+      "message": "I\u0027m also thinking of just making this duration always equal to pending + execution... Or add a new column for pending time.  The if/else might actually be worse.  thoughts?",
+      "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
