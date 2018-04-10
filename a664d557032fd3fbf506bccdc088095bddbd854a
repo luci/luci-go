@@ -46,6 +46,30 @@
       "revId": "a664d557032fd3fbf506bccdc088095bddbd854a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "484c382c_afeac3b4",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-10T10:45:43Z",
+      "side": 1,
+      "message": "I agree that this is not a trooper issue, but it\u0027s also not a sheriff issue, it\u0027s rather a non-issue. Green sounds wrong to me, since the build has not really completed doing what it was supposed to do, so perhaps yellow (WARNING) or some other new color/state?",
+      "parentUuid": "bd1e4d09_c3fbf743",
+      "range": {
+        "startLine": 450,
+        "startChar": 20,
+        "endLine": 450,
+        "endChar": 24
+      },
+      "revId": "a664d557032fd3fbf506bccdc088095bddbd854a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
