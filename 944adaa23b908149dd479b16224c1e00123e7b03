@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba7e14df_ff033b0c",
+        "filename": "scheduler/appengine/engine/engine_v2_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 782,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-10T00:12:30Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 782,
+        "startChar": 41,
+        "endLine": 782,
+        "endChar": 42
+      },
+      "revId": "944adaa23b908149dd479b16224c1e00123e7b03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50b9c99b_a4de5e7b",
+        "filename": "scheduler/appengine/engine/engine_v2_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 790,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-10T00:12:30Z",
+      "side": 1,
+      "message": ":)",
+      "range": {
+        "startLine": 790,
+        "startChar": 4,
+        "endLine": 790,
+        "endChar": 14
+      },
+      "revId": "944adaa23b908149dd479b16224c1e00123e7b03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1d5d73f5_58917069",
+        "filename": "scheduler/appengine/engine/engine_v2_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 875,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-10T00:12:30Z",
+      "side": 1,
+      "message": "+sergiyb@ ^^ easier to read schedule, in your case smth like \"7, 37 * * * * *\" should work.",
+      "revId": "944adaa23b908149dd479b16224c1e00123e7b03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8c7f262b_69c7a6a0",
+        "filename": "scheduler/appengine/engine/engine_v2_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1011,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-10T00:12:30Z",
+      "side": 1,
+      "message": "neat!",
+      "range": {
+        "startLine": 946,
+        "startChar": 0,
+        "endLine": 1011,
+        "endChar": 1
+      },
+      "revId": "944adaa23b908149dd479b16224c1e00123e7b03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
