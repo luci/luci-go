@@ -16,6 +16,7 @@ package engine
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
@@ -396,6 +398,121 @@ func TestForceInvocationV2(t *testing.T) {
 			datastore.GetTestable(c).CatchupIndexes()
 			invs, _, _ := e.ListInvocations(auth.WithState(c, asUserOne), job, 100, "")
 			So(invs, ShouldResemble, []*Invocation{inv})
+		})
+	})
+}
+
+func TestEmitTriggers(t *testing.T) {
+	t.Parallel()
+
+	Convey("with fake env", t, func() {
+		const testingJob = "project/job-v2"
+
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+
+		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tq.CreateQueues()
+
+		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+			{
+				JobID:    testingJob,
+				Revision: "rev1",
+				Schedule: "triggered",
+				Task:     noopTaskBytes(),
+				Acls:     aclOne, // owned by one@example.com
+			},
+		}), ShouldBeNil)
+
+		Convey("happy path", func() {
+			var incomingTriggers []*internal.Trigger
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				incomingTriggers = ctl.Request().IncomingTriggers
+				ctl.State().Status = task.StatusSucceeded
+				return nil
+			}
+
+			job, err := e.getJob(c, testingJob)
+			So(err, ShouldBeNil)
+
+			// Simulate EmitTriggers call from an owner.
+			emittedTriggers := []*internal.Trigger{
+				{
+					Id:           "t1",
+					OrderInBatch: 1,
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Tags: []string{"a:b"},
+						},
+					},
+				},
+				{
+					Id:           "t2",
+					OrderInBatch: 2,
+				},
+			}
+			asOne := auth.WithState(c, &authtest.FakeState{Identity: "user:one@example.com"})
+			err = e.EmitTriggers(asOne, map[*Job][]*internal.Trigger{job: emittedTriggers})
+			So(err, ShouldBeNil)
+
+			// Run TQ until all activities stop.
+			tasks, _, err := tq.RunSimulation(c, nil)
+			So(err, ShouldBeNil)
+
+			// We expect a triage invoked by EmitTrigger, and one full invocation.
+			expect := expectedTasks{JobID: testingJob, Epoch: epoch}
+			expect.triage()
+			expect.invocationSequence(9200093521727759856)
+			expect.triage()
+			So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+
+			// The task manager received all triggers (though maybe out of order, it
+			// is not defined).
+			sort.Slice(incomingTriggers, func(i, j int) bool {
+				return incomingTriggers[i].Id < incomingTriggers[j].Id
+			})
+			So(incomingTriggers, ShouldResemble, emittedTriggers)
+		})
+
+		Convey("no TRIGGERER permission", func() {
+			job, err := e.getJob(c, testingJob)
+			So(err, ShouldBeNil)
+
+			asTwo := auth.WithState(c, &authtest.FakeState{Identity: "user:two@example.com"})
+			err = e.EmitTriggers(asTwo, map[*Job][]*internal.Trigger{
+				job: {
+					{Id: "t1"},
+				},
+			})
+			So(err, ShouldEqual, ErrNoPermission)
+		})
+
+		Convey("paused job ignores triggers", func() {
+			job, err := e.getJob(c, testingJob)
+			So(err, ShouldBeNil)
+			So(e.setJobPausedFlag(c, job, true, ""), ShouldBeNil)
+
+			// The pause emits a triage, get over it now.
+			tasks, _, err := tq.RunSimulation(c, nil)
+			So(err, ShouldBeNil)
+			expect := expectedTasks{JobID: testingJob, Epoch: epoch}
+			expect.kickTriage()
+			expect.triage()
+			So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+
+			// Make the RPC, which succeeds.
+			asOne := auth.WithState(c, &authtest.FakeState{Identity: "user:one@example.com"})
+			err = e.EmitTriggers(asOne, map[*Job][]*internal.Trigger{
+				job: {
+					{Id: "t1"},
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// But nothing really happens.
+			tasks, _, err = tq.RunSimulation(c, nil)
+			So(err, ShouldBeNil)
+			So(len(tasks.Payloads()), ShouldEqual, 0)
 		})
 	})
 }

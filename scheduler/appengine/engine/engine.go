@@ -539,15 +539,10 @@ func (e *engineImpl) ForceInvocation(c context.Context, job *Job) (FutureInvocat
 
 // EmitTriggers puts one or more triggers into pending trigger queues of the
 // specified jobs.
-//
-// Only v1 for now.
 func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal.Trigger) error {
 	// Make sure the caller has permissions to add triggers to all jobs.
 	jobs := make([]*Job, 0, len(perJob))
 	for j := range perJob {
-		if e.isV2Job(j.JobID) {
-			return fmt.Errorf("v2 jobs are not supported yet")
-		}
 		jobs = append(jobs, j)
 	}
 	switch filtered, err := e.filterForRole(c, jobs, acl.Triggerer); {
@@ -562,7 +557,16 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal
 		for job, triggers := range perJob {
 			jobID := job.JobID
 			triggers := triggers
-			tasks <- func() error { return e.newTriggers(c, jobID, triggers) }
+			if e.isV2Job(jobID) {
+				tasks <- func() error {
+					return e.execEnqueueTriggersTask(c, &internal.EnqueueTriggersTask{
+						JobId:    jobID,
+						Triggers: triggers,
+					})
+				}
+			} else {
+				tasks <- func() error { return e.newTriggers(c, jobID, triggers) }
+			}
 		}
 	})
 }
@@ -2051,13 +2055,15 @@ func (e *engineImpl) execFanOutTriggersTask(c context.Context, tqTask proto.Mess
 
 // execEnqueueTriggersTask adds a bunch of triggers to job's pending triggers
 // set and kicks the triage process to process them.
+//
+// Note: it is invoked through TQ, and also directly from EmitTriggers RPC
+// handler.
 func (e *engineImpl) execEnqueueTriggersTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.EnqueueTriggersTask)
 
 	c = logging.SetField(c, "JobID", msg.JobId)
 
-	logTriggers := func(title string) {
-		logging.Infof(c, "%s", title)
+	logTriggers := func() {
 		for _, t := range msg.Triggers {
 			logging.Infof(c, "  %s (emitted by %q, inv %d)", t.Id, t.JobId, t.InvocationId)
 		}
@@ -2072,11 +2078,13 @@ func (e *engineImpl) execEnqueueTriggersTask(c context.Context, tqTask proto.Mes
 		return err // transient error getting the job
 	}
 	if job == nil || !job.Enabled || job.Paused {
-		logTriggers("Discarding the following triggers since the job is inactive")
+		logging.Warningf(c, "Discarding the following triggers since the job is inactive")
+		logTriggers()
 		return nil
 	}
 
-	logTriggers("Adding the following triggers to the pending triggers set")
+	logging.Infof(c, "Adding the following triggers to the pending triggers set")
+	logTriggers()
 	if err := pendingTriggersSet(c, msg.JobId).Add(c, msg.Triggers); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to update pending triggers set")
 		return err
