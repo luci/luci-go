@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "174d607b_e16e900f",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-10T23:36:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01c79584_bfca8bea",
+      "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90917b0d_4172210d",
         "filename": "milo/frontend/appengine/templates/pages/builder.html",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76a78169_006935ee",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-10T23:36:31Z",
+      "side": 1,
+      "message": "Duration -\u003e Run Duration (I think \"Execution Duration\" is too long.  \"Execution Time\" was a close second)",
+      "parentUuid": "90917b0d_4172210d",
+      "range": {
+        "startLine": 135,
+        "startChar": 12,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -73,6 +115,24 @@
       "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f045f015_7a9ca5de",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-10T23:36:31Z",
+      "side": 1,
+      "message": "Removed pending all together.  Could introduce pending duration in a separate CL.",
+      "parentUuid": "2ac8a477_b9db5880",
+      "revId": "7d06c37da083271359ef39e71c635bac03d194d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
