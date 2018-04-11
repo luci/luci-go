@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e02fdc5a_965314f5",
+        "filename": "scheduler/appengine/frontend/templates/pages/job.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T19:28:06Z",
+      "side": 1,
+      "message": "this actually looks like shit, but I have no better ideas currently: https://screenshot.googleplex.com/8sizYPwi5TK.png",
+      "range": {
+        "startLine": 102,
+        "startChar": 12,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "dbf87febd06e60c81d3c7a1d0aa9a45528f13c28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
