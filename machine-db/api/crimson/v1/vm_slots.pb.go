@@ -15,6 +15,7 @@ var _ = math.Inf
 // A request to find available VM slots in the database.
 type FindVMSlotsRequest struct {
 	// The number of available VM slots to find.
+	// Values < 1 return all available VM slots.
 	Slots int32 `protobuf:"varint,1,opt,name=slots" json:"slots,omitempty"`
 	// The platform manufacturers to filter found VM slots on.
 	Manufacturers []string `protobuf:"bytes,2,rep,name=manufacturers" json:"manufacturers,omitempty"`
