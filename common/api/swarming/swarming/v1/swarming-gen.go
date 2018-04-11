@@ -279,6 +279,8 @@ type SwarmingRpcsBotInfo struct {
 
 	LeaseId string `json:"lease_id,omitempty"`
 
+	MachineLease string `json:"machine_lease,omitempty"`
+
 	MachineType string `json:"machine_type,omitempty"`
 
 	Quarantined bool `json:"quarantined,omitempty"`
@@ -786,6 +788,8 @@ func (s *SwarmingRpcsFilesRef) MarshalJSON() ([]byte, error) {
 // SwarmingRpcsNewTaskRequest: Description of a new task request as
 // described by the client. This message is used to create a new task.
 type SwarmingRpcsNewTaskRequest struct {
+	EvaluateOnly bool `json:"evaluate_only,omitempty"`
+
 	ExpirationSecs int64 `json:"expiration_secs,omitempty,string"`
 
 	Name string `json:"name,omitempty"`
@@ -807,9 +811,14 @@ type SwarmingRpcsNewTaskRequest struct {
 
 	Tags []string `json:"tags,omitempty"`
 
+	// TaskSlices: Defines a possible task execution for a task request to
+	// be run on the Swarming infrastructure. This is one of the possible
+	// fallback on a task request.
+	TaskSlices []*SwarmingRpcsTaskSlice `json:"task_slices,omitempty"`
+
 	User string `json:"user,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "ExpirationSecs") to
+	// ForceSendFields is a list of field names (e.g. "EvaluateOnly") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -817,13 +826,12 @@ type SwarmingRpcsNewTaskRequest struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "ExpirationSecs") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
+	// NullFields is a list of field names (e.g. "EvaluateOnly") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
 }
 
@@ -1035,6 +1043,33 @@ func (s *SwarmingRpcsStringPair) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// SwarmingRpcsTaskCancelRequest: Request to cancel one task.
+type SwarmingRpcsTaskCancelRequest struct {
+	KillRunning bool `json:"kill_running,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "KillRunning") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "KillRunning") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsTaskCancelRequest) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsTaskCancelRequest
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // SwarmingRpcsTaskList: Wraps a list of TaskResult.
 type SwarmingRpcsTaskList struct {
 	Cursor string `json:"cursor,omitempty"`
@@ -1200,6 +1235,11 @@ type SwarmingRpcsTaskRequest struct {
 
 	Tags []string `json:"tags,omitempty"`
 
+	// TaskSlices: Defines a possible task execution for a task request to
+	// be run on the Swarming infrastructure. This is one of the possible
+	// fallback on a task request.
+	TaskSlices []*SwarmingRpcsTaskSlice `json:"task_slices,omitempty"`
+
 	User string `json:"user,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -1334,6 +1374,8 @@ type SwarmingRpcsTaskResult struct {
 
 	CreatedTs string `json:"created_ts,omitempty"`
 
+	CurrentTaskSlice int64 `json:"current_task_slice,omitempty,string"`
+
 	DedupedFrom string `json:"deduped_from,omitempty"`
 
 	Duration float64 `json:"duration,omitempty"`
@@ -1365,6 +1407,7 @@ type SwarmingRpcsTaskResult struct {
 	//   "CANCELED"
 	//   "COMPLETED"
 	//   "EXPIRED"
+	//   "KILLED"
 	//   "PENDING"
 	//   "RUNNING"
 	//   "TIMED_OUT"
@@ -1421,10 +1464,45 @@ func (s *SwarmingRpcsTaskResult) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// SwarmingRpcsTaskSlice: Defines a possible task execution for a task
+// request to be run on the Swarming infrastructure. This is one of the
+// possible fallback on a task request.
+type SwarmingRpcsTaskSlice struct {
+	ExpirationSecs int64 `json:"expiration_secs,omitempty,string"`
+
+	// Properties: Important metadata about a particular task.
+	Properties *SwarmingRpcsTaskProperties `json:"properties,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "ExpirationSecs") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "ExpirationSecs") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsTaskSlice) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsTaskSlice
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // SwarmingRpcsTasksCancelRequest: Request to cancel some subset of
-// pending tasks.
+// pending/running tasks.
 type SwarmingRpcsTasksCancelRequest struct {
 	Cursor string `json:"cursor,omitempty"`
+
+	KillRunning bool `json:"kill_running,omitempty"`
 
 	Limit int64 `json:"limit,omitempty,string"`
 
@@ -3494,18 +3572,20 @@ func (c *ServerTokenCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBootstr
 // method id "swarming.task.cancel":
 
 type TaskCancelCall struct {
-	s          *Service
-	taskId     string
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
+	s                             *Service
+	taskId                        string
+	swarmingrpcstaskcancelrequest *SwarmingRpcsTaskCancelRequest
+	urlParams_                    gensupport.URLParams
+	ctx_                          context.Context
+	header_                       http.Header
 }
 
 // Cancel: Cancels a task. If a bot was running the task, the bot will
 // forcibly cancel the task.
-func (r *TaskService) Cancel(taskId string) *TaskCancelCall {
+func (r *TaskService) Cancel(taskId string, swarmingrpcstaskcancelrequest *SwarmingRpcsTaskCancelRequest) *TaskCancelCall {
 	c := &TaskCancelCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.taskId = taskId
+	c.swarmingrpcstaskcancelrequest = swarmingrpcstaskcancelrequest
 	return c
 }
 
@@ -3541,6 +3621,11 @@ func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcstaskcancelrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/cancel")
 	urls += "?" + c.urlParams_.Encode()
@@ -3604,6 +3689,10 @@ func (c *TaskCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsCancelRe
 	//     }
 	//   },
 	//   "path": "task/{task_id}/cancel",
+	//   "request": {
+	//     "$ref": "SwarmingRpcsTaskCancelRequest",
+	//     "parameterName": "resource"
+	//   },
 	//   "response": {
 	//     "$ref": "SwarmingRpcsCancelResponse"
 	//   },
@@ -4196,6 +4285,7 @@ func (c *TasksCountCall) Start(start float64) *TasksCountCall {
 //   "COMPLETED_SUCCESS"
 //   "DEDUPED"
 //   "EXPIRED"
+//   "KILLED"
 //   "PENDING"
 //   "PENDING_RUNNING"
 //   "RUNNING"
@@ -4327,12 +4417,14 @@ func (c *TasksCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCou
 	//         "COMPLETED_SUCCESS",
 	//         "DEDUPED",
 	//         "EXPIRED",
+	//         "KILLED",
 	//         "PENDING",
 	//         "PENDING_RUNNING",
 	//         "RUNNING",
 	//         "TIMED_OUT"
 	//       ],
 	//       "enumDescriptions": [
+	//         "",
 	//         "",
 	//         "",
 	//         "",
@@ -4437,6 +4529,7 @@ func (c *TasksListCall) Start(start float64) *TasksListCall {
 //   "COMPLETED_SUCCESS"
 //   "DEDUPED"
 //   "EXPIRED"
+//   "KILLED"
 //   "PENDING"
 //   "PENDING_RUNNING"
 //   "RUNNING"
@@ -4599,12 +4692,14 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 	//         "COMPLETED_SUCCESS",
 	//         "DEDUPED",
 	//         "EXPIRED",
+	//         "KILLED",
 	//         "PENDING",
 	//         "PENDING_RUNNING",
 	//         "RUNNING",
 	//         "TIMED_OUT"
 	//       ],
 	//       "enumDescriptions": [
+	//         "",
 	//         "",
 	//         "",
 	//         "",
@@ -4829,6 +4924,7 @@ func (c *TasksRequestsCall) Start(start float64) *TasksRequestsCall {
 //   "COMPLETED_SUCCESS"
 //   "DEDUPED"
 //   "EXPIRED"
+//   "KILLED"
 //   "PENDING"
 //   "PENDING_RUNNING"
 //   "RUNNING"
@@ -4991,12 +5087,14 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 	//         "COMPLETED_SUCCESS",
 	//         "DEDUPED",
 	//         "EXPIRED",
+	//         "KILLED",
 	//         "PENDING",
 	//         "PENDING_RUNNING",
 	//         "RUNNING",
 	//         "TIMED_OUT"
 	//       ],
 	//       "enumDescriptions": [
+	//         "",
 	//         "",
 	//         "",
 	//         "",
