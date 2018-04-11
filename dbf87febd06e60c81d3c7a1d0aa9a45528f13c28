@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "977723d7_a2fd2164",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T22:55:40Z",
+      "side": 1,
+      "message": "First, my bad -- I incorrectly thought this is an API of scheduler service itself. Having two methods in engine with docs is very SGTM.\nHowever, actual scheduler API should have pagination for active invocations for the sake of consistency. You aren\u0027t against this, are you?",
+      "parentUuid": "5c5215ac_44e48960",
+      "range": {
+        "startLine": 128,
+        "startChar": 0,
+        "endLine": 135,
+        "endChar": 71
+      },
+      "revId": "dbf87febd06e60c81d3c7a1d0aa9a45528f13c28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e02fdc5a_965314f5",
         "filename": "scheduler/appengine/frontend/templates/pages/job.html",
         "patchSetId": 2
