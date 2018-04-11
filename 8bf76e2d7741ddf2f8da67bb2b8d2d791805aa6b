@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7570a3d8_a3bf70f0",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 912,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-04-11T03:45:40Z",
+      "side": 1,
+      "message": "note how c.done takes `nil`? This turns into a JSON object. Return json-serializable data from verifyEnsureFile, and it\u0027ll magically appear as the -json-output data.",
+      "range": {
+        "startLine": 911,
+        "startChar": 0,
+        "endLine": 912,
+        "endChar": 24
+      },
+      "revId": "8bf76e2d7741ddf2f8da67bb2b8d2d791805aa6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d0b5c24_40a8edcd",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 990,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-04-11T03:45:40Z",
+      "side": 1,
+      "message": "I think I would much rather have this return the data via c.done above (which will make -json-output for this function contain all the pin data as... well.. json)",
+      "range": {
+        "startLine": 990,
+        "startChar": 1,
+        "endLine": 990,
+        "endChar": 18
+      },
+      "revId": "8bf76e2d7741ddf2f8da67bb2b8d2d791805aa6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
