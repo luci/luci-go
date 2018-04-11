@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2749de3e_23b68998",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 912,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-04-11T03:57:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7570a3d8_a3bf70f0",
+      "range": {
+        "startLine": 911,
+        "startChar": 0,
+        "endLine": 912,
+        "endChar": 24
+      },
+      "revId": "8bf76e2d7741ddf2f8da67bb2b8d2d791805aa6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d0b5c24_40a8edcd",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "8bf76e2d7741ddf2f8da67bb2b8d2d791805aa6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7b300f5_8a1a2f84",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 990,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-04-11T03:57:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d0b5c24_40a8edcd",
+      "range": {
+        "startLine": 990,
+        "startChar": 1,
+        "endLine": 990,
+        "endChar": 18
+      },
+      "revId": "8bf76e2d7741ddf2f8da67bb2b8d2d791805aa6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
