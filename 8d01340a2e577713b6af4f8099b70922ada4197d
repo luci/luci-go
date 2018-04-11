@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92fbf9f9_09e48866",
+        "filename": "milo/common/config.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-11T22:53:29Z",
+      "side": 1,
+      "message": "nit: maybe merge into the prev if\nsame below",
+      "range": {
+        "startLine": 102,
+        "startChar": 3,
+        "endLine": 102,
+        "endChar": 5
+      },
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "010323da_5d4e6f86",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-11T22:53:29Z",
+      "side": 1,
+      "message": "i didn\u0027t understand this sentence",
+      "range": {
+        "startLine": 104,
+        "startChar": 35,
+        "endLine": 105,
+        "endChar": 14
+      },
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de5543c3_7433f7f0",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-11T22:53:29Z",
+      "side": 1,
+      "message": "headerConsoles is called only from L552 and def there is already checked to be non-nil.\n\nit seems this entire function can be inlined and be just a call to consoleHeaderGropuIDs",
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54816dc8_4a7a393b",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 498,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-11T22:53:29Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 498,
+        "startChar": 1,
+        "endLine": 498,
+        "endChar": 14
+      },
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
