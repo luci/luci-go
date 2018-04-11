@@ -37,6 +37,13 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/schedule"
 )
 
+// FinishedInvocationsHorizon defines how many invocations to keep in the
+// Job's FinishedInvocations list.
+//
+// All entries there that are older than FinishedInvocationsHorizon will be
+// evicted next time the list is updated.
+const FinishedInvocationsHorizon = 10 * time.Minute
+
 // Job stores the last known definition of a scheduler job, as well as its
 // current state. Root entity, its kind is "Job".
 type Job struct {
@@ -110,6 +117,24 @@ type Job struct {
 	//
 	// Used by v2 jobs only.
 	ActiveInvocations []int64 `gae:",noindex"`
+
+	// FinishedInvocationsRaw is a list of recently finished invocations, along
+	// with the time they finished.
+	//
+	// It is serialized internal.FinishedInvocationList proto, see db.proto. We
+	// store it this way to simplify adding more fields if necessary and to avoid
+	// paying the cost of the deserialization if the caller is not interested.
+	//
+	// This list is used to achieve a perfectly consistent listing of all recent
+	// invocations of a job.
+	//
+	// Entries older than FinishedInvocationsHorizon are evicted from this list
+	// during triages. We assume that FinishedInvocationsHorizon is enough for
+	// datastore indexes to catch up, so all recent invocations older than the
+	// horizon can be fetched using a regular datastore query.
+	//
+	// Used by v2 jobs only.
+	FinishedInvocationsRaw []byte `gae:",noindex"`
 }
 
 // JobName returns name of this Job as defined its project's config.
@@ -163,7 +188,8 @@ func (e *Job) IsEqual(other *Job) bool {
 		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
 		e.State.Equal(&other.State) &&
 		e.Cron.Equal(&other.Cron) &&
-		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations))
+		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
+		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw))
 }
 
 // IsV2 returns true for v2 jobs.

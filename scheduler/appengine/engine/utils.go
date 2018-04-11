@@ -258,6 +258,48 @@ func structFromMap(m map[string]string) *structpb.Struct {
 	return out
 }
 
+// marshalFinishedInvs marshals list of invocations into FinishedInvocationList.
+//
+// Panics on errors.
+func marshalFinishedInvs(invs []*internal.FinishedInvocation) []byte {
+	if len(invs) == 0 {
+		return nil
+	}
+	blob, err := proto.Marshal(&internal.FinishedInvocationList{Invocations: invs})
+	if err != nil {
+		panic(err)
+	}
+	return blob
+}
+
+// unmarshalFinishedInvs unmarshals FinishedInvocationList proto message.
+func unmarshalFinishedInvs(raw []byte) ([]*internal.FinishedInvocation, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	invs := internal.FinishedInvocationList{}
+	if err := proto.Unmarshal(raw, &invs); err != nil {
+		return nil, err
+	}
+	return invs.Invocations, nil
+}
+
+// filteredFinishedInvocations unmarshals FinishedInvocationList and filters
+// it to keep only entries whose Finished timestamp is newer than 'oldest'.
+func filteredFinishedInvs(raw []byte, oldest time.Time) ([]*internal.FinishedInvocation, error) {
+	invs, err := unmarshalFinishedInvs(raw)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]*internal.FinishedInvocation, 0, len(invs))
+	for _, inv := range invs {
+		if google.TimeFromProto(inv.Finished).After(oldest) {
+			filtered = append(filtered, inv)
+		}
+	}
+	return filtered, nil
+}
+
 // opsCache "remembers" recently executed operations, and skips executing them
 // if they already were done.
 //
