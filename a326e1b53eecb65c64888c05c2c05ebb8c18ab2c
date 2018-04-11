@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc982678_01614cb1",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 979,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T23:54:12Z",
+      "side": 1,
+      "message": "nit: this can also be\n\nfor range parsedFile.VerifyPlatforms {\n}",
+      "range": {
+        "startLine": 979,
+        "startChar": 1,
+        "endLine": 979,
+        "endChar": 55
+      },
+      "revId": "a326e1b53eecb65c64888c05c2c05ebb8c18ab2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "203a0466_e7242346",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 986,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T23:54:12Z",
+      "side": 1,
+      "message": "nit:\n\npins :\u003d pinMap[subdir]\nfor ... {\n  pins \u003d append(pins, ...)\n}\npinMap[subdir] \u003d pins",
+      "range": {
+        "startLine": 982,
+        "startChar": 3,
+        "endLine": 986,
+        "endChar": 50
+      },
+      "revId": "a326e1b53eecb65c64888c05c2c05ebb8c18ab2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0d6a15c_60be8823",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 989,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T23:54:12Z",
+      "side": 1,
+      "message": "please sort values, i.e.\n\nfor _, v :\u003d range pinMap {\n  sort.Slice(v, ...)\n}\n\nOtherwise the output depends on who wins the race in parallel.FanOutIn. It\u0027s not a big deal, but non-deterministic output is annoying.",
+      "range": {
+        "startLine": 989,
+        "startChar": 8,
+        "endLine": 989,
+        "endChar": 14
+      },
+      "revId": "a326e1b53eecb65c64888c05c2c05ebb8c18ab2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
