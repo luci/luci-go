@@ -17,9 +17,6 @@ package rpc
 import (
 	"golang.org/x/net/context"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/Masterminds/squirrel"
 
 	"go.chromium.org/luci/common/errors"
@@ -27,9 +24,6 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 )
-
-// maxVMSlots is the maximum number of available VM slots which can be found at a time.
-const maxVMSlots = 32
 
 // FindVMSlots handles a request to find available VM slots.
 func (*Service) FindVMSlots(c context.Context, req *crimson.FindVMSlotsRequest) (*crimson.FindVMSlotsResponse, error) {
@@ -44,12 +38,6 @@ func (*Service) FindVMSlots(c context.Context, req *crimson.FindVMSlotsRequest) 
 
 // findVMSlots returns a slice of physical hosts with available VM slots in the database.
 func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.FindVMSlotsRequest) ([]*crimson.PhysicalHost, error) {
-	switch {
-	case req.Slots < 1:
-		return nil, status.Error(codes.InvalidArgument, "slots is required and must be positive")
-	case req.Slots > maxVMSlots:
-		return nil, status.Errorf(codes.InvalidArgument, "slots must not exceed %d", maxVMSlots)
-	}
 	stmt := squirrel.Select("h.name", "h.vlan_id", "ph.vm_slots - COUNT(v.physical_host_id)").
 		From("(physical_hosts ph, hostnames h)")
 	if len(req.Manufacturers) > 0 {
@@ -60,10 +48,12 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 		Where("ph.hostname_id = h.id").
 		Where("ph.vm_slots > 0").
 		GroupBy("h.name", "h.vlan_id", "ph.vm_slots").
-		Having("ph.vm_slots > COUNT(v.physical_host_id)").
+		Having("ph.vm_slots > COUNT(v.physical_host_id)")
+	if req.Slots > 0 {
 		// In the worst case, each host with at least one available VM slot has only one available VM slot.
 		// Set the limit to assume the worst and refine the result later.
-		Limit(uint64(req.Slots))
+		stmt = stmt.Limit(uint64(req.Slots))
+	}
 	stmt = selectInString(stmt, "pl.manufacturer", req.Manufacturers)
 	query, args, err := stmt.ToSql()
 	if err != nil {
@@ -76,7 +66,7 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 	defer rows.Close()
 	var hosts []*crimson.PhysicalHost
 	var slots int32
-	for rows.Next() && slots < req.Slots {
+	for rows.Next() && (slots < req.Slots || req.Slots < 1) {
 		h := &crimson.PhysicalHost{}
 		if err = rows.Scan(
 			&h.Name,

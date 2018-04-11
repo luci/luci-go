@@ -11,6 +11,7 @@ import "go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto";
 // A request to find available VM slots in the database.
 message FindVMSlotsRequest {
   // The number of available VM slots to find.
+  // Values < 1 return all available VM slots.
   int32 slots = 1;
   // The platform manufacturers to filter found VM slots on.
   repeated string manufacturers = 2;
