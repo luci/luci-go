@@ -13,7 +13,7 @@
   "batchPath": "batch",
   "description": "API to interact with the Swarming service. Permits to create, view and cancel tasks, query tasks and bots",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/MwS04UO44e3Wn9zgAOfxkgQH070\"",
+  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/IotzaHxbp65Zj5DZelvwCWcRCio\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
@@ -457,6 +457,10 @@
             }
           },
           "path": "task/{task_id}/cancel",
+          "request": {
+            "$ref": "SwarmingRpcsTaskCancelRequest",
+            "parameterName": "resource"
+          },
           "response": {
             "$ref": "SwarmingRpcsCancelResponse"
           },
@@ -580,12 +584,14 @@
                 "COMPLETED_SUCCESS",
                 "DEDUPED",
                 "EXPIRED",
+                "KILLED",
                 "PENDING",
                 "PENDING_RUNNING",
                 "RUNNING",
                 "TIMED_OUT"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -673,12 +679,14 @@
                 "COMPLETED_SUCCESS",
                 "DEDUPED",
                 "EXPIRED",
+                "KILLED",
                 "PENDING",
                 "PENDING_RUNNING",
                 "RUNNING",
                 "TIMED_OUT"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -782,12 +790,14 @@
                 "COMPLETED_SUCCESS",
                 "DEDUPED",
                 "EXPIRED",
+                "KILLED",
                 "PENDING",
                 "PENDING_RUNNING",
                 "RUNNING",
                 "TIMED_OUT"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -944,6 +954,9 @@
           "type": "string"
         },
         "lease_id": {
+          "type": "string"
+        },
+        "machine_lease": {
           "type": "string"
         },
         "machine_type": {
@@ -1216,6 +1229,9 @@
       "description": "Description of a new task request as described by the client. This message is used to create a new task.",
       "id": "SwarmingRpcsNewTaskRequest",
       "properties": {
+        "evaluate_only": {
+          "type": "boolean"
+        },
         "expiration_secs": {
           "format": "int64",
           "type": "string"
@@ -1249,6 +1265,13 @@
         "tags": {
           "items": {
             "type": "string"
+          },
+          "type": "array"
+        },
+        "task_slices": {
+          "description": "Defines a possible task execution for a task request to be run on the Swarming infrastructure. This is one of the possible fallback on a task request.",
+          "items": {
+            "$ref": "SwarmingRpcsTaskSlice"
           },
           "type": "array"
         },
@@ -1369,6 +1392,16 @@
         },
         "value": {
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingRpcsTaskCancelRequest": {
+      "description": "Request to cancel one task.",
+      "id": "SwarmingRpcsTaskCancelRequest",
+      "properties": {
+        "kill_running": {
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -1531,6 +1564,13 @@
           },
           "type": "array"
         },
+        "task_slices": {
+          "description": "Defines a possible task execution for a task request to be run on the Swarming infrastructure. This is one of the possible fallback on a task request.",
+          "items": {
+            "$ref": "SwarmingRpcsTaskSlice"
+          },
+          "type": "array"
+        },
         "user": {
           "type": "string"
         }
@@ -1626,6 +1666,10 @@
           "format": "date-time",
           "type": "string"
         },
+        "current_task_slice": {
+          "format": "int64",
+          "type": "string"
+        },
         "deduped_from": {
           "type": "string"
         },
@@ -1676,11 +1720,13 @@
             "CANCELED",
             "COMPLETED",
             "EXPIRED",
+            "KILLED",
             "PENDING",
             "RUNNING",
             "TIMED_OUT"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             "",
@@ -1710,12 +1756,30 @@
       },
       "type": "object"
     },
+    "SwarmingRpcsTaskSlice": {
+      "description": "Defines a possible task execution for a task request to be run on the Swarming infrastructure. This is one of the possible fallback on a task request.",
+      "id": "SwarmingRpcsTaskSlice",
+      "properties": {
+        "expiration_secs": {
+          "format": "int64",
+          "type": "string"
+        },
+        "properties": {
+          "$ref": "SwarmingRpcsTaskProperties",
+          "description": "Important metadata about a particular task."
+        }
+      },
+      "type": "object"
+    },
     "SwarmingRpcsTasksCancelRequest": {
-      "description": "Request to cancel some subset of pending tasks.",
+      "description": "Request to cancel some subset of pending/running tasks.",
       "id": "SwarmingRpcsTasksCancelRequest",
       "properties": {
         "cursor": {
           "type": "string"
+        },
+        "kill_running": {
+          "type": "boolean"
         },
         "limit": {
           "format": "int64",

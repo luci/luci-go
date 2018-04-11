@@ -13,7 +13,7 @@
   "batchPath": "batch",
   "description": "API specific to swarmbucket.",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/bB4z1KNULH5idtTqVEBpopErE9A\"",
+  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/90k7XAxzUYEvjSdcxFI4EBPwxN8\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
@@ -197,6 +197,12 @@
         },
         "properties_json": {
           "type": "string"
+        },
+        "swarming_dimensions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       },
       "type": "object"
