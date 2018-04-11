@@ -902,14 +902,19 @@ func TestQueries(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("With paging", func() {
-				invs, cursor, err := e.ListInvocations(ctxOne, job, 2, "")
+				invs, cursor, err := e.ListInvocations(ctxOne, job, ListInvocationsOpts{
+					PageSize: 2,
+				})
 				So(err, ShouldBeNil)
 				So(len(invs), ShouldEqual, 2)
 				So(invs[0].ID, ShouldEqual, 1)
 				So(invs[1].ID, ShouldEqual, 2)
 				So(cursor, ShouldNotEqual, "")
 
-				invs, cursor, err = e.ListInvocations(ctxOne, job, 2, cursor)
+				invs, cursor, err = e.ListInvocations(ctxOne, job, ListInvocationsOpts{
+					PageSize: 2,
+					Cursor:   cursor,
+				})
 				So(err, ShouldBeNil)
 				So(len(invs), ShouldEqual, 1)
 				So(invs[0].ID, ShouldEqual, 3)
