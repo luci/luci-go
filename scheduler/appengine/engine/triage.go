@@ -135,12 +135,12 @@ func (op *triageOp) transaction(c context.Context, job *Job) error {
 	// Reset state collected in the transaction in case this is a retry.
 	op.garbage = nil
 
-	// Tidy ActiveInvocations list by removing all recently finished invocations.
+	// Tidy ActiveInvocations list by moving all recently finished invocations to
+	// FinishedInvocations list.
 	tidyOp, err := op.tidyActiveInvocations(c, job)
 	if err != nil {
 		return err
 	}
-	logging.Infof(c, "Active invocations: %v", job.ActiveInvocations)
 
 	// Process pending triggers set by emitting new invocations. Note that this
 	// modifies ActiveInvocations list when emitting invocations.
@@ -196,44 +196,71 @@ func (op *triageOp) finalize(c context.Context) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// tidyActiveInvocations removes finished invocations from ActiveInvocations.
+// tidyActiveInvocations removes finished invocations from ActiveInvocations,
+// and adds them to FinishedInvocations.
 //
 // Called within a transaction. Mutates job. Returns an open dsset.PopOp that
 // must be eventually submitted with dsset.FinishPop.
 func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.PopOp, error) {
+	now := clock.Now(c).UTC()
+
+	// Deserialize the list of recently finished invocations, as stored in the
+	// entity. Discard old items right away. If it is broken, log, but proceed.
+	// It is ~OK to loose it (this will temporary cause some API calls to return
+	// incomplete data).
+	finishedRecord, err := filteredFinishedInvs(
+		job.FinishedInvocationsRaw, now.Add(-FinishedInvocationsHorizon))
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to unmarshal FinishedInvocationsRaw, skipping")
+	}
+
 	// Note that per dsset API we need to do BeginPop if there's some garbage,
 	// even if Items is empty. We can skip this if both lists are empty though.
-	if len(op.finishedList.Items) == 0 && len(op.finishedList.Garbage) == 0 {
-		return nil, nil
-	}
-
-	popOp, err := op.finishedSet.BeginPop(c, op.finishedList)
-	if err != nil {
-		return nil, err
-	}
-
-	// Items can have IDs popped by some other transaction already. Collect
-	// only ones consumed by us here.
-	reallyFinished := make(map[int64]struct{}, len(op.finishedList.Items))
-	for _, itm := range op.finishedList.Items {
-		if popOp.Pop(itm.ID) {
-			reallyFinished[op.finishedSet.ItemToInvID(&itm)] = struct{}{}
+	var popOp *dsset.PopOp
+	if len(op.finishedList.Items) != 0 || len(op.finishedList.Garbage) != 0 {
+		popOp, err = op.finishedSet.BeginPop(c, op.finishedList)
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	// Remove IDs of all finished invocations from ActiveInvocations list,
-	// preserving the order.
-	if len(reallyFinished) != 0 {
-		filtered := make([]int64, 0, len(job.ActiveInvocations))
-		for _, id := range job.ActiveInvocations {
-			if _, yep := reallyFinished[id]; yep {
-				logging.Infof(c, "Invocation %d is acknowledged as finished", id)
-			} else {
-				filtered = append(filtered, id) // still running
+		// Items can have IDs popped by some other transaction already. Collect
+		// only ones consumed by us here.
+		reallyFinished := make(map[int64]struct{}, len(op.finishedList.Items))
+		for _, itm := range op.finishedList.Items {
+			if popOp.Pop(itm.ID) {
+				reallyFinished[op.finishedSet.ItemToInvID(&itm)] = struct{}{}
 			}
 		}
-		job.ActiveInvocations = filtered
+
+		// Remove IDs of all finished invocations from ActiveInvocations list,
+		// preserving the order, and add them to the finished invocations list.
+		if len(reallyFinished) != 0 {
+			filtered := make([]int64, 0, len(job.ActiveInvocations))
+			for _, id := range job.ActiveInvocations {
+				if _, yep := reallyFinished[id]; !yep {
+					filtered = append(filtered, id) // still running
+					continue
+				}
+				logging.Infof(c, "Invocation %d is acknowledged as finished", id)
+				finishedRecord = append(finishedRecord, &internal.FinishedInvocation{
+					InvocationId: id,
+					Finished:     google.NewTimestamp(now),
+				})
+			}
+			job.ActiveInvocations = filtered
+		}
 	}
+
+	// Marshal back FinishedInvocationsRaw after it has been updated.
+	job.FinishedInvocationsRaw = marshalFinishedInvs(finishedRecord)
+
+	// Nice looking logging.
+	invIDs := make([]int64, len(finishedRecord))
+	for i := range finishedRecord {
+		invIDs[i] = finishedRecord[i].InvocationId
+	}
+	logging.Infof(c, "Active invocations: %v", job.ActiveInvocations)
+	logging.Infof(c, "Recently finished:  %v", invIDs)
 
 	return popOp, nil
 }
