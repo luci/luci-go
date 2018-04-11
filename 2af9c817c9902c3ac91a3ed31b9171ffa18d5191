@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04300d36_284d0be6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-04-11T04:04:34Z",
+      "side": 1,
+      "message": "update",
+      "range": {
+        "startLine": 9,
+        "startChar": 54,
+        "endLine": 10,
+        "endChar": 46
+      },
+      "revId": "2af9c817c9902c3ac91a3ed31b9171ffa18d5191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d684e077_9196f06e",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 980,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-04-11T04:04:34Z",
+      "side": 1,
+      "message": "why not \n\n  for res :\u003d range results {\n    ...\n  }\n\nIt doesn\u0027t look like i is actually used for anything other than a loop variable?",
+      "range": {
+        "startLine": 980,
+        "startChar": 2,
+        "endLine": 980,
+        "endChar": 18
+      },
+      "revId": "2af9c817c9902c3ac91a3ed31b9171ffa18d5191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
