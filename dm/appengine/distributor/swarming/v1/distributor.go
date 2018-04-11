@@ -241,7 +241,8 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 func (d *swarmingDist) Cancel(q *dm.Quest_Desc, tok distributor.Token) error {
 	return retry.Retry(d, retry.Default, func() (err error) {
 		ctx, _ := context.WithTimeout(d, 10*time.Second)
-		_, err = newSwarmClient(ctx, d.sCfg).Task.Cancel(string(tok)).Context(ctx).Do()
+		cr := &swarm.SwarmingRpcsTaskCancelRequest{KillRunning: true}
+		_, err = newSwarmClient(ctx, d.sCfg).Task.Cancel(string(tok), cr).Context(ctx).Do()
 		return
 	}, retry.LogCallback(d, "swarm.Task.Cancel"))
 }

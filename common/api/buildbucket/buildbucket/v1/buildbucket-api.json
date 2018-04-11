@@ -13,7 +13,7 @@
   "batchPath": "batch",
   "description": "API for scheduling builds.",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/znhfeRqG1ayGyUhTqmhvWzoDzQQ\"",
+  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/1cLX1C1EYpA4BpAwG9QDgRcRFhs\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
