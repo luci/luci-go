@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "e4b28c75_52439901",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T02:16:50Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b30ccbb4_3fbda81c",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 0
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68b108be_49430941",
         "filename": "scheduler/appengine/engine/triage_test.go",
         "patchSetId": 2
@@ -201,6 +225,30 @@
       "side": 1,
       "message": "We were, see marshalTriggersList and marshalTimersList.\n\nI\u0027ve never ever seen proto.Marshal fail... Panicing to keep the code simpler.",
       "parentUuid": "3d0a2eed_a5180dbf",
+      "range": {
+        "startLine": 263,
+        "startChar": 3,
+        "endLine": 263,
+        "endChar": 20
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "064b3993_ea432be7",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T02:16:50Z",
+      "side": 1,
+      "message": "mkay, i personally like panicing, it feels like exceptions :)",
+      "parentUuid": "fc873177_b489979c",
       "range": {
         "startLine": 263,
         "startChar": 3,
