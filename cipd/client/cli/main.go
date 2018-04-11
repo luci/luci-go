@@ -944,12 +944,17 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	verify := cipd.Verifier{
 		Client: client,
 	}
+	results := make(chan *ensure.ResolvedFile, len(parsedFile.VerifyPlatforms))
 	_ = parallel.FanOutIn(func(workC chan<- func() error) {
 		for _, plat := range parsedFile.VerifyPlatforms {
 			plat := plat
 
 			workC <- func() error {
-				return verify.VerifyEnsureFile(ctx, parsedFile, plat.Expander())
+				ret, err := verify.VerifyEnsureFile(ctx, parsedFile, plat.Expander())
+				if err == nil {
+					results <- ret
+				}
+				return err
 			}
 		}
 	})
@@ -970,6 +975,19 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	}
 
 	logging.Infof(ctx, "Successfully verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
+
+	pinMap := map[string][]pinInfo{}
+	for i := 0; i < len(parsedFile.VerifyPlatforms); i++ {
+		res := <-results
+		for subdir, pkgs := range res.PackagesBySubdir {
+			pins := make([]pinInfo, len(pkgs))
+			for i, pkg := range pkgs {
+				pins[i] = pinInfo{pkg.PackageName, &pkg, "", ""}
+			}
+			pinMap[subdir] = append(pinMap[subdir], pins...)
+		}
+	}
+	printPinsAndError(pinMap)
 	return nil
 }
 

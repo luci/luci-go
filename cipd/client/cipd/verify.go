@@ -138,7 +138,7 @@ func (v *Verifier) ResolvePackage(ctx context.Context, pkg UnresolvedPackage) (c
 //
 // If a package fails to resolve, or if ResolveWith reutrns an error,
 // VerifyEnsureFile will return an error.
-func (v *Verifier) VerifyEnsureFile(ctx context.Context, file *ensure.File, expander template.Expander) error {
+func (v *Verifier) VerifyEnsureFile(ctx context.Context, file *ensure.File, expander template.Expander) (*ensure.ResolvedFile, error) {
 	v.initialize()
 
 	// Resolve all instances.
@@ -147,7 +147,7 @@ func (v *Verifier) VerifyEnsureFile(ctx context.Context, file *ensure.File, expa
 	// continues to try the remaining packages. However, we'll track the error
 	// and return it externally.
 	var resolveErrors errors.MultiError
-	_, err := file.ResolveWith(func(pkgName, vers string) (common.Pin, error) {
+	ret, err := file.ResolveWith(func(pkgName, vers string) (common.Pin, error) {
 		pkg := UnresolvedPackage{pkgName, vers}
 
 		pin, err := v.ResolvePackage(ctx, pkg)
@@ -159,11 +159,11 @@ func (v *Verifier) VerifyEnsureFile(ctx context.Context, file *ensure.File, expa
 
 	switch {
 	case err != nil:
-		return err
+		return ret, err
 	case len(resolveErrors) > 0:
-		return resolveErrors
+		return ret, resolveErrors
 	default:
-		return nil
+		return ret, nil
 	}
 }
 
