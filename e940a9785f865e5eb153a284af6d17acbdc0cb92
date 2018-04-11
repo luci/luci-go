@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b30ccbb4_3fbda81c",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T02:12:10Z",
+      "side": 1,
+      "message": "I want to keep FinishedInvocationsRaw clean of old garbage even if there\u0027s no new finished invocations.",
+      "parentUuid": "458c120b_919c915e",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 0
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68b108be_49430941",
         "filename": "scheduler/appengine/engine/triage_test.go",
         "patchSetId": 2
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "941026bf_0358fc46",
+        "filename": "scheduler/appengine/engine/triage_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T02:12:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "273860aa_d744761c",
+      "range": {
+        "startLine": 62,
+        "startChar": 24,
+        "endLine": 62,
+        "endChar": 25
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4e0687f_61e74e7f",
         "filename": "scheduler/appengine/engine/triage_test.go",
         "patchSetId": 2
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "f689b018_b8606c80",
+        "filename": "scheduler/appengine/engine/triage_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T02:12:10Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d4e0687f_61e74e7f",
+      "range": {
+        "startLine": 86,
+        "startChar": 3,
+        "endLine": 90,
+        "endChar": 48
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d0a2eed_a5180dbf",
         "filename": "scheduler/appengine/engine/utils.go",
         "patchSetId": 2
@@ -114,6 +186,30 @@
       "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc873177_b489979c",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-11T02:12:10Z",
+      "side": 1,
+      "message": "We were, see marshalTriggersList and marshalTimersList.\n\nI\u0027ve never ever seen proto.Marshal fail... Panicing to keep the code simpler.",
+      "parentUuid": "3d0a2eed_a5180dbf",
+      "range": {
+        "startLine": 263,
+        "startChar": 3,
+        "endLine": 263,
+        "endChar": 20
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
