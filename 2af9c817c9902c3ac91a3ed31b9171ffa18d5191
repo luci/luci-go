@@ -93,6 +93,30 @@
       "revId": "2af9c817c9902c3ac91a3ed31b9171ffa18d5191",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "521339f3_57e5167b",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 980,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-04-11T04:24:12Z",
+      "side": 1,
+      "message": "Oh, right, I see the channel is unclosed.\n\nThe other way to do it would be to just have a slice of results and assign them directly. I\u0027m pretty sure that\u0027s goroutine-safe?",
+      "parentUuid": "cc7c90e9_96632be1",
+      "range": {
+        "startLine": 980,
+        "startChar": 2,
+        "endLine": 980,
+        "endChar": 18
+      },
+      "revId": "2af9c817c9902c3ac91a3ed31b9171ffa18d5191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
