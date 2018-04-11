@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "458c120b_919c915e",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T01:54:43Z",
+      "side": 1,
+      "message": "i think this can be moved *after* the next block s.t. we only ever deserialize \u0026\u0026 remove garbage if there are new items to add, otherwise keep as is. Then, early exit on line 206 (before this CL) can still go on.",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 216,
+        "endChar": 0
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68b108be_49430941",
+        "filename": "scheduler/appengine/engine/triage_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T01:54:43Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 62,
+        "startChar": 33,
+        "endLine": 62,
+        "endChar": 34
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "273860aa_d744761c",
+        "filename": "scheduler/appengine/engine/triage_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T01:54:43Z",
+      "side": 1,
+      "message": "ce",
+      "range": {
+        "startLine": 62,
+        "startChar": 24,
+        "endLine": 62,
+        "endChar": 25
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4e0687f_61e74e7f",
+        "filename": "scheduler/appengine/engine/triage_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T01:54:43Z",
+      "side": 1,
+      "message": "... but if you adopt my suggestion above, then this is probably no longer the case (but personally, i don\u0027t see this as a bad thing)",
+      "range": {
+        "startLine": 86,
+        "startChar": 3,
+        "endLine": 90,
+        "endChar": 48
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d0a2eed_a5180dbf",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-11T01:54:43Z",
+      "side": 1,
+      "message": "meh, we weren\u0027t panicing befoer on similar stuff, why can\u0027t error be propagated?",
+      "range": {
+        "startLine": 263,
+        "startChar": 3,
+        "endLine": 263,
+        "endChar": 20
+      },
+      "revId": "e940a9785f865e5eb153a284af6d17acbdc0cb92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
