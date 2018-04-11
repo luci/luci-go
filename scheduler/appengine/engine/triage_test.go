@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -55,9 +57,37 @@ func TestTriageOp(t *testing.T) {
 			}
 			recentlyFinishedSet(c, before.JobID).Add(c, []int64{1, 2, 4})
 
+			// We record the triage time inside FinishedInvocation.Finished, not when
+			// the invocations was actually finished. Usually it shouldn't matter,
+			// since the difference is only a couple of seconds (due to TQ delays).
+			clock.Get(c).(testclock.TestClock).Add(15 * time.Second)
+			expectedFinishedTS := epoch.Add(15 * time.Second)
+
 			after, err := tb.runTestTriage(c, before)
 			So(err, ShouldBeNil)
 			So(after.ActiveInvocations, ShouldResemble, []int64{3, 5})
+
+			// FinishedInvocationsRaw has the finished invocations.
+			finishedRaw := after.FinishedInvocationsRaw
+			finished, err := unmarshalFinishedInvs(finishedRaw)
+			So(err, ShouldBeNil)
+			So(finished, ShouldResemble, []*internal.FinishedInvocation{
+				{InvocationId: 1, Finished: google.NewTimestamp(expectedFinishedTS)},
+				{InvocationId: 2, Finished: google.NewTimestamp(expectedFinishedTS)},
+				{InvocationId: 4, Finished: google.NewTimestamp(expectedFinishedTS)},
+			})
+
+			// Some time later, they are still there.
+			clock.Get(c).(testclock.TestClock).Add(FinishedInvocationsHorizon - time.Second)
+			after, err = tb.runTestTriage(c, after)
+			So(err, ShouldBeNil)
+			So(after.FinishedInvocationsRaw, ShouldResemble, finishedRaw)
+
+			// But eventually the get kicked out.
+			clock.Get(c).(testclock.TestClock).Add(2 * time.Second)
+			after, err = tb.runTestTriage(c, after)
+			So(err, ShouldBeNil)
+			So(after.FinishedInvocationsRaw, ShouldBeNil)
 		})
 
 		Convey("processes triggers", func() {

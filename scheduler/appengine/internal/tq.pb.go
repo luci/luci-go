@@ -22,7 +22,7 @@ type ReadProjectConfigTask struct {
 func (m *ReadProjectConfigTask) Reset()                    { *m = ReadProjectConfigTask{} }
 func (m *ReadProjectConfigTask) String() string            { return proto.CompactTextString(m) }
 func (*ReadProjectConfigTask) ProtoMessage()               {}
-func (*ReadProjectConfigTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*ReadProjectConfigTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *ReadProjectConfigTask) GetProjectId() string {
 	if m != nil {
@@ -45,7 +45,7 @@ type LaunchInvocationTask struct {
 func (m *LaunchInvocationTask) Reset()                    { *m = LaunchInvocationTask{} }
 func (m *LaunchInvocationTask) String() string            { return proto.CompactTextString(m) }
 func (*LaunchInvocationTask) ProtoMessage()               {}
-func (*LaunchInvocationTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*LaunchInvocationTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *LaunchInvocationTask) GetJobId() string {
 	if m != nil {
@@ -73,7 +73,7 @@ type LaunchInvocationsBatchTask struct {
 func (m *LaunchInvocationsBatchTask) Reset()                    { *m = LaunchInvocationsBatchTask{} }
 func (m *LaunchInvocationsBatchTask) String() string            { return proto.CompactTextString(m) }
 func (*LaunchInvocationsBatchTask) ProtoMessage()               {}
-func (*LaunchInvocationsBatchTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*LaunchInvocationsBatchTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *LaunchInvocationsBatchTask) GetTasks() []*LaunchInvocationTask {
 	if m != nil {
@@ -96,7 +96,7 @@ type TriageJobStateTask struct {
 func (m *TriageJobStateTask) Reset()                    { *m = TriageJobStateTask{} }
 func (m *TriageJobStateTask) String() string            { return proto.CompactTextString(m) }
 func (*TriageJobStateTask) ProtoMessage()               {}
-func (*TriageJobStateTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*TriageJobStateTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 func (m *TriageJobStateTask) GetJobId() string {
 	if m != nil {
@@ -120,7 +120,7 @@ type KickTriageTask struct {
 func (m *KickTriageTask) Reset()                    { *m = KickTriageTask{} }
 func (m *KickTriageTask) String() string            { return proto.CompactTextString(m) }
 func (*KickTriageTask) ProtoMessage()               {}
-func (*KickTriageTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (*KickTriageTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func (m *KickTriageTask) GetJobId() string {
 	if m != nil {
@@ -143,7 +143,7 @@ type InvocationFinishedTask struct {
 func (m *InvocationFinishedTask) Reset()                    { *m = InvocationFinishedTask{} }
 func (m *InvocationFinishedTask) String() string            { return proto.CompactTextString(m) }
 func (*InvocationFinishedTask) ProtoMessage()               {}
-func (*InvocationFinishedTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (*InvocationFinishedTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
 
 func (m *InvocationFinishedTask) GetJobId() string {
 	if m != nil {
@@ -180,7 +180,7 @@ type FanOutTriggersTask struct {
 func (m *FanOutTriggersTask) Reset()                    { *m = FanOutTriggersTask{} }
 func (m *FanOutTriggersTask) String() string            { return proto.CompactTextString(m) }
 func (*FanOutTriggersTask) ProtoMessage()               {}
-func (*FanOutTriggersTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+func (*FanOutTriggersTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
 
 func (m *FanOutTriggersTask) GetJobIds() []string {
 	if m != nil {
@@ -210,7 +210,7 @@ type EnqueueTriggersTask struct {
 func (m *EnqueueTriggersTask) Reset()                    { *m = EnqueueTriggersTask{} }
 func (m *EnqueueTriggersTask) String() string            { return proto.CompactTextString(m) }
 func (*EnqueueTriggersTask) ProtoMessage()               {}
-func (*EnqueueTriggersTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
+func (*EnqueueTriggersTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
 
 func (m *EnqueueTriggersTask) GetJobId() string {
 	if m != nil {
@@ -240,7 +240,7 @@ type ScheduleTimersTask struct {
 func (m *ScheduleTimersTask) Reset()                    { *m = ScheduleTimersTask{} }
 func (m *ScheduleTimersTask) String() string            { return proto.CompactTextString(m) }
 func (*ScheduleTimersTask) ProtoMessage()               {}
-func (*ScheduleTimersTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
+func (*ScheduleTimersTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{8} }
 
 func (m *ScheduleTimersTask) GetJobId() string {
 	if m != nil {
@@ -278,7 +278,7 @@ type TimerTask struct {
 func (m *TimerTask) Reset()                    { *m = TimerTask{} }
 func (m *TimerTask) String() string            { return proto.CompactTextString(m) }
 func (*TimerTask) ProtoMessage()               {}
-func (*TimerTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{9} }
+func (*TimerTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{9} }
 
 func (m *TimerTask) GetJobId() string {
 	if m != nil {
@@ -316,7 +316,7 @@ type CronTickTask struct {
 func (m *CronTickTask) Reset()                    { *m = CronTickTask{} }
 func (m *CronTickTask) String() string            { return proto.CompactTextString(m) }
 func (*CronTickTask) ProtoMessage()               {}
-func (*CronTickTask) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{10} }
+func (*CronTickTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{10} }
 
 func (m *CronTickTask) GetJobId() string {
 	if m != nil {
@@ -347,10 +347,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/tq.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/tq.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 456 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xdf, 0x6b, 0x13, 0x41,
 	0x10, 0xc7, 0xb9, 0x86, 0xc4, 0xde, 0x44, 0x7c, 0x38, 0x6d, 0x0d, 0x81, 0x62, 0xbc, 0x17, 0x03,
