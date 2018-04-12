@@ -221,7 +221,7 @@ func (pl *PackageLoader) Verify(c context.Context, sp *vpython.Spec, tags []*vpy
 			continue
 		}
 
-		if err := verify.VerifyEnsureFile(c, ef, expander); err != nil {
+		if _, err := verify.VerifyEnsureFile(c, ef, expander); err != nil {
 			logging.Errorf(c, "Failed to verify package set for: %s", tag.TagString())
 			ensureFileErrors++
 		}
