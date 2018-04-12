@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate stringer -type=Status
+//go:generate stringer -type=Status,MachineStatus
 
 package model
 
@@ -81,3 +81,18 @@ func (s Status) Terminal() bool {
 func (s Status) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }
+
+// MachineStatus indicates the status of a machine.
+type MachineStatus int
+
+const (
+	// Idle means the machine is ready to accept a job.
+	Idle MachineStatus = iota
+	// Busy means the machine is currently running a job.
+	Busy
+	// Offline means the machine is neither ready to accept a job nor
+	// currently running a job.  The machine could be dead or quarantined.
+	Offline
+	// Rebooting means the machine went offline within the last 5 minutes.
+	Rebooting
+)

@@ -75,6 +75,7 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/fix-datastore", cronMW, cronFixDatastore)
 	r.GET("/internal/cron/stats", cronMW, StatsHandler)
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
+	r.GET("/internal/cron/update-pools", cronMW, UpdatePoolHandler)
 
 	// Builds.
 	r.GET("/p/:project/builds/b:id", projectMW, handleError(func(c *router.Context) error {
