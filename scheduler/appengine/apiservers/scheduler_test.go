@@ -173,7 +173,7 @@ func TestGetInvocationsApi(t *testing.T) {
 
 		Convey("DS error", func() {
 			fakeEng.mockJob("proj/job")
-			fakeEng.listInvocations = func(int, string) ([]*engine.Invocation, string, error) {
+			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
 				return nil, "", fmt.Errorf("ds error")
 			}
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
@@ -186,9 +186,10 @@ func TestGetInvocationsApi(t *testing.T) {
 
 		Convey("Empty with huge pagesize", func() {
 			fakeEng.mockJob("proj/job")
-			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
-				So(pageSize, ShouldEqual, 50)
-				So(cursor, ShouldEqual, "")
+			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
+				So(opts, ShouldResemble, engine.ListInvocationsOpts{
+					PageSize: 50,
+				})
 				return nil, "", nil
 			}
 			r, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
@@ -204,9 +205,11 @@ func TestGetInvocationsApi(t *testing.T) {
 			started := time.Unix(123123123, 0).UTC()
 			finished := time.Unix(321321321, 0).UTC()
 			fakeEng.mockJob("proj/job")
-			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
-				So(pageSize, ShouldEqual, 5)
-				So(cursor, ShouldEqual, "cursor")
+			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
+				So(opts, ShouldResemble, engine.ListInvocationsOpts{
+					PageSize: 5,
+					Cursor:   "cursor",
+				})
 				return []*engine.Invocation{
 					{ID: 12, Revision: "deadbeef", Status: task.StatusRunning, Started: started,
 						TriggeredBy: identity.Identity("user:bot@example.com")},
@@ -377,7 +380,7 @@ type fakeEngine struct {
 	getVisibleJobs        func() ([]*engine.Job, error)
 	getVisibleProjectJobs func(projectID string) ([]*engine.Job, error)
 	getVisibleJob         func(jobID string) (*engine.Job, error)
-	listInvocations       func(pageSize int, cursor string) ([]*engine.Invocation, string, error)
+	listInvocations       func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error)
 
 	pauseJob        func(jobID string) error
 	resumeJob       func(jobID string) error
@@ -430,8 +433,8 @@ func (f *fakeEngine) GetVisibleJobBatch(c context.Context, jobIDs []string) (map
 	return out, nil
 }
 
-func (f *fakeEngine) ListInvocations(c context.Context, job *engine.Job, pageSize int, cursor string) ([]*engine.Invocation, string, error) {
-	return f.listInvocations(pageSize, cursor)
+func (f *fakeEngine) ListInvocations(c context.Context, job *engine.Job, opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
+	return f.listInvocations(opts)
 }
 
 func (f *fakeEngine) PauseJob(c context.Context, job *engine.Job) error {
