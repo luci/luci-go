@@ -5,6 +5,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -13,6 +14,17 @@ func StatsHandler(ctx *router.Context) {
 	err := buildbot.StatsHandler(c)
 	if err != nil {
 		logging.Errorf(c, "failed to send stats: %s", err)
+		h.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	h.WriteHeader(http.StatusOK)
+}
+
+func UpdatePoolHandler(ctx *router.Context) {
+	c, h := ctx.Context, ctx.Writer
+	err := buildbucket.UpdatePools(c)
+	if err != nil {
+		logging.Errorf(c, "failed to update pools: %s", err)
 		h.WriteHeader(http.StatusInternalServerError)
 		return
 	}
