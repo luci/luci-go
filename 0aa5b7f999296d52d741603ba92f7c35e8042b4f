@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "50a9e2b7_9062bb9f",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-12T00:17:50Z",
+      "side": 1,
+      "message": "RPC API will have an enum. I didn\u0027t want to go through the formality of adding an enum here, and then have some stupid switch in RPC layer to translate from one enum to another.",
+      "range": {
+        "startLine": 230,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 18
+      },
+      "revId": "0aa5b7f999296d52d741603ba92f7c35e8042b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
