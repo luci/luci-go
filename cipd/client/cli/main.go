@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -908,15 +909,14 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	err := verifyEnsureFile(ctx, c.ensureFile, c.clientOptions)
-	return c.done(nil, err)
+	pm, err := verifyEnsureFile(ctx, c.ensureFile, c.clientOptions)
+	return c.doneWithPinMap(pm, err)
 }
 
-func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientOptions) error {
-
+func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientOptions) (map[string][]pinInfo, error) {
 	parsedFile, err := loadAndValidateEnsureFile(ctx, ensureFile, &clientOpts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	clientOpts.ensureFileServiceURL = parsedFile.ServiceURL
 
@@ -930,13 +930,13 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 
 	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(parsedFile.VerifyPlatforms) == 0 {
 		logging.Errorf(ctx,
 			"Verification platforms must be specified in the ensure file using one or more $VerifiedPlatform directives.")
-		return errors.New("no verification platforms configured")
+		return nil, errors.New("no verification platforms configured")
 	}
 	logging.Debugf(ctx, "Verifying against %d platform(s) in the ensure file.", len(parsedFile.VerifyPlatforms))
 
@@ -944,12 +944,17 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	verify := cipd.Verifier{
 		Client: client,
 	}
+	results := make(chan *ensure.ResolvedFile, len(parsedFile.VerifyPlatforms))
 	_ = parallel.FanOutIn(func(workC chan<- func() error) {
 		for _, plat := range parsedFile.VerifyPlatforms {
 			plat := plat
 
 			workC <- func() error {
-				return verify.VerifyEnsureFile(ctx, parsedFile, plat.Expander())
+				ret, err := verify.VerifyEnsureFile(ctx, parsedFile, plat.Expander())
+				if err == nil {
+					results <- ret
+				}
+				return err
 			}
 		}
 	})
@@ -966,11 +971,28 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 			logging.Errorf(ctx, "Failed to verify pin %s.", pin)
 		}
 
-		return errors.New("failed verification")
+		return nil, errors.New("failed verification")
 	}
 
 	logging.Infof(ctx, "Successfully verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
-	return nil
+
+	pinMap := map[string][]pinInfo{}
+	for range parsedFile.VerifyPlatforms {
+		res := <-results
+		for subdir, pkgs := range res.PackagesBySubdir {
+			pins := pinMap[subdir]
+			for _, pkg := range pkgs {
+				pins = append(pins, pinInfo{pkg.PackageName, &pkg, "", ""})
+			}
+			pinMap[subdir] = pins
+		}
+	}
+	for _, v := range pinMap {
+		sort.Slice(v, func(i, j int) bool {
+			return v[i].Pkg < v[j].Pkg
+		})
+	}
+	return pinMap, nil
 }
 
 func loadAndValidateEnsureFile(ctx context.Context, path string, clientOpts *clientOptions) (*ensure.File, error) {
