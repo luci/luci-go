@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "d4944353_c8215feb",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-12T20:58:09Z",
+      "side": 1,
+      "message": "I\u0027ll clean up the usage of Machine/Builder/Pool/Bot here and standardize on \"Bot\" and \"BotPool\" whereever possible.  Upon re-reading I agree it\u0027s a bit messy/confusing.",
+      "parentUuid": "cf2d6bb2_04f2e9aa",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 14
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "acc20b68_5a5c0b52",
         "filename": "milo/common/model/pool.go",
         "patchSetId": 5
@@ -128,6 +152,24 @@
     },
     {
       "key": {
+        "uuid": "6c05f74d_3e17d953",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-12T20:58:09Z",
+      "side": 1,
+      "message": "Good idea, I\u0027ll do that.",
+      "parentUuid": "352b2f36_eb89f6a1",
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3609ff61_c0d50ad3",
         "filename": "milo/common/model/pool.go",
         "patchSetId": 5
@@ -139,6 +181,30 @@
       "writtenOn": "2018-04-12T20:35:18Z",
       "side": 1,
       "message": "this isn\u0027t a dimension, though.\n\nFWIU Dimensions type defines a criteria of machines. Maybe rename it to MachineCriteria, MachinePoolDefinition or something.\n\nBTW, don\u0027t we use term \"bot\", not \"machine\"? V8 runs multiple bots on same machine, so I think s/machine/bot/ in this CL would be more accurate.",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 12
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab39ec08_39883626",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-12T20:58:09Z",
+      "side": 1,
+      "message": "The reason was because I really wanted a \"short\" name.  I think I can partially justify it by saying the Swarming hostname is an \"implicit\" dimension - It is the host that the bot is connected to.\n\nBut then dimensions would be used in two different ways in Milo, so I agree that\u0027s problematic.  I\u0027ll use \"PoolDescriptor\" Maybe? Avoiding \"Definition\" since it\u0027s isn\u0027t as much defined in Milo as inferred.",
+      "parentUuid": "3609ff61_c0d50ad3",
       "range": {
         "startLine": 47,
         "startChar": 1,
@@ -185,6 +251,30 @@
       "writtenOn": "2018-04-12T20:35:18Z",
       "side": 1,
       "message": "dimensions the struct or dimensions the field? this is ambiguous\n\nanyway, I think it would be better to have method instead of a field. \nThe field value gets stale as soon as one modifies Host or Dimensions field, and one cannot recompute it without recreating the whole thing. No such problem with a method.\nWhoever needs to store the sha1, can compute it using the method and store along with this struct.",
+      "range": {
+        "startLine": 52,
+        "startChar": 63,
+        "endLine": 52,
+        "endChar": 73
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42d09583_337ad63c",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-12T20:58:09Z",
+      "side": 1,
+      "message": "Field was used to avoid more complexity and unnecessary computation (Basically as a \"free\" cache).  As long as the callers are cooperative (Don\u0027t modify dimensions without fixing Hash), it\u0027s cheaper this way.  Besides, I think by splitting this out into a separate entity, the hash will need to be the key anyways.  I think I\u0027d like to keep the pre-computation of the SHA1, and document that these are supposed to be immutable.\n\nMaking these fields private with accessors won\u0027t work with Datastore either without some crazy PLS magic, so I\u0027d want to avoid that.",
+      "parentUuid": "00565c10_a252dd3c",
       "range": {
         "startLine": 52,
         "startChar": 63,
