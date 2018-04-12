@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "26eede4c_997fdbe0",
+        "filename": "milo/common/config.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-04-12T23:18:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92fbf9f9_09e48866",
+      "range": {
+        "startLine": 102,
+        "startChar": 3,
+        "endLine": 102,
+        "endChar": 5
+      },
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "010323da_5d4e6f86",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 20
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ca5b07a6_4905cfb5",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-04-12T23:18:52Z",
+      "side": 1,
+      "message": "lol. this shouldn\u0027t even be here, it\u0027s a rebase artifact. deleted.",
+      "parentUuid": "010323da_5d4e6f86",
+      "range": {
+        "startLine": 104,
+        "startChar": 35,
+        "endLine": 105,
+        "endChar": 14
+      },
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de5543c3_7433f7f0",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 20
@@ -62,6 +110,24 @@
       "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6755fbd1_9f38015c",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-04-12T23:18:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de5543c3_7433f7f0",
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +151,30 @@
       "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad3f5013_26ba6fbb",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 498,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-04-12T23:18:52Z",
+      "side": 1,
+      "message": "no longer necessary",
+      "parentUuid": "54816dc8_4a7a393b",
+      "range": {
+        "startLine": 498,
+        "startChar": 1,
+        "endLine": 498,
+        "endChar": 14
+      },
+      "revId": "8d01340a2e577713b6af4f8099b70922ada4197d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
