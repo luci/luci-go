@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7377d1cc_c70cf750",
+        "filename": "milo/common/model/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-12T04:02:33Z",
+      "side": 1,
+      "message": "iannucci@ mentioned this would be a good idea.  But I\u0027m thinking it might be better to just roll this into the \"Busy\" status.",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 10
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
