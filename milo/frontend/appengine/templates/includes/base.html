@@ -47,10 +47,13 @@ that can be found in the LICENSE file. -->
   {{template "body" .}}
   <footer>
     <hr>
-    <a href="https://chromium.googlesource.com/infra/luci">LUCI</a>,
-    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
-    built: <b>{{.CurrentTime | localTime "" }}</b><br>
-    version: <b>{{.AppVersion}}</b><br>
+      <div><img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"></div>
+      <div>
+        <a href="https://chromium.googlesource.com/infra/luci">LUCI</a>,
+        working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+        built: <b>{{.CurrentTime | localTime "" }}</b><br>
+        version: <b>{{.AppVersion}}</b><br>
+      </div>
   </footer>
 </body>
 <script>
