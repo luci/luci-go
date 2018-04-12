@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee7f7dfe_29b3c0c2",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-12T02:23:59Z",
+      "side": 1,
+      "message": "maruel: I\u0027d like to draw your attention here to see if this looks right to you.",
+      "revId": "39609a7b3faf421ac70b64af81619ab5b19c63f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
