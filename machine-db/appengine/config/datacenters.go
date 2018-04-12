@@ -83,11 +83,19 @@ func importDatacenters(c context.Context, configSet config.Set, platformIds map[
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure switches").Err()
 	}
-	err = model.EnsureKVMs(c, datacenters, platformIds, rackIds)
+	kvmIds, err := model.EnsureKVMs(c, datacenters, platformIds, rackIds)
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure KVMs").Err()
 	}
-	// TODO(smut): Ensure KVMs.
+	// KVMs must reference the rack they exist in, while racks may optionally reference
+	// a KVM that serves them. Because of this bidirectional foreign key constraint in
+	// the database, we must first ensure that everything about racks except their KVM
+	// matches the config, then ensure that KVMs match the config, then ensure the KVM
+	// referred to by each rack matches the config.
+	err = model.EnsureRackKVMs(c, datacenters, kvmIds)
+	if err != nil {
+		return errors.Annotate(err, "failed to ensure rack KVMs").Err()
+	}
 	return nil
 }
 
