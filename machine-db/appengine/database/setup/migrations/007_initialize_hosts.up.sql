@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS physical_hosts (
 	os_id int NOT NULL,
 	-- The number of VMs which can be deployed on this physical host.
 	vm_slots int unsigned NOT NULL,
-        -- The virtual datacenter VMs deployed on this physical host belong to.
-        virtual_datacenter varchar(255),
+	-- The virtual datacenter VMs deployed on this physical host belong to.
+	virtual_datacenter varchar(255),
 	-- A description of this physical host.
 	description varchar(255),
 	-- The deployment ticket associated with this physical host.
