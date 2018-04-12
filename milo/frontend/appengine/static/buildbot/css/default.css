@@ -41,6 +41,12 @@ footer {
   clear: both;
 }
 
+.lucy-logo {
+  width: 4em;
+  float: left;
+  margin-right: 10px;
+}
+
 .auth {
   position:absolute;
   top:5px;
