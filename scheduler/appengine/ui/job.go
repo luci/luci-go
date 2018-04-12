@@ -39,21 +39,43 @@ func jobPage(ctx *router.Context) {
 	projectID := p.ByName("ProjectID")
 	jobName := p.ByName("JobName")
 	cursor := r.URL.Query().Get("c")
+	v2mode := r.URL.Query().Get("v2") == "1"
 
 	job := jobFromEngine(ctx, projectID, jobName)
 	if job == nil {
 		return
 	}
+	v2mode = v2mode || job.IsV2()
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	var invs []*engine.Invocation
+	// We show active invocations only on the first page of the results, and only
+	// in v2 mode. In v1 mode, active invocations are intermixed with finished
+	// ones.
+	var invsActive []*engine.Invocation
+	var invsActiveErr error
+	if cursor == "" && v2mode {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			invsActive, _, invsActiveErr = e.ListInvocations(c, job, engine.ListInvocationsOpts{
+				PageSize:   1000, // ~ ∞, UI doesn't paginate active invocations
+				ActiveOnly: true,
+			})
+		}()
+	}
+
+	var invsLog []*engine.Invocation
 	var nextCursor string
-	var invErr error
+	var invsLogErr error
 	go func() {
 		defer wg.Done()
-		invs, nextCursor, invErr = e.ListInvocations(c, job, 50, cursor)
+		invsLog, nextCursor, invsLogErr = e.ListInvocations(c, job, engine.ListInvocationsOpts{
+			PageSize:     50,
+			Cursor:       cursor,
+			FinishedOnly: v2mode, // in v2 mode active invocations are displayed separately
+		})
 	}()
 
 	var triggers []*internal.Trigger
@@ -66,10 +88,12 @@ func jobPage(ctx *router.Context) {
 	wg.Wait()
 
 	switch {
-	case invErr != nil:
-		panic(errors.Annotate(invErr, "failed to fetch invocations").Err())
+	case invsActiveErr != nil:
+		panic(errors.Annotate(invsActiveErr, "failed to fetch active invocations").Err())
+	case invsLogErr != nil:
+		panic(errors.Annotate(invsLogErr, "failed to fetch invocation log").Err())
 	case triErr != nil:
-		panic(errors.Annotate(invErr, "failed to fetch triggers").Err())
+		panic(errors.Annotate(triErr, "failed to fetch triggers").Err())
 	}
 
 	// memcacheKey hashes cursor to reduce its length, since full cursor doesn't
@@ -102,17 +126,22 @@ func jobPage(ctx *router.Context) {
 	}
 
 	jobUI := makeJob(c, job)
-	invsUI := make([]*invocation, len(invs))
-	for i, inv := range invs {
-		invsUI[i] = makeInvocation(jobUI, inv)
+	invsActiveUI := make([]*invocation, len(invsActive))
+	for i, inv := range invsActive {
+		invsActiveUI[i] = makeInvocation(jobUI, inv)
+	}
+	invsLogUI := make([]*invocation, len(invsLog))
+	for i, inv := range invsLog {
+		invsLogUI[i] = makeInvocation(jobUI, inv)
 	}
 
 	templates.MustRender(c, w, "pages/job.html", map[string]interface{}{
-		"Job":             jobUI,
-		"Invocations":     invsUI,
-		"PendingTriggers": makeTriggerList(jobUI.now, triggers),
-		"PrevCursor":      prevCursor,
-		"NextCursor":      nextCursor,
+		"Job":               jobUI,
+		"InvocationsActive": invsActiveUI,
+		"InvocationsLog":    invsLogUI,
+		"PendingTriggers":   makeTriggerList(jobUI.now, triggers),
+		"PrevCursor":        prevCursor,
+		"NextCursor":        nextCursor,
 	})
 }
 

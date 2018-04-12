@@ -396,7 +396,9 @@ func TestForceInvocationV2(t *testing.T) {
 
 			// The invocation is now in the list of finish invocations.
 			datastore.GetTestable(c).CatchupIndexes()
-			invs, _, _ := e.ListInvocations(auth.WithState(c, asUserOne), job, 100, "")
+			invs, _, _ := e.ListInvocations(auth.WithState(c, asUserOne), job, ListInvocationsOpts{
+				PageSize: 100,
+			})
 			So(invs, ShouldResemble, []*Invocation{inv})
 		})
 	})

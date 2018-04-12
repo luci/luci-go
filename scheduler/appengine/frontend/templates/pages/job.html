@@ -18,6 +18,26 @@
 {{template "job-action-scripts" .}}
 {{end}}
 
+
+{{define "invocations-list"}}
+  {{range .Second }}
+    <tr class="{{.RowClass}}">
+      <td><a href="/jobs/{{$.First.ProjectID}}/{{$.First.JobName}}/{{.InvID}}">{{.InvID}}</a></td>
+      <td>{{.Started}}</td>
+      <td class="long" title="{{.TriggeredBy}}">{{.TriggeredBy}}</td>
+      <td>{{.Duration}}</td>
+      <td>
+      {{if .ViewURL}}
+        <a href="{{.ViewURL}}" target="_blank" class="underline label {{.LabelClass}}">{{.Status}}</a>
+      {{else}}
+        <span class="label {{.LabelClass}}">{{.Status}}</span>
+      {{end}}
+      </td>
+    </tr>
+  {{end}}
+{{end}}
+
+
 {{define "content"}}
 
 <ol class="breadcrumb">
@@ -76,21 +96,15 @@
           </tr>
         </thead>
         <tbody>
-        {{range .Invocations }}
-          <tr class="{{.RowClass}}">
-            <td><a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}/{{.InvID}}">{{.InvID}}</a></td>
-            <td>{{.Started}}</td>
-            <td class="long" title="{{.TriggeredBy}}">{{.TriggeredBy}}</td>
-            <td>{{.Duration}}</td>
-            <td>
-            {{if .ViewURL}}
-              <a href="{{.ViewURL}}" target="_blank" class="underline label {{.LabelClass}}">{{.Status}}</a>
-            {{else}}
-              <span class="label {{.LabelClass}}">{{.Status}}</span>
-            {{end}}
+        {{if .InvocationsActive}}
+          {{template "invocations-list" Pair .Job .InvocationsActive}}
+          <tr>
+            <td colspan="5">
+              <hr style="margin-top: 2px; margin-bottom: 2px;"/>
             </td>
           </tr>
         {{end}}
+        {{template "invocations-list" Pair .Job .InvocationsLog}}
         </tbody>
       </table>
       <nav>

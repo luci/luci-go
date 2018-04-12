@@ -95,7 +95,10 @@ func (s *SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invo
 		pageSize = int(in.PageSize)
 	}
 
-	einvs, cursor, err := s.Engine.ListInvocations(ctx, job, pageSize, in.GetCursor())
+	einvs, cursor, err := s.Engine.ListInvocations(ctx, job, engine.ListInvocationsOpts{
+		PageSize: pageSize,
+		Cursor:   in.Cursor,
+	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
 	}

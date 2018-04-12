@@ -95,6 +95,14 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 				}
 				return out
 			},
+			// Pair combines two args into one map with keys "First" and "Second", to
+			// pass pairs to templates (that in golang can accept only one argument).
+			"Pair": func(a1, a2 interface{}) map[string]interface{} {
+				return map[string]interface{}{
+					"First":  a1,
+					"Second": a2,
+				}
+			},
 		},
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			loginURL, err := auth.LoginURL(c, e.Request.URL.RequestURI())
