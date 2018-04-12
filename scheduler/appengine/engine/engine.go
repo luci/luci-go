@@ -113,18 +113,15 @@ type Engine interface {
 	// fails returns a transient error.
 	GetVisibleJobBatch(c context.Context, jobIDs []string) (map[string]*Job, error)
 
-	// ListInvocations returns invocations of a given job, most recent first.
+	// ListInvocations returns invocations of a given job, sorted by their
+	// creation time (most recent first).
+	//
+	// Can optionally return only active invocations (i.e. ones that are pending,
+	// starting or running) or only finished ones. See ListInvocationsOpts.
 	//
 	// Returns invocations and a cursor string if there's more. Returns only
 	// transient errors.
-	//
-	// For v2 jobs, the listing includes only finished invocations and it is
-	// eventually consistent (i.e. very recently finished invocations may no be
-	// listed there yet).
-	//
-	// TODO(vadimsh): Expose an endpoint for fetching currently running
-	// invocations in a perfectly consistent way.
-	ListInvocations(c context.Context, job *Job, pageSize int, cursor string) ([]*Invocation, string, error)
+	ListInvocations(c context.Context, job *Job, opts ListInvocationsOpts) ([]*Invocation, string, error)
 
 	// GetInvocation returns an invocation of a given job.
 	//
@@ -224,6 +221,14 @@ type EngineInternal interface {
 	// It is needed to be able to manually tests PubSub related workflows on dev
 	// server, since dev server can't accept PubSub push messages.
 	PullPubSubOnDevServer(c context.Context, taskManagerName, publisher string) error
+}
+
+// ListInvocationsOpts are passed to ListInvocations method.
+type ListInvocationsOpts struct {
+	PageSize     int
+	Cursor       string
+	FinishedOnly bool
+	ActiveOnly   bool
 }
 
 // FutureInvocation is returned by ForceInvocation.
@@ -371,20 +376,23 @@ func (e *engineImpl) GetVisibleJobBatch(c context.Context, jobIDs []string) (map
 // Part of the public interface.
 //
 // Supports both v1 and v2 invocations.
-func (e *engineImpl) ListInvocations(c context.Context, job *Job, pageSize int, cursor string) ([]*Invocation, string, error) {
-	// Note: we don't really need full *Job here, but we enforce callers to get
-	// it, so they check ACLs (they are part of *Job).
+func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvocationsOpts) ([]*Invocation, string, error) {
+	// TODO(vadimsh): Implement FinishedOnly and ActiveOnly
+	if opts.ActiveOnly {
+		return nil, "", nil
+	}
+
 	jobID := job.JobID
 
-	if pageSize == 0 || pageSize > 500 {
-		pageSize = 500
+	if opts.PageSize == 0 || opts.PageSize > 500 {
+		opts.PageSize = 500
 	}
 
 	// Deserialize the cursor.
 	var cursorObj ds.Cursor
-	if cursor != "" {
+	if opts.Cursor != "" {
 		var err error
-		cursorObj, err = ds.DecodeCursor(c, cursor)
+		cursorObj, err = ds.DecodeCursor(c, opts.Cursor)
 		if err != nil {
 			return nil, "", err
 		}
@@ -397,17 +405,17 @@ func (e *engineImpl) ListInvocations(c context.Context, job *Job, pageSize int, 
 	} else {
 		q = q.Ancestor(ds.NewKey(c, "Job", jobID, 0, nil))
 	}
-	q = q.Order("__key__").Limit(int32(pageSize))
+	q = q.Order("__key__").Limit(int32(opts.PageSize))
 	if cursorObj != nil {
 		q = q.Start(cursorObj)
 	}
 
 	// Fetch pageSize worth of invocations, then grab the cursor.
-	out := make([]*Invocation, 0, pageSize)
+	out := make([]*Invocation, 0, opts.PageSize)
 	var newCursor string
 	err := ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
 		out = append(out, obj)
-		if len(out) < pageSize {
+		if len(out) < opts.PageSize {
 			return nil
 		}
 		cur, err := getCursor()
