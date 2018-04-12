@@ -293,24 +293,25 @@ func (t *KVMsTable) ids(c context.Context) map[string]int64 {
 }
 
 // EnsureKVMs ensures the database contains exactly the given KVMs.
-func EnsureKVMs(c context.Context, cfgs []*config.Datacenter, platformIds, rackIds map[string]int64) error {
+// Returns a map of KVM names to IDs in the database.
+func EnsureKVMs(c context.Context, cfgs []*config.Datacenter, platformIds, rackIds map[string]int64) (map[string]int64, error) {
 	t := &KVMsTable{}
 	t.platforms = platformIds
 	t.racks = rackIds
 	if err := t.fetch(c); err != nil {
-		return errors.Annotate(err, "failed to fetch KVMs").Err()
+		return nil, errors.Annotate(err, "failed to fetch KVMs").Err()
 	}
 	if err := t.computeChanges(c, cfgs); err != nil {
-		return errors.Annotate(err, "failed to compute changes").Err()
+		return nil, errors.Annotate(err, "failed to compute changes").Err()
 	}
 	if err := t.add(c); err != nil {
-		return errors.Annotate(err, "failed to add KVMs").Err()
+		return nil, errors.Annotate(err, "failed to add KVMs").Err()
 	}
 	if err := t.remove(c); err != nil {
-		return errors.Annotate(err, "failed to remove KVMs").Err()
+		return nil, errors.Annotate(err, "failed to remove KVMs").Err()
 	}
 	if err := t.update(c); err != nil {
-		return errors.Annotate(err, "failed to update KVMs").Err()
+		return nil, errors.Annotate(err, "failed to update KVMs").Err()
 	}
-	return nil
+	return t.ids(c), nil
 }
