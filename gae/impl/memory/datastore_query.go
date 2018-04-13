@@ -42,9 +42,9 @@ const MaxIndexColumns = 64
 type queryCursor []byte
 
 func newCursor(s string) (ds.Cursor, error) {
-	d, err := base64.URLEncoding.DecodeString(s)
+	d, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to Base64-decode cursor: %s", err)
+		return nil, fmt.Errorf("failed to Base64-decode cursor: %s", err)
 	}
 	c := queryCursor(d)
 	if _, _, err := c.decode(); err != nil {
@@ -53,7 +53,7 @@ func newCursor(s string) (ds.Cursor, error) {
 	return c, nil
 }
 
-func (q queryCursor) String() string { return base64.URLEncoding.EncodeToString([]byte(q)) }
+func (q queryCursor) String() string { return base64.RawURLEncoding.EncodeToString([]byte(q)) }
 
 // decode returns the encoded IndexColumns, the raw row (cursor) data, or an
 // error.
