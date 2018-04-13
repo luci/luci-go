@@ -60,7 +60,7 @@ func (c *GetVMSlotsCmd) Run(app subcommands.Application, args []string, env subc
 // getVMSlotsCmd returns a command to get available VM slots.
 func getVMSlotsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-slots -n <slots> [-man <manufacturer>]...",
+		UsageLine: "get-slots -n <slots> [-man <manufacturer>]... [-vdc <virtual datacenter>]",
 		ShortDesc: "retrieves available VM slots",
 		LongDesc:  "Retrieves available VM slots.",
 		CommandRun: func() subcommands.CommandRun {
@@ -68,6 +68,7 @@ func getVMSlotsCmd(params *Parameters) *subcommands.Command {
 			cmd.Initialize(params)
 			cmd.Flags.Var(flag.Int32(&cmd.req.Slots), "n", "The number of available VM slots to get.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Manufacturers), "man", "Manufacturer to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.VirtualDatacenters), "vdc", "Virtual datacenter to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}

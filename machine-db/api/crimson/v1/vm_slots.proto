@@ -15,6 +15,8 @@ message FindVMSlotsRequest {
   int32 slots = 1;
   // The platform manufacturers to filter found VM slots on.
   repeated string manufacturers = 2;
+  // The virtual datacenter to filter found VM slots on.
+  repeated string virtual_datacenters = 3;
 }
 
 // A response containing a list of available VM slots in the database.

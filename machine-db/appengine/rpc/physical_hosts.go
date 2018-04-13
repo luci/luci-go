@@ -76,16 +76,25 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 
 	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
 	_, err = tx.ExecContext(c, `
-		INSERT INTO physical_hosts (hostname_id, machine_id, os_id, vm_slots, description, deployment_ticket)
+		INSERT INTO physical_hosts (
+			hostname_id,
+			machine_id,
+			os_id,
+			vm_slots,
+			virtual_datacenter,
+			description,
+			deployment_ticket
+		)
 		VALUES (
 			?,
 			(SELECT id FROM machines WHERE name = ?),
 			(SELECT id FROM oses WHERE name = ?),
 			?,
 			?,
+			?,
 			?
 		)
-	`, hostnameId, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket)
+	`, hostnameId, h.Machine, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -143,6 +152,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 		"m.name",
 		"o.name",
 		"h.vm_slots",
+		"h.virtual_datacenter",
 		"h.description",
 		"h.deployment_ticket",
 		"i.ipv4",
@@ -166,6 +176,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	stmt = selectInInt64(stmt, "n.vlan_id", req.Vlans)
 	stmt = selectInString(stmt, "m.name", req.Machines)
 	stmt = selectInString(stmt, "o.name", req.Oses)
+	stmt = selectInString(stmt, "h.virtual_datacenter", req.VirtualDatacenters)
 	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
 	stmt = selectInState(stmt, "m.state", req.States)
 	stmt = selectInString(stmt, "d.name", req.Datacenters)
@@ -191,6 +202,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 			&h.Machine,
 			&h.Os,
 			&h.VmSlots,
+			&h.VirtualDatacenter,
 			&h.Description,
 			&h.DeploymentTicket,
 			&ipv4,
@@ -224,6 +236,9 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 			updateState = true
 		case "vm_slots":
 			stmt = stmt.Set("vm_slots", h.VmSlots)
+			update = true
+		case "virtual_datacenter":
+			stmt = stmt.Set("virtual_datacenter", h.VirtualDatacenter)
 			update = true
 		case "description":
 			stmt = stmt.Set("description", h.Description)
@@ -358,6 +373,8 @@ func validatePhysicalHostForUpdate(h *crimson.PhysicalHost, mask *field_mask.Fie
 			if h.VmSlots < 0 {
 				return status.Error(codes.InvalidArgument, "VM slots must be non-negative")
 			}
+		case "virtual_datacenter":
+			// Empty virtual datacenter is allowed, nothing to validate.
 		case "description":
 			// Empty description is allowed, nothing to validate.
 		case "deployment_ticket":

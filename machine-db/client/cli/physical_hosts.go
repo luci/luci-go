@@ -30,10 +30,10 @@ func printPhysicalHosts(tsv bool, hosts ...*crimson.PhysicalHost) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "VLAN", "IP Address", "Machine", "OS", "Max VM Slots", "Description", "Deployment Ticket", "State")
+			p.Row("Name", "VLAN", "IP Address", "Machine", "OS", "Max VM Slots", "Virtual Datacenter", "Description", "Deployment Ticket", "State")
 		}
 		for _, h := range hosts {
-			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Os, h.VmSlots, h.Description, h.DeploymentTicket, h.State)
+			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket, h.State)
 		}
 	}
 }
@@ -64,7 +64,7 @@ func (c *AddPhysicalHostCmd) Run(app subcommands.Application, args []string, env
 // addPhysicalHostCmd returns a command to add a physical host.
 func addPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-host -name <name> -machine <machine> -os <os> -ip <ip address> [-state <state>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "add-host -name <name> -machine <machine> -os <os> -ip <ip address> [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a physical host",
 		LongDesc:  "Adds a physical host to the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -76,6 +76,7 @@ func addPhysicalHostCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.host.Ipv4, "ip", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
 			cmd.Flags.Var(StateFlag(&cmd.host.State), "state", "The state of this host. Must be the name of a state returned by get-states.")
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
+			cmd.Flags.StringVar(&cmd.host.VirtualDatacenter, "vdc", "", "The virtual datacenter VMs deployed on this host will belong to.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
 			return cmd
@@ -100,6 +101,7 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 			"os":      "os",
 			"state":   "state",
 			"slots":   "vm_slots",
+			"vdc":     "virtual_datacenter",
 			"desc":    "description",
 			"tick":    "deployment_ticket",
 		}),
@@ -117,7 +119,7 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 // editPhysicalHostCmd returns a command to edit a physical host.
 func editPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "edit-host -name <name> -vlan <id> [-machine <machine>] [-os <os>] [-state <state>] [-slots <vm slots>] [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "edit-host -name <name> -vlan <id> [-machine <machine>] [-os <os>] [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a physical host",
 		LongDesc:  "Edits a physical host in the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -129,6 +131,7 @@ func editPhysicalHostCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Must be the name of an operating system returned by get-oses.")
 			cmd.Flags.Var(StateFlag(&cmd.host.State), "state", "The state of this host. Must be a state returned by get-states.")
 			cmd.Flags.Var(flag.Int32(&cmd.host.VmSlots), "slots", "The number of VMs which can be deployed on this host.")
+			cmd.Flags.StringVar(&cmd.host.VirtualDatacenter, "vdc", "", "The virtual datacenter VMs deployed on this host will belong to.")
 			cmd.Flags.StringVar(&cmd.host.Description, "desc", "", "A description of this host.")
 			cmd.Flags.StringVar(&cmd.host.DeploymentTicket, "tick", "", "The deployment ticket associated with this host.")
 			return cmd
@@ -158,7 +161,7 @@ func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, en
 // getPhysicalHostsCmd returns a command to get physical hosts.
 func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-os <os>]... [-ip <ip address>]... [-state <state>]...",
+		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-os <os>]... [-ip <ip address>]... [-state <state>]... [-vdc <virtual datacenter>]...",
 		ShortDesc: "retrieves physical hosts",
 		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
@@ -173,6 +176,7 @@ func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Platforms), "plat", "Name of a platform to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Racks), "rack", "Name of a rack to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Datacenters), "dc", "Name of a datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.VirtualDatacenters), "vdc", "Name of a virtual datacenter to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}
