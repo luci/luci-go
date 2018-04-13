@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -59,6 +60,7 @@ func durationReporter(c context.Context, m metric.CumulativeDistribution) func(e
 		case context.Canceled:
 			result = "CONTEXT_CANCELED"
 		}
+		logging.Debugf(c, "Auth: err: %s.  result: %s", err, result)
 		m.Add(c, float64(clock.Since(c, startTs).Nanoseconds()/1000), result)
 	}
 }

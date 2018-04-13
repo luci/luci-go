@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -45,6 +46,8 @@ func newService(svr *server) logdog.LogsServer {
 	return &logdog.DecoratedLogs{
 		Service: svr,
 		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+			state := auth.GetState(c)
+			log.Debugf(c, "Prelude called with state %v", state)
 			// Enter a datastore namespace based on the message type.
 			//
 			// We use a type switch here because this is a shared decorator. All user
