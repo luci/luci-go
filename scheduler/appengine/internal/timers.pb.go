@@ -44,7 +44,7 @@ type Timer struct {
 func (m *Timer) Reset()                    { *m = Timer{} }
 func (m *Timer) String() string            { return proto.CompactTextString(m) }
 func (*Timer) ProtoMessage()               {}
-func (*Timer) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*Timer) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *Timer) GetId() string {
 	if m != nil {
@@ -89,7 +89,7 @@ type TimerList struct {
 func (m *TimerList) Reset()                    { *m = TimerList{} }
 func (m *TimerList) String() string            { return proto.CompactTextString(m) }
 func (*TimerList) ProtoMessage()               {}
-func (*TimerList) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*TimerList) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *TimerList) GetTimers() []*Timer {
 	if m != nil {
@@ -104,10 +104,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/timers.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/timers.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 254 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x8f, 0x3d, 0x4f, 0xf3, 0x30,
 	0x10, 0xc7, 0xe5, 0xe4, 0x49, 0xfb, 0xf4, 0x8a, 0x40, 0xb2, 0x10, 0xb2, 0xba, 0x10, 0x75, 0xca,
