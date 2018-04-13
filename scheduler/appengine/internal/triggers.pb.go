@@ -87,7 +87,7 @@ type Trigger struct {
 func (m *Trigger) Reset()                    { *m = Trigger{} }
 func (m *Trigger) String() string            { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()               {}
-func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
 type isTrigger_Payload interface {
 	isTrigger_Payload()
@@ -322,7 +322,7 @@ type TriggerList struct {
 func (m *TriggerList) Reset()                    { *m = TriggerList{} }
 func (m *TriggerList) String() string            { return proto.CompactTextString(m) }
 func (*TriggerList) ProtoMessage()               {}
-func (*TriggerList) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*TriggerList) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
 
 func (m *TriggerList) GetTriggers() []*Trigger {
 	if m != nil {
@@ -337,10 +337,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor4)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor4 = []byte{
 	// 437 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x92, 0xcd, 0x6e, 0xd3, 0x4c,
 	0x14, 0x86, 0x3f, 0xc7, 0x4d, 0x9c, 0x4e, 0xbe, 0x16, 0x18, 0x01, 0x1a, 0x22, 0x21, 0xa2, 0x82,
