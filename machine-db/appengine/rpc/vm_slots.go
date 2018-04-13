@@ -55,6 +55,7 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 		stmt = stmt.Limit(uint64(req.Slots))
 	}
 	stmt = selectInString(stmt, "pl.manufacturer", req.Manufacturers)
+	stmt = selectInString(stmt, "ph.virtual_datacenter", req.VirtualDatacenters)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to generate statement").Err()

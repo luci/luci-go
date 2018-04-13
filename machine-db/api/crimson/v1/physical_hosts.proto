@@ -30,6 +30,8 @@ message PhysicalHost {
   string ipv4 = 8;
   // The state of the machine backing this host.
   common.State state = 9;
+  // The virtual datacenter VMs deployed on this host belong to.
+  string virtual_datacenter = 10;
 }
 
 // A request to create a new physical host in the database.
@@ -58,6 +60,8 @@ message ListPhysicalHostsRequest {
   repeated string racks = 8;
   // The datacenters to filter retrieved hosts on.
   repeated string datacenters = 9;
+  // The virtual datacenters to filter retrieved hosts on.
+  repeated string virtual_datacenters = 10;
 }
 
 // A response containing a list of physical hosts in the database.
