@@ -289,9 +289,9 @@ type Console struct {
 	// Eg. refs/heads/master
 	Ref string `protobuf:"bytes,4,opt,name=ref" json:"ref,omitempty"`
 	// ManifestName the name of the manifest the waterfall looks at.
-	// By convention, Manifest Names can be:
-	// * UNPATCHED - For non patched builds, such as continuous builds
-	// * PATCHED - For patched builds, such as those on try jobs
+	// This should always be "REVISION".
+	// In the future, other manifest names can be supported.
+	// TODO(hinoka,iannucci): crbug/832893 - Support custom manifest names, such as "UNPATCHED" / "PATCHED".
 	ManifestName string `protobuf:"bytes,5,opt,name=manifest_name,json=manifestName" json:"manifest_name,omitempty"`
 	// Builders is a list of builder configurations to display as the columns of the console.
 	Builders []*Builder `protobuf:"bytes,6,rep,name=builders" json:"builders,omitempty"`

@@ -133,9 +133,9 @@ message Console {
   string ref = 4;
 
   // ManifestName the name of the manifest the waterfall looks at.
-  // By convention, Manifest Names can be:
-  // * UNPATCHED - For non patched builds, such as continuous builds
-  // * PATCHED - For patched builds, such as those on try jobs
+  // This should always be "REVISION".
+  // In the future, other manifest names can be supported.
+  // TODO(hinoka,iannucci): crbug/832893 - Support custom manifest names, such as "UNPATCHED" / "PATCHED".
   string manifest_name = 5;
 
   // Builders is a list of builder configurations to display as the columns of the console.
