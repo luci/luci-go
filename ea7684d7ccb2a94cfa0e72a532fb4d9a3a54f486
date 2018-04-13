@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be78943f_44b401a0",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-13T23:26:43Z",
+      "side": 1,
+      "message": "Existing dbs updated with:\nALTER TABLE physical_hosts ADD COLUMN virtual_datacenter varchar(255) DEFAULT \"\";",
+      "revId": "ea7684d7ccb2a94cfa0e72a532fb4d9a3a54f486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
