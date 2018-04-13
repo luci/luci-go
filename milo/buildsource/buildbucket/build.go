@@ -131,9 +131,7 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Commit, error) {
 	builds, commits, err := build.PreviousByGitilesCommit(c)
 	switch {
-	case err == nil:
-	case err == model.ErrUnknownPreviousBuild:
-		return nil, nil
+	case err == nil || err == model.ErrUnknownPreviousBuild:
 	case status.Code(err) == codes.PermissionDenied:
 		return nil, common.CodeUnauthorized.Tag().Apply(err)
 	default:
