@@ -389,10 +389,10 @@ func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvoc
 	}
 
 	// Deserialize the cursor.
-	var cursorObj ds.Cursor
+	var cursor invocationsCursor
 	if opts.Cursor != "" {
 		var err error
-		cursorObj, err = ds.DecodeCursor(c, opts.Cursor)
+		cursor, err = decodeInvocationsCursor(c, opts.Cursor)
 		if err != nil {
 			return nil, "", err
 		}
@@ -406,29 +406,34 @@ func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvoc
 		q = q.Ancestor(ds.NewKey(c, "Job", jobID, 0, nil))
 	}
 	q = q.Order("__key__").Limit(int32(opts.PageSize))
-	if cursorObj != nil {
-		q = q.Start(cursorObj)
+	if cursor.QueryCursor != nil {
+		q = q.Start(cursor.QueryCursor)
 	}
 
 	// Fetch pageSize worth of invocations, then grab the cursor.
 	out := make([]*Invocation, 0, opts.PageSize)
-	var newCursor string
+	newCursor := invocationsCursor{}
 	err := ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
 		out = append(out, obj)
 		if len(out) < opts.PageSize {
 			return nil
 		}
-		cur, err := getCursor()
-		if err != nil {
+		var err error
+		if newCursor.QueryCursor, err = getCursor(); err != nil {
 			return err
 		}
-		newCursor = cur.String()
 		return ds.Stop
 	})
 	if err != nil {
 		return nil, "", transient.Tag.Apply(err)
 	}
-	return out, newCursor, nil
+
+	cursorStr, err := newCursor.Serialize()
+	if err != nil {
+		return nil, "", errors.Annotate(err, "failed to serialize the cursor").Err()
+	}
+
+	return out, cursorStr, nil
 }
 
 // GetInvocation returns some invocation of a given job.
