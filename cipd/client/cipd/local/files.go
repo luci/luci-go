@@ -30,11 +30,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-// File defines a single file to be added or extracted from a package.
+// File represents a single file to be added or extracted from a package.
 //
 // All paths are slash separated (including symlink targets).
 type File interface {
-	// Name returns slash separated file path relative to a package root
+	// Name returns slash separated file path relative to a package root.
 	//
 	// For example "dir/dir/file".
 	Name() string
@@ -67,6 +67,22 @@ type File interface {
 	//
 	// Returns error for symlink files.
 	Open() (io.ReadCloser, error)
+}
+
+// RenamableFile allows callers to change the name of the file.
+type RenamableFile interface {
+	File
+
+	// Rename changes the name of the file.
+	//
+	// The new name must be clean relative slash-separate path.
+	//
+	// Returns an error for symlinks, since it usually breaks them (by changing
+	// relative paths).
+	//
+	// It doesn't touches the file system, it's just changes the name of the file
+	// as it will appear inside the archive.
+	Rename(name string) error
 }
 
 // WinAttrs represents the extra file attributes for windows.
@@ -131,9 +147,11 @@ type Destination interface {
 ////////////////////////////////////////////////////////////////////////////////
 // File system source.
 
+// fileSystemFile is RenamableFile implementation that uses a file system file
+// as a backing store.
 type fileSystemFile struct {
-	absPath       string
-	name          string
+	absPath       string // static path to the real file with the data
+	name          string // the name to use inside the archive
 	size          uint64
 	executable    bool
 	writable      bool
@@ -161,7 +179,21 @@ func (f *fileSystemFile) Open() (io.ReadCloser, error) {
 	if f.Symlink() {
 		return nil, fmt.Errorf("opening a symlink is not allowed: %s", f.Name())
 	}
+	if f.absPath == "" {
+		return nil, fmt.Errorf("the object is not associated with a real file")
+	}
 	return os.Open(f.absPath)
+}
+
+func (f *fileSystemFile) Rename(name string) error {
+	if !isCleanSlashPath(name) {
+		return fmt.Errorf("not a relative slash-separated path: %q", name)
+	}
+	if f.Symlink() {
+		return fmt.Errorf("renaming symlinks is not allowed, it changes their meaning")
+	}
+	f.name = name
+	return nil
 }
 
 // ScanFilter is predicate used by ScanFileSystem to decide what files to skip.
@@ -254,15 +286,10 @@ func getModTime(info os.FileInfo, opts ScanOptions) time.Time {
 // a native absolute path). Returned File object has path relative to 'root'.
 // If fileInfo is given, it will be used to grab file mode and size, otherwise
 // os.Lstat will be used to get it. Recognizes symlinks.
-func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptions) (File, error) {
-	if !filepath.IsAbs(abs) {
-		return nil, fmt.Errorf("expecting absolute path, got this: %q", abs)
-	}
-	if !filepath.IsAbs(root) {
-		return nil, fmt.Errorf("expecting absolute path, got this: %q", root)
-	}
-	if !isSubpath(abs, root) {
-		return nil, fmt.Errorf("path %q is not under %q", abs, root)
+func WrapFile(abs, root string, fileInfo *os.FileInfo, scanOpts ScanOptions) (RenamableFile, error) {
+	slashRel, err := slashRelPath(abs, root)
+	if err != nil {
+		return nil, err
 	}
 
 	var info os.FileInfo
@@ -275,11 +302,6 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 		}
 	} else {
 		info = *fileInfo
-	}
-
-	rel, err := filepath.Rel(root, abs)
-	if err != nil {
-		return nil, err
 	}
 
 	// Recognize symlinks as such, convert target to relative path, if needed.
@@ -307,7 +329,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 			targetAbs = filepath.Clean(filepath.Join(filepath.Dir(abs), target))
 			if !isSubpath(targetAbs, root) {
 				return nil, fmt.Errorf(
-					"Invalid symlink %s: a relative symlink pointing to a file outside of the package root", rel)
+					"invalid symlink %s: a relative symlink pointing to a file outside of the package root", slashRel)
 			}
 		}
 
@@ -321,7 +343,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 		} else {
 			return &fileSystemFile{
 				absPath:       abs,
-				name:          filepath.ToSlash(rel),
+				name:          slashRel,
 				writable:      getWritable(info, scanOpts),
 				modtime:       getModTime(info, scanOpts),
 				symlinkTarget: filepath.ToSlash(target),
@@ -338,7 +360,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 
 		return &fileSystemFile{
 			absPath:    abs,
-			name:       filepath.ToSlash(rel),
+			name:       slashRel,
 			size:       uint64(info.Size()),
 			executable: (info.Mode().Perm() & 0111) != 0,
 			writable:   getWritable(info, scanOpts),
@@ -348,6 +370,45 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 	}
 
 	return nil, fmt.Errorf("not a regular file or symlink: %s", abs)
+}
+
+// NewSymlink constructs File object that represents a relative symlink (not
+// necessary existing in the file system).
+//
+// It accepts 3 native absolute paths:
+//   * 'abs' is the path to the symlink file itself.
+//   * 'target' is the path to the symlink's target.
+//   * 'root' defines a base to relative paths.
+//
+// Both 'abs' and 'target' must be under the root.
+func NewSymlink(abs, target, root string) (File, error) {
+	for _, p := range []string{abs, target, root} {
+		if !filepath.IsAbs(p) {
+			return nil, fmt.Errorf("expecting absolute path, got this: %q", p)
+		}
+	}
+
+	// Get the normalized name of the symlink file. This also check that 'abs' is
+	// under 'root'.
+	name, err := slashRelPath(abs, root)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure target is under root and construct relative (to the symlink) path
+	// to the target.
+	if !isSubpath(target, root) {
+		return nil, fmt.Errorf("invalid symlink %q: points to a file outside of the package root", name)
+	}
+	rel, err := filepath.Rel(filepath.Dir(abs), target)
+	if err != nil {
+		return nil, fmt.Errorf("bad symlink target %q - %s", target, err)
+	}
+
+	return &fileSystemFile{
+		name:          name,
+		symlinkTarget: filepath.ToSlash(rel),
+	}, nil
 }
 
 // isSubpath returns true if 'path' is 'root' or is inside a subdirectory of
@@ -387,6 +448,26 @@ func isCleanSlashPath(p string) bool {
 		return false
 	}
 	return true
+}
+
+// slashRelPath takes a native absolute paths to a file and to a root directory,
+// verifies the file is under the root, and returns slash-separated relative
+// path to the file.
+func slashRelPath(abs, root string) (string, error) {
+	if !filepath.IsAbs(abs) {
+		return "", fmt.Errorf("expecting absolute path, got this: %q", abs)
+	}
+	if !filepath.IsAbs(root) {
+		return "", fmt.Errorf("expecting absolute path, got this: %q", root)
+	}
+	if !isSubpath(abs, root) {
+		return "", fmt.Errorf("path %q is not under %q", abs, root)
+	}
+	rel, err := filepath.Rel(root, abs)
+	if err != nil {
+		return "", err
+	}
+	return filepath.ToSlash(rel), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

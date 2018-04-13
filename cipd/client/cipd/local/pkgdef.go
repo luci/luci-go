@@ -57,14 +57,38 @@ type PackageDef struct {
 
 // PackageChunkDef represents one entry in 'data' section of package definition.
 //
-// It is either a single file, or a recursively scanned directory (with optional
-// list of regexps for files to skip).
+// It is either a single file, symlink, or a recursively scanned directory (with
+// optional list of regexps for files to skip).
 type PackageChunkDef struct {
 	// Dir is a directory to add to the package (recursively).
 	Dir string
 
 	// File is a single file to add to the package.
+	//
+	// Its content (and mode) will be taken from some other file in case CopyFrom
+	// is set. Otherwise, the content (and mode) is taken from the matching file
+	// under the root directory.
 	File string
+
+	// CopyFrom defines where to grab the contents of the file instead of the
+	// default location (defined by File).
+	//
+	// Must point to an existing regular file. Pointing to symlinks is not
+	// allowed, since symlinks inside archives are relative, and copying a
+	// relative symlink usually breaks it. Use Symlink field instead if you want
+	// to define a symlink.
+	CopyFrom string `yaml:"copy_from"`
+
+	// Symlink is a name of a symbolic link to put into the package.
+	//
+	// Must always be specified together with Target field.
+	Symlink string
+
+	// Target specifies which file the symlink points to.
+	//
+	// It should be a path relative to the symlink location that is still under
+	// the root directory.
+	Target string
 
 	// VersionFile defines where to drop JSON file with package version.
 	VersionFile string `yaml:"version_file"`
@@ -107,7 +131,7 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	versionFile := ""
 	for i, chunk := range out.Data {
 		// Make sure 'dir' and 'file' etc. aren't used together.
-		has := make([]string, 0, 3)
+		has := make([]string, 0, 1)
 		if chunk.File != "" {
 			has = append(has, "file")
 		}
@@ -117,14 +141,29 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 		if chunk.Dir != "" {
 			has = append(has, "dir")
 		}
+		if chunk.Symlink != "" {
+			has = append(has, "symlink")
+		}
 		if len(has) == 0 {
-			return out, fmt.Errorf("files entry #%d needs 'file', 'dir' or 'version_file' key", i)
+			return out, fmt.Errorf("files entry #%d needs one of 'file', 'dir', 'version_file' or 'symlink' keys", i)
 		}
 		if len(has) != 1 {
 			return out, fmt.Errorf("files entry #%d should have only one key, got %q", i, has)
 		}
-		//'version_file' can appear only once, it must be a clean relative path.
-		if chunk.VersionFile != "" {
+		got := has[0]
+
+		switch {
+		// 'copy_from' is valid only for files.
+		case chunk.CopyFrom != "" && chunk.File == "":
+			return out, fmt.Errorf("'copy_from' field is valid only for file entries, not %q", got)
+		// 'target' is valid only for symlinks.
+		case chunk.Target != "" && chunk.Symlink == "":
+			return out, fmt.Errorf("'target' field is valid only for symlink entries, not %q", got)
+		// ... and 'target' is required for symlinks.
+		case chunk.Symlink != "" && chunk.Target == "":
+			return out, fmt.Errorf("'target' field is required for symlink entries")
+		// 'version_file' can appear only once, it must be a clean relative path.
+		case chunk.VersionFile != "":
 			if versionFile != "" {
 				return out, fmt.Errorf("'version_file' entry can be used only once")
 			}
@@ -183,11 +222,45 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 
 		// Individual file.
 		if chunk.File != "" {
-			file, err := WrapFile(makeAbs(chunk.File), root, nil, scanOpts)
+			var file RenamableFile
+			if chunk.CopyFrom == "" {
+				// No copying, store the file under its own name.
+				file, err = WrapFile(makeAbs(chunk.File), root, nil, scanOpts)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				// If copying from some other file, use this file as a real source of
+				// data, and then just rename the resulting file-to-be-added into what
+				// we need (which is chunk.File).
+				file, err = WrapFile(makeAbs(chunk.CopyFrom), root, nil, scanOpts)
+				if err != nil {
+					return nil, err
+				}
+				if file.Symlink() {
+					return nil, fmt.Errorf("can't use 'copy_from' with symlink files, it changes what they point to")
+				}
+				rel, err := slashRelPath(makeAbs(chunk.File), root)
+				if err != nil {
+					return nil, err
+				}
+				if err = file.Rename(rel); err != nil {
+					return nil, err
+				}
+			}
+			add(file)
+			continue
+		}
+
+		// A symlink.
+		if chunk.Symlink != "" {
+			linkAbs := makeAbs(chunk.Symlink)
+			targetAbs := filepath.Join(filepath.Dir(linkAbs), filepath.FromSlash(chunk.Target))
+			symlink, err := NewSymlink(linkAbs, targetAbs, root)
 			if err != nil {
 				return nil, err
 			}
-			add(file)
+			add(symlink)
 			continue
 		}
 
