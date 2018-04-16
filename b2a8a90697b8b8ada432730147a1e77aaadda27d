@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2abac4de_febee823",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 532,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-16T22:17:48Z",
+      "side": 1,
+      "message": "nit: might be simpler to move this to \n\n ids, err :\u003d ...\n\nto one line above",
+      "range": {
+        "startLine": 532,
+        "startChar": 5,
+        "endLine": 532,
+        "endChar": 81
+      },
+      "revId": "b2a8a90697b8b8ada432730147a1e77aaadda27d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
