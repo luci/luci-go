@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3629371_cc590bf8",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-16T23:18:19Z",
+      "side": 1,
+      "message": "super nit: it\u0027s technically \"I.E.\"",
+      "range": {
+        "startLine": 161,
+        "startChar": 66,
+        "endLine": 161,
+        "endChar": 68
+      },
+      "revId": "5be54648c597dcc98ff7b2a8bb183563f9014a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6636278_8a40e0ec",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-16T23:18:19Z",
+      "side": 1,
+      "message": "Maybe...\n\nswitch {\n  case con.Def.BuilderViewOnly:\n    logging.Warningf(...)\n    fallthrough\n  case strings.Contain(...):\n    ...\n}\n\nThen you only have to reference con.Def.BuilderViewOnly once",
+      "revId": "5be54648c597dcc98ff7b2a8bb183563f9014a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
