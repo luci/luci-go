@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -49,13 +50,28 @@ type Version struct {
 // ParseVersion parses a Python version from a version string (e.g., "1.2.3").
 func ParseVersion(s string) (Version, error) {
 	var v Version
+
+	// Treat as PEP440.
+	if err := parsePEP440Version(s, &v); err != nil {
+		// Try resilient parsing.
+		if err2 := resilientVersionParsing(s, &v); err2 != nil {
+			return v, errors.Reason(
+				"could not parse version from %q, failed PEP440 (%s) and resilient (%s) persing",
+				s, err, err2).Err()
+		}
+	}
+
+	return v, nil
+}
+
+func parsePEP440Version(s string, v *Version) error {
 	if s == "" {
-		return v, nil
+		return nil
 	}
 
 	match := canonicalVersionRE.FindStringSubmatch(s)
 	if match == nil {
-		return v, errors.Reason("non-canonical Python version string: %q", s).Err()
+		return errors.New("non-canonical Python version string")
 	}
 	parts := strings.Split(match[2], ".")
 
@@ -79,9 +95,63 @@ func ParseVersion(s string) (Version, error) {
 	}
 	v.Major = mustParseVersion(parts[0])
 	if v.IsZero() {
-		return v, errors.Reason("version is incomplete").Err()
+		return errors.Reason("version is incomplete").Err()
 	}
-	return v, nil
+	return nil
+}
+
+// resilientVersionParsing is a resilient version of parsing Python versions.
+//
+// It is used when PEP440 version parsing doesn't work, which is generally when
+// the Python version string is non-compliant. Since there's still potentially
+// enough information in the version string to satisfy our intent, we will try
+// and parse it in a much simpler manner:
+//
+// 1) Strip all characters that aren't numbers or dots.
+// 2) Parse left-to-right until we get 1, 2, or 3 numbers, assuming that they
+//    are Major, Minor, and Patch respectively.
+// 3) Require that we observe at least Major and Minor to succeed.
+func resilientVersionParsing(s string, v *Version) error {
+	s = strings.Map(func(r rune) rune {
+		if unicode.IsDigit(r) || r == '.' {
+			return r
+		}
+
+		// Delete this character.
+		return -1
+	}, s)
+
+	// Accommodate empty segments (e.g., "..") by returning "false".
+	maybeParseVersion := func(value string) (int, bool) {
+		if len(value) == 0 {
+			return 0, false
+		}
+		version, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("invalid number value %q: %s", value, err))
+		}
+		return version, true
+	}
+
+	var parsedMajor, parsedMinor bool
+	parts := strings.Split(s, ".")
+	switch len(parts) {
+	default:
+		fallthrough
+	case 3:
+		v.Patch, _ = maybeParseVersion(parts[2])
+		fallthrough
+	case 2:
+		v.Minor, parsedMinor = maybeParseVersion(parts[1])
+		fallthrough
+	case 1:
+		v.Major, parsedMajor = maybeParseVersion(parts[0])
+	}
+
+	if !(parsedMajor && parsedMinor) {
+		return errors.Reason("did not parse both major and minor versions from %q", s).Err()
+	}
+	return nil
 }
 
 func (v Version) String() string {
