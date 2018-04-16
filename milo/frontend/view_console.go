@@ -504,8 +504,19 @@ func ConsoleHandler(c *router.Context) error {
 	}
 	group := c.Params.ByName("group")
 
+	// Get console from datastore and filter out builders from the definition.
+	con, err := common.GetConsole(c.Context, project, group)
+	if err != nil {
+		return errors.Annotate(err, "error getting console").Err()
+	}
+
 	// If group is a tryserver group, redirect to builders view.
-	if strings.Contains(group, "tryserver") {
+	if strings.Contains(group, "tryserver") || con.Def.BuilderViewOnly {
+		// TODO(tandrii): remove string matching once everybody migrates to
+		// builder_view_only config option.
+		if !con.Def.BuilderViewOnly {
+			logging.Warningf(c.Context, "project %q group %s is missing 'builder_view_only'", project, group)
+		}
 		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
 		return nil
 	}
@@ -520,11 +531,6 @@ func ConsoleHandler(c *router.Context) error {
 		limit = maxLimit
 	}
 
-	// Get console from datastore and filter out builders from the definition.
-	con, err := common.GetConsole(c.Context, project, group)
-	if err != nil {
-		return errors.Annotate(err, "error getting console").Err()
-	}
 	var headerCons []*common.Console
 	if con.Def.Header != nil {
 		ids, err := consoleHeaderGroupIDs(project, con.Def.Header.GetConsoleGroups())
