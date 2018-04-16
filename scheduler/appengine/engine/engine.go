@@ -410,22 +410,30 @@ func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvoc
 		q = q.Start(cursor.QueryCursor)
 	}
 
-	// Fetch pageSize worth of invocations, then grab the cursor.
 	out := make([]*Invocation, 0, opts.PageSize)
 	newCursor := invocationsCursor{}
-	err := ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
-		out = append(out, obj)
-		if len(out) < opts.PageSize {
-			return nil
+
+	// Fetch pageSize worth of invocations, then grab the cursor.
+	dsq := invDatastoreQuery{}
+	dsq.start(c, q)
+	defer dsq.stop()
+	for {
+		switch inv, err := dsq.next(); {
+		case err != nil: // the RPC failed
+			return nil, "", transient.Tag.Apply(err)
+		case inv == nil: // fetched all available results
+			return out, "", nil
+		case inv != nil:
+			out = append(out, inv)
 		}
-		var err error
-		if newCursor.QueryCursor, err = getCursor(); err != nil {
-			return err
+		if len(out) >= opts.PageSize {
+			cursor, err := dsq.stop()
+			if err != nil {
+				return nil, "", transient.Tag.Apply(err)
+			}
+			newCursor.QueryCursor = cursor
+			break
 		}
-		return ds.Stop
-	})
-	if err != nil {
-		return nil, "", transient.Tag.Apply(err)
 	}
 
 	cursorStr, err := newCursor.Serialize()
