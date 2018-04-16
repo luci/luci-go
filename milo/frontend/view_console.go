@@ -57,8 +57,8 @@ func logTimer(c context.Context, message string) func() {
 // If the user is not a reader of the project, this will return a 404.
 // TODO(hinoka): If the user is not a reader of any of of the builders returned,
 // that builder will be removed from list of results.
-func getConsoleDef(c context.Context, project, name string) (*config.Console, error) {
-	cs, err := common.GetConsole(c, project, name)
+func getConsoleDef(c context.Context, project, group string) (*config.Console, error) {
+	cs, err := common.GetConsole(c, project, group)
 	if err != nil {
 		return nil, err
 	}
@@ -236,13 +236,8 @@ func summaries(c context.Context, consoleID common.ConsoleID, def *config.Header
 	return buildsource.GetBuilderSummaryGroups(c, ids, projectID)
 }
 
-func console(c context.Context, project, id string, limit int) (*ui.Console, error) {
-	def, err := getConsoleDef(c, project, id)
-	if err != nil {
-		return nil, err
-	}
-
-	consoleID := common.ConsoleID{Project: project, ID: id}
+func console(c context.Context, project string, def *config.Console, limit int) (*ui.Console, error) {
+	consoleID := common.ConsoleID{Project: project, ID: def.Id}
 	var header *ui.ConsoleHeader
 	var rows []*buildsource.ConsoleRow
 	var commits []ui.Commit
@@ -526,8 +521,18 @@ func ConsoleHandler(c *router.Context) error {
 	}
 	group := c.Params.ByName("group")
 
+	def, err := getConsoleDef(c.Context, project, group)
+	if err != nil {
+		return err
+	}
+
 	// If group is a tryserver group, redirect to builders view.
-	if strings.Contains(group, "tryserver") {
+	if strings.Contains(group, "tryserver") || def.BuilderViewOnly {
+		// TODO(tandrii): remove string matching once everybody migrates to
+		// builder_view_only config option.
+		if !def.BuilderViewOnly {
+			logging.Warningf(c.Context, "project %q group %s is missing 'builder_view_only'", project, group)
+		}
 		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
 		return nil
 	}
@@ -542,7 +547,7 @@ func ConsoleHandler(c *router.Context) error {
 		limit = maxLimit
 	}
 
-	result, err := console(c.Context, project, group, limit)
+	result, err := console(c.Context, project, def, limit)
 	if err != nil {
 		return err
 	}
