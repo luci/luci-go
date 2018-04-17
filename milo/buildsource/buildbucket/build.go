@@ -162,10 +162,11 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 	logging.Infof(c, "Fetched %d commit blamelist from Gitiles", len(result))
 
 	// this means that there were more than 50 commits in-between.
-	if len(builds) == 0 {
+	if len(builds) == 0 && len(commits) > 0 {
 		result = append(result, &ui.Commit{
 			Description: "<blame list capped at 50 commits>",
 			Revision:    &ui.Link{},
+			AuthorName:  "<blame list capped at 50 commits>",
 		})
 	}
 
@@ -272,10 +273,12 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		}
 
 		// support only one CL per build.
+		link := ui.NewPatchLink(cl)
 		result.Blame = []*ui.Commit{{
-			Changelist:      ui.NewPatchLink(cl),
+			Changelist:      link,
 			RequestRevision: ui.NewLink(props.Revision, "", fmt.Sprintf("request revision %s", props.Revision)),
 		}}
+		result.Trigger.Changelist = link
 
 		result.Blame[0].AuthorEmail = email
 		break
