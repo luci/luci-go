@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c31231a1_1bdd6bc8",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-04-17T23:07:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5dac772_e8434d59",
+      "range": {
+        "startLine": 59,
+        "startChar": 76,
+        "endLine": 59,
+        "endChar": 83
+      },
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a8f6168_4ac9dc54",
         "filename": "vpython/python/version.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d3778cb_9c28d17f",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-04-17T23:07:56Z",
+      "side": 1,
+      "message": "We pass in v from ParseVersion, and it\u0027s always a zero value, so that isn\u0027t necessary here. This isn\u0027t an exported function, so we\u0027re safe in the assumption that v !\u003d nil at this point.\n\n(But I changed these sub-methods to return Version structs directly, so this is no longer a problem).",
+      "parentUuid": "9a8f6168_4ac9dc54",
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "22e799d1_58b7dda6",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-04-17T23:07:56Z",
+      "side": 1,
+      "message": "ooo good catch! I\u0027ll fix this and add a test case :)",
+      "parentUuid": "0a91a95b_22b03439",
+      "range": {
+        "startLine": 131,
+        "startChar": 3,
+        "endLine": 131,
+        "endChar": 8
+      },
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0d87922_2653ab1c",
         "filename": "vpython/python/version.go",
         "patchSetId": 2
@@ -79,6 +145,24 @@
       "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb10cf79_2715484c",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-04-17T23:07:56Z",
+      "side": 1,
+      "message": "Yeah, that\u0027s a good thought, and from the previous one too.\n\nI\u0027ll go back to each sub-method returning its own Version struct and clarify in the exported method that the returned Version is junk if there is an error.",
+      "parentUuid": "f0d87922_2653ab1c",
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
