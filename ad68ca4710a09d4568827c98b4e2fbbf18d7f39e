@@ -16,6 +16,24 @@
       "revId": "ad68ca4710a09d4568827c98b4e2fbbf18d7f39e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4f778e6_d1459c2e",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T17:38:03Z",
+      "side": 1,
+      "message": "InnoDB seems to support this https://dev.mysql.com/doc/refman/5.5/en/optimizing-innodb-bulk-data-loading.html",
+      "parentUuid": "bc2cec02_c2bf631e",
+      "revId": "ad68ca4710a09d4568827c98b4e2fbbf18d7f39e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
