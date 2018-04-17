@@ -34,6 +34,70 @@
       "revId": "ad68ca4710a09d4568827c98b4e2fbbf18d7f39e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70ff5adb_bb0a6884",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T22:10:15Z",
+      "side": 1,
+      "message": "talked to vadim. he warned that enabling the check again will make the database to rescan all FKs in the database, which is a bit expensive. It is probably makes sense only when you are populating an empty db. So never mind my suggestion.",
+      "parentUuid": "f4f778e6_d1459c2e",
+      "revId": "ad68ca4710a09d4568827c98b4e2fbbf18d7f39e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51d49b71_f1da4a4f",
+        "filename": "machine-db/appengine/model/rack_kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T22:10:15Z",
+      "side": 1,
+      "message": "why not \u0026rack.KVMId ?",
+      "range": {
+        "startLine": 61,
+        "startChar": 44,
+        "endLine": 61,
+        "endChar": 50
+      },
+      "revId": "ad68ca4710a09d4568827c98b4e2fbbf18d7f39e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c92d8868_3fb15d06",
+        "filename": "machine-db/appengine/model/rack_kvms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T22:10:15Z",
+      "side": 1,
+      "message": "when one sees this log, it wouldn\u0027t be the obvious that the context is the kvm part of the rack, as opposed rack in general",
+      "range": {
+        "startLine": 147,
+        "startChar": 20,
+        "endLine": 147,
+        "endChar": 35
+      },
+      "revId": "ad68ca4710a09d4568827c98b4e2fbbf18d7f39e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
