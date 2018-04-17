@@ -92,7 +92,7 @@ func TestInterpreterGetVersion(t *testing.T) {
 		{"", "unknown version output"},
 		{"Python2.7.11\n", "unknown version output"},
 		{"Python", "unknown version output"},
-		{"Python 2.7.11 foo bar junk", "non-canonical Python version string"},
+		{"Python X.7.11 foo bar junk", "non-canonical Python version string"},
 	}
 
 	Convey(`Testing Interpreter.GetVersion`, t, func() {

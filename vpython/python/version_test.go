@@ -48,6 +48,11 @@ func TestParseVersion(t *testing.T) {
 		{"1.0.post4", Version{1, 0, 0}},
 		{"2!1.0", Version{1, 0, 0}},
 		{"1000.0.1", Version{1000, 0, 1}},
+		{"2.7.14 :: Anaconda, Inc.", Version{2, 7, 14}},
+		{"2.7 :: Anaconda, Inc.", Version{2, 7, 0}},
+		{"0.1.2", Version{0, 1, 2}},
+		{"1.1.X", Version{1, 1, 0}},
+		{"1.1.", Version{1, 1, 0}},
 	}
 
 	failures := []struct {
@@ -55,8 +60,11 @@ func TestParseVersion(t *testing.T) {
 		err   string
 	}{
 		{"a", "non-canonical Python version string"},
-		{"0.1.2", "version is incomplete"},
-		{"1.1.X", "non-canonical Python version string"},
+		{"2..7 :: Anaconda, Inc.", "could not parse minor version"},
+		{".2.7 :: Anaconda, Inc.", "could not parse major version"},
+		{"2. :: Foo!", "empty version string"},
+		{"2 :: Bar!", "does not have major and minor versions"},
+		{"11111111111111111111111111111111111111111.7 :: Bar!", "invalid number value"},
 	}
 
 	Convey(`Testing ParseVersion`, t, func() {

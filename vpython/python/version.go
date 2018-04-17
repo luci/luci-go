@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -47,15 +48,41 @@ type Version struct {
 }
 
 // ParseVersion parses a Python version from a version string (e.g., "1.2.3").
+//
+// On error, the returned Version value is not specified.
 func ParseVersion(s string) (Version, error) {
 	var v Version
+
+	// Treat as PEP440.
+	v, err := parsePEP440Version(s)
+	if err == nil {
+		return v, nil
+	}
+
+	// Try resilient parsing.
+	v, err2 := resilientVersionParsing(s)
+	if err2 == nil {
+		return v, nil
+	}
+
+	return v, errors.Reason(
+		"could not parse version from %q, failed PEP440 (%s) and resilient (%s) parsing",
+		s, err, err2).Err()
+}
+
+// parsePEP440Version parses a PEP440 version string into v.
+//
+// Note that on error, parsePEP440Version may still modify v.
+func parsePEP440Version(s string) (Version, error) {
+	v := Version{}
+
 	if s == "" {
 		return v, nil
 	}
 
 	match := canonicalVersionRE.FindStringSubmatch(s)
 	if match == nil {
-		return v, errors.Reason("non-canonical Python version string: %q", s).Err()
+		return v, errors.New("non-canonical Python version string")
 	}
 	parts := strings.Split(match[2], ".")
 
@@ -82,6 +109,68 @@ func ParseVersion(s string) (Version, error) {
 		return v, errors.Reason("version is incomplete").Err()
 	}
 	return v, nil
+}
+
+// resilientVersionParsing is a resilient version of parsing Python versions.
+//
+// It is used when PEP440 version parsing doesn't work, which is generally when
+// the Python version string is non-compliant. Since there's still potentially
+// enough information in the version string to satisfy our intent, we will try
+// and parse it in a much simpler manner:
+//
+// 1) Strip all characters that aren't numbers or dots.
+// 2) Parse left-to-right until we get 1, 2, or 3 numbers, assuming that they
+//    are Major, Minor, and Patch respectively.
+// 3) Require that we observe at least Major and Minor to succeed.
+//
+// Note that on error, resilientVersionParsing may still modify v.
+func resilientVersionParsing(s string) (v Version, err error) {
+	s = strings.Map(func(r rune) rune {
+		if unicode.IsDigit(r) || r == '.' {
+			return r
+		}
+
+		// Delete this character.
+		return -1
+	}, s)
+
+	// Accommodate empty segments (e.g., "..") by returning "false".
+	parseVersion := func(value string, dest *int) error {
+		if len(value) == 0 {
+			return errors.New("empty version string")
+		}
+		version, err := strconv.Atoi(value)
+		if err != nil {
+			return errors.Reason("invalid number value %q: %s", value, err).Err()
+		}
+		*dest = version
+		return nil
+	}
+
+	parts := strings.Split(s, ".")
+
+	// Must have at least major and minor versions.
+	if len(parts) < 2 {
+		err = errors.Reason("reduced version %q does not have major and minor versions", s).Err()
+		return
+	}
+
+	// Parse the Patch version. This is optional; if there's an error, we will
+	// just swallow it.
+	if len(parts) >= 3 {
+		_ = parseVersion(parts[2], &v.Patch)
+	}
+
+	// Parse major and minor versions.
+	if err = parseVersion(parts[1], &v.Minor); err != nil {
+		err = errors.Annotate(err, "could not parse minor version").Err()
+		return
+	}
+	if err = parseVersion(parts[0], &v.Major); err != nil {
+		err = errors.Annotate(err, "could not parse major version").Err()
+		return
+	}
+	return
 }
 
 func (v Version) String() string {
