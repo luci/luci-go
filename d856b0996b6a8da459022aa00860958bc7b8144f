@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "731be2b3_81894b97",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T06:19:39Z",
+      "side": 1,
+      "message": "This actually noticeably slows down the query, I\u0027ll modify this before committing to fetch only missing bodies.",
+      "range": {
+        "startLine": 440,
+        "startChar": 1,
+        "endLine": 441,
+        "endChar": 39
+      },
+      "revId": "d856b0996b6a8da459022aa00860958bc7b8144f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7a9a5061_2a271c66",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T06:19:39Z",
+      "side": 1,
+      "message": "There\u0027s no absolutely strong guarantee the IDs are already sorted in correct order there. I think the order depends on races when multiple invocations start at the same time. The size of this list is smallish (\u003c100), so I decided it would be safer just to sort it right here.",
+      "range": {
+        "startLine": 138,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 11
+      },
+      "revId": "d856b0996b6a8da459022aa00860958bc7b8144f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5306c0f_ed048fe0",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T06:19:39Z",
+      "side": 1,
+      "message": "this is a bit of shit show, not sure how to improve it",
+      "range": {
+        "startLine": 275,
+        "startChar": 3,
+        "endLine": 275,
+        "endChar": 20
+      },
+      "revId": "d856b0996b6a8da459022aa00860958bc7b8144f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d94fc6b_33ff1f7a",
+        "filename": "scheduler/appengine/internal/cursors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T06:19:39Z",
+      "side": 1,
+      "message": "When merging multiple results, we need an ability to \"peek\" at the next result. And after we fetched an item (to \u0027peek\u0027 at it), the cursor always points to all items after the fetched. So to support cases when we peeked, but didn\u0027t use an item, we need to store both the peeked item and the cursor.\n\nThere are probably ways to store only the cursor (e.g. grab a cursor before peeking). But I think they may lead to even more trickier cases, e.g. consider situation:\n\n1. We fetched all elements up to, and including X.\n2. The next item to be peeked is X+10. We store the cursor before peeking, the cursor essentially encodes condition \"resume at ID \u003e X\".\n3. We peek at the item, it is X+10, we do some decisions based on that, that decide not to use X+10. \n4. We \"freeze\" the query state into the new cursor. This frozen state contains our \"ID \u003e X\" cursor inside.\n5. Now imagine X+5 item appears.\n6. Once we unfreeze the state, we have an inconsistency: the state was frozen under assumption X+10 is next, but now we see X+5.\n\nThis is probably solvable, but I decided it would be simpler to store (X+10, \"ID \u003e X+10\") as a state, so no matter what happens to items, we unfreeze in consistent state.",
+      "range": {
+        "startLine": 32,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 26
+      },
+      "revId": "d856b0996b6a8da459022aa00860958bc7b8144f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1741485e_4c194dd4",
+        "filename": "scheduler/appengine/internal/cursors.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T06:19:39Z",
+      "side": 1,
+      "message": "this is not true, I\u0027ll need to clarify/test this",
+      "range": {
+        "startLine": 37,
+        "startChar": 62,
+        "endLine": 38,
+        "endChar": 14
+      },
+      "revId": "d856b0996b6a8da459022aa00860958bc7b8144f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
