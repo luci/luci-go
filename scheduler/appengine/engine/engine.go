@@ -377,18 +377,15 @@ func (e *engineImpl) GetVisibleJobBatch(c context.Context, jobIDs []string) (map
 //
 // Supports both v1 and v2 invocations.
 func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvocationsOpts) ([]*Invocation, string, error) {
-	// TODO(vadimsh): Implement FinishedOnly and ActiveOnly
-	if opts.ActiveOnly {
-		return nil, "", nil
+	if opts.ActiveOnly && opts.FinishedOnly {
+		return nil, "", fmt.Errorf("using both ActiveOnly and FinishedOnly is not allowed")
 	}
 
-	jobID := job.JobID
-
-	if opts.PageSize == 0 || opts.PageSize > 500 {
+	if opts.PageSize <= 0 || opts.PageSize > 500 {
 		opts.PageSize = 500
 	}
 
-	// Deserialize the cursor.
+	// Deserialize the incoming cursor.
 	var cursor invocationsCursor
 	if opts.Cursor != "" {
 		var err error
@@ -398,49 +395,97 @@ func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvoc
 		}
 	}
 
-	// Prepare the query. Fetch 'pageSize' worth of entities as a single batch.
-	q := ds.NewQuery("Invocation")
-	if e.isV2Job(jobID) {
-		q = q.Eq("IndexedJobID", jobID)
-	} else {
-		q = q.Ancestor(ds.NewKey(c, "Job", jobID, 0, nil))
-	}
-	q = q.Order("__key__").Limit(int32(opts.PageSize))
-	if cursor.QueryCursor != nil {
-		q = q.Start(cursor.QueryCursor)
-	}
+	// We are going to merge results of multiple queries:
+	//   1) Over historical finished invocations in the datastore.
+	//   2) Over recently finished invocations, stored inline in the Job entity.
+	//   3) Over active invocations, also stored inline in the Job entity.
+	var qs []invQuery
 
-	out := make([]*Invocation, 0, opts.PageSize)
-	newCursor := invocationsCursor{}
-
-	// Fetch pageSize worth of invocations, then grab the cursor.
-	dsq := invDatastoreIter{}
-	dsq.start(c, q)
-	defer dsq.stop()
-	for {
-		switch inv, err := dsq.next(); {
-		case err != nil: // the RPC failed
-			return nil, "", transient.Tag.Apply(err)
-		case inv == nil: // fetched all available results
-			return out, "", nil
-		case inv != nil:
-			out = append(out, inv)
+	// Prepare the queries over finished invocations.
+	var finishedQuery *invDatastoreQuery
+	if !opts.ActiveOnly {
+		var parent *ds.Key
+		q := ds.NewQuery("Invocation")
+		if job.IsV2() {
+			q = q.Eq("IndexedJobID", job.JobID)
+		} else {
+			parent = ds.NewKey(c, "Job", job.JobID, 0, nil)
+			q = q.Ancestor(parent)
 		}
-		if len(out) >= opts.PageSize {
-			cursor, err := dsq.stop()
-			if err != nil {
-				return nil, "", transient.Tag.Apply(err)
+		q = q.Order("__key__")
+
+		finishedQuery = finishedInvQuery(c, q, cursor, parent)
+		defer finishedQuery.close()
+		qs = append(qs, finishedQuery)
+
+		// And always grab recently finished invocations from the Job, since they
+		// may be more up-to-date.
+		qs = append(qs, recentInvQuery(c, job, cursor.LastReturned))
+	}
+
+	// Prepare the query over active invocations.
+	if !opts.FinishedOnly {
+		qs = append(qs, activeInvQuery(c, job, cursor.LastReturned))
+	}
+
+	// Merge the results of all queries.
+	out, all, err := mergeInvQueries(qs, opts.PageSize)
+	if err != nil {
+		return nil, "", errors.Annotate(err, "failed to query invocations").Tag(transient.Tag).Err()
+	}
+
+	// Queries that use IDs inlined in the Job need a separate step of fetching
+	// entity bodies. We detect such "shallow" entities by missing Status value,
+	// which is guaranteed to be set for all Invocation entities.
+	var shallow []*Invocation
+	for _, inv := range out {
+		if inv.Status == "" {
+			shallow = append(shallow, inv)
+		}
+	}
+
+	if len(shallow) != 0 {
+		if err := ds.Get(c, shallow); err != nil {
+			return nil, "", errors.Annotate(err, "failed to fetch invocations").Tag(transient.Tag).Err()
+		}
+		// Filter the output once more, since the state of the entities fetched
+		// right now may be more up-to-date. In particular, active invocations
+		// may not be active anymore. Note that this may reduce the requested page
+		// size, in pathological case to 0.
+		filtered := make([]*Invocation, 0, len(out))
+		for _, inv := range out {
+			if opts.ActiveOnly && inv.Status.Final() {
+				continue
 			}
-			newCursor.QueryCursor = cursor
-			break
+			if opts.FinishedOnly && !inv.Status.Final() {
+				continue
+			}
+			filtered = append(filtered, inv)
 		}
+		out = filtered
 	}
 
+	// Return empty cursor if fetched all available invocations, this signals the
+	// caller that the query has finished.
+	if all {
+		return out, "", nil
+	}
+
+	// Otherwise prepare the next cursor.
+	newCursor := invocationsCursor{}
+	if len(out) > 0 {
+		newCursor.LastReturned = out[len(out)-1].ID
+	}
+	if finishedQuery != nil {
+		err := finishedQuery.updateCursor(&newCursor)
+		if err != nil {
+			return nil, "", errors.Annotate(err, "failed to grab the cursor").Tag(transient.Tag).Err()
+		}
+	}
 	cursorStr, err := newCursor.Serialize()
 	if err != nil {
 		return nil, "", errors.Annotate(err, "failed to serialize the cursor").Err()
 	}
-
 	return out, cursorStr, nil
 }
 
