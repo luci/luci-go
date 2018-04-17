@@ -28,5 +28,13 @@ option go_package = "internal";
 // The internal structure of the cursor is implementation detail and clients
 // must not depend on it.
 message InvocationsCursor {
-  bytes ds_cursor = 1;  // the raw datastore cursor as byte blob
+  // Points to all finished invocations after 'next_finished'.
+  bytes finished_cursor = 1;
+  // ID of a finished invocation immediately preceding 'finished_cursor' or
+  // -1 if we've exhausted all finished invocations, or 0 if haven't fetched
+  // anything yet.
+  int64 next_finished = 2;
+  // ID of the last returned invocation (active or finished), or 0 if none were
+  // returned yet.
+  int64 last_returned = 3;
 }
