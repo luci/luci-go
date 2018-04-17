@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc2cec02_c2bf631e",
+        "filename": "machine-db/appengine/config/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T17:36:38Z",
+      "side": 1,
+      "message": "wouldn\u0027t it be easier to temporarily turn off FK constraints?\nhttps://stackoverflow.com/a/15501754\n\nbtw, it seems these changes to the db are made not transactionally? i think they should be",
+      "revId": "ad68ca4710a09d4568827c98b4e2fbbf18d7f39e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
