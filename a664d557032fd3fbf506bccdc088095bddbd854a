@@ -94,6 +94,30 @@
       "revId": "a664d557032fd3fbf506bccdc088095bddbd854a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26ab93f1_2a3fd019",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T14:43:54Z",
+      "side": 1,
+      "message": "Why cancelation is a fatalistic action? CrOS heavily uses this feature.",
+      "parentUuid": "69356ff1_1a4197e0",
+      "range": {
+        "startLine": 450,
+        "startChar": 20,
+        "endLine": 450,
+        "endChar": 24
+      },
+      "revId": "a664d557032fd3fbf506bccdc088095bddbd854a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
