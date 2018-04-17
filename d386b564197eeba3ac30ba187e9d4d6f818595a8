@@ -22,6 +22,30 @@
       "revId": "d386b564197eeba3ac30ba187e9d4d6f818595a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "703f8d8b_582f2e35",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T19:19:01Z",
+      "side": 1,
+      "message": "No, this will be even slower, since I\u0027ll need to grab a cursor for each result row, and getting a cursor apparently may involve RPCs.",
+      "parentUuid": "66f2fac9_33589839",
+      "range": {
+        "startLine": 69,
+        "startChar": 3,
+        "endLine": 70,
+        "endChar": 37
+      },
+      "revId": "d386b564197eeba3ac30ba187e9d4d6f818595a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
