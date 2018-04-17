@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2f65f18_cb0cf693",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T00:02:24Z",
+      "side": 1,
+      "message": "it took me 3h to write this code :(",
+      "range": {
+        "startLine": 326,
+        "startChar": 5,
+        "endLine": 326,
+        "endChar": 22
+      },
+      "revId": "043f159a6bff53ac06642a568c9da4582dce3c1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
