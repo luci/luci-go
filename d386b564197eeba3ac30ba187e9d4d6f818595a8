@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66f2fac9_33589839",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T17:56:12Z",
+      "side": 1,
+      "message": "I have a strong suspicion this ping-pong causes serious slow-downs :( I\u0027ll try to confirm this, and maybe switch to a simpler \"buffer everything\" approach.",
+      "range": {
+        "startLine": 69,
+        "startChar": 3,
+        "endLine": 70,
+        "endChar": 37
+      },
+      "revId": "d386b564197eeba3ac30ba187e9d4d6f818595a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
