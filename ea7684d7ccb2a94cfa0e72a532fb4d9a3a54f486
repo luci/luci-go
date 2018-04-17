@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "d8d16d65_7132b853",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T15:00:36Z",
+      "side": 1,
+      "message": "mix of spaces and tabs",
+      "revId": "ea7684d7ccb2a94cfa0e72a532fb4d9a3a54f486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "be78943f_44b401a0",
         "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
         "patchSetId": 1
@@ -13,6 +30,24 @@
       "writtenOn": "2018-04-13T23:26:43Z",
       "side": 1,
       "message": "Existing dbs updated with:\nALTER TABLE physical_hosts ADD COLUMN virtual_datacenter varchar(255) DEFAULT \"\";",
+      "revId": "ea7684d7ccb2a94cfa0e72a532fb4d9a3a54f486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3a96eab_1d740ae7",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T15:00:36Z",
+      "side": 1,
+      "message": "i think we should not have different schema in code and prod. Can you run an UPDATE to set vdc to empty and remove the default?",
+      "parentUuid": "be78943f_44b401a0",
       "revId": "ea7684d7ccb2a94cfa0e72a532fb4d9a3a54f486",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
