@@ -217,6 +217,30 @@
     },
     {
       "key": {
+        "uuid": "687c90d3_7dc02d05",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T17:31:45Z",
+      "side": 1,
+      "message": "\u003e swarming host is another dimension.\n\nThis is a very good abstraction to me. Perhaps you could simplify the whole thing by having\n\n  type PoolDescriptor strpair.Map\n\n  const SwarmingHostnameKey \u003d \"swarming_hostname\"\n\nPoolDescriptor SGTM",
+      "parentUuid": "ab39ec08_39883626",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 12
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c47eb495_b44d53b3",
         "filename": "milo/common/model/pool.go",
         "patchSetId": 5
@@ -275,6 +299,30 @@
       "side": 1,
       "message": "Field was used to avoid more complexity and unnecessary computation (Basically as a \"free\" cache).  As long as the callers are cooperative (Don\u0027t modify dimensions without fixing Hash), it\u0027s cheaper this way.  Besides, I think by splitting this out into a separate entity, the hash will need to be the key anyways.  I think I\u0027d like to keep the pre-computation of the SHA1, and document that these are supposed to be immutable.\n\nMaking these fields private with accessors won\u0027t work with Datastore either without some crazy PLS magic, so I\u0027d want to avoid that.",
       "parentUuid": "00565c10_a252dd3c",
+      "range": {
+        "startLine": 52,
+        "startChar": 63,
+        "endLine": 52,
+        "endChar": 73
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a6a4087_a32f483c",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T17:31:45Z",
+      "side": 1,
+      "message": "since we are converging on a separate entity, yes, we\u0027d need a field for the ID.",
+      "parentUuid": "42d09583_337ad63c",
       "range": {
         "startLine": 52,
         "startChar": 63,
