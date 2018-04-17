@@ -22,6 +22,30 @@
       "revId": "4f38aee0b7e310d9d8b7aeb22bc8bab38c1018a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fc7f93d_9a0d0301",
+        "filename": "scheduler/appengine/frontend/templates/includes/base.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-17T22:04:45Z",
+      "side": 1,
+      "message": "😒\nok, whatever",
+      "parentUuid": "a0fc0285_75a709ea",
+      "range": {
+        "startLine": 90,
+        "startChar": 15,
+        "endLine": 90,
+        "endChar": 23
+      },
+      "revId": "4f38aee0b7e310d9d8b7aeb22bc8bab38c1018a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
