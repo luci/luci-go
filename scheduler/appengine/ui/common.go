@@ -18,12 +18,14 @@ package ui
 import (
 	"html/template"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
@@ -46,6 +48,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 
 	m := base.Extend(func(c *router.Context, next router.Handler) {
 		c.Context = context.WithValue(c.Context, configContextKey(0), &cfg)
+		c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
 		next(c)
 	})
 	m = m.Extend(
@@ -76,6 +79,17 @@ func config(c context.Context) *Config {
 		panic("impossible, configContextKey is not set")
 	}
 	return cfg
+}
+
+type startTimeContextKey int
+
+// startTime returns timestamp when we started handling the request.
+func startTime(c context.Context) time.Time {
+	ts, ok := c.Value(startTimeContextKey(0)).(time.Time)
+	if !ok {
+		panic("impossible, startTimeContextKey is not set")
+	}
+	return ts
 }
 
 // prepareTemplates configures templates.Bundle used by all UI handlers.
@@ -124,6 +138,9 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 				"LoginURL":    loginURL,
 				"LogoutURL":   logoutURL,
 				"XsrfToken":   token,
+				"HandlerDuration": func() time.Duration {
+					return clock.Now(c).Sub(startTime(c))
+				},
 			}, nil
 		},
 	}
