@@ -27,16 +27,16 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestInvDatastoreQuery(t *testing.T) {
+func TestInvDatastoreIter(t *testing.T) {
 	t.Parallel()
 
 	run := func(c context.Context, query *datastore.Query, limit int) ([]*Invocation, datastore.Cursor, error) {
-		q := invDatastoreQuery{}
-		q.start(c, query)
-		defer q.stop()
+		it := invDatastoreIter{}
+		it.start(c, query)
+		defer it.stop()
 		invs := []*Invocation{}
 		for {
-			switch inv, err := q.next(); {
+			switch inv, err := it.next(); {
 			case err != nil:
 				return nil, nil, err
 			case inv == nil:
@@ -45,7 +45,7 @@ func TestInvDatastoreQuery(t *testing.T) {
 				invs = append(invs, inv)
 			}
 			if len(invs) == limit {
-				cur, err := q.stop()
+				cur, err := it.stop()
 				if err != nil {
 					return nil, nil, err
 				}

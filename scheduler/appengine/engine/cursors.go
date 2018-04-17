@@ -29,9 +29,12 @@ import (
 
 // invocationsCursor is used to paginate ListInvocations results.
 //
-// It wraps cursors.InvocationsCursor proto.
+// It wraps cursors.InvocationsCursor proto. See the proto doc for meaning of
+// fields.
 type invocationsCursor struct {
-	QueryCursor datastore.Cursor
+	FinishedCursor datastore.Cursor
+	NextFinished   int64
+	LastReturned   int64
 }
 
 // decodeInvocationsCursor deserializes the cursor.
@@ -45,44 +48,51 @@ func decodeInvocationsCursor(c context.Context, cursor string) (cur invocationsC
 		err = errors.Annotate(err, "failed to base64 decode the cursor").Err()
 		return
 	}
-
 	msg := internal.InvocationsCursor{}
 	if err = proto.Unmarshal(blob, &msg); err != nil {
 		err = errors.Annotate(err, "failed to unmarshal the cursor").Err()
 		return
 	}
 
-	if len(msg.DsCursor) != 0 {
+	if len(msg.FinishedCursor) != 0 {
 		// GAE lib wants the cursor base64-encoded.
-		dsCurb64 := base64.RawURLEncoding.EncodeToString(msg.DsCursor)
-		if cur.QueryCursor, err = datastore.DecodeCursor(c, dsCurb64); err != nil {
+		dsCurb64 := base64.RawURLEncoding.EncodeToString(msg.FinishedCursor)
+		if cur.FinishedCursor, err = datastore.DecodeCursor(c, dsCurb64); err != nil {
 			err = errors.Annotate(err, "failed to decode datastore cursor").Err()
 			return
 		}
 	}
+
+	cur.NextFinished = msg.NextFinished
+	cur.LastReturned = msg.LastReturned
 
 	return
 }
 
 // Serialize converts the cursor to an URL-safe string.
 func (cur *invocationsCursor) Serialize() (str string, err error) {
-	if cur.QueryCursor == nil {
+	zero := invocationsCursor{}
+	if *cur == zero {
 		return
 	}
 
-	msg := internal.InvocationsCursor{}
+	msg := internal.InvocationsCursor{
+		NextFinished: cur.NextFinished,
+		LastReturned: cur.LastReturned,
+	}
 
-	// GAE lib encodes the cursor in base64.RawURLEncoding. Unwrap it back, to put
-	// raw bytes into our proto, to avoid double base64 encoding.
-	msg.DsCursor, err = base64.RawURLEncoding.DecodeString(cur.QueryCursor.String())
-	if err != nil {
-		return // must never actually happen
+	if cur.FinishedCursor != nil {
+		// GAE lib encodes the cursor in base64.RawURLEncoding. Unwrap it back, to put
+		// raw bytes into our proto, to avoid double base64 encoding.
+		msg.FinishedCursor, err = base64.RawURLEncoding.DecodeString(cur.FinishedCursor.String())
+		if err != nil {
+			return // must never actually happen
+		}
 	}
 
 	blob, err := proto.Marshal(&msg)
 	if err != nil {
 		return // also must never actually happen
 	}
-
 	return base64.RawURLEncoding.EncodeToString(blob), nil
 }
