@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5dac772_e8434d59",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T22:14:46Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 59,
+        "startChar": 76,
+        "endLine": 59,
+        "endChar": 83
+      },
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a8f6168_4ac9dc54",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T22:14:46Z",
+      "side": 1,
+      "message": "i think we should at least\n\n  *v \u003d Version{}\n\nhere, and actually before the if statement. Below, we may leave Minor or Patch unset, so it may have garbage",
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a91a95b_22b03439",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T22:14:46Z",
+      "side": 1,
+      "message": "strictly speaking, this shouldn\u0027t panic on value \"111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111\"",
+      "range": {
+        "startLine": 131,
+        "startChar": 3,
+        "endLine": 131,
+        "endChar": 8
+      },
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0d87922_2653ab1c",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-17T22:14:46Z",
+      "side": 1,
+      "message": "in this case and case 1 we might leave garbage in v.Patch \ni think we should zero it",
+      "revId": "b74e88c88ae5af4b13b9576df7e850bb6e55beaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
