@@ -144,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "bfa7e242_8ca8cb41",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T23:30:20Z",
+      "side": 1,
+      "message": "Did it now. It actually made the code slightly simpler.",
+      "parentUuid": "7e1a831d_f3025fbd",
+      "range": {
+        "startLine": 397,
+        "startChar": 18,
+        "endLine": 397,
+        "endChar": 53
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6ea9332_5d03de20",
         "filename": "scheduler/appengine/engine/invquery.go",
         "patchSetId": 11
