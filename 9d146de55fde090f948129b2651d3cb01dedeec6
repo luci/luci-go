@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "34e421d6_4c7fd26d",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T23:09:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2cbf73a8_03d6542d",
+      "range": {
+        "startLine": 395,
+        "startChar": 2,
+        "endLine": 396,
+        "endChar": 27
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9350865f_d87c9d78",
         "filename": "scheduler/appengine/engine/invquery.go",
         "patchSetId": 11
@@ -321,6 +345,30 @@
       "side": 1,
       "message": "my PoV is from avoiding GC allocs and saving on CPU spent on bookkeeping. Hence, both allocs are almost the same.\n\nNow I see that your PoV is avoiding extra RAM usage. I don\u0027t buy this as important because 500*8\u003d4KB alloc is nothing comparing 500 actual invocations. We can allocate 4KB 200 times and still be \u003c1MB.\n\nAnyway, no point thinking more about this.",
       "parentUuid": "73ffc8f5_645c85ea",
+      "range": {
+        "startLine": 455,
+        "startChar": 1,
+        "endLine": 455,
+        "endChar": 26
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9805fd2_aaebad58",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T23:09:05Z",
+      "side": 1,
+      "message": "To be precise My PoV is to avoid unnecessary O(PageSize) memory, but not necessarily O(1). I consider PageSize to be \"large\".\n\nIn terms of GC, luci-go/luci-gae frameworks generate astonishing amount of garbage already (bringing up and tearing down complex hierarchy of contexts on each request) and +-10 objects make no difference whatsoever.",
+      "parentUuid": "a7330ae0_b5fec053",
       "range": {
         "startLine": 455,
         "startChar": 1,
