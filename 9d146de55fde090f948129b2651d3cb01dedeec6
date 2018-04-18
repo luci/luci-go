@@ -258,6 +258,30 @@
       "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "73ffc8f5_645c85ea",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T22:48:24Z",
+      "side": 1,
+      "message": "Because allocating 500 pointers is 50x more memory in a memory constraint environment? :)",
+      "parentUuid": "178524c0_b506ebba",
+      "range": {
+        "startLine": 455,
+        "startChar": 1,
+        "endLine": 455,
+        "endChar": 26
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
