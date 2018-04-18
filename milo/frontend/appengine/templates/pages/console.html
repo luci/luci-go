@@ -190,13 +190,17 @@
       {{ range $console.Commit }}
         <div class="console-commit-item">
           <div class="console-commit-summary">
-            <div class="console-commit-time">{{ .CommitTime | localTime "N/A" }}</div>
-            <div class="console-commit-author">
-              <a href="{{.Revision.URL}}" aria-label="commit by {{ .AuthorEmail }}">
+            <div class="console-commit-revision" data-timestamp="{{ .CommitTime | timeEpochMillis }}" class="local-time tooltip-only">
+              <a href="{{.Revision.URL}}" aria-label="revision {{ .Revision.Label | shortenHash 8 }}">
                 <span class="commit" title="{{ .Description }}">
-                  {{ .AuthorEmail }}
+                  {{ .Revision.Label | shortenHash 8 }}
                 </span>
               </a>
+            </div>
+            <div class="console-commit-author">
+              <span class="commit" title="{{ .Description }}" aria-label="commit by {{ .AuthorEmail }}">
+                {{ .AuthorEmail }}
+              </span>
             </div>
           </div>
           <div class="console-commit-description">

@@ -51,11 +51,13 @@ var funcMap = template.FuncMap{
 	"formatTime":       formatTime,
 	"humanDuration":    humanDuration,
 	"localTime":        localTime,
+	"timeEpochMillis":  timeEpochMillis,
 	"obfuscateEmail":   obfuscateEmail,
 	"pagedURL":         pagedURL,
 	"parseRFC3339":     parseRFC3339,
 	"percent":          percent,
 	"shortHash":        shortHash,
+	"shortenHash":      shortenHash,
 	"shortenEmail":     shortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
@@ -74,6 +76,11 @@ func localTime(ifZero string, t time.Time) template.HTML {
 		`<span class="local-time" data-timestamp="%d">%s</span>`,
 		milliseconds,
 		t.Format(time.RFC850)))
+}
+
+// timeEpochMillis formats t to milliseconds since UNIX epoch.
+func timeEpochMillis(t time.Time) template.HTML {
+	return template.HTML(fmt.Sprintf(`%d`, t.UnixNano()/1e6))
 }
 
 // rURL matches anything that looks like an https:// URL.
@@ -223,6 +230,15 @@ func shortenEmail(email string) string {
 func shortHash(s string) string {
 	if len(s) > 6 {
 		return s[0:6]
+	}
+	return s
+}
+
+// shortenHash abbriviates a git hash into specified number of characters.
+// Recommended usage: {{ .GitHash | shortenHash 8 }}
+func shortenHash(hashLen int, s string) string {
+	if len(s) > hashLen {
+		return s[0:hashLen]
 	}
 	return s
 }
