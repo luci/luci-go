@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "488f38b5_796ee488",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T00:48:32Z",
+      "side": 1,
+      "message": "I think I\u0027m worried about this now, since 0 results are treated like \"end of data\". I consider to add an outter loop that fetches more stuff (rerunning this whole shit again) until it gets the full requested page or definitive \"no more results\" response. Wdyt?",
+      "range": {
+        "startLine": 449,
+        "startChar": 5,
+        "endLine": 449,
+        "endChar": 37
+      },
+      "revId": "9f843cbaccb3d5a306f5856ff7270e8157183f71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
