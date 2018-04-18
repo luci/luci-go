@@ -157,6 +157,11 @@ message Console {
   // If true, this console will not filter out builds marked as Experimental.
   // This field is optional. By default Consoles only show production builds.
   bool include_experimental_builds = 11;
+
+  // If true, only builders view will be available. Console view (i.e. git log
+  // based view) will be disabled and users redirected to builder view.
+  // Defaults to false.
+  bool builder_view_only = 12;
 }
 
 // Builder is a reference to a Milo builder.
