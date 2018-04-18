@@ -68,6 +68,29 @@
       "revId": "9cad041b94f057859e2166b8dc3d18a0cd59f60a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c738b3a8_28401af6",
+        "filename": "scheduler/appengine/engine/invquery_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T00:52:23Z",
+      "side": 1,
+      "message": "imo, easier to read if you just spell out 3 calls:\n\ngtq :\u003d q\ninvs, err :\u003d run(c, gtq, 2)\nSo(err, ShouldBeNil)\nSo(invs, ShouldResemble, origina[:2])\n\ngtq \u003d q.Gt(\"__key__\", datastore.KeyForObj(c, invs[1])\ninvs, err \u003d run(c, gtq, 2)\nSo(err, ShouldBeNil)\nSo(invs, ShouldResemble, origina[2:4])\n\ngtq \u003d q.Gt(\"__key__\", datastore.KeyForObj(c, invs[1])\ninvs, err \u003d run(c, gtq, 2)\nSo(err, ShouldBeNil)\nSo(invs, ShouldResemble, origina[4:5])",
+      "range": {
+        "startLine": 79,
+        "startChar": 3,
+        "endLine": 97,
+        "endChar": 4
+      },
+      "revId": "9cad041b94f057859e2166b8dc3d18a0cd59f60a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
