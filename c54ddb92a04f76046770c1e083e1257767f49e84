@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84f743ad_33e59d30",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T01:24:23Z",
+      "side": 1,
+      "message": "return non-zero v?",
+      "range": {
+        "startLine": 75,
+        "startChar": 52,
+        "endLine": 75,
+        "endChar": 58
+      },
+      "revId": "c54ddb92a04f76046770c1e083e1257767f49e84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9417d03_18b5911c",
+        "filename": "vpython/python/version.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T01:24:23Z",
+      "side": 1,
+      "message": "return non zero v?",
+      "range": {
+        "startLine": 126,
+        "startChar": 57,
+        "endLine": 126,
+        "endChar": 63
+      },
+      "revId": "c54ddb92a04f76046770c1e083e1257767f49e84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
