@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d314999_67d0f9b0",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:28:47Z",
+      "side": 1,
+      "message": "This reads as if we are actually refreshing job entity from ds, are we?",
+      "range": {
+        "startLine": 395,
+        "startChar": 2,
+        "endLine": 396,
+        "endChar": 27
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9350865f_d87c9d78",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:28:47Z",
+      "side": 1,
+      "message": "i\u0027m sure you\u0027ve asked yourself already: is there no easy to way to re-use sorted list from before?\n\nwhy can\u0027t we re-use qs array as-is from previous fetchInvsPage call?",
+      "range": {
+        "startLine": 397,
+        "startChar": 18,
+        "endLine": 397,
+        "endChar": 53
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6ea9332_5d03de20",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:28:47Z",
+      "side": 1,
+      "message": "move this below early return.",
+      "range": {
+        "startLine": 412,
+        "startChar": 37,
+        "endLine": 416,
+        "endChar": 28
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "473743e4_692ab8c0",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:28:47Z",
+      "side": 1,
+      "message": "the same",
+      "range": {
+        "startLine": 453,
+        "startChar": 3,
+        "endLine": 453,
+        "endChar": 7
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01ab0c90_ceee18a8",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:28:47Z",
+      "side": 1,
+      "message": "hey, i heard to like avoiding allocs. Here is an idea:\n\nswap all shall invocations to the end of slice:\n\nr :\u003d len(invs) - 1\nfor l, inv :\u003d range invs{\n  if l \u003e\u003d r{ break }\n  if inv.Status \u003d\u003d \"\" {invs[r] \u003d inv; r-- }\n}\n...\n... datastore.Get(c, invs[r:])...",
+      "range": {
+        "startLine": 455,
+        "startChar": 1,
+        "endLine": 455,
+        "endChar": 26
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
