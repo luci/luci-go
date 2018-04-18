@@ -234,6 +234,30 @@
       "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "178524c0_b506ebba",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:44:25Z",
+      "side": 1,
+      "message": "not that I insist on adopting my optimization, but why is allocating 500 pointers worse than 10 pointers?",
+      "parentUuid": "3881dcfc_2ce7289a",
+      "range": {
+        "startLine": 455,
+        "startChar": 1,
+        "endLine": 455,
+        "endChar": 26
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
