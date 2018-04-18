@@ -220,7 +220,7 @@
   white-space: nowrap;
 }
 
-.console-commit-time {
+.console-commit-revision {
   width: 15em;
   text-overflow: ellipsis;
   overflow: hidden;

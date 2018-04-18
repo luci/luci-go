@@ -51,6 +51,7 @@ var funcMap = template.FuncMap{
 	"formatTime":       formatTime,
 	"humanDuration":    humanDuration,
 	"localTime":        localTime,
+	"localTimeTooltip": localTimeTooltip,
 	"obfuscateEmail":   obfuscateEmail,
 	"pagedURL":         pagedURL,
 	"parseRFC3339":     parseRFC3339,
@@ -66,14 +67,32 @@ var funcMap = template.FuncMap{
 // that will be converted to local timezone in the browser.
 // Recommended usage: {{ .Date | localTime "N/A" }}
 func localTime(ifZero string, t time.Time) template.HTML {
+	return localTimeCommon(ifZero, t, false, "")
+}
+
+// localTimeTooltip is similar to localTime, but shows time in a tooltip and
+// allows to specify inner text to be added to the created <span> element.
+// Recommended usage: {{ .Date | localTimeTooltip "innerText" "N/A" }}
+func localTimeTooltip(innerText string, ifZero string, t time.Time) template.HTML {
+	return localTimeCommon(ifZero, t, true, innerText)
+}
+
+func localTimeCommon(ifZero string, t time.Time, tooltip bool, innerText string) template.HTML {
 	if t.IsZero() {
 		return template.HTML(template.HTMLEscapeString(ifZero))
 	}
 	milliseconds := t.UnixNano() / 1e6
+	tooltipClass := ``
+	if tooltip {
+		tooltipClass = ` tooltip-only`
+	} else {
+		innerText = t.Format(time.RFC850)
+	}
 	return template.HTML(fmt.Sprintf(
-		`<span class="local-time" data-timestamp="%d">%s</span>`,
+		`<span class="local-time%s" data-timestamp="%d">%s</span>`,
+		tooltipClass,
 		milliseconds,
-		t.Format(time.RFC850)))
+		innerText))
 }
 
 // rURL matches anything that looks like an https:// URL.
@@ -219,10 +238,11 @@ func shortenEmail(email string) string {
 	return strings.Replace(email, "@google.com", "", -1)
 }
 
-// shortHash abbriviates a git hash into 6 characters.
-func shortHash(s string) string {
-	if len(s) > 6 {
-		return s[0:6]
+// shortHash abbriviates a git hash into specified number of characters.
+// Recommended usage: {{ .GitHash | shortHash 8 }}
+func shortHash(hashLen int, s string) string {
+	if len(s) > hashLen {
+		return s[0:hashLen]
 	}
 	return s
 }
