@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "e6be9cdd_274f2c55",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T13:02:26Z",
+      "side": 1,
+      "message": "it is a nit, i don\u0027t feel strongly about it",
+      "parentUuid": "e3571c6f_2ad58172",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89d1a8c4_02977c64",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 6
@@ -104,6 +122,24 @@
       "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fdfa3883_e1140e6d",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T13:02:26Z",
+      "side": 1,
+      "message": "i meant that the value of innerText is thrown away.\n\ni didn\u0027t realize that this code was there before. This is the default value of the inner text and it is replaced on the client side.\n\nmy previous question still stands. This logic is specific to localTime function, so why isn\u0027t it there? You wouldn\u0027t need tooltip boolean param and you wouldn\u0027t need this if statement. The boolean parameter basically alternates between localTime and localTimeToolTip. It would be simpler if the each alternative would be in their respective functions",
+      "parentUuid": "7d664fc2_3c59e702",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
