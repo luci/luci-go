@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "9a87f1fa_cffbac80",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T01:08:12Z",
+      "side": 1,
+      "message": "do IIC this must be here (and not in {}) to avoid panic in defer?",
+      "range": {
+        "startLine": 401,
+        "startChar": 1,
+        "endLine": 401,
+        "endChar": 37
+      },
+      "revId": "9f843cbaccb3d5a306f5856ff7270e8157183f71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51a1e229_e2c9cc64",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T01:08:12Z",
+      "side": 1,
+      "message": "imo, this whole method is too long to keep in mind. Can we split it into two:\n\nout, all, err :\u003d fetchAllInvocations(c, job, cursor, opts)\nout \u003d fillShallow(c, out, opts)\n// deal with cursors and return.",
+      "revId": "9f843cbaccb3d5a306f5856ff7270e8157183f71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "488f38b5_796ee488",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 4
@@ -18,6 +58,53 @@
         "startChar": 5,
         "endLine": 449,
         "endChar": 37
+      },
+      "revId": "9f843cbaccb3d5a306f5856ff7270e8157183f71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7965d3f6_90c6406c",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T01:08:12Z",
+      "side": 1,
+      "message": "yeah, agree. Based on refactoring suggestion above, should be fairly readable:\n\nout \u003d []\nfor opts.PageSize \u003e 0 {\n  some, all, err :\u003d fetchAllInvocations(c, job, cursor, opts)\n  some \u003d fillShallow(c, some, opts)\n  out \u003d append(out, some)\n  opts.PageSize -\u003d len(some)\n}",
+      "parentUuid": "488f38b5_796ee488",
+      "range": {
+        "startLine": 449,
+        "startChar": 5,
+        "endLine": 449,
+        "endChar": 37
+      },
+      "revId": "9f843cbaccb3d5a306f5856ff7270e8157183f71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebf1cee6_1c9bc901",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T01:08:12Z",
+      "side": 1,
+      "message": "in current impl, I think this is wrong, since next page may actually have \u003e0 results.",
+      "range": {
+        "startLine": 465,
+        "startChar": 11,
+        "endLine": 465,
+        "endChar": 25
       },
       "revId": "9f843cbaccb3d5a306f5856ff7270e8157183f71",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
