@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "d8a133ba_0fc0b903",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:30:09Z",
+      "side": 1,
+      "message": "sg",
+      "parentUuid": "758f5caf_05b6ed1f",
+      "range": {
+        "startLine": 89,
+        "startChar": 3,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0fc991d4_54857d1e",
         "filename": "scheduler/appengine/engine/invquery.go",
         "patchSetId": 7
@@ -202,6 +226,30 @@
       "side": 1,
       "message": "Yeah, I figured it doesn\u0027t matter. If \u0027invs\u0027 were large, I\u0027d rather take extra care elsewhere to make sure it is stored ordered (so we don\u0027t need to resort it on each listing). But without our current limits sort.Slice is totally fine.",
       "parentUuid": "3b61dc81_966b0519",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 73
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95a0122b_43cc21e8",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:30:09Z",
+      "side": 1,
+      "message": "ack.",
+      "parentUuid": "c8972c67_26009149",
       "range": {
         "startLine": 145,
         "startChar": 1,
