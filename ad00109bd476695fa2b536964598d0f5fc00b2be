@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68f9b6c9_2e406cf2",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T21:53:24Z",
+      "side": 1,
+      "message": "https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating",
+      "range": {
+        "startLine": 469,
+        "startChar": 1,
+        "endLine": 470,
+        "endChar": 27
+      },
+      "revId": "ad00109bd476695fa2b536964598d0f5fc00b2be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
