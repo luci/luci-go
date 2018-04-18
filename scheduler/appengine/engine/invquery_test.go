@@ -27,6 +27,83 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func makeInvListQ(ids ...int64) *invListQuery {
+	invs := make([]*Invocation, len(ids))
+	for i, id := range ids {
+		invs[i] = &Invocation{ID: id}
+	}
+	return &invListQuery{invs, 0}
+}
+
+func invIDs(invs []*Invocation) []int64 {
+	out := make([]int64, len(invs))
+	for i, inv := range invs {
+		out[i] = inv.ID
+	}
+	return out
+}
+
+func TestMergeInvQueries(t *testing.T) {
+	t.Parallel()
+
+	Convey("Empty", t, func() {
+		invs, done, err := mergeInvQueries([]invQuery{
+			makeInvListQ(), makeInvListQ(),
+		}, 100, nil)
+		So(invs, ShouldBeEmpty)
+		So(done, ShouldBeTrue)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Singe source, with limit", t, func() {
+		invs, done, err := mergeInvQueries([]invQuery{
+			makeInvListQ(1, 2, 3, 4, 5),
+		}, 3, nil)
+		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3})
+		So(done, ShouldBeFalse)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Singe source, with limit, appends", t, func() {
+		invs := []*Invocation{{ID: 1}, {ID: 2}}
+		invs, done, err := mergeInvQueries([]invQuery{
+			makeInvListQ(3, 4, 5, 6),
+		}, 3, invs)
+		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3, 4, 5})
+		So(done, ShouldBeFalse)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Singe source, dups and out of order", t, func() {
+		invs, done, err := mergeInvQueries([]invQuery{
+			makeInvListQ(1, 2, 2, 3, 2, 4, 5),
+		}, 100, nil)
+		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3, 4, 5})
+		So(done, ShouldBeTrue)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Merging", t, func() {
+		invs, done, err := mergeInvQueries([]invQuery{
+			makeInvListQ(1, 3, 5),
+			makeInvListQ(2, 4, 6),
+		}, 100, nil)
+		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3, 4, 5, 6})
+		So(done, ShouldBeTrue)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Merging with dups and limit", t, func() {
+		invs, done, err := mergeInvQueries([]invQuery{
+			makeInvListQ(1, 2, 3, 4, 5),
+			makeInvListQ(1, 2, 3, 4, 5),
+		}, 3, nil)
+		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3})
+		So(done, ShouldBeFalse)
+		So(err, ShouldBeNil)
+	})
+}
+
 func TestInvDatastoreIter(t *testing.T) {
 	t.Parallel()
 
