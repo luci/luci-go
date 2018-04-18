@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf554f1b_26ee6026",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T21:55:37Z",
+      "side": 1,
+      "message": "if page.final {return out, \"\", nil}\nand you don\u0027t need done var.",
+      "range": {
+        "startLine": 412,
+        "startChar": 2,
+        "endLine": 412,
+        "endChar": 19
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b82b10cf_e314c7e6",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T21:55:37Z",
+      "side": 1,
+      "message": "can there really be 2 invocations with the same id in a `q`?",
+      "range": {
+        "startLine": 89,
+        "startChar": 3,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fc991d4_54857d1e",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T21:55:37Z",
+      "side": 1,
+      "message": "smaller than or equal to",
+      "range": {
+        "startLine": 136,
+        "startChar": 40,
+        "endLine": 136,
+        "endChar": 61
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b61dc81_966b0519",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T21:55:37Z",
+      "side": 1,
+      "message": "algo-nit: min heap is actually preferable here if pageSize \u003c\u003c len(j.ActiveInvocations).\nHowever, latter should typically be \u003c1000, so whatever :)",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 73
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
