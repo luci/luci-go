@@ -15,9 +15,12 @@
 package rpc
 
 import (
+	"database/sql"
+
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/stringset"
+	"github.com/Masterminds/squirrel"
+
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
@@ -26,7 +29,7 @@ import (
 
 // ListRacks handles a request to retrieve racks.
 func (*Service) ListRacks(c context.Context, req *crimson.ListRacksRequest) (*crimson.ListRacksResponse, error) {
-	racks, err := listRacks(c, stringset.NewFromSlice(req.Names...), stringset.NewFromSlice(req.Datacenters...))
+	racks, err := listRacks(c, req)
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +39,22 @@ func (*Service) ListRacks(c context.Context, req *crimson.ListRacksRequest) (*cr
 }
 
 // listRacks returns a slice of racks in the database.
-func listRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.Rack, error) {
+func listRacks(c context.Context, req *crimson.ListRacksRequest) ([]*crimson.Rack, error) {
+	stmt := squirrel.Select("r.name", "r.description", "r.state", "d.name", "h.name").
+		From("(racks r, datacenters d)").
+		LeftJoin("kvms k ON r.kvm_id = k.id").
+		LeftJoin("hostnames h ON k.hostname_id = h.id").
+		Where("r.datacenter_id = d.id")
+	stmt = selectInString(stmt, "r.name", req.Names)
+	stmt = selectInString(stmt, "d.name", req.Datacenters)
+	stmt = selectInString(stmt, "h.name", req.Kvms)
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to generate statement").Err()
+	}
+
 	db := database.Get(c)
-	rows, err := db.QueryContext(c, `
-		SELECT r.name, r.description, r.state, d.name
-		FROM racks r, datacenters d
-		WHERE r.datacenter_id = d.id
-	`)
+	rows, err := db.QueryContext(c, query, args...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch racks").Err()
 	}
@@ -51,12 +63,14 @@ func listRacks(c context.Context, names, datacenters stringset.Set) ([]*crimson.
 	var racks []*crimson.Rack
 	for rows.Next() {
 		rack := &crimson.Rack{}
-		if err = rows.Scan(&rack.Name, &rack.Description, &rack.State, &rack.Datacenter); err != nil {
+		var kvm sql.NullString
+		if err = rows.Scan(&rack.Name, &rack.Description, &rack.State, &rack.Datacenter, &kvm); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch rack").Err()
 		}
-		if matches(rack.Name, names) && matches(rack.Datacenter, datacenters) {
-			racks = append(racks, rack)
+		if kvm.Valid {
+			rack.Kvm = kvm.String
 		}
+		racks = append(racks, rack)
 	}
 	return racks, nil
 }
