@@ -56,6 +56,7 @@ var funcMap = template.FuncMap{
 	"parseRFC3339":     parseRFC3339,
 	"percent":          percent,
 	"shortHash":        shortHash,
+	"shortenHash":      shortenHash,
 	"shortenEmail":     shortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
@@ -223,6 +224,15 @@ func shortenEmail(email string) string {
 func shortHash(s string) string {
 	if len(s) > 6 {
 		return s[0:6]
+	}
+	return s
+}
+
+// shortenHash abbriviates a git hash into specified number of characters.
+// Recommended usage: {{ .GitHash | shortenHash 8 }}
+func shortenHash(len int, s string) string {
+	if len(s) > len {
+		return s[0:len]
 	}
 	return s
 }
