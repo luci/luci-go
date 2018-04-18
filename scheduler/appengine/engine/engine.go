@@ -377,62 +377,52 @@ func (e *engineImpl) GetVisibleJobBatch(c context.Context, jobIDs []string) (map
 //
 // Supports both v1 and v2 invocations.
 func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvocationsOpts) ([]*Invocation, string, error) {
-	// TODO(vadimsh): Implement FinishedOnly and ActiveOnly
-	if opts.ActiveOnly {
-		return nil, "", nil
+	if opts.ActiveOnly && opts.FinishedOnly {
+		return nil, "", fmt.Errorf("using both ActiveOnly and FinishedOnly is not allowed")
 	}
 
-	jobID := job.JobID
-
-	if opts.PageSize == 0 || opts.PageSize > 500 {
+	if opts.PageSize <= 0 || opts.PageSize > 500 {
 		opts.PageSize = 500
 	}
 
-	// Deserialize the cursor.
-	var cursor invocationsCursor
-	if opts.Cursor != "" {
-		var err error
-		cursor, err = decodeInvocationsCursor(c, opts.Cursor)
-		if err != nil {
-			return nil, "", err
+	var cursor internal.InvocationsCursor
+	if err := decodeInvCursor(opts.Cursor, &cursor); err != nil {
+		return nil, "", err
+	}
+
+	// Initiate queries that fetch invocations from multiple sources.
+	qs := prepareInvsQueries(c, job, opts, cursor.LastScanned)
+	defer func() {
+		for _, q := range qs {
+			q.close()
 		}
-	}
+	}()
 
-	// Prepare the query. Fetch 'pageSize' worth of entities as a single batch.
-	q := ds.NewQuery("Invocation")
-	if e.isV2Job(jobID) {
-		q = q.Eq("IndexedJobID", jobID)
-	} else {
-		q = q.Ancestor(ds.NewKey(c, "Job", jobID, 0, nil))
-	}
-	q = q.Order("__key__").Limit(int32(opts.PageSize))
-	if cursor.QueryCursor != nil {
-		q = q.Start(cursor.QueryCursor)
-	}
-
-	// Fetch pageSize worth of invocations, then grab the cursor.
 	out := make([]*Invocation, 0, opts.PageSize)
-	newCursor := invocationsCursor{}
-	err := ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
-		out = append(out, obj)
-		if len(out) < opts.PageSize {
-			return nil
+
+	// Build the full page out of potentially incomplete (due to post-filtering)
+	// smaller pages. Note that most of the time 'fetchInvsPage' will return the
+	// full page right away.
+	var page invsPage
+	var err error
+	for opts.PageSize > 0 {
+		out, page, err = fetchInvsPage(c, qs, opts, out)
+		switch {
+		case err != nil:
+			return nil, "", err
+		case page.final:
+			return out, "", nil // return empty cursor to indicate we are done
 		}
-		var err error
-		if newCursor.QueryCursor, err = getCursor(); err != nil {
-			return err
-		}
-		return ds.Stop
-	})
-	if err != nil {
-		return nil, "", transient.Tag.Apply(err)
+		opts.PageSize -= page.count
 	}
 
-	cursorStr, err := newCursor.Serialize()
+	// We end up here if the last fetched mini-page wasn't final, need new cursor.
+	cursorStr, err := encodeInvCursor(&internal.InvocationsCursor{
+		LastScanned: page.lastScanned,
+	})
 	if err != nil {
 		return nil, "", errors.Annotate(err, "failed to serialize the cursor").Err()
 	}
-
 	return out, cursorStr, nil
 }
 
