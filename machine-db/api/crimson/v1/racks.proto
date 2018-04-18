@@ -18,6 +18,8 @@ message Rack {
   string datacenter = 3;
   // The state of this rack.
   common.State state = 4;
+  // The KVM serving this rack.
+  string kvm = 5;
 }
 
 // A request to list racks in the database.
@@ -26,6 +28,8 @@ message ListRacksRequest {
   repeated string names = 1;
   // The datacenters to filter retrieved racks on.
   repeated string datacenters = 2;
+  // The KVMs to filter retrieved racks on.
+  repeated string kvms = 3;
 }
 
 // A response containing a list of racks in the database.
