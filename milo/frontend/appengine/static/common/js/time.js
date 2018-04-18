@@ -57,7 +57,7 @@
   }
 
   function makeTimesLocal(locale) {
-    // Moment.js does not set the local automatically, it must be done by the
+    // Moment.js does not set the locale automatically, it must be done by the
     // caller.
     locale = locale || window.navigator.userLanguage || window.navigator.language;
     moment.locale(locale);
@@ -71,8 +71,13 @@
         var date = new Date(parseInt(timestamp, 10));
         var newTimestamp = formatDate(date);
         if (newTimestamp != null) {
-          span.innerText = newTimestamp.main;
-          span.setAttribute("title", newTimestamp.hover);
+          if (span.classList.contains('tooltip-only')) {
+            span.setAttribute(
+              "title", newTimestamp.main + "\n" + newTimestamp.hover)
+          } else {
+            span.innerText = newTimestamp.main;
+            span.setAttribute("title", newTimestamp.hover);
+          }
         }
       } catch (e) {
         console.error('could not convert time of span', span, 'to local:', e)
