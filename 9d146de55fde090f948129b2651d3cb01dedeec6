@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "2cbf73a8_03d6542d",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T22:49:48Z",
+      "side": 1,
+      "message": "ok, then I got it right. Please, \ns/grab/use \n\"grab\" is more like \"fetch\", hence connotation of \"grab from db\"",
+      "parentUuid": "e9b84a3b_bf8de6a1",
+      "range": {
+        "startLine": 395,
+        "startChar": 2,
+        "endLine": 396,
+        "endChar": 27
+      },
+      "revId": "9d146de55fde090f948129b2651d3cb01dedeec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9350865f_d87c9d78",
         "filename": "scheduler/appengine/engine/invquery.go",
         "patchSetId": 11
