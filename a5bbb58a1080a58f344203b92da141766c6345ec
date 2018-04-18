@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e3571c6f_2ad58172",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-18T12:52:34Z",
+      "side": 1,
+      "message": "It is consistent with localTime above. And IMHO localTimeTooltip should have the innerText parameter before ifZero, but if you feel strongly about that, I can change it.",
+      "parentUuid": "1885142c_211dc266",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89d1a8c4_02977c64",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 6
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "28a43ede_1282ae11",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-18T12:52:34Z",
+      "side": 1,
+      "message": "We\u0027d still need a bool to know if we should generate innerText ourselves or not. I\u0027d rather keep number of parameters small.",
+      "parentUuid": "89d1a8c4_02977c64",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0a6ed31_d98af12b",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 6
@@ -50,6 +86,24 @@
       "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d664fc2_3c59e702",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-18T12:52:34Z",
+      "side": 1,
+      "message": "We do not throw it away. It\u0027s still used to compute data-timestamp property on L84.\n\n\nRe innerText: the logic was here before my refactoring and I am not sure why it is needed. Perhaps to support browsers that do not have JavaScript enabled? Also JavaScript takes some time to execute before replacing it with localized timestamp and having similarly-sized text in a cell reduces that jumpiness of the page after load.",
+      "parentUuid": "c0a6ed31_d98af12b",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "9f26bbd1_c08bf9cd",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-18T12:52:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78a8634e_d30fac82",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 95,
+        "endChar": 11
+      },
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "701357a7_44023c28",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 6
@@ -96,6 +174,30 @@
       "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f05d1b7_f726234d",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-18T12:52:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "701357a7_44023c28",
+      "range": {
+        "startLine": 243,
+        "startChar": 5,
+        "endLine": 243,
+        "endChar": 14
+      },
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
