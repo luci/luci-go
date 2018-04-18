@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1885142c_211dc266",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T12:34:14Z",
+      "side": 1,
+      "message": "nit: the order of parameters is inconsistent with localTimeTooltip",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89d1a8c4_02977c64",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T12:34:14Z",
+      "side": 1,
+      "message": "might be simpler to accept tooltipClass parameter directly from the caller",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0a6ed31_d98af12b",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T12:34:14Z",
+      "side": 1,
+      "message": "it is a bit strange that ignore whatever was passed by the caller. Why this logic isn\u0027t in L70?\n\nstepping back:\nthis time is not local. Why isn\u0027t this done in js? The other part of this \"if\" is essentially in js because it sets innerText there",
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78a8634e_d30fac82",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T12:34:14Z",
+      "side": 1,
+      "message": "must be template.HTMLEscapeString`ed",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 95,
+        "endChar": 11
+      },
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "701357a7_44023c28",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-18T12:34:14Z",
+      "side": 1,
+      "message": "this function used to be specific to hash (6 was hardcoded)\nnow it has nothing to do with hashes, it is a generic \"at most X first runes\", so I recommend renaming\nto something more generic, like \"prefix\"",
+      "range": {
+        "startLine": 243,
+        "startChar": 5,
+        "endLine": 243,
+        "endChar": 14
+      },
+      "revId": "a5bbb58a1080a58f344203b92da141766c6345ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
