@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "16e882a1_8d09b83f",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T22:13:01Z",
+      "side": 1,
+      "message": "Too late. Done.",
+      "parentUuid": "bf554f1b_26ee6026",
+      "range": {
+        "startLine": 412,
+        "startChar": 2,
+        "endLine": 412,
+        "endChar": 19
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b82b10cf_e314c7e6",
         "filename": "scheduler/appengine/engine/invquery.go",
         "patchSetId": 7
@@ -69,6 +93,30 @@
       "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "758f5caf_05b6ed1f",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T22:13:01Z",
+      "side": 1,
+      "message": "Shouldn\u0027t be, but I\u0027d like to be defensive here to avoid queries being stuck in a loop or something. Note that this is also defense against wrong order of IDs (notice \u0027\u003e\u0027 instead of \u0027!\u003d\u0027).",
+      "parentUuid": "b82b10cf_e314c7e6",
+      "range": {
+        "startLine": 89,
+        "startChar": 3,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "4f07c434_69507c5c",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T22:13:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0fc991d4_54857d1e",
+      "range": {
+        "startLine": 136,
+        "startChar": 40,
+        "endLine": 136,
+        "endChar": 61
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b61dc81_966b0519",
         "filename": "scheduler/appengine/engine/invquery.go",
         "patchSetId": 7
@@ -106,6 +178,30 @@
       "writtenOn": "2018-04-18T21:55:37Z",
       "side": 1,
       "message": "algo-nit: min heap is actually preferable here if pageSize \u003c\u003c len(j.ActiveInvocations).\nHowever, latter should typically be \u003c1000, so whatever :)",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 73
+      },
+      "revId": "fa89e2d3972b8b4cb080dd77b2c44f8dcb440052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c8972c67_26009149",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-18T22:13:01Z",
+      "side": 1,
+      "message": "Yeah, I figured it doesn\u0027t matter. If \u0027invs\u0027 were large, I\u0027d rather take extra care elsewhere to make sure it is stored ordered (so we don\u0027t need to resort it on each listing). But without our current limits sort.Slice is totally fine.",
+      "parentUuid": "3b61dc81_966b0519",
       "range": {
         "startLine": 145,
         "startChar": 1,
