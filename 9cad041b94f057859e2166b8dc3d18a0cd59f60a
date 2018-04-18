@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21ed3a29_32a7330c",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T00:43:23Z",
+      "side": 1,
+      "message": "default:",
+      "range": {
+        "startLine": 37,
+        "startChar": 6,
+        "endLine": 37,
+        "endChar": 23
+      },
+      "revId": "9cad041b94f057859e2166b8dc3d18a0cd59f60a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4716f63_c56a5765",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T00:43:23Z",
+      "side": 1,
+      "message": "i don\u0027t like it because there is a race possibility:\n 1. n-th item put into result by db goroutine\n 2. n-th item got from result **here**\n 3. db goroutine tries to fetch n+1-th item, but fails, assigns err to it.err\n 4. it.err reads latest err **here**\n\nthis is not wrong, but it\u0027s weird. IMO, better more verbose\n\nif item, ok :\u003d \u003c- it.results; ok{\n  return item, nil\n}\nreturn nil, t.err",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "9cad041b94f057859e2166b8dc3d18a0cd59f60a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb68e703_b0abdc7e",
+        "filename": "scheduler/appengine/engine/invquery.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T00:43:23Z",
+      "side": 1,
+      "message": "delete \u0027s\u0027",
+      "range": {
+        "startLine": 91,
+        "startChar": 55,
+        "endLine": 91,
+        "endChar": 56
+      },
+      "revId": "9cad041b94f057859e2166b8dc3d18a0cd59f60a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

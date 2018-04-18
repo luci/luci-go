@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ffa1b039_5c00f826",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-18T00:43:23Z",
+      "side": 1,
+      "message": "RPC",
+      "range": {
+        "startLine": 313,
+        "startChar": 29,
+        "endLine": 313,
+        "endChar": 32
+      },
+      "revId": "c90ecdef9fa80be40a7c41465544825d06ae3636",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
