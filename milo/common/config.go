@@ -105,11 +105,17 @@ func (c *Console) FilterBuilders(perms access.Permissions) {
 	}
 	c.Builders = okBuilderIDs
 	okBuilders := make([]*config.Builder, 0, len(c.Def.Builders))
+	// A single builder entry could have multiple builder names.
 	for _, b := range c.Def.Builders {
+		okNames := make([]string, 0, len(b.Name))
 		for _, name := range b.Name {
 			if bucket := extractBucket(name); bucket != "" && !perms.Can(bucket, access.AccessBucket) {
 				continue
 			}
+			okNames = append(okNames, name)
+		}
+		b.Name = okNames
+		if len(b.Name) > 0 {
 			okBuilders = append(okBuilders, b)
 		}
 	}
