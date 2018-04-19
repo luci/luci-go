@@ -22,11 +22,15 @@ option go_package = "internal";
 // InvocationsCursor is used to paginate results of GetInvocations RPC call.
 //
 // It is serialized in base64 and sent to the clients. There's no integrity
-// protection: we assume broken cursors are rejected down the call stack
-// (which is the case with the datastore cursors).
+// protection: we assume broken cursors are rejected down the call stack.
 //
 // The internal structure of the cursor is implementation detail and clients
 // must not depend on it.
 message InvocationsCursor {
-  bytes ds_cursor = 1;  // the raw datastore cursor as byte blob
+  reserved 1; // used to be datastore cursor
+
+  // ID of the last scanned invocation (active or finished).
+  //
+  // The query will return all IDs that are larger than this one.
+  int64 last_scanned = 2;
 }
