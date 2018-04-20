@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc02b066_e9627f8e",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-20T20:00:10Z",
+      "side": 1,
+      "message": "make this return {\n   local: ...\n   MTV:  ...\n   UTC: ...\n   fromNow: ...\n}",
+      "revId": "409a6e17333f496051218ce379cb9a9d416a27bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ec0717c_cca72df9",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-20T20:00:10Z",
+      "side": 1,
+      "message": "I think jquery is available, so: span.hasClass(\u0027tooltip-only\u0027)",
+      "revId": "409a6e17333f496051218ce379cb9a9d416a27bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "859f2c01_021544e4",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-20T20:00:10Z",
+      "side": 1,
+      "message": "[newTimestamp.fromNow, newTimestamp.local, newTimestamp.MTV, newTimestamp.UTC].join(\"\\n\")",
+      "revId": "409a6e17333f496051218ce379cb9a9d416a27bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "242eca0d_3968284e",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-20T20:00:10Z",
+      "side": 1,
+      "message": "innerText \u003d newTimestamp.fromNow",
+      "revId": "409a6e17333f496051218ce379cb9a9d416a27bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8129278_9771ccab",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-20T20:00:10Z",
+      "side": 1,
+      "message": "[newTimestamp.fromNow, newTimestamp.MTV, newTimestamp.UTC].join(\u0027\\n\u0027)",
+      "revId": "409a6e17333f496051218ce379cb9a9d416a27bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
