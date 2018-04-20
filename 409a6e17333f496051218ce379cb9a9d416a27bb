@@ -70,6 +70,24 @@
     },
     {
       "key": {
+        "uuid": "b7cea804_579a0e8c",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-20T21:30:04Z",
+      "side": 1,
+      "message": "That would change behavior everywhere where there are timestamps to show \u0027XX minutes ago\u0027 instead of local time. Are you sure about it?",
+      "parentUuid": "242eca0d_3968284e",
+      "revId": "409a6e17333f496051218ce379cb9a9d416a27bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c8129278_9771ccab",
         "filename": "milo/frontend/appengine/static/common/js/time.js",
         "patchSetId": 11
