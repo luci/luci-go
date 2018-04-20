@@ -42,6 +42,48 @@
     },
     {
       "key": {
+        "uuid": "18fa9195_1ca29187",
+        "filename": "skylark/skylarkproto/methods.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-20T22:05:08Z",
+      "side": 1,
+      "message": "Renamed to \u0027to_pbtext\u0027. This is also now a function that lives in \u0027protobuf\u0027 module, so the usage from skylark scripts would look like:\n\n  m \u003d some_pb.Message(....)\n  proto.to_pbtext(m)",
+      "parentUuid": "3c9e0865_343126d1",
+      "range": {
+        "startLine": 28,
+        "startChar": 32,
+        "endLine": 28,
+        "endChar": 39
+      },
+      "revId": "52487c20c746423a6869701d12071cdbdc7a6b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3b368dc5_a3f3e932",
+        "filename": "skylark/skylarkproto/methods.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-20T22:05:08Z",
+      "side": 1,
+      "message": "Good point. I also thought about possibility of collision between field names and \"standard\" method names. I initially decided to keep it inside the message because there\u0027s no other natural namespace to put it into.\n\nI\u0027ve now added \"proto\" module that has a collection of functions (currently only 1) to work with protobuf messages. Embedders of this library will have to expose the content of this module to the script environment.",
+      "parentUuid": "55120991_df229cec",
+      "revId": "52487c20c746423a6869701d12071cdbdc7a6b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "22bfd39d_405abca2",
         "filename": "skylark/skylarkproto/methods.go",
         "patchSetId": 6
@@ -53,6 +95,30 @@
       "writtenOn": "2018-04-20T20:34:16Z",
       "side": 1,
       "message": "This is great, delegating to the proto code for text output instead of maintaining a custom version (like skylarkstruct.to_proto does)",
+      "range": {
+        "startLine": 37,
+        "startChar": 24,
+        "endLine": 37,
+        "endChar": 52
+      },
+      "revId": "52487c20c746423a6869701d12071cdbdc7a6b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "254184c9_44d1ab1e",
+        "filename": "skylark/skylarkproto/methods.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-20T22:05:08Z",
+      "side": 1,
+      "message": "Yeah, I really don\u0027t want to reimplement proto serialization from scratch in Skylark... Especially considering possibility that we\u0027ll use binary serialization someday too (e.g. when pushing configs to luci-config or something).\n\nThe downside is that skylark scripts know only about proto types compiled inside the go binary that hosts the interpreter, so we won\u0027t be able to have some universal interpreter that can work with arbitrary protos.",
+      "parentUuid": "22bfd39d_405abca2",
       "range": {
         "startLine": 37,
         "startChar": 24,
