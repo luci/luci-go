@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package testprotos;
+
+message IntFields {
+  int64 i64 = 1;
+  repeated int64 i64_rep = 2;
+}
+
+message MessageFields {
+  Simple single = 1;
+  repeated Simple rep = 2;
+}
+
+message Simple {
+  int64 i = 1;
+}
