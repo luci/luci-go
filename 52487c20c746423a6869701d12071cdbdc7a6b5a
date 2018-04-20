@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55120991_df229cec",
+        "filename": "skylark/skylarkproto/methods.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1177675
+      },
+      "writtenOn": "2018-04-20T20:34:16Z",
+      "side": 1,
+      "message": "skylarkstruct is trying to remove its to_proto()/to_json() methods; according to the internal bug pointed to by https://github.com/google/skylark/blob/11b496306ff83d01ad34c57ed772f22ef69d8a75/skylarkstruct/struct.go#L224,\n\n\u003e The .to_proto and .to_json fields of a struct should be moved to a library function (or deleted) since they raise an ambiguity: in what order are attributes sought: fields or methods first? struct fields should take precedence. Having to_proto on a struct is a mistake: struct should really be an \"unconstrained namespace\"\n\nI\u0027m not sure if this should also apply to Message, however.",
+      "revId": "52487c20c746423a6869701d12071cdbdc7a6b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c9e0865_343126d1",
+        "filename": "skylark/skylarkproto/methods.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1177675
+      },
+      "writtenOn": "2018-04-20T20:34:16Z",
+      "side": 1,
+      "message": "\"to_text\" is somewhat ambiguous; these days, a proto3 is as likely to be represented as JSON as it is pbtext, and both are technically \"text\". Maybe this method should take a format parameter, or have a more explicit name like \"to_pbtext\" or \"to_proto_text\".",
+      "range": {
+        "startLine": 28,
+        "startChar": 32,
+        "endLine": 28,
+        "endChar": 39
+      },
+      "revId": "52487c20c746423a6869701d12071cdbdc7a6b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22bfd39d_405abca2",
+        "filename": "skylark/skylarkproto/methods.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1177675
+      },
+      "writtenOn": "2018-04-20T20:34:16Z",
+      "side": 1,
+      "message": "This is great, delegating to the proto code for text output instead of maintaining a custom version (like skylarkstruct.to_proto does)",
+      "range": {
+        "startLine": 37,
+        "startChar": 24,
+        "endLine": 37,
+        "endChar": 52
+      },
+      "revId": "52487c20c746423a6869701d12071cdbdc7a6b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
