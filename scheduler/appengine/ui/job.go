@@ -39,13 +39,11 @@ func jobPage(ctx *router.Context) {
 	projectID := p.ByName("ProjectID")
 	jobName := p.ByName("JobName")
 	cursor := r.URL.Query().Get("c")
-	v2mode := r.URL.Query().Get("v2") == "1"
 
 	job := jobFromEngine(ctx, projectID, jobName)
 	if job == nil {
 		return
 	}
-	v2mode = v2mode || job.IsV2()
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -55,12 +53,14 @@ func jobPage(ctx *router.Context) {
 	// ones.
 	var invsActive []*engine.Invocation
 	var invsActiveErr error
-	if cursor == "" && v2mode {
+	var haveInvsActive bool
+	if cursor == "" && job.IsV2() {
+		haveInvsActive = true
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			invsActive, _, invsActiveErr = e.ListInvocations(c, job, engine.ListInvocationsOpts{
-				PageSize:   1000, // ~ ∞, UI doesn't paginate active invocations
+				PageSize:   100000000, // ~ ∞, UI doesn't paginate active invocations
 				ActiveOnly: true,
 			})
 		}()
@@ -74,7 +74,7 @@ func jobPage(ctx *router.Context) {
 		invsLog, nextCursor, invsLogErr = e.ListInvocations(c, job, engine.ListInvocationsOpts{
 			PageSize:     50,
 			Cursor:       cursor,
-			FinishedOnly: v2mode, // in v2 mode active invocations are displayed separately
+			FinishedOnly: job.IsV2(), // in v2 active invocations are displayed separately
 		})
 	}()
 
@@ -123,6 +123,22 @@ func jobPage(ctx *router.Context) {
 		}
 		itm.SetExpiration(24 * time.Hour)
 		mc.Set(c, itm)
+	}
+
+	// List of invocations in job.ActiveInvocations may contain recently finished
+	// invocations not yet removed from the active list by the triage procedure.
+	// 'invsActive' is always more accurate, since it fetches invocations from
+	// the datastore and checks their status. So update the job entity to be more
+	// accurate if we can. This is important for reporting jobs with recently
+	// finished invocations as not running. Otherwise the UI page may appear
+	// non-consistent (no running invocations in the list, yet the job's status is
+	// displayed as "Running"). This is a bit of a hack...
+	if haveInvsActive {
+		ids := make([]int64, len(invsActive))
+		for i, inv := range invsActive {
+			ids[i] = inv.ID
+		}
+		job.ActiveInvocations = ids
 	}
 
 	jobUI := makeJob(c, job)
