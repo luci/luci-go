@@ -60,7 +60,7 @@ func jobPage(ctx *router.Context) {
 		go func() {
 			defer wg.Done()
 			invsActive, _, invsActiveErr = e.ListInvocations(c, job, engine.ListInvocationsOpts{
-				PageSize:   1000, // ~ ∞, UI doesn't paginate active invocations
+				PageSize:   100000000, // ~ ∞, UI doesn't paginate active invocations
 				ActiveOnly: true,
 			})
 		}()
@@ -123,6 +123,20 @@ func jobPage(ctx *router.Context) {
 		}
 		itm.SetExpiration(24 * time.Hour)
 		mc.Set(c, itm)
+	}
+
+	// List of invocations in job.ActiveInvocations may contain recently finished
+	// invocations not yet removed from the active list by the triage procedure.
+	// 'invsActive' is always more accurate, since it fetches invocations from
+	// the datastore and checks their status. So update the job entity to be more
+	// accurate. This is important for reporting jobs with recently finished
+	// invocations as not running. This is a bit of a hack...
+	if job.IsV2() {
+		ids := make([]int64, len(invsActive))
+		for i, inv := range invsActive {
+			ids[i] = inv.ID
+		}
+		job.ActiveInvocations = ids
 	}
 
 	jobUI := makeJob(c, job)
