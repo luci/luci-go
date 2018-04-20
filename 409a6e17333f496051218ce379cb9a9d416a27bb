@@ -88,6 +88,24 @@
     },
     {
       "key": {
+        "uuid": "e6193f56_dd3892fa",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-20T21:36:54Z",
+      "side": 1,
+      "message": "Sorry this was supposed to be innerText \u003d newTimestamp.local",
+      "parentUuid": "b7cea804_579a0e8c",
+      "revId": "409a6e17333f496051218ce379cb9a9d416a27bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c8129278_9771ccab",
         "filename": "milo/frontend/appengine/static/common/js/time.js",
         "patchSetId": 11
