@@ -51,11 +51,12 @@ var funcMap = template.FuncMap{
 	"formatTime":       formatTime,
 	"humanDuration":    humanDuration,
 	"localTime":        localTime,
+	"localTimeTooltip": localTimeTooltip,
 	"obfuscateEmail":   obfuscateEmail,
 	"pagedURL":         pagedURL,
 	"parseRFC3339":     parseRFC3339,
 	"percent":          percent,
-	"shortHash":        shortHash,
+	"prefix":           prefix,
 	"shortenEmail":     shortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
@@ -66,14 +67,26 @@ var funcMap = template.FuncMap{
 // that will be converted to local timezone in the browser.
 // Recommended usage: {{ .Date | localTime "N/A" }}
 func localTime(ifZero string, t time.Time) template.HTML {
+	return localTimeCommon(ifZero, t, "", t.Format(time.RFC850))
+}
+
+// localTimeTooltip is similar to localTime, but shows time in a tooltip and
+// allows to specify inner text to be added to the created <span> element.
+// Recommended usage: {{ .Date | localTimeTooltip "innerText" "N/A" }}
+func localTimeTooltip(innerText string, ifZero string, t time.Time) template.HTML {
+	return localTimeCommon(ifZero, t, "tooltip-only", innerText)
+}
+
+func localTimeCommon(ifZero string, t time.Time, tooltipClass string, innerText string) template.HTML {
 	if t.IsZero() {
 		return template.HTML(template.HTMLEscapeString(ifZero))
 	}
 	milliseconds := t.UnixNano() / 1e6
 	return template.HTML(fmt.Sprintf(
-		`<span class="local-time" data-timestamp="%d">%s</span>`,
+		`<span class="local-time %s" data-timestamp="%d">%s</span>`,
+		tooltipClass,
 		milliseconds,
-		t.Format(time.RFC850)))
+		template.HTMLEscapeString(innerText)))
 }
 
 // rURL matches anything that looks like an https:// URL.
@@ -219,10 +232,11 @@ func shortenEmail(email string) string {
 	return strings.Replace(email, "@google.com", "", -1)
 }
 
-// shortHash abbriviates a git hash into 6 characters.
-func shortHash(s string) string {
-	if len(s) > 6 {
-		return s[0:6]
+// prefix abbriviates a string into specified number of characters.
+// Recommended usage: {{ .GitHash | prefix 8 }}
+func prefix(prefixLen int, s string) string {
+	if len(s) > prefixLen {
+		return s[:prefixLen]
 	}
 	return s
 }

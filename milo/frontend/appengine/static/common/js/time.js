@@ -22,13 +22,12 @@
     if (!mt.isValid()) {
       return null;
     }
-    var hover = mt.fromNow();
-    hover += "\n" + moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD LT [(MTV)]");
-    hover += "\n" + moment.tz(mt, "UTC").format("YYYY-MM-DD LT [(UTC)]");
 
     return {
-      main: mt.format("YYYY-MM-DD LT (z)"),
-      hover: hover
+      local: mt.format("YYYY-MM-DD LT (z)"),
+      MTV: moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD LT [(MTV)]"),
+      UTC: moment.tz(mt, "UTC").format("YYYY-MM-DD LT [(UTC)]"),
+      fromNow: mt.fromNow(),
     }
   }
 
@@ -57,7 +56,7 @@
   }
 
   function makeTimesLocal(locale) {
-    // Moment.js does not set the local automatically, it must be done by the
+    // Moment.js does not set the locale automatically, it must be done by the
     // caller.
     locale = locale || window.navigator.userLanguage || window.navigator.language;
     moment.locale(locale);
@@ -71,8 +70,25 @@
         var date = new Date(parseInt(timestamp, 10));
         var newTimestamp = formatDate(date);
         if (newTimestamp != null) {
-          span.innerText = newTimestamp.main;
-          span.setAttribute("title", newTimestamp.hover);
+          if ($(span).hasClass('tooltip-only')) {
+            span.setAttribute(
+              "title", [
+                newTimestamp.fromNow,
+                newTimestamp.local,
+                newTimestamp.MTV,
+                newTimestamp.UTC
+              ].join("\n")
+            )
+          } else {
+            span.innerText = newTimestamp.local;
+            span.setAttribute(
+              "title", [
+                newTimestamp.fromNow,
+                newTimestamp.MTV,
+                newTimestamp.UTC
+              ].join("\n")
+            )
+          }
         }
       } catch (e) {
         console.error('could not convert time of span', span, 'to local:', e)
