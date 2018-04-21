@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a04eb94_e7df6af1",
+        "filename": "skylark/skylarkproto/all_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-21T00:14:02Z",
+      "side": 1,
+      "message": "Evaluating the .sky files is fine for testing the whole skylarkproto package as a black box, but I think there should be at least some pure Go unit tests for aspects of this package, particularly for conversions.go, loader.go, message.go, type.go.",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e5d1843_f86ee472",
+        "filename": "skylark/skylarkproto/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-21T00:14:02Z",
+      "side": 1,
+      "message": "errors.Annotate? https://godoc.org/go.chromium.org/luci/common/errors#Annotate",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2287ed6_92ddd6a4",
+        "filename": "skylark/skylarkproto/message.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-21T00:14:02Z",
+      "side": 1,
+      "message": "Can you mention that it implements skylark.Value, skylark.HasAttrs, and skylark.HasSetField (I know you mention these later where the interface methods are actually defined)?",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69205902_5712916f",
+        "filename": "skylark/skylarkproto/message.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-21T00:14:02Z",
+      "side": 1,
+      "message": "I\u0027m not sure I understand this comment. I\u0027d only expect the skylark value in fields to be set here; is the go version worth mentioning? You don\u0027t mention it in Attr for example.",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20d684e8_d0df7992",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-21T00:14:02Z",
+      "side": 1,
+      "message": "Line 53 already assumed it wasn\u0027t nil didn\u0027t it?",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf8718fa_23a2fbde",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-21T00:14:02Z",
+      "side": 1,
+      "message": "?",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
