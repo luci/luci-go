@@ -662,7 +662,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 			j1 := getJob(c, "abc/1")
 			So(j1.State.State, ShouldEqual, JobStateRunning)
 			invID = j1.State.InvocationID
-			inv, err := e.getInvocation(c, "abc/1", invID)
+			inv, err := e.getInvocation(c, "abc/1", invID, false)
 			So(err, ShouldBeNil)
 			So(inv.TriggeredJobIDs, ShouldResemble, []string{
 				"abc/2-triggered",
@@ -697,7 +697,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 		So(e.ExecuteSerializedAction(c, invTask.Payload, 0), ShouldBeNil)
 
 		// After final save.
-		inv, err := e.getInvocation(c, "abc/1", invID)
+		inv, err := e.getInvocation(c, "abc/1", invID, false)
 		So(err, ShouldBeNil)
 		So(inv.Status, ShouldEqual, task.StatusSucceeded)
 		So(inv.MutationsCount, ShouldEqual, 2)
@@ -1131,7 +1131,7 @@ func TestAborts(t *testing.T) {
 			So(e.startInvocation(c, jobID, invNonce, "", nil, 0), ShouldBeNil)
 
 			// It is alive and the job entity tracks it.
-			inv, err := e.getInvocation(c, jobID, invID)
+			inv, err := e.getInvocation(c, jobID, invID, false)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusRunning)
 			job, err := e.getJob(c, jobID)
@@ -1153,7 +1153,7 @@ func TestAborts(t *testing.T) {
 			So(e.AbortInvocation(ctxOwner, job, invID), ShouldBeNil)
 
 			// It is dead.
-			inv, err := e.getInvocation(c, jobID, invID)
+			inv, err := e.getInvocation(c, jobID, invID, false)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
 			So(getSentDistrValue(c, metricInvocationsDurations, jobID, "ABORTED"), ShouldEqual, 3600)
@@ -1176,7 +1176,7 @@ func TestAborts(t *testing.T) {
 			So(e.AbortJob(ctxOwner, job), ShouldBeNil)
 
 			// It is dead.
-			inv, err := e.getInvocation(c, jobID, invID)
+			inv, err := e.getInvocation(c, jobID, invID, false)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
 			So(getSentDistrValue(c, metricInvocationsDurations, jobID, "ABORTED"), ShouldEqual, 8.25)
