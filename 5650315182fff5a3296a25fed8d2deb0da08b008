@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "71264998_06700ea7",
+        "filename": "skylark/skylarkproto/all_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-23T07:24:01Z",
+      "side": 1,
+      "message": "I don\u0027t think separate Go tests for everything will add much value. They will mostly duplicate what\u0027s already being tested and will look like a mirror copy of the code under tests (for each switch condition, there\u0027ll be a test that just hits this switch condition and identically verifies the body of the condition did what it says it does, I don\u0027t find such tests useful). \n\nThis code exists with sole purpose to be useful from Skylark side. It means each and every line implements some aspect of \"skylark \u003c-\u003e proto\" integration and can be indirectly hit (and tested) from the skylark side. In fact, I used code coverage report to verify all *.sky tests hits all edge cases (100.0% of conversions.go is covered now through skylark tests).\n\nSo I believe the coverage for the type conversions is sufficient and done on an appropriate level. But some stuff in loader.go and types.go isn\u0027t directly covered by skylark tests, so I\u0027ve added go tests there.",
+      "parentUuid": "1a04eb94_e7df6af1",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e5d1843_f86ee472",
         "filename": "skylark/skylarkproto/loader.go",
         "patchSetId": 7
@@ -30,6 +48,24 @@
       "writtenOn": "2018-04-21T00:14:02Z",
       "side": 1,
       "message": "errors.Annotate? https://godoc.org/go.chromium.org/luci/common/errors#Annotate",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70bd5869_948370a8",
+        "filename": "skylark/skylarkproto/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-23T07:24:01Z",
+      "side": 1,
+      "message": "For the sake of purity I didn\u0027t want to make this package depend on luci stuff... Also stack traces provided by luci/common/errors are mostly useless for skylark stuff - they just show guts on the interpreter, that don\u0027t give any useful information.\n\nI can change this to common/errors if you insist.",
+      "parentUuid": "1e5d1843_f86ee472",
       "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "39ce2bad_e3868069",
+        "filename": "skylark/skylarkproto/message.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-23T07:24:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2287ed6_92ddd6a4",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69205902_5712916f",
         "filename": "skylark/skylarkproto/message.go",
         "patchSetId": 7
@@ -67,6 +121,24 @@
       "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "431d4fad_29370c8b",
+        "filename": "skylark/skylarkproto/message.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-23T07:24:01Z",
+      "side": 1,
+      "message": "This comment was more helpful before I added \u0027checkAssignable\u0027 helper. Rewrote.",
+      "parentUuid": "69205902_5712916f",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "64d840a7_1cc798ab",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-23T07:24:01Z",
+      "side": 1,
+      "message": "No, in Go it is fine to read from nil maps (they just appear empty), but writing requires the real initialized map.",
+      "parentUuid": "20d684e8_d0df7992",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bf8718fa_23a2fbde",
         "filename": "skylark/skylarkproto/type.go",
         "patchSetId": 7
@@ -101,6 +191,24 @@
       "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bba5095f_9905976a",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-23T07:24:01Z",
+      "side": 1,
+      "message": "This is stupid Go gotcha: https://github.com/golang/go/wiki/CommonMistakes#using-goroutines-on-loop-iterator-variables\n\nBasically, without this line the function on line 84 captures \u0027prop\u0027 variable that lives outside the loop. So all funcs will reference same variable (that eventually will just contain the last props.Prop). \u0027prop :\u003d prop\u0027 line defines \u0027prop\u0027 in a loop body scope, so each \u0027func\u0027 gets a closure around its own copy of \u0027prop\u0027 variable.",
+      "parentUuid": "bf8718fa_23a2fbde",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
