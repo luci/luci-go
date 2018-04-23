@@ -283,18 +283,27 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 
 	saving.MutationsCount++
 
+	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
+
 	// Update local copy of Invocation with what's in the datastore on success.
 	defer func() {
-		if err == nil {
-			ctl.saved = saving
-			ctl.debugLog = ""        // debug log was successfully flushed
-			ctl.timers = nil         // new timers were successfully scheduled
-			ctl.triggers = nil       // new triggers were successfully emitted
-			ctl.consumedTimers = nil // pending timers were consumed
+		if err != nil {
+			return
+		}
+
+		ctl.saved = saving
+		ctl.debugLog = ""        // debug log was successfully flushed
+		ctl.timers = nil         // new timers were successfully scheduled
+		ctl.triggers = nil       // new triggers were successfully emitted
+		ctl.consumedTimers = nil // pending timers were consumed
+
+		// Store finished v1 invocation as v2 to start populating v2 history before
+		// the full switch to v2, to have at least something there.
+		if hasFinished && !ctl.saved.IsV2() {
+			ctl.saved.bestEffortSaveAsV2(ctx)
 		}
 	}()
 
-	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
 	if hasFinished {
 		saving.Finished = clock.Now(ctx).UTC()
 		saving.debugLog(
