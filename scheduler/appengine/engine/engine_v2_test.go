@@ -329,7 +329,7 @@ func TestForceInvocationV2(t *testing.T) {
 			So(job.ActiveInvocations, ShouldResemble, []int64{invID})
 
 			// All its fields are good.
-			inv, err := e.getInvocation(c, "project/job-v2", invID)
+			inv, err := e.getInvocation(c, "project/job-v2", invID, true)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
 				ID:              expectedInvID,
@@ -368,7 +368,7 @@ func TestForceInvocationV2(t *testing.T) {
 			})
 
 			// The invocation is in finished state.
-			inv, err = e.getInvocation(c, "project/job-v2", invID)
+			inv, err = e.getInvocation(c, "project/job-v2", invID, true)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
 				ID:              expectedInvID,
@@ -629,7 +629,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			})
 
 			// Triggering invocation has finished (with triggers recorded).
-			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID)
+			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID, true)
 			So(err, ShouldBeNil)
 			So(triggeringInv.Status, ShouldEqual, task.StatusSucceeded)
 			outgoing, err := triggeringInv.OutgoingTriggers()
@@ -683,7 +683,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(seen, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 
 			// And they are recoded in IncomingTriggers set.
-			triggeredInv, err := e.getInvocation(c, triggeredJob, triggeredInvID)
+			triggeredInv, err := e.getInvocation(c, triggeredJob, triggeredInvID, true)
 			So(err, ShouldBeNil)
 			So(triggeredInv.Status, ShouldEqual, task.StatusSucceeded)
 			incoming, err := triggeredInv.IncomingTriggers()
