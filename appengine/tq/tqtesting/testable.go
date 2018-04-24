@@ -74,6 +74,10 @@ type Testable interface {
 	// of the task queue service (e.g if something is popping or reseting tasks
 	// in parallel, bad things will happen).
 	//
+	// If it encounters an unrecognized task, calls params.UnknownTaskHandler to
+	// handle it. Unrecognized tasks are still returned in 'executed' and
+	// 'pending' sets, except they don't have 'Payload' set.
+	//
 	// It stops whenever any of the following happens:
 	//   * The queue of pending tasks is empty.
 	//   * ETA of the next task is past deadline (set via SimulationParams).
@@ -90,9 +94,10 @@ type Testable interface {
 
 // SimulationParams are passed to RunSimulation.
 type SimulationParams struct {
-	Deadline         time.Time         // default is "don't stop on deadline"
-	ShouldStopBefore func(t Task) bool // returns true if simulation should stop
-	ShouldStopAfter  func(t Task) bool // returns true if simulation should stop
+	Deadline           time.Time                     // default is "don't stop on deadline"
+	ShouldStopBefore   func(t Task) bool             // returns true if simulation should stop
+	ShouldStopAfter    func(t Task) bool             // returns true if simulation should stop
+	UnknownTaskHandler func(t *taskqueue.Task) error // handles unrecognized tasks
 }
 
 // Task represents a scheduled tq Task.
@@ -202,10 +207,12 @@ func (t *testableImpl) RunSimulation(c context.Context, params *SimulationParams
 	var deadline time.Time
 	var shouldStopBefore func(t Task) bool
 	var shouldStopAfter func(t Task) bool
+	var unknownHandler func(t *taskqueue.Task) error
 	if params != nil {
 		deadline = params.Deadline
 		shouldStopBefore = params.ShouldStopBefore
 		shouldStopAfter = params.ShouldStopAfter
+		unknownHandler = params.UnknownTaskHandler
 	}
 
 loop:
@@ -224,9 +231,19 @@ loop:
 			panic("impossible, the task must be in the queue")
 		}
 		executed = append(executed, *earliest)
-
 		tc.Set(earliest.Task.ETA)
-		if err = t.ExecuteTask(c, *earliest, nil); err != nil {
+
+		if earliest.Payload == nil {
+			if unknownHandler != nil {
+				err = unknownHandler(earliest.Task)
+			} else {
+				err = fmt.Errorf("unrecognized TQ task for handler at %s", earliest.Task.Path)
+			}
+		} else {
+			err = t.ExecuteTask(c, *earliest, nil)
+		}
+
+		if err != nil {
 			break
 		}
 		if shouldStopAfter != nil && shouldStopAfter(*earliest) {

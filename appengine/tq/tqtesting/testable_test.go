@@ -36,6 +36,7 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var epoch = time.Unix(1500000000, 0).UTC()
@@ -268,6 +269,37 @@ func TestRunSimulation(t *testing.T) {
 			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3})
 			// The clock matches last executed task.
 			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
+		})
+
+		Convey("Unrecognized task", func() {
+			unknownTask := taskqueue.Task{
+				Path:    "/unknown",
+				Payload: []byte{1, 2, 3},
+			}
+			So(taskqueue.Add(ctx, "", &unknownTask), ShouldBeNil)
+
+			addTask(ctx, 1, 0, "") // as in "Happy path"
+
+			Convey("Without UnknownTaskHandler", func() {
+				executed, pending, err := tst.RunSimulation(ctx, nil)
+				So(err, ShouldErrLike, "unrecognized TQ task for handler at /unknown")
+				So(len(executed), ShouldEqual, 1) // executed the bad task
+				So(len(pending), ShouldEqual, 1)  // the good recognized task is pending
+			})
+
+			Convey("With UnknownTaskHandler", func() {
+				var unknown []*taskqueue.Task
+				executed, pending, err := tst.RunSimulation(ctx, &SimulationParams{
+					UnknownTaskHandler: func(t *taskqueue.Task) error {
+						unknown = append(unknown, t)
+						return nil
+					},
+				})
+				So(err, ShouldBeNil)
+				So(len(executed), ShouldEqual, 7) // executed all tasks + 1 bad, see "happy path"
+				So(len(pending), ShouldEqual, 0)
+				So(unknown, ShouldResemble, []*taskqueue.Task{&unknownTask})
+			})
 		})
 	})
 }
