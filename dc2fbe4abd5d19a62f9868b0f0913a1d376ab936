@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f15a2d7_e74d4bc1",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-24T20:11:16Z",
+      "side": 1,
+      "message": "this is another ds (memcache) request, right? is there any way to pass Console to ProjectLinks from outside? \nOr am I optimizing for smth that I shouldn\u0027t?",
+      "range": {
+        "startLine": 434,
+        "startChar": 14,
+        "endLine": 434,
+        "endChar": 31
+      },
+      "revId": "dc2fbe4abd5d19a62f9868b0f0913a1d376ab936",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
