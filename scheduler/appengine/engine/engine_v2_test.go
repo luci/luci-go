@@ -15,6 +15,7 @@
 package engine
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"testing"
@@ -530,19 +531,27 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		tq.CreateQueues()
 
 		triggeringJob := "project/triggering-job-v2"
-		triggeredJob := "project/triggered-job-v2"
+		triggeredJobV1 := "project/triggered-job-v1"
+		triggeredJobV2 := "project/triggered-job-v2"
 
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:           triggeringJob,
-				TriggeredJobIDs: []string{triggeredJob},
+				TriggeredJobIDs: []string{triggeredJobV1, triggeredJobV2},
 				Revision:        "rev1",
 				Schedule:        "triggered",
 				Task:            noopTaskBytes(),
 				Acls:            aclOne,
 			},
 			{
-				JobID:    triggeredJob,
+				JobID:    triggeredJobV1,
+				Revision: "rev1",
+				Schedule: "triggered",
+				Task:     noopTaskBytes(),
+				Acls:     aclOne,
+			},
+			{
+				JobID:    triggeredJobV2,
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
@@ -551,8 +560,8 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const triggeringInvID int64 = 9200093523824911856
-			const triggeredInvID int64 = 9200093521728457040
+			const triggeringInvID int64 = 9200093523825364688
+			const triggeredInvID int64 = 9200093521727660480
 
 			// Force launch the triggering job.
 			job, err := e.getJob(c, triggeringJob)
@@ -563,6 +572,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			// Eventually it runs the task which emits a bunch of triggers, which
 			// causes the triggered job triage. We stop right before it and examine
 			// what we see.
+			var v1tasks []*taskqueue.Task
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t1"})
 				So(ctl.Save(ctx), ShouldBeNil)
@@ -574,6 +584,12 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				ShouldStopBefore: func(t tqtesting.Task) bool {
 					_, ok := t.Payload.(*internal.TriageJobStateTask)
 					return ok
+				},
+				// v1 task queue tasks do not use tq.Dispatcher and appear as unknown
+				// tasks. Collect them.
+				UnknownTaskHandler: func(t *taskqueue.Task) error {
+					v1tasks = append(v1tasks, t)
+					return nil
 				},
 			})
 			So(err, ShouldBeNil)
@@ -605,28 +621,65 @@ func TestOneJobTriggersAnother(t *testing.T) {
 
 				// It emits a trigger in the middle.
 				&internal.FanOutTriggersTask{
-					JobIds:   []string{triggeredJob},
+					JobIds:   []string{triggeredJobV1, triggeredJobV2},
 					Triggers: []*internal.Trigger{expectedTrigger1},
 				},
 				&internal.EnqueueTriggersTask{
-					JobId:    triggeredJob,
+					JobId:    triggeredJobV2,
 					Triggers: []*internal.Trigger{expectedTrigger1},
 				},
+				nil, // unrecognized v1 task EnqueueTriggersAction, checked below
 
 				// Triggering job finishes execution, emitting another trigger.
 				&internal.InvocationFinishedTask{
 					JobId: triggeringJob,
 					InvId: triggeringInvID,
 					Triggers: &internal.FanOutTriggersTask{
-						JobIds:   []string{triggeredJob},
+						JobIds:   []string{triggeredJobV1, triggeredJobV2},
 						Triggers: []*internal.Trigger{expectedTrigger2},
 					},
 				},
 				&internal.EnqueueTriggersTask{
-					JobId:    triggeredJob,
+					JobId:    triggeredJobV2,
 					Triggers: []*internal.Trigger{expectedTrigger2},
 				},
+				nil, // unrecognized v1 task EnqueueTriggersAction, checked below
 			})
+
+			// Ensure v1 tasks that emit triggers for v1 job were enqueued. Their
+			// handling is tested in v1 tests.
+			So(len(v1tasks), ShouldEqual, 2)
+			So(v1tasks[0].Path, ShouldEqual, "/invs")
+			So(beatifyJSON(v1tasks[0].Payload, "			"), ShouldEqual, `{
+				"JobID": "project/triggered-job-v1",
+				"Kind": "EnqueueTriggersAction",
+				"Triggers": {
+					"triggers": [
+						{
+							"created": "2015-09-14T22:42:01.000Z",
+							"id": "t1",
+							"invocationId": "9200093523825364688",
+							"jobId": "project/triggering-job-v2"
+						}
+					]
+				}
+			}`)
+			So(v1tasks[1].Path, ShouldEqual, "/invs")
+			So(beatifyJSON(v1tasks[1].Payload, "			"), ShouldEqual, `{
+				"JobID": "project/triggered-job-v1",
+				"Kind": "EnqueueTriggersAction",
+				"Triggers": {
+					"triggers": [
+						{
+							"created": "2015-09-14T22:42:01.000Z",
+							"id": "t2",
+							"invocationId": "9200093523825364688",
+							"jobId": "project/triggering-job-v2",
+							"orderInBatch": "1"
+						}
+					]
+				}
+			}`)
 
 			// Triggering invocation has finished (with triggers recorded).
 			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID, true)
@@ -639,7 +692,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			// At this point triggered job's triage is about to start. Before it does,
 			// verify emitted trigger (sitting in the pending triggers set) is
 			// discoverable through ListTriggers.
-			tj, _ := e.getJob(c, triggeredJob)
+			tj, _ := e.getJob(c, triggeredJobV2)
 			triggers, err := e.ListTriggers(c, tj)
 			So(err, ShouldBeNil)
 			So(triggers, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
@@ -659,7 +712,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(tasks.Payloads(), ShouldResemble, []proto.Message{
 				// Triggered job is getting triaged (because pending triggers).
 				&internal.TriageJobStateTask{
-					JobId: triggeredJob,
+					JobId: triggeredJobV2,
 				},
 				// Triggering job is getting triaged (because it has just finished).
 				&internal.TriageJobStateTask{
@@ -667,23 +720,23 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				},
 				// The triggered job begins execution.
 				&internal.LaunchInvocationsBatchTask{
-					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeredJob, InvId: triggeredInvID}},
+					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeredJobV2, InvId: triggeredInvID}},
 				},
 				&internal.LaunchInvocationTask{
-					JobId: triggeredJob, InvId: triggeredInvID,
+					JobId: triggeredJobV2, InvId: triggeredInvID,
 				},
 				// ...and finishes. Note that the triage doesn't launch new invocation.
 				&internal.InvocationFinishedTask{
-					JobId: triggeredJob, InvId: triggeredInvID,
+					JobId: triggeredJobV2, InvId: triggeredInvID,
 				},
-				&internal.TriageJobStateTask{JobId: triggeredJob},
+				&internal.TriageJobStateTask{JobId: triggeredJobV2},
 			})
 
 			// Verify LaunchTask callback saw the triggers.
 			So(seen, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 
 			// And they are recoded in IncomingTriggers set.
-			triggeredInv, err := e.getInvocation(c, triggeredJob, triggeredInvID, true)
+			triggeredInv, err := e.getInvocation(c, triggeredJobV2, triggeredInvID, true)
 			So(err, ShouldBeNil)
 			So(triggeredInv.Status, ShouldEqual, task.StatusSucceeded)
 			incoming, err := triggeredInv.IncomingTriggers()
@@ -1072,6 +1125,19 @@ func TestCron(t *testing.T) {
 			})
 		})
 	})
+}
+
+// TODO: remove when v1 is gone.
+func beatifyJSON(b []byte, prefix string) string {
+	body := map[string]interface{}{}
+	if err := json.Unmarshal(b, &body); err != nil {
+		panic(err)
+	}
+	blob, err := json.MarshalIndent(body, prefix, "\t")
+	if err != nil {
+		panic(err)
+	}
+	return string(blob)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
