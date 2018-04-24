@@ -1496,8 +1496,8 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 	return err
 }
 
-// newBatchOfTriggers splits a batch of triggers into individual per-job async tasks by means
-// of EnqueueTriggersAction.
+// newBatchOfTriggers splits a batch of triggers into individual per-job async
+// tasks by means of EnqueueTriggersAction.
 //
 // It should run outside of a transaction, since transaction limits
 // us to just 5 task queue items hereby limiting len(triggeredJobID) to 5.
@@ -1510,7 +1510,25 @@ func (e *engineImpl) newBatchOfTriggers(c context.Context, triggeredJobIDs []str
 		wg.Add(1)
 		go func(i int, jobID string) {
 			defer wg.Done()
-			errs.Assign(i, e.enqueueJobActions(c, jobID, []Action{EnqueueTriggersAction{Triggers: triggers}}))
+			v2, err := e.isV2Job(c, jobID)
+			switch {
+			case err == ds.ErrNoSuchEntity:
+				return // just skip this job
+			case err == nil && v2:
+				// We can buffer multiple tasks and then enqueue them as batch, but
+				// we don't care that much: this is temporary code (until v2 is
+				// everywhere), it is in background handler, and all AddTask are
+				// executed in parallel anyway.
+				err = e.cfg.Dispatcher.AddTask(c, &tq.Task{
+					Payload: &internal.EnqueueTriggersTask{
+						JobId:    jobID,
+						Triggers: triggers,
+					},
+				})
+			case err == nil && !v2:
+				err = e.enqueueJobActions(c, jobID, []Action{EnqueueTriggersAction{Triggers: triggers}})
+			}
+			errs.Assign(i, err)
 		}(i, jobID)
 	}
 	wg.Wait()
