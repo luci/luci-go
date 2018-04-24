@@ -25,9 +25,11 @@
 
     return {
       local: mt.format("YYYY-MM-DD LT (z)"),
-      MTV: moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD LT [(MTV)]"),
-      UTC: moment.tz(mt, "UTC").format("YYYY-MM-DD LT [(UTC)]"),
       fromNow: mt.fromNow(),
+      localSeconds: mt.format("YYYY-MM-DD LTS (z)"),
+      MTVSeconds: moment.tz(mt, "America/Los_Angeles").format(
+        "YYYY-MM-DD LTS [(MTV)]"),
+      UTCSeconds: moment.tz(mt, "UTC").format("YYYY-MM-DD LTS [(UTC)]"),
     }
   }
 
@@ -74,9 +76,9 @@
             span.setAttribute(
               "title", [
                 newTimestamp.fromNow,
-                newTimestamp.local,
-                newTimestamp.MTV,
-                newTimestamp.UTC
+                newTimestamp.localSeconds,
+                newTimestamp.MTVSeconds,
+                newTimestamp.UTCSeconds
               ].join("\n")
             )
           } else {
@@ -84,8 +86,8 @@
             span.setAttribute(
               "title", [
                 newTimestamp.fromNow,
-                newTimestamp.MTV,
-                newTimestamp.UTC
+                newTimestamp.MTVSeconds,
+                newTimestamp.UTCSeconds
               ].join("\n")
             )
           }
