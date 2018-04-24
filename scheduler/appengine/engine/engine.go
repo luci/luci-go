@@ -2113,13 +2113,25 @@ func (e *engineImpl) execInvocationFinishedTask(c context.Context, tqTask proto.
 func (e *engineImpl) execFanOutTriggersTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.FanOutTriggersTask)
 
-	tasks := make([]*tq.Task, len(msg.JobIds))
-	for i, jobID := range msg.JobIds {
-		tasks[i] = &tq.Task{
-			Payload: &internal.EnqueueTriggersTask{
-				JobId:    jobID,
-				Triggers: msg.Triggers,
-			},
+	tasks := make([]*tq.Task, 0, len(msg.JobIds))
+	for _, jobID := range msg.JobIds {
+		switch v2, err := e.isV2Job(c, jobID); {
+		case err == ds.ErrNoSuchEntity:
+			// just skip the missing job
+		case err != nil:
+			return errors.Annotate(err, "error when fetching job %q to check its v2 status", jobID).Err()
+		case v2:
+			tasks = append(tasks, &tq.Task{
+				Payload: &internal.EnqueueTriggersTask{
+					JobId:    jobID,
+					Triggers: msg.Triggers,
+				},
+			})
+		case !v2:
+			err := e.enqueueJobActions(c, jobID, []Action{EnqueueTriggersAction{Triggers: msg.Triggers}})
+			if err != nil {
+				return errors.Annotate(err, "failed to enqueue TQ task to trigger v1 job %q", jobID).Err()
+			}
 		}
 	}
 
