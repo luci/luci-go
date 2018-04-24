@@ -25,8 +25,10 @@
 
     return {
       local: mt.format("YYYY-MM-DD LT (z)"),
-      MTV: moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD LT [(MTV)]"),
-      UTC: moment.tz(mt, "UTC").format("YYYY-MM-DD LT [(UTC)]"),
+      localSeconds: mt.format("YYYY-MM-DD LTS (z)"),
+      MTVSeconds: moment.tz(mt, "America/Los_Angeles").format(
+        "YYYY-MM-DD LTS [(MTV)]"),
+      UTCSeconds: moment.tz(mt, "UTC").format("YYYY-MM-DD LTS [(UTC)]"),
       fromNow: mt.fromNow(),
     }
   }
@@ -70,25 +72,16 @@
         var date = new Date(parseInt(timestamp, 10));
         var newTimestamp = formatDate(date);
         if (newTimestamp != null) {
-          if ($(span).hasClass('tooltip-only')) {
-            span.setAttribute(
-              "title", [
-                newTimestamp.fromNow,
-                newTimestamp.local,
-                newTimestamp.MTV,
-                newTimestamp.UTC
-              ].join("\n")
-            )
-          } else {
+          span.setAttribute(
+            "title", [
+              newTimestamp.fromNow,
+              newTimestamp.localSeconds,
+              newTimestamp.MTVSeconds,
+              newTimestamp.UTCSeconds
+            ].join("\n")
+          )
+          if (!$(span).hasClass('tooltip-only'))
             span.innerText = newTimestamp.local;
-            span.setAttribute(
-              "title", [
-                newTimestamp.fromNow,
-                newTimestamp.MTV,
-                newTimestamp.UTC
-              ].join("\n")
-            )
-          }
         }
       } catch (e) {
         console.error('could not convert time of span', span, 'to local:', e)
