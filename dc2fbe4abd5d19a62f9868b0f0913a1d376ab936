@@ -22,6 +22,47 @@
       "revId": "dc2fbe4abd5d19a62f9868b0f0913a1d376ab936",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "036b6a11_3ba6bfb6",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-24T20:15:25Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s a huge deal since it\u0027s memcached.",
+      "parentUuid": "6f15a2d7_e74d4bc1",
+      "range": {
+        "startLine": 434,
+        "startChar": 14,
+        "endLine": 434,
+        "endChar": 31
+      },
+      "revId": "dc2fbe4abd5d19a62f9868b0f0913a1d376ab936",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10ea8cec_e286c3c6",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-24T20:15:25Z",
+      "side": 1,
+      "message": "Should still show builder links even with error.",
+      "revId": "dc2fbe4abd5d19a62f9868b0f0913a1d376ab936",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
