@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "05b3dabb_8a8b3e90",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1523,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-24T01:51:00Z",
+      "side": 1,
+      "message": "imo, fits well in switch{ \ncase err \u003d\u003d\ncase err \u003d\u003d nil \u0026\u0026 v2\ncase err \u003d\u003d nil \u0026\u0026 !v2\n}\nerrs.Assign(i, err)",
+      "range": {
+        "startLine": 1523,
+        "startChar": 3,
+        "endLine": 1523,
+        "endChar": 10
+      },
+      "revId": "bf7788c40ac01ed6b6a543350f4b62af20087835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6bdc1f90_c7a5c590",
         "filename": "scheduler/appengine/engine/engine_test.go",
         "patchSetId": 1
