@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6bdc1f90_c7a5c590",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 742,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-24T01:41:59Z",
+      "side": 1,
+      "message": "This test is a horror show, but it is temporary state until all v1 crap is deleted.",
+      "range": {
+        "startLine": 742,
+        "startChar": 2,
+        "endLine": 742,
+        "endChar": 64
+      },
+      "revId": "bf7788c40ac01ed6b6a543350f4b62af20087835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
