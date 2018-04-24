@@ -15,6 +15,7 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -23,7 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
@@ -32,6 +35,7 @@ import (
 	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -594,6 +598,9 @@ func TestFullTriggeredFlow(t *testing.T) {
 		e, mgr := newTestEngine()
 		taskBytes := noopTaskBytes()
 
+		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tq.CreateQueues()
+
 		// Create a new triggering noop job (ticks every 5 sec).
 		jobsDefinitions := []catalog.Definition{
 			{
@@ -604,8 +611,8 @@ func TestFullTriggeredFlow(t *testing.T) {
 				Flavor:   catalog.JobFlavorTrigger,
 				TriggeredJobIDs: []string{
 					"abc/2-triggered",
-					"abc/3-triggered",
-					"abc/4-triggered",
+					"abc/3-triggered", // will be v2
+					"abc/4-triggered", // will be paused
 				},
 			},
 		}
@@ -620,6 +627,11 @@ func TestFullTriggeredFlow(t *testing.T) {
 			})
 		}
 		So(e.UpdateProjectJobs(c, "abc", jobsDefinitions), ShouldBeNil)
+
+		// Declare job #3 as v2. It should be triggered using v2 mechanism.
+		job3 := getJob(c, "abc/3-triggered")
+		job3.ConvertedToV2 = true
+		So(ds.Put(c, &job3), ShouldBeNil)
 
 		// Pause job #4. It should skip the incoming trigger.
 		job4 := getJob(c, "abc/4-triggered")
@@ -715,14 +727,59 @@ func TestFullTriggeredFlow(t *testing.T) {
 		batchTask := ensureOneTask(c, "invs-q")
 		taskqueue.GetTestable(c).ResetTasks()
 		So(e.ExecuteSerializedAction(c, batchTask.Payload, 0), ShouldBeNil)
-		// Now execute each of trigger tasks.
-		for _, triggerTask := range popAllTasks(c, "invs-q") {
+
+		// It should enqueue one v1-formated task (for job #2) and one v2-formated
+		// (for job #3).
+		v1TriggersTasks := peekAllTasks(c, "invs-q")
+		v2TriggersTasks := peekAllTasks(c, "triggers")
+		taskqueue.GetTestable(c).ResetTasks()
+
+		// For v1 job, we execute each of trigger tasks.
+		for _, triggerTask := range v1TriggersTasks {
 			So(e.ExecuteSerializedAction(c, triggerTask.Payload, 0), ShouldBeNil)
 		}
 
+		// For v2 job we just confirm the task was enqueue as expected. The rest of
+		// this flow is tested in engine_v2_test.go. Note that we can't use
+		// tqtesting.GetTestable(...) here as in v2 tests because it doesn't
+		// interoperate with other tq-related test helpers used by v1 tests.
+		So(len(v2TriggersTasks), ShouldEqual, 1)
+		var tqTask struct {
+			Type string          `json:"type"`
+			Body json.RawMessage `json:"body"`
+		}
+		json.Unmarshal(v2TriggersTasks[0].Payload, &tqTask)
+		So(tqTask.Type, ShouldEqual, "internal.tq.EnqueueTriggersTask")
+		enqueueTask := internal.EnqueueTriggersTask{}
+		jsonpb.Unmarshal(bytes.NewReader([]byte(tqTask.Body)), &enqueueTask)
+		So(enqueueTask, ShouldResemble, internal.EnqueueTriggersTask{
+			JobId: "abc/3-triggered",
+			Triggers: []*internal.Trigger{
+				{
+					Id:           "trg",
+					JobId:        "abc/1",
+					InvocationId: 9200093518582729040,
+					Created:      &timestamp.Timestamp{Seconds: 1442270525, Nanos: 0},
+					OrderInBatch: 0,
+					Payload: &internal.Trigger_Noop{
+						Noop: &api.NoopTrigger{Data: "note the trigger id"},
+					},
+				},
+				{
+					Id:           "trg",
+					JobId:        "abc/1",
+					InvocationId: 9200093518582729040,
+					Created:      &timestamp.Timestamp{Seconds: 1442270525, Nanos: 0},
+					OrderInBatch: 1,
+					Payload: &internal.Trigger_Noop{
+						Noop: &api.NoopTrigger{Data: "different payload"},
+					},
+				},
+			},
+		})
+
 		// Triggers should result in new invocations for previously suspended jobs.
 		So(getJob(c, "abc/2-triggered").State.State, ShouldEqual, JobStateQueued)
-		So(getJob(c, "abc/3-triggered").State.State, ShouldEqual, JobStateQueued)
 
 		// Except job 4, which is paused.
 		job4 = getJob(c, "abc/4-triggered")
@@ -748,7 +805,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 			So(e.ExecuteSerializedAction(c, t.Payload, 0), ShouldBeNil)
 		}
 		So(deliveredTriggers, ShouldResemble, map[string][]string{
-			"abc/2-triggered": {"trg"}, "abc/3-triggered": {"trg"},
+			"abc/2-triggered": {"trg"},
 		})
 	})
 }
@@ -1524,12 +1581,17 @@ func ensureOneTask(c context.Context, q string) *taskqueue.Task {
 	return nil
 }
 
-func popAllTasks(c context.Context, q string) []*taskqueue.Task {
+func peekAllTasks(c context.Context, q string) []*taskqueue.Task {
 	tqt := taskqueue.GetTestable(c)
 	tasks := make([]*taskqueue.Task, 0, len(tqt.GetScheduledTasks()[q]))
 	for _, t := range tqt.GetScheduledTasks()[q] {
 		tasks = append(tasks, t)
 	}
-	tqt.ResetTasks()
+	return tasks
+}
+
+func popAllTasks(c context.Context, q string) []*taskqueue.Task {
+	tasks := peekAllTasks(c, q)
+	taskqueue.GetTestable(c).ResetTasks()
 	return tasks
 }
