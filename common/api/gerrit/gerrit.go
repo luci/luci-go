@@ -267,9 +267,10 @@ func (qr *ChangeDetailsParams) queryString() url.Values {
 	return qs
 }
 
-// ChangeDetails gets details about a single change with optional fields.
+// Change gets a single change with optional fields.
 //
-// This method returns a single *Change and an error.
+// Parameter details specifies whether to include detailed info about the
+// change.
 //
 // The changeID parameter may be in any of the forms supported by Gerrit:
 //   - "4247"
@@ -281,9 +282,12 @@ func (qr *ChangeDetailsParams) queryString() url.Values {
 // to return non-default properties for Change. The supported strings for
 // options are listed in Gerrit's api documentation at the link below:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
-func (c *Client) ChangeDetails(ctx context.Context, changeID string, options ChangeDetailsParams) (*Change, error) {
+func (c *Client) Change(ctx context.Context, changeID string, details bool, options ChangeDetailsParams) (*Change, error) {
 	var resp Change
-	path := fmt.Sprintf("a/changes/%s/detail", url.PathEscape(changeID))
+	path := "a/changes/" + url.PathEscape(changeID)
+	if details {
+		path += "/detail"
+	}
 	if _, err := c.get(ctx, path, options.queryString(), &resp); err != nil {
 		return nil, err
 	}

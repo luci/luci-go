@@ -126,12 +126,14 @@ func TestQuery(t *testing.T) {
 	})
 
 }
-func TestChangeDetails(t *testing.T) {
+func TestChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Details", t, func() {
+	Convey("Details", t, func(cc C) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			cc.So(r.URL.Path, ShouldEqual, "/a/changes/629279/detail")
+			cc.So(r.URL.Query()["o"], ShouldResemble, []string{"CURRENT_REVISION"})
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintf(w, ")]}'\n%s\n", fakeCL3Str)
@@ -140,7 +142,7 @@ func TestChangeDetails(t *testing.T) {
 
 		Convey("WithOptions", func() {
 			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION"}}
-			cl, err := c.ChangeDetails(ctx, "629279", options)
+			cl, err := c.Change(ctx, "629279", true, options)
 			So(err, ShouldBeNil)
 			So(cl.RevertOf, ShouldEqual, 629277)
 			So(cl.CurrentRevision, ShouldEqual, "1ee75012c0de")
