@@ -446,7 +446,7 @@ func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvoc
 func (e *engineImpl) GetInvocation(c context.Context, job *Job, invID int64) (*Invocation, error) {
 	// Note: we want public API users to go through GetVisibleJob to check ACLs,
 	// thus usage of *Job, even though JobID string is sufficient in this case.
-	return e.getInvocation(c, job.JobID, invID)
+	return e.getInvocation(c, job.JobID, invID, job.IsV2())
 }
 
 // PauseJob prevents new automatic invocations of a job.
@@ -487,7 +487,7 @@ func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
 		if isNew {
 			return errSkipPut // the job was removed, nothing to abort
 		}
-		invs, err = e.jobController(jobID).onJobAbort(c, job)
+		invs, err = e.jobController(job.IsV2()).onJobAbort(c, job)
 		return err
 	})
 	if err != nil {
@@ -538,7 +538,7 @@ func (e *engineImpl) ForceInvocation(c context.Context, job *Job) (FutureInvocat
 			noSuchJob = true
 			return errSkipPut
 		}
-		future, err = e.jobController(job.JobID).onJobForceInvocation(c, job)
+		future, err = e.jobController(job.IsV2()).onJobForceInvocation(c, job)
 		return err
 	})
 
@@ -572,7 +572,7 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal
 		for job, triggers := range perJob {
 			jobID := job.JobID
 			triggers := triggers
-			if e.isV2Job(jobID) {
+			if job.IsV2() {
 				tasks <- func() error {
 					return e.execEnqueueTriggersTask(c, &internal.EnqueueTriggersTask{
 						JobId:    jobID,
@@ -593,7 +593,7 @@ func (e *engineImpl) ListTriggers(c context.Context, job *Job) ([]*internal.Trig
 	var triggers []*internal.Trigger
 	var err error
 
-	if e.isV2Job(job.JobID) {
+	if job.IsV2() {
 		// v2 implementation stores triggers in a dsset.
 		_, triggers, err = pendingTriggersSet(c, job.JobID).Triggers(c)
 	} else {
@@ -845,14 +845,28 @@ func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) 
 }
 
 // isV2Job returns true if the given job is using v2 scheduler engine.
-func (e *engineImpl) isV2Job(jobID string) bool {
-	return strings.HasSuffix(jobID, "-v2")
+//
+// This is expensive call that hits memcache/datastore (non-transactionally). If
+// you have *Job or *Invocation already, use their IsV2() methods instead.
+//
+// Returns a fatal error if the job is not found. All other errors are
+// considered transient.
+func (e *engineImpl) isV2Job(c context.Context, jobID string) (bool, error) {
+	job := &Job{JobID: jobID}
+	switch err := ds.Get(ds.WithoutTransaction(c), job); {
+	case err == nil:
+		return job.IsV2(), nil
+	case err == ds.ErrNoSuchEntity:
+		return false, err
+	default:
+		return false, transient.Tag.Apply(err)
+	}
 }
 
 // jobController returns an appropriate implementation of the jobController
 // depending on a version of the engine the job is using (v1 or v2).
-func (e *engineImpl) jobController(jobID string) jobController {
-	if e.isV2Job(jobID) {
+func (e *engineImpl) jobController(v2 bool) jobController {
+	if v2 {
 		return &jobControllerV2{eng: e}
 	}
 	return &jobControllerV1{eng: e}
@@ -945,7 +959,7 @@ func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, 
 			logging.Warningf(c, "Job is resumed by %s", who)
 		}
 		job.Paused = paused
-		return e.jobController(job.JobID).onJobScheduleChange(c, job)
+		return e.jobController(job.IsV2()).onJobScheduleChange(c, job)
 	})
 }
 
@@ -987,7 +1001,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.TriggeredJobIDs = def.TriggeredJobIDs
 
 		// Kick off task queue tasks.
-		ctl := e.jobController(job.JobID)
+		ctl := e.jobController(job.IsV2())
 		if !oldEnabled {
 			if err := ctl.onJobEnabled(c, job); err != nil {
 				return err
@@ -1011,7 +1025,7 @@ func (e *engineImpl) disableJob(c context.Context, jobID string) error {
 			return errSkipPut
 		}
 		job.Enabled = false
-		return e.jobController(jobID).onJobDisabled(c, job)
+		return e.jobController(job.IsV2()).onJobDisabled(c, job)
 	})
 }
 
@@ -1025,7 +1039,7 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 			return errSkipPut
 		}
 		logging.Infof(c, "Resetting job")
-		ctl := e.jobController(jobID)
+		ctl := e.jobController(job.IsV2())
 		if err := ctl.onJobDisabled(c, job); err != nil {
 			return err
 		}
@@ -1039,15 +1053,14 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 // getInvocation returns an existing invocation or ErrNoSuchInvocation error.
 //
 // Supports both v1 and v2 invocations.
-func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
-	isV2 := e.isV2Job(jobID)
+func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64, v2 bool) (*Invocation, error) {
 	inv := &Invocation{ID: invID}
-	if !isV2 {
+	if !v2 {
 		inv.JobKey = ds.NewKey(c, "Job", jobID, 0, nil)
 	}
 	switch err := ds.Get(c, inv); {
 	case err == nil:
-		if isV2 && inv.JobID != jobID {
+		if v2 && inv.JobID != jobID {
 			logging.Errorf(c,
 				"Invocation %d is associated with job %q, not %q. Treating it as missing.",
 				invID, inv.JobID, jobID)
@@ -1069,8 +1082,14 @@ func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64)
 // outside the transaction (since they are in different entity groups). If the
 // transaction fails, these entities may keep hanging unreferenced by anything
 // as garbage. This is fine, since they are not discoverable by any queries.
+//
+// Supports only v2 invocations!
 func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []task.Request) ([]*Invocation, error) {
 	assertInTransaction(c)
+
+	if !job.IsV2() {
+		return nil, fmt.Errorf("expecting job %q to be v2, but it is v1", job.JobID)
+	}
 
 	// Create N new Invocation entities in Starting state.
 	invs, err := e.allocateInvocations(c, job, req)
@@ -1101,9 +1120,12 @@ func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []task.
 //
 // Supports only v2 invocations!
 func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Request) (*Invocation, error) {
+	if !job.IsV2() {
+		return nil, fmt.Errorf("expecting job %q to be v2, but it is v1", job.JobID)
+	}
 	var inv *Invocation
 	err := runIsolatedTxn(c, func(c context.Context) (err error) {
-		inv, err = e.initInvocation(c, job.JobID, &Invocation{
+		inv, err = e.initInvocation(c, job.JobID, true, &Invocation{
 			Started:         clock.Now(c).UTC(),
 			Revision:        job.Revision,
 			RevisionURL:     job.RevisionURL,
@@ -1132,7 +1154,13 @@ func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Re
 // allocateInvocations is a batch version of allocateInvocation.
 //
 // It launches N independent transactions in parallel to create N invocations.
+//
+// Supports only v2 invocations!
 func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task.Request) ([]*Invocation, error) {
+	if !job.IsV2() {
+		return nil, fmt.Errorf("expecting job %q to be v2, but it is v1", job.JobID)
+	}
+
 	wg := sync.WaitGroup{}
 	wg.Add(len(req))
 
@@ -1174,11 +1202,10 @@ func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task
 // not used yet.
 //
 // Supports both v1 and v2 invocations.
-func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invocation, req *task.Request) (*Invocation, error) {
+func (e *engineImpl) initInvocation(c context.Context, jobID string, v2 bool, inv *Invocation, req *task.Request) (*Invocation, error) {
 	assertInTransaction(c)
-	isV2 := e.isV2Job(jobID)
 	var jobKey *ds.Key
-	if !isV2 {
+	if !v2 {
 		jobKey = ds.NewKey(c, "Job", jobID, 0, nil)
 	}
 	invID, err := generateInvocationID(c, jobKey)
@@ -1186,7 +1213,7 @@ func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invoca
 		return nil, errors.Annotate(err, "failed to generate invocation ID").Err()
 	}
 	inv.ID = invID
-	if isV2 {
+	if v2 {
 		inv.JobID = jobID
 	} else {
 		inv.JobKey = jobKey
@@ -1434,13 +1461,20 @@ func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int
 // It creates new phony Invocation entity (in 'FAILED' state) in the datastore,
 // to keep record of all overruns. Doesn't modify Job entity.
 //
-// Supports both v1 and v2 invocations.
+// Supports only v1 invocations currently!
 func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
+	switch v2, err := e.isV2Job(c, jobID); {
+	case err != nil:
+		return err
+	case v2:
+		return fmt.Errorf("expecting job %q to be v1, but it is v2", jobID)
+	}
+
 	var inv *Invocation
 	err := runTxn(c, func(c context.Context) error {
 		now := clock.Now(c).UTC()
 		var initError error
-		inv, initError = e.initInvocation(c, jobID, &Invocation{
+		inv, initError = e.initInvocation(c, jobID, false, &Invocation{
 			Started:  now,
 			Finished: now,
 			Status:   task.StatusOverrun,
@@ -1583,7 +1617,13 @@ func (e *engineImpl) withController(c context.Context, jobID string, invID int64
 
 	logging.Infof(c, "Handling %s", action)
 
-	inv, err := e.getInvocation(c, jobID, invID)
+	v2, err := e.isV2Job(c, jobID)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to check v2 status of the job")
+		return err
+	}
+
+	inv, err := e.getInvocation(c, jobID, invID, v2)
 	switch {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "Failed to fetch the invocation")
@@ -1624,11 +1664,6 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	c = logging.SetField(c, "InvNonce", invocationNonce)
 	c = logging.SetField(c, "Attempt", retryCount)
 
-	// TODO(vadimsh): This works only for v1 jobs currently.
-	if e.isV2Job(jobID) {
-		panic("must be v1 job")
-	}
-
 	// Figure out parameters of the invocation based on passed triggers.
 	req := requestFromTriggers(c, triggers)
 	if triggeredBy != "" {
@@ -1661,6 +1696,11 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			skipRunning = true
 			return errSkipPut
 		}
+		if job.IsV2() {
+			logging.Errorf(c, "Job is not v1, skipping")
+			skipRunning = true
+			return errSkipPut
+		}
 		if !job.State.IsExpectingInvocation(invocationNonce) {
 			logging.Errorf(c, "No longer need to start invocation with nonce %d", invocationNonce)
 			skipRunning = true
@@ -1676,7 +1716,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			RetryCount:      int64(retryCount),
 			Status:          task.StatusStarting,
 		}
-		if _, err := e.initInvocation(c, job.JobID, &inv, &req); err != nil {
+		if _, err := e.initInvocation(c, job.JobID, false, &inv, &req); err != nil {
 			return err
 		}
 		inv.debugLog(c, "Invocation initiated (attempt %d)", retryCount+1)
@@ -1962,7 +2002,7 @@ func (e *engineImpl) execLaunchInvocationTask(c context.Context, tqTask proto.Me
 		// Notify the job controller about the invocation state change. It may
 		// decide to update the corresponding job, e.g. if the invocation moves to
 		// StatusFailed state.
-		if err := e.jobController(msg.JobId).onInvUpdating(c, &inv, &lastInvState, nil, nil); err != nil {
+		if err := e.jobController(true).onInvUpdating(c, &inv, &lastInvState, nil, nil); err != nil {
 			return err
 		}
 
@@ -2186,7 +2226,7 @@ func (e *engineImpl) execCronTickTask(c context.Context, tqTask proto.Message) e
 			return errSkipPut
 		}
 		logging.Infof(c, "Tick %d has arrived", msg.TickNonce)
-		return e.jobController(msg.JobId).onJobCronTick(c, job, msg)
+		return e.jobController(job.IsV2()).onJobCronTick(c, job, msg)
 	})
 }
 

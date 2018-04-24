@@ -135,6 +135,9 @@ type Job struct {
 	//
 	// Used by v2 jobs only.
 	FinishedInvocationsRaw []byte `gae:",noindex"`
+
+	// ConvertedToV2 is true if this job has been converted to v2 format.
+	ConvertedToV2 bool `gae:",noindex"`
 }
 
 // JobName returns name of this Job as defined its project's config.
@@ -189,12 +192,13 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.State.Equal(&other.State) &&
 		e.Cron.Equal(&other.Cron) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
-		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw))
+		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw) &&
+		e.ConvertedToV2 == other.ConvertedToV2)
 }
 
 // IsV2 returns true for v2 jobs.
 func (e *Job) IsV2() bool {
-	return strings.HasSuffix(e.JobID, "-v2")
+	return strings.HasSuffix(e.JobID, "-v2") || e.ConvertedToV2
 }
 
 // MatchesDefinition returns true if job definition in the entity matches the

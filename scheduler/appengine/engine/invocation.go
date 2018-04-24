@@ -257,6 +257,11 @@ type Invocation struct {
 	MutationsCount int64 `gae:",noindex"`
 }
 
+// IsV2 is true if the invocation is in v2 format.
+func (e *Invocation) IsV2() bool {
+	return e.JobKey == nil
+}
+
 // jobID returns ID of the job the invocation belongs too.
 //
 // Supports both v1 and v2 invocations.
