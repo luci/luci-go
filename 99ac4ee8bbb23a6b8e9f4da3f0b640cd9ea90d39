@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d581c26_38326d6b",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2005,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-24T00:28:18Z",
+      "side": 1,
+      "message": "i prefer same line as before since this var is unused below, is next line long for you? :)",
+      "range": {
+        "startLine": 2005,
+        "startChar": 2,
+        "endLine": 2005,
+        "endChar": 33
+      },
+      "revId": "99ac4ee8bbb23a6b8e9f4da3f0b640cd9ea90d39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca2ee18e_05a72f90",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-24T00:28:18Z",
+      "side": 1,
+      "message": "covertly coNverting is exactly what we want to do.\n(missing N)",
+      "range": {
+        "startLine": 140,
+        "startChar": 1,
+        "endLine": 140,
+        "endChar": 13
+      },
+      "revId": "99ac4ee8bbb23a6b8e9f4da3f0b640cd9ea90d39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
