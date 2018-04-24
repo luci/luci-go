@@ -23,22 +23,43 @@ import (
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+	accessProto "go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func withTestAccessClient(c context.Context, client *access.TestClient) context.Context {
-	return WithAccessClient(c, &AccessClient{
-		AccessClient: client,
-		Host:         "buildbucket.example.com",
-	})
+	testFactory := func(context.Context, string) (accessProto.AccessClient, error) {
+		return client, nil
+	}
+	return withAccessClientFactory(c, testFactory)
 }
+
+var (
+	anon = &authtest.FakeState{
+		Identity:       identity.AnonymousIdentity,
+		IdentityGroups: []string{"all"},
+	}
+	admin = &authtest.FakeState{
+		Identity:       "user:alicebob@google.com",
+		IdentityGroups: []string{"administrators", "googlers", "all"},
+	}
+	user = &authtest.FakeState{
+		Identity:       "user:alicebob@google.com",
+		IdentityGroups: []string{"googlers", "all"},
+	}
+	external = &authtest.FakeState{
+		Identity:       "user:eve@notgoogle.com",
+		IdentityGroups: []string{"all"},
+	}
+)
 
 func TestACL(t *testing.T) {
 	t.Parallel()
@@ -46,17 +67,17 @@ func TestACL(t *testing.T) {
 	Convey("Test Environment", t, func() {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 		c = gologger.StdConfig.Use(c)
+		c = caching.WithEmptyProcessCache(c)
+		c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+		_, err := UpdateServiceConfig(c)
+		So(err, ShouldBeNil)
 
 		Convey("Set up projects", func() {
-			c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
 			err := UpdateConsoles(c)
 			So(err, ShouldBeNil)
 
 			Convey("Anon wants to...", func() {
-				c = auth.WithState(c, &authtest.FakeState{
-					Identity:       identity.AnonymousIdentity,
-					IdentityGroups: []string{"all"},
-				})
+				c = auth.WithState(c, anon)
 				Convey("Read public project", func() {
 					ok, err := IsAllowed(c, "opensource")
 					So(ok, ShouldEqual, true)
@@ -71,10 +92,7 @@ func TestACL(t *testing.T) {
 			})
 
 			Convey("admin@google.com wants to...", func() {
-				c = auth.WithState(c, &authtest.FakeState{
-					Identity:       "user:alicebob@google.com",
-					IdentityGroups: []string{"administrators", "googlers", "all"},
-				})
+				c = auth.WithState(c, admin)
 				Convey("Read private project", func() {
 					ok, err := IsAllowed(c, "secret")
 					So(ok, ShouldEqual, true)
@@ -88,10 +106,7 @@ func TestACL(t *testing.T) {
 			})
 
 			Convey("alicebob@google.com wants to...", func() {
-				c = auth.WithState(c, &authtest.FakeState{
-					Identity:       "user:alicebob@google.com",
-					IdentityGroups: []string{"googlers", "all"},
-				})
+				c = auth.WithState(c, user)
 				Convey("Read private project", func() {
 					ok, err := IsAllowed(c, "secret")
 					So(ok, ShouldEqual, true)
@@ -106,10 +121,7 @@ func TestACL(t *testing.T) {
 			})
 
 			Convey("eve@notgoogle.com wants to...", func() {
-				c = auth.WithState(c, &authtest.FakeState{
-					Identity:       "user:eve@notgoogle.com",
-					IdentityGroups: []string{"all"},
-				})
+				c = auth.WithState(c, external)
 				Convey("Read public project", func() {
 					ok, err := IsAllowed(c, "opensource")
 					So(ok, ShouldEqual, true)
@@ -130,10 +142,7 @@ func TestACL(t *testing.T) {
 			}
 
 			Convey("With anonymous identity", func() {
-				c = auth.WithState(c, &authtest.FakeState{
-					Identity:       identity.AnonymousIdentity,
-					IdentityGroups: []string{"all"},
-				})
+				c = auth.WithState(c, anon)
 
 				Convey("Get bucket permissions uncached", func() {
 					c = withTestAccessClient(c, &client)
@@ -201,24 +210,36 @@ func TestACL(t *testing.T) {
 			Convey("Make sure cache doesn't share identity", func() {
 				c = withTestAccessClient(c, &client)
 
-				cABob := auth.WithState(c, &authtest.FakeState{
-					Identity:       "user:alicebob@google.com",
-					IdentityGroups: []string{"googlers", "all"},
-				})
-				cEve := auth.WithState(c, &authtest.FakeState{
-					Identity:       "user:eve@notgoogle.com",
-					IdentityGroups: []string{"all"},
-				})
-				// Uncached call.
+				cUser := auth.WithState(c, user)
+				// Uncached call from authenticated user.
 				client.PermittedActionsResponse = helloPermissions.ToProto(0)
-				perms, err := BucketPermissions(cEve, "hello")
+				perms, err := BucketPermissions(cUser, "hello")
 				So(err, ShouldBeNil)
 				So(perms, ShouldResemble, helloPermissions)
 
-				// Eve's result should now be cached, but anon should make an RPC
-				// for themselves, and Eve's result should not be used.
+				// Alicebob's result should now be cached, but anon should make an RPC
+				// for themselves, and Alicebob's result should not be used.
+				cExt := auth.WithState(c, external)
 				client.PermittedActionsResponse = (access.Permissions{}).ToProto(0)
-				perms, err = BucketPermissions(cABob, "hello")
+				perms, err = BucketPermissions(cExt, "hello")
+				So(err, ShouldBeNil)
+				So(len(perms), ShouldEqual, 0)
+			})
+
+			Convey("Make sure context doesn't share identity", func() {
+				// First call from authenticated user.
+				c = auth.WithState(c, user)
+				c = withTestAccessClient(c, &client)
+				client.PermittedActionsResponse = helloPermissions.ToProto(0)
+				perms, err := BucketPermissions(c, "hello")
+				So(err, ShouldBeNil)
+				So(perms, ShouldResemble, helloPermissions)
+
+				// Alicebob's result should now be cached, but anon should make an RPC
+				// for themselves, and Alicebob's result should not be used.
+				cExt := auth.WithState(c, external)
+				client.PermittedActionsResponse = (access.Permissions{}).ToProto(0)
+				perms, err = BucketPermissions(cExt, "hello")
 				So(err, ShouldBeNil)
 				So(len(perms), ShouldEqual, 0)
 			})
@@ -236,6 +257,12 @@ name: "opensource"
 access: "group:all"
 `
 
+var miloCfg = `
+buildbucket {
+  host: "cr-buildbucket-dev.appspot.com"
+}
+`
+
 var aclConfgs = map[config.Set]memcfg.Files{
 	"projects/secret": {
 		"project.cfg": secretProjectCfg,
@@ -245,5 +272,8 @@ var aclConfgs = map[config.Set]memcfg.Files{
 	},
 	"project/misconfigured": {
 		"probject.cfg": secretProjectCfg,
+	},
+	"services/luci-milo": {
+		"settings.cfg": miloCfg,
 	},
 }

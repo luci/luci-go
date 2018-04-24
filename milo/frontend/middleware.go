@@ -381,12 +381,11 @@ func withGitilesMiddleware(c *router.Context, next router.Handler) {
 // This middleware depends on auth middleware in order to generate the access
 // client.
 func withAccessClientMiddleware(c *router.Context, next router.Handler) {
-	client, err := common.NewAccessClient(c.Context)
-	if err != nil {
+	var err error
+	if c.Context, err = common.WithAccess(c.Context); err != nil {
 		ErrorHandler(c, err)
 		return
 	}
-	c.Context = common.WithAccessClient(c.Context, client)
 	next(c)
 }
 
