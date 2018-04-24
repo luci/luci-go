@@ -518,6 +518,13 @@ func TestFullFlow(t *testing.T) {
 			TickTime:  epoch.Add(10 * time.Second),
 			PrevTime:  epoch.Add(6 * time.Second),
 		}))
+
+		// The successful invocation is also saved as v2.
+		inv = Invocation{ID: 9200093518582515376}
+		So(ds.Get(c, &inv), ShouldBeNil)
+		So(inv.IsV2(), ShouldBeTrue)
+		So(inv.JobID, ShouldEqual, "abc/1")
+		So(inv.IndexedJobID, ShouldEqual, "abc/1")
 	})
 }
 
