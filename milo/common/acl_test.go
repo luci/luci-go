@@ -23,21 +23,23 @@ import (
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+	accessProto "go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func withTestAccessClient(c context.Context, client *access.TestClient) context.Context {
-	return WithAccessClient(c, &AccessClient{
-		AccessClient: client,
-		Host:         "buildbucket.example.com",
-	})
+	testFactory := func(context.Context, string) (accessProto.AccessClient, error) {
+		return client, nil
+	}
+	return withAccessClientFactory(c, testFactory)
 }
 
 func TestACL(t *testing.T) {
@@ -46,9 +48,12 @@ func TestACL(t *testing.T) {
 	Convey("Test Environment", t, func() {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 		c = gologger.StdConfig.Use(c)
+		c = caching.WithEmptyProcessCache(c)
+		c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+		_, err := UpdateServiceConfig(c)
+		So(err, ShouldBeNil)
 
 		Convey("Set up projects", func() {
-			c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
 			err := UpdateConsoles(c)
 			So(err, ShouldBeNil)
 
@@ -236,6 +241,12 @@ name: "opensource"
 access: "group:all"
 `
 
+var miloCfg = `
+buildbucket {
+  host: "cr-buildbucket-dev.appspot.com"
+}
+`
+
 var aclConfgs = map[config.Set]memcfg.Files{
 	"projects/secret": {
 		"project.cfg": secretProjectCfg,
@@ -245,5 +256,8 @@ var aclConfgs = map[config.Set]memcfg.Files{
 	},
 	"project/misconfigured": {
 		"probject.cfg": secretProjectCfg,
+	},
+	"services/luci-milo": {
+		"settings.cfg": miloCfg,
 	},
 }
