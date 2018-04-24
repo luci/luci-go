@@ -67,42 +67,38 @@ func IsAdmin(c context.Context) (bool, error) {
 	return auth.IsMember(c, "administrators")
 }
 
-var accessClientKey = "access client key"
+var accessClientFactoryKey = "access client factory key"
 
-// AccessClient wraps an accessProto.AccessClient and exports its Host.
-type AccessClient struct {
-	accessProto.AccessClient
-	Host string
-}
+// AccessClientFactory wraps an accessProto.AccessClient and exports its Host.
+type AccessClientFactory func(c context.Context, host string) (accessProto.AccessClient, error)
 
-// NewAccessClient creates a new AccessClient for talking to this milo instance's buildbucket instance.
-func NewAccessClient(c context.Context) (*AccessClient, error) {
-	settings := GetSettings(c)
-	if settings.Buildbucket.GetHost() == "" {
-		return nil, errors.Reason("no buildbucket host found").Err()
-	}
+// prodAccessClientFactory creates a access client tied to the given buildbucket host.
+func prodAccessClientFactory(c context.Context, host string) (accessProto.AccessClient, error) {
 	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-	return &AccessClient{
-		AccessClient: bbAccess.NewClient(settings.Buildbucket.Host, &http.Client{Transport: t}),
-		Host:         settings.Buildbucket.Host,
-	}, nil
+	return bbAccess.NewClient(host, &http.Client{Transport: t}), nil
 }
 
-// WithAccessClient attaches an AccessClient to the given context.
-func WithAccessClient(c context.Context, a *AccessClient) context.Context {
-	return context.WithValue(c, &accessClientKey, a)
+// withAccessClientFactory returns a context with the given AccessClientFactory.
+func withAccessClientFactory(c context.Context, a AccessClientFactory) context.Context {
+	return context.WithValue(c, &accessClientFactoryKey, a)
 }
 
-// GetAccessClient retrieves an AccessClient from the given context.
-func GetAccessClient(c context.Context) *AccessClient {
-	if client, ok := c.Value(&accessClientKey).(*AccessClient); !ok {
-		panic("access client not found in context")
-	} else {
-		return client
+// getAccessClient creates an AccessClient from the given context, tied to
+// the current user and buildbucket host.
+func getAccessClient(c context.Context, host string) (accessProto.AccessClient, error) {
+	factory, ok := c.Value(&accessClientFactoryKey).(AccessClientFactory)
+	if !ok {
+		return nil, errors.New("access client factory not found in context")
 	}
+	return factory(c, host)
+}
+
+// WithAccess injects a production access client factory to the context.
+func WithAccess(c context.Context) (context.Context, error) {
+	return withAccessClientFactory(c, prodAccessClientFactory), nil
 }
 
 // BucketPermissions gets permissions for the current identity for all given buckets.
@@ -113,9 +109,18 @@ func GetAccessClient(c context.Context) *AccessClient {
 func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissions, error) {
 	perms := make(bbAccess.Permissions, len(buckets))
 
+	settings := GetSettings(c)
+	if settings.Buildbucket.GetHost() == "" {
+		return nil, errors.Reason("no buildbucket host found").Err()
+	}
+	bbHost := settings.Buildbucket.GetHost()
+	client, err := getAccessClient(c, bbHost)
+	if err != nil {
+		return nil, err
+	}
+
 	// Set the namespace in the context for memcache.
-	client := GetAccessClient(c)
-	c, err := info.Namespace(c, fmt.Sprintf("buildbucket-access-%s", client.Host))
+	c, err = info.Namespace(c, fmt.Sprintf("buildbucket-access-%s", bbHost))
 	if err != nil {
 		return nil, err
 	}
