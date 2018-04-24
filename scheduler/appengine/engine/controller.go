@@ -335,7 +335,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 
 		// Notify the engine about the invocation state change and all timers and
 		// triggers. The engine may decide to update the corresponding job.
-		jobCtl := ctl.eng.jobController(ctl.JobID())
+		jobCtl := ctl.eng.jobController(saving.IsV2())
 		if err := jobCtl.onInvUpdating(c, &ctl.saved, &saving, ctl.timers, ctl.triggers); err != nil {
 			return err
 		}
