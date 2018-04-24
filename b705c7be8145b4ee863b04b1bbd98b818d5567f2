@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "437c1863_b3e139af",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-24T17:10:50Z",
+      "side": 1,
+      "message": "https://screenshot.googleplex.com/kuqHFihNFbi\n\nHaving gone back and forth on timestamps with other people for a long time, and 100% this will cause confusion and frustration for users to not be able to tell at a glance what timezone the timestamps are in.\n\nGiven any timestamp, anyone should be able to tell unambiguously at a glance what timezone that timestamp is a part of.  Without the timezone stamp, timestamps become more ambiguous.\n\nAnother way to do that could be to add the (z)/(PST)/(CEST) to the \"Finished Time\" header column, and then the (z) wouldn\u0027t have to repeat.",
+      "revId": "b705c7be8145b4ee863b04b1bbd98b818d5567f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
