@@ -54,9 +54,10 @@ func Run(templatePath string) {
 	standard.InstallHandlers(r)
 
 	baseMW := standard.Base().Extend(withGitilesMiddleware)
-	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute), withAccessClientMiddleware)
-	htmlMW := frontendMW.Extend(
+	htmlMW := baseMW.Extend(
+		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth),
+		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	projectMW := htmlMW.Extend(projectACLMiddleware)
@@ -64,9 +65,9 @@ func Run(templatePath string) {
 	cronMW := backendMW.Extend(gaemiddleware.RequireCron)
 
 	r.GET("/", htmlMW, frontpageHandler)
-	r.GET("/p", frontendMW, movedPermanently("/"))
+	r.GET("/p", baseMW, movedPermanently("/"))
 	r.GET("/search", htmlMW, searchHandler)
-	r.GET("/opensearch.xml", frontendMW, searchXMLHandler)
+	r.GET("/opensearch.xml", baseMW, searchXMLHandler)
 
 	// Admin and cron endpoints.
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
@@ -97,11 +98,11 @@ func Run(templatePath string) {
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
 		return ConsolesHandler(c, c.Params.ByName("project"))
 	}))
-	r.GET("/p/:project/", frontendMW, movedPermanently("/p/:project"))
-	r.GET("/p/:project/g", frontendMW, movedPermanently("/p/:project"))
+	r.GET("/p/:project/", baseMW, movedPermanently("/p/:project"))
+	r.GET("/p/:project/g", baseMW, movedPermanently("/p/:project"))
 	r.GET("/p/:project/g/:group/console", projectMW, handleError(ConsoleHandler))
 	r.GET("/p/:project/g/:group", projectMW, redirect("/p/:project/g/:group/console", http.StatusFound))
-	r.GET("/p/:project/g/:group/", frontendMW, movedPermanently("/p/:project/g/:group"))
+	r.GET("/p/:project/g/:group/", baseMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
 	r.GET("/p/:project/builders", projectMW, handleError(func(c *router.Context) error {
@@ -148,7 +149,7 @@ func Run(templatePath string) {
 			fmt.Sprintf("buildbucket/%s/%s", c.Params.ByName("bucket"), c.Params.ByName("builder"))))
 	}))
 	// TODO(nodir): delete this redirect and the chromium project assumption with it
-	r.GET("/buildbucket/:bucket/:builder", frontendMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
+	r.GET("/buildbucket/:bucket/:builder", baseMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
 
 	// Buildbot
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
@@ -179,7 +180,7 @@ func Run(templatePath string) {
 		return BuilderHandler(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
 	}))
-	r.GET("/buildbot/:master/", frontendMW, func(c *router.Context) {
+	r.GET("/buildbot/:master/", baseMW, func(c *router.Context) {
 		u := *c.Request.URL
 		u.Path = "/search"
 		u.RawQuery = fmt.Sprintf("q=%s", c.Params.ByName("master"))
@@ -212,7 +213,7 @@ func Run(templatePath string) {
 	})
 	milo.RegisterBuildInfoServer(&api, &rpc.BuildInfoService{})
 	discovery.Enable(&api)
-	api.InstallHandlers(r, frontendMW)
+	api.InstallHandlers(r, baseMW.Extend(middleware.WithContextTimeout(time.Minute)))
 
 	http.DefaultServeMux.Handle("/", r)
 }

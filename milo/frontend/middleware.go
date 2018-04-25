@@ -380,7 +380,7 @@ func withGitilesMiddleware(c *router.Context, next router.Handler) {
 // access API client into the context.
 //
 // This middleware depends on auth middleware in order to generate the access
-// client.
+// client, so it must be called after the auth middleware is installed.
 func withAccessClientMiddleware(c *router.Context, next router.Handler) {
 	client, err := common.NewAccessClient(c.Context)
 	if err != nil {
