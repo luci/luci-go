@@ -54,9 +54,10 @@ func Run(templatePath string) {
 	standard.InstallHandlers(r)
 
 	baseMW := standard.Base().Extend(withGitilesMiddleware)
-	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute), withAccessClientMiddleware)
+	frontendMW := baseMW.Extend(middleware.WithContextTimeout(time.Minute))
 	htmlMW := frontendMW.Extend(
 		auth.Authenticate(server.CookieAuth),
+		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	projectMW := htmlMW.Extend(projectACLMiddleware)
