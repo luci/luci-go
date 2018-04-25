@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b015214a_609258ac",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-25T03:10:49Z",
+      "side": 1,
+      "message": "This flag will be later checked at some appropriate moment during v1 state machine cycle, when it knows how to convert itself to v2 without losing any state.",
+      "range": {
+        "startLine": 143,
+        "startChar": 1,
+        "endLine": 143,
+        "endChar": 14
+      },
+      "revId": "731a0d672863677f5369f6c620c91a4b073c05bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "97f12e66_b9fb253a",
+        "filename": "scheduler/appengine/engine/migration/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-25T03:10:49Z",
+      "side": 1,
+      "message": "Looks like this: https://2972-5d0aeb3-tainted-vadimsh-dot-luci-scheduler-dev.appspot.com/admin/portal/scheduler_v2_migration",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "731a0d672863677f5369f6c620c91a4b073c05bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
