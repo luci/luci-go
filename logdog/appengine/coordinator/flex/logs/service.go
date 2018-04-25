@@ -36,6 +36,16 @@ type server struct {
 	resultLimit int
 }
 
+var logServerKey = "log server key"
+
+func WithServer(c context.Context, server logdog.LogsServer) context.Context {
+	return context.WithValue(c, &logServerKey, server)
+}
+
+func GetServer(c context.Context) logdog.LogsServer {
+	return c.Value(&logServerKey).(logdog.LogsServer)
+}
+
 // New creates a new authenticating LogsServer instance.
 func New() logdog.LogsServer {
 	return newService(&server{})
