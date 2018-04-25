@@ -22,6 +22,47 @@
       "revId": "6356b707abfb294f1efac29611530da5fc1a7523",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc403cd6_8cb97c70",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-25T00:18:18Z",
+      "side": 1,
+      "message": "context timeout isn\u0027t important for redirects, so we could \"inline\" frontMW into htmlMW and use baseMW in the routes that simply redirect",
+      "parentUuid": "9efb3258_e9be30db",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "6356b707abfb294f1efac29611530da5fc1a7523",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bc77ecc_05712c8f",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-25T00:18:18Z",
+      "side": 1,
+      "message": "please add a comment that explicitly mentions that this middleware MUST go after auth mw",
+      "revId": "6356b707abfb294f1efac29611530da5fc1a7523",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
