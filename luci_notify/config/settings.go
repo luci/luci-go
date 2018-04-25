@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/validation"
 
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
@@ -84,10 +84,9 @@ func (s *Settings) Save(withMeta bool) (datastore.PropertyMap, error) {
 
 // updateSettings fetches the service config from luci-config and then stores
 // the new config into the datastore.
-func updateSettings(c context.Context) error {
+func updateSettings(c context.Context, lucicfg config.Interface) error {
 	// Load the settings from luci-config.
 	cs := cfgclient.CurrentServiceConfigSet(c)
-	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
 	cfg, err := lucicfg.GetConfig(c, cs, "settings.cfg", false)
 	if err != nil {
 		return errors.Annotate(err, "loading settings.cfg from luci-config").Err()

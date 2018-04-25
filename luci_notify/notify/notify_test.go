@@ -25,33 +25,34 @@ import (
 	"go.chromium.org/gae/service/user"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 
-	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
-	"go.chromium.org/luci/luci_notify/config"
+	apiConfig "go.chromium.org/luci/luci_notify/api/config"
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func extractNotifiers(c context.Context, projectID string, cfg *notifyConfig.ProjectConfig) []*config.Notifier {
-	var notifiers []*config.Notifier
+func extractNotifiers(c context.Context, projectID string, cfg *apiConfig.ProjectConfig) []*notifyConfig.Notifier {
+	var notifiers []*notifyConfig.Notifier
 	parentKey := datastore.MakeKey(c, "Project", projectID)
 	for _, n := range cfg.Notifiers {
-		notifiers = append(notifiers, config.NewNotifier(parentKey, n))
+		notifiers = append(notifiers, notifyConfig.NewNotifier(parentKey, n))
 	}
 	return notifiers
 }
 
-func notifyDummyBuild(status buildbucketpb.Status, notifyEmails ...string) *Build {
+func notifyDummyBuild(status buildbucketpb.Status, notifyEmails ...[]EmailNotify) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", "test-builder", status)
-	build.EmailNotify = notifyEmails
-
+	for _, en := range notifyEmails {
+		build.Destinations = append(build.Destinations, en...)
+	}
 	return &build
 }
 
@@ -118,10 +119,22 @@ func TestNotify(t *testing.T) {
 		notifiers := extractNotifiers(c, cfgName, cfg)
 
 		// Re-usable builds and builders for running Notify.
+		emails := []EmailNotify{
+			EmailNotify{
+				Email: "property@google.com",
+			},
+			EmailNotify{
+				Email: "bogus@gmail.com",
+			},
+			EmailNotify{
+				Email:    "template@google.com",
+				Template: "test-template",
+			},
+		}
 		goodBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS)
-		goodEmailBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS, "property@google.com", "bogus@gmail.com")
+		goodEmailBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS, emails)
 		badBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE)
-		badEmailBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE, "property@google.com", "bogus@gmail.com")
+		badEmailBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE, emails)
 		goodBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
 			Status:          buildbucketpb.Status_SUCCESS,
@@ -133,9 +146,11 @@ func TestNotify(t *testing.T) {
 
 		dispatcher, taskqueue := createMockTaskQueue(c)
 
-		test := func(notifiers []*config.Notifier, build *Build, builder *Builder, emailExpect ...string) {
+		test := func(notifiers []*notifyConfig.Notifier, build *Build, builder *Builder, emailExpect ...string) {
+			lucicfg := notifyConfig.NotifyInterface(c)
+
 			// Test Notify.
-			err := Notify(c, dispatcher, notifiers, builder.Status, build)
+			err := Notify(c, dispatcher, notifiers, builder.Status, build, lucicfg)
 			So(err, ShouldBeNil)
 
 			// Verify sent messages.
@@ -143,7 +158,7 @@ func TestNotify(t *testing.T) {
 		}
 
 		Convey(`empty`, func() {
-			var noNotifiers []*config.Notifier
+			var noNotifiers []*notifyConfig.Notifier
 			test(noNotifiers, goodBuild, goodBuilder)
 			test(noNotifiers, goodBuild, badBuilder)
 			test(noNotifiers, badBuild, goodBuilder)

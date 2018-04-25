@@ -27,12 +27,13 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/user"
 
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -47,7 +48,7 @@ var (
 	}
 )
 
-func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...string) *Build {
+func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...[]EmailNotify) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", builder, status)
 	build.Input = &buildbucketpb.Build_Input{
@@ -60,8 +61,9 @@ func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime 
 		},
 	}
 	build.CreateTime, _ = ptypes.TimestampProto(creationTime)
-	build.EmailNotify = notifyEmails
-
+	for _, en := range notifyEmails {
+		build.Destinations = append(build.Destinations, en...)
+	}
 	return &build
 }
 
@@ -81,13 +83,39 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 
 		Convey(`single email_notify value`, func() {
 			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}]}`)
-			So(results, ShouldResemble, []string{"test@email"})
+			So(results, ShouldResemble, []EmailNotify{
+				EmailNotify{
+					Email:    "test@email",
+					Template: "",
+				},
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`single email_notify value_with_template`, func() {
+			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email",
+			                                                             "template": "test-template"}]}`)
+			So(results, ShouldResemble, []EmailNotify{
+				EmailNotify{
+					Email:    "test@email",
+					Template: "test-template",
+				},
+			})
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`multiple email_notify values`, func() {
 			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}, {"email": "test2@email"}]}`)
-			So(results, ShouldResemble, []string{"test@email", "test2@email"})
+			So(results, ShouldResemble, []EmailNotify{
+				EmailNotify{
+					Email:    "test@email",
+					Template: "",
+				},
+				EmailNotify{
+					Email:    "test2@email",
+					Template: "",
+				},
+			})
 			So(err, ShouldBeNil)
 		})
 	})
@@ -116,11 +144,18 @@ func TestHandleBuild(t *testing.T) {
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
 		newTime := time.Date(2015, 2, 3, 12, 58, 7, 0, time.UTC)
 
+		propertyEmail := []EmailNotify{
+			EmailNotify{
+				Email: "property@google.com",
+			},
+		}
+
 		dispatcher, taskqueue := createMockTaskQueue(c)
+		lucicfg := notifyConfig.NotifyInterface(c)
 
 		testSuccess := func(build *Build, emailExpect ...string) {
 			// Test handleBuild.
-			err := handleBuild(c, dispatcher, build, mockHistoryFunc(testCommits))
+			err := handleBuild(c, dispatcher, build, mockHistoryFunc(testCommits), lucicfg)
 			So(err, ShouldBeNil)
 
 			// Verify sent messages.
@@ -150,7 +185,7 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`no config w/property`, func() {
-			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, "property@google.com")
+			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, propertyEmail)
 			testSuccess(build, "property@google.com")
 		})
 
@@ -167,7 +202,7 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`init builder w/property`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, "property@google.com")
+			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propertyEmail)
 			testSuccess(build, "test-example-failure@google.com", "property@google.com")
 			verifyBuilder(build, rev1)
 		})
@@ -193,11 +228,11 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`revision update w/property`, func() {
-			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, "property@google.com")
+			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, propertyEmail)
 			testSuccess(build, "test-example-success@google.com", "property@google.com")
 			verifyBuilder(build, rev1)
 
-			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, "property@google.com")
+			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, propertyEmail)
 			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com", "property@google.com")
 			verifyBuilder(newBuild, rev2)
 		})
