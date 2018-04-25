@@ -405,6 +405,177 @@ func TestForceInvocationV2(t *testing.T) {
 	})
 }
 
+func TestAbortJob(t *testing.T) {
+	t.Parallel()
+
+	Convey("with fake env", t, func() {
+		const jobID = "project/job-v2"
+		const expectedInvID int64 = 9200093523825193008
+
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+
+		asOne := auth.WithState(c, asUserOne)
+
+		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tq.CreateQueues()
+
+		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+			{
+				JobID:    jobID,
+				Revision: "rev1",
+				Schedule: "triggered",
+				Task:     noopTaskBytes(),
+				Acls:     aclOne,
+			},
+		}), ShouldBeNil)
+
+		// Force launch a new invocation.
+		job, err := e.getJob(c, jobID)
+		So(err, ShouldBeNil)
+		futureInv, err := e.ForceInvocation(asOne, job)
+		So(err, ShouldBeNil)
+		invID, err := futureInv.InvocationID(c)
+		So(err, ShouldBeNil)
+		So(invID, ShouldEqual, expectedInvID)
+
+		Convey("inv aborted before it starts", func() {
+			// Kill it right away before it had a chance to start.
+			So(e.AbortJob(asOne, job), ShouldBeNil)
+
+			// It is dead right away.
+			inv, err := e.getInvocation(c, jobID, invID, true)
+			So(err, ShouldBeNil)
+			So(inv, ShouldResemble, &Invocation{
+				ID:              expectedInvID,
+				JobID:           jobID,
+				IndexedJobID:    jobID,
+				InvocationNonce: expectedInvID,
+				Started:         epoch,
+				Finished:        epoch,
+				TriggeredBy:     "user:one@example.com",
+				Revision:        "rev1",
+				Task:            noopTaskBytes(),
+				Status:          task.StatusAborted,
+				MutationsCount:  1,
+				DebugLog: "[22:42:00.000] New invocation initialized\n" +
+					"[22:42:00.000] Triggered by user:one@example.com\n" +
+					"[22:42:00.000] Invocation is manually aborted by user:one@example.com\n" +
+					"[22:42:00.000] Invocation finished in 0s with status ABORTED\n",
+			})
+
+			// Unpause the task queue to confirm the new invocation doesn't actually
+			// start.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				panic("must not be called")
+				return nil
+			}
+			tasks, _, err := tq.RunSimulation(c, nil)
+			So(err, ShouldBeNil)
+
+			// The sequence of tasks we've just performed.
+			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				// The delayed triage directly from AbortJob.
+				&internal.KickTriageTask{JobId: jobID},
+				// The invocation finalization from AbortInvocation.
+				&internal.InvocationFinishedTask{JobId: jobID, InvId: expectedInvID},
+
+				// Noop launch. We can't undo the already posted tasks. Note that the
+				// actual launch didn't happen, as checked by mgr.launchTask.
+				&internal.LaunchInvocationsBatchTask{
+					Tasks: []*internal.LaunchInvocationTask{{JobId: jobID, InvId: expectedInvID}},
+				},
+				&internal.LaunchInvocationTask{JobId: jobID, InvId: expectedInvID},
+
+				// The triage from KickTriageTask and from InvocationFinishedTask
+				// finally arrives.
+				&internal.TriageJobStateTask{JobId: jobID},
+			})
+
+			// The job state is updated (the invocation is no longer active).
+			job, err = e.getJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.ActiveInvocations, ShouldBeNil)
+
+			// The invocation is now in the list of finished invocations.
+			datastore.GetTestable(c).CatchupIndexes()
+			invs, _, _ := e.ListInvocations(asOne, job, ListInvocationsOpts{
+				PageSize:     100,
+				FinishedOnly: true,
+			})
+			So(invs, ShouldResemble, []*Invocation{inv})
+		})
+
+		Convey("inv aborted while it is running", func() {
+			// Let the invocation start and set a timer. Abort the simulation before
+			// the timer ticks.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				ctl.State().Status = task.StatusRunning
+				ctl.AddTimer(ctx, time.Minute, "1 min", nil)
+				return nil
+			}
+			tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+				ShouldStopBefore: func(t tqtesting.Task) bool {
+					_, ok := t.Payload.(*internal.TimerTask)
+					return ok
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// The sequence of tasks we've just performed.
+			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				&internal.LaunchInvocationsBatchTask{
+					Tasks: []*internal.LaunchInvocationTask{{JobId: jobID, InvId: expectedInvID}},
+				},
+				&internal.LaunchInvocationTask{
+					JobId: jobID, InvId: expectedInvID,
+				},
+			})
+
+			// At this point the timer tick is scheduled to happen 1 min from now, but
+			// we abort the job.
+			So(e.AbortJob(asOne, job), ShouldBeNil)
+
+			// It is dead right away.
+			inv, err := e.getInvocation(c, jobID, invID, true)
+			So(inv.Status, ShouldEqual, task.StatusAborted)
+
+			// Run all processes to completion.
+			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
+				panic("must not be called")
+				return nil
+			}
+			tasks, _, err = tq.RunSimulation(c, nil)
+			So(err, ShouldBeNil)
+
+			// The sequence of tasks we've just performed.
+			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				// The delayed triage directly from AbortJob.
+				&internal.KickTriageTask{JobId: jobID},
+				// The invocation finalization from AbortInvocation.
+				&internal.InvocationFinishedTask{JobId: jobID, InvId: expectedInvID},
+
+				// The triage from KickTriageTask and from InvocationFinishedTask
+				// finally arrives.
+				&internal.TriageJobStateTask{JobId: jobID},
+
+				// And delayed TimerTask arrives and gets skipped, as confirmed by
+				// mgr.handleTimer.
+				&internal.TimerTask{
+					JobId: jobID,
+					InvId: expectedInvID,
+					Timer: &internal.Timer{
+						Id:      "project/job-v2:9200093523825193008:1:0",
+						Created: google.NewTimestamp(epoch.Add(time.Second)),
+						Eta:     google.NewTimestamp(epoch.Add(time.Minute + time.Second)),
+						Title:   "1 min",
+					},
+				},
+			})
+		})
+	})
+}
+
 func TestEmitTriggers(t *testing.T) {
 	t.Parallel()
 
