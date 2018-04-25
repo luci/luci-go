@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "05f97a7e_dfb2f8b5",
+        "filename": "skylark/skylarkproto/testdata/misc.sky",
+        "patchSetId": 9
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-25T22:18:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "565f6f83_c80314bf",
+      "range": {
+        "startLine": 29,
+        "startChar": 39,
+        "endLine": 29,
+        "endChar": 40
+      },
+      "revId": "f780c2eabd1fa8b59e0cd882c6918d157cc54521",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee9113ef_9adc48c6",
         "filename": "skylark/skylarkproto/type_test.go",
         "patchSetId": 9
@@ -39,6 +63,24 @@
       "revId": "f780c2eabd1fa8b59e0cd882c6918d157cc54521",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "985018c4_d48526b7",
+        "filename": "skylark/skylarkproto/type_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-25T22:18:13Z",
+      "side": 1,
+      "message": "Fine, whatever. I thought Goconvey looked like overkill for such simple tests.",
+      "parentUuid": "ee9113ef_9adc48c6",
+      "revId": "f780c2eabd1fa8b59e0cd882c6918d157cc54521",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
