@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d922b1bd_f07202db",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T17:35:55Z",
+      "side": 1,
+      "message": "Failure mode of lack of access middleware is panic, so it shouldn\u0027t be super scary either way.\n\nI deleted frontendMW.",
+      "parentUuid": "cc403cd6_8cb97c70",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "6356b707abfb294f1efac29611530da5fc1a7523",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0bc77ecc_05712c8f",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 1
@@ -63,6 +87,24 @@
       "revId": "6356b707abfb294f1efac29611530da5fc1a7523",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ff36867_71c0cd5f",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T17:35:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0bc77ecc_05712c8f",
+      "revId": "6356b707abfb294f1efac29611530da5fc1a7523",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
