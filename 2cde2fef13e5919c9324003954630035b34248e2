@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8705423_b49d338d",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "I\u0027m more inclined to let parseBuilders() do the clock.Now() call, wdyt?",
+      "revId": "2cde2fef13e5919c9324003954630035b34248e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

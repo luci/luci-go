@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "23f93832_f24f5c11",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "32d838b4_d3c239a3",
+      "range": {
+        "startLine": 43,
+        "startChar": 21,
+        "endLine": 43,
+        "endChar": 67
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0ab18da6_77f6fa29",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 5
@@ -39,6 +63,24 @@
       "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ea2c613_9584c8f3",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "context still needed for datastore.MakeKey().  Not sure if passing now via params is a good idea in that case since calling it here would practically only differ by nanoseconds.",
+      "parentUuid": "0ab18da6_77f6fa29",
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -89,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "4279f174_39f87eba",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4944353_c8215feb",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 14
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "acc20b68_5a5c0b52",
         "filename": "milo/common/model/pool.go",
         "patchSetId": 5
@@ -112,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "b15e11a8_18fd5a60",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Now an explicit key",
+      "parentUuid": "acc20b68_5a5c0b52",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 7
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7e45e0a8_b6c1cb70",
         "filename": "milo/common/model/pool.go",
         "patchSetId": 5
@@ -132,6 +222,30 @@
       "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2317b35_5271b4ba",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "7e45e0a8_b6c1cb70",
+      "range": {
+        "startLine": 32,
+        "startChar": 4,
+        "endLine": 32,
+        "endChar": 10
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -167,6 +281,24 @@
       "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1e8d643_05269bb3",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c05f74d_3e17d953",
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -238,6 +370,30 @@
       "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b79b5257_461f50f4",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "I don\u0027t think strpair.Map serializes cleanly into a datastore entity since it\u0027s a list nested in a map, but otherwise this sgtm.\n\nI\u0027ll make PoolDescriptor :\u003d Dimensions + Host",
+      "parentUuid": "687c90d3_7dc02d05",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 12
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -335,6 +491,54 @@
     },
     {
       "key": {
+        "uuid": "41dcded2_f34b77be",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a6a4087_a32f483c",
+      "range": {
+        "startLine": 52,
+        "startChar": 63,
+        "endLine": 52,
+        "endChar": 73
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ae88dd7e_fe7bb867",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c47eb495_b44d53b3",
+      "range": {
+        "startLine": 52,
+        "startChar": 16,
+        "endLine": 52,
+        "endChar": 25
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4bc6e0b0_98ff4303",
         "filename": "milo/common/model/pool.go",
         "patchSetId": 5
@@ -355,6 +559,30 @@
       "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de23eef0_583b6501",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4bc6e0b0_98ff4303",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 40
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -381,6 +609,30 @@
     },
     {
       "key": {
+        "uuid": "25c7173e_1f1f21e2",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done.  Everything is renamed \"Bot\"",
+      "parentUuid": "a6aa96bf_28d14c72",
+      "range": {
+        "startLine": 74,
+        "startChar": 39,
+        "endLine": 74,
+        "endChar": 57
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6465b4f_2a2d1912",
         "filename": "milo/common/model/pool.go",
         "patchSetId": 5
@@ -401,6 +653,30 @@
       "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6eae3a8f_40883585",
+        "filename": "milo/common/model/pool.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6465b4f_2a2d1912",
+      "range": {
+        "startLine": 76,
+        "startChar": 16,
+        "endLine": 76,
+        "endChar": 30
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -451,6 +727,30 @@
     },
     {
       "key": {
+        "uuid": "2f2518a2_a1ccb636",
+        "filename": "milo/common/model/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b215491b_9174cab7",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 10
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d7b4f37_3560088d",
         "filename": "milo/frontend/cron.go",
         "patchSetId": 5
@@ -474,6 +774,30 @@
     },
     {
       "key": {
+        "uuid": "b51bd49c_bc013a3d",
+        "filename": "milo/frontend/cron.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d7b4f37_3560088d",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 6
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68529080_41f4a23a",
         "filename": "milo/frontend/cron.go",
         "patchSetId": 5
@@ -494,6 +818,30 @@
       "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8f55bc6_d1e8768f",
+        "filename": "milo/frontend/cron.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-25T21:47:06Z",
+      "side": 1,
+      "message": "Done.  I tried doing something clever.  wdyt?",
+      "parentUuid": "68529080_41f4a23a",
+      "range": {
+        "startLine": 41,
+        "startChar": 2,
+        "endLine": 42,
+        "endChar": 47
+      },
+      "revId": "72ba4bf3a50741fbfd5fc873fb70b8ff4a37aad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
