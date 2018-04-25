@@ -320,116 +320,40 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	status := "None"
 	link := "#"
 	class := ""
+	i := 0
 
-	// Below is a state machine for rendering a single builder's column.
-	// In essence, the state machine takes 3 inputs: the current state, and
-	// the if the next 2 builds exist. It uses this information to choose the
-	// next state.
-	//
-	// Each iteration, the state machine writes out the state's corresponding element,
-	// either a lone cell, the top of a long cell, the bottom of a long cell, the
-	// middle of a long cell, or an empty space.
-	//
-	// The ultimate goal of this state machine is to visually extend a single
-	// build down to the next known build for this builder by commit.
-
-	// Initialize state machine state.
-	//
-	// Could equivalently be implemented using a "start" state, but
-	// that requires a no-render special case which would make the
-	// state machine less clean.
-	var state int
-	switch {
-	case len(br.Build) == 1:
-		switch {
-		case br.Build[0] != nil:
-			state = cell
-		case br.Build[0] == nil:
-			state = empty
-		}
-	case len(br.Build) > 1:
-		switch {
-		case br.Build[0] != nil && br.Build[1] != nil:
-			state = cell
-		case br.Build[0] != nil && br.Build[1] == nil:
-			state = top
-		case br.Build[0] == nil:
-			state = empty
-		}
-	default:
-		// This is probably a console preview.
-	}
-	// Execute state machine for determining cell type.
-	for i, build := range br.Build {
-		nextBuild := false
-		if i < len(br.Build)-1 {
-			nextBuild = br.Build[i+1] != nil
-		}
-		nextNextBuild := false
-		if i < len(br.Build)-2 {
-			nextNextBuild = br.Build[i+2] != nil
+	for {
+		if i >= len(br.Build) {
+			break
 		}
 
-		var nextState int
-		switch state {
-		case empty:
-			class = "empty-cell"
-			switch {
-			case nextBuild && nextNextBuild:
-				nextState = cell
-			case nextBuild && !nextNextBuild:
-				nextState = top
-			case !nextBuild:
-				nextState = empty
-			}
-		case top:
-			class = "cell-top"
-			status = build.Summary.Status.String()
-			link = build.SelfLink()
-			switch {
-			case nextNextBuild:
-				nextState = bottom
-			case !nextNextBuild:
-				nextState = middle
-			}
-		case middle:
-			class = "cell-middle"
-			switch {
-			case nextNextBuild:
-				nextState = bottom
-			case !nextNextBuild:
-				nextState = middle
-			}
-		case bottom:
-			class = "cell-bottom"
-			switch {
-			case nextNextBuild:
-				nextState = cell
-			case !nextNextBuild:
-				nextState = top
-			}
-		case cell:
+		// Calculate how many rows a given builder bubble should span.
+		height := 1
+		for j := i; j < len(br.Build) && br.Build[j] != nil; i++ {
+			height += 1
+		}
+
+		if i+height < len(br.Build) {
 			class = "cell"
-			status = build.Summary.Status.String()
-			link = build.SelfLink()
-			switch {
-			case nextNextBuild:
-				nextState = cell
-			case !nextNextBuild:
-				nextState = top
-			}
-		default:
-			panic("Unrecognized state")
+		} else {
+			class = "cell-bottom"
 		}
-		// Write current state's information.
+
+		build := br.Build[i]
+		status = build.Summary.Status.String()
+		link = build.SelfLink()
+
+		// Write bubble for a given build.
 		must(fmt.Fprintf(buffer,
-			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
+			`<div class="console-cell-container">`+
+				`<a class="console-%s status-%s" href="%s" title="%s" style="min-height: %.1fem" data-height="%d">`+
 				`</a><div class="console-cell-spacer"></div></div>`,
 			class, status, link,
-			template.HTMLEscapeString(br.BuilderName())))
+			template.HTMLEscapeString(br.BuilderName()),
+			// TODO(sergiyb): Fix this formula. It needs to take borders into account.
+			float32(height)*2.15+(float32(height)-1)*0.1, height))
 
-		// Update state.
-		state = nextState
+		i += height
 	}
 	must(buffer.WriteString(`</div></div>`))
 }

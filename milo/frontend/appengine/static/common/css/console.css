@@ -202,6 +202,10 @@
 .console-commit-item {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: left;
+  white-space: nowrap;
+  margin-bottom: 0.1em;
 }
 
 .console-commit-summary {
@@ -211,13 +215,6 @@
   min-height: 2em;
   margin-right: -0.2em;
   padding: 1px 1em;
-}
-
-.console-commit-item {
-  display: flex;
-  align-items: center;
-  justify-content: left;
-  white-space: nowrap;
 }
 
 .console-commit-revision {
@@ -342,6 +339,7 @@
 .console-builder-column {
   display: flex;
   flex-direction: column;
+  margin-right: 1px;
 }
 
 .console-builder-column:last-of-type {
@@ -384,6 +382,7 @@
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
   margin-top: 0.75em;
+  margin-bottom: 0.1em;
 }
 
 /* Builds */
@@ -392,6 +391,10 @@
   display: flex;
   flex-grow: 1;
   flex-direction: column;
+}
+
+.console-build-column div.console-cell-container {
+  margin-bottom: 0.1em;
 }
 
 .console-build-column div.console-cell-container:nth-child(even) {
@@ -413,7 +416,7 @@
   min-width: 2em;
   min-height: 2em;
   border-radius: 0.5em;
-  border-width: 1px;
+  border-width: 0.1em;
   border-style: solid;
 }
 

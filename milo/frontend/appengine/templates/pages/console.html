@@ -237,6 +237,8 @@ $(function () {
     $(".console-commit-description").each(function() {
       sizes.push($(this).height());
     });
+    // TODO(sergiyb): Update this code to take bubbles spanning multiple
+    // revisions into account.
     $(".console-build-column").each(function() {
       const containers = $(this).find(".console-cell-spacer");
       for (const i in sizes) {
