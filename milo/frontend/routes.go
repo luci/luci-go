@@ -72,9 +72,10 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
 
 	// Cron endpoints
-	r.GET("/internal/cron/fix-datastore", cronMW, cronFixDatastore)
-	r.GET("/internal/cron/stats", cronMW, StatsHandler)
+	r.GET("/internal/cron/fix-datastore", cronMW, fixDatastore.handler)
+	r.GET("/internal/cron/stats", cronMW, stats.handler)
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
+	r.GET("/internal/cron/update-pools", cronMW, updatePool.handler)
 
 	// Builds.
 	r.GET("/p/:project/builds/b:id", projectMW, handleError(func(c *router.Context) error {

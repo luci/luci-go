@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"net/http"
 	"time"
 
 	"golang.org/x/net/context"
@@ -12,7 +11,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -21,7 +19,7 @@ import (
 //
 // TODO(nodir): delete this file
 
-func fixDatastore(c context.Context) error {
+func fixDatastoreHandler(c context.Context) error {
 	// delete all incomplete builds that were created >2 days ago
 	start := clock.Now(c)
 	buildDeadline := start.Add(-24 * 2 * time.Hour)
@@ -49,12 +47,4 @@ func fixDatastore(c context.Context) error {
 			}
 		}
 	})
-}
-
-func cronFixDatastore(c *router.Context) {
-	if err := fixDatastore(c.Context); err != nil {
-		logging.Errorf(c.Context, "%s", err)
-		c.Writer.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 }
