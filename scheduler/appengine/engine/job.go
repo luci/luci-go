@@ -136,6 +136,12 @@ type Job struct {
 	// Used by v2 jobs only.
 	FinishedInvocationsRaw []byte `gae:",noindex"`
 
+	// EligibleForV2 is true if the job is eligible for conversion to v2 and
+	// should be converted at an earliest convenience.
+	//
+	// Ignored for v2 jobs. There's no automated way back from v2 to v1.
+	EligibleForV2 bool `gae:",noindex"`
+
 	// ConvertedToV2 is true if this job has been converted to v2 format.
 	ConvertedToV2 bool `gae:",noindex"`
 }
@@ -193,6 +199,7 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.Cron.Equal(&other.Cron) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
 		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw) &&
+		e.EligibleForV2 == other.EligibleForV2 &&
 		e.ConvertedToV2 == other.ConvertedToV2)
 }
 
@@ -201,12 +208,20 @@ func (e *Job) IsV2() bool {
 	return strings.HasSuffix(e.JobID, "-v2") || e.ConvertedToV2
 }
 
+// JobDefinition is used during v1->v2 migration to carry job-related bits
+// fetched from the migration settings.
+type JobDefinition struct {
+	catalog.Definition      // as read from the catalog
+	EligibleForV2      bool // as read from migration settings
+}
+
 // MatchesDefinition returns true if job definition in the entity matches the
 // one specified by catalog.Definition struct.
-func (e *Job) MatchesDefinition(def catalog.Definition) bool {
+func (e *Job) MatchesDefinition(def JobDefinition) bool {
 	return e.JobID == def.JobID &&
 		e.Flavor == def.Flavor &&
 		e.Schedule == def.Schedule &&
+		e.EligibleForV2 == def.EligibleForV2 &&
 		e.Acls.Equal(&def.Acls) &&
 		bytes.Equal(e.Task, def.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
