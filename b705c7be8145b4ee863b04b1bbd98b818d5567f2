@@ -16,6 +16,24 @@
       "revId": "b705c7be8145b4ee863b04b1bbd98b818d5567f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d863a22_c4d830e2",
+        "filename": "milo/frontend/appengine/static/common/js/time.js",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-25T10:28:42Z",
+      "side": 1,
+      "message": "Making it appear in a column header is a much larger change (and best done in a separate CL) because this logic is also used for non-columns, e.g. to show start/stop time of a build: https://2970-2613891-tainted-sergiyb-2-dot-luci-milo-dev.appspot.com/buildbot/client.v8/V8%20Linux/24448. Therefore, I\u0027ve reverted this change and re-deployed the app, which now shows timezone again.",
+      "parentUuid": "437c1863_b3e139af",
+      "revId": "b705c7be8145b4ee863b04b1bbd98b818d5567f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
