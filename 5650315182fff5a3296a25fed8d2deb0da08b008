@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "cda33672_427affe5",
+        "filename": "skylark/skylarkproto/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-25T03:28:24Z",
+      "side": 1,
+      "message": "No, I accept this rationale.",
+      "parentUuid": "70bd5869_948370a8",
+      "revId": "5650315182fff5a3296a25fed8d2deb0da08b008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2287ed6_92ddd6a4",
         "filename": "skylark/skylarkproto/message.go",
         "patchSetId": 7
