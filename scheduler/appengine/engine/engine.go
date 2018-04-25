@@ -841,6 +841,9 @@ func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallbac
 // place (with a new state) and enqueues all emitted actions to task queues.
 func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) error) error {
 	assertInTransaction(c)
+	if job.IsV2() {
+		panic("must never be called for v2 jobs, there are checks for this already")
+	}
 	sched, err := job.ParseSchedule()
 	if err != nil {
 		return fmt.Errorf("bad schedule %q - %s", job.EffectiveSchedule(), err)
@@ -1456,6 +1459,20 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 
 // executeJobAction routes an action that targets a job.
 func (e *engineImpl) executeJobAction(c context.Context, payload *actionTaskPayload, retryCount int) error {
+	// Ignore v1 tasks if the job is already v2. They are probably late and
+	// there's nothing we can do to handle them correctly. There are also similar
+	// checks inside each individual v1 transaction, to handle the case the job
+	// was flipped to v2 in the middle of 'executeJobAction'.
+	if payload.JobID != "" {
+		switch v2, err := e.isV2Job(c, payload.JobID); {
+		case err != nil:
+			return err
+		case v2:
+			logging.Warningf(c, "Skipping the task %q for job %q, since the job is v2 now", payload.Kind, payload.JobID)
+			return nil
+		}
+	}
+
 	switch payload.Kind {
 	case "TickLaterAction":
 		return e.jobTimerTick(c, payload.JobID, payload.TickNonce)
@@ -1484,6 +1501,10 @@ func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int
 			logging.Errorf(c, "Scheduled job is unexpectedly gone")
 			return errSkipPut
 		}
+		if job.IsV2() {
+			logging.Errorf(c, "The job is v2, skipping")
+			return errSkipPut
+		}
 		logging.Infof(c, "Tick %d has arrived", tickNonce)
 		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnTimerTick(tickNonce) })
 	})
@@ -1495,15 +1516,9 @@ func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int
 // It creates new phony Invocation entity (in 'FAILED' state) in the datastore,
 // to keep record of all overruns. Doesn't modify Job entity.
 //
-// Supports only v1 invocations currently!
+// Supports only v1 jobs currently! Harmless (and also does nothing visible) if
+// called for v2 job.
 func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
-	switch v2, err := e.isV2Job(c, jobID); {
-	case err != nil:
-		return err
-	case v2:
-		return fmt.Errorf("expecting job %q to be v1, but it is v2", jobID)
-	}
-
 	var inv *Invocation
 	err := runTxn(c, func(c context.Context) error {
 		now := clock.Now(c).UTC()
@@ -1586,6 +1601,9 @@ func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []*in
 			return errSkipPut
 		case job.Paused:
 			logging.Warningf(c, "Skipping %d incoming triggers: the job is paused", len(triggers))
+			return errSkipPut
+		case job.IsV2():
+			logging.Errorf(c, "The job is v2, skipping")
 			return errSkipPut
 		}
 		logging.Infof(c, "Triggered %d times", len(triggers))
@@ -1749,7 +1767,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			return errSkipPut
 		}
 		if job.IsV2() {
-			logging.Errorf(c, "Job is not v1, skipping")
+			logging.Errorf(c, "The job is v2, skipping")
 			skipRunning = true
 			return errSkipPut
 		}
