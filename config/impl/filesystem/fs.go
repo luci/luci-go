@@ -437,6 +437,31 @@ func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgP
 	return nil, config.ErrNoConfig
 }
 
+func (fs *filesystemImpl) ListFiles(ctx context.Context, cfgSet config.Set) ([]string, error) {
+	var templates []string
+	configSet := configSet{luciPath(cfgSet)}
+	if err := configSet.validate(); err != nil {
+		return templates, err
+	}
+
+	realPath, _, err := fs.resolveBasePath()
+	if err != nil {
+		return templates, err
+	}
+
+	paths, err := scanDirectory(newLUCIPath(realPath.toLUCI().s() + "/" + configSet.s()).toNative())
+	if err != nil {
+		return templates, err
+	}
+
+	for _, fp := range paths.contentRevPathMap {
+		//for _, cf := range fp.Meta.Path {
+		templates = append(templates, fp.Meta.Path)
+		//	}
+	}
+	return templates, nil
+}
+
 func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
 	if _, err := fs.scanHeadRevision(); err != nil {
 		return "", err
