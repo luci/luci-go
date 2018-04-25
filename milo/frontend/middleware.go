@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -360,7 +361,7 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 				"Analytics":   analytics.Snippet(c),
 				"RequestID":   info.RequestID(c),
 				"Request":     e.Request,
-				"Navi":        ProjectLinks(project, group),
+				"Navi":        ProjectLinks(c, project, group),
 				"ProjectID":   project,
 			}, nil
 		},
@@ -410,8 +411,8 @@ func emulationMiddleware(c *router.Context, next router.Handler) {
 	next(c)
 }
 
-// ProjectLink returns the navigation list surrounding a project and optionally group.
-func ProjectLinks(project, group string) []ui.LinkGroup {
+// ProjectLinks returns the navigation list surrounding a project and optionally group.
+func ProjectLinks(c context.Context, project, group string) []ui.LinkGroup {
 	if project == "" {
 		return nil
 	}
@@ -430,16 +431,22 @@ func ProjectLinks(project, group string) []ui.LinkGroup {
 		},
 	}
 	if group != "" {
-		groupLinks := []*ui.Link{
-			ui.NewLink(
+		groupLinks := []*ui.Link{}
+		con, err := common.GetConsole(c, project, group)
+		if err != nil {
+			logging.WithError(err).Warningf(c, "error getting console")
+		} else if !con.Def.BuilderViewOnly {
+			groupLinks = append(groupLinks, ui.NewLink(
 				"Console",
 				fmt.Sprintf("/p/%s/g/%s/console", project, group),
-				fmt.Sprintf("Console for group %s in project %s", group, project)),
-			ui.NewLink(
-				"Builders",
-				fmt.Sprintf("/p/%s/g/%s/builders", project, group),
-				fmt.Sprintf("Builders for group %s in project %s", group, project)),
+				fmt.Sprintf("Console for group %s in project %s", group, project)))
 		}
+
+		groupLinks = append(groupLinks, ui.NewLink(
+			"Builders",
+			fmt.Sprintf("/p/%s/g/%s/builders", project, group),
+			fmt.Sprintf("Builders for group %s in project %s", group, project)))
+
 		links = append(links, ui.LinkGroup{
 			Name:  ui.NewLink(group, "", ""),
 			Links: groupLinks,
