@@ -29,7 +29,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	configInterface "go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/impl/remote"
 	"go.chromium.org/luci/config/validation"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/server/router"
@@ -115,10 +116,9 @@ func clearDeadProjects(c context.Context, liveProjects stringset.Set) error {
 }
 
 // updateProjects updates all Projects and their Notifiers in the datastore.
-func updateProjects(c context.Context) error {
+func updateProjects(c context.Context, lucicfg configInterface.Interface) error {
 	cfgName := info.AppID(c) + ".cfg"
 	logging.Debugf(c, "fetching configs for %s", cfgName)
-	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
 	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
 	if err != nil {
 		return errors.Annotate(err, "while fetching project configs").Err()
@@ -169,17 +169,29 @@ func updateProjects(c context.Context) error {
 	return merr
 }
 
+// NotifyInterface sets a remote interface to be used for all config interaction.
+func NotifyInterface(c context.Context) configInterface.Interface {
+	s := gaeconfig.DefaultSettings(c)
+	insecure := false
+	if s.ConfigServiceHost == "" {
+		s.ConfigServiceHost = "localhost"
+		insecure = true
+	}
+	return remote.New(s.ConfigServiceHost, insecure, nil)
+}
+
 // UpdateHandler is the HTTP router handler for handling cron-triggered
 // configuration update requests.
 func UpdateHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
 	c, _ = context.WithTimeout(c, time.Minute)
-	if err := updateProjects(c); err != nil {
+	lucicfg := NotifyInterface(c)
+	if err := updateProjects(c, lucicfg); err != nil {
 		logging.WithError(err).Errorf(c, "error while updating project configs")
 		h.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if err := updateSettings(c); err != nil {
+	if err := updateSettings(c, lucicfg); err != nil {
 		logging.WithError(err).Errorf(c, "error while updating settings")
 		h.WriteHeader(http.StatusInternalServerError)
 		return

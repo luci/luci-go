@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -34,7 +34,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/luci_notify/config"
+	configInterface "go.chromium.org/luci/config"
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 )
 
 var (
@@ -54,27 +55,25 @@ func commitIndex(commits []*gitpb.Commit, revision string) int {
 	return -1
 }
 
-func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
+type EmailNotify struct {
+	Email    string `json:"email"`
+	Template string `json:"template"`
+}
+
+func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 	if parametersJSON == "" {
 		return nil, nil
 	}
-
 	// json equivalent: {"email_notify": [{"email": "<address>"}, ...]}
 	var output struct {
-		EmailNotify []struct {
-			Email string `json:"email"`
-		} `json:"email_notify"`
+		EmailNotify []EmailNotify `json:"email_notify"`
 	}
 
+	//var output []EmailNotify
 	if err := json.NewDecoder(strings.NewReader(parametersJSON)).Decode(&output); err != nil {
 		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
-
-	result := make([]string, len(output.EmailNotify))
-	for i, r := range output.EmailNotify {
-		result[i] = r.Email
-	}
-	return result, nil
+	return output.EmailNotify, nil
 }
 
 // handleBuild processes a Build and sends appropriate notifications.
@@ -86,10 +85,10 @@ func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
 // history is a function that contacts gitiles to obtain the git history for
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
-func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
+func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc, lucicfg configInterface.Interface) error {
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
-	notifiers, err := config.LookupNotifiers(c, build.Builder.Project, builderID)
+	notifiers, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
 	if err != nil {
 		return errors.Annotate(err, "looking up notifiers").Err()
 	}
@@ -97,7 +96,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// No configurations were found, but we might need to generate notifications
 		// based on properties. Don't fall through to avoid storing build status for
 		// builds without configurations.
-		return Notify(c, d, notifiers, StatusUnknown, build)
+		return Notify(c, d, notifiers, StatusUnknown, build, lucicfg)
 	}
 
 	if len(build.Input.GetGitilesCommits()) == 0 {
@@ -118,7 +117,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			case err == datastore.ErrNoSuchEntity:
 				// Notify, but avoid on_change notification by setting Status to StatusUnknown.
 				builder.Status = StatusUnknown
-				if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+				if err := Notify(c, d, notifiers, builder.Status, build, lucicfg); err != nil {
 					return err
 				}
 				// Initialize the Builder in the datastore.
@@ -149,7 +148,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
 		// Notify about the build, but ignore on_change by creating a builder with an unknown status.
-		return Notify(c, d, notifiers, StatusUnknown, build)
+		return Notify(c, d, notifiers, StatusUnknown, build, lucicfg)
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -188,9 +187,9 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// Since on_change only occurs when Builder Status != StatusUnknown, set builder
 		// to a new builder with exactly this property.
 		if outOfOrder {
-			return Notify(c, d, notifiers, StatusUnknown, build)
+			return Notify(c, d, notifiers, StatusUnknown, build, lucicfg)
 		}
-		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+		if err := Notify(c, d, notifiers, builder.Status, build, lucicfg); err != nil {
 			return err
 		}
 		return datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build))
@@ -205,6 +204,7 @@ var errNotLUCIBuild = errors.New("not a LUCI build")
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
 func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 	c, h := ctx.Context, ctx.Writer
+	lucicfg := notifyConfig.NotifyInterface(c)
 	build, err := extractBuild(c, ctx.Request)
 	switch {
 	case err == errNotLUCIBuild:
@@ -214,7 +214,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 	case !build.Status.Completed():
 		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
 	default:
-		if err := handleBuild(c, d, build, gitilesHistory); err != nil {
+		if err := handleBuild(c, d, build, gitilesHistory, lucicfg); err != nil {
 			logging.WithError(err).Errorf(c, "error while notifying")
 			if transient.Tag.In(err) {
 				// Transient errors are 500 so that PubSub retries them.
@@ -229,7 +229,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
 type Build struct {
 	buildbucketpb.Build
-	EmailNotify []string
+	Destinations []EmailNotify
 }
 
 // extractBuild constructs a Build from the PubSub HTTP request.
@@ -266,7 +266,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "could not decode email_notify").Err()
 	}
-	build.EmailNotify = emails
+	build.Destinations = emails
 
 	return &build, nil
 }
