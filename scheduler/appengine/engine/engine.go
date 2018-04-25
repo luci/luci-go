@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -52,6 +53,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine/migration"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -641,7 +643,36 @@ func (e *engineImpl) GetAllProjects(c context.Context) ([]string, error) {
 // UpdateProjectJobs adds new, removes old and updates existing jobs.
 //
 // Part of the internal interface, doesn't check ACLs.
-func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error {
+func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, cdefs []catalog.Definition) error {
+	// Get v1 -> v2 migration settings.
+	eligibleForV2 := func(jobID string) bool { return false }
+	settings, err := migration.GetSettings(c)
+	if err != nil {
+		return err
+	}
+	if settings.EligibleJobs != "" {
+		re, err := regexp.Compile(settings.EligibleJobs)
+		if err == nil {
+			eligibleForV2 = re.MatchString
+		} else {
+			logging.Errorf(c, "Bad regexp %q in v2 migration settings, ignoring", settings.EligibleJobs)
+		}
+	}
+
+	// Attach the v2 migration flag to all definitions.
+	defs := make([]JobDefinition, len(cdefs))
+	for i, def := range cdefs {
+		defs[i] = JobDefinition{
+			Definition:    def,
+			EligibleForV2: eligibleForV2(def.JobID),
+		}
+		if defs[i].EligibleForV2 {
+			logging.Infof(c, "Job %q is eligible for v2", def.JobID)
+		} else {
+			logging.Infof(c, "Job %q is NOT eligible for v2", def.JobID)
+		}
+	}
+
 	// JobID -> *Job map.
 	existing, err := e.getProjectJobs(c, projectID)
 	if err != nil {
@@ -671,13 +702,14 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs
 			}
 		}
 		wg.Add(1)
-		go func(i int, def catalog.Definition) {
+		go func(i int, def JobDefinition) {
 			updateErrs.Assign(i, e.updateJob(c, def))
 			wg.Done()
 		}(i, def)
 	}
 
-	// Disable old jobs.
+	// Disable old jobs. Their v2 migration will happen when (and if) they are
+	// enabled back.
 	disableErrs := errors.NewLazyMultiError(len(toDisable))
 	for i, jobID := range toDisable {
 		wg.Add(1)
@@ -965,7 +997,7 @@ func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, 
 
 // updateJob updates an existing job if its definition has changed, adds
 // a completely new job or enables a previously disabled job.
-func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error {
+func (e *engineImpl) updateJob(c context.Context, def JobDefinition) error {
 	return e.jobTxn(c, def.JobID, func(c context.Context, job *Job, isNew bool) error {
 		if !isNew && job.Enabled && job.MatchesDefinition(def) {
 			return errSkipPut
@@ -985,6 +1017,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				Task:            def.Task,
 				State:           JobState{State: JobStateDisabled},
 				TriggeredJobIDs: def.TriggeredJobIDs,
+				EligibleForV2:   def.EligibleForV2,
 			}
 		}
 		oldEnabled := job.Enabled
@@ -999,6 +1032,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Schedule = def.Schedule
 		job.Task = def.Task
 		job.TriggeredJobIDs = def.TriggeredJobIDs
+		job.EligibleForV2 = def.EligibleForV2
 
 		// Kick off task queue tasks.
 		ctl := e.jobController(job.IsV2())
