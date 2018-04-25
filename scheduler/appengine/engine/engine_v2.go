@@ -85,7 +85,16 @@ func (ctl *jobControllerV2) onJobCronTick(c context.Context, job *Job, tick *int
 }
 
 func (ctl *jobControllerV2) onJobAbort(c context.Context, job *Job) (invs []int64, err error) {
-	return nil, nil
+	// onJobAbort is sometimes used manually to "reset" the job state if it got
+	// stuck for some reason. We initiate a triage for this purpose. This is not
+	// strictly necessary (but doesn't hurt either).
+	if err := ctl.eng.kickTriageLater(c, job.JobID, 0); err != nil {
+		return nil, err
+	}
+	// We just ask engine to abort all active invocations. This should cause them
+	// to eventually move to Aborted state, which will kick them out of
+	// ActiveInvocations list.
+	return job.ActiveInvocations, nil
 }
 
 func (ctl *jobControllerV2) onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error) {
