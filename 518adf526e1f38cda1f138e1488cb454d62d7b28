@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d93a42c0_d1773944",
+        "filename": "skylark/skylarkproto/testdata/int64.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-26T22:34:19Z",
+      "side": 1,
+      "message": "Could rename this to int.sky or ints.sky and use a different one of the integer SimpleFields in each case. Not too important though.",
+      "revId": "518adf526e1f38cda1f138e1488cb454d62d7b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c40b9d8_709a9066",
+        "filename": "skylark/skylarkproto/testdata/int_ranges.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-04-26T22:34:19Z",
+      "side": 1,
+      "message": "m \u003d testprotos.SimpleFields()? As is this relies on int64.sky\u0027s test of \"m.i64 \u003d None\" working.",
+      "revId": "518adf526e1f38cda1f138e1488cb454d62d7b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
