@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ceb489c4_a188e5c6",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T23:16:02Z",
+      "side": 1,
+      "message": "why not just \n\n  if lk.configSet \u003d\u003d configSet\n\nthat is the variable above. Then we don\u0027t need lPath",
+      "revId": "8a292e6a4fdf4f185ccdc7ed2af0b784945636bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11dcad75_eceef807",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T23:16:02Z",
+      "side": 1,
+      "message": "there is no need to copy config if all we need is its Path. please inline c",
+      "revId": "8a292e6a4fdf4f185ccdc7ed2af0b784945636bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1802def7_c8cc22f4",
+        "filename": "config/impl/memory/memory.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T23:16:02Z",
+      "side": 1,
+      "message": "nit: this line is not really necessarily. This is Go, so a nil map is a valid map for iteration:\n\n  for _, cfg :\u003d range m.sets[configSet] {",
+      "range": {
+        "startLine": 79,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 38
+      },
+      "revId": "8a292e6a4fdf4f185ccdc7ed2af0b784945636bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e884effa_28d1622e",
+        "filename": "config/impl/remote/remote.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T23:16:02Z",
+      "side": 1,
+      "message": "nit: files\n\nplease move to L133",
+      "range": {
+        "startLine": 128,
+        "startChar": 5,
+        "endLine": 128,
+        "endChar": 14
+      },
+      "revId": "8a292e6a4fdf4f185ccdc7ed2af0b784945636bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

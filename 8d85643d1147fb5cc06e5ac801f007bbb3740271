@@ -165,6 +165,24 @@
     },
     {
       "key": {
+        "uuid": "fceb1e4c_1a238a98",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T23:16:02Z",
+      "side": 1,
+      "message": "ok. Vadim said file system is very useful, so this is useful too. You could actually use file system impl when running luci-notify locally using `gae.py dev`",
+      "parentUuid": "f963e716_8b0c1792",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "125d0cd1_351c2877",
         "filename": "config/impl/filesystem/fs.go",
         "patchSetId": 9
