@@ -59,6 +59,10 @@ func (i erroringInterface) GetProjects(ctx context.Context) ([]config.Project, e
 	return nil, i.err
 }
 
+func (i erroringInterface) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
+	return nil, i.err
+}
+
 func (i erroringInterface) GetRefConfigs(ctx context.Context, path string, metaOnly bool) ([]config.Config, error) {
 	return nil, i.err
 }
