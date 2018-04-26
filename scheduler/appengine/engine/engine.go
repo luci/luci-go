@@ -53,6 +53,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/migration"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -678,6 +679,13 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, cdef
 	if err != nil {
 		return err
 	}
+
+	// Advance v2 conversion for jobs that are ready for it. This is best effort
+	// and doesn't block the rest of the update if fails.
+	if err = e.advanceV2Conversion(c, existing); err != nil {
+		logging.WithError(err).Warningf(c, "Failed to advance v2 migration")
+	}
+
 	// JobID -> new definition revision map.
 	updated := make(map[string]string, len(defs))
 	for _, def := range defs {
@@ -708,8 +716,7 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, cdef
 		}(i, def)
 	}
 
-	// Disable old jobs. Their v2 migration will happen when (and if) they are
-	// enabled back.
+	// Disable old jobs.
 	disableErrs := errors.NewLazyMultiError(len(toDisable))
 	for i, jobID := range toDisable {
 		wg.Add(1)
@@ -724,6 +731,100 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, cdef
 		return nil
 	}
 	return transient.Tag.Apply(errors.NewMultiError(updateErrs.Get(), disableErrs.Get()))
+}
+
+// advanceV2Conversion transactionally converts ready jobs to v2.
+//
+// It acts as a safety net if v2 conversions that normally happen during state
+// machine transitions are not happening (for example, if there are no state
+// machine transitions as is the case for disabled or paused jobs).
+func (e *engineImpl) advanceV2Conversion(c context.Context, jobs map[string]*Job) error {
+	return parallel.FanOutIn(func(tasks chan<- func() error) {
+		for _, job := range jobs {
+			if !canInitiateV2Conversion(job) {
+				continue
+			}
+			jobID := job.JobID
+			tasks <- func() error {
+				return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+					if isNew || !canInitiateV2Conversion(job) {
+						return errSkipPut
+					}
+					return e.rollSM(c, job, func(sm *StateMachine) error {
+						sm.MaybeConvertToV2()
+						return nil
+					})
+				})
+			}
+		}
+	})
+}
+
+// canInitiateV2Conversion returns true if the job is in a good state to be
+// converted to v2 via state machine transition MaybeConvertToV2().
+func canInitiateV2Conversion(job *Job) bool {
+	switch {
+	case job.IsV2():
+		return false // already fully converted
+	case job.State.State == JobStateConverting:
+		return false // already initiated the conversion
+	case !job.EligibleForV2:
+		return false // do not want to convert yet
+	case job.State.State == JobStateDisabled:
+		return true // disabled jobs can be converted right away without much fuzz
+	case job.State.State == JobStateScheduled:
+		return true // there's a tick pending, but we can convert it to v2
+	case job.State.State == JobStateSuspended:
+		return true // the job is paused, we can convert it to v2 easily
+	default:
+		// The rest of the states are tricky to deal with this way, StateMachine
+		// will eventually switch itself into JobStateConverting when it is ready.
+		return false
+	}
+}
+
+// convertToV2 converts the job to v2 format.
+//
+// It is called transactionally once the job enters JobStateConverting state.
+//
+// Mutates 'job' and returns nil on success. The job will be put back into
+// datastore in that case.
+func (e *engineImpl) convertToV2(c context.Context, job *Job, params ConvertToV2Action) error {
+	assertInTransaction(c)
+
+	job.ConvertedToV2 = true
+	job.Cron = cron.State{Enabled: job.Enabled, LastRewind: params.LastRewind}
+
+	// Disabled jobs do not have pending triggers or cron ticks.
+	if !job.Enabled {
+		return nil
+	}
+
+	// Convert the pending triggers to v2 format. Note that this is a cross-group
+	// transaction, but only one other entity group is involved (per dsset.Add
+	// guarantee), so it should be fine.
+	if len(params.PendingTriggers) != 0 {
+		if err := pendingTriggersSet(c, job.JobID).Add(c, params.PendingTriggers); err != nil {
+			logging.WithError(err).Errorf(c, "Failed to transfer v1 triggers to v2")
+			return err
+		}
+	}
+
+	// Initiate the new cron machine and kick it once so it emits a tick in v2
+	// format, if necessary.
+	err := pokeCron(c, job, e.cfg.Dispatcher, func(m *cron.Machine) error {
+		m.RescheduleTick()
+		return nil
+	})
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to kick new cron machine")
+		return err
+	}
+
+	// And finally make sure we have an initial triage scheduled in case none
+	// of the actions above added it. It is fine if they did, triages are
+	// idempotent.
+	return e.kickTriageLater(c, job.JobID, 0)
 }
 
 // ResetAllJobsOnDevServer forcefully resets state of all enabled jobs.
@@ -816,12 +917,16 @@ var errSkipPut = errors.New("errSkipPut")
 // back into datastore (unless the callback returns errSkipPut).
 func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallback) error {
 	c = logging.SetField(c, "JobID", jobID)
-	return runTxn(c, func(c context.Context) error {
+	wasV2 := false
+	nowV2 := false
+	err := runTxn(c, func(c context.Context) error {
+		wasV2, nowV2 = false, false // reset in case of txn retry
 		stored := Job{JobID: jobID}
 		err := ds.Get(c, &stored)
 		if err != nil && err != ds.ErrNoSuchEntity {
 			return transient.Tag.Apply(err)
 		}
+		wasV2 = stored.IsV2()
 		modified := stored // make a copy of Job struct
 		switch err = callback(c, &modified, err == ds.ErrNoSuchEntity); {
 		case err == errSkipPut:
@@ -829,10 +934,15 @@ func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallbac
 		case err != nil:
 			return err // a real error (transient or fatal)
 		case !modified.IsEqual(&stored):
+			nowV2 = modified.IsV2()
 			return transient.Tag.Apply(ds.Put(c, &modified))
 		}
 		return nil
 	})
+	if err == nil && !wasV2 && nowV2 {
+		logging.Infof(c, "The job was successfully converted to v2!")
+	}
+	return err
 }
 
 // rollSM is called under transaction to perform a single state machine step.
@@ -851,11 +961,12 @@ func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) 
 	now := clock.Now(c).UTC()
 	rnd := mathrand.Get(c)
 	sm := StateMachine{
-		State:    job.State,
-		Now:      now,
-		Schedule: sched,
-		Nonce:    func() int64 { return rnd.Int63() + 1 },
-		Context:  c,
+		State:         job.State,
+		Now:           now,
+		Schedule:      sched,
+		Nonce:         func() int64 { return rnd.Int63() + 1 },
+		EligibleForV2: job.EligibleForV2,
+		Context:       c,
 	}
 	// All errors returned by state machine transition changes are transient.
 	// Fatal errors (when we have them) should be reflected as a state changing
@@ -867,16 +978,26 @@ func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) 
 		return transient.Tag.Apply(err)
 	}
 	sm.Post()
-	if len(sm.Actions) != 0 {
-		if err := e.enqueueJobActions(c, job.JobID, sm.Actions); err != nil {
-			return err
-		}
-	}
+
 	if sm.State.State != job.State.State {
 		logging.Infof(c, "%s -> %s", job.State.State, sm.State.State)
 	}
 	job.State = sm.State
-	return nil
+
+	if len(sm.Actions) == 0 {
+		return nil
+	}
+
+	// ConvertToV2Action action is special. We execute it RIGHT NOW instead of
+	// enqueueing it to the task queue. We also skip all other actions if
+	// ConvertToV2Action was used, since they become nonsensical for v2 jobs.
+	for _, a := range sm.Actions {
+		if action, yep := a.(ConvertToV2Action); yep {
+			return e.convertToV2(c, job, action)
+		}
+	}
+
+	return e.enqueueJobActions(c, job.JobID, sm.Actions)
 }
 
 // isV2Job returns true if the given job is using v2 scheduler engine.
@@ -1021,6 +1142,7 @@ func (e *engineImpl) updateJob(c context.Context, def JobDefinition) error {
 				State:           JobState{State: JobStateDisabled},
 				TriggeredJobIDs: def.TriggeredJobIDs,
 				EligibleForV2:   def.EligibleForV2,
+				ConvertedToV2:   def.EligibleForV2, // new jobs start as v2 right away
 			}
 		}
 		oldEnabled := job.Enabled
@@ -1050,6 +1172,15 @@ func (e *engineImpl) updateJob(c context.Context, def JobDefinition) error {
 			if err := ctl.onJobScheduleChange(c, job); err != nil {
 				return err
 			}
+		}
+
+		// Switch v1 to v2 if possible. Otherwise it will happen during the next
+		// approriate rollSM(...) call or in advanceV2Conversion().
+		if canInitiateV2Conversion(job) {
+			return e.rollSM(c, job, func(sm *StateMachine) error {
+				sm.MaybeConvertToV2()
+				return nil
+			})
 		}
 		return nil
 	})
@@ -1607,6 +1738,10 @@ func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []*in
 			return errSkipPut
 		}
 		logging.Infof(c, "Triggered %d times", len(triggers))
+		if job.State.State == JobStateConverting {
+			logging.Warningf(c, "The job is being converted to v2, emitting triggers as v2")
+			return pendingTriggersSet(c, job.JobID).Add(c, triggers)
+		}
 		return e.rollSM(c, job, func(sm *StateMachine) error {
 			sm.OnNewTriggers(triggers)
 			return nil
