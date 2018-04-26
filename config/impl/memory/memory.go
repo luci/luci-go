@@ -70,6 +70,19 @@ func (m *memoryImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 	return nil, config.ErrNoConfig
 }
 
+func (m *memoryImpl) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
+	if err := m.err; err != nil {
+		return nil, err
+	}
+
+	var files []string
+	for _, cf := range m.sets[configSet] {
+		files = append(files, cf)
+	}
+	sort.Strings(files)
+	return files, nil
+}
+
 func (m *memoryImpl) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
 	if err := m.err; err != nil {
 		return "", err
@@ -174,7 +187,7 @@ func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, e
 	return out, nil
 }
 
-// configMaybe returns config.Config is such config is in the set, else nil.
+// configMaybe returns config.Config if such config is in the set, else nil.
 func (b Files) configMaybe(configSet config.Set, path string, metaOnly bool) *config.Config {
 	if body, ok := b[path]; ok {
 		cfg := &config.Config{

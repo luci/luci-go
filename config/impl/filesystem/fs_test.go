@@ -136,6 +136,12 @@ func TestFSImpl(t *testing.T) {
 				})
 			})
 
+			Convey("ListFiles", func() {
+				cfg, err := client.ListFiles(ctx, "projects/foobar")
+				So(err, ShouldBeNil)
+				So(cfg, ShouldResemble, []string{"something/file.cfg"})
+			})
+
 			Convey("GetConfigByHash", func() {
 				cont, err := client.GetConfigByHash(ctx, "v1:e42874cc28bbba410f56790c24bb6f33e73ab784")
 				So(err, ShouldBeNil)
