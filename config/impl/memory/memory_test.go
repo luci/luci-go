@@ -82,6 +82,15 @@ func TestMemoryImpl(t *testing.T) {
 			})
 		})
 
+		Convey("ListFiles", func() {
+			templates, err := impl.ListFiles(ctx, "projects/proj2")
+			So(err, ShouldBeNil)
+			So(templates, ShouldResemble, []string{
+				"project2 another file",
+				"project2 file",
+			})
+		})
+
 		Convey("GetConfig missing set", func() {
 			cfg, err := impl.GetConfig(ctx, "missing/set", "path", false)
 			So(cfg, ShouldBeNil)
