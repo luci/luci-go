@@ -46,6 +46,30 @@
       "revId": "97d5e3aef9a27ab888efbdda45bcc63f65542502",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4cf6cbc2_90a7efd5",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1115956
+      },
+      "writtenOn": "2018-04-26T11:08:01Z",
+      "side": 1,
+      "message": "You have my support also on how you made it now. In the future, an auto-resize solution would be most awesome.",
+      "parentUuid": "2b127937_f34937be",
+      "range": {
+        "startLine": 391,
+        "startChar": 2,
+        "endLine": 392,
+        "endChar": 19
+      },
+      "revId": "97d5e3aef9a27ab888efbdda45bcc63f65542502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
