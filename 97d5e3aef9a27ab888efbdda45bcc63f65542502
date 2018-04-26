@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7b733e8_9463ceb8",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1115956
+      },
+      "writtenOn": "2018-04-26T09:22:40Z",
+      "side": 1,
+      "message": "This means we always have 2px total between the builder items. Is it possible to shrink this to 1? On buildbot, the space between the columns adjusts to the horizontal space. While the top/bottome space stays the same and is larger.\n\nIMO only in one direction (either top/bottom or left/right) of a builder bubble the margins are needed in order to follow the gray/white lines.",
+      "range": {
+        "startLine": 391,
+        "startChar": 2,
+        "endLine": 392,
+        "endChar": 19
+      },
+      "revId": "97d5e3aef9a27ab888efbdda45bcc63f65542502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
