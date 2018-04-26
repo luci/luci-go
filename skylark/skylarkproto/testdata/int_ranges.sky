@@ -1,0 +1,82 @@
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+TWO_POW_63 = 9223372036854775808
+TWO_POW_31 = 2147483648
+
+m = testprotos.SimpleFields()
+
+# int64 max.
+m.i64 = TWO_POW_63 - 1  # still ok
+assert.eq(m.i64, TWO_POW_63 - 1)
+assert.eq(proto.to_pbtext(m), "i64: 9223372036854775807\n")
+def set_i64_large():
+  m.i64 = TWO_POW_63
+assert.fails(set_i64_large, "doesn't fit into int64")
+
+# int64 min.
+m.i64 = -TWO_POW_63  # still ok
+assert.eq(m.i64, -TWO_POW_63)
+assert.eq(proto.to_pbtext(m), "i64: -9223372036854775808\n")
+def set_i64_small():
+  m.i64 = -TWO_POW_63-1
+assert.fails(set_i64_small, "doesn't fit into int64")
+
+m.i64 = None  # reset 'm' for the next test
+
+# int32 max.
+m.i32 = TWO_POW_31 - 1  # still ok
+assert.eq(m.i32, TWO_POW_31 - 1)
+assert.eq(proto.to_pbtext(m), "i32: 2147483647\n")
+def set_i32_large():
+  m.i32 = TWO_POW_31
+assert.fails(set_i32_large, "doesn't fit into int32")
+
+# int32 min.
+m.i32 = -TWO_POW_31  # still ok
+assert.eq(m.i32, -TWO_POW_31)
+assert.eq(proto.to_pbtext(m), "i32: -2147483648\n")
+def set_i32_small():
+  m.i32 = -TWO_POW_31-1
+assert.fails(set_i32_small, "doesn't fit into int32")
+
+m.i32 = None  # reset 'm' for the next test
+
+# uint64 max.
+m.ui64 = 2*TWO_POW_63 - 1  # still ok
+assert.eq(m.ui64, 2*TWO_POW_63 - 1)
+assert.eq(proto.to_pbtext(m), "ui64: 18446744073709551615\n")
+def set_ui64_large():
+  m.ui64 = 2*TWO_POW_63
+assert.fails(set_ui64_large, "doesn't fit into uint64")
+
+# uint64 min.
+def set_ui64_small():
+  m.ui64 = -1
+assert.fails(set_ui64_small, "doesn't fit into uint64")
+
+m.ui64 = None  # reset 'm' for the next test
+
+# uint32 max.
+m.ui32 = 2*TWO_POW_31 - 1  # still ok
+assert.eq(m.ui32, 2*TWO_POW_31 - 1)
+assert.eq(proto.to_pbtext(m), "ui32: 4294967295\n")
+def set_ui32_large():
+  m.ui32 = 2*TWO_POW_31
+assert.fails(set_ui32_large, "doesn't fit into uint32")
+
+# uint32 min.
+def set_ui32_small():
+  m.ui32 = -1
+assert.fails(set_ui32_small, "doesn't fit into uint32")

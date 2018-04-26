@@ -16,10 +16,27 @@ package skylarkproto
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 
 	"github.com/google/skylark"
 )
+
+// intRanges describes ranges of integer types that can appear in *.pb.go code.
+//
+// Note that platform-dependent 'int' is not possible there, nor int16 or int8.
+// Only (s|u)int(32|64).
+var intRanges = map[reflect.Kind]struct {
+	signed      bool
+	minSigned   int64
+	maxSigned   int64
+	maxUnsigned uint64
+}{
+	reflect.Int32:  {true, math.MinInt32, math.MaxInt32, 0},
+	reflect.Uint32: {false, 0, 0, math.MaxUint32},
+	reflect.Int64:  {true, math.MinInt64, math.MaxInt64, 0},
+	reflect.Uint64: {false, 0, 0, math.MaxUint64},
+}
 
 // getAssigner returns a callback that can assign the given skylark value to
 // a go value of the given type, or an error if such assignment is not allowed
@@ -29,17 +46,60 @@ func getAssigner(typ reflect.Type, sv skylark.Value) (func(reflect.Value) error,
 	case skylark.NoneType:
 		return nil, fmt.Errorf("can't assign nil to a value of kind %q", typ.Kind())
 
-	case skylark.Int:
-		// TODO: add more simple types
-		asInt64, ok := val.Int64()
-		if !ok {
-			return nil, fmt.Errorf("the integer %s doesn't fit into int64", val)
-		}
-		if typ.Kind() != reflect.Int64 { // TODO: cast to other ints
-			return nil, fmt.Errorf("can't assign integer to a value of kind %q", typ.Kind())
+	case skylark.Bool:
+		if typ.Kind() != reflect.Bool {
+			return nil, fmt.Errorf("can't assign boolean to a value of kind %q", typ.Kind())
 		}
 		return func(gv reflect.Value) error {
-			gv.SetInt(asInt64)
+			gv.SetBool(bool(val))
+			return nil
+		}, nil
+
+	case skylark.Float:
+		if typ.Kind() != reflect.Float64 && typ.Kind() != reflect.Float32 {
+			return nil, fmt.Errorf("can't assign float to a value of kind %q", typ.Kind())
+		}
+		return func(gv reflect.Value) error {
+			gv.SetFloat(float64(val))
+			return nil
+		}, nil
+
+	case skylark.Int:
+		// Assigning integer to a float field? Cast to float first.
+		if typ.Kind() == reflect.Float64 || typ.Kind() == reflect.Float32 {
+			return getAssigner(typ, val.Float())
+		}
+		// Otherwise check that assigning to an int, and the value is in range.
+		intRange, ok := intRanges[typ.Kind()]
+		if !ok {
+			return nil, fmt.Errorf("can't assign integer to a value of kind %q", typ.Kind())
+		}
+		if intRange.signed {
+			asInt64, ok := val.Int64()
+			if !ok || asInt64 > intRange.maxSigned || asInt64 < intRange.minSigned {
+				return nil, fmt.Errorf("the integer %s doesn't fit into %s", val, typ.Kind())
+			}
+			return func(gv reflect.Value) error {
+				gv.SetInt(asInt64)
+				return nil
+			}, nil
+		} else {
+			asUint64, ok := val.Uint64()
+			if !ok || asUint64 > intRange.maxUnsigned || asUint64 < 0 {
+				return nil, fmt.Errorf("the integer %s doesn't fit into %s", val, typ.Kind())
+			}
+			return func(gv reflect.Value) error {
+				gv.SetUint(asUint64)
+				return nil
+			}, nil
+		}
+
+	case skylark.String:
+		if typ.Kind() != reflect.String {
+			return nil, fmt.Errorf("can't assign string to a value of kind %q", typ.Kind())
+		}
+		return func(gv reflect.Value) error {
+			gv.SetString(string(val))
 			return nil
 		}, nil
 

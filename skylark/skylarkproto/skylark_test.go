@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/google/skylark"
+	"github.com/google/skylark/resolve"
 	"github.com/google/skylark/skylarktest"
 
 	// Register proto types in the protobuf lib registry.
@@ -43,6 +44,12 @@ func init() {
 		}
 		panic(fmt.Sprintf("could not find %s", rel))
 	}
+
+	// Enable not-yet-standard features.
+	resolve.AllowLambda = true
+	resolve.AllowNestedDef = true
+	resolve.AllowFloat = true
+	resolve.AllowSet = true
 }
 
 // TestAllSkylark loads and executes all test scripts (testdata/*.sky).

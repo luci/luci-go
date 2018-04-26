@@ -25,20 +25,17 @@ import (
 // the given Go type.
 func newDefaultValue(typ reflect.Type) (skylark.Value, error) {
 	switch typ.Kind() {
-	case reflect.Int,
-		reflect.Int8,
-		reflect.Int16,
-		reflect.Int32,
-		reflect.Int64,
-		reflect.Uint,
-		reflect.Uint16,
-		reflect.Uint32,
-		reflect.Uint64:
+	case reflect.Bool:
+		return skylark.False, nil
+
+	case reflect.Float32, reflect.Float64:
+		return skylark.Float(0), nil
+
+	case reflect.Int32, reflect.Int64, reflect.Uint32, reflect.Uint64:
 		return skylark.MakeInt(0), nil
 
-	case reflect.Slice:
-		// TODO: detect []byte as special
-		return skylark.NewList(nil), nil
+	case reflect.String:
+		return skylark.String(""), nil
 
 	case reflect.Ptr: // a message field
 		t, err := GetMessageType(typ)
@@ -46,6 +43,10 @@ func newDefaultValue(typ reflect.Type) (skylark.Value, error) {
 			return nil, fmt.Errorf("can't instantiate value for go type %q - %s", typ, err)
 		}
 		return NewMessage(t), nil
+
+	case reflect.Slice:
+		// TODO: detect []byte as special
+		return skylark.NewList(nil), nil
 	}
 
 	return nil, fmt.Errorf("do not know how to instantiate skylark value for go type %q", typ)
