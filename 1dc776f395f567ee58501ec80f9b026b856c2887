@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bab0d449_5ac1f842",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "There are multiple things named swarming, so something has to give\n\nOtherwise, \"swarmingAPI\" makes sense.",
+      "parentUuid": "ba71fd5a_2a399722",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "44f79721_29c5197e",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -45,6 +69,30 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db5d6735_d0be6593",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44f79721_29c5197e",
+      "range": {
+        "startLine": 44,
+        "startChar": 3,
+        "endLine": 44,
+        "endChar": 51
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f1968fc1_1f863af7",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89c70078_acdb20f5",
+      "range": {
+        "startLine": 46,
+        "startChar": 38,
+        "endLine": 46,
+        "endChar": 41
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "10758597_a99d2550",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -91,6 +163,30 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1152451_61cc0f9b",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10758597_a99d2550",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 30
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "f668dffd_fa7238fc",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abdd9231_f379ad3a",
+      "range": {
+        "startLine": 54,
+        "startChar": 36,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "79ee5652_0ee82e17",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -137,6 +257,30 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d08bec3_709dde6a",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "79ee5652_0ee82e17",
+      "range": {
+        "startLine": 55,
+        "startChar": 56,
+        "endLine": 55,
+        "endChar": 76
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "58b1cd46_79170687",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9fdd19c_0508ed84",
+      "range": {
+        "startLine": 59,
+        "startChar": 27,
+        "endLine": 59,
+        "endChar": 31
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7cca72a_7195907b",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -177,6 +345,24 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fbce0b8_5f1b744f",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7cca72a_7195907b",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "664617d4_8e3f4678",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "d7dc52b4_f7d8c5d6",
+      "range": {
+        "startLine": 65,
+        "startChar": 29,
+        "endLine": 65,
+        "endChar": 75
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "71329e7c_8f7f54dc",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -220,6 +430,24 @@
     },
     {
       "key": {
+        "uuid": "bdc47fd2_d9ba6b53",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "71329e7c_8f7f54dc",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21bb0b07_0034a134",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -234,6 +462,24 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b9377f3_5b5978f9",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Actually you don\u0027t even need another loop.",
+      "parentUuid": "21bb0b07_0034a134",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -260,6 +506,30 @@
     },
     {
       "key": {
+        "uuid": "b161edbf_ff39c59a",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "961c8bb5_8291bda6",
+      "range": {
+        "startLine": 86,
+        "startChar": 5,
+        "endLine": 86,
+        "endChar": 14
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae9ce74f_f36a418f",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -280,6 +550,30 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9eeceaf6_ac9bd340",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Removed, logic will be in the presentation layer.",
+      "parentUuid": "ae9ce74f_f36a418f",
+      "range": {
+        "startLine": 100,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 76
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -306,6 +600,30 @@
     },
     {
       "key": {
+        "uuid": "dfb26ded_549583d7",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "19cd84df_6bd08ec4",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 116,
+        "endChar": 46
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a23cb7a9_83aadaed",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -326,6 +644,30 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3de8d12_d6a32aff",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "It\u0027s just less code.  Parsing out the map of hostname -\u003e swarming client requires an extra variable and 3-5 lines of code, plus passing an extra parameter into this function.\n\nThey all use the same Roundtripper in the same context anyways, which should take care of all the connection reuse.\n\nhttps://golang.org/pkg/net/http/#RoundTripper\n\"[The default roundtripper] establishes network connections as needed and caches them for reuse by subsequent calls\"",
+      "parentUuid": "a23cb7a9_83aadaed",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 0
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -352,6 +694,30 @@
     },
     {
       "key": {
+        "uuid": "3fee30c3_7e0317d6",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d20e7d1b_8a76868d",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 5
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6dffcd8a_1e9dc693",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -375,6 +741,30 @@
     },
     {
       "key": {
+        "uuid": "168d5726_b833ab18",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6dffcd8a_1e9dc693",
+      "range": {
+        "startLine": 151,
+        "startChar": 72,
+        "endLine": 151,
+        "endChar": 73
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c82796a8_b7cd6247",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -392,6 +782,24 @@
     },
     {
       "key": {
+        "uuid": "2258f48c_2104c351",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c82796a8_b7cd6247",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59b00dc8_2cd384d9",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -406,6 +814,24 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87d09020_6e3bc650",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59b00dc8_2cd384d9",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -432,6 +858,30 @@
     },
     {
       "key": {
+        "uuid": "449c077b_592b8136",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a301edf5_ea33adaa",
+      "range": {
+        "startLine": 51,
+        "startChar": 26,
+        "endLine": 51,
+        "endChar": 30
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a705a1a3_43b97fca",
         "filename": "milo/common/model/bots.go",
         "patchSetId": 10
@@ -452,6 +902,30 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d98b7c0_6cf744b3",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a705a1a3_43b97fca",
+      "range": {
+        "startLine": 74,
+        "startChar": 49,
+        "endLine": 74,
+        "endChar": 59
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -478,6 +952,30 @@
     },
     {
       "key": {
+        "uuid": "fec442d0_b33882d4",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "369e0a2d_3b726976",
+      "range": {
+        "startLine": 81,
+        "startChar": 52,
+        "endLine": 81,
+        "endChar": 55
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dccb779e_0d69d21f",
         "filename": "milo/common/model/bots.go",
         "patchSetId": 10
@@ -501,6 +999,30 @@
     },
     {
       "key": {
+        "uuid": "5bb27e15_ece512f5",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dccb779e_0d69d21f",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 9
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "378d312d_574a053d",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 10
@@ -512,6 +1034,30 @@
       "writtenOn": "2018-04-26T15:14:44Z",
       "side": 1,
       "message": "this unnecessarily stores the entity kind of the pool entity. Is this necessary? why not store just the hash",
+      "range": {
+        "startLine": 76,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 23
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36cc6ea5_d90b4a93",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "It\u0027s not strictly necessary, but we are explicitly referring to a BotPool entity.  Besides, there\u0027s a niftly little feature in the datastore viewer where because this is a datastore.Key, clicking on it will take you to the referenced entity.",
+      "parentUuid": "378d312d_574a053d",
       "range": {
         "startLine": 76,
         "startChar": 9,
@@ -547,6 +1093,30 @@
     },
     {
       "key": {
+        "uuid": "2064f821_6fa3f7f2",
+        "filename": "milo/frontend/cron.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11e55fa0_9bae87a3",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 12
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59ff66dd_534a4361",
         "filename": "milo/frontend/cron.go",
         "patchSetId": 10
@@ -561,6 +1131,24 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2503993d_35f93f16",
+        "filename": "milo/frontend/cron.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-26T23:21:59Z",
+      "side": 1,
+      "message": "Hm actually yeah then this file can be deleted alltogether.",
+      "parentUuid": "59ff66dd_534a4361",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
