@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5375bb60_a22505c7",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1741,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-26T04:03:56Z",
+      "side": 1,
+      "message": "I\u0027m not sure this is reachable, since ConvertToV2 action is handled in the same transaction that emits it (so in theory job.IsV2() and job.State.State \u003d\u003d JobStateConverting are never observed at the same time from outside), but figured better safe than sorry...",
+      "range": {
+        "startLine": 1741,
+        "startChar": 5,
+        "endLine": 1741,
+        "endChar": 42
+      },
+      "revId": "f1ce42c940968707d1cafbacae404b99d919421f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
