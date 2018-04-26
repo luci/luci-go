@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/router"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -34,6 +35,23 @@ type server struct {
 	//
 	// This is provided for testing purposes.
 	resultLimit int
+}
+
+var logServerKey = "log server key"
+
+func WithServer(c context.Context, svr logdog.LogsServer) context.Context {
+	return context.WithValue(c, &logServerKey, svr)
+}
+
+func UseServer(svr logdog.LogsServer) router.Middleware {
+	return func(ctx *router.Context, next router.Handler) {
+		ctx.Context = WithServer(ctx.Context, svr)
+		next(ctx)
+	}
+}
+
+func GetServer(c context.Context) logdog.LogsServer {
+	return c.Value(&logServerKey).(logdog.LogsServer)
 }
 
 // New creates a new authenticating LogsServer instance.
