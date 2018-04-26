@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9b721969_dbcedc18",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 805,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-26T17:34:36Z",
+      "side": 1,
+      "message": "Yes. IIUC, the more groups involved, the slower the transaction (and higher chance of failure). But two groups should be fine...",
+      "parentUuid": "0f0aa631_c141929e",
+      "range": {
+        "startLine": 805,
+        "startChar": 22,
+        "endLine": 805,
+        "endChar": 36
+      },
+      "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1fd15e80_f797a403",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01cf62fc_45c40300",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 813,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-26T17:34:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1fd15e80_f797a403",
+      "range": {
+        "startLine": 813,
+        "startChar": 57,
+        "endLine": 813,
+        "endChar": 61
+      },
+      "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -91,6 +139,30 @@
       "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2350f48e_a24c1a35",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-26T17:34:36Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "947e2e37_98cc94dc",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 72
+      },
+      "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
