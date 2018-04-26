@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "f39a00aa_34d93e2b",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7328ce25_3eee0932",
+      "range": {
+        "startLine": 447,
+        "startChar": 10,
+        "endLine": 447,
+        "endChar": 36
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7776100c_359e3978",
         "filename": "config/impl/filesystem/fs.go",
         "patchSetId": 9
@@ -85,6 +109,24 @@
       "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd474909_9218cbae",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7776100c_359e3978",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +147,24 @@
     },
     {
       "key": {
+        "uuid": "f963e716_8b0c1792",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "There is no real rationale at this point other than a narrow focus without consideration of services in this context.  \n\nRather than removing it at this point, I\u0027m going to leave it as a viable option for the interface and someone can remove it if deemed not needed down the road.",
+      "parentUuid": "803c975f_12aa7e92",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "125d0cd1_351c2877",
         "filename": "config/impl/filesystem/fs.go",
         "patchSetId": 9
@@ -119,6 +179,24 @@
       "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "241903b3_794ed018",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Yeah, I had added this during testing and realized I didn\u0027t need it but forgot to remove it.  \n\nFixed.",
+      "parentUuid": "125d0cd1_351c2877",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -145,6 +223,30 @@
     },
     {
       "key": {
+        "uuid": "ec8fdddc_41c31ca1",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 464,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc57087b_0d296383",
+      "range": {
+        "startLine": 461,
+        "startChar": 5,
+        "endLine": 464,
+        "endChar": 22
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d2a4efd_1f6f0801",
         "filename": "config/impl/memory/memory.go",
         "patchSetId": 9
@@ -168,6 +270,30 @@
     },
     {
       "key": {
+        "uuid": "1a09a1c4_c8c80bb4",
+        "filename": "config/impl/memory/memory.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d2a4efd_1f6f0801",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 14
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3265e58b_92baad93",
         "filename": "config/impl/memory/memory.go",
         "patchSetId": 9
@@ -185,6 +311,24 @@
     },
     {
       "key": {
+        "uuid": "d259c5e3_41182a2f",
+        "filename": "config/impl/memory/memory.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "I was trying to avoid getting to close to reserve words but frankly templates is just as close.\n\nFixed throughout.",
+      "parentUuid": "3265e58b_92baad93",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1431a9d2_270ee81e",
         "filename": "config/impl/memory/memory_test.go",
         "patchSetId": 9
@@ -199,6 +343,24 @@
       "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca8ee1c4_be54e55f",
+        "filename": "config/impl/memory/memory_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Good catch.  \n\nFixed.",
+      "parentUuid": "1431a9d2_270ee81e",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -225,6 +387,30 @@
     },
     {
       "key": {
+        "uuid": "5f6cd945_70ec830b",
+        "filename": "config/impl/remote/remote.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69cee853_6c8ca1d4",
+      "range": {
+        "startLine": 129,
+        "startChar": 44,
+        "endLine": 129,
+        "endChar": 63
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69db8c68_47f52feb",
         "filename": "config/impl/remote/remote.go",
         "patchSetId": 9
@@ -239,6 +425,24 @@
       "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58c4af38_9cd8a937",
+        "filename": "config/impl/remote/remote.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Ha, you found a clue as to how I was validating the results.  This was not intended to be left. \n\nFixed.",
+      "parentUuid": "69db8c68_47f52feb",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -262,6 +466,30 @@
       "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc98c46e_6b823d05",
+        "filename": "config/interface.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-04-26T22:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c403a4f_0d5a305e",
+      "range": {
+        "startLine": 151,
+        "startChar": 46,
+        "endLine": 151,
+        "endChar": 53
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
