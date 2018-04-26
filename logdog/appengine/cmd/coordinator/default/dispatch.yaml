@@ -33,6 +33,9 @@ dispatch:
   - url: "*/prpc/logdog.Logs/*"
     service: logs
 
+  - url: "*/logs/*"
+    service: logs
+
   ##
   # Always route logdog.Services and logdog.Registration RPCs to the "services"
   # module.
