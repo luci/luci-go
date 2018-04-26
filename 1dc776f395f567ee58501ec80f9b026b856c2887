@@ -1,0 +1,566 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba71fd5a_2a399722",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "nit: i find sv1 a bit cryptic. there is only one version of swarming api, so not sure explicitly including version number in the package alias is useful",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44f79721_29c5197e",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "false?",
+      "range": {
+        "startLine": 44,
+        "startChar": 3,
+        "endLine": 44,
+        "endChar": 51
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89c70078_acdb20f5",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "unused",
+      "range": {
+        "startLine": 46,
+        "startChar": 38,
+        "endLine": 46,
+        "endChar": 41
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10758597_a99d2550",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "nit: this allocates an empty slice with 0 capacity and will be thrown away if at least one builder is there\n\n  var result []fullBuilderPool",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 30
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abdd9231_f379ad3a",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "BuilderSummaryKind",
+      "range": {
+        "startLine": 54,
+        "startChar": 36,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79ee5652_0ee82e17",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "this reads like it returns a datastore key, but in fact it returns an id. Please rename to something that indicates it returns an id, e.g. PoolID",
+      "range": {
+        "startLine": 55,
+        "startChar": 56,
+        "endLine": 55,
+        "endChar": 76
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9fdd19c_0508ed84",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "nit: the is the only place where the variable is read. Inline?",
+      "range": {
+        "startLine": 59,
+        "startChar": 27,
+        "endLine": 59,
+        "endChar": 31
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7cca72a_7195907b",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "if we save builder pools to datastore here, and just return pool descriptors, then we don\u0027t need fullBuilderPool type",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7dc52b4_f7d8c5d6",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "\"set of pool ids in p\"\n\nset implies unique\nthis function accepts fullBuilderPools, not BuilderPools",
+      "range": {
+        "startLine": 65,
+        "startChar": 29,
+        "endLine": 65,
+        "endChar": 75
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71329e7c_8f7f54dc",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "not sure what this means in addition to what the prev statement already means",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21bb0b07_0034a134",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "this result is not deterministic because of the map iteration\n\nperhaps the whole thing would be simpler if we kept a stringset of seen pool ids and added to the result only if we didn\u0027t see id of a given pool yet. That would be one loop.",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "961c8bb5_8291bda6",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "nit: parseBot\n\nwhen I read this name, I thought it is scoped to bot status",
+      "range": {
+        "startLine": 86,
+        "startChar": 5,
+        "endLine": 86,
+        "endChar": 14
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae9ce74f_f36a418f",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "swarming has decided that it won\u0027t have this 5min heuristic. I wonder if the reasoning behind that decision applies to milo as well? to me, it seems either this heuristic should be at the swarming level, or higher in the stack, perhaps at the user-level. If a user sees that a bot is dead for 1m, that\u0027s fine.\n\nregardless, this is wrong place to do the comparison with now because it is a cron job. It means that if a cron job is stuck or something, a user might see seen 1h ago and busy. If we decide that milo must have his heuristic (which I am not sure about), it should be in the presentation layer",
+      "range": {
+        "startLine": 100,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 76
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19cd84df_6bd08ec4",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "this assumes that this is the start of the cron job, which is not true: we\u0027ve already spent time fetching builders.\nBesides, our middleware already sets timeouts?",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 116,
+        "endChar": 46
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a23cb7a9_83aadaed",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "why are we creating a swarming client per pool instead of reusing one client?",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 0
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d20e7d1b_8a76868d",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "nit: maybe call this bot and call the bot from swarming \"botInfo\"",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 5
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dffcd8a_1e9dc693",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "nit: periods in the end of sentences",
+      "range": {
+        "startLine": 151,
+        "startChar": 72,
+        "endLine": 151,
+        "endChar": 73
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c82796a8_b7cd6247",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "we could just save pools here. then you don\u0027t need to return them or have the L186 loop or L175 comment",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59b00dc8_2cd384d9",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "perhaps not needed",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a301edf5_ea33adaa",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "sha1 is considered insecure\nmaybe sha256?",
+      "range": {
+        "startLine": 51,
+        "startChar": 26,
+        "endLine": 51,
+        "endChar": 30
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a705a1a3_43b97fca",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "what is BotPoolKey? I think you meant (PoolDescriptor).PoolKey() or Descriptor.PoolKey()",
+      "range": {
+        "startLine": 74,
+        "startChar": 49,
+        "endLine": 74,
+        "endChar": 59
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "369e0a2d_3b726976",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "their?\notherwise this reads like status of the slice",
+      "range": {
+        "startLine": 81,
+        "startChar": 52,
+        "endLine": 81,
+        "endChar": 55
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dccb779e_0d69d21f",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "why is this type needed? it does not have methods",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 9
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "378d312d_574a053d",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "this unnecessarily stores the entity kind of the pool entity. Is this necessary? why not store just the hash",
+      "range": {
+        "startLine": 76,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 23
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11e55fa0_9bae87a3",
+        "filename": "milo/frontend/cron.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "nit: maybe put it into the if statement",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 12
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59ff66dd_534a4361",
+        "filename": "milo/frontend/cron.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T15:14:44Z",
+      "side": 1,
+      "message": "instead of having a type, a method and a var per handler, i think it would be simpler to have a function that accepts a handler that return an error and returns a handlers that does not an error, like https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/frontend/routes.go?q\u003droutes.go\u0026sq\u003dpackage:chromium\u0026l\u003d241",
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
