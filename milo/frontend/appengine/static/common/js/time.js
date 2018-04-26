@@ -43,7 +43,7 @@
     if (!st.isValid()) {
       return null;
     }
-    var hover = st.format("[Started: ] YYYY-MM-DD LT (z)");
+    var hover = st.format("[Started: ] YYYY-MM-DD LTS (z)");
     hover += "\nEnded: ";
     if (end == null) {
       hover += "N/A";
@@ -52,7 +52,7 @@
       if (!et.isValid()) {
         return null
       }
-      hover += et.format("YYYY-MM-DD LT (z)");
+      hover += et.format("YYYY-MM-DD LTS (z)");
     }
     return hover;
   }
