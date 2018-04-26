@@ -70,6 +70,30 @@
       "revId": "97d5e3aef9a27ab888efbdda45bcc63f65542502",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a6fab222_8f3adc78",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-26T11:57:15Z",
+      "side": 1,
+      "message": "Btw, this particular rule only controls the top line of the builder bubbles, not the build bubbles that are instead controlled by the .console-cell-* rules below.",
+      "parentUuid": "4cf6cbc2_90a7efd5",
+      "range": {
+        "startLine": 391,
+        "startChar": 2,
+        "endLine": 392,
+        "endChar": 19
+      },
+      "revId": "97d5e3aef9a27ab888efbdda45bcc63f65542502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
