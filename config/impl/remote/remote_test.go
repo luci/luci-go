@@ -78,6 +78,32 @@ func TestRemoteCalls(t *testing.T) {
 				Content: "hi",
 			})
 		})
+		Convey("ListFiles", func() {
+			server, remoteImpl := testTools(200,
+				map[string]interface{}{
+					"config_sets": []interface{}{
+						map[string]interface{}{
+							"files": []interface{}{
+								map[string]interface{}{
+									"path": "first.template",
+								},
+								map[string]interface{}{
+									"path": "second.template",
+								},
+							},
+							"config_set": "a",
+						},
+					},
+				},
+			)
+			defer server.Close()
+
+			res, err := remoteImpl.ListFiles(ctx, "a")
+
+			fmt.Println("Response: ", res)
+			So(err, ShouldBeNil)
+			So(res, ShouldResemble, []string{"first.template", "second.template"})
+		})
 		Convey("GetConfigByHash", func() {
 			server, remoteImpl := testTools(200, map[string]string{
 				"content": encodeToB("content"),

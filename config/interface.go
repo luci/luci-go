@@ -147,4 +147,7 @@ type Interface interface {
 
 	// GetRefs returns the list of refs for a project.
 	GetRefs(ctx context.Context, projectID string) ([]string, error)
+
+	// ListFiles returns the list of files for a config set.
+	ListFiles(ctx context.Context, configSet Set) ([]string, error)
 }

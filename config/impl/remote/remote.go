@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
@@ -117,6 +118,26 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 		},
 		Content: string(decoded),
 	}, nil
+}
+
+func (r *remoteImpl) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
+	srv, err := r.service(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := srv.GetConfigSets().ConfigSet(string(configSet)).IncludeFiles(true).Context(ctx).Do()
+	if err != nil {
+		return nil, apiErr(err)
+	}
+	var files []string
+	for _, cs := range resp.ConfigSets {
+		for _, fs := range cs.Files {
+			files = append(files, fs.Path)
+		}
+	}
+	sort.Strings(files)
+	return files, nil
 }
 
 func (r *remoteImpl) GetConfigByHash(ctx context.Context, configSet string) (string, error) {
