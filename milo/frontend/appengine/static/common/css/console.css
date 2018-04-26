@@ -18,6 +18,7 @@
 .console-column {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .console-row {
@@ -288,7 +289,7 @@
   border-left: 1px solid silver;
   border-right: 1px solid silver;
   border-bottom: 1px solid transparent;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
   align-items: center;
   justify-content: center;
@@ -378,7 +379,7 @@
 .console-builder-item {
   display: flex;
   border: 1px solid silver;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
   text-decoration: none;
   align-items: center;
@@ -416,7 +417,7 @@
 
 .console-cell, .console-cell-top, .console-cell-middle, .console-cell-bottom {
   display: flex;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
   border-radius: 0.5em;
   border-width: 1px;
@@ -438,7 +439,7 @@
 
 .collapsed .console-cell-top {
   display: flex;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
   border-bottom-left-radius: unset;
   border-bottom-right-radius: unset;
@@ -451,7 +452,7 @@
 
 .collapsed .console-cell-middle {
   display: flex;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
   border-width: 1px;
   border-style: solid;
@@ -473,7 +474,7 @@
 
 .collapsed .console-cell-bottom {
   display: flex;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
   border-bottom-left-radius: 0.5em;
   border-bottom-right-radius: 0.5em;
@@ -489,7 +490,7 @@
   display: flex;
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 0.5em;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
 }
 
