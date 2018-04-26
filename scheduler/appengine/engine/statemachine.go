@@ -82,6 +82,10 @@ const (
 	// an overrun: the job's new invocation should have been started by now, but
 	// the previous one is still sitting in the queue.
 	JobStateSlowQueue StateKind = "SLOW_QUEUE"
+
+	// JobStateConverting indicates this state machine is stopping and being
+	// replaced with v2 state machine. This is terminal state.
+	JobStateConverting StateKind = "CONVERTING_TO_V2"
 )
 
 // JobState contains the current state of a job state machine.
@@ -212,6 +216,19 @@ type EnqueueBatchOfTriggersAction struct {
 // IsAction makes EnqueueBatchOfTriggersAction implement Action interface.
 func (a EnqueueBatchOfTriggersAction) IsAction() bool { return true }
 
+// ConvertToV2Action instructs the engine to transform the job into v2,
+// moving the relevant state (in particular triggers) from v1 to v2 format.
+//
+// This struct carries all the state to transfer from v1 to v2. It will be
+// passed as is to Engine.covertToV2(...).
+type ConvertToV2Action struct {
+	LastRewind      time.Time           // last time cron tick happened
+	PendingTriggers []*internal.Trigger // deserialized State.PendingTriggersRaw
+}
+
+// IsAction makes ConvertToV2Action implement Action interface.
+func (a ConvertToV2Action) IsAction() bool { return true }
+
 // StateMachine advances state of some single scheduler job. It performs
 // a single step only (one On* call). As input it takes the state of the job and
 // state of the world (the schedule is considered to be a part of the world
@@ -228,9 +245,10 @@ func (a EnqueueBatchOfTriggersAction) IsAction() bool { return true }
 // DISABLED -> SCHEDULED -> QUEUED -> QUEUED (starting) -> RUNNING -> SCHEDULED
 type StateMachine struct {
 	// Inputs.
-	Now      time.Time          // current time
-	Schedule *schedule.Schedule // knows when to run the job next time
-	Nonce    func() int64       // produces a series of nonces on demand
+	Now           time.Time          // current time
+	Schedule      *schedule.Schedule // knows when to run the job next time
+	Nonce         func() int64       // produces a series of nonces on demand
+	EligibleForV2 bool               // true if the job should become v2 ASAP
 
 	// Mutated.
 	State           JobState            // state of the job, mutated in On* methods
@@ -259,6 +277,9 @@ func (m *StateMachine) Post() {
 // OnJobEnabled happens when a new job (never seen before) was discovered or
 // a previously disabled job was enabled.
 func (m *StateMachine) OnJobEnabled() {
+	if m.State.State == JobStateConverting || m.MaybeConvertToV2() {
+		return
+	}
 	if m.State.State == JobStateDisabled {
 		m.State = JobState{State: JobStateScheduled} // clean state
 		m.scheduleTick()
@@ -269,6 +290,9 @@ func (m *StateMachine) OnJobEnabled() {
 // OnJobDisabled happens when job was disabled or removed. It clears the state
 // and cancels any pending invocations (running ones continue to run though).
 func (m *StateMachine) OnJobDisabled() {
+	if m.State.State == JobStateConverting || m.MaybeConvertToV2() {
+		return
+	}
 	m.State = JobState{State: JobStateDisabled} // clean state
 }
 
@@ -276,6 +300,8 @@ func (m *StateMachine) OnJobDisabled() {
 func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	// Skip unexpected, late or canceled ticks.
 	switch {
+	case m.State.State == JobStateConverting:
+		return nil
 	case m.State.State == JobStateDisabled:
 		return nil
 	case m.State.State == JobStateSuspended:
@@ -283,6 +309,9 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	case m.State.TickNonce != tickNonce:
 		return nil
 	}
+
+	// Note regarding v2 conversion: we attempt the conversion once an invocation
+	// finishes. Do not touch anything here.
 
 	// Report error (to trigger retry) if the tick happened unexpectedly soon.
 	// Absolute schedules may report "wrong" next tick time if asked for a next
@@ -370,6 +399,9 @@ func (m *StateMachine) OnInvocationDone(invocationID int64) {
 // OnNewTriggers happens when some other job sends triggers to this one.
 // Thus, when this happens is uncorrelated to specific states of this job.
 func (m *StateMachine) OnNewTriggers(newTriggers []*internal.Trigger) {
+	if m.State.State == JobStateConverting {
+		return
+	}
 	known := stringset.New(len(m.PendingTriggers))
 	for _, t := range m.PendingTriggers {
 		known.Add(t.Id)
@@ -379,12 +411,18 @@ func (m *StateMachine) OnNewTriggers(newTriggers []*internal.Trigger) {
 			m.PendingTriggers = append(m.PendingTriggers, nt)
 		}
 	}
-	m.maybeSuspendOrResume()
+	if !m.MaybeConvertToV2() {
+		m.maybeSuspendOrResume()
+	}
 }
 
 // OnScheduleChange happens when job's schedule changes (and the job potentially
 // needs to be rescheduled).
 func (m *StateMachine) OnScheduleChange() {
+	if m.State.State == JobStateConverting {
+		return
+	}
+
 	// Do not touch timers on disabled jobs.
 	if m.State.State == JobStateDisabled {
 		return
@@ -424,6 +462,9 @@ func (m *StateMachine) OnScheduleChange() {
 // Manual invocation only works if the job is currently not running or not
 // queued for run (i.e. it is in Scheduled state waiting for a timer tick).
 func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
+	if m.State.State == JobStateConverting {
+		return errors.New("the job is being converted to v2")
+	}
 	if m.State.State != JobStateScheduled && m.State.State != JobStateSuspended {
 		return errors.New("the job is already running or about to start")
 	}
@@ -437,10 +478,47 @@ func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
 
 // OnManualAbort happens when users aborts the queued or running invocation.
 func (m *StateMachine) OnManualAbort() {
+	if m.State.State == JobStateConverting {
+		return
+	}
 	// Pretend that it is finished. InvocationNonce is not 0 only if an invocation
 	// is running or queued.
 	if m.State.InvocationNonce != 0 {
 		m.invocationFinished()
+	}
+}
+
+// MaybeConvertToV2 examines the current state and switches it terminal
+// CONVERTING_TO_V2 state if possible, emitting an action that does the rest of
+// the transition. Returns true if it did indeed initiated the conversion.
+func (m *StateMachine) MaybeConvertToV2() bool {
+	switch {
+	case m.State.State == JobStateConverting:
+		return false // already converting
+	case !m.EligibleForV2:
+		return false // do not want to convert
+	case m.State.State == JobStateDisabled:
+		// Disabled jobs can be converted right away, no state to transfer to v2.
+		m.emitAction(ConvertToV2Action{})
+		m.State.State = JobStateConverting
+		return true
+	case m.State.State == JobStateScheduled || m.State.State == JobStateSuspended:
+		// For jobs in-between invocations we transfer their cron state and all
+		// pending triggers.
+		m.emitAction(ConvertToV2Action{
+			// Note: do not transfer TickTime, since we want v2 cron machine to
+			// reissue the tick. Knowing LastRewind time it sufficient to figure
+			// out when the next tick should happen.
+			LastRewind:      m.State.PrevTime,
+			PendingTriggers: m.PendingTriggers,
+		})
+		m.State.State = JobStateConverting
+		m.PendingTriggers = nil // clear it to reduce the entity size
+		return true
+	default:
+		// Skip all other states. Eventually the job will end up in some state
+		// we understand.
+		return false
 	}
 }
 
@@ -449,6 +527,9 @@ func (m *StateMachine) OnManualAbort() {
 // scheduleTick emits TickLaterAction action according to job's schedule. Does
 // nothing if the tick is already scheduled.
 func (m *StateMachine) scheduleTick() {
+	if m.State.State == JobStateConverting {
+		impossible("unreachable from JobStateConverting state")
+	}
 	nextTick := m.Schedule.Next(m.Now, m.State.PrevTime)
 	if nextTick != m.State.TickTime {
 		m.State.TickTime = nextTick
@@ -465,11 +546,16 @@ func (m *StateMachine) scheduleTick() {
 // invocationFinished is called after invocation is finished to return the
 // job to scheduled (or suspended) state and emit a timer tick (if necessary).
 func (m *StateMachine) invocationFinished() {
+	if m.State.State == JobStateConverting {
+		impossible("unreachable from JobStateConverting state")
+	}
 	m.State.State = JobStateScheduled
 	m.State.PrevTime = m.Now
-	m.resetInvocation()      // forget about just finished invocation
-	m.scheduleTick()         // start waiting for a new one
-	m.maybeSuspendOrResume() // switch back to suspended state if necessary
+	m.resetInvocation() // forget about just finished invocation
+	if !m.MaybeConvertToV2() {
+		m.scheduleTick()         // start waiting for a new one
+		m.maybeSuspendOrResume() // switch back to suspended state if necessary
+	}
 }
 
 // maybeSuspendOrResume switches SCHEDULED state to SUSPENDED state in case
@@ -478,6 +564,10 @@ func (m *StateMachine) invocationFinished() {
 // If there are PendingTriggers, changes state to QUEUED with given triggers.
 // TODO(Tandrii): new name for this method.
 func (m *StateMachine) maybeSuspendOrResume() {
+	if m.State.State == JobStateConverting {
+		impossible("unreachable from JobStateConverting state")
+	}
+
 	switch {
 	case m.State.State == JobStateScheduled && m.State.TickTime == schedule.DistantFuture:
 		m.State.State = JobStateSuspended
@@ -497,6 +587,9 @@ func (m *StateMachine) maybeSuspendOrResume() {
 
 // resetTick clears tick time and nonce, effectively canceling a tick.
 func (m *StateMachine) resetTick() {
+	if m.State.State == JobStateConverting {
+		panic("unreachable from JobStateConverting state")
+	}
 	m.State.TickTime = time.Time{}
 	m.State.TickNonce = 0
 }
@@ -504,6 +597,9 @@ func (m *StateMachine) resetTick() {
 // queueInvocation generates a new invocation nonce and asks engine to start
 // a new invocation.
 func (m *StateMachine) queueInvocation(triggeredBy identity.Identity, triggers []*internal.Trigger) {
+	if m.State.State == JobStateConverting {
+		impossible("unreachable from JobStateConverting state")
+	}
 	m.State.InvocationTime = m.Now
 	m.State.InvocationNonce = m.Nonce()
 	m.State.InvocationRetryCount = 0
@@ -518,6 +614,9 @@ func (m *StateMachine) queueInvocation(triggeredBy identity.Identity, triggers [
 
 // resetInvocation clears invocation related part of the state.
 func (m *StateMachine) resetInvocation() {
+	if m.State.State == JobStateConverting {
+		impossible("unreachable from JobStateConverting state")
+	}
 	m.State.InvocationNonce = 0
 	m.State.InvocationRetryCount = 0
 	m.State.InvocationTime = time.Time{}
