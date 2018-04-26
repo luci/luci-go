@@ -184,6 +184,15 @@ func (m *Machine) RewindIfNecessary() {
 	}
 }
 
+// RescheduleTick schedules the next tick, if not already scheduled.
+//
+// TODO(vadimsh): Exists only for v1 -> v2 conversion.
+func (m *Machine) RescheduleTick() {
+	if m.State.Enabled && m.State.LastTick.When.IsZero() {
+		m.scheduleTick()
+	}
+}
+
 // OnScheduleChange happens when cron's schedule changes.
 //
 // In particular, it handles switches between absolute and relative schedules.
