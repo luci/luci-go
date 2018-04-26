@@ -22,6 +22,30 @@
       "revId": "97d5e3aef9a27ab888efbdda45bcc63f65542502",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b127937_f34937be",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-04-26T10:31:29Z",
+      "side": 1,
+      "message": "Hm, looking at a screenshot (http://shortn/_s2kQ4z7UJn), indeed we have 2px between two columns. I thought margings between neighboring elements are merged. Still I think 2px looks better than 1px. As for dynamic adjustment of the bubble width to fill the screen is something that I am considering implementing as well, but not as part of this CL.",
+      "parentUuid": "f7b733e8_9463ceb8",
+      "range": {
+        "startLine": 391,
+        "startChar": 2,
+        "endLine": 392,
+        "endChar": 19
+      },
+      "revId": "97d5e3aef9a27ab888efbdda45bcc63f65542502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
