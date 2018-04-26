@@ -1,0 +1,267 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c02a1859_2446bdd5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "ListFiles",
+      "range": {
+        "startLine": 7,
+        "startChar": 19,
+        "endLine": 7,
+        "endChar": 27
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3f81603_75696ce9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "config set",
+      "range": {
+        "startLine": 9,
+        "startChar": 50,
+        "endLine": 9,
+        "endChar": 57
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7328ce25_3eee0932",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "this assumes cfgSet is a project config set, i.e. projects/foo, and will not work for other configs sets, e.g. services/bar.\n\ni think this should be just luciPath(cfgSet) that we\u0027ve constructed in L442",
+      "range": {
+        "startLine": 447,
+        "startChar": 10,
+        "endLine": 447,
+        "endChar": 36
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7776100c_359e3978",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "please move the declaration of \"templates\" variable here and replaces `return templates, err` above with `return nil, err`",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "803c975f_12aa7e92",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "why is this tied to project config set and doesn\u0027t support other types of config sets?\n\nif the rationale is \"we don\u0027t have a use case to list files in a non-project config set\", then it could be extended to \"we don\u0027t have a use case to list files in a fileSystem impl\", in which we could just panic in this func. That is, actually, maybe what it is better to do if we decide to delete fileSystem impl. I don\u0027t think anyone really cares about its existence",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "125d0cd1_351c2877",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "lk.revision cannot !\u003d revision because iterContentRevPath itself already filters out revisions which are !\u003d scanHeadRevision(). Therefore, it seems scanHeadRevision() call in L448 is unnecessary",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc57087b_0d296383",
+        "filename": "config/impl/filesystem/fs.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 464,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "this is equivalent to just\n\n  return templates, err",
+      "range": {
+        "startLine": 461,
+        "startChar": 5,
+        "endLine": 464,
+        "endChar": 22
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d2a4efd_1f6f0801",
+        "filename": "config/impl/memory/memory.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "same comment here. we declare variables not in the top of the function, but as close to the bottom as possible. please move templates below and return nil in L76\n\nit would be consistent with L62",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 14
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3265e58b_92baad93",
+        "filename": "config/impl/memory/memory.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "the list is non-deterministic because map iteration in Go is random. Please sort templates after the loop\n\nbesides, why is this variable called templates? at this abstraction level, this is files, not necessarily templates. This applies to this entire CL.",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1431a9d2_270ee81e",
+        "filename": "config/impl/memory/memory_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "this test is flaky because currently ListFiles is non-deterministic, see my another comment",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69cee853_6c8ca1d4",
+        "filename": "config/impl/remote/remote.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "Project() returns a project id and it is not a valid config set. This should be string(configSet)\nit should be the configSet itself",
+      "range": {
+        "startLine": 129,
+        "startChar": 44,
+        "endLine": 129,
+        "endChar": 63
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69db8c68_47f52feb",
+        "filename": "config/impl/remote/remote.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "we should be doing this. please remove",
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c403a4f_0d5a305e",
+        "filename": "config/interface.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-26T20:41:44Z",
+      "side": 1,
+      "message": "config set",
+      "range": {
+        "startLine": 151,
+        "startChar": 46,
+        "endLine": 151,
+        "endChar": 53
+      },
+      "revId": "8d85643d1147fb5cc06e5ac801f007bbb3740271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
