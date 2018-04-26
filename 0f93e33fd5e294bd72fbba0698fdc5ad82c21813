@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f0aa631_c141929e",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 805,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-26T06:18:00Z",
+      "side": 1,
+      "message": "by fine you mean that is so because not too many entity groups are involved, right?",
+      "range": {
+        "startLine": 805,
+        "startChar": 22,
+        "endLine": 805,
+        "endChar": 36
+      },
+      "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fd15e80_f797a403",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 813,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-26T06:18:00Z",
+      "side": 1,
+      "message": "emits",
+      "range": {
+        "startLine": 813,
+        "startChar": 57,
+        "endLine": 813,
+        "endChar": 61
+      },
+      "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d550c1d5_cc07762c",
+        "filename": "scheduler/appengine/engine/statemachine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 497,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-26T06:18:00Z",
+      "side": 1,
+      "message": "strictly speaking, not necessary, but whatever, code will be gone by next week.",
+      "range": {
+        "startLine": 496,
+        "startChar": 1,
+        "endLine": 497,
+        "endChar": 36
+      },
+      "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "947e2e37_98cc94dc",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-26T06:18:00Z",
+      "side": 1,
+      "message": "sole purpose is to support adding pending triggers, right?",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 72
+      },
+      "revId": "0f93e33fd5e294bd72fbba0698fdc5ad82c21813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
