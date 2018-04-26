@@ -119,6 +119,26 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 	}, nil
 }
 
+func (r *remoteImpl) ListFiles(ctx context.Context, configSet config.Set) ([]string, error) {
+	srv, err := r.service(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var templates []string
+	resp, err := srv.GetConfigSets().ConfigSet(configSet.Project()).IncludeFiles(true).Context(ctx).Do()
+	if err != nil {
+		templates = append(templates, "api error")
+		return templates, apiErr(err)
+	}
+	for _, cs := range resp.ConfigSets {
+		for _, fs := range cs.Files {
+			templates = append(templates, fs.Path)
+		}
+	}
+	return templates, nil
+}
+
 func (r *remoteImpl) GetConfigByHash(ctx context.Context, configSet string) (string, error) {
 	srv, err := r.service(ctx)
 	if err != nil {
