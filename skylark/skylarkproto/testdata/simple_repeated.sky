@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-m = testprotos.IntFields()
+# Note: this test also covers all other scalar types, since the implementation
+# of repeated fields is identical for all of them.
+
+m = testprotos.SimpleFields()
 
 # Default value.
 assert.eq(m.i64_rep, [])
@@ -27,7 +30,7 @@ assert.eq(m.i64_rep, [])
 
 # The list is stored as a reference, not as a value.
 l = []
-m2 = testprotos.IntFields(i64_rep=l)
+m2 = testprotos.SimpleFields(i64_rep=l)
 l.append(123)
 assert.eq(m2.i64_rep, [123])
 
@@ -57,7 +60,7 @@ def serialize():
 assert.fails(serialize, 'list item #2 - can\'t assign nil to a value of kind "int64"')
 
 # Serialization to text proto works.
-text = proto.to_pbtext(testprotos.IntFields(i64_rep=[1, 2, 3]))
+text = proto.to_pbtext(testprotos.SimpleFields(i64_rep=[1, 2, 3]))
 assert.eq(text, """i64_rep: 1
 i64_rep: 2
 i64_rep: 3

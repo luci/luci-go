@@ -16,9 +16,16 @@ syntax = "proto3";
 
 package testprotos;
 
-message IntFields {
+message SimpleFields {
   int64 i64 = 1;
   repeated int64 i64_rep = 2;
+  int32 i32 = 3;
+  uint64 ui64 = 4;
+  uint32 ui32 = 5;
+  bool b = 6;
+  float f32 = 7;
+  double f64 = 8;
+  string s = 9;
 }
 
 message MessageFields {
