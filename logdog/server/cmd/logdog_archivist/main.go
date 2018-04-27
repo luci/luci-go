@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -55,7 +56,50 @@ var (
 		&montypes.MetricMetadata{Units: montypes.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
+
+	// If the archive dispatch is within this range of the current time, we will
+	// avoid archival.
+	dispatchThreshold = 5 * time.Minute
 )
+
+func processMessage(c context.Context, msg *pubsub.Message, ar *archivist.Archivist) {
+}
+
+func runner(c context.Context, ar *archivist.Archivist, ch chan archivist.Task) {
+	for {
+		var task archivist.Task
+		select {
+		case <-c.Done():
+			return
+		case task = <-ch:
+			// Continue
+		}
+		at := task.Task()
+		// Get the local time. If we are within the dispatchThreshold, retry this
+		// archival later.
+		if ad := google.TimeFromProto(at.DispatchedAt); !ad.IsZero() {
+			now := clock.Now(c)
+			delta := now.Sub(ad)
+			if delta < 0 {
+				delta = -delta
+			}
+			if delta < dispatchThreshold {
+				log.Fields{
+					"localTime":    now.Local(),
+					"dispatchTime": ad.Local(),
+					"delta":        delta,
+					"threshold":    dispatchThreshold,
+				}.Infof(c, "Log stream is within dispatch threshold. Returning task to queue.")
+				defer func() {
+					time.Sleep(delta)
+					ch <- task
+				}()
+				continue
+			}
+		}
+		ar.ArchiveTask(c, task)
+	}
+}
 
 // application is the Archivist application state.
 type application struct {
@@ -165,12 +209,15 @@ func (a *application) runArchivist(c context.Context) error {
 		}
 	}
 
+	// Unbuffered channel, we always run at most 1 job at a time
+	taskQueue := make(chan archivist.Task)
+	go runner(c, &ar, taskQueue)
+
 	err = retry.Retry(c, transient.Only(retryForever), func() error {
 		return grpcutil.WrapIfTransient(sub.Receive(c, func(c context.Context, msg *pubsub.Message) {
 			c = log.SetFields(c, log.Fields{
 				"messageID": msg.ID,
 			})
-
 			// ACK (or not) the message based on whether our task was consumed.
 			deleteTask := false
 			defer func() {
@@ -223,7 +270,7 @@ func (a *application) runArchivist(c context.Context) error {
 				return
 			}
 
-			ar.ArchiveTask(c, task)
+			taskQueue <- task
 			deleteTask = task.consumed
 		}))
 	}, func(err error, d time.Duration) {

@@ -19,12 +19,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	log "go.chromium.org/luci/common/logging"
@@ -46,10 +44,6 @@ const (
 	tsEntriesField = "entries"
 	tsIndexField   = "index"
 	tsDataField    = "data"
-
-	// If the archive dispatch is within this range of the current time, we will
-	// avoid archival.
-	dispatchThreshold = 5 * time.Minute
 )
 
 var (
@@ -221,25 +215,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	if err := types.ProjectName(at.Project).Validate(); err != nil {
 		task.Consume()
 		return fmt.Errorf("invalid project name %q: %s", at.Project, err)
-	}
-
-	// Get the local time. If we are within the dispatchThreshold, retry this
-	// archival later.
-	if ad := google.TimeFromProto(at.DispatchedAt); !ad.IsZero() {
-		now := clock.Now(c)
-		delta := now.Sub(ad)
-		if delta < 0 {
-			delta = -delta
-		}
-		if delta < dispatchThreshold {
-			log.Fields{
-				"localTime":    now.Local(),
-				"dispatchTime": ad.Local(),
-				"delta":        delta,
-				"threshold":    dispatchThreshold,
-			}.Infof(c, "Log stream is within dispatch threshold. Returning task to queue.")
-			return statusErr(errors.New("log stream is within dispatch threshold"))
-		}
 	}
 
 	// Load the log stream's current state. If it is already archived, we will
