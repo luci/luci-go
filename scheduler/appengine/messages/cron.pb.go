@@ -135,6 +135,9 @@ type Job struct {
 	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	// Schedule describes when to run the job.
 	//
+	// A job with a schedule can still be triggered by other triggering jobs
+	// and via "Run now" button in UI.
+	//
 	// Supported kinds of schedules (illustrated by examples):
 	//   - "* 0 * * * *": cron-like expression, in a syntax supported by
 	//     https://github.com/gorhill/cronexpr (see its docs for full reference).
