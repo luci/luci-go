@@ -297,7 +297,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		return
 	}
 
-	must(buffer.WriteString(`<div class="console-builder-column" style="flex-grow: 1">`))
+	must(buffer.WriteString(`<div class="console-builder-column">`))
 	// Add spaces if we haven't hit maximum depth to keep the grid consistent.
 	for i := 0; i < (maxDepth - depth); i++ {
 		must(buffer.WriteString(`<div class="console-space"></div>`))
@@ -438,7 +438,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 // If maxDepth is negative, skip the labels to render the HTML as flat rather than nested.
 func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	if maxDepth > 0 {
-		must(buffer.WriteString(`<div class="console-column">`))
+		must(fmt.Fprintf(buffer, `<div class="console-column">`))
 		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>
 						<div class="console-top-row">`,
 			template.HTMLEscapeString(c.Name),
