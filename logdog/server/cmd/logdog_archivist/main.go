@@ -55,6 +55,9 @@ var (
 		&montypes.MetricMetadata{Units: montypes.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
+
+	// maxBacklogRunners denotes how many goroutines can run backlog jobs.
+	maxBacklogRunners = 2
 )
 
 // application is the Archivist application state.
@@ -165,67 +168,101 @@ func (a *application) runArchivist(c context.Context) error {
 		}
 	}
 
+	backlog := make(chan *pubsub.Message)
+	defer func() {
+		close(backlog)
+	}()
+	process := func(msg *pubsub.Message) {
+		c = log.SetFields(c, log.Fields{
+			"messageID": msg.ID,
+		})
+
+		// ACK, NACK, or retry the message based on whether our task was consumed
+		deleteTask := false
+		var retryDelay *time.Duration
+		defer func() {
+			switch {
+			case retryDelay != nil:
+				// Retry the message later.
+				go func() {
+					time.Sleep(*retryDelay)
+					backlog <- msg
+				}()
+			case deleteTask:
+				// ACK the message if it is completed.
+				msg.Ack()
+			default:
+				msg.Nack()
+			}
+		}()
+
+		// Time how long task processing takes for metrics.
+		startTime := clock.Now(c)
+		defer func() {
+			duration := clock.Now(c).Sub(startTime)
+
+			if deleteTask {
+				log.Fields{
+					"duration": duration,
+				}.Infof(c, "Task successfully processed; deleting.")
+			} else {
+				log.Fields{
+					"duration": duration,
+				}.Infof(c, "Task processing incomplete. Not deleting.")
+			}
+
+			// Add to our processing time metric.
+			tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
+		}()
+
+		task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
+		c = log.SetFields(c, log.Fields{
+			"consumed":         task.consumed,
+			"subscriptionName": task.subscriptionName,
+			"taskTimestamp":    task.timestamp.Format(time.RFC3339Nano),
+			"archiveTask":      task.at,
+		})
+		if task.msg != nil {
+			// Log all fields except data.
+			c = log.SetFields(c, log.Fields{
+				"message": map[string]interface{}{
+					"id":          task.msg.ID,
+					"attributes":  task.msg.Attributes,
+					"publishTime": task.msg.PublishTime.Format(time.RFC3339Nano),
+				},
+			})
+		}
+		if err != nil {
+			log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
+			deleteTask = true
+			return
+		}
+
+		err = ar.ArchiveTask(c, task)
+		// Check if we need to retry this (in memory) later.
+		if t, ok := errors.TagValueIn(archivist.RetryInTagKey, err); ok {
+			if tv, ok := t.(archivist.RetryIn); ok {
+				rd := time.Duration(tv)
+				retryDelay = &(rd)
+			}
+		}
+	}
+
+	// Launch the backlog runners.
+	for i := 0; i < maxBacklogRunners; i++ {
+		go func() {
+			for {
+				msg := <-backlog
+				process(msg)
+			}
+		}()
+	}
+
 	err = retry.Retry(c, transient.Only(retryForever), func() error {
-		return grpcutil.WrapIfTransient(sub.Receive(c, func(c context.Context, msg *pubsub.Message) {
-			c = log.SetFields(c, log.Fields{
-				"messageID": msg.ID,
-			})
-
-			// ACK (or not) the message based on whether our task was consumed.
-			deleteTask := false
-			defer func() {
-				// ACK the message if it is completed. If not, we do not NACK it, as we
-				// want to let Pub/Sub redelivery delay occur as a form of backoff.
-				if deleteTask {
-					msg.Ack()
-				}
-			}()
-
-			// Time how long task processing takes for metrics.
-			startTime := clock.Now(c)
-			defer func() {
-				duration := clock.Now(c).Sub(startTime)
-
-				if deleteTask {
-					log.Fields{
-						"duration": duration,
-					}.Infof(c, "Task successfully processed; deleting.")
-				} else {
-					log.Fields{
-						"duration": duration,
-					}.Infof(c, "Task processing incomplete. Not deleting.")
-				}
-
-				// Add to our processing time metric.
-				tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
-			}()
-
-			task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
-			c = log.SetFields(c, log.Fields{
-				"consumed":         task.consumed,
-				"subscriptionName": task.subscriptionName,
-				"taskTimestamp":    task.timestamp.Format(time.RFC3339Nano),
-				"archiveTask":      task.at,
-			})
-			if task.msg != nil {
-				// Log all fields except data.
-				c = log.SetFields(c, log.Fields{
-					"message": map[string]interface{}{
-						"id":          task.msg.ID,
-						"attributes":  task.msg.Attributes,
-						"publishTime": task.msg.PublishTime.Format(time.RFC3339Nano),
-					},
-				})
-			}
-			if err != nil {
-				log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
-				deleteTask = true
-				return
-			}
-
-			ar.ArchiveTask(c, task)
-			deleteTask = task.consumed
-		}))
+		return grpcutil.WrapIfTransient(
+			sub.Receive(c, func(c context.Context, msg *pubsub.Message) {
+				process(msg)
+			}))
 	}, func(err error, d time.Duration) {
 		log.Fields{
 			log.ErrorKey: err,
