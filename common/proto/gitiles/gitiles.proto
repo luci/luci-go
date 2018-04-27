@@ -25,6 +25,39 @@ service Gitiles {
     rpc Refs(RefsRequest) returns (RefsResponse) {};
 }
 
+    // CheckAccess checks if a user has a permission on give repo and ref.
+    // Using this API requires ViewAccess capability on Gerrit server. See
+    // https://gerrit-review.googlesource.com/Documentation/access-control.html#capability_viewAccess
+    rpc CheckAccess(CheckAccessRequest) returns (CheckAccessResponse) {};
+
+// CheckAccessRequest is request message for Gitiles.CheckAccess.
+message CheckAccessRequest {
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/master
+    // Required.
+    string project = 1;
+    // The ref for whcih to check access.
+    // Required for most permissions.
+    string ref = 2;
+    // Gerrit permission such as "read".
+    // Required.
+    string permission;
+}
+
+// CheckAccessResponse is response message for Gitiles.CheckAccess.
+message CheckAccessResponse {
+    string status
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/master
+    // Required.
+    string project = 1;
+    // The ref for whcih to check access.
+    // Required for most permissions.
+    string ref = 2;
+    // Gerrit permission such as "read". Required.
+    string permission;
+}
+
 // LogRequest is request message for Gitiles.Log rpc.
 message LogRequest {
     // Gitiles project, e.g. "chromium/src" part in
