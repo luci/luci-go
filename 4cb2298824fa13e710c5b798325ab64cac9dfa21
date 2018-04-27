@@ -22,6 +22,30 @@
       "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8901e55c_9addd3b0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-27T19:13:39Z",
+      "side": 1,
+      "message": "* pre-fetching: Isn\u0027t necessary since this code also fetches immediately after start.\n* Buffering: There\u0027s buffering here too, at the logEntry level, rather than logEntry + Bytes.\n* Direct log access: Basically this means reimplementing get.go.\n\nThis is how I understand textlog.go:\nhandler -\u003e renderer -\u003e fetcher -\u003e fetcherSource -\u003e storage.Get\nwhere renderer, fetcher requires extensive setup code, and fetcherSource needs to be implemented.\n\nAnd in this CL:\nhandler -\u003e fetch (custom) -\u003e server.Get -\u003e storage.Get\nHandler has a minimal amount of rendering, and fetch mostly leverages server.Get to do the hard work.\n\nBasically it feels like if this endpoint uses fetcher directly, a lot of code seems to be rewritten.  For example in the textlogs.go example, L70-100 basically is part of the main business logic, and is mostly the same as the setup in get.go:server.Get (but missing some code code, for example to bail out if logs.Purged is true).\n\nBut the main thing is, in order to use the fetcher, it needs a source.  The fetcherSource implementation is about 40 lines (excluding logging and comments), which is about the same as the custom fetch implementation.  All of this was already implemented inside server.Get.\n\nThe main optimization with using fetcherSource is that it only calls ds.Get(logDescriptor) as many time as needed to get the terminal index, whereas the custom fetch will call it on every request.  I don\u0027t think this is a huge deal because ds.Get() call is memcached in dsCache.  Also I think this preserves layering better, since all user-facing log serving code can be centralize to get.go.",
+      "parentUuid": "dde49218_a84af3d5",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 55
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
