@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ec2be570_f24f46f9",
+        "filename": "skylark/skylarkproto/testdata/int64.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-27T22:41:07Z",
+      "side": 1,
+      "message": "Renamed to ints.sky.",
+      "parentUuid": "d93a42c0_d1773944",
+      "revId": "518adf526e1f38cda1f138e1488cb454d62d7b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c40b9d8_709a9066",
         "filename": "skylark/skylarkproto/testdata/int_ranges.sky",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "518adf526e1f38cda1f138e1488cb454d62d7b28",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ab1377d_613e18fc",
+        "filename": "skylark/skylarkproto/testdata/int_ranges.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-27T22:41:07Z",
+      "side": 1,
+      "message": "Skylark forbids redeclaring global variables like that. I used \u0027m1\u0027, \u0027m2\u0027, ... instead.",
+      "parentUuid": "6c40b9d8_709a9066",
+      "revId": "518adf526e1f38cda1f138e1488cb454d62d7b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
