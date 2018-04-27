@@ -46,6 +46,30 @@
       "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67845a3f_77391b6b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-04-27T20:36:32Z",
+      "side": 1,
+      "message": "\u003e pre-fetching: Isn\u0027t necessary since this code also fetches immediately after start.\n\u003e Buffering: There\u0027s buffering here too, at the logEntry level, rather than logEntry + Bytes.\n\nCorrect. Prefetching does put some real constraints into memory usage, but I suspect it\u0027s moot. It\u0027s still a good level to tune the fetches, though, rather than \"# of messages in a channel\".\n\n\u003e Direct log access: Basically this means reimplementing get.go.\n\nI mean, sort of? Most of \"get.go\"\u0027s logic is around confirming the \"storage\" backend object to the user request. We don\u0027t have to do that here, since we don\u0027t need to subject this stream to the limits that we put on the user-facing \"Logs.Get\" requests.\n\nThose limits serve two purposes: firstly, to provide realistic constraints on the user API, and secondly to conform to AppEngine request/response size and buffering limits. Neither of those is something that we need to do here! The ideal thing would stream data straight out of storage and into a text buffer, and that\u0027s what the Fetcher implementation does.\n\nAdditionally, when you go through the Get endpoint, you authenticate as the LogDog app, and not the calling user, for those Get requests. It\u0027s probably fine, but it\u0027s not ideal, since you\u0027re really doing delegate calls. I guess you could use a delegate token, but that also seems unnecessary given that your posture is within the very app that\u0027s doing the fetching.\n\n\u003e handler -\u003e renderer -\u003e fetcher -\u003e fetcherSource -\u003e storage.Get\n\nWell, it\u0027s more like:\n\nhandler -\u003e (fetcher -\u003e fetcherSource -\u003e storage.Get) -\u003e renderer\n\nThe renderer treats fetcher like a \"Get me a log\" callback, nothing more. That\u0027s why it\u0027s so easy to replace with a custom log rendering (WriteLine), if that\u0027s what you want to do.\n\n\u003e  (but missing some code code, for example to bail out if logs.Purged is true).\n\nYeah that might be worth putting into a common \"check if this user can get this log\" function shared between the two, but that is a good point. OTOH this is fairly minimal set of checks: does the log exist, and can the user see it?\n\n\u003e The main optimization with using fetcherSource is that it only calls ds.Get(logDescriptor) as many time as needed to get the terminal index, whereas the custom fetch will call it on every request.  I don\u0027t think this is a huge deal because ds.Get() call is memcached in dsCache.  Also I think this preserves layering better, since all user-facing log serving code can be centralize to get.go.\n\nI disagree - the main optimization is that you are streaming from storage directly and as fast as possible, instead of pulling chunks subject to constraints that are tailored for a different use case through an intermediate endpoint. You will be streaming them fast, and each chunk will require a full HTTP session setup, ACL check, logging, etc. I would bet that direct streaming would actually be noticeably faster :)",
+      "parentUuid": "8901e55c_9addd3b0",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 55
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
