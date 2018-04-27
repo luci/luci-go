@@ -48,9 +48,9 @@ func TestLoader(t *testing.T) {
 		sort.Strings(keys)
 		So(keys, ShouldResemble, []string{
 			"Complex",
-			"IntFields",
 			"MessageFields",
 			"Simple",
+			"SimpleFields",
 		})
 	})
 

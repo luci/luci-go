@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-m = testprotos.IntFields()
+# Note: this test also covers all other integer types, since their
+# implementation is almost identical. The differences are tested in
+# int_ranges.sky.
+
+m = testprotos.SimpleFields()
 
 # Default value.
 assert.eq(m.i64, 0)
@@ -22,19 +26,12 @@ m.i64 = 123
 assert.eq(m.i64, 123)
 
 # Setting through constructor works.
-m2 = testprotos.IntFields(i64=456)
+m2 = testprotos.SimpleFields(i64=456)
 assert.eq(m2.i64, 456)
 
 # Clearing works.
 m2.i64 = None
 assert.eq(m2.i64, 0)
-
-# Setting too large value fails.
-two_pow_63 = 9223372036854775808
-m2.i64 = two_pow_63 - 1  # still ok
-def set_large():
-  m2.i64 = two_pow_63
-assert.fails(set_large, "doesn't fit into int64")
 
 # Setting wrong type fails.
 def set_bad():
@@ -43,9 +40,15 @@ assert.fails(set_bad, 'can\'t assign list to a value of kind "int64"')
 
 # Setting to a message fails.
 def set_msg():
-  m2.i64 = testprotos.IntFields()
+  m2.i64 = testprotos.SimpleFields()
 assert.fails(set_msg, 'can\'t assign proto struct to a value of type "int64"')
 
+# We don't support implicit conversions from float to int. Callers should use
+# int(...) cast explicitly.
+def set_float():
+  m2.i64 = 123.4
+assert.fails(set_float, 'can\'t assign float to a value of kind "int64"')
+
 # Serialization to text proto works.
-text = proto.to_pbtext(testprotos.IntFields(i64=987))
+text = proto.to_pbtext(testprotos.SimpleFields(i64=987))
 assert.eq(text, "i64: 987\n")
