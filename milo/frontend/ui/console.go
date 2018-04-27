@@ -186,6 +186,9 @@ type ConsoleElement interface {
 	// The two integer parameters represent useful pieces of metadata in
 	// rendering: current depth, and maximum depth.
 	RenderHTML(*bytes.Buffer, int, int)
+
+	// Calculate number of leaf nodes in the console element.
+	NumLeafNodes() int
 }
 
 // Category represents an interior node in a category tree for builders.
@@ -297,7 +300,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		return
 	}
 
-	must(buffer.WriteString(`<div class="console-builder-column" style="flex-grow: 1">`))
+	must(buffer.WriteString(`<div class="console-builder-column">`))
 	// Add spaces if we haven't hit maximum depth to keep the grid consistent.
 	for i := 0; i < (maxDepth - depth); i++ {
 		must(buffer.WriteString(`<div class="console-space"></div>`))
@@ -434,11 +437,15 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	must(buffer.WriteString(`</div></div>`))
 }
 
+func (br BuilderRef) NumLeafNodes() int {
+	return 1
+}
+
 // RenderHTML renders the Category struct and its children as HTML into a buffer.
 // If maxDepth is negative, skip the labels to render the HTML as flat rather than nested.
 func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	if maxDepth > 0 {
-		must(buffer.WriteString(`<div class="console-column">`))
+		must(fmt.Fprintf(buffer, `<div class="console-column" style="flex: %d">`, c.NumLeafNodes()))
 		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>
 						<div class="console-top-row">`,
 			template.HTMLEscapeString(c.Name),
@@ -452,4 +459,12 @@ func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	if maxDepth > 0 {
 		must(buffer.WriteString(`</div></div>`))
 	}
+}
+
+func (c Category) NumLeafNodes() int {
+	sum := 0
+	for _, child := range c.Children {
+		sum += child.NumLeafNodes()
+	}
+	return sum
 }
