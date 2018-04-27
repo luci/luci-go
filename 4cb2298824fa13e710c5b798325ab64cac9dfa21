@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dde49218_a84af3d5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-04-27T15:07:33Z",
+      "side": 1,
+      "message": "Cool!\n\nI do recommend using Fetcher, since it implements pre-fetching, buffering, and direct logs access. It should be better than a custom thing, and it is pretty decently tested. If you like this idea, you can grab the implementation from this CL:\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/c8b8b3c82395ea7c43c88eb1ee9dc6f0a2ea87a6/logdog/appengine/coordinator/flex/view/textlogs.go#160\n\nRenderer is a little less interesting, but do keep in mind that using it would ensure consistency between this endpoint and \"logdog cat\" tool. Not sure if that\u0027s valuable.",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 55
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
