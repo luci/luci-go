@@ -105,7 +105,17 @@ var (
 		"The total number of log entries.",
 		nil,
 		field.String("stream"))
+
+	RetryInTagKey = errors.NewTagKey("Retry this later")
 )
+
+// RetryIn is an error tag that signals the caller to retry the call later.
+// This implements errors.TagValueGenerator.
+type RetryIn time.Duration
+
+func (t RetryIn) GenerateErrorTagValue() errors.TagValue {
+	return errors.TagValue{RetryInTagKey, t}
+}
 
 // Task is a single archive task.
 type Task interface {
@@ -190,7 +200,7 @@ const storageBufferSize = types.MaxLogEntryDataSize * 64
 //
 // If the supplied Context is Done, operation may terminate before completion,
 // returning the Context's error.
-func (a *Archivist) ArchiveTask(c context.Context, task Task) {
+func (a *Archivist) ArchiveTask(c context.Context, task Task) error {
 	c = log.SetFields(c, log.Fields{
 		"project": task.Task().Project,
 		"id":      task.Task().Id,
@@ -207,6 +217,8 @@ func (a *Archivist) ArchiveTask(c context.Context, task Task) {
 
 	// Add a result metric.
 	tsCount.Add(c, 1, !failure)
+
+	return err
 }
 
 // archiveTaskImpl performs the actual task archival.
@@ -238,7 +250,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 				"delta":        delta,
 				"threshold":    dispatchThreshold,
 			}.Infof(c, "Log stream is within dispatch threshold. Returning task to queue.")
-			return statusErr(errors.New("log stream is within dispatch threshold"))
+			return errors.Reason("log stream is within dispatch threshold").Tag(RetryIn(delta)).Err()
 		}
 	}
 
