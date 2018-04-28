@@ -100,12 +100,11 @@ func TestGenerateInvocationID(t *testing.T) {
 
 	Convey("generateInvocationID does not collide", t, func() {
 		c := newTestContext(epoch)
-		k := datastore.NewKey(c, "Job", "", 123, nil)
 
 		// Bunch of ids generated at the exact same moment in time do not collide.
 		ids := map[int64]struct{}{}
 		for i := 0; i < 20; i++ {
-			id, err := generateInvocationID(c, k)
+			id, err := generateInvocationID(c)
 			So(err, ShouldBeNil)
 			ids[id] = struct{}{}
 		}
@@ -114,14 +113,13 @@ func TestGenerateInvocationID(t *testing.T) {
 
 	Convey("generateInvocationID gen IDs with most recent first", t, func() {
 		c := newTestContext(epoch)
-		k := datastore.NewKey(c, "Job", "", 123, nil)
 
-		older, err := generateInvocationID(c, k)
+		older, err := generateInvocationID(c)
 		So(err, ShouldBeNil)
 
 		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
 
-		newer, err := generateInvocationID(c, k)
+		newer, err := generateInvocationID(c)
 		So(err, ShouldBeNil)
 
 		So(newer, ShouldBeLessThan, older)
@@ -313,10 +311,7 @@ func TestPrepareTopic(t *testing.T) {
 			ctx:     c,
 			eng:     e,
 			manager: &noop.TaskManager{},
-			saved: Invocation{
-				ID:     123456,
-				JobKey: datastore.NewKey(c, "Job", "job_id", 0, nil),
-			},
+			saved:   Invocation{ID: 123456},
 		}
 		ctl.populateState()
 

@@ -1093,9 +1093,9 @@ func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task
 
 // initInvocation populates fields of Invocation struct.
 //
-// It allocates invocation ID and populates related fields: ID, JobKey, JobID.
-// It also copies data from given task.Request object into corresponding fields
-// of the invocation (so they can be indexed etc).
+// It allocates invocation ID and populates ID and JobID. It also copies data
+// from given task.Request object into corresponding fields of the invocation
+// (so they can be indexed etc).
 //
 // On success returns exact same 'inv' for convenience. It doesn't Put it into
 // the datastore.
@@ -1105,7 +1105,7 @@ func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task
 func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invocation, req *task.Request) (*Invocation, error) {
 	assertInTransaction(c)
 
-	invID, err := generateInvocationID(c, nil)
+	invID, err := generateInvocationID(c)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to generate invocation ID").Err()
 	}
