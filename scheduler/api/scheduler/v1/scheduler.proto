@@ -66,8 +66,6 @@ service Scheduler {
   // be deduplicated. See Trigger message for more details.
   //
   // Requires TRIGGERER Job permission.
-  //
-  // TODO(vadimsh): deduplication doesn't work in v1.
   rpc EmitTriggers(EmitTriggersRequest) returns (google.protobuf.Empty);
 }
 
