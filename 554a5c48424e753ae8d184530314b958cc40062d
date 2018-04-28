@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2897287_185ba59f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-28T02:29:39Z",
+      "side": 1,
+      "message": "example: \nhttps://2987-3975dbf-tainted-tandrii-dot-luci-milo.appspot.com/p/chromium/builders/luci.chromium.ci/Linux%20Builder/100128\nvs \nhttps://ci.chromium.org/p/chromium/builders/luci.chromium.ci/Linux%20Builder/100128",
+      "revId": "554a5c48424e753ae8d184530314b958cc40062d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
