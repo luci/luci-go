@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "81d63b58_245a6895",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-28T02:07:44Z",
+      "side": 1,
+      "message": "example: https://2987-3975dbf-tainted-tandrii-dot-luci-milo-dev.appspot.com/buildbot/chromium/Win%20x64/21803",
+      "revId": "c8754f053e6c1795d23cf228a0fa14bce3f2ee1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63e0b184_5623df4f",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-28T02:07:44Z",
+      "side": 1,
+      "message": "there is no test for this code of any kind.",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 161,
+        "endChar": 3
+      },
+      "revId": "c8754f053e6c1795d23cf228a0fa14bce3f2ee1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de7c60ea_af0a1b13",
+        "filename": "milo/git/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-28T02:07:44Z",
+      "side": 1,
+      "message": "there could be lots of files per commit, so I don\u0027t want this change to make main console slower.",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "c8754f053e6c1795d23cf228a0fa14bce3f2ee1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
