@@ -496,8 +496,6 @@ type SchedulerClient interface {
 	// be deduplicated. See Trigger message for more details.
 	//
 	// Requires TRIGGERER Job permission.
-	//
-	// TODO(vadimsh): deduplication doesn't work in v1.
 	EmitTriggers(ctx context.Context, in *EmitTriggersRequest, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 }
 type schedulerPRPCClient struct {
@@ -693,8 +691,6 @@ type SchedulerServer interface {
 	// be deduplicated. See Trigger message for more details.
 	//
 	// Requires TRIGGERER Job permission.
-	//
-	// TODO(vadimsh): deduplication doesn't work in v1.
 	EmitTriggers(context.Context, *EmitTriggersRequest) (*google_protobuf.Empty, error)
 }
 
