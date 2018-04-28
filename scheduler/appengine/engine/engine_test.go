@@ -502,9 +502,7 @@ func TestEnqueueInvocations(t *testing.T) {
 		for _, inv := range invs {
 			invIDs[inv.ID] = true
 			cpy := *inv
-			So(cpy.ID, ShouldResemble, cpy.InvocationNonce)
 			cpy.ID = 0
-			cpy.InvocationNonce = 0
 			invsByTrigger[inv.TriggeredBy] = cpy
 		}
 		So(invsByTrigger, ShouldResemble, map[identity.Identity]Invocation{
@@ -513,7 +511,7 @@ func TestEnqueueInvocations(t *testing.T) {
 				Started:     epoch,
 				TriggeredBy: "user:a@example.com",
 				Status:      task.StatusStarting,
-				DebugLog: "[22:42:00.000] New invocation initialized\n" +
+				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Triggered by user:a@example.com\n",
 			},
 			"user:b@example.com": {
@@ -521,7 +519,7 @@ func TestEnqueueInvocations(t *testing.T) {
 				Started:     epoch,
 				TriggeredBy: "user:b@example.com",
 				Status:      task.StatusStarting,
-				DebugLog: "[22:42:00.000] New invocation initialized\n" +
+				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Triggered by user:b@example.com\n",
 			},
 		})
@@ -646,7 +644,6 @@ func TestLaunchInvocationTask(t *testing.T) {
 		Convey("happy path", func() {
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				So(ctl.InvocationID(), ShouldEqual, inv.ID)
-				So(ctl.InvocationNonce(), ShouldEqual, inv.InvocationNonce)
 				ctl.DebugLog("Succeeded!")
 				ctl.State().Status = task.StatusSucceeded
 				return nil
@@ -660,17 +657,16 @@ func TestLaunchInvocationTask(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(triggers, ShouldResemble, []*internal.Trigger{{Id: "a"}})
 			So(updated, ShouldResemble, &Invocation{
-				ID:              inv.ID,
-				InvocationNonce: inv.ID,
-				JobID:           "project/job",
-				IndexedJobID:    "project/job",
-				Started:         epoch,
-				Finished:        epoch,
-				Revision:        job.Revision,
-				Task:            job.Task,
-				Status:          task.StatusSucceeded,
-				MutationsCount:  2,
-				DebugLog: "[22:42:00.000] New invocation initialized\n" +
+				ID:             inv.ID,
+				JobID:          "project/job",
+				IndexedJobID:   "project/job",
+				Started:        epoch,
+				Finished:       epoch,
+				Revision:       job.Revision,
+				Task:           job.Task,
+				Status:         task.StatusSucceeded,
+				MutationsCount: 2,
+				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Starting the invocation (attempt 1)\n" +
 					"[22:42:00.000] Succeeded!\n" +
 					"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n",
@@ -706,7 +702,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 			updated := fetchInvocation(c)
 			So(updated.Status, ShouldEqual, task.StatusSucceeded)
 			So(updated.RetryCount, ShouldEqual, 1)
-			So(updated.DebugLog, ShouldEqual, "[22:42:00.000] New invocation initialized\n"+
+			So(updated.DebugLog, ShouldEqual, "[22:42:00.000] New invocation is queued and will start shortly\n"+
 				"[22:42:00.000] Starting the invocation (attempt 1)\n"+
 				"[22:42:00.000] The invocation will be retried\n"+
 				"[22:42:00.000] Starting the invocation (attempt 2)\n"+
@@ -758,15 +754,14 @@ func TestForceInvocation(t *testing.T) {
 			inv, err := e.getInvocation(c, "project/job", invID)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
-				ID:              expectedInvID,
-				JobID:           "project/job",
-				InvocationNonce: expectedInvID,
-				Started:         epoch,
-				TriggeredBy:     "user:one@example.com",
-				Revision:        "rev1",
-				Task:            noopTaskBytes(),
-				Status:          task.StatusStarting,
-				DebugLog: "[22:42:00.000] New invocation initialized\n" +
+				ID:          expectedInvID,
+				JobID:       "project/job",
+				Started:     epoch,
+				TriggeredBy: "user:one@example.com",
+				Revision:    "rev1",
+				Task:        noopTaskBytes(),
+				Status:      task.StatusStarting,
+				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Triggered by user:one@example.com\n",
 			})
 
@@ -797,18 +792,17 @@ func TestForceInvocation(t *testing.T) {
 			inv, err = e.getInvocation(c, "project/job", invID)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
-				ID:              expectedInvID,
-				JobID:           "project/job",
-				IndexedJobID:    "project/job", // set for finished tasks!
-				InvocationNonce: expectedInvID,
-				Started:         epoch,
-				Finished:        epoch.Add(time.Second),
-				TriggeredBy:     "user:one@example.com",
-				Revision:        "rev1",
-				Task:            noopTaskBytes(),
-				Status:          task.StatusSucceeded,
-				MutationsCount:  2,
-				DebugLog: "[22:42:00.000] New invocation initialized\n" +
+				ID:             expectedInvID,
+				JobID:          "project/job",
+				IndexedJobID:   "project/job", // set for finished tasks!
+				Started:        epoch,
+				Finished:       epoch.Add(time.Second),
+				TriggeredBy:    "user:one@example.com",
+				Revision:       "rev1",
+				Task:           noopTaskBytes(),
+				Status:         task.StatusSucceeded,
+				MutationsCount: 2,
+				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Triggered by user:one@example.com\n" +
 					"[22:42:01.000] Starting the invocation (attempt 1)\n" +
 					"[22:42:01.000] Started!\n" +
@@ -872,18 +866,17 @@ func TestAbortJob(t *testing.T) {
 			inv, err := e.getInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
-				ID:              expectedInvID,
-				JobID:           jobID,
-				IndexedJobID:    jobID,
-				InvocationNonce: expectedInvID,
-				Started:         epoch,
-				Finished:        epoch,
-				TriggeredBy:     "user:one@example.com",
-				Revision:        "rev1",
-				Task:            noopTaskBytes(),
-				Status:          task.StatusAborted,
-				MutationsCount:  1,
-				DebugLog: "[22:42:00.000] New invocation initialized\n" +
+				ID:             expectedInvID,
+				JobID:          jobID,
+				IndexedJobID:   jobID,
+				Started:        epoch,
+				Finished:       epoch,
+				TriggeredBy:    "user:one@example.com",
+				Revision:       "rev1",
+				Task:           noopTaskBytes(),
+				Status:         task.StatusAborted,
+				MutationsCount: 1,
+				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Triggered by user:one@example.com\n" +
 					"[22:42:00.000] Invocation is manually aborted by user:one@example.com\n" +
 					"[22:42:00.000] Invocation finished in 0s with status ABORTED\n",

@@ -134,11 +134,6 @@ func (ctl *taskController) InvocationID() int64 {
 	return ctl.saved.ID
 }
 
-// InvocationNonce is part of task.Controller interface.
-func (ctl *taskController) InvocationNonce() int64 {
-	return ctl.saved.InvocationNonce
-}
-
 // Task is part of task.Controller interface.
 func (ctl *taskController) Task() proto.Message {
 	return ctl.task

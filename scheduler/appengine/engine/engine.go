@@ -1000,10 +1000,7 @@ func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Re
 		if err != nil {
 			return
 		}
-		// TODO(vadimsh): Remove once InvocationNonce is gone. We need it for now
-		// since task controller use InvocationNonce as dedup key.
-		inv.InvocationNonce = inv.ID
-		inv.debugLog(c, "New invocation initialized")
+		inv.debugLog(c, "New invocation is queued and will start shortly")
 		if req.TriggeredBy != "" {
 			inv.debugLog(c, "Triggered by %s", req.TriggeredBy)
 		}

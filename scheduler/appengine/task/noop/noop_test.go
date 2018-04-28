@@ -56,8 +56,8 @@ func TestFullFlow(t *testing.T) {
 			Status: task.StatusSucceeded,
 		})
 		So(ctl.Triggers, ShouldResemble, []*internal.Trigger{
-			{Id: "noop:2:0"},
-			{Id: "noop:2:1"},
+			{Id: "noop:1:0", Payload: &internal.Trigger_Noop{}},
+			{Id: "noop:1:1", Payload: &internal.Trigger_Noop{}},
 		})
 	})
 }
